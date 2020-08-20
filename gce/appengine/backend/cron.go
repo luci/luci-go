@@ -21,11 +21,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/auth/service/protocol"
 

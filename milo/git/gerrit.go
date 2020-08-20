@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/gae/service/memcache"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/milo/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

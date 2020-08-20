@@ -30,13 +30,13 @@ import (
 
 	"google.golang.org/api/pubsub/v1"
 
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/tq"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -509,7 +509,7 @@ func schedulerProperty(ctx context.Context, ctl task.Controller) (*structpb.Valu
 	if len(ts) > maxTriggersAsSchedulerProperty {
 		ctl.DebugLog("Capping %d triggers passed to the build to just %d latest ones",
 			len(ts), maxTriggersAsSchedulerProperty)
-		ts = ts[len(ts)-maxTriggersAsSchedulerProperty : len(ts)]
+		ts = ts[len(ts)-maxTriggersAsSchedulerProperty:]
 	}
 	for _, tInternal := range ts {
 		buf.Reset()

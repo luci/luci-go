@@ -28,12 +28,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 

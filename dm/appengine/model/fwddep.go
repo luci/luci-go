@@ -18,8 +18,8 @@ import (
 	"context"
 	"sort"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // FwdDep describes a 'depends-on' relation between two Attempts. It has a

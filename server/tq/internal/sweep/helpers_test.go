@@ -31,14 +31,14 @@ func TestHelpers(t *testing.T) {
 	Convey("OnlyLeased", t, func() {
 		reminders := []*reminder.Reminder{
 			// Each key be exactly 2*keySpaceBytes chars long.
-			&reminder.Reminder{ID: "00000000000000000000000000000001"},
-			&reminder.Reminder{ID: "00000000000000000000000000000005"},
-			&reminder.Reminder{ID: "00000000000000000000000000000009"},
-			&reminder.Reminder{ID: "0000000000000000000000000000000f"}, // ie 15
+			{ID: "00000000000000000000000000000001"},
+			{ID: "00000000000000000000000000000005"},
+			{ID: "00000000000000000000000000000009"},
+			{ID: "0000000000000000000000000000000f"}, // ie 15
 		}
 		leased := partition.SortedPartitions{partition.FromInts(5, 9)}
 		So(onlyLeased(reminders, leased, keySpaceBytes), ShouldResemble, []*reminder.Reminder{
-			&reminder.Reminder{ID: "00000000000000000000000000000005"},
+			{ID: "00000000000000000000000000000005"},
 		})
 	})
 }

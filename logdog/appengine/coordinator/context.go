@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	cfglib "go.chromium.org/luci/config"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/common/types"

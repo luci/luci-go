@@ -15,8 +15,8 @@
 package model
 
 import (
-	"go.chromium.org/luci/gae/service/datastore"
 	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // AttemptResult holds the raw, compressed json blob returned from the

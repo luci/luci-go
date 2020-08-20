@@ -17,16 +17,15 @@ package dummy_project
 
 import (
 	"fmt"
-	"reflect"
 	"hash/fnv"
+	"reflect"
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/common/tsmon/target"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/common/tsmon/target"
 )
-
 
 // Hash returns a uint64 hash of this target.
 func (t *DummyProject) Hash() uint64 {

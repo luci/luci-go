@@ -26,9 +26,9 @@ import (
 
 	"google.golang.org/api/pubsub/v1"
 
-	"go.chromium.org/luci/gae/impl/memory"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"

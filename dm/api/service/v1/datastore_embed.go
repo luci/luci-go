@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 const flipMask uint32 = 0xFFFFFFFF

@@ -22,10 +22,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	helloworld "go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"

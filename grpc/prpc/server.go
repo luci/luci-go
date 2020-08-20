@@ -108,9 +108,9 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu                   sync.RWMutex
-	services             map[string]*service
-	overrides            map[string]map[string]Override
+	mu        sync.RWMutex
+	services  map[string]*service
+	overrides map[string]map[string]Override
 }
 
 type service struct {

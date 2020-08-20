@@ -20,14 +20,14 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txnBuf"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

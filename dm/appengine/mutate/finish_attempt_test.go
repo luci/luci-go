@@ -18,13 +18,13 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

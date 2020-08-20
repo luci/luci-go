@@ -23,10 +23,10 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/gae/service/datastore"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 
@@ -120,7 +120,7 @@ func TestUpdateTrees(t *testing.T) {
 			}
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   statusMessage,
 						key:       -1,
@@ -180,7 +180,7 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Closed manually, doesn't re-open", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  "somedev@chromium.org",
 						message:   "Closed because of reasons",
 						key:       -1,
@@ -209,7 +209,7 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Opened manually, stays open with no new failures", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
 						key:       -1,
@@ -239,7 +239,7 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Opened manually, closes on new failure", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
 						key:       -1,
@@ -268,14 +268,14 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple trees", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   "Closed up",
 						key:       -1,
 						status:    config.Closed,
 						timestamp: evenEarlierTime,
 					},
-					"v8-status.appspot.com": treeStatus{
+					"v8-status.appspot.com": {
 						username:  botUsername,
 						message:   "Open for business",
 						key:       -1,
@@ -348,7 +348,7 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Doesn't close when build is older than last status update", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
 						key:       -1,
@@ -382,7 +382,7 @@ func TestUpdateTrees(t *testing.T) {
 			// than the status update.
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
 						key:       -1,
@@ -421,7 +421,7 @@ func TestUpdateTrees(t *testing.T) {
 			// build.
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
 						key:       -1,
@@ -457,14 +457,14 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple projects", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
 						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
-					"infra-status.appspot.com": treeStatus{
+					"infra-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is open (Automatic: Yes!)",
 						key:       -1,
@@ -516,14 +516,14 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple projects, overlapping tree status hosts", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": treeStatus{
+					"chromium-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is open (Flake)",
 						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
-					"infra-status.appspot.com": treeStatus{
+					"infra-status.appspot.com": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: Some builder failed)",
 						key:       -1,

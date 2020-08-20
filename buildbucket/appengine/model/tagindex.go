@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // Ensure TagIndexEntry implements datastore.PropertyConverter.

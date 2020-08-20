@@ -28,7 +28,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	commonpb "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/git"
@@ -36,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"

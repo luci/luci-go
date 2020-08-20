@@ -29,7 +29,7 @@ var (
 	NilType = types.TargetType{}
 
 	DeviceType = (*NetworkDevice)(nil).Type()
-	TaskType = (*Task)(nil).Type()
+	TaskType   = (*Task)(nil).Type()
 )
 
 var targetTypeEnum = flagenum.Enum{

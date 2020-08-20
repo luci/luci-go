@@ -18,9 +18,9 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"

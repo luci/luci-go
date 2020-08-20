@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"

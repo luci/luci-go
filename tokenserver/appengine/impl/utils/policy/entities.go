@@ -17,8 +17,8 @@ package policy
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // importedPolicyHeader is an entity that holds metadata about a cached policy.

@@ -28,8 +28,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	bqapi "google.golang.org/api/bigquery/v2"
 
-	"go.chromium.org/luci/gae/filter/featureBreaker"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -37,6 +35,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

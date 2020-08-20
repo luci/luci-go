@@ -20,11 +20,11 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 func TestTumbleFiddlyBits(t *testing.T) {

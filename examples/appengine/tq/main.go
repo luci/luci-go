@@ -41,9 +41,9 @@ import (
 	"strconv"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"

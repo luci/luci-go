@@ -20,10 +20,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 

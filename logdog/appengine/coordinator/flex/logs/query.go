@@ -21,9 +21,9 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"

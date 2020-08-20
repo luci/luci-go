@@ -545,7 +545,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 			<-timer.GetC()
 
 			mu.Lock()
-			for i, _ := range batch.Data {
+			for i := range batch.Data {
 				sent = append(sent, batch.Data[i].(int))
 			}
 			mu.Unlock()

@@ -20,11 +20,11 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	google_pb "go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )

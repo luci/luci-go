@@ -20,8 +20,8 @@ import (
 	"path"
 	"sort"
 
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 // swarmingBuildLogImpl is the implementation for getting a log name from

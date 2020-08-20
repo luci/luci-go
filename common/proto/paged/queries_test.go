@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/common/proto/examples"
 

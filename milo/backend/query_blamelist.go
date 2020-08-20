@@ -19,11 +19,11 @@ import (
 	"encoding/base64"
 	"sync"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"

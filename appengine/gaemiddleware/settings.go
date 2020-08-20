@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
+	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )

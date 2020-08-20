@@ -19,8 +19,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/gae/service/taskqueue"
 )
 
 // Internals is used by tqtesting package and must not be used directly.

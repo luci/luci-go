@@ -28,10 +28,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

@@ -17,9 +17,9 @@ package admin
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 )

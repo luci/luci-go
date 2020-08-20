@@ -42,7 +42,7 @@ func someLibFunc(vals ...int) error {
 
 type MiscWrappedError struct{ error }
 
-func (e *MiscWrappedError) Error() string     { return fmt.Sprintf("super wrapper(%s)", e.error.Error()) }
+func (e *MiscWrappedError) Error() string { return fmt.Sprintf("super wrapper(%s)", e.error.Error()) }
 func (e *MiscWrappedError) Unwrap() error { return e.error }
 
 func errorWrapper(err error) error {

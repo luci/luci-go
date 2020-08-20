@@ -27,7 +27,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/duration"
-	"go.chromium.org/luci/gae/service/info"
 	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -37,6 +36,7 @@ import (
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 )
 

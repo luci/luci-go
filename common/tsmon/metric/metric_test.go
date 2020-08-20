@@ -352,7 +352,7 @@ func TestMetricWithRegistry(t *testing.T) {
 	Convey("Multiple metrics", t, func() {
 		Convey("with the same metric name and targe type", func() {
 			NewIntWithTargetType("registry/test/2", target.TaskType, "desc", nil)
-			So(func(){
+			So(func() {
 				NewIntWithTargetType("registry/test/2", target.TaskType, "desc", nil)
 			}, ShouldPanic)
 		})

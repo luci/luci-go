@@ -25,11 +25,11 @@ import (
 	"fmt"
 	"time"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/retry/transient"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"

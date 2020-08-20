@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/service/blobstore"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/common/data/cmpbin"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

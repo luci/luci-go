@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/gae/service/info"
 	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
