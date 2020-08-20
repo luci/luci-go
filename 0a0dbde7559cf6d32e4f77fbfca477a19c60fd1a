@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27045c34_b1ee1d6c",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-20T20:33:10Z",
+      "side": 1,
+      "message": "validateCommitWithRef",
+      "range": {
+        "startLine": 188,
+        "startChar": 3,
+        "endLine": 188,
+        "endChar": 17
+      },
+      "revId": "0a0dbde7559cf6d32e4f77fbfca477a19c60fd1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12a213e4_8b6e9600",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-20T20:33:10Z",
+      "side": 1,
+      "message": "not for this CL, but I wonder why this isn\u0027t in buildbucket/protoutil package",
+      "range": {
+        "startLine": 193,
+        "startChar": 8,
+        "endLine": 193,
+        "endChar": 22
+      },
+      "revId": "0a0dbde7559cf6d32e4f77fbfca477a19c60fd1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b886bb2e_cf75e7e0",
+        "filename": "buildbucket/appengine/rpc/update_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-20T20:33:10Z",
+      "side": 1,
+      "message": "the test would be more useful if it was asserting that a bad commit does not get through",
+      "revId": "0a0dbde7559cf6d32e4f77fbfca477a19c60fd1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
