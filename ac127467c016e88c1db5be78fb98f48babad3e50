@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "7cb49af5_dd6b978c",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdab6b44_76ab3eaf",
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0830480f_0525c84f",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 6
@@ -64,6 +82,30 @@
       "writtenOn": "2020-08-20T00:04:14Z",
       "side": 1,
       "message": "I think this can be extracted out as a const.",
+      "range": {
+        "startLine": 61,
+        "startChar": 10,
+        "endLine": 63,
+        "endChar": 17
+      },
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d582ac47_cd3e47ca",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "Sorry, could you elaborate further?",
+      "parentUuid": "0830480f_0525c84f",
       "range": {
         "startLine": 61,
         "startChar": 10,
@@ -93,6 +135,24 @@
     },
     {
       "key": {
+        "uuid": "aec56d1f_e0c5e1f1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "This is from the existing build page. I think it\u0027s fine to leave it as is.\nWe can always change this if there\u0027s a user request for that.",
+      "parentUuid": "386d6b02_7b25bc47",
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5c1d22b7_939bf755",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 6
@@ -104,6 +164,24 @@
       "writtenOn": "2020-08-20T00:04:14Z",
       "side": 1,
       "message": "Maybe full word patch set instead of ps?",
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d39279b_5440e026",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "This is from the existing build page. I think it\u0027s fine to leave it as is.\nWe can always change this if there\u0027s a user request for that.",
+      "parentUuid": "5c1d22b7_939bf755",
       "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -127,6 +205,24 @@
     },
     {
       "key": {
+        "uuid": "183af806_3535e327",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "I\u0027ll refactor the function in a later CL.",
+      "parentUuid": "a4eaa9e2_825f1ebd",
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d8783a45_07c85e6e",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 6
@@ -141,6 +237,24 @@
       "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30fd6772_f7a7f645",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:40:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8783a45_07c85e6e",
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
