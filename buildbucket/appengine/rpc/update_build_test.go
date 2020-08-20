@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"strings"
 	"testing"
 
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -46,9 +47,9 @@ func TestValidateUpdate(t *testing.T) {
 					"build.tags",
 					"build.output",
 					"build.status_details",
-					"build.output.gitiles_commit",
 					"build.summary_markdown",
 				}}
+				req.Build.SummaryMarkdown = "this is a string"
 				So(validateUpdate(req), ShouldBeNil)
 			})
 		})
@@ -94,14 +95,25 @@ func TestValidateUpdate(t *testing.T) {
 	Convey("validate BuildTags", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
-		req.Build.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
-		So(validateUpdate(req), ShouldBeNil)
+		req.Build.Tags = []*pb.StringPair{{Key: "ci:builder", Value: ""}}
+		So(validateUpdate(req), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
 	})
 
 	Convey("validate SummaryMarkdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
-		req.Build.SummaryMarkdown = "[mark](http://example.org)*down*"
-		So(validateUpdate(req), ShouldBeNil)
+		req.Build.SummaryMarkdown = strings.Repeat("☕", summaryMarkdownMaxLength)
+		So(validateUpdate(req), ShouldErrLike, "too big to accept")
+	})
+
+	Convey("validateUpdate with Commit", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.gitiles_commit"}}
+		req.Build.Output = &pb.Build_Output{GitilesCommit: &pb.GitilesCommit{
+			Project: "project",
+			Host:    "host",
+			Id:      "id",
+		}}
+		So(validateUpdate(req), ShouldErrLike, "ref is required")
 	})
 }
