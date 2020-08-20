@@ -1,0 +1,122 @@
+LUCI/gae: App Engine pseudo-SDK
+Fast Tests, Slick API, Happy Hacking
+18:00 12 Jul 2016
+Tags: appengine, datastore, testing
+
+Robbie Iannucci
+Professional Software Wrestler, Google
+iannucci@google.com
+https://github.com/luci/gae
+
+Chrome Infrastructure Team
+infra-dev@chromium.org
+
+* Go on App Engine kicks ass!
+
+: Hello! Robbie Iannucci, work CIT. Use Go/GAE to build CI microservices.
+: QUICK GAE overview (PaaS, Datastore K/V, Memcache, load balancing, scaling, etc.)
+: Go/GAE is BEST App Engine
+: We made testing Go/GAE super fast+fun
+
+* Trouble in Paradise?
+
+*Testing*is*slow*
+
+- Requires SDK+Python (!!)
+- Slow (3-4s minumum overhead per datastore instance)
+- Accidental serialization (non-concurrent, race detector ~useless)
+
+*API*is*less*than*ideal*
+
+Lacks:
+
+- automatic object memcaching
+- hooks
+- embedded IDs
+- 'mockable' services
+
+: Go/GAE 2GTTTGT, but hurdles because Go is recently added
+: Uses same Python devserver (impl. speed, maint)
+: We miss NDB
+: So, as any good engineers would do...
+
+* Solution
+
+.background lightning/all_the_things.png
+
+* Solution
+
+*High-performance*pure-Go*in-memory*GAE-services*implementation*
+
+- Concurrent
+- Accurate Indexes, Query semantics, Query execution
+- Accurate Transaction behavior (including transactional Task Queue)
+- Fast tests
+
+*High-level*service*API*
+
+- Embedded object identity
+- Flexible datatypes/encoding
+
+: So we built a thing! In-memory pure-Go implementation of the datastore (as well
+: other App Engine services). Library lets you access prod services with nice
+: API, and get our really fast in-memory fakes in your tests.
+
+* Code + Numbers
+
+: So enough run-up, let's take a look at some lightning-style code and numbers.
+
+* Native way (aetest)
+
+.code lightning/native_test.go /START OMIT/,/END OMIT/
+
+: Duplication ("Model")
+: Key management
+: Takes ~8 seconds == yawn.
+
+~7.5 seconds
+
+* luci/gae way
+
+.code lightning/gae_test.go /START OMIT/,/END OMIT/
+
+: Shorter! Model, ID part of model. ID properly typed.
+: LUCI/gae can dynamically compute ID too (say if it was a composition of A+B)
+: 50 Milliseconds.
+
+~0.056 seconds
+
+* >100x speedup! Less redundancy!
+
+: Hooray! I can run 100 times as many tests in the same amount of time!
+
+* But wait, there's more!
+
+* Features
+
+*We*actually*use*it*
+
+700 tests (parallel, clean-slate) run in ~35 seconds.
+
+*Flexible*Filter*Layer*
+
+- Transparent caching (based on [[https://github.com/qedus/nds]])
+- Recursive buffered transactions
+- *<your*logic*here>*
+
+*Controllable*Eventual*Consistency*
+
+Allows explicit testing around Eventual Consistency states.
+
+*Consistent*API*
+
+Classic GAE, Managed VMs, Cloud Datastore, In-Memory
+
+* Thanks
+
+This couldn't have been done without amazing Go packages like:
+
+- [[https://google.golang.org/appengine]] 😀
+- [[https://github.com/steveyen/gkvlite]]
+- [[https://github.com/mjibson/goon]]
+- [[https://github.com/qedus/nds]]
