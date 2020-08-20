@@ -15,7 +15,7 @@
 package model
 
 import (
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/dm/api/service/v1"
 )

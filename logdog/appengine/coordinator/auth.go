@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"

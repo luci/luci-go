@@ -17,8 +17,8 @@ package flaky
 import (
 	"testing"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

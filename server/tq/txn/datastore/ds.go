@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/gae/filter/txndefer"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"

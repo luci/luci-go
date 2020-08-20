@@ -18,9 +18,9 @@ import (
 	"errors"
 	"testing"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"golang.org/x/net/context"
 

@@ -21,8 +21,8 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/server/auth"

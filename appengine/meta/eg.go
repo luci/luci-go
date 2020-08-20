@@ -17,7 +17,7 @@ package meta
 import (
 	"context"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // EntityGroupMeta is the model corresponding to the __entity_group__ model in

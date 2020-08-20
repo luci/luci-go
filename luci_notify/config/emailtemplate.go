@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

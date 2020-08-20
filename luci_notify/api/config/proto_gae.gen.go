@@ -19,14 +19,14 @@ package config
 import (
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 var _ datastore.PropertyConverter = (*GitilesCommits)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'GitilesCommits' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *GitilesCommits) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -36,7 +36,7 @@ func (p *GitilesCommits) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'GitilesCommits' when used with the "go.chromium.org/gae" library.
+// into an embedded 'GitilesCommits' when used with the "go.chromium.org/luci/gae" library.
 func (p *GitilesCommits) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -49,7 +49,7 @@ var _ datastore.PropertyConverter = (*Notifications)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'Notifications' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *Notifications) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -59,7 +59,7 @@ func (p *Notifications) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Notifications' when used with the "go.chromium.org/gae" library.
+// into an embedded 'Notifications' when used with the "go.chromium.org/luci/gae" library.
 func (p *Notifications) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -72,7 +72,7 @@ var _ datastore.PropertyConverter = (*TreeCloser)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'TreeCloser' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *TreeCloser) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -82,7 +82,7 @@ func (p *TreeCloser) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'TreeCloser' when used with the "go.chromium.org/gae" library.
+// into an embedded 'TreeCloser' when used with the "go.chromium.org/luci/gae" library.
 func (p *TreeCloser) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {

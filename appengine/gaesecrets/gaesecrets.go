@@ -27,8 +27,8 @@ import (
 	"strings"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/retry/transient"

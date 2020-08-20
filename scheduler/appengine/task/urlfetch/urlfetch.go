@@ -30,7 +30,7 @@ import (
 
 	"google.golang.org/api/pubsub/v1"
 
-	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"

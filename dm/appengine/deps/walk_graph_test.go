@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	google_pb "go.chromium.org/luci/common/proto/google"

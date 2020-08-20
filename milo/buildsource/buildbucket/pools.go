@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/deprecated"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucketAPI "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"

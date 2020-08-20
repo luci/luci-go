@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"

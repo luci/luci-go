@@ -51,7 +51,7 @@ import (
 	serverAuth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/gae/impl/cloud"
+	"go.chromium.org/luci/gae/impl/cloud"
 
 	cloudBT "cloud.google.com/go/bigtable"
 	"cloud.google.com/go/datastore"

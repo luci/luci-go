@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"testing"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 
 	"golang.org/x/net/context"
 

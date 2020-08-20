@@ -17,8 +17,8 @@ package mutate
 import (
 	"testing"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"

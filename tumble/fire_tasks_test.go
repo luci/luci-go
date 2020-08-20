@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

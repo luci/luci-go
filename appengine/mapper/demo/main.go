@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"

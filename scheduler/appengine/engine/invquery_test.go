@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"

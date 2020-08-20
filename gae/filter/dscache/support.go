@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
-	mc "go.chromium.org/gae/service/memcache"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"

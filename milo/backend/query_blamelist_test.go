@@ -21,7 +21,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"

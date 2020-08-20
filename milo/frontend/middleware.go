@@ -31,7 +31,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	blackfriday "gopkg.in/russross/blackfriday.v2"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"

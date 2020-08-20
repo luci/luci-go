@@ -20,8 +20,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"

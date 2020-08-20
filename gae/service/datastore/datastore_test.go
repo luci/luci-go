@@ -25,7 +25,7 @@ import (
 	"runtime"
 	"testing"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"

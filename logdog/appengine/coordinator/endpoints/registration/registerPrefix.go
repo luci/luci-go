@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"

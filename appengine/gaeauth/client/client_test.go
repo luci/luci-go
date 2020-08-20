@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

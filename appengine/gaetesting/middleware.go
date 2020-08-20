@@ -18,7 +18,7 @@ import (
 	"context"
 	"flag"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets/testsecrets"
@@ -27,7 +27,7 @@ import (
 var goLogger = flag.Bool("test.gologger", false, "Enable console logging during test.")
 
 // TestingContext returns context with base services installed:
-//   * go.chromium.org/gae/impl/memory (in-memory appengine services)
+//   * go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
 //   * go.chromium.org/luci/server/caching (access to process cache)
 //   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContext() context.Context {
@@ -38,7 +38,7 @@ func TestingContext() context.Context {
 
 // TestingContextWithAppID returns context with the specified App ID and base
 // services installed:
-//   * go.chromium.org/gae/impl/memory (in-memory appengine services)
+//   * go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
 //   * go.chromium.org/luci/server/caching (access to process cache)
 //   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContextWithAppID(appID string) context.Context {

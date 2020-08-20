@@ -17,7 +17,7 @@ package buildbucket
 import (
 	"testing"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"

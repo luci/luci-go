@@ -22,8 +22,8 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 

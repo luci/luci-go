@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/gae/service/urlfetch"
 )
 
 var background = context.Background()

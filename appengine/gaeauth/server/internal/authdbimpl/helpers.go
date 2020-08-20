@@ -17,7 +17,7 @@ package authdbimpl
 import (
 	"context"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/service"
 )
 

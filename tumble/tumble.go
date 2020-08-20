@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/gae/filter/txnBuf"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/txnBuf"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // RunMutation immediately runs the Mutation `m` in a transaction. This method

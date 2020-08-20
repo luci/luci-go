@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"

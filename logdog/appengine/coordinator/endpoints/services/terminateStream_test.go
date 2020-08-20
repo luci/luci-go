@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"

@@ -30,10 +30,10 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
 
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 )
 
 // Testing is a high-level testing object for testing applications that use

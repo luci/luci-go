@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"

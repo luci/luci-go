@@ -24,8 +24,8 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/bq"

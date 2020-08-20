@@ -23,7 +23,7 @@ import (
 	"context"
 	"sync"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // FilterRDS installs the datastore filter into the context.

@@ -2,7 +2,7 @@ proto-gae
 =========
 
 proto-gae is a simple `go generate`-compatible tool for generating
-"go.chromium.org/gae/service/datastore".PropertyConverter implementation for
+"go.chromium.org/luci/gae/service/datastore".PropertyConverter implementation for
 `protoc`-generated message types. This allows you to embed `proto.Message`
 implementations into your datastore models.
 

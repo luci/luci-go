@@ -18,12 +18,12 @@ package demo
 
 import "testing"
 import "golang.org/x/net/context"
-import "go.chromium.org/gae/impl/memory"
+import "go.chromium.org/luci/gae/impl/memory"
 import . "github.com/smartystreets/goconvey/convey"
 
 // START OMIT
 
-import "go.chromium.org/gae/service/datastore" // HL
+import "go.chromium.org/luci/gae/service/datastore" // HL
 
 func TestGAE(t *testing.T) {
 	type Model struct { // HL

@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 
-	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 
 	"github.com/golang/protobuf/proto"
 

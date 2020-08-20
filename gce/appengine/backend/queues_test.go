@@ -24,8 +24,8 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock/testclock"

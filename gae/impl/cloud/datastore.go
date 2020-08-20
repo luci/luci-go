@@ -23,8 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/gae/impl/prod/constraints"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/prod/constraints"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/iterator"

@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/common/errors"

@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/auth/identity"

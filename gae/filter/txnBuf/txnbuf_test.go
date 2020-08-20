@@ -20,10 +20,10 @@ import (
 	"math/rand"
 	"testing"
 
-	"go.chromium.org/gae/filter/count"
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/filter/count"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/errors"

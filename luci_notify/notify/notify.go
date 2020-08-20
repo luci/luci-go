@@ -33,9 +33,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
-	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"

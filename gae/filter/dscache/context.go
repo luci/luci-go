@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 var dsTxnCacheKey = "holds a *dsCache"

@@ -19,14 +19,14 @@ package buildbucketpb
 import (
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 var _ datastore.PropertyConverter = (*Bucket)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'Bucket' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *Bucket) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -36,7 +36,7 @@ func (p *Bucket) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Bucket' when used with the "go.chromium.org/gae" library.
+// into an embedded 'Bucket' when used with the "go.chromium.org/luci/gae" library.
 func (p *Bucket) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -49,7 +49,7 @@ var _ datastore.PropertyConverter = (*Build)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'Build' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *Build) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -59,7 +59,7 @@ func (p *Build) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Build' when used with the "go.chromium.org/gae" library.
+// into an embedded 'Build' when used with the "go.chromium.org/luci/gae" library.
 func (p *Build) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -72,7 +72,7 @@ var _ datastore.PropertyConverter = (*BuildInfra)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'BuildInfra' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *BuildInfra) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -82,7 +82,7 @@ func (p *BuildInfra) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'BuildInfra' when used with the "go.chromium.org/gae" library.
+// into an embedded 'BuildInfra' when used with the "go.chromium.org/luci/gae" library.
 func (p *BuildInfra) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -95,7 +95,7 @@ var _ datastore.PropertyConverter = (*Builder)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'Builder' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *Builder) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -105,7 +105,7 @@ func (p *Builder) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Builder' when used with the "go.chromium.org/gae" library.
+// into an embedded 'Builder' when used with the "go.chromium.org/luci/gae" library.
 func (p *Builder) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {

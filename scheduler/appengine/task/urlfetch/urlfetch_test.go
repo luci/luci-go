@@ -23,7 +23,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config/validation"

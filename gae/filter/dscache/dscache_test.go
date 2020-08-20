@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/serialize"
-	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
+	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

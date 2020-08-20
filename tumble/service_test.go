@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

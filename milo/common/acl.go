@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/memcache"
 
 	bbAccess "go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/errors"

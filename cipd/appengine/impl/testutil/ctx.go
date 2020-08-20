@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"

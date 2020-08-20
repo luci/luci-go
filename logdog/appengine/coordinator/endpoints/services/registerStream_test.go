@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"

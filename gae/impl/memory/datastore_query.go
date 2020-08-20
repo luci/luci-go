@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/serialize"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 )

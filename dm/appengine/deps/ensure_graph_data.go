@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/proto"
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"

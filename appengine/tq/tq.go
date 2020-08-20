@@ -32,7 +32,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/stringset"

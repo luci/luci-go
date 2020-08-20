@@ -20,7 +20,7 @@ import (
 	"path"
 	"sort"
 
-	mc "go.chromium.org/gae/service/memcache"
+	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"
 )
 

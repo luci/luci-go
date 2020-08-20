@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/user"
+	"go.chromium.org/luci/gae/service/user"
 )
 
 type userData struct {

@@ -17,7 +17,7 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // DatastoreFeatures is a list of datastore features that can be "broken".

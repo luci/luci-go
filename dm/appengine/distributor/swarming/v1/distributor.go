@@ -27,7 +27,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/duration"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

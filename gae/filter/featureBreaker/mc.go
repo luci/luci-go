@@ -17,7 +17,7 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	mc "go.chromium.org/gae/service/memcache"
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 type mcState struct {

@@ -27,7 +27,7 @@ import (
 	"sort"
 	"strings"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )

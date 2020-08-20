@@ -24,8 +24,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"

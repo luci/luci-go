@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"

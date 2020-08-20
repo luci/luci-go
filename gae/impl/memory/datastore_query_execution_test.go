@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/service/blobstore"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/blobstore"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -24,7 +24,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/clockflag"

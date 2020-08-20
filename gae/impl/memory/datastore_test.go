@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/serialize"
-	infoS "go.chromium.org/gae/service/info"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
+	infoS "go.chromium.org/luci/gae/service/info"
 
 	"golang.org/x/net/context"
 

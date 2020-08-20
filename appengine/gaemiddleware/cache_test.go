@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"

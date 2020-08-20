@@ -20,9 +20,9 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/gae/filter/txndefer"
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb" // some "random" v2 proto
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/clock/testclock"
 	configpb "go.chromium.org/luci/common/proto/config" // some "random" v1 proto
 	"go.chromium.org/luci/config"

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"

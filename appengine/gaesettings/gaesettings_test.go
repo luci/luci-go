@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/filter/count"
-	"go.chromium.org/gae/filter/dscache"
-	"go.chromium.org/gae/filter/txnBuf"
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/filter/count"
+	"go.chromium.org/luci/gae/filter/dscache"
+	"go.chromium.org/luci/gae/filter/txnBuf"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 

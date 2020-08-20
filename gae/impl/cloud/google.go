@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	infoS "go.chromium.org/gae/service/info"
+	infoS "go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lru"

@@ -28,7 +28,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/router"

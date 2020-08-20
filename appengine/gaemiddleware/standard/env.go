@@ -40,8 +40,8 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	gaetsmon "go.chromium.org/luci/appengine/tsmon"
 
-	"go.chromium.org/gae/impl/prod"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/impl/prod"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 var (

@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"

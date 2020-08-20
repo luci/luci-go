@@ -30,8 +30,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // ErrFlakyRPCDeadline is returned by FlakyErrors to indicate a deadline.

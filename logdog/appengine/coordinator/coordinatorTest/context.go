@@ -49,8 +49,8 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/settings"
 
-	gaeMemory "go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
+	gaeMemory "go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -19,14 +19,14 @@ package srcman
 import (
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 var _ datastore.PropertyConverter = (*Manifest)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'Manifest' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *Manifest) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -36,7 +36,7 @@ func (p *Manifest) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Manifest' when used with the "go.chromium.org/gae" library.
+// into an embedded 'Manifest' when used with the "go.chromium.org/luci/gae" library.
 func (p *Manifest) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
@@ -49,7 +49,7 @@ var _ datastore.PropertyConverter = (*ManifestDiff)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // 'ManifestDiff' to serialize to an unindexed '[]byte' when used with the
-// "go.chromium.org/gae" library.
+// "go.chromium.org/luci/gae" library.
 func (p *ManifestDiff) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -59,7 +59,7 @@ func (p *ManifestDiff) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'ManifestDiff' when used with the "go.chromium.org/gae" library.
+// into an embedded 'ManifestDiff' when used with the "go.chromium.org/luci/gae" library.
 func (p *ManifestDiff) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {

@@ -26,7 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/discovery"

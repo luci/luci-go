@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/dumper"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/dumper"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor/fake"
 	"go.chromium.org/luci/dm/appengine/model"

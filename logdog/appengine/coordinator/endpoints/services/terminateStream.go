@@ -18,7 +18,7 @@ import (
 	"context"
 	"crypto/subtle"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"

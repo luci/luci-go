@@ -25,7 +25,7 @@ import (
 	"math"
 	"sort"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // Params are passed to SplitIntoRanges.

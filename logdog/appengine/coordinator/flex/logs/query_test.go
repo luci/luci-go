@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"

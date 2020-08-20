@@ -17,7 +17,7 @@ package memory
 import (
 	"bytes"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"github.com/luci/gtreap"
 	"go.chromium.org/luci/common/data/treapstore"

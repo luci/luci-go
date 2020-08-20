@@ -24,7 +24,7 @@ import (
 // and/or PropertyMap arrays from one layer of the RawInterface to the next.
 //
 // If you're not writing a datastore backend implementation (like
-// "go.chromium.org/gae/impl/*"), then you can ignore this type.
+// "go.chromium.org/luci/gae/impl/*"), then you can ignore this type.
 //
 // For example, say your GetMulti method was passed 4 arguments, but one of them
 // was bad. DroppedArgTracker would allow you to "drop" the bad entry, and then

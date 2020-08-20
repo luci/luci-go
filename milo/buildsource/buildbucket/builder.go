@@ -25,7 +25,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/memcache"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"

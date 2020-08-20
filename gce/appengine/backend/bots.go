@@ -24,8 +24,8 @@ import (
 
 	"google.golang.org/api/googleapi"
 
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"

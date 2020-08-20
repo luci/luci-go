@@ -27,9 +27,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	prodConstraints "go.chromium.org/gae/impl/prod/constraints"
-	ds "go.chromium.org/gae/service/datastore"
-	tq "go.chromium.org/gae/service/taskqueue"
+	prodConstraints "go.chromium.org/luci/gae/impl/prod/constraints"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	tq "go.chromium.org/luci/gae/service/taskqueue"
 )
 
 var (

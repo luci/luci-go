@@ -25,7 +25,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"

@@ -32,11 +32,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 
-	"go.chromium.org/gae/filter/txnBuf"
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/serialize"
-	"go.chromium.org/gae/service/info"
-	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/filter/txnBuf"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/info"
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 const (

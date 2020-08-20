@@ -19,8 +19,8 @@ import (
 	"compress/zlib"
 	"io/ioutil"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/datastore/serialize"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore/serialize"
 )
 
 func encodeItemValue(pm ds.PropertyMap) []byte {

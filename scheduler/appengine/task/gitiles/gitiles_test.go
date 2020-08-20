@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	commonpb "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/git"

@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"time"
 
-	"go.chromium.org/gae/service/blobstore"
+	"go.chromium.org/luci/gae/service/blobstore"
 )
 
 var (

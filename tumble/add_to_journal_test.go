@@ -17,7 +17,7 @@ package tumble
 import (
 	"testing"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"

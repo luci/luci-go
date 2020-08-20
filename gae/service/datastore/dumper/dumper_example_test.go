@@ -17,8 +17,8 @@ package dumper
 import (
 	"fmt"
 
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )

@@ -19,11 +19,11 @@ import (
 	"net/http"
 	"sync"
 
-	"go.chromium.org/gae/filter/dscache"
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/filter/readonly"
-	"go.chromium.org/gae/filter/txndefer"
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/filter/dscache"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/filter/readonly"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/errors"

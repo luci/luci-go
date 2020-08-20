@@ -29,8 +29,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/gae/service/memcache"
-	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"

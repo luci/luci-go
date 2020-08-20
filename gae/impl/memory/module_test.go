@@ -17,7 +17,7 @@ package memory
 import (
 	"testing"
 
-	"go.chromium.org/gae/service/module"
+	"go.chromium.org/luci/gae/service/module"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

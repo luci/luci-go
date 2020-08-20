@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/gae/service/info"
-	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/info"
+	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/errors"
 

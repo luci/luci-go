@@ -27,9 +27,9 @@ import (
 
 	"google.golang.org/api/pubsub/v1"
 
-	"go.chromium.org/gae/filter/featureBreaker"
-	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"

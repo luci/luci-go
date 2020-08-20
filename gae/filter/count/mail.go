@@ -15,7 +15,7 @@
 package count
 
 import (
-	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/luci/gae/service/mail"
 	"golang.org/x/net/context"
 )
 

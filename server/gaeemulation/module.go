@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package gaeemulation provides a server module that adds implementation of
-// some https://godoc.org/go.chromium.org/gae APIs to the global server context.
+// some https://godoc.org/go.chromium.org/luci/gae APIs to the global server context.
 //
 // The implementation is based on regular Cloud APIs and works from anywhere
 // (not necessarily from Appengine).
@@ -45,8 +45,8 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/gae/filter/txndefer"
-	"go.chromium.org/gae/impl/cloud"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/cloud"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -62,7 +62,7 @@ type ModuleOptions struct{}
 func (o *ModuleOptions) Register(f *flag.FlagSet) {}
 
 // NewModule returns a server module that adds implementation of
-// some https://godoc.org/go.chromium.org/gae APIs to the global server context.
+// some https://godoc.org/go.chromium.org/luci/gae APIs to the global server context.
 func NewModule(opts *ModuleOptions) module.Module {
 	if opts == nil {
 		opts = &ModuleOptions{}

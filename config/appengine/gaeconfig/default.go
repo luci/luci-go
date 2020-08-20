@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // devCfgDir is a name of the directory with config files when running in

@@ -24,7 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"

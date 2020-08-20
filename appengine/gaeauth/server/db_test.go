@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	ds "go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/server/auth/authdb"

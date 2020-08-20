@@ -17,8 +17,8 @@ package dscache
 import (
 	"sync"
 
-	"go.chromium.org/gae/service/datastore"
-	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/gae/service/datastore"
+	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"

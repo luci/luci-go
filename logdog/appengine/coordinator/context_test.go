@@ -21,7 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"

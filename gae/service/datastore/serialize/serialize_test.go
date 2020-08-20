@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/service/blobstore"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/blobstore"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/data/cmpbin"
 
 	. "github.com/smartystreets/goconvey/convey"

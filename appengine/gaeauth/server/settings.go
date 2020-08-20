@@ -22,7 +22,7 @@ import (
 	"net/url"
 	"strings"
 
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
 	"go.chromium.org/luci/server/portal"
 )

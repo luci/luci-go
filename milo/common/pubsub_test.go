@@ -21,7 +21,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 
