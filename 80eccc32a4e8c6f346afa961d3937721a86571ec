@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3e4965c_d89c61f5",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-20T02:23:07Z",
+      "side": 1,
+      "message": "nits: unkown -\u003e unknown",
+      "revId": "80eccc32a4e8c6f346afa961d3937721a86571ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
