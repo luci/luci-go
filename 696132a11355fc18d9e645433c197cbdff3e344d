@@ -22,6 +22,30 @@
       "revId": "696132a11355fc18d9e645433c197cbdff3e344d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "568dcd56_a0384c00",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-20T21:15:03Z",
+      "side": 1,
+      "message": "hm...what about the other validator functions in appengine/rpc/common.py, like validateBuildSet()?\n\nMaybe, we could have a separate CL to discuss reorganize the placement of validator functions?",
+      "parentUuid": "36cb8382_0eab29e7",
+      "range": {
+        "startLine": 189,
+        "startChar": 5,
+        "endLine": 189,
+        "endChar": 19
+      },
+      "revId": "696132a11355fc18d9e645433c197cbdff3e344d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
