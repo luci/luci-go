@@ -16,6 +16,24 @@
       "revId": "9a2b94c20e0910d1178478db29d3d914c841ed55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d58b67c_0b8552ed",
+        "filename": "common/proto/mask/mask_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-20T23:35:32Z",
+      "side": 1,
+      "message": "bulk `gofmt -s` is relentless :p",
+      "parentUuid": "555ae1ab_178dfc92",
+      "revId": "9a2b94c20e0910d1178478db29d3d914c841ed55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
