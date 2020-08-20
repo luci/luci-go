@@ -264,15 +264,15 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
           event.stopImmediatePropagation();
         }) as EventListener;
 
-        this.addEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext);
-        this.addEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext);
+        this.addEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext);
+        this.addEventListener(`milo-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext);
         super.connectedCallback();
       }
 
       disconnectedCallback() {
         const props = providerPropsWeakMap.get(this)!;
-        this.removeEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext!);
-        this.removeEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext!);
+        this.removeEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext!);
+        this.removeEventListener(`milo-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext!);
         super.disconnectedCallback();
       }
 
@@ -305,7 +305,7 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
    * Emits subscribe or unsubscribe events for the observed context keys.
    */
   function emitEvents<T extends LitElement & Record<K, Ctx>>(element: T, type: 'subscribe' | 'unsubscribe') {
-    element.dispatchEvent(new CustomEvent(`tr-${type}-context-${contextKey}`, {
+    element.dispatchEvent(new CustomEvent(`milo-${type}-context-${contextKey}`, {
       detail: {element},
       bubbles: true,
       cancelable: true,

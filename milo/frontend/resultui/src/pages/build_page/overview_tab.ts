@@ -58,7 +58,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       Build
       <span class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
-        ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unkown status'}
+        ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
       </span>
       ${(() => { switch (bpd.status) {
       case BuildStatus.Scheduled:
@@ -139,7 +139,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Infra</h3>
         <table>
-          <tr><td>Buildbucket ID:</td><td><tr-link .link=${bpd.buildbucket_link} target="_blank"></td></tr>
+          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucket_link} target="_blank"></td></tr>
           ${bpd.infra?.swarming ? html`
           <tr>
             <td>Swarming Task:</td>
@@ -147,10 +147,10 @@ export class OverviewTabElement extends MobxLitElement {
           </tr>
           <tr>
             <td>Bot:</td>
-            <td>${botLink ? html`<tr-link .link=${botLink} target="_blank"></tr-link>` : 'N/A'}</td>
+            <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
           </tr>
           ` : ''}
-          <tr><td>Recipe:</td><td><tr-link .link=${bpd.recipe_link} target="_blank"></tr-link></td></tr>
+          <tr><td>Recipe:</td><td><milo-link .link=${bpd.recipe_link} target="_blank"></milo-link></td></tr>
         </table>
       </div>
     `;
@@ -249,7 +249,7 @@ export class OverviewTabElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-overview-tab')(
+customElement('milo-overview-tab')(
   consumeBuildState(
     consumeAppState(OverviewTabElement),
   ),

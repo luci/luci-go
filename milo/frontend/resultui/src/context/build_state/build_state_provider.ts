@@ -56,7 +56,7 @@ export class BuildStateProviderElement extends MobxLitElement {
   }
 }
 
-customElement('tr-build-state-provider')(
+customElement('milo-build-state-provider')(
   provideBuildState(
     consumeAppState(BuildStateProviderElement),
   ),

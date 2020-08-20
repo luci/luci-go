@@ -21,7 +21,7 @@ import { css, customElement, html, LitElement, PropertyValues } from 'lit-elemen
  * top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
-@customElement('tr-page-layout')
+@customElement('milo-page-layout')
 export class PageLayoutElement extends LitElement {
   private rendered = false;
   protected firstUpdated() {

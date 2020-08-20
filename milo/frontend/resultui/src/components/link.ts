@@ -14,13 +14,14 @@
 
 import { customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
+
 import { Link } from '../services/build_page';
 
 
 /**
  * Renders a Link object.
  */
-@customElement('tr-link')
+@customElement('milo-link')
 export class LinkElement extends LitElement {
   @property() link!: Link;
   @property() target?: string;

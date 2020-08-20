@@ -30,10 +30,10 @@ describe('Invocation Page', () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState);
     const page = await fixture<InvocationPageElement>(html`
-      <tr-invocation-page
+      <milo-invocation-page
         .appState=${appState}
         .invocationState=${invocationState}
-      ></tr-invocation-page>
+      ></milo-invocation-page>
     `);
     const location = {params: {'invocation_id': 'invocation_id'}} as Partial<RouterLocation> as RouterLocation;
     const cmd = {} as Partial<Commands> as Commands;
@@ -46,10 +46,10 @@ describe('Invocation Page', () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState);
     const page = await fixture<InvocationPageElement>(html`
-      <tr-invocation-page
+      <milo-invocation-page
         .appState=${appState}
         .invocationState=${invocationState}
-      ></tr-invocation-page>
+      ></milo-invocation-page>
     `);
     const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();

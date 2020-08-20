@@ -26,7 +26,7 @@ import { css, customElement, html } from 'lit-element';
  *   - root.
  * in that order.
  */
-@customElement('tr-login-page')
+@customElement('milo-login-page')
 export class LoginPageElement extends MobxLitElement implements
     BeforeEnterObserver {
   redirectUri = '';

@@ -25,7 +25,7 @@ import '../image_diff_viewer';
 /**
  * Renders an image diff artifact entry.
  */
-@customElement('tr-image-diff-artifact')
+@customElement('milo-image-diff-artifact')
 export class TextDiffArtifactElement extends MobxLitElement {
   @observable.ref expected!: Artifact;
   @observable.ref actual!: Artifact;
@@ -40,19 +40,19 @@ export class TextDiffArtifactElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <tr-expandable-entry .expanded=${true} .hideContentRuler=${true}>
+      <milo-expandable-entry .expanded=${true} .hideContentRuler=${true}>
         <span id="header" slot="header">
           Unexpected image output from
           <a href=${this.artifactPageUrl} target="_blank">${this.diff.artifactId}</a>
         </span>
-        <tr-image-diff-viewer
+        <milo-image-diff-viewer
           slot="content"
           .expected=${this.expected}
           .actual=${this.actual}
           .diff=${this.diff}
         >
-        </tr-image-diff-viewer>
-      </tr-expandable-entry>
+        </milo-image-diff-viewer>
+      </milo-expandable-entry>
     `;
   }
 }

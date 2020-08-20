@@ -23,7 +23,7 @@ export interface Component {
   weight: number;
 }
 
-@customElement('tr-status-bar')
+@customElement('milo-status-bar')
 export class StatusBarElement extends MobxLitElement {
   @observable.ref
   components: Component[] = [];

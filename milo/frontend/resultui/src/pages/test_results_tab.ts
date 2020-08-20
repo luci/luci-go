@@ -59,7 +59,7 @@ export class TestResultsTabElement extends MobxLitElement {
   }
 
   private toggleAllVariants(expand: boolean) {
-    this.shadowRoot!.querySelectorAll<VariantEntryElement>('tr-variant-entry')
+    this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry')
       .forEach((e) => e.expanded = expand);
   }
 
@@ -129,13 +129,13 @@ export class TestResultsTabElement extends MobxLitElement {
         variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),
         ([_, v]) => `${v.testId} ${v.variantHash}`,
         ([prev, v, next]) => html`
-        <tr-variant-entry
+        <milo-variant-entry
           .variant=${v}
           .prevTestId=${prev?.testId ?? ''}
           .prevVariant=${prev?.testId === v.testId ? prev : null}
           .expanded=${this.hasSingleVariant}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
-        ></tr-variant-entry>
+        ></milo-variant-entry>
       `)}
       ${variants.length !== 0 ? html`<hr class="divider">` : ''}
     `;
@@ -146,14 +146,14 @@ export class TestResultsTabElement extends MobxLitElement {
 
     return html`
       <div id="header">
-        <tr-test-filter
+        <milo-test-filter
           .onFilterChanged=${(filter: TestFilter) => {
             this.invocationState.showExonerated = filter.showExonerated;
             this.invocationState.showExpected = filter.showExpected;
             this.invocationState.showFlaky = filter.showFlaky;
           }}
         >
-        </tr-test-filter>
+        </milo-test-filter>
         <mwc-button
           class="action-button"
           dense unelevated
@@ -166,12 +166,12 @@ export class TestResultsTabElement extends MobxLitElement {
         >Collapse All</mwc-button>
       </div>
       <div id="main">
-        <tr-left-panel>
-          <tr-test-nav-tree
+        <milo-left-panel>
+          <milo-test-nav-tree
             .testLoader=${state.testLoader}
             .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
-          ></tr-test-nav-tree>
-        </tr-left-panel>
+          ></milo-test-nav-tree>
+        </milo-left-panel>
         <div id="test-result-view">
           ${this.renderAllVariants()}
           <div class="list-entry">
@@ -190,7 +190,7 @@ export class TestResultsTabElement extends MobxLitElement {
               <span
                 style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
               >
-                Loading <tr-dot-spinner></tr-dot-spinner>
+                Loading <milo-dot-spinner></milo-dot-spinner>
               </span>
               <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
             </span>
@@ -236,7 +236,7 @@ export class TestResultsTabElement extends MobxLitElement {
       border-top: 1px solid #DDDDDD;
     }
 
-    tr-test-nav-tree {
+    milo-test-nav-tree {
       overflow: hidden;
     }
 
@@ -259,7 +259,7 @@ export class TestResultsTabElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-test-results-tab')(
+customElement('milo-test-results-tab')(
   consumeInvocationState(
       consumeAppState(TestResultsTabElement),
   ),

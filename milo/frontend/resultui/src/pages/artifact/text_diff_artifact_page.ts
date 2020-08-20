@@ -95,10 +95,10 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
           </tr>
         </table>
       </div>
-      <tr-status-bar
+      <milo-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
         .loading=${this.artifactRes.state === 'pending'}
-      ></tr-status-bar>
+      ></milo-status-bar>
       <div id="details">
         ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
       </div>
@@ -136,7 +136,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
   `;
 }
 
-customElement('tr-text-diff-artifact-page')(
+customElement('milo-text-diff-artifact-page')(
   consumeAppState(
     TextDiffArtifactPageElement,
   ),

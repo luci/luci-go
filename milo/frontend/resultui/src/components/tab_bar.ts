@@ -29,7 +29,7 @@ export interface TabDef {
  * Note: this element itself doesn't modify its state. When the selected tab is
  * changed, the parent element must set a new selectedTabId.
  */
-@customElement('tr-tab-bar')
+@customElement('milo-tab-bar')
 export class TabBarElement extends LitElement {
   @property() tabs: TabDef[] = [];
   @property() selectedTabId = '';

@@ -111,14 +111,14 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
-      <tr-status-bar
+      <milo-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
         .loading=${this.invocationState.invocationReq.state === 'pending'}
-      ></tr-status-bar>
-      <tr-tab-bar
+      ></milo-status-bar>
+      <milo-tab-bar
         .tabs=${this.tabDefs}
         .selectedTabId=${this.appState.selectedTabId}
-      ></tr-tab-bar>
+      ></milo-tab-bar>
       <slot></slot>
     `;
   }
@@ -153,7 +153,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   `;
 }
 
-customElement('tr-invocation-page')(
+customElement('milo-invocation-page')(
   consumeInvocationState(
     consumeAppState(
       InvocationPageElement,

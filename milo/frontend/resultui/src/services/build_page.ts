@@ -15,8 +15,9 @@
 
 // TODO(crbug/1108200): Replace this file with direct queries to services.
 
-import { Build, BuilderID, Step } from './buildbucket';
 import jsonbigint from 'json-bigint';
+
+import { Build, BuilderID, Step } from './buildbucket';
 
 export interface GetBuildPageDataRequest {
   builder: BuilderID;
@@ -114,7 +115,8 @@ export interface RelatedBuildsData {
  */
 export class BuildPageService {
   constructor(private accessToken: string) {}
-  private reviver = (k: any, v: any) => k === "id"? v.toString() : v;
+  // tslint:disable-next-line: ban-types
+  private reviver = (k: string, v: unknown) => k === 'id'?  (v as Object).toString() : v;
 
   async getBuildPageData(req: GetBuildPageDataRequest): Promise<BuildPageData> {
     const res = await fetch(

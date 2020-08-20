@@ -69,7 +69,7 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
   }
 }
 
-customElement('tr-app-state-provider')(
+customElement('milo-app-state-provider')(
   provideAppState(
     AppStateProviderElement,
   ),

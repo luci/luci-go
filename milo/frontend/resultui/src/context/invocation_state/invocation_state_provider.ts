@@ -55,7 +55,7 @@ export class InvocationStateProviderElement extends MobxLitElement {
   }
 }
 
-customElement('tr-invocation-state-provider')(
+customElement('milo-invocation-state-provider')(
   provideInvocationState(
     consumeAppState(InvocationStateProviderElement),
   ),

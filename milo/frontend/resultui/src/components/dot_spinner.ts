@@ -18,7 +18,7 @@ import { css, customElement, html, LitElement } from 'lit-element';
 /**
  * A simple 3-dots loading indicator.
  */
-@customElement('tr-dot-spinner')
+@customElement('milo-dot-spinner')
 export class DotSpinnerElement extends LitElement {
   protected render() {
     return html`

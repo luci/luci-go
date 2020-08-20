@@ -25,7 +25,7 @@ import { consumeTreeState, TestNavTreeState } from './context';
 
 
 /**
- * A node in tr-test-nav-tree. Collapsed by default.
+ * A node in milo-test-nav-tree. Collapsed by default.
  */
 export class TestNavNodeElement extends MobxLitElement {
   @observable.ref depth = 0;
@@ -82,11 +82,11 @@ export class TestNavNodeElement extends MobxLitElement {
           style=${styleMap({ display: this.expanded ? '' : 'none' })}
         >
           ${repeat(this.wasExpanded ? this.node.children : [], (node) => node.name, (node) => html`
-          <tr-test-nav-node
+          <milo-test-nav-node
             .depth=${this.depth + 1}
             .node=${node}
           >
-          </tr-test-nav-node>
+          </milo-test-nav-node>
           `)}
         </div>
       </div>
@@ -154,7 +154,7 @@ export class TestNavNodeElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-test-nav-node')(
+customElement('milo-test-nav-node')(
   consumeTreeState(
     TestNavNodeElement,
   ),
