@@ -25,7 +25,7 @@ import { observable } from 'mobx';
  * Clicking the handle can expand or collapse the panel.
  * Dragging the handle when the panel is expanded can resize the panel.
  */
-@customElement('tr-left-panel')
+@customElement('milo-left-panel')
 export class LeftPanelElement extends MobxLitElement {
   @observable.ref private expanded = false;
 

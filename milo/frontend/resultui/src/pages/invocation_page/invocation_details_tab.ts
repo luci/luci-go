@@ -102,7 +102,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-invocation-details-tab')(
+customElement('milo-invocation-details-tab')(
   consumeInvocationState(
     consumeAppState(InvocationDetailsTabElement),
   ),

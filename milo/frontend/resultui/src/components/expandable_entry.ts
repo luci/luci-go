@@ -19,7 +19,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 /**
  * Renders an expandable entry.
  */
-@customElement('tr-expandable-entry')
+@customElement('milo-expandable-entry')
 export class ExpandableEntry extends LitElement {
   @property() hideContentRuler = false;
   onToggle = (_isExpanded: boolean) => {};

@@ -144,14 +144,14 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <span>${this.builder.builder} / ${this.buildNumOrId}</span>
         </div>
       </div>
-      <tr-status-bar
+      <milo-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
         .loading=${this.buildState.buildPageDataReq.state === 'pending'}
-      ></tr-status-bar>
-      <tr-tab-bar
+      ></milo-status-bar>
+      <milo-tab-bar
         .tabs=${this.tabDefs}
         .selectedTabId=${this.appState.selectedTabId}
-      ></tr-tab-bar>
+      ></milo-tab-bar>
       <slot></slot>
     `;
   }
@@ -186,7 +186,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   `;
 }
 
-customElement('tr-build-page')(
+customElement('milo-build-page')(
   consumeInvocationState(
     consumeBuildState(
       consumeAppState(

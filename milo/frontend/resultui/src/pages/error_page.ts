@@ -21,7 +21,7 @@ import { sanitizeHTML } from '../libs/sanitize_html';
 /**
  * Renders sourceUrl and reason from search params (if present).
  */
-@customElement('tr-error-page')
+@customElement('milo-error-page')
 export class ErrorPageElement extends MobxLitElement implements BeforeEnterObserver {
   private sourceUrl = '';
   private reason = '';

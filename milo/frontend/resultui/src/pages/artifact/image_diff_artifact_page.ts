@@ -123,18 +123,18 @@ export class ImageDiffArtifactPage extends MobxLitElement {
           </tr>
         </table>
       </div>
-      <tr-status-bar
+      <milo-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
         .loading=${this.isLoading}
-      ></tr-status-bar>
+      ></milo-status-bar>
       ${this.isLoading ? '' : html`
-        <tr-image-diff-viewer
+        <milo-image-diff-viewer
           .expected=${this.expectedArtifact}
           .actual=${this.actualArtifact}
           .diff=${this.diffArtifact}
         >
       `}
-      </tr-image-diff-viewer>
+      </milo-image-diff-viewer>
     `;
   }
 
@@ -155,7 +155,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
   `;
 }
 
-customElement('tr-image-diff-artifact-page')(
+customElement('milo-image-diff-artifact-page')(
   consumeAppState(
     ImageDiffArtifactPage,
   ),

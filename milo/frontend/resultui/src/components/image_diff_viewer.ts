@@ -39,7 +39,7 @@ const VIEW_OPTION_CLASS_MAP = Object.freeze({
  * and image diff.
  */
 // TODO(weiweilin): improve error handling.
-@customElement('tr-image-diff-viewer')
+@customElement('milo-image-diff-viewer')
 export class ImageDiffViewerElement extends MobxLitElement {
   @observable.ref expected!: Artifact;
   @observable.ref actual!: Artifact;

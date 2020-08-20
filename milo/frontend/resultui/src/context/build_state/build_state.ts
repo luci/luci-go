@@ -18,9 +18,8 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import { BuilderID } from '../../services/buildbucket';
-import { BuildPageData } from '../../services/build_page';
+import { BuildPageData, RelatedBuildsData } from '../../services/build_page';
 import { AppState } from '../app_state/app_state';
-import { RelatedBuildsData } from "../../services/build_page"
 
 /**
  * Records state of a build.

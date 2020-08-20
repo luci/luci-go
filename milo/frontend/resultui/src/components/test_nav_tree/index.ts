@@ -74,11 +74,11 @@ export class TestNavTreeElement extends MobxLitElement {
         <div id="header" title=${root.name}>${root.name}</div>
         <div id="body">
           ${repeat(root.children, (node) => node.name, (node) => html`
-          <tr-test-nav-node
+          <milo-test-nav-node
             .depth=${0}
             .node=${node}
           >
-          </tr-test-nav-node>
+          </milo-test-nav-node>
           `)}
           <mwc-button
             id="load-more-btn"
@@ -87,7 +87,7 @@ export class TestNavTreeElement extends MobxLitElement {
             ?disabled=${this.testLoader.done || this.testLoader.isLoading}
           >
             ${this.testLoader.isLoading ?
-              html`Loading <tr-dot-spinner></tr-dot-spinner>` :
+              html`Loading <milo-dot-spinner></milo-dot-spinner>` :
               this.testLoader.done ? 'All Tests are Loaded' : 'Load the next 100 Tests'
             }
           </mwc-button>
@@ -123,7 +123,7 @@ export class TestNavTreeElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-test-nav-tree')(
+customElement('milo-test-nav-tree')(
   provideTreeState(
     TestNavTreeElement,
   ),

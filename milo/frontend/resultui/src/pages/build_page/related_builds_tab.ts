@@ -16,14 +16,14 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import MarkdownIt from 'markdown-it';
-import { observable} from 'mobx';
+import { observable } from 'mobx';
 
-import { sanitizeHTML } from '../../src/libs/sanitize_html';
-import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../src/libs/build_utils';
-import { displayTimestamp, displayDuration } from '../../src/libs/time_utils';
-import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { BuildState, consumeBuildState } from '../context/build_state/build_state';
-import { Build, BuildStatus } from '../services/buildbucket';
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
+import { sanitizeHTML } from '../../libs/sanitize_html';
+import { displayDuration, displayTimestamp } from '../../libs/time_utils';
+import { Build, BuildStatus } from '../../services/buildbucket';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -44,13 +44,13 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   private renderBuildsetInfo() {
     if (this.buildState.buildPageData == null) {
-      return html `Loading...`
+      return html `Loading...`;
     }
     return html`
       <ul>
       ${repeat(
         this.buildState.buildPageData!.build_sets,
-        (item, _) => html`<li>${item}</li>`
+        (item, _) => html`<li>${item}</li>`,
       )}
       </ul>
     `;
@@ -102,8 +102,8 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`<a href="${href}">${display}</a>`;
   }
 
-  private displayMarkdown(markdown: string|undefined) {
-    if (markdown == undefined) {
+  private displayMarkdown(markdown: string | undefined) {
+    if (markdown === undefined) {
       return html ``;
     }
     const md = new MarkdownIt();
@@ -146,8 +146,8 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   `;
 }
 
-customElement('tr-related-builds-tab')(
+customElement('milo-related-builds-tab')(
   consumeBuildState(
     consumeAppState(RelatedBuildsTabElement),
-  )
+  ),
 );

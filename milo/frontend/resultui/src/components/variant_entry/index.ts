@@ -61,7 +61,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
 /**
  * Renders an expandable entry of the given test variant.
  */
-@customElement('tr-variant-entry')
+@customElement('milo-variant-entry')
 export class VariantEntryElement extends MobxLitElement {
   @observable.ref variant!: ReadonlyVariant;
   @observable.ref prevTestId = '';
@@ -133,11 +133,11 @@ export class VariantEntryElement extends MobxLitElement {
                 <span>
                   <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
                 </span>
-                <tr-copy-to-clipboard
+                <milo-copy-to-clipboard
                   .textToCopy=${this.variant.testId}
                   @click=${(e: Event) => e.stopPropagation()}
                   title="copy test ID to clipboard"
-                ></tr-copy-to-clipboard>
+                ></milo-copy-to-clipboard>
               </div>
               <div id="variant-identifier">
                 <span>
@@ -175,11 +175,11 @@ export class VariantEntryElement extends MobxLitElement {
             </div>
             `)}
             ${repeat(this.wasExpanded ? this.variant!.results : [], (r) => r.resultId, (r, i) => html`
-            <tr-result-entry
+            <milo-result-entry
               .id=${i + 1}
               .testResult=${r}
               .expanded=${this.hasSingleChild || !r.expected}
-            ></tr-result-entry>
+            ></milo-result-entry>
             `)}
           </div>
         </div>
@@ -308,7 +308,7 @@ export class VariantEntryElement extends MobxLitElement {
       padding: 5px;
     }
 
-    tr-copy-to-clipboard {
+    milo-copy-to-clipboard {
       margin-left: 5px;
       margin-right: 5px;
     }

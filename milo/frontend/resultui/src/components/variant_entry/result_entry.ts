@@ -99,7 +99,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <tr-expandable-entry .hideContentRuler=${true}
+      <milo-expandable-entry .hideContentRuler=${true}
         .onToggle=${(expanded: boolean) => {
           this.tagExpanded = expanded;
         }}
@@ -121,7 +121,7 @@ export class ResultEntryElement extends MobxLitElement {
           </tr>
           `)}
         </table>
-      </tr-expandable-entry>
+      </milo-expandable-entry>
     `;
   }
 
@@ -131,7 +131,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <tr-expandable-entry .hideContentRuler=${true}>
+      <milo-expandable-entry .hideContentRuler=${true}>
         <span slot="header">
           Artifacts: <span class="light">${this.artifacts.length}</span>
         </span>
@@ -141,13 +141,13 @@ export class ResultEntryElement extends MobxLitElement {
           <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
           `)}
         </ul>
-      </tr-expandable-entry>
+      </milo-expandable-entry>
     `;
   }
 
   protected render() {
     return html`
-      <tr-expandable-entry
+      <milo-expandable-entry
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => this.expanded = expanded}
       >
@@ -162,21 +162,21 @@ export class ResultEntryElement extends MobxLitElement {
         <div slot="content">
           ${this.renderSummaryHtml()}
           ${this.textDiffArtifact && html`
-          <tr-text-diff-artifact .artifact=${this.textDiffArtifact}>
-          </tr-text-diff-artifact>
+          <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
+          </milo-text-diff-artifact>
           `}
           ${this.imageDiffArtifactGroup.diff && html`
-          <tr-image-diff-artifact
+          <milo-image-diff-artifact
             .expected=${this.imageDiffArtifactGroup.expected}
             .actual=${this.imageDiffArtifactGroup.actual}
             .diff=${this.imageDiffArtifactGroup.diff}
           >
-          </tr-image-diff-artifact>
+          </milo-image-diff-artifact>
           `}
           ${this.renderArtifacts()}
           ${this.renderTags()}
         </div>
-      </tr-expandable-entry>
+      </milo-expandable-entry>
     `;
   }
 
@@ -227,6 +227,6 @@ export class ResultEntryElement extends MobxLitElement {
     `;
 }
 
-customElement('tr-result-entry')(
+customElement('milo-result-entry')(
   consumeAppState(ResultEntryElement),
 );

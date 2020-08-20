@@ -27,7 +27,7 @@ export interface TestFilter {
  * Notifies the parent element via onFilterChanged callback when the filter is
  * changed.
  */
-@customElement('tr-test-filter')
+@customElement('milo-test-filter')
 export class TestFilterElement extends MobxLitElement {
   onFilterChanged: (filter: TestFilter) => void = () => {};
 

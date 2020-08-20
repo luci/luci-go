@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import copy from 'copy-to-clipboard';
-import { css, customElement, html} from 'lit-element';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import copy from 'copy-to-clipboard';
+import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 
@@ -22,7 +22,7 @@ import { observable } from 'mobx';
  * A simple icon that copies textToCopy to clipboard onclick.
  * Size can be configured via --size, defaults to 16px;
  */
-@customElement('tr-copy-to-clipboard')
+@customElement('milo-copy-to-clipboard')
 export class CopyToClipboard extends MobxLitElement {
   @observable.ref copied = false;
   textToCopy = '';

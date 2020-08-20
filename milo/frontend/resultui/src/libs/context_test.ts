@@ -34,7 +34,7 @@ class OuterContextProvider extends LitElement {
   @property()
   unprovidedKey = 'outer_provider-unprovided-val0';
 }
-customElement('tr-outer-context-provider-test')(
+customElement('milo-outer-context-provider-test')(
   provideContext('outerProviderInactiveKey')(
     provideContext('outerProviderKey')(
       provideContext('providerKey')(
@@ -51,7 +51,7 @@ class InnerContextProvider extends LitElement {
   @property()
   providerKey = 'inner_provider-provider-val0';
 }
-customElement('tr-inner-context-provider-test')(
+customElement('milo-inner-context-provider-test')(
   provideContext('providerKey')(
     InnerContextProvider,
   ),
@@ -74,7 +74,7 @@ class ContextConsumer extends LitElement {
   @property()
   outerUnobservedKey = 'local-unobserved';
 }
-customElement('tr-context-consumer-test')(
+customElement('milo-context-consumer-test')(
   consumeContext('outerProviderInactiveKey')(
     consumeContext('outerProviderKey')(
       consumeContext('providerKey')(
@@ -84,11 +84,11 @@ customElement('tr-context-consumer-test')(
   ),
 );
 
-@customElement('tr-context-consumer-wrapper-test')
+@customElement('milo-context-consumer-wrapper-test')
 export class ContextConsumerWrapper extends LitElement {
   protected render() {
     return html`
-      <tr-context-consumer-test></tr-context-consumer-test>
+      <milo-context-consumer-test></milo-context-consumer-test>
     `;
   }
 }
@@ -100,17 +100,17 @@ describe('context', () => {
   describe('ContextProvider', () => {
     it('should provide context to descendent context consumers', async () => {
       const outerProvider = await fixture<OuterContextProvider>(html`
-        <tr-outer-context-provider-test>
-          <tr-inner-context-provider-test>
-            <tr-context-consumer-test id="inner-consumer">
-            </tr-context-consumer-test>
-          </tr-inner-context-provider-test>
-          <tr-context-consumer-test id="outer-consumer">
-          </tr-context-consumer-test>
-        <tr-outer-context-provider>
+        <milo-outer-context-provider-test>
+          <milo-inner-context-provider-test>
+            <milo-context-consumer-test id="inner-consumer">
+            </milo-context-consumer-test>
+          </milo-inner-context-provider-test>
+          <milo-context-consumer-test id="outer-consumer">
+          </milo-context-consumer-test>
+        <milo-outer-context-provider>
       `);
 
-      const innerProvider = outerProvider.querySelector('tr-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
+      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
       const outerConsumer = outerProvider.querySelector('#outer-consumer')!.shadowRoot!.host as ContextConsumer;
       const innerConsumer = outerProvider.querySelector('#inner-consumer')!.shadowRoot!.host as ContextConsumer;
 
@@ -169,16 +169,16 @@ describe('context', () => {
 
     it('should provide context to context consumers in shadow DOMs', async () => {
       const outerProvider = await fixture<OuterContextProvider>(html`
-        <tr-outer-context-provider-test>
-          <tr-inner-context-provider-test>
-            <tr-context-consumer-wrapper-test>
-            </tr-context-consumer-wrapper-test>
-          </tr-inner-context-provider-test>
-        </tr-outer-context-provider-test>
+        <milo-outer-context-provider-test>
+          <milo-inner-context-provider-test>
+            <milo-context-consumer-wrapper-test>
+            </milo-context-consumer-wrapper-test>
+          </milo-inner-context-provider-test>
+        </milo-outer-context-provider-test>
       `);
-      const innerProvider = outerProvider.querySelector('tr-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
-      const consumer = innerProvider.querySelector('tr-context-consumer-wrapper-test')!.shadowRoot!
-        .querySelector('tr-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
+      const consumer = innerProvider.querySelector('milo-context-consumer-wrapper-test')!.shadowRoot!
+        .querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
 
       assert.strictEqual(consumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(consumer.outerProviderKey, 'outer_provider-outer_provider-val0');
