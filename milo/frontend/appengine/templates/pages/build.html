@@ -236,8 +236,21 @@
         Recipe: {{ .BuildPage.RecipeLink.HTML }}
       </li>
     </ul>
+    {{ with .BuildPage.GetOutput.GetLogs }}
+      <h2>Build Logs</h2>
+      <ul>
+      {{ range . }}
+        <li>
+          <a href="{{ .ViewUrl }}">{{ .Name }}</a>
+          {{- if eq .Name "stdout" "stderr" }}
+            [{{ logdogLink . true }}]
+          {{- end }}
+        </li>
+      {{ end }}
+      </ul>
+    {{ end }}
 
-    <h2>Steps and Logs</h2>
+    <h2>Build Steps</h2>
     Show:
     <input type="radio" name="hider" id="showExpanded" value="expanded"
            {{- if eq .BuildPage.StepDisplayPref "expanded" }} checked{{ end }}>
