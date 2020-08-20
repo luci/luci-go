@@ -15,17 +15,32 @@
 package main
 
 import (
+	"fmt"
+
+	gaeAuthServer "go.chromium.org/luci/appengine/gaeauth/server"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
 func main() {
 	server.Main(nil, nil, func(srv *server.Server) error {
+		mw := router.MiddlewareChain{}
+		mw.Extend(
+			auth.Authenticate(
+				gaeAuthServer.CookieAuth,
+				&gaeAuthServer.OAuth2Method{Scopes: []string{gaeAuthServer.EmailScope}},
+			),
+		)
 
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/", mw, func(c *router.Context) {
+			user := auth.CurrentIdentity(c.Context).Email()
 			logging.Debugf(c.Context, "Hello world")
-			c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
+			logging.Debugf(c.Context, "%s", user)
+			msg := fmt.Sprintf("Hello, world. This is CAS Viewer. User: %s", user)
+			c.Writer.Write([]byte(msg))
 		})
 
 		return nil
