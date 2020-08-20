@@ -145,6 +145,24 @@
     },
     {
       "key": {
+        "uuid": "57b80ba4_439c1232",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-20T02:55:54Z",
+      "side": 1,
+      "message": "\u003e Are you proposing to put app.yaml directly in `casviewer`?\n\u003e \n\nyes, like\nhttps://cloud.google.com/appengine/docs/standard/go/configuration-files#examples\n\n\u003e Generally speaking, we should put only GAE yaml files and HTTP routers in `./appengine`, and write application code elsewhere.\n\u003e https://github.com/golang-standards/project-layout (not official standard, though)\n\u003e \n\u003e I understand your feeling that the code for CAS Viewer will be pretty small, though.\n\nBut I\u0027m fine with casvewer/appengine only for routers.",
+      "parentUuid": "7eeb09fc_3c884969",
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d625b48a_3bff8c1f",
         "filename": "cas/appengine/frontend/app.yaml",
         "patchSetId": 12
