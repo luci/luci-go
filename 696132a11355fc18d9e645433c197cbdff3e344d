@@ -46,6 +46,30 @@
       "revId": "696132a11355fc18d9e645433c197cbdff3e344d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6951ae6_78f811f4",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-20T21:23:23Z",
+      "side": 1,
+      "message": "sgtm\n\nexcept i wouldn\u0027t move buildset validation. Buildset is a dying concept that we probably don\u0027t want to advertise",
+      "parentUuid": "568dcd56_a0384c00",
+      "range": {
+        "startLine": 189,
+        "startChar": 5,
+        "endLine": 189,
+        "endChar": 19
+      },
+      "revId": "696132a11355fc18d9e645433c197cbdff3e344d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
