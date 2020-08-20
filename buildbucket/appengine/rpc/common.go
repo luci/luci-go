@@ -185,6 +185,14 @@ func validateSummaryMarkdown(md string) error {
 	return nil
 }
 
+// validateCommit checks if `cm` is a valid commit with a ref.
+func validateCommitWithRef(cm *pb.GitilesCommit) error {
+	if cm.GetRef() == "" {
+		return errors.Reason(`ref is required`).Err()
+	}
+	return validateCommit(cm)
+}
+
 // validateCommit validates the given Gitiles commit.
 func validateCommit(cm *pb.GitilesCommit) error {
 	switch {

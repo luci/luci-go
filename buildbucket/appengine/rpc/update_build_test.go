@@ -46,9 +46,9 @@ func TestValidateUpdate(t *testing.T) {
 					"build.tags",
 					"build.output",
 					"build.status_details",
-					"build.output.gitiles_commit",
 					"build.summary_markdown",
 				}}
+				req.Build.SummaryMarkdown = "this is a string"
 				So(validateUpdate(req), ShouldBeNil)
 			})
 		})
@@ -102,6 +102,18 @@ func TestValidateUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
 		req.Build.SummaryMarkdown = "[mark](http://example.org)*down*"
+		So(validateUpdate(req), ShouldBeNil)
+	})
+
+	Convey("validateUpdate with Commit", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.gitiles_commit"}}
+		req.Build.Output = &pb.Build_Output{GitilesCommit: &pb.GitilesCommit{
+			Project:  "project",
+			Host:     "host",
+			Ref:      "refs/",
+			Position: 1,
+		}}
 		So(validateUpdate(req), ShouldBeNil)
 	})
 }

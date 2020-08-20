@@ -47,6 +47,9 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 		case "build.output":
 		case "build.output.properties":
 		case "build.output.gitiles_commit":
+			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
+				return errors.Annotate(err, "build.output.gitiles_commit").Err()
+			}
 		case "build.status":
 			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
 				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
