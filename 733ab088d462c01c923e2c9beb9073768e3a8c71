@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "443f5c90_8b36ce47",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T03:37:16Z",
+      "side": 1,
+      "message": "nit: \u003d\u003d\u003d\n\u003d\u003d in JS has some weird behaviour.\nWe should always use \u003d\u003d\u003d.",
+      "range": {
+        "startLine": 50,
+        "startChar": 38,
+        "endLine": 50,
+        "endChar": 40
+      },
+      "revId": "733ab088d462c01c923e2c9beb9073768e3a8c71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ee06082_7a57458a",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T03:37:16Z",
+      "side": 1,
+      "message": "though it doesn\u0027t make a difference here,\nan arrow function would be better. `() \u003d\u003e {}`\nbecause `this` in `function() {}` is not lexically coped.",
+      "revId": "733ab088d462c01c923e2c9beb9073768e3a8c71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
