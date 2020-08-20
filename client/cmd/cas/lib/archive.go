@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -121,7 +122,7 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Dig
 		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
-	client, err := c.casFlags.NewClient(ctx, false)
+	client, err := cas.NewClient(ctx, c.casFlags.Instance, c.casFlags.TokenServerHost, false)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create cas client").Err()
 	}
