@@ -16,6 +16,24 @@
       "revId": "71e33a42b8feac16d53c8a8e1eae155eb83f49ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "957848f9_caca67ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T03:57:28Z",
+      "side": 1,
+      "message": "`npx tslint -p ./`",
+      "parentUuid": "064c5b02_66451b35",
+      "revId": "71e33a42b8feac16d53c8a8e1eae155eb83f49ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
