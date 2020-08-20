@@ -220,7 +220,7 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 }
 
 func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
-	cl, err := fl.NewClient(ctx, false)
+	cl, err := cas.NewClient(ctx, fl.Instance, fl.TokenServerHost, false)
 	if err != nil {
 		return err
 	}
