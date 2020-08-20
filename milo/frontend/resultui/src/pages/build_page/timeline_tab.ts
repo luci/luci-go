@@ -15,7 +15,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
-import { observable} from 'mobx';
+import { observable } from 'mobx';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -39,5 +39,5 @@ export class TimelineTabElement extends MobxLitElement {
 customElement('tr-timeline-tab')(
   consumeBuildState(
     consumeAppState(TimelineTabElement),
-  )
+  ),
 );

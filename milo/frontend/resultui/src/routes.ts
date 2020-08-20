@@ -126,7 +126,7 @@ router.setRoutes({
                       path: '/related-builds',
                       name: 'build-related-builds',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "related_builds_tab" */ './pages/related_builds_tab');
+                        await import(/* webpackChunkName: "related_builds_tab" */ './pages/build_page/related_builds_tab');
                         return cmd.component('tr-related-builds-tab');
                       },
                     },

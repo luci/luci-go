@@ -58,7 +58,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       Build
       <span class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
-        ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unkown status'}
+        ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
       </span>
       ${(() => { switch (bpd.status) {
       case BuildStatus.Scheduled:

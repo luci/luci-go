@@ -29,19 +29,19 @@ export function getURLForBuild(build: Build): string {
 }
 
 export function getURLForBuilder(build: Build): string {
-  return `/p/${build.builder.project}/builders/${build.builder.bucket}/${build.builder.builder}`
+  return `/p/${build.builder.project}/builders/${build.builder.bucket}/${build.builder.builder}`;
 }
 
 export function getDisplayNameForStatus(s: BuildStatus): string {
   const statusMap = new Map([
-    [BuildStatus.Scheduled, "Scheduled"],
-    [BuildStatus.Started, "Running"],
-    [BuildStatus.Success, "Success"],
-    [BuildStatus.Failure, "Failure"],
-    [BuildStatus.InfraFailure, "Infra Failure"],
-    [BuildStatus.Canceled, "Canceled"],
+    [BuildStatus.Scheduled, 'Scheduled'],
+    [BuildStatus.Started, 'Running'],
+    [BuildStatus.Success, 'Success'],
+    [BuildStatus.Failure, 'Failure'],
+    [BuildStatus.InfraFailure, 'Infra Failure'],
+    [BuildStatus.Canceled, 'Canceled'],
   ]);
-  return statusMap.get(s) || "Unknown";
+  return statusMap.get(s) || 'Unknown';
 }
 
 export function getURLForGitilesCommit(commit: GitilesCommit): string {
