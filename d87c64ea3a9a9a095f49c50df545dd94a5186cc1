@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6dc5e590_bf461a8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-20T04:19:12Z",
+      "side": 1,
+      "message": "Why do we need to change this? I think both \"Canceled\" and \"Cancelled\" are correct, and it seems like Milo is using \"Canceled\" more than \"Cancelled\":\n\nhttps://source.chromium.org/search?q\u003dCanceled\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fmilo%2F\n\nvs\n\nhttps://source.chromium.org/search?q\u003dCancelled\u0026sq\u003d\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fmilo%2F",
+      "revId": "d87c64ea3a9a9a095f49c50df545dd94a5186cc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
