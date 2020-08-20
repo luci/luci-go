@@ -17,6 +17,7 @@ import { css, customElement, html } from 'lit-element';
 import MarkdownIt from 'markdown-it';
 import { observable } from 'mobx';
 
+import '../../components/ace_editor';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -196,6 +197,29 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderProperties(header: string, properties: {[key: string]: unknown}) {
+    const editorOptions = {
+      mode: 'ace/mode/json',
+      readOnly: true,
+      showPrintMargin: false,
+      scrollPastEnd: false,
+      fontSize: 14,
+      maxLines: 50,
+    };
+
+    return html`
+      <div>
+        <h3>${header}</h3>
+        <milo-ace-editor
+          .options=${{
+            ...editorOptions,
+            value: JSON.stringify(properties, undefined, 2),
+          }}
+        ></milo-ace-editor>
+      </div>
+    `;
+  }
+
   protected render() {
     const bpd = this.buildState.buildPageData;
     if (!bpd) {
@@ -212,7 +236,8 @@ export class OverviewTabElement extends MobxLitElement {
       <!-- TODO(crbug/1116824): render failed steps -->
       ${this.renderTiming()}
       ${this.renderTags()}
-      <!-- TODO(crbug/1116824): render properties -->
+      ${this.renderProperties('Input Properties', bpd.input.properties)}
+      ${this.renderProperties('Output Properties', bpd.input.properties)}
     `;
   }
 
@@ -245,6 +270,10 @@ export class OverviewTabElement extends MobxLitElement {
     #summary-html {
       background-color: rgb(245, 245, 245);
       padding: 5px;
+    }
+
+    milo-ace-editor {
+      width: 800px;
     }
   `;
 }
