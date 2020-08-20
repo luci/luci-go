@@ -118,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "76faf29a_60af0916",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-20T01:48:41Z",
+      "side": 1,
+      "message": "Sorry for not being clear. It\u0027s not a const. What I meant is:\n\n```\n\u003cspan class\u003d\"status ${STATUS_CLASS_MAP.get(bpd.status)}\"\u003e\n  ${STATUS_DISPLAY_MAP.get(bpd.status)}\n\u003c/span\u003e\n```\n\nare used for all the cases, may be we can have\n\n```\nprivate renderStatusText(status) {\n  return html`\n          \u003cspan class\u003d\"status ${STATUS_CLASS_MAP.get(bpd.status)}\"\u003e\n            ${STATUS_DISPLAY_MAP.get(bpd.status)}\n          \u003c/span\u003e\n  `;\n}\n```\n\nand then\n\n```\n   switch (bpd.status) {\n      case BuildStatus.Scheduled:\n        return html`\n          Build ${this.renderStatusText(bpd.status)} ... `\n\n```",
+      "parentUuid": "d582ac47_cd3e47ca",
+      "range": {
+        "startLine": 61,
+        "startChar": 10,
+        "endLine": 63,
+        "endChar": 17
+      },
+      "revId": "ac127467c016e88c1db5be78fb98f48babad3e50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "386d6b02_7b25bc47",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 6
