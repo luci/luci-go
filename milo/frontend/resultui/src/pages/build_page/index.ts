@@ -68,7 +68,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
     this.disposers.push(autorun(
       () => this.invocationState.invocationId = this.buildState.buildPageData
-        ?.infra.resultdb.invocation.slice('invocations/'.length) || '',
+        ?.infra?.resultdb.invocation.slice('invocations/'.length) || '',
     ));
   }
 

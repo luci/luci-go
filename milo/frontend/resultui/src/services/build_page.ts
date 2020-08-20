@@ -38,7 +38,7 @@ export interface BuildPageData extends Build {
   can_retry: boolean;
 
   commit_link_html: string;
-  summary: string[];
+  summary?: string[];
   recipe_link: Link;
   buildbucket_link: Link;
   build_sets: string[];
@@ -88,10 +88,10 @@ export interface Interval {
 export interface Link {
   label: string;
   url: string;
-  aria_label: string;
-  img: string;
-  alt: string;
-  alias: boolean;
+  aria_label?: string;
+  img?: string;
+  alt?: string;
+  alias?: boolean;
 }
 
 export interface LogoBase {
