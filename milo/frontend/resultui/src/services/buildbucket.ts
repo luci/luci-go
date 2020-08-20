@@ -57,7 +57,7 @@ export enum BuildStatus {
   Success = 12,
   Failure = 20,
   InfraFailure = 36,
-  Canceled = 68,
+  Cancelled = 68,
 }
 
 export interface BuildInput {
