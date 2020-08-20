@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "16700aa7_e5555d26",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:57:27Z",
+      "side": 1,
+      "message": "I think we can move this to the comment section rather than in the commit message.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 27
+      },
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "efc78c58_559d6961",
         "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
         "patchSetId": 6
