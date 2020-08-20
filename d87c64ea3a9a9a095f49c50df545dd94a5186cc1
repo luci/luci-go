@@ -34,6 +34,24 @@
       "revId": "d87c64ea3a9a9a095f49c50df545dd94a5186cc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "96bf5dad_0403de44",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T05:11:05Z",
+      "side": 1,
+      "message": "Alright, wasn\u0027t aware of that.\nAbandoning this CL.",
+      "parentUuid": "c19ec32f_4330bb0f",
+      "revId": "d87c64ea3a9a9a095f49c50df545dd94a5186cc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
