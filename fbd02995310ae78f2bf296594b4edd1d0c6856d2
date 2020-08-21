@@ -16,6 +16,29 @@
       "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1442d312_a3f78c26",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-21T01:49:09Z",
+      "side": 1,
+      "message": "I don\u0027t think we need a dedicated method for this, otherwise the methods will just keep piling up. What if we want a method for  add + hardlink + no validation? IMO a struct holding various options would keep the interface compact.\n\nThis also makes me agree with what @jwata said about keeping the interface. Even if we only have one implementation, an interface helps define the methods we need.",
+      "range": {
+        "startLine": 229,
+        "startChar": 16,
+        "endLine": 229,
+        "endChar": 40
+      },
+      "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
