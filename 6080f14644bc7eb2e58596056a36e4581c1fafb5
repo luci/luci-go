@@ -16,6 +16,24 @@
       "revId": "6080f14644bc7eb2e58596056a36e4581c1fafb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb1b2347_a0aff354",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-21T19:52:39Z",
+      "side": 1,
+      "message": "good point :) I wasn\u0027t and still am not 100% sure what would have been moved to protoutil, Maybe, I should write that CL soon.",
+      "parentUuid": "960175cc_5430bc1c",
+      "revId": "6080f14644bc7eb2e58596056a36e4581c1fafb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
