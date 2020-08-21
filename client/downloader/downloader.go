@@ -127,7 +127,7 @@ type Options struct {
 	MaxConcurrentJobs int
 
 	// Cache is used to save/load isolated items to/from cache.
-	Cache cache.Cache
+	Cache *cache.Cache
 }
 
 // normalizePathSeparator returns path having os native path separator.
@@ -747,7 +747,7 @@ type Stats struct {
 }
 
 // GetCacheStats returns packed stats for cache miss/hit.
-func GetCacheStats(cache cache.Cache) ([]byte, []byte, error) {
+func GetCacheStats(cache *cache.Cache) ([]byte, []byte, error) {
 	// TODO(yyanagisawa): refactor this.
 	added := cache.GetAdded()
 	used := cache.GetUsed()
@@ -783,7 +783,7 @@ func GetCacheStats(cache cache.Cache) ([]byte, []byte, error) {
 }
 
 // FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
-func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
+func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache *cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
 	start := time.Now()
 
 	d := New(ctx, c, isolatedHash, outDir, &Options{
