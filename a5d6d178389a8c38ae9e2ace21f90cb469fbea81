@@ -80,6 +80,30 @@
       "revId": "a5d6d178389a8c38ae9e2ace21f90cb469fbea81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d668a3f4_02bf25a5",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-21T19:44:46Z",
+      "side": 1,
+      "message": "At L213, validateCommit() performs the check.",
+      "parentUuid": "42035bd4_3259f5f3",
+      "range": {
+        "startLine": 192,
+        "startChar": 7,
+        "endLine": 192,
+        "endChar": 13
+      },
+      "revId": "a5d6d178389a8c38ae9e2ace21f90cb469fbea81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
