@@ -104,6 +104,30 @@
       "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd53b2be_6463a982",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-21T05:10:43Z",
+      "side": 1,
+      "message": "\u003e \u003e How?\n\u003e \n\u003e IMO an interface helps shape the design and gives less freedom to add ad-hoc public methods.\n\u003e \n\nI think that is true if interface is defined in different place, but not for this case?\n\n\u003e \u003e This is just moved from L323, not added. So let me leave TODO for that.\n\u003e \n\u003e Ack, could you update the comment of this method?\n\nadded.",
+      "parentUuid": "bc8ae76b_2cfd9a7c",
+      "range": {
+        "startLine": 229,
+        "startChar": 16,
+        "endLine": 229,
+        "endChar": 40
+      },
+      "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
