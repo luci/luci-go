@@ -56,6 +56,30 @@
       "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7b44654_e07046a3",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-21T02:57:03Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t think we need a dedicated method for this, otherwise the methods will just keep piling up. What if we want a method for  add + hardlink + no validation? IMO a struct holding various options would keep the interface compact.\n\u003e \n\nThis is just moved from L323, not added. So let me leave TODO for that.\n\n\u003e an interface helps define the methods we need.\n\nHow?",
+      "parentUuid": "1442d312_a3f78c26",
+      "range": {
+        "startLine": 229,
+        "startChar": 16,
+        "endLine": 229,
+        "endChar": 40
+      },
+      "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
