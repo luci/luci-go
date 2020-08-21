@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "a0133ba4_90564d99",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T01:59:23Z",
+      "side": 1,
+      "message": "FYI:\n\nhttp://shortn/_duE0X8qzk2\nhttp://shortn/_FVFlHkDZPE\n\nAs opposed to my suggestion, the guide suggests not to use it unless it\u0027s necessary.\nIf the existing code doesn\u0027t benefit from the interface, it\u0027s better to remove it?\n",
+      "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1442d312_a3f78c26",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 6
