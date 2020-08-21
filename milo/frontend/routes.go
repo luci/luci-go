@@ -221,10 +221,7 @@ func configsJSHandler(c *router.Context) error {
 		return err
 	}
 
-	rdbHost := ""
-	if settings := common.GetSettings(c.Context); settings != nil && settings.Resultdb != nil {
-		rdbHost = settings.Resultdb.Host
-	}
+	settings := common.GetSettings(c.Context)
 
 	clientID, err := auth.GetFrontendClientID(c.Context)
 	if err != nil {
@@ -240,7 +237,10 @@ func configsJSHandler(c *router.Context) error {
 	header.Set("cache-control", "max-age=3600,stale-while-revalidate=604800")
 	err = template.Execute(c.Writer, map[string]interface{}{
 		"ResultDB": map[string]string{
-			"Host": rdbHost,
+			"Host": settings.GetResultdb().GetHost(),
+		},
+		"Buildbucket": map[string]string{
+			"Host": settings.GetBuildbucket().GetHost(),
 		},
 		"OAuth2": map[string]string{
 			"ClientID": clientID,
