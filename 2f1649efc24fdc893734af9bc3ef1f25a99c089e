@@ -22,6 +22,30 @@
       "revId": "2f1649efc24fdc893734af9bc3ef1f25a99c089e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abc93681_1b8c25b6",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-21T00:29:27Z",
+      "side": 0,
+      "message": "We only have disk based cache, but New*Disk* sounds like there are other cache creation API.",
+      "parentUuid": "9f6f95f1_9637abf3",
+      "range": {
+        "startLine": 118,
+        "startChar": 5,
+        "endLine": 118,
+        "endChar": 12
+      },
+      "revId": "2f1649efc24fdc893734af9bc3ef1f25a99c089e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
