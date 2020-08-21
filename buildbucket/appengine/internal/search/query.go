@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -85,7 +86,7 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		Builder:             p.GetBuilder(),
 		Tags:                protoutil.StringPairMap(p.Tags),
 		Status:              p.Status,
-		CreatedBy:           identity.Identity(p.CreatedBy),
+		CreatedBy:           identity.Identity(fixCreatedBy(p.CreatedBy)),
 		StartTime:           mustTimestamp(p.CreateTime.GetStartTime()),
 		EndTime:             mustTimestamp(p.CreateTime.GetEndTime()),
 		IncludeExperimental: p.IncludeExperimental,
@@ -431,6 +432,14 @@ func fixPageSize(size int32) int32 {
 	default:
 		return size
 	}
+}
+
+// fixPageSize ensures the createdBy identity string is the format "kind:value".
+func fixCreatedBy(createdBy string) string {
+	if createdBy != "" && !strings.Contains(createdBy, ":") {
+		createdBy = fmt.Sprintf("user:%s", createdBy)
+	}
+		return createdBy
 }
 
 // mustTimestamp converts a protobuf timestamp to a time.Time and panics on failures.

@@ -62,9 +62,6 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 		return errors.Reason("build is mutually exclusive with create_time").Err()
 	}
 	// TODO(crbug/1053813): Disallow empty predicate.
-	// TODO(crbug/1090540): validate the pr.createBy identity.
-	// It'll be the replacement for the `user.parse_identity(q.created_by)` in Py.
-	// https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l=294
 	return nil
 }
 

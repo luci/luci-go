@@ -69,7 +69,7 @@ func TestNewSearchQuery(t *testing.T) {
 					},
 					Status:        pb.Status_ENDED_MASK,
 					GerritChanges: gerritChanges,
-					CreatedBy:     string(identity.AnonymousIdentity),
+					CreatedBy:     "abc@test.com",
 					Tags:          tags,
 					CreateTime: &pb.TimeRange{
 						StartTime: &timestamp.Timestamp{Seconds: 1592701200},
@@ -100,7 +100,7 @@ func TestNewSearchQuery(t *testing.T) {
 				Builder:             expectedBuilder,
 				Tags:                expectedTags,
 				Status:              pb.Status_ENDED_MASK,
-				CreatedBy:           identity.AnonymousIdentity,
+				CreatedBy:           identity.Identity("user:abc@test.com"),
 				StartTime:           expectedStartTime,
 				EndTime:             expectedEndTime,
 				IncludeExperimental: false,
