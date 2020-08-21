@@ -104,7 +104,7 @@ type results struct {
 	Isolated  *isolated.Isolated `json:"isolated"`
 }
 
-func (c *downloadRun) outputResults(cache cache.Cache, dl *downloader.Downloader) error {
+func (c *downloadRun) outputResults(cache *cache.Cache, dl *downloader.Downloader) error {
 	if c.resultJSON == "" {
 		return nil
 	}
@@ -156,12 +156,12 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 	var filesMu sync.Mutex
 	var files []string
 
-	var diskCache cache.Cache
+	var diskCache *cache.Cache
 	if c.cacheDir != "" {
 		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
 			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
 		}
-		diskCache, err = cache.NewDisk(c.cachePolicies, c.cacheDir, isolated.GetHash(c.isolatedFlags.Namespace))
+		diskCache, err = cache.New(c.cachePolicies, c.cacheDir, isolated.GetHash(c.isolatedFlags.Namespace))
 		if err != nil && diskCache == nil {
 			return errors.Annotate(err, "failed to initialize disk cache in %s", c.cacheDir).Err()
 		}

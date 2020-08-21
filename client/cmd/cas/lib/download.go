@@ -121,9 +121,9 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 
 	to := make(map[digest.Digest]*tree.Output)
 
-	var diskcache cache.Cache
+	var diskcache *cache.Cache
 	if r.cacheDir != "" {
-		diskcache, err = cache.NewDisk(r.cachePolicies, r.cacheDir, crypto.SHA256)
+		diskcache, err = cache.New(r.cachePolicies, r.cacheDir, crypto.SHA256)
 		if err != nil {
 			return errors.Annotate(err, "failed to create initialize cache").Err()
 		}

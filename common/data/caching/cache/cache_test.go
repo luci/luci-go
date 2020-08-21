@@ -29,7 +29,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func testCache(t *testing.T, c Cache) isolated.HexDigests {
+func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 	var expected isolated.HexDigests
 	Convey(`Common tests performed on a cache of objects.`, func() {
 		// c's policies must have MaxItems == 2 and MaxSize == 1024.
@@ -121,18 +121,18 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 	return expected
 }
 
-func TestNewDisk(t *testing.T) {
+func TestNew(t *testing.T) {
 	Convey(`Test the disk-based cache of objects.`, t, func() {
 		td := t.TempDir()
 
 		pol := Policies{MaxSize: 1024, MaxItems: 2}
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
-		c, err := NewDisk(pol, td, h)
+		c, err := New(pol, td, h)
 		So(err, ShouldBeNil)
 		expected := testCache(t, c)
 
-		c, err = NewDisk(pol, td, h)
+		c, err = New(pol, td, h)
 		So(err, ShouldBeNil)
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
@@ -142,7 +142,7 @@ func TestNewDisk(t *testing.T) {
 		rel, err := filepath.Rel(cwd, t.TempDir())
 		So(err, ShouldBeNil)
 		So(filepath.IsAbs(rel), ShouldBeFalse)
-		_, err = NewDisk(pol, rel, h)
+		_, err = New(pol, rel, h)
 		So(err, ShouldBeNil)
 	})
 
@@ -153,15 +153,14 @@ func TestNewDisk(t *testing.T) {
 		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
 		So(ioutil.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
 
-		c, err := NewDisk(Policies{}, dir, isolated.GetHash(isolatedclient.DefaultNamespace))
+		c, err := New(Policies{}, dir, isolated.GetHash(isolatedclient.DefaultNamespace))
 		So(err, ShouldNotBeNil)
 		if c == nil {
 			t.Errorf("c should not be nil: %v", err)
 		}
 		So(c, ShouldNotBeNil)
 
-		d := c.(*disk)
-		So(d.statePath(), ShouldEqual, state)
+		So(c.statePath(), ShouldEqual, state)
 
 		// invalid files should be removed.
 		empty, err := filesystem.IsEmptyDir(dir)
@@ -175,7 +174,7 @@ func TestNewDisk(t *testing.T) {
 		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
-		c, err := NewDisk(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, h)
+		c, err := New(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, h)
 		So(err, ShouldBeNil)
 
 		file1Content := []byte("foo")
@@ -194,20 +193,19 @@ func TestNewDisk(t *testing.T) {
 		notOnDiskContent := []byte("not on disk")
 		notOnDiskDigest := isolated.HashBytes(h, notOnDiskContent)
 
-		c, err := NewDisk(Policies{}, dir, h)
+		c, err := New(Policies{}, dir, h)
 		defer func() { So(c.Close(), ShouldBeNil) }()
 
 		So(err, ShouldBeNil)
 		So(c, ShouldNotBeNil)
-		d := c.(*disk)
 		perm := os.ModePerm
-		So(ioutil.WriteFile(d.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
+		So(ioutil.WriteFile(c.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
 
-		So(d.GetUsed(), ShouldBeEmpty)
-		So(d.Hardlink(notOnDiskDigest, filepath.Join(dir, "not_on_disk"), perm), ShouldNotBeNil)
-		So(d.GetUsed(), ShouldBeEmpty)
-		So(d.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
-		So(d.GetUsed(), ShouldHaveLength, 1)
+		So(c.GetUsed(), ShouldBeEmpty)
+		So(c.Hardlink(notOnDiskDigest, filepath.Join(dir, "not_on_disk"), perm), ShouldNotBeNil)
+		So(c.GetUsed(), ShouldBeEmpty)
+		So(c.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
+		So(c.GetUsed(), ShouldHaveLength, 1)
 	})
 
 	Convey(`AddFileWithoutValidation`, t, func() {
@@ -215,7 +213,7 @@ func TestNewDisk(t *testing.T) {
 		cache := filepath.Join(dir, "cache")
 		h := isolated.GetHash(isolatedclient.DefaultNamespace)
 
-		c, err := NewDisk(Policies{
+		c, err := New(Policies{
 			MaxSize:  1,
 			MaxItems: 1,
 		}, cache, h)
