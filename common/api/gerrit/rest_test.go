@@ -23,9 +23,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -192,6 +194,28 @@ func TestGetChange(t *testing.T) {
 						},
 					},
 				},
+				Messages: []*gerritpb.ChangeMessageInfo{
+					{
+						Id: "YH-egE",
+						Author: &gerritpb.AccountInfo{
+							Name:     "John Doe",
+							Email:    "john.doe@example.com",
+							Username: "jdoe",
+						},
+						Date:    timestamppb.New(parseTime("2013-03-23T21:34:02.419000000Z")),
+						Message: "Patch Set 1:\n\nThis is the first message.",
+					},
+					{
+						Id: "WEEdhU",
+						Author: &gerritpb.AccountInfo{
+							Name:     "Jane Roe",
+							Email:    "jane.roe@example.com",
+							Username: "jroe",
+						},
+						Date:    timestamppb.New(parseTime("2013-03-23T21:36:52.332000000Z")),
+						Message: "Patch Set 1:\n\nThis is the second message.\n\nWith a line break.",
+					},
+				},
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +254,33 @@ func TestGetChange(t *testing.T) {
 								"email": "rubberstamper@example.com"
 							}
 						}
-					}
+					},
+					"messages": [
+						{
+							"id": "YH-egE",
+							"author": {
+								"_account_id": 1000096,
+								"name": "John Doe",
+								"email": "john.doe@example.com",
+								"username": "jdoe"
+							},
+							"date": "2013-03-23 21:34:02.419000000",
+							"message": "Patch Set 1:\n\nThis is the first message.",
+							"_revision_number": 1
+						},
+						{
+							"id": "WEEdhU",
+							"author": {
+								"_account_id": 1000097,
+								"name": "Jane Roe",
+								"email": "jane.roe@example.com",
+								"username": "jroe"
+							},
+							"date": "2013-03-23 21:36:52.332000000",
+							"message": "Patch Set 1:\n\nThis is the second message.\n\nWith a line break.",
+							"_revision_number": 1
+						}
+					]
 				}`)
 			})
 			defer srv.Close()
@@ -428,4 +478,14 @@ func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*htt
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
 	return srv, &client{BaseURL: srv.URL}
+}
+
+// parseTime parses a RFC3339Nano formatted timestamp string.
+// Panics when error occurs during parse.
+func parseTime(t string) time.Time {
+	ret, err := time.Parse(time.RFC3339Nano, t)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
