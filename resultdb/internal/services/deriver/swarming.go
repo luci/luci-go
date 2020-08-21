@@ -275,7 +275,7 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 	// Add the swarming task's url and state to summaryHTML.
 	buf := &strings.Builder{}
 	err := summaryTmpl.Execute(buf, map[string]interface{}{
-		"url":   fmt.Sprintf("https://%s/%s", req.SwarmingTask.Hostname, req.SwarmingTask.Id),
+		"url":   fmt.Sprintf("https://%s/task?id=%s", req.SwarmingTask.Hostname, req.SwarmingTask.Id),
 		"state": task.State,
 	})
 	if err != nil {
