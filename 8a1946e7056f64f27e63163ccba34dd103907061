@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5f003866_f27be553",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T00:46:28Z",
+      "side": 1,
+      "message": "If that\u0027s the only reason, I recommend to keep the interface.\nIn general, Interface is useful for injecting a fake implementation to tests. (even when you don\u0027t have plan to have multiple implementations)\n\nI know some of mock libraries can generate mocks from interface definitions.\ne.g. https://github.com/vektra/mockery",
+      "parentUuid": "865e9756_50932fe4",
+      "range": {
+        "startLine": 10,
+        "startChar": 4,
+        "endLine": 10,
+        "endChar": 69
+      },
+      "revId": "8a1946e7056f64f27e63163ccba34dd103907061",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b21482a0_6a872979",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 5
