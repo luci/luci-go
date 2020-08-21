@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f6f95f1_9637abf3",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T00:25:04Z",
+      "side": 0,
+      "message": "Any reason for the rename?",
+      "range": {
+        "startLine": 118,
+        "startChar": 5,
+        "endLine": 118,
+        "endChar": 12
+      },
+      "revId": "2f1649efc24fdc893734af9bc3ef1f25a99c089e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

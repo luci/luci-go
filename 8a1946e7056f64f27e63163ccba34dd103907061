@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a60cde59_46e68526",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T00:25:04Z",
+      "side": 1,
+      "message": "nit: I\u0027m not sure how the interface prevents implementations.",
+      "range": {
+        "startLine": 10,
+        "startChar": 4,
+        "endLine": 10,
+        "endChar": 69
+      },
+      "revId": "8a1946e7056f64f27e63163ccba34dd103907061",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b21482a0_6a872979",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T00:25:04Z",
+      "side": 1,
+      "message": "Update TODOs to tikuta or a bug.",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 0
+      },
+      "revId": "8a1946e7056f64f27e63163ccba34dd103907061",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
