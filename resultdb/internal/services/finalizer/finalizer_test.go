@@ -133,7 +133,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(finalizeTime, ShouldNotResemble, time.Time{})
 		})
 
-		Convey(`Enqueues more finalizing tasks`, func() {
+		// This is flaky https://crbug.com/1042602#c21
+		SkipConvey(`Enqueues more finalizing tasks`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x"),
 				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x"),
