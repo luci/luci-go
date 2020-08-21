@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4744c34f_a9acf478",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-21T00:23:03Z",
+      "side": 1,
+      "message": "👍👍👍",
+      "parentUuid": "cfcf0c4b_d0e8b5db",
+      "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28b01e56_f3e26c77",
         "filename": "common/api/gerrit/demo/main.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "095f3681_56299e03",
+        "filename": "common/api/gerrit/demo/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-21T00:23:03Z",
+      "side": 1,
+      "message": "Good point. Done.",
+      "parentUuid": "28b01e56_f3e26c77",
+      "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97fd7bde_0c0667c1",
+        "filename": "common/api/gerrit/demo/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-21T00:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f73cf628_1bd3ef1f",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 30
+      },
+      "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
