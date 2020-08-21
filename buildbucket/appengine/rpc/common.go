@@ -187,6 +187,14 @@ func validateSummaryMarkdown(md string) error {
 
 // TODO(ddoman): move proto validator functions to protoutil.
 
+// validateCommitWithRef checks if `cm` is a valid commit with a ref.
+func validateCommitWithRef(cm *pb.GitilesCommit) error {
+	if cm.GetRef() == "" {
+		return errors.Reason(`ref is required`).Err()
+	}
+	return validateCommit(cm)
+}
+
 // validateCommit validates the given Gitiles commit.
 func validateCommit(cm *pb.GitilesCommit) error {
 	switch {

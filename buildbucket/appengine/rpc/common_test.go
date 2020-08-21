@@ -198,4 +198,33 @@ func TestValidateTags(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("validateCommitWithRef", t, func() {
+		Convey("nil", func() {
+			So(validateCommitWithRef(nil), ShouldErrLike, "ref is required")
+		})
+
+		Convey("empty", func() {
+			So(validateCommitWithRef(&pb.GitilesCommit{}), ShouldErrLike, "ref is required")
+		})
+
+		Convey("with id", func() {
+			cm := &pb.GitilesCommit{
+				Host:    "host",
+				Project: "project",
+				Id:      "id",
+			}
+			So(validateCommitWithRef(cm), ShouldErrLike, "ref is required")
+		})
+
+		Convey("with ref", func() {
+			cm := &pb.GitilesCommit{
+				Host:     "host",
+				Project:  "project",
+				Ref:      "refs/",
+				Position: 1,
+			}
+			So(validateCommitWithRef(cm), ShouldBeNil)
+		})
+	})
 }
