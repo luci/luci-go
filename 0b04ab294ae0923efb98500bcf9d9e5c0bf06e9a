@@ -231,6 +231,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81986fa3_51c94cb7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-21T00:20:25Z",
+      "side": 1,
+      "message": "We can rush deployment of realms to chromium for led use case specifically, but it will be a mess (duplicated configs: old ones used for real builds, new ones for led, but only if resultdb is enabled).",
+      "parentUuid": "09180bb0_82047f93",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
