@@ -16,11 +16,13 @@ package lib
 
 import (
 	"context"
+	"flag"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -40,6 +42,21 @@ func (c *commonFlags) Init() {
 }
 
 func (c *commonFlags) Parse() error {
+	// extract glog flag used in remote-apis-sdks
+	logtostderr := flag.Lookup("logtostderr")
+	if logtostderr == nil {
+		return errors.Reason("logtostderr flag for glog not found").Err()
+	}
+	v := flag.Lookup("v")
+	if v == nil {
+		return errors.Reason("v flag for glog not found").Err()
+	}
+
+	if c.logConfig.Level == logging.Debug {
+		logtostderr.Value.Set("true")
+		v.Value.Set("9")
+	}
+
 	return c.casFlags.Parse()
 }
 
