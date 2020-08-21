@@ -37,7 +37,7 @@ import (
 
 // ExitCodeCommandFailure indicates that a given command failed due to internal errors
 // or invalid input parameters.
-const ExitCodeCommandFailure = 1001
+const ExitCodeCommandFailure = 123
 
 // baseCommandRun provides common command run functionality.
 // All rdb subcommands must embed it directly or indirectly.
