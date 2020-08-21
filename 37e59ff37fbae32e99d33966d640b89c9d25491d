@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "d76c87ca_8a70a66f",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-21T23:06:30Z",
+      "side": 1,
+      "message": "Discussed in Chat; changing to use \u0027fixCreatedBy\u0027 in one place (search pkg).",
+      "parentUuid": "7c028ed0_3092b12a",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bb04997_4eff6e52",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
@@ -105,6 +123,24 @@
       "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d85339e_518b7bd6",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-21T23:06:30Z",
+      "side": 1,
+      "message": "Discussed in Chat; changing to use \u0027fixCreatedBy\u0027 in one place (search pkg).",
+      "parentUuid": "8eeec427_4d127f27",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
