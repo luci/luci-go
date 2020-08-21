@@ -16,10 +16,12 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"go.chromium.org/luci/common/isolated"
@@ -236,4 +238,69 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
+}
+
+func BenchmarkDisk(b *testing.B) {
+	tdir := b.TempDir()
+
+	for _, n := range []int{16, 256, 65536, 65536 * 4} {
+		b.Run(fmt.Sprintf("with %d files", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				dir := filepath.Join(tdir, strconv.Itoa(i))
+				if err := os.RemoveAll(dir); err != nil {
+					b.Errorf("failed to remove dir: %v", err)
+				}
+
+				if err := os.MkdirAll(dir, 0700); err != nil {
+					b.Errorf("failed to create dir: %v", err)
+				}
+
+				b.StartTimer()
+
+				for j := 0; j < n; j++ {
+					if err := ioutil.WriteFile(filepath.Join(dir, strconv.Itoa(j)), nil, 0600); err != nil {
+						b.Errorf("failed to write file: %v", err)
+					}
+				}
+			}
+		})
+	}
+}
+
+func BenchmarkDiskParallel(b *testing.B) {
+	tdir := b.TempDir()
+
+	for _, n := range []int{16, 256, 65536, 65536 * 4} {
+		b.Run(fmt.Sprintf("with %d files", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				dir := filepath.Join(tdir, strconv.Itoa(i))
+				if err := os.RemoveAll(dir); err != nil {
+					b.Errorf("failed to remove dir: %v", err)
+				}
+
+				if err := os.MkdirAll(dir, 0700); err != nil {
+					b.Errorf("failed to create dir: %v", err)
+				}
+
+				c := make(chan struct{}, 16)
+
+				b.StartTimer()
+
+				for j := 0; j < n; j++ {
+					c <- struct{}{}
+					j := j
+					go func() {
+						defer func() {
+							<-c
+						}()
+						if err := ioutil.WriteFile(filepath.Join(dir, strconv.Itoa(j)), nil, 0600); err != nil {
+							b.Errorf("failed to write file: %v", err)
+						}
+					}()
+				}
+			}
+		})
+	}
 }
