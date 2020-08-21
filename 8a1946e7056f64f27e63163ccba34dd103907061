@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "eee03886_eb1553e0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-21T00:50:16Z",
+      "side": 1,
+      "message": "But I currently think we don\u0027t need to write a test requiring mock of this cache library. Using real implementation is sufficnet in test?",
+      "parentUuid": "5f003866_f27be553",
+      "range": {
+        "startLine": 10,
+        "startChar": 4,
+        "endLine": 10,
+        "endChar": 69
+      },
+      "revId": "8a1946e7056f64f27e63163ccba34dd103907061",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b21482a0_6a872979",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 5
