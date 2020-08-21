@@ -114,18 +114,17 @@ func TestFinalizeInvocation(t *testing.T) {
 		// soon, it's fine not to test it. We "know" it works.
 		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 
-		// This is flaky https://crbug.com/1042602#c19
-		SkipConvey(`Changes the state and finalization time`, func() {
+		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
+				insert.InvocationWithInclusions("x1", pb.Invocation_FINALIZING, nil),
 			)...)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x1")
 			So(err, ShouldBeNil)
 
 			var state pb.Invocation_State
 			var finalizeTime time.Time
-			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x").Key(), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x1").Key(), map[string]interface{}{
 				"State":        &state,
 				"FinalizeTime": &finalizeTime,
 			})
@@ -134,15 +133,15 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		// This is flaky https://crbug.com/1042602#c21
-		SkipConvey(`Enqueues more finalizing tasks`, func() {
+		Convey(`Enqueues more finalizing tasks`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x"),
-				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x"),
-				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, nil, "x"),
-				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
+				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x2"),
+				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x2"),
+				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, nil, "x2"),
+				insert.InvocationWithInclusions("x2", pb.Invocation_FINALIZING, nil),
 			)...)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x2")
 			So(err, ShouldBeNil)
 
 			// Enqueued TQ tasks.
@@ -167,10 +166,9 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(count, ShouldEqual, 0)
 		})
 
-		// This is flaky https://crbug.com/1042602#c17
-		SkipConvey(`Enqueues more bq_export tasks`, func() {
+		Convey(`Enqueues more bq_export tasks`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
+				insert.Invocation("x3", pb.Invocation_FINALIZING, map[string]interface{}{
 					"BigQueryExports": [][]byte{
 						[]byte("bq_export1"),
 						[]byte("bq_export2"),
@@ -178,7 +176,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				}),
 			)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x3")
 			So(err, ShouldBeNil)
 
 			st := spanner.NewStatement(`
@@ -195,7 +193,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				var payload []byte
 				err := b.FromSpanner(r, &taskID, &invID, &payload)
 				So(err, ShouldBeNil)
-				So(taskID, ShouldContainSubstring, "x:")
+				So(taskID, ShouldContainSubstring, "x3:")
 				payloads = append(payloads, string(payload))
 				return nil
 			})
