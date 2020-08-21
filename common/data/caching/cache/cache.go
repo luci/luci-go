@@ -34,50 +34,24 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-// Cache is a cache of objects.
+// Cache is a cache of objects holding content in disk.
 //
 // All implementations must be thread-safe.
-type Cache interface {
-	io.Closer
+type Cache struct {
+	// Immutable.
+	policies Policies
+	path     string
+	h        crypto.Hash
 
-	// Keys returns the list of all cached digests in LRU order.
-	Keys() isolated.HexDigests
+	// Lock protected.
+	mu  sync.Mutex // This protects modification of cached entries under |path| too.
+	lru lruDict    // Implements LRU based eviction.
 
-	// Touch updates the LRU position of an item to ensure it is kept in the
-	// cache.
-	//
-	// Returns true if item is in cache.
-	Touch(digest isolated.HexDigest) bool
-
-	// Evict removes item from cache if it's there.
-	Evict(digest isolated.HexDigest)
-
-	// Add reads data from src and stores it in cache.
-	Add(digest isolated.HexDigest, src io.Reader) error
-
-	// AddFile adds src as cache entry with hardlink.
-	// But this doesn't do any content validation.
-	AddFileWithoutValidation(digest isolated.HexDigest, src string) error
-
-	// AddWithHardlink reads data from src and stores it in cache and hardlink file.
-	// This is to avoid file removal by shrink in Add().
-	AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error
-
-	// Read returns contents of the cached item.
-	Read(digest isolated.HexDigest) (io.ReadCloser, error)
-
-	// Hardlink ensures file at |dest| has the same content as cached |digest|.
-	//
-	// Note that the behavior when dest already exists is undefined. It will work
-	// on all POSIX and may or may not fail on Windows depending on the
-	// implementation used. Do not rely on this behavior.
-	Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error
-
-	// GetAdded returns a list of file size added to cache.
-	GetAdded() []int64
-
-	// GetUsed returns a list of file size used from cache.
-	GetUsed() []int64
+	statsMu sync.Mutex // Protects the stats below
+	// TODO(tikuta): Add stats about: # removed.
+	// TODO(tikuta): stateFile
+	added []int64
+	used  []int64
 }
 
 // Policies is the policies to use on a cache to limit it's footprint.
@@ -110,12 +84,12 @@ func (p *Policies) IsDefault() bool {
 
 var ErrInvalidHash = errors.New("invalid hash")
 
-// NewDisk creates a disk based cache.
+// New creates a disk based cache.
 //
 // It may return both a valid Cache and an error if it failed to load the
 // previous cache metadata. It is safe to ignore this error. This creates
 // cache directory if it doesn't exist.
-func NewDisk(policies Policies, path string, h crypto.Hash) (Cache, error) {
+func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 	var err error
 	path, err = filepath.Abs(path)
 	if err != nil {
@@ -126,7 +100,7 @@ func NewDisk(policies Policies, path string, h crypto.Hash) (Cache, error) {
 		return nil, errors.Annotate(err, "failed to call MkdirAll(%s)", path).Err()
 	}
 
-	d := &disk{
+	d := &Cache{
 		policies: policies,
 		path:     path,
 		h:        h,
@@ -168,32 +142,7 @@ func NewDisk(policies Policies, path string, h crypto.Hash) (Cache, error) {
 	return d, err
 }
 
-// Private details.
-
-const maxUint = ^uint(0)
-const maxInt = int(maxUint >> 1)
-
-const cacheMaxSizeDefault = math.MaxInt64
-const cacheMaxItemsDefault = maxInt
-
-type disk struct {
-	// Immutable.
-	policies Policies
-	path     string
-	h        crypto.Hash
-
-	// Lock protected.
-	mu  sync.Mutex // This protects modification of cached entries under |path| too.
-	lru lruDict    // Implements LRU based eviction.
-
-	statsMu sync.Mutex // Protects the stats below
-	// TODO(maruel): Add stats about: # removed.
-	// TODO(maruel): stateFile
-	added []int64
-	used  []int64
-}
-
-func (d *disk) Close() error {
+func (d *Cache) Close() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if !d.lru.IsDirty() {
@@ -207,13 +156,18 @@ func (d *disk) Close() error {
 	return err
 }
 
-func (d *disk) Keys() isolated.HexDigests {
+// Keys returns the list of all cached digests in LRU order.
+func (d *Cache) Keys() isolated.HexDigests {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.lru.keys()
 }
 
-func (d *disk) Touch(digest isolated.HexDigest) bool {
+// Touch updates the LRU position of an item to ensure it is kept in the
+// cache.
+//
+// Returns true if item is in cache.
+func (d *Cache) Touch(digest isolated.HexDigest) bool {
 	if !digest.Validate(d.h) {
 		return false
 	}
@@ -227,7 +181,8 @@ func (d *disk) Touch(digest isolated.HexDigest) bool {
 	return true
 }
 
-func (d *disk) Evict(digest isolated.HexDigest) {
+// Evict removes item from cache if it's there.
+func (d *Cache) Evict(digest isolated.HexDigest) {
 	if !digest.Validate(d.h) {
 		return
 	}
@@ -237,7 +192,8 @@ func (d *disk) Evict(digest isolated.HexDigest) {
 	_ = os.Remove(d.itemPath(digest))
 }
 
-func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
+// Read returns contents of the cached item.
+func (d *Cache) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	if !digest.Validate(d.h) {
 		return nil, os.ErrInvalid
 	}
@@ -263,7 +219,92 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	return f, nil
 }
 
-func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) error {
+// Add reads data from src and stores it in cache.
+func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
+	return d.add(digest, src, nil)
+}
+
+// AddFileWithoutValidation adds src as cache entry with hardlink.
+// But this doesn't do any content validation.
+//
+// TODO(tikuta): make one function and controll the behavior by option?
+func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to get stat").Err()
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if err := os.Link(src, d.itemPath(digest)); err != nil && !os.IsExist(err) {
+		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+	}
+
+	d.lru.pushFront(digest, units.Size(fi.Size()))
+	if err := d.respectPolicies(); err != nil {
+		d.lru.pop(digest)
+		return err
+	}
+
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	d.added = append(d.added, fi.Size())
+	return nil
+}
+
+// AddWithHardlink reads data from src and stores it in cache and hardlink file.
+// This is to avoid file removal by shrink in Add().
+func (d *Cache) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
+	return d.add(digest, src, func() error {
+		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
+			_ = os.Remove(d.itemPath(digest))
+			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
+		}
+		return nil
+	})
+}
+
+// Hardlink ensures file at |dest| has the same content as cached |digest|.
+//
+// Note that the behavior when dest already exists is undefined. It will work
+// on all POSIX and may or may not fail on Windows depending on the
+// implementation used. Do not rely on this behavior.
+func (d *Cache) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+	if runtime.GOOS == "darwin" {
+		// Accessing the path, which is being replaced, with os.Link
+		// seems to cause flaky 'operation not permitted' failure on
+		// macOS (https://crbug.com/1076468). So prevent that by holding
+		// lock here.
+		d.mu.Lock()
+		defer d.mu.Unlock()
+	}
+	return d.hardlinkUnlocked(digest, dest, perm)
+}
+
+// GetAdded returns a list of file size added to cache.
+func (d *Cache) GetAdded() []int64 {
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	return append([]int64{}, d.added...)
+}
+
+// GetUsed returns a list of file size used from cache.
+func (d *Cache) GetUsed() []int64 {
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	return append([]int64{}, d.used...)
+}
+
+// Private details.
+
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
+
+const cacheMaxSizeDefault = math.MaxInt64
+const cacheMaxItemsDefault = maxInt
+
+func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -316,58 +357,7 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	return nil
 }
 
-func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
-	return d.add(digest, src, nil)
-}
-
-func (d *disk) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
-	fi, err := os.Stat(src)
-	if err != nil {
-		return errors.Annotate(err, "failed to get stat").Err()
-	}
-
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if err := os.Link(src, d.itemPath(digest)); err != nil && !os.IsExist(err) {
-		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
-	}
-
-	d.lru.pushFront(digest, units.Size(fi.Size()))
-	if err := d.respectPolicies(); err != nil {
-		d.lru.pop(digest)
-		return err
-	}
-
-	d.statsMu.Lock()
-	defer d.statsMu.Unlock()
-	d.added = append(d.added, fi.Size())
-	return nil
-}
-
-func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
-	return d.add(digest, src, func() error {
-		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
-			_ = os.Remove(d.itemPath(digest))
-			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
-		}
-		return nil
-	})
-}
-
-func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
-	if runtime.GOOS == "darwin" {
-		// Accessing the path, which is being replaced, with os.Link
-		// seems to cause flaky 'operation not permitted' failure on
-		// macOS (https://crbug.com/1076468). So prevent that by holding
-		// lock here.
-		d.mu.Lock()
-		defer d.mu.Unlock()
-	}
-	return d.hardlinkUnlocked(digest, dest, perm)
-}
-
-func (d *disk) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os.FileMode) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -416,27 +406,15 @@ func (d *disk) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os.
 	return nil
 }
 
-func (d *disk) GetAdded() []int64 {
-	d.statsMu.Lock()
-	defer d.statsMu.Unlock()
-	return append([]int64{}, d.added...)
-}
-
-func (d *disk) GetUsed() []int64 {
-	d.statsMu.Lock()
-	defer d.statsMu.Unlock()
-	return append([]int64{}, d.used...)
-}
-
-func (d *disk) itemPath(digest isolated.HexDigest) string {
+func (d *Cache) itemPath(digest isolated.HexDigest) string {
 	return filepath.Join(d.path, string(digest))
 }
 
-func (d *disk) statePath() string {
+func (d *Cache) statePath() string {
 	return filepath.Join(d.path, "state.json")
 }
 
-func (d *disk) respectPolicies() error {
+func (d *Cache) respectPolicies() error {
 	minFreeSpaceWanted := uint64(d.policies.MinFreeSpace)
 	for {
 		freeSpace, err := filesystem.GetFreeSpace(d.path)
