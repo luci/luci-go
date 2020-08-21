@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fea18cd0_04233a6b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-21T01:48:25Z",
+      "side": 1,
+      "message": "I feel that keeping an interface is better for the general reason I commented.\n\nBut since I haven\u0027t touched the client code that much yet.\nI will leave Ye and Takuto for the decision.",
+      "revId": "fbd02995310ae78f2bf296594b4edd1d0c6856d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
