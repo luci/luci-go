@@ -51,6 +51,24 @@
       "revId": "5dd2f7a7655c1bf4ed812733c5b6928751f12c40",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc5e1c2c_cada185c",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-21T00:30:53Z",
+      "side": 1,
+      "message": "derp. Sorry for noise.",
+      "parentUuid": "d16a5635_68d54663",
+      "revId": "5dd2f7a7655c1bf4ed812733c5b6928751f12c40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
