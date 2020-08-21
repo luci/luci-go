@@ -285,6 +285,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b4e4ade_222893bd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-21T00:42:12Z",
+      "side": 1,
+      "message": "+estaab for this KR question.",
+      "parentUuid": "6136bcf0_ab7600da",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
