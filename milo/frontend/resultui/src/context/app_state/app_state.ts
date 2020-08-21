@@ -15,6 +15,7 @@
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../../libs/context';
+import { BuildsService } from '../../services/buildbucket';
 import { BuildPageService } from '../../services/build_page';
 import { MiloInternal } from '../../services/milo_internal';
 import { ResultDb } from '../../services/resultdb';
@@ -48,6 +49,14 @@ export class AppState {
       return null;
     }
     return new MiloInternal(this.accessToken);
+  }
+
+  @computed
+  get buildsService(): BuildsService | null {
+    if (!this.accessToken) {
+      return null;
+    }
+    return new BuildsService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
   }
 }
 
