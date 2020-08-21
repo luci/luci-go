@@ -22,6 +22,30 @@
       "revId": "410d36426c8539224de6cfaa0fe15a16369579b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0238e78_fc167249",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-21T23:01:27Z",
+      "side": 1,
+      "message": "yep. done",
+      "parentUuid": "ad2d26fa_891a1cb2",
+      "range": {
+        "startLine": 40,
+        "startChar": 31,
+        "endLine": 40,
+        "endChar": 32
+      },
+      "revId": "410d36426c8539224de6cfaa0fe15a16369579b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
