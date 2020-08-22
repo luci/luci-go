@@ -138,12 +138,12 @@ type BuildOutputProperties struct {
 	Proto DSStruct `gae:"properties,noindex"`
 }
 
-// buildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes
+// BuildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes
 // exceeds this maximum, this package will try to compress it, setting IsZipped
 // accordingly, but if this length is still exceeded it's an error to write
 // such entities to the datastore. Use FromProto to ensure this maximum is
 // respected.
-const buildStepsMaxBytes = 1e6
+const BuildStepsMaxBytes = 1e6
 
 // BuildSteps is a representation of a build proto's steps field
 // in the datastore.
@@ -196,7 +196,7 @@ func (s *BuildSteps) FromProto(ctx context.Context, stp []*pb.Step) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal %q", datastore.KeyForObj(ctx, s)).Err()
 	}
-	if len(b) <= buildStepsMaxBytes {
+	if len(b) <= BuildStepsMaxBytes {
 		s.Bytes = b
 		s.IsZipped = false
 		return nil

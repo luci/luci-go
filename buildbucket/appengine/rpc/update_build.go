@@ -16,27 +16,40 @@ package rpc
 
 import (
 	"context"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// updateBuildStatuses is a set of build statuses supported by UpdateBuild RPC.
-var updateBuildStatuses = map[pb.Status]struct{}{
-	pb.Status_STARTED: {},
-	// kitchen does not actually use SUCCESS. It relies on swarming pubsub
-	// handler in Buildbucket because a task may fail after recipe succeeded.
-	pb.Status_SUCCESS:       {},
-	pb.Status_FAILURE:       {},
-	pb.Status_INFRA_FAILURE: {},
-}
+var (
+	// updateBuildStatuses is a set of build statuses supported by UpdateBuild RPC.
+	updateBuildStatuses = map[pb.Status]struct{}{
+		pb.Status_STARTED: {},
+		// kitchen does not actually use SUCCESS. It relies on swarming pubsub
+		// handler in Buildbucket because a task may fail after recipe succeeded.
+		pb.Status_SUCCESS:       {},
+		pb.Status_FAILURE:       {},
+		pb.Status_INFRA_FAILURE: {},
+	}
+
+	// statusesWithStartTime is a set of step statuses that requires the step to have
+	// a start_time field set.
+	statusesWithStartTime = map[pb.Status]bool{
+		pb.Status_STARTED: true,
+		pb.Status_SUCCESS: true,
+		pb.Status_FAILURE: true,
+	}
+)
 
 // validateUpdate validates the given request.
-func validateUpdate(req *pb.UpdateBuildRequest) error {
+func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
 	}
@@ -56,6 +69,9 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 			}
 		case "build.status_details":
 		case "build.steps":
+			if err := validateSteps(ctx, req.Build.Steps); err != nil {
+				return errors.Annotate(err, "build.steps").Err()
+			}
 		case "build.summary_markdown":
 			if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
 				return errors.Annotate(err, "build.summary_markdown").Err()
@@ -71,9 +87,68 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 	return nil
 }
 
+// validateSteps validates the steps of the Build.
+func validateSteps(ctx context.Context, steps []*pb.Step) error {
+	bs := &model.BuildSteps{}
+	if err := bs.FromProto(ctx, steps); err != nil {
+		return err
+	}
+	if len(bs.Bytes) > model.BuildStepsMaxBytes {
+		return errors.Reason("too big to accept").Err()
+	}
+
+	seen := map[string]bool{}
+	for i, step := range steps {
+		if seen[step.Name] {
+			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
+		}
+		seen[step.Name] = true
+		if err := validateStep(step); err != nil {
+			return errors.Annotate(err, "step[%d]", i).Err()
+		}
+	}
+	return nil
+}
+
+func validateStep(step *pb.Step) error {
+	if step.GetName() == "" {
+		return errors.Reason("name: required").Err()
+	}
+
+	var st, et time.Time
+	var err error
+	if step.StartTime != nil {
+		if st, err = ptypes.Timestamp(step.StartTime); err != nil {
+			return errors.Annotate(err, "start_time").Err()
+		}
+	}
+	if step.EndTime != nil {
+		if et, err = ptypes.Timestamp(step.EndTime); err != nil {
+			return errors.Annotate(err, "start_time").Err()
+		}
+	}
+
+	switch {
+	case step.Status == pb.Status_STATUS_UNSPECIFIED:
+		return errors.Reason("status: must not be STATUS_UNSPECIFIED").Err()
+	case statusesWithStartTime[step.Status] && st.IsZero():
+		return errors.Reason("start_time: required by status %q", step.Status).Err()
+	case step.Status < pb.Status_STARTED && !st.IsZero():
+		return errors.Reason("start_time: must not be specified for status %q", step.Status).Err()
+	case !et.IsZero() && et.Before(st):
+		return errors.Reason("start_time: is after the end_time (%d > %d)", st.Unix(), et.Unix()).Err()
+	// hasTerminateStatus != hasEndTime
+	case (step.Status&pb.Status_ENDED_MASK > 0) != !et.IsZero():
+		return errors.Reason("end_time: must have both or neither end_time and a terminal status").Err()
+	}
+
+	// TODO(ddoman): validate logs and status with parent.
+	return nil
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
-	if err := validateUpdate(req); err != nil {
+	if err := validateUpdate(ctx, req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
