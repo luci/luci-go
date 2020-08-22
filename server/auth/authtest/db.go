@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -234,6 +235,12 @@ func (db *FakeDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 // GetTokenServiceURL is part of authdb.DB interface.
 func (db *FakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("GetTokenServiceURL is not implemented by FakeDB")
+}
+
+// GetRealmData is part of authdb.DB interface.
+func (db *FakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	// TODO(vadimsh): Implement.
+	return &protocol.RealmData{}, nil
 }
 
 // mockedForID returns db.perID[id], initializing it if necessary.

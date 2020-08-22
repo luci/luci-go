@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -31,40 +32,40 @@ type ErroringDB struct {
 
 // IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
 // to authenticate access for given email.
-func (db ErroringDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }
 
 // IsInternalService returns true if the given hostname belongs to a service
 // that is a part of the current LUCI deployment.
-func (db ErroringDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) IsInternalService(ctx context.Context, hostname string) (bool, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }
 
 // IsMember returns true if the given identity belongs to any of the groups.
-func (db ErroringDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }
 
 // CheckMembership returns groups from the given list the identity belongs to.
-func (db ErroringDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) ([]string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return nil, db.Error
 }
 
 // HasPermission returns true if the identity has the given permission in any
 // of the realms.
-func (db ErroringDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
-func (db ErroringDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return nil, db.Error
 }
 
@@ -74,8 +75,8 @@ func (db ErroringDB) GetCertificates(c context.Context, id identity.Identity) (*
 // It's used to restrict access for certain account to certain IP subnets.
 //
 // Returns ("", nil) if `ident` is not IP restricted.
-func (db ErroringDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return "", db.Error
 }
 
@@ -83,19 +84,25 @@ func (db ErroringDB) GetWhitelistForIdentity(c context.Context, ident identity.I
 //
 // IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 // empty. May return errors if underlying datastore has issues.
-func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }
 
 // GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
-func (db ErroringDB) GetAuthServiceURL(c context.Context) (string, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) GetAuthServiceURL(ctx context.Context) (string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return "", db.Error
 }
 
 // GetTokenServiceURL returns root URL ("https://<host>") of the token service.
-func (db ErroringDB) GetTokenServiceURL(c context.Context) (string, error) {
-	logging.Errorf(c, "%s", db.Error)
+func (db ErroringDB) GetTokenServiceURL(ctx context.Context) (string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
 	return "", db.Error
+}
+
+// GetRealmData returns data attached to a realm.
+func (db ErroringDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	logging.Errorf(ctx, "%s", db.Error)
+	return nil, db.Error
 }

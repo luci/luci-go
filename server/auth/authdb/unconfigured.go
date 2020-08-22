@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -90,4 +91,9 @@ func (db UnconfiguredDB) GetAuthServiceURL(ctx context.Context) (string, error) 
 func (db UnconfiguredDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	db.log(ctx, "GetTokenServiceURL")
 	return "", db.Error
+}
+
+func (db UnconfiguredDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	db.log(ctx, "GetRealmData")
+	return nil, db.Error
 }

@@ -309,11 +309,11 @@ func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, err
 	}, nil
 }
 
-func (m fakeAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
+func (m fakeAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
 	return "http://fake.login.url/" + dest, nil
 }
 
-func (m fakeAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
+func (m fakeAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
 	return "http://fake.logout.url/" + dest, nil
 }
 
@@ -324,17 +324,17 @@ func (m fakeAuthMethod) GetUserCredentials(context.Context, *http.Request) (*oau
 	return nil, ErrNoForwardableCreds
 }
 
-func injectTestDB(c context.Context, d authdb.DB) context.Context {
-	return ModifyConfig(c, func(cfg Config) Config {
-		cfg.DBProvider = func(c context.Context) (authdb.DB, error) {
+func injectTestDB(ctx context.Context, d authdb.DB) context.Context {
+	return ModifyConfig(ctx, func(cfg Config) Config {
+		cfg.DBProvider = func(ctx context.Context) (authdb.DB, error) {
 			return d, nil
 		}
 		return cfg
 	})
 }
 
-func injectFrontendClientID(c context.Context, clientID string) context.Context {
-	return ModifyConfig(c, func(cfg Config) Config {
+func injectFrontendClientID(ctx context.Context, clientID string) context.Context {
+	return ModifyConfig(ctx, func(cfg Config) Config {
 		cfg.FrontendClientID = func(context.Context) (string, error) {
 			return clientID, nil
 		}
@@ -353,15 +353,15 @@ type fakeDB struct {
 	groups          map[string][]identity.Identity
 }
 
-func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
+func (db *fakeDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
 	return clientID == db.allowedClientID, nil
 }
 
-func (db *fakeDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+func (db *fakeDB) IsInternalService(ctx context.Context, hostname string) (bool, error) {
 	return hostname == db.internalService, nil
 }
 
-func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+func (db *fakeDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
 	for _, g := range groups {
 		for _, member := range db.groups[g] {
 			if id == member {
@@ -372,36 +372,40 @@ func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups []str
 	return false, nil
 }
 
-func (db *fakeDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
+func (db *fakeDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) ([]string, error) {
 	panic("not implemented")
 }
 
-func (db *fakeDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
+func (db *fakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	return false, errors.New("fakeDB: HasPermission is not implemented")
 }
 
-func (db *fakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+func (db *fakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errors.New("fakeDB: GetCertificates is not implemented")
 }
 
-func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+func (db *fakeDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+func (db *fakeDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
 	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
 }
 
-func (db *fakeDB) GetAuthServiceURL(c context.Context) (string, error) {
+func (db *fakeDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 	if db.authServiceURL == "" {
 		return "", errors.New("fakeDB: GetAuthServiceURL is not configured")
 	}
 	return db.authServiceURL, nil
 }
 
-func (db *fakeDB) GetTokenServiceURL(c context.Context) (string, error) {
+func (db *fakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	if db.tokenServiceURL == "" {
 		return "", errors.New("fakeDB: GetTokenServiceURL is not configured")
 	}
 	return db.tokenServiceURL, nil
+}
+
+func (db *fakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	return &protocol.RealmData{}, nil
 }
