@@ -41,10 +41,11 @@ import (
 //
 // The list of mocks can also be extended later via db.AddMocks(...).
 type FakeDB struct {
-	m     sync.RWMutex
-	err   error                              // if not nil, return this error
-	perID map[identity.Identity]*mockedForID // id => groups and perms it has
-	ips   map[string]stringset.Set           // IP => whitelists it belongs to
+	m         sync.RWMutex
+	err       error                              // if not nil, return this error
+	perID     map[identity.Identity]*mockedForID // id => groups and perms it has
+	ips       map[string]stringset.Set           // IP => whitelists it belongs to
+	realmData map[string]*protocol.RealmData     // realm name => data
 }
 
 var _ authdb.DB = (*FakeDB)(nil)
@@ -83,6 +84,24 @@ func MockPermission(id identity.Identity, realm string, perm realms.Permission) 
 	}
 	return MockedDatum{
 		apply: func(db *FakeDB) { db.mockedForID(id).perms.Add(mockedPermKey(realm, perm)) },
+	}
+}
+
+// MockRealmData modifies what db's GetRealmData returns.
+//
+// Panics if `realm` is not a valid globally scoped realm, i.e. it doesn't look
+// like "<project>:<realm>".
+func MockRealmData(realm string, data *protocol.RealmData) MockedDatum {
+	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+		panic(err)
+	}
+	return MockedDatum{
+		apply: func(db *FakeDB) {
+			if db.realmData == nil {
+				db.realmData = make(map[string]*protocol.RealmData, 1)
+			}
+			db.realmData[realm] = data
+		},
 	}
 }
 
@@ -239,8 +258,9 @@ func (db *FakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 
 // GetRealmData is part of authdb.DB interface.
 func (db *FakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
-	// TODO(vadimsh): Implement.
-	return &protocol.RealmData{}, nil
+	db.m.RLock()
+	defer db.m.RUnlock()
+	return db.realmData[realm], nil
 }
 
 // mockedForID returns db.perID[id], initializing it if necessary.
