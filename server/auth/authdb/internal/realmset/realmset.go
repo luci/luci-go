@@ -39,6 +39,7 @@ type Realms struct {
 	perms  map[string]PermissionIndex       // permission name -> its index
 	names  stringset.Set                    // just names of all defined realms
 	realms map[realmAndPerm]groupsAndIdents // <realm, perm> -> who has it
+	data   map[string]*protocol.RealmData   // per-realm attached RealmData
 }
 
 // PermissionIndex is used in place of permission names.
@@ -70,6 +71,11 @@ func (r *Realms) PermissionIndex(perm realms.Permission) (idx PermissionIndex, o
 // HasRealm returns true if the given realm exists in the DB.
 func (r *Realms) HasRealm(realm string) bool {
 	return r.names.Has(realm)
+}
+
+// Data returns RealmData attached to a realm or nil if none.
+func (r *Realms) Data(realm string) *protocol.RealmData {
+	return r.data[realm]
 }
 
 // QueryAuthorized returns a representation of principals that have the
@@ -183,10 +189,25 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 		realms[key] = groupsAndIdents{groups: groups, idents: idents}
 	}
 
+	// Extract attached per-realm data into a queryable map.
+	count := 0
+	for _, realm := range r.Realms {
+		if realm.Data != nil {
+			count++
+		}
+	}
+	data := make(map[string]*protocol.RealmData, count)
+	for _, realm := range r.Realms {
+		if realm.Data != nil {
+			data[realm.Name] = realm.Data
+		}
+	}
+
 	return &Realms{
 		perms:  perms,
 		names:  names,
 		realms: realms,
+		data:   data,
 	}, nil
 }
 

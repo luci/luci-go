@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,12 +34,17 @@ func TestFakeDB(t *testing.T) {
 	testPerm2 := realms.RegisterPermission("testing.tests.perm2")
 	testPerm3 := realms.RegisterPermission("testing.tests.perm3")
 
+	dataRoot := &protocol.RealmData{EnforceInService: []string{"A"}}
+	dataSome := &protocol.RealmData{EnforceInService: []string{"B"}}
+
 	Convey("With FakeDB", t, func() {
 		db := NewFakeDB(
 			MockMembership("user:abc@def.com", "group-a"),
 			MockMembership("user:abc@def.com", "group-b"),
 			MockPermission("user:abc@def.com", "proj:realm", testPerm1),
 			MockPermission("user:abc@def.com", "proj:realm", testPerm2),
+			MockRealmData("proj:@root", dataRoot),
+			MockRealmData("proj:some", dataSome),
 			MockIPWhitelist("127.0.0.42", "wl"),
 		)
 
@@ -88,6 +94,17 @@ func TestFakeDB(t *testing.T) {
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:unknown")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeFalse)
+		})
+
+		Convey("GetRealmData works", func() {
+			data, err := db.GetRealmData(ctx, "proj:some")
+			So(err, ShouldBeNil)
+			So(data, ShouldEqual, dataSome)
+
+			// No automatic fallback to root happens, mock it yourself.
+			data, err = db.GetRealmData(ctx, "proj:zzz")
+			So(err, ShouldBeNil)
+			So(data, ShouldBeNil)
 		})
 
 		Convey("IP whitelist checks work", func() {

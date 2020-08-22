@@ -19,8 +19,12 @@ import (
 	"net"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestState(t *testing.T) {
@@ -76,5 +80,44 @@ func TestState(t *testing.T) {
 		url, err := GetState(ctx).DB().GetAuthServiceURL(ctx)
 		So(err, ShouldBeNil)
 		So(url, ShouldEqual, "https://example.com/auth_service")
+	})
+
+	Convey("ShouldEnforceRealmACL", t, func() {
+		ctx := ModifyConfig(context.Background(), func(cfg Config) Config {
+			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
+				AppID: "my-app-id",
+			})
+			return cfg
+		})
+
+		ctx = WithState(ctx, &state{
+			db: &fakeDB{
+				realmData: map[string]*protocol.RealmData{
+					"proj:empty": {},
+					"proj:yes":   {EnforceInService: []string{"zzz", "my-app-id"}},
+					"proj:no":    {EnforceInService: []string{"zzz", "xxx"}},
+				},
+			},
+		})
+
+		// No data.
+		yes, err := ShouldEnforceRealmACL(ctx, "proj:unknown")
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeFalse)
+
+		// Empty data.
+		yes, err = ShouldEnforceRealmACL(ctx, "proj:empty")
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeFalse)
+
+		// In the set.
+		yes, err = ShouldEnforceRealmACL(ctx, "proj:yes")
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeTrue)
+
+		// Not in the set.
+		yes, err = ShouldEnforceRealmACL(ctx, "proj:no")
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeFalse)
 	})
 }
