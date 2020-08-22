@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab49452a_14b08b20",
+        "filename": "buildbucket/appengine/rpc/update_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-22T06:41:52Z",
+      "side": 1,
+      "message": "IIUC of the py-valdator, the existing logic allows a terminal status without start_time.",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 185,
+        "endChar": 5
+      },
+      "revId": "e5b5a7d55624ac364d0d47449207e321e40d7052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
