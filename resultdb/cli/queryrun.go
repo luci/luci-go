@@ -155,8 +155,9 @@ func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultIt
 	// Prepare a test result request.
 	trReq := &pb.QueryTestResultsRequest{
 		Invocations: invNames,
-		Predicate:   &pb.TestResultPredicate{TestIdRegexp: r.testID},
-		PageSize:    int32(r.limit),
+		Predicate: &pb.TestResultPredicate{TestIdRegexp: r.testID,
+			Expectancy: pb.TestResultPredicate_Expectancy(54)},
+		PageSize: int32(r.limit),
 	}
 	if r.unexpected {
 		trReq.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
