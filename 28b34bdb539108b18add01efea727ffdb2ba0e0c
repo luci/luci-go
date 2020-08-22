@@ -111,6 +111,30 @@
     },
     {
       "key": {
+        "uuid": "265bb0fc_4dee10a8",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-22T07:57:29Z",
+      "side": 1,
+      "message": "Status is an enum{}, and Protobuf doesn\u0027t allow unknown enum values.\n\nfrom https://developers.google.com/protocol-buffers/docs/proto#enum\n\"a field with an enum type can only have one of a specified set of constants as its value (if you try to provide a different value, the parser will treat it like an unknown field.\"\n\n---------------\nUpdated to disallow ENDMASK.\n\nQ. the python implementation allows ENDMASK. Should we also fix the python validator to disallow ENDMASK?",
+      "parentUuid": "21e9d3aa_dab0b786",
+      "range": {
+        "startLine": 132,
+        "startChar": 6,
+        "endLine": 132,
+        "endChar": 50
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0159bb6f_e57cced7",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
