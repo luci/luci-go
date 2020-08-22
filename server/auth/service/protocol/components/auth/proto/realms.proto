@@ -168,6 +168,11 @@ message Permission {
 // of bindings) provided in the Realm message. This allows to decouple the
 // high-level user-facing language for defining permissions from the
 // implementation of each individual LUCI service that checks permissions.
+//
+// A realm can also carry some small amount of data (usually auth related) that
+// LUCI services use when dealing with this realm. It should be something that
+// all (or at least more than one) LUCI services use. Configuration specific to
+// a single service should be in this service's project config instead.
 message Realm {
   // Name of the realm as "<project>:<realm>" string, where:
   //   "<project>" matches `^([a-z0-9\-_]{1,100}|@internal)$`.
@@ -176,6 +181,9 @@ message Realm {
 
   // A list of bindings in lexicographical order of their `permissions` fields.
   repeated Binding bindings = 2;
+
+  // Associated data extracted from the realms.cfg project config.
+  RealmData data = 3;
 }
 
 
@@ -199,4 +207,12 @@ message Binding {
   //
   // Ordered alphabetically.
   repeated string principals = 2;
+}
+
+
+// RealmData is semi-arbitrary non-ACL data extracted from the realms.cfg
+// project config and attached to a realm.
+message RealmData {
+  // Used only during Realms migration to gradually roll out the enforcement.
+  repeated string enforce_in_service = 1;
 }
