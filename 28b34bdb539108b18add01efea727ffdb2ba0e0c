@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3dd425c9_6766ae17",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "i think we are solving the problem of (how do I call FromProto) in the wrong place. I think we should change FromProto not to accept context, rather than modify all these functions and tests. more below",
+      "range": {
+        "startLine": 52,
+        "startChar": 20,
+        "endLine": 52,
+        "endChar": 41
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "577fd66e_7e42d04b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "this looks like an invitation for a problem in the future.\nOne may use this context to make an RPC which we don\u0027t want here.\n\nalso I had to look into the impl to make sure does not an RPC.\n\nFromProto uses context only to generate a datastore key that then used in the error message, so the FromProto doesn\u0027t really need a context. Would you simplify that func to remove context param?\n\nthen we don\u0027t need context param in validateSteps (it is a bit weird to have context in validate* functions)",
+      "range": {
+        "startLine": 93,
+        "startChar": 14,
+        "endLine": 93,
+        "endChar": 23
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eaeabc4a_080bbcd1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "why not stringset? it is takes less space because struct{} space 0 memory and Go has internal optimization for struct{}",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 26
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb10829c_8d103d52",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "note that, as is, this implementation is less efficient than python: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d356?q\u003dupdate_build%20f:buildbucket%20lang:py\n\nif you plan to implement that, could you add a TODO?\nmaybe create a struct with a model.BuildSteps field and move all functions there?",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21e9d3aa_dab0b786",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "this doesn\u0027t prevent the user to specify status 950934, or any other number. Should we have an allowlist of statuses?\ne.g. ENDMASK isn\u0027t allowed either",
+      "range": {
+        "startLine": 132,
+        "startChar": 6,
+        "endLine": 132,
+        "endChar": 50
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0159bb6f_e57cced7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-22T07:03:29Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/buildbucket/protoutil#IsEnded",
+      "range": {
+        "startLine": 139,
+        "startChar": 6,
+        "endLine": 139,
+        "endChar": 44
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
