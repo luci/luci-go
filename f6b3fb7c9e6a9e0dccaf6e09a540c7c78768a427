@@ -36,6 +36,23 @@
     },
     {
       "key": {
+        "uuid": "90860aa9_15856623",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T21:17:21Z",
+      "side": 1,
+      "message": "Will need to do some refactoring to split Run in half; will reply to other comments then.",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c589112_1852da50",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 14
@@ -93,6 +110,24 @@
     },
     {
       "key": {
+        "uuid": "61801078_b3a16be4",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T21:17:21Z",
+      "side": 1,
+      "message": "\u003e did you mean sinkFn?\n\nOops, yep, old name.\n\n\u003e \n\u003e stepping back, why does func has to return it? the sinkFn is the same as the only the client provided. \n\u003e \n\u003e\n\u003e actually same thoughts apply to the build: can we generalize this into a func CurrentBuild() which returns a copy of the current state?\n\u003e\n\u003e \n\u003e i think this way, these orthogonal aspects wouldn\u0027t be coupled\n\nI was trying to keep everything under Run; Right now exe.Run users do not have access to the sinkFn at all.\n\nHowever I think now that the code is in this shape, it would be better to have exe.Run which doesn\u0027t have a detach method, and exe.RunManually which just gives you build and sinkFn (the old API).",
+      "parentUuid": "32b881c0_181c9279",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4e8cda6c_31dbd7fb",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 14
@@ -133,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "3f075115_00c5ee58",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T21:17:21Z",
+      "side": 1,
+      "message": "It\u0027s not clear what this would be consistent with?",
+      "parentUuid": "4bc3a84b_ab4355d7",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 8
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0d777853_4e94ee6e",
         "filename": "luciexe/exe/errors.go",
         "patchSetId": 14
@@ -144,6 +203,30 @@
       "writtenOn": "2020-08-23T18:09:28Z",
       "side": 1,
       "message": "timeout corresponds to INFRA_FAILURE\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/swarming.py;l\u003d838?q\u003dcr-buildbucket%2Fswarming.p",
+      "range": {
+        "startLine": 108,
+        "startChar": 16,
+        "endLine": 108,
+        "endChar": 31
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abae084b_95bf2b4b",
+        "filename": "luciexe/exe/errors.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T21:17:21Z",
+      "side": 1,
+      "message": "You\u0027re right that FAILURE and INFRA_FAILURE both make more sense than CANCELED for DeadlineExceeded. I don\u0027t think swarming\u0027s expired condition maps onto the context in the code there though.\n\nIf the timeout is set to prevent, say, a test from taking too long, then FAILURE would be more appropriate than INFRA_FAILURE.\n\nI would prefer to default to FAILURE than INFRA_FAILURE though.",
+      "parentUuid": "0d777853_4e94ee6e",
       "range": {
         "startLine": 108,
         "startChar": 16,
