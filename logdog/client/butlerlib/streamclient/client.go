@@ -161,3 +161,10 @@ func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, o
 	ret, err := c.dial.DialDgramStream(fullOpts.desc)
 	return ret, errors.Annotate(err, "attempting to connect datagram stream %q", name).Err()
 }
+
+// Namespace returns the namespace of this Client.
+//
+// This Namespace is set a the time the Client is created.
+func (c *Client) Namespace() types.StreamName {
+	return c.ns
+}

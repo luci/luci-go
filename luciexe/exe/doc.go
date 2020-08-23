@@ -20,12 +20,10 @@
 //     "context"
 //
 //     "go.chromium.org/luci/luciexe/exe"
-//
-//     bbpb "go.chromium.org/luci/buildbucket/proto"
 //   )
 //
 //   func main() {
-//     exe.Run(func(ctx context.Context, input *bbpb.Build, userArgs []string, send exe.BuildSender) error {
+//     exe.Run(func(ctx context.Context, input *exe.Build, userArgs []string) error {
 //       ... do whatever you want here ...
 //       return nil // nil error indicates successful build.
 //     })
