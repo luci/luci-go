@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -30,20 +31,20 @@ import (
 type DB interface {
 	// IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
 	// to authenticate access for given email.
-	IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error)
+	IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error)
 
 	// IsInternalService returns true if the given hostname belongs to a service
 	// that is a part of the current LUCI deployment.
 	//
 	// What hosts are internal is controlled by 'internal_service_regexp' setting
 	// in security.cfg in the Auth Service configs.
-	IsInternalService(c context.Context, hostname string) (bool, error)
+	IsInternalService(ctx context.Context, hostname string) (bool, error)
 
 	// IsMember returns true if the given identity belongs to any of the groups.
 	//
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, groups []string) (bool, error)
+	IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error)
 
 	// CheckMembership returns groups from the given list the identity belongs to.
 	//
@@ -54,7 +55,7 @@ type DB interface {
 	// be different from the order in 'groups'.
 	//
 	// May return errors if underlying datastore has issues.
-	CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error)
+	CheckMembership(ctx context.Context, id identity.Identity, groups []string) ([]string, error)
 
 	// HasPermission returns true if the identity has the given permission in the
 	// realm.
@@ -67,14 +68,14 @@ type DB interface {
 	//
 	// Returns an error only if the check itself failed due to a misconfiguration
 	// or transient issues. This should usually result in an Internal error.
-	HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error)
+	HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error)
 
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//
 	// Returns (nil, nil) if the given signer is not trusted.
 	//
 	// Returns errors (usually transient) if the bundle can't be fetched.
-	GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error)
+	GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error)
 
 	// GetWhitelistForIdentity returns name of the IP whitelist to use to check
 	// IP of requests from given `ident`.
@@ -82,24 +83,34 @@ type DB interface {
 	// It's used to restrict access for certain account to certain IP subnets.
 	//
 	// Returns ("", nil) if `ident` is not IP restricted.
-	GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error)
+	GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error)
 
 	// IsInWhitelist returns true if IP address belongs to given named
 	// IP whitelist.
 	//
 	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 	// empty. May return errors if underlying datastore has issues.
-	IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error)
+	IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error)
 
 	// GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
 	//
 	// Returns an error if the DB implementation is not using an auth service.
-	GetAuthServiceURL(c context.Context) (string, error)
+	GetAuthServiceURL(ctx context.Context) (string, error)
 
 	// GetTokenServiceURL returns root URL ("https://<host>") of the token server.
 	//
 	// Returns an error if the DB implementation doesn't know how to retrieve it.
 	//
 	// Returns ("", nil) if the token server URL is not configured.
-	GetTokenServiceURL(c context.Context) (string, error)
+	GetTokenServiceURL(ctx context.Context) (string, error)
+
+	// GetRealmData returns data attached to a realm.
+	//
+	// Falls back to the "@root" realm if `realm` doesn't exist. Returns nil if
+	// the root realm doesn't exist either, which means that either project
+	// doesn't exist or it has no realms.cfg file.
+	//
+	// Returns an error only if the check itself failed due to a misconfiguration
+	// or transient issues. This should usually result in an Internal error.
+	GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error)
 }

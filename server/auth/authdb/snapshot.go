@@ -313,3 +313,9 @@ func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
 func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
 	return db.tokenServiceURL, nil
 }
+
+// GetRealmData returns data attached to a realm.
+func (db *SnapshotDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	// TODO(vadimsh): Implement.
+	return &protocol.RealmData{}, nil
+}

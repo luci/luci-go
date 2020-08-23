@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -32,48 +33,52 @@ var errNotImplementedInDev = errors.New("this feature is not available in develo
 // Must not be used for real production applications.
 type DevServerDB struct{}
 
-func (DevServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
+func (DevServerDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
 	return true, nil
 }
 
-func (DevServerDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+func (DevServerDB) IsInternalService(ctx context.Context, hostname string) (bool, error) {
 	return false, nil
 }
 
-func (DevServerDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+func (DevServerDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
 	if len(groups) == 0 {
 		return false, nil
 	}
 	return id.Kind() != identity.Anonymous, nil
 }
 
-func (DevServerDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
+func (DevServerDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) ([]string, error) {
 	if id.Kind() == identity.Anonymous {
 		return nil, nil
 	}
 	return groups, nil
 }
 
-func (DevServerDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
+func (DevServerDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	return id.Kind() != identity.Anonymous, nil
 }
 
-func (DevServerDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+func (DevServerDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errNotImplementedInDev
 }
 
-func (DevServerDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+func (DevServerDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-func (DevServerDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+func (DevServerDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
 	return false, nil
 }
 
-func (DevServerDB) GetAuthServiceURL(c context.Context) (string, error) {
+func (DevServerDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 	return "", errNotImplementedInDev
 }
 
-func (DevServerDB) GetTokenServiceURL(c context.Context) (string, error) {
+func (DevServerDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	return "", errNotImplementedInDev
+}
+
+func (DevServerDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	return &protocol.RealmData{}, nil
 }
