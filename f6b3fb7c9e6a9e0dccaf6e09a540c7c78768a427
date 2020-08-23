@@ -16,6 +16,143 @@
       "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ca20e27e_358bdc49",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "i scratched the surface. This CL is very large and hard to review.",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c589112_1852da50",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "range": {
+        "startLine": 45,
+        "startChar": 56,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa6bc2f3_30f4139b",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "are you sure we will not add more config params, besides lim? if so, that would be breaking changes. normally Go code uses structs to make this more flexible.\n\ni also suspect that if that\u0027s done, then this func can be simplified. It is trying to do a lot of things right now.",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32b881c0_181c9279",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "did you mean sinkFn?\n\nstepping back, why does func has to return it? the sinkFn is the same as the only the client provided. \n\nactually same thoughts apply to the build: can we generalize this into a func CurrentBuild() which returns a copy of the current state?\n\ni think this way, these orthogonal aspects wouldn\u0027t be coupled",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e8cda6c_31dbd7fb",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "should this be documented? it is not clear from the doc that sendFn might be nil\n\nalternatively, should we always return a non-nil func?",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bc3a84b_ab4355d7",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "withBuild?\n\nfor consistency",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 8
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d777853_4e94ee6e",
+        "filename": "luciexe/exe/errors.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-23T18:09:28Z",
+      "side": 1,
+      "message": "timeout corresponds to INFRA_FAILURE\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/swarming.py;l\u003d838?q\u003dcr-buildbucket%2Fswarming.p",
+      "range": {
+        "startLine": 108,
+        "startChar": 16,
+        "endLine": 108,
+        "endChar": 31
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
