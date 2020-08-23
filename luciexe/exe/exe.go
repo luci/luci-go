@@ -19,82 +19,58 @@ import (
 	"compress/zlib"
 	"context"
 	"flag"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"sync"
+	"runtime/debug"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"golang.org/x/time/rate"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
 )
 
-const (
-	// ArgsDelim separates args for user program from the args needed by this
-	// luciexe wrapper (e.g. `--output` flag). All args provided after the
-	// first ArgsDelim will passed to user program.
-	ArgsDelim = "--"
-)
-
-// BuildSender is a function which may be called within the callback of Run to
-// update this program's Build state.
-//
-// This function is bound to the Build message given to the `main` callback of
-// Run.
-//
-// Panics if it cannot send the Build (which is never expected in normal
-// operation).
-type BuildSender func()
-
-// InfraErrorTag should be set on errors returned from the `main` callback of
-// Run.
-//
-// Errors with this tag set will cause the overall build status to be
-// INFRA_FAILURE instead of FAILURE.
-var InfraErrorTag = errors.BoolTag{Key: errors.NewTagKey("infra_error")}
-
-// "bootstrap.Get"
-type bsg func() (*bootstrap.Bootstrap, error)
-
 // MainFn is the function signature you must implement in your callback to Run.
 //
 // Args:
 //  - ctx: The context will be canceled when the program receives the os
-//   Interrupt or SIGTERM (on unix) signal. The context also has standard go
-//   logging setup.
-//  - input: The initial Build state, as read from stdin. The build is not
-//   protected by a mutex of any sort, so the `MainFn` is responsible
-//   for protecting it if it can be modified from multiple goroutines.
-//  - userArgs: All command line arguments supplied after first `ArgsDelim`.
-//  - send: A send func which should be called after modifying the provided
-//   build. The BuildSender is synchronous and locked; it may only be called
-//   once at a time. It will marshal the current build, then send it. Writes
-//   to the build should be synchronized with calls to the BuildSender.
+//   Interrupt or SIGTERM (on unix) signal. The context has the following
+//   libraries enabled:
+//      * go.chromium.org/luci/common/logging
+//      * go.chromium.org/luci/common/system/environ
+//      * The Build modification functions in this package (i.e. everything
+//        enabled by SinkBuildUpdates).
+//  - build: The Build state, initialized with the Build read from stdin.
+//  - userArgs: All command line arguments supplied after first `--`.
 //
-// input.Output.Properties is initialized to an empty Struct so you can use
-// WriteProperties right away.
-type MainFn func(ctx context.Context, input *bbpb.Build, userargs []string, send BuildSender) error
+// Note: You MUST use the environment from `environ.FromCtx` when inspecting the
+// environment or launching subprocesses. In order to ensure this, the process
+// environment is cleared from the time that MainFn starts.
+type MainFn func(ctx context.Context, build *Build, userargs []string) error
 
 func splitArgs(args []string) ([]string, []string) {
 	for i, arg := range args {
-		if arg == ArgsDelim {
+		if arg == "--" {
 			return args[:i], args[i+1:]
 		}
 	}
 	return args, nil
 }
 
-func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
+func mkOutputHandler(ctx context.Context, exeArgs []string, build *Build) func() {
 	fs := flag.NewFlagSet(exeArgs[0], flag.ExitOnError)
 	outputFlag := luciexe.AddOutputFlagToSet(fs)
 	fs.Parse(exeArgs[1:])
@@ -102,6 +78,7 @@ func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
 		return nil
 	}
 	return func() {
+		build, _ := build.Detach(ctx)
 		if err := outputFlag.Write(build); err != nil {
 			panic(errors.Annotate(err, "writing final build").Err())
 		}
@@ -126,40 +103,35 @@ func buildFrom(in io.Reader, build *bbpb.Build) {
 	}
 }
 
-func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootstrapGet bsg) (BuildSender, func() error) {
-	ldClient, err := bootstrapGet()
-	if err != nil {
-		panic(errors.Annotate(err, "unable to make Logdog Client").Err())
+func mkLogdogSink(ctx context.Context, build *bbpb.Build, cfg *config) func(*bbpb.Build) {
+	if cfg.lim <= 0 {
+		return nil
 	}
 
 	cType := luciexe.BuildProtoContentType
-	if zlibLevel > 0 {
+	if cfg.zlibLevel > 0 {
 		cType = luciexe.BuildProtoZlibContentType
 	}
-	buildStream, err := ldClient.Client.NewDatagramStream(
+	buildStream, err := cfg.ldClient.NewDatagramStream(
 		ctx, luciexe.BuildProtoStreamSuffix,
 		streamclient.WithContentType(cType))
+
 	if err != nil {
 		panic(err)
 	}
 
-	// TODO(iannucci): come up with a better API for this?
-	var sendBuildMu sync.Mutex
 	var buf *bytes.Buffer
 	var z *zlib.Writer
 
-	if zlibLevel > 0 {
+	if cfg.zlibLevel > 0 {
 		buf = &bytes.Buffer{}
-		z, err = zlib.NewWriterLevel(buf, zlibLevel)
+		z, err = zlib.NewWriterLevel(buf, cfg.zlibLevel)
 		if err != nil {
 			panic(errors.Annotate(err, "unable to create zlib.Writer").Err())
 		}
 	}
 
-	return func() {
-		sendBuildMu.Lock()
-		defer sendBuildMu.Unlock()
-
+	return func(build *bbpb.Build) {
 		data, err := proto.Marshal(build)
 		if err != nil {
 			panic(errors.Annotate(err, "unable to marshal Build state").Err())
@@ -180,85 +152,119 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootst
 		if err := buildStream.WriteDatagram(data); err != nil {
 			panic(errors.Annotate(err, "unable to write Build state").Err())
 		}
-	}, buildStream.Close
+	}
 }
 
-// Run executes the `main` callback with a basic Context.
+// Run executes the `main` callback.
+//
+// To implement the luciexe protocol:
+//
+//   func main() {
+//     exe.Run(func(ctx context.Context, input *exe.Build, userArgs []string) error {
+//       ... do whatever you want here ...
+//       return nil // nil error indicates successful build.
+//     })
+//   }
 //
 // This calls os.Exit on completion of `main`, or panics if something went
-// wrong. If main panics, this is converted to an INFRA_FAILURE. If main returns
-// a non-nil error, this is converted to FAILURE, unless the InfraErrorTag is
-// set on the error (in which case it's converted to INFRA_FAILURE).
-func Run(main MainFn, options ...Option) {
-	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), os.Args, bootstrap.Get, options, main))
+// wrong.
+//
+// If main panics, this is converted to an INFRA_FAILURE. Otherwise main's
+// returned error is converted to a build status with GetErrorStatus.
+func Run(main MainFn, options ...RunOption) {
+	options = append(options, func(c *config) {
+		if logging.GetFactory(c.ctx) == nil {
+			c.ctx = gologger.StdConfig.Use(c.ctx)
+		}
+		if c.ldClient == nil {
+			bs, err := bootstrap.GetFromEnv(environ.FromCtx(c.ctx))
+			if err != nil {
+				panic(errors.Annotate(err, "unable to initialize logdog client").Err())
+			}
+			c.ldClient = bs.Client
+		}
+	})
+
+	os.Exit(runImpl(os.Args, options, main))
 }
 
-func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
-	if build.SummaryMarkdown != "" {
-		build.SummaryMarkdown += "\n\n"
+func runImpl(args []string, opts []RunOption, main MainFn) int {
+	cfg := &config{
+		ctx: environ.With(context.Background(), environ.System()),
+
+		lim: rate.Every(time.Second),
 	}
-	build.SummaryMarkdown += fmt.Sprintf("Final %s: %s", flavor, errlike)
-}
+	os.Clearenv()
 
-func runCtx(ctx context.Context, args []string, bootstrapGet bsg, opts []Option, main MainFn) int {
-	cfg := &config{}
 	for _, o := range opts {
 		if o != nil {
 			o(cfg)
 		}
 	}
+	ctx := cfg.ctx
+
 	exeArgs, userArgs := splitArgs(args)
 
 	build := &bbpb.Build{}
-	if handleFn := mkOutputHandler(exeArgs, build); handleFn != nil {
+	buildFrom(os.Stdin, build)
+
+	sinkFn := mkLogdogSink(ctx, build, cfg)
+
+	ctx, buildObj := SinkBuildUpdates(ctx, build, cfg.ldClient, cfg.lim, sinkFn)
+	defer func() {
+		// one final send; this ensures that the build is sent with a finalized
+		// Status. mkLogdogSink generates sinkFn so that it will do one final send
+		// when the context is canceled.
+		if _, sendFn := buildObj.Detach(ctx); sendFn != nil {
+			sendFn()
+		}
+	}()
+
+	if handleFn := mkOutputHandler(ctx, exeArgs, buildObj); handleFn != nil {
 		defer handleFn()
 	}
 
-	buildFrom(os.Stdin, build)
-	sendBuild, closer := mkBuildStream(ctx, build, cfg.zlibLevel, bootstrapGet)
-	defer func() {
-		if err := closer(); err != nil {
-			panic(err)
-		}
-	}()
-	defer sendBuild()
-
-	return runUserCode(ctx, build, userArgs, sendBuild, main)
+	return runUserCode(ctx, buildObj, userArgs, main)
 }
 
 // runUserCode should convert all user code errors/panic's into non-panicing
 // state in `build`.
-func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, sendBuild BuildSender, main MainFn) (retcode int) {
+func runUserCode(ctx context.Context, build *Build, userArgs []string, main MainFn) (retcode int) {
+	finalize := func(err error) {
+		b, _ := build.Detach(ctx)
+		if protoutil.IsEnded(b.Status) {
+			panic(errors.New("finalize called on finished Build"))
+		}
+		b.Status, b.StatusDetails = GetErrorStatus(err)
+		b.EndTime = google.NewTimestamp(clock.Now(ctx))
+	}
+
 	defer func() {
 		if errI := recover(); errI != nil {
 			retcode = 2
-			build.Status = bbpb.Status_INFRA_FAILURE
-			appendError(build, "panic", errI)
+
+			finalize(errors.New("panic", StatusInfraFailure))
+
 			logging.Errorf(ctx, "main function paniced: %s", errI)
 			if err, ok := errI.(error); ok {
 				errors.Log(ctx, err)
 			}
+			logging.Errorf(ctx, "original traceback: %s", debug.Stack())
 		}
 	}()
 
 	cCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	signals.HandleInterrupt(cancel)
-	if err := main(cCtx, build, userArgs, sendBuild); err != nil {
-		if InfraErrorTag.In(err) {
-			build.Status = bbpb.Status_INFRA_FAILURE
-			appendError(build, "infra error", err)
-		} else {
-			build.Status = bbpb.Status_FAILURE
-			appendError(build, "error", err)
-		}
+
+	err := main(cCtx, build, userArgs)
+	finalize(err)
+
+	if err != nil {
 		logging.Errorf(ctx, "main function failed: %s", err)
 		errors.Log(ctx, err)
 		retcode = 1
-	} else {
-		if !protoutil.IsEnded(build.Status) {
-			build.Status = bbpb.Status_SUCCESS
-		}
 	}
+
 	return
 }
