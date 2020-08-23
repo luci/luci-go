@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98bbeeb1_72e804f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T05:29:02Z",
+      "side": 1,
+      "message": "PTAL (when you have the chance, for obvious reasons). I\u0027ve cleared previous +1\u0027s since this has diverged a lot from the initial patchset, based on discussions in the Recipe Engine Development chat.\n\nI think this can serve as a reasonable basis for writing python-free recipes in Go. Broad reviewer list to let various interested parties peek at the APIs, please add others who you know may be interested.\n\nNote that this only covers concurrency-safe manipulation of the Build message, including logging streams. This is intentionally light (even though the implementation looks a bit exciting).\n\nFor a full \"recipes\" effort, I think we\u0027ll also want to lay down some conventions about how modules should be initialized from properties, how modules should implement fakes, etc. I have some ideas, but I think this will provide value in the meantime.",
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
