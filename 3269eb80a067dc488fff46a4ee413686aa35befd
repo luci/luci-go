@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "082e4619_2c93ef8f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-23T21:36:23Z",
+      "side": 1,
+      "message": "PTAL, though I find it suspicious that we don\u0027t have this already...",
+      "revId": "3269eb80a067dc488fff46a4ee413686aa35befd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
