@@ -15,12 +15,16 @@
 package build
 
 import (
+	"context"
+	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
 )
 
@@ -30,6 +34,12 @@ import (
 // is also partially available through the context via functions like `WithStep`
 // and `ModifyProperties`.
 type State struct {
+	// stepNames contains disambiguation state for duplicate names; Each FULL
+	// name, as requested by the user, is the key, and the number of times that
+	// full name was requested is the value.
+	stepNamesMu sync.Mutex
+	stepNames   map[string]int
+
 	// modMu is held in Shared mode while the user is modifying `build`, and held
 	// in Exclusive mode while the Build is being cloned for sending.
 	modMu sync.RWMutex
@@ -92,6 +102,51 @@ func (s *State) modLock(cb func() error) error {
 	}
 	defer s.signalNewVersionLocked()
 	return cb()
+}
+
+// enterDisambiguatedNamespace updates ctx with the new step namespace implied
+// by `name`.
+//
+// If `name` would lead to a duplicate namespace, this will append ` (N)` to
+// `name` to disambiguate it.
+//
+// This will continue to increment N until it finds an unused namespace.
+//
+// Panics if `name` contains "|" (see WithStep which checks for this).
+func (s *State) enterDisambiguatedNamespace(ctx context.Context, name string) (string, context.Context) {
+	if strings.Contains(name, "|") {
+		panic(errors.Reason(
+			"precondition violated: enterDisambiguatedNamespace called with `|` in `name`: %q",
+			name).Err())
+	}
+
+	baseName := name
+	if curNS := getNS(ctx); curNS != "" {
+		baseName = fmt.Sprintf("%s|%s", curNS, name)
+	}
+
+	s.stepNamesMu.Lock()
+	defer s.stepNamesMu.Unlock()
+
+	var stepNS string
+	curNum := s.stepNames[baseName]
+
+	stepNS = baseName
+	for s.stepNames[stepNS] != 0 {
+		curNum++
+		stepNS = fmt.Sprintf("%s (%d)", baseName, curNum)
+	}
+
+	// reset stepNames[baseName] to the deduplication number we just figured out;
+	// No values less than curNum will work for the rest of the program.
+	s.stepNames[baseName] = curNum
+
+	// Claim the final computed name, even if it was the result of deduplication
+	// as well...  Otherwise users could manually conflict with one of our
+	// deduplicated names.
+	s.stepNames[stepNS]++
+
+	return stepNS, withNS(ctx, stepNS)
 }
 
 // View is a struct containing the modifiable portions of a Build.

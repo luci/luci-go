@@ -113,7 +113,12 @@ func TestBuild(t *testing.T) {
 				return nil
 			})
 
-			return nil
+			return WithStep(ctx, "some name", func(ctx context.Context, s *Step) error {
+				return s.Modify(ctx, func(sv *StepView) error {
+					sv.SummaryMarkdown = "herp derp"
+					return nil
+				})
+			})
 		})
 		So(err, ShouldBeNil)
 
@@ -122,6 +127,15 @@ func TestBuild(t *testing.T) {
 			Status:          bbpb.Status_SUCCESS,
 			EndTime:         ptime,
 			SummaryMarkdown: "hello",
+			Steps: []*bbpb.Step{
+				{
+					Name:            "some name",
+					SummaryMarkdown: "herp derp",
+					StartTime:       ptime,
+					EndTime:         ptime,
+					Status:          bbpb.Status_SUCCESS,
+				},
+			},
 		})
 
 	})

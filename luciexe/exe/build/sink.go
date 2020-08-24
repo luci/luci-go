@@ -124,9 +124,10 @@ func (s Sink) Use(ctx context.Context, cb func(context.Context, *State) error) (
 	}
 
 	build := &State{
-		build:   proto.Clone(initial).(*bbpb.Build),
-		initial: proto.Clone(initial).(*bbpb.Build),
-		sendFn:  s.SendFunc,
+		build:     proto.Clone(initial).(*bbpb.Build),
+		initial:   proto.Clone(initial).(*bbpb.Build),
+		stepNames: map[string]int{},
+		sendFn:    s.SendFunc,
 	}
 	build.sender = s.makeSender(ctx, build)
 
