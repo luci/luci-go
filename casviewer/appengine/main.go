@@ -15,7 +15,11 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/logging"
+	"fmt"
+
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 )
@@ -23,9 +27,26 @@ import (
 func main() {
 	server.Main(nil, nil, func(srv *server.Server) error {
 
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			logging.Debugf(c.Context, "Hello world")
-			c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
+		srv.Routes.GET("/", router.MiddlewareChain{}, func(ctx *router.Context) {
+			// request handler part
+			// TODO: retrieve instance from the request URL.
+			inst := "projects/chromium-swarm-dev/instances/default_instance"
+			// TODO: retrieve digest from the request URL.
+			d := "111aa690b079d1503c73812e66136e76a86bc86077ebdac0f72bc7def5986f2f/84"
+			// TODO: configure token server host in settings.cfg.
+			tHost := "luci-token-server-dev.appspot.com"
+			rName := fmt.Sprintf("%s/blobs/%s", inst, d)
+
+			// Application logic begin
+			c, _ := cas.NewClient(ctx.Context, inst, tHost, true)
+			b, _ := c.ReadBytes(ctx.Context, rName)
+			dir := &repb.Directory{}
+			_ = proto.Unmarshal(b, dir)
+			// Application logic end
+
+			// View part.
+			// TODO: render html with the retrieved directory.
+			ctx.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
 		})
 
 		return nil
