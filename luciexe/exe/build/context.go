@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	stateKey     = "holds a *State"
-	namespaceKey = "holds the current step namespace as a string"
+	stateKey      = "holds a *State"
+	namespaceKey  = "holds the current step namespace as a string"
+	propertyNSKey = "holds a []string"
 )
 
 func getNS(ctx context.Context) string {
@@ -44,4 +45,20 @@ func getState(ctx context.Context) *State {
 
 func setState(ctx context.Context, b *State) context.Context {
 	return context.WithValue(ctx, &stateKey, b)
+}
+
+func getPropertyNS(ctx context.Context) []string {
+	curNS, ok := ctx.Value(&propertyNSKey).([]string)
+	if !ok {
+		return nil
+	}
+	return append([]string(nil), curNS...)
+}
+
+func addPropertyNS(ctx context.Context, toks []string) context.Context {
+	if len(toks) == 0 {
+		return ctx
+	}
+
+	return context.WithValue(ctx, &propertyNSKey, append(getPropertyNS(ctx), toks...))
 }
