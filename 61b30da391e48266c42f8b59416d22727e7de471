@@ -1,0 +1,388 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68cb15ca_b1133ef9",
+        "filename": "luciexe/exe/build/context.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "nit: is state.go a better place for this? would be closer to the things this is related to\n\notherwise might grow into a bunch of functions that for not strongly related types",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44a40136_eefffcdf",
+        "filename": "luciexe/exe/build/errors.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "is there a reason why this is a type, as opposed to two global funcs? we have only one instance of this type and it is never exposed outside of this package",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 18
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "166d93b5_27380944",
+        "filename": "luciexe/exe/build/errors.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "i am worried that this has the same problem as grpcutil.Tag, which has place only for the status, but cannot contain status details. As a result, status and status details might be coming from different channels and therefore not guaranteed to correspond to each other. This is what inspired me to create appstatus package, see this description: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1984537/11//COMMIT_MSG#10\n\nin buildbucket context this means that status and status details are coming from different channels.\nAs a user of this package, I am unable to tag a error with INFRA_FAILURE and details that aren\u0027t expressible via specific errors\n\nso i wonder if the tag value should be a struct with both status and status details:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/appstatus/status.go;l\u003d57?q\u003dappstatus",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec979e14_df8b8165",
+        "filename": "luciexe/exe/build/errors.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "panicked?\nhttps://www.google.com/search?q\u003dpaniced\u0026oq\u003dpaniced\u0026aqs\u003dchrome..69i57j0l5j69i61l2.3932j1j4\u0026sourceid\u003dchrome\u0026ie\u003dUTF-8",
+      "range": {
+        "startLine": 133,
+        "startChar": 46,
+        "endLine": 133,
+        "endChar": 53
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fb20435_91745a74",
+        "filename": "luciexe/exe/build/sink.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "do you mean returns nil?",
+      "range": {
+        "startLine": 113,
+        "startChar": 11,
+        "endLine": 113,
+        "endChar": 18
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5afdf84b_92fc30d0",
+        "filename": "luciexe/exe/build/sink.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "nit: panicked",
+      "range": {
+        "startLine": 118,
+        "startChar": 43,
+        "endLine": 118,
+        "endChar": 51
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "625f97fc_e55f06bc",
+        "filename": "luciexe/exe/build/sink.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "panicked",
+      "range": {
+        "startLine": 139,
+        "startChar": 38,
+        "endLine": 139,
+        "endChar": 45
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "929c3468_155bf4d7",
+        "filename": "luciexe/exe/build/sink.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "why is this responsibility of Sink.Use() as opposed to the caller? (SRP)\n\ni suspect the reason is that Use() is called from mkRawRun and mkRun. It makes sense for them, but given that this is a public func, I am not sure it makes sense for anyone else. Should we create a new private func that does this and calls Use(), and use that private func in mkRawRun/mkRun?",
+      "range": {
+        "startLine": 138,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 3
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c6a95f6_0e32f0de",
+        "filename": "luciexe/exe/build/state.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "Functions of State type never call this func. It is called only by Sink. Why is it needed here?",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1dd6564_cf7cf91b",
+        "filename": "luciexe/exe/build/state.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "we hold two locks at the same time here. I think this increases the risk of deadlocks, but it is totally unavoidable. Also not sure we want to signal new ver if cb failed?\n\nwhy not\n\n  s.modMu.RLock()\n  if s.detached {\n    s.modMu.RUnlock()\n    return ErrBuildDetached\n  }\n  err :\u003d cb()\n  s.modMu.RUnlock()\n\n  if err !\u003d nil {\n     s.signalNewVersionLocked()\n  }",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05823bc3_30d36089",
+        "filename": "luciexe/exe/doc.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "no longer exists",
+      "range": {
+        "startLine": 53,
+        "startChar": 21,
+        "endLine": 53,
+        "endChar": 37
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c865fc20_ea865a1d",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "what if a user, for whatever reason, already has a context with some stuff. I think this interface assumes that the user doesn\u0027t.\n\nwhy not accept context from the user?\n  exe.Run(context.Background(), ...",
+      "range": {
+        "startLine": 156,
+        "startChar": 20,
+        "endLine": 156,
+        "endChar": 40
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0efc854_99767713",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "range": {
+        "startLine": 156,
+        "startChar": 2,
+        "endLine": 156,
+        "endChar": 60
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "987eeaf0_302638d5",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "why is this needed? looks quite invasive. Is this documented?",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdb05e80_1296e29a",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "this loses the error message. do we want to print/log it?",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "330205d0_4d8a047f",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "why not accept context in Run()",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "023b972b_a2f1c5a0",
+        "filename": "luciexe/exe/raw_run.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "defer?",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 3
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b9c1dc0_1a65b44c",
+        "filename": "luciexe/exe/run.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "defer?",
+      "range": {
+        "startLine": 34,
+        "startChar": 3,
+        "endLine": 34,
+        "endChar": 4
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

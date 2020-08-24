@@ -228,6 +228,30 @@
     },
     {
       "key": {
+        "uuid": "86ba810c_bfa36586",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "i meant consistent with \"withNS\" 4 lines above\n\nlooks like I placed this comment in a wrong place, I meant L46",
+      "parentUuid": "3f075115_00c5ee58",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 8
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d777853_4e94ee6e",
         "filename": "luciexe/exe/errors.go",
         "patchSetId": 14
@@ -263,6 +287,30 @@
       "side": 1,
       "message": "You\u0027re right that FAILURE and INFRA_FAILURE both make more sense than CANCELED for DeadlineExceeded. I don\u0027t think swarming\u0027s expired condition maps onto the context in the code there though.\n\nIf the timeout is set to prevent, say, a test from taking too long, then FAILURE would be more appropriate than INFRA_FAILURE.\n\nI would prefer to default to FAILURE than INFRA_FAILURE though.",
       "parentUuid": "0d777853_4e94ee6e",
+      "range": {
+        "startLine": 108,
+        "startChar": 16,
+        "endLine": 108,
+        "endChar": 31
+      },
+      "revId": "f6b3fb7c9e6a9e0dccaf6e09a540c7c78768a427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa146ea3_0220f5cf",
+        "filename": "luciexe/exe/errors.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T17:55:45Z",
+      "side": 1,
+      "message": "if it is a test, then sure, but it is not necessarily a test. Builds also make RPCs, sometimes goma times out, often sub-tasks expire, etc. All of this are infra failures (not a problem with code-under-test). Given that we are choosing the default, I still feel INFRA_FAILURE is a safer choice, and the choice of FAILURE should be explicit, i.e. a test wrapper must deliberately analyze what went wrong and choose appropriate status",
+      "parentUuid": "abae084b_95bf2b4b",
       "range": {
         "startLine": 108,
         "startChar": 16,
