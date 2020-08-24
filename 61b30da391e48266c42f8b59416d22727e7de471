@@ -526,6 +526,30 @@
     },
     {
       "key": {
+        "uuid": "e8607acd_f5985a47",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T21:02:13Z",
+      "side": 1,
+      "message": "\u003e more like a library and bit less like a framework :)\n\n+1 to this. This is actually what I wrote in a draft, but didn\u0027t send out.\n\n\u003e unlikely to care about concurrency\n\ndoes this mean that it is better to decouple build-sending from concurrency-build-mutations? e.g. the sending part could assume that all mutations are synchronized, and a separate helper struct could implement smart synchronization\n\nthis is an example of my general concern that orthogonal things get coupled unnecessarily",
+      "parentUuid": "e703630c_9eb63e4c",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "023b972b_a2f1c5a0",
         "filename": "luciexe/exe/raw_run.go",
         "patchSetId": 17
