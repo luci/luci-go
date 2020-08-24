@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/exe/build"
+	"go.chromium.org/luci/luciexe/exe/proptools"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -217,9 +218,14 @@ func TestExe(t *testing.T) {
 				outFile := filepath.Join(tdir, "out.pb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
-					return s.Modify(func(bv *build.View) error {
+					s.Modify(func(bv *build.View) error {
 						bv.SummaryMarkdown = "Hi."
 						return nil
+					})
+					return build.ModifyProperties(ctx, func(props *structpb.Struct) error {
+						return proptools.WriteProperties(props, map[string]interface{}{
+							"some": "thing",
+						})
 					})
 				}))
 				So(exitCode, ShouldEqual, 0)
@@ -227,14 +233,20 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"some": {Kind: &structpb.Value_StringValue{
+									StringValue: "thing",
+								}},
+							},
+						},
 					},
 					EndTime: ptime,
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"B\r\b\xf2\x87\xe7Ę\xfe\xff\xff\xff\x01\x10\a`\f\x82\x01\x02\n\x00\xa2\x01\x03Hi.")
+					"B\r\b\xf2\x87\xe7Ę\xfe\xff\xff\xff\x01\x10\a`\f\x82\x01\x13\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\xa2\x01\x03Hi.")
 			})
 
 			Convey(`textpb`, func() {

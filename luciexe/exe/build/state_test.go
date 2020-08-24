@@ -21,12 +21,14 @@ import (
 	"sync"
 	"testing"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/time/rate"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/luciexe/exe/proptools"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -97,6 +99,23 @@ func TestBuild(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(cheats.Modify(nil), ShouldEqual, ErrBuildDetached)
+		})
+
+		Convey(`modify properties`, func() {
+			lastBuild, _, err := sink.Use(ctx, func(ctx context.Context, state *State) error {
+				return ModifyProperties(ctx, func(props *structpb.Struct) error {
+					return proptools.WriteProperties(props, map[string]interface{}{
+						"cool": "stuff",
+					})
+				})
+			})
+			So(err, ShouldBeNil)
+
+			So(lastBuild.Output.Properties, ShouldResembleProto, &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"cool": {Kind: &structpb.Value_StringValue{StringValue: "stuff"}},
+				},
+			})
 		})
 
 	})
