@@ -35,6 +35,32 @@ func TestDetails(t *testing.T) {
 	t.Parallel()
 
 	Convey("Details", t, func() {
+		Convey("NewBuildStepsFromBuildProto", func() {
+			ctx := memory.Use(context.Background())
+			datastore.GetTestable(ctx).AutoIndex(true)
+			datastore.GetTestable(ctx).Consistent(true)
+			Convey("with nil build", func() {
+				_, err := NewBuildStepsFromBuildProto(ctx, nil)
+				So(err, ShouldErrLike, "build cannot be nil")
+			})
+
+			Convey("with an ID", func() {
+				b := &pb.Build{
+					Id: 123,
+					Steps: []*pb.Step{
+						{
+							Name: "step",
+						},
+					},
+				}
+				bs, err := NewBuildStepsFromBuildProto(ctx, b)
+				So(err, ShouldBeNil)
+
+				// verify that the ID of the input Build is kept.
+				So(bs.Build.LastTok().IntID, ShouldEqual, 123)
+			})
+		})
+
 		Convey("BuildSteps", func() {
 			ctx := memory.Use(context.Background())
 			datastore.GetTestable(ctx).AutoIndex(true)
@@ -142,7 +168,7 @@ func TestDetails(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					s := &BuildSteps{}
-					So(s.FromProto(ctx, []*pb.Step{
+					So(s.FromProto([]*pb.Step{
 						{
 							Name: "step",
 						},
