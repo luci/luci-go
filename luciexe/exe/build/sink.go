@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 // Sink contains all options to create a "build sink" which will absorb updates
@@ -42,6 +43,12 @@ type Sink struct {
 	//
 	// `nil` is equivalent to an empty Build.
 	InitialBuild *bbpb.Build
+
+	// LogdogClient is the client to use for all Log functions' underlying
+	// io streams.
+	//
+	// `nil` is the equivalent of streamclient.New("null", "")
+	LogdogClient *streamclient.Client
 
 	// SendLimit is the maximum rate limit for invocations to SendFunc.
 	//
@@ -128,8 +135,17 @@ func (s Sink) Use(ctx context.Context, cb func(context.Context, *State) error) (
 		initial:   proto.Clone(initial).(*bbpb.Build),
 		stepNames: map[string]int{},
 		sendFn:    s.SendFunc,
+		ldClient:  s.LogdogClient,
 	}
 	build.sender = s.makeSender(ctx, build)
+
+	if build.ldClient == nil {
+		var err error
+		build.ldClient, err = streamclient.New("null", "")
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	if build.build.Output == nil {
 		build.build.Output = &bbpb.Build_Output{}
