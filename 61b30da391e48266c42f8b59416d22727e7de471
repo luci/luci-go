@@ -340,6 +340,30 @@
     },
     {
       "key": {
+        "uuid": "f219a6e2_38d66517",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:07:02Z",
+      "side": 1,
+      "message": "My feeling is that the vast majority of uses will not need to supply anything in the context which is consumed by Run; If they need to install additional things, they\u0027ll do it inside of their main function. This option is provided as an escape hatch in case the user really wants to mock clock, logging or something else.",
+      "parentUuid": "330205d0_4d8a047f",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "023b972b_a2f1c5a0",
         "filename": "luciexe/exe/raw_run.go",
         "patchSetId": 17
