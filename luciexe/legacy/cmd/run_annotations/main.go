@@ -42,7 +42,7 @@ func check(err error) {
 }
 
 func main() {
-	exe.Run(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild exe.BuildSender) error {
+	exe.RunRaw(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild func()) error {
 		if len(userArgs) == 0 {
 			return errors.New("No arguments were provided")
 		}
