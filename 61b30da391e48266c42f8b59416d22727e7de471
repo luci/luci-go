@@ -502,6 +502,30 @@
     },
     {
       "key": {
+        "uuid": "e703630c_9eb63e4c",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-24T20:29:51Z",
+      "side": 1,
+      "message": "I do agree that I\u0027d be happier with a leaner interface.\n\nAs an example, I implemented the Build update for cros_test_platform.execute in https://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/cmd/cros_test_platform/internal/execution/build/build.go\n\nGranted, that implementation \n[1] doesn\u0027t have concurrency at all\n[2] doesn\u0027t create any logdog streams.\n\nNow, I do want to add [2], but possibly don\u0027t ever want [1].\n\nIn that situation, I\u0027d be happier with a leaner library that lets me do [2] without a lot of extra cost (in terms of complexity of the interface primarily, but also the complexity of the implementation to some extent, \u0027cause all abstractions are leaky).\n\ne.g., I\u0027m unlikely to care about:\n- concurrency\n  - corollary: fine grained locking -- if I do add concurrency, it\u0027s like to be such that simply locking the whole Build message and updating a bunch of steps at once is adequate. Simpler concurrency implementation is likely to be easier to reason about / less likely to be buggy.\n- any kind of property namespaces\n\n--\n\nNow, I\u0027m in favor of _some_ higher abstraction library than currently exists. So whatever shape this library lands in, I\u0027d be interested in moving to that for my implementation. But I\u0027d be happier with something a bit more like a library and bit less like a framework :)",
+      "parentUuid": "6a156049_7eed6dbe",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "023b972b_a2f1c5a0",
         "filename": "luciexe/exe/raw_run.go",
         "patchSetId": 17
