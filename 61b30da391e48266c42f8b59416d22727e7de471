@@ -550,6 +550,30 @@
     },
     {
       "key": {
+        "uuid": "bf923b06_8453d83e",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T21:16:04Z",
+      "side": 1,
+      "message": "Ok it looks like this comment has turned into a discussion of unrelated things. Let\u0027s sync in the recipe dev chatroom.",
+      "parentUuid": "e8607acd_f5985a47",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "023b972b_a2f1c5a0",
         "filename": "luciexe/exe/raw_run.go",
         "patchSetId": 17
