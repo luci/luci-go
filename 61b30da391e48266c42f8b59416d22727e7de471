@@ -378,6 +378,24 @@
     },
     {
       "key": {
+        "uuid": "88f1969a_5ca6587c",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T20:14:21Z",
+      "side": 1,
+      "message": "Ah, though we should only do this for Run, not RawRun",
+      "parentUuid": "0062fd46_b41b3c4d",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bdb05e80_1296e29a",
         "filename": "luciexe/exe/exe.go",
         "patchSetId": 17
