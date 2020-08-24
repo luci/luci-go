@@ -17,6 +17,8 @@ package build
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -26,6 +28,8 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	ldtypes "go.chromium.org/luci/logdog/common/types"
 )
 
 // State tracks the state of the current buildbucket Build in the context.
@@ -52,6 +56,7 @@ type State struct {
 	// under Exclusive mode.
 	version int64
 
+	logsMu   sync.Mutex // protects `build.Outtup.Logs` (only for adding logs)
 	outputMu sync.Mutex // protects `View` fields
 	propsMu  sync.Mutex // protects `build.Output.Properties`
 	stepsMu  sync.Mutex // protects `build.steps` (only for adding steps)
@@ -62,10 +67,78 @@ type State struct {
 	// initial is an immutable copy of the original Build.
 	initial *bbpb.Build
 
+	// Logdog client to sink log data to.
+	ldClient *streamclient.Client
+
 	// sendFn is the user-provided function which should 'sink' updates to
 	// `build`. The sender loop in SinkBuildUpdates will invoke this function with
 	// clones of `build` when there are new versions of `build` to send.
 	sendFn func(*bbpb.Build) error
+}
+
+// ldPrep adds a new Log to this Build's Output.Logs and returns a the
+// build-unique logdog streamname allocated for this log.
+func (s *State) ldPrep(name string) (ldtypes.StreamName, error) {
+	return addUniqueLog(-1, name, func(cb func(*[]*bbpb.Log) error) error {
+		return s.modLock(func() error {
+			s.logsMu.Lock()
+			defer s.logsMu.Unlock()
+			return cb(&s.build.Output.Logs)
+		})
+	})
+}
+
+// Log attaches a new text-mode log to the build with the given name.
+//
+// Caller must close the log when they're done with it.
+func (s *State) Log(ctx context.Context, name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	fullName, err := s.ldPrep(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.ldClient.NewTextStream(ctx, fullName, opts...)
+}
+
+// LogFile is a convenience method to attach a new text-mode log to the build
+// with the given name and copy the contents of the file at `path` into it.
+func (s *State) LogFile(ctx context.Context, name string, path string, opts ...streamclient.Option) error {
+	out, err := s.Log(ctx, name, opts...)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	in, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+// LogBinary attaches a new binary-mode log to the build with the given name.
+//
+// Caller must close the log when they're done with it.
+func (s *State) LogBinary(ctx context.Context, name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	fullName, err := s.ldPrep(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.ldClient.NewBinaryStream(ctx, fullName, opts...)
+}
+
+// LogDatagram attaches a new datagram-mode log to the build with the given
+// name.
+//
+// Caller must close the log when they're done with it.
+func (s *State) LogDatagram(ctx context.Context, name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+	fullName, err := s.ldPrep(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.ldClient.NewDatagramStream(ctx, fullName, opts...)
 }
 
 // InitialBuild returns a copy of the input build that this Build was created

@@ -26,6 +26,7 @@ func mkRun(main MainFn) runMiddle {
 	return func(ctx context.Context, cfg *config, initial *bbpb.Build, userArgs []string, sendFn func(*bbpb.Build) error) (*bbpb.Build, interface{}, error) {
 		return build.Sink{
 			InitialBuild: initial,
+			LogdogClient: cfg.ldClient,
 			SendLimit:    cfg.lim,
 			SendFunc:     sendFn,
 		}.Use(ctx, func(ctx context.Context, state *build.State) error {

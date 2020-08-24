@@ -17,6 +17,8 @@ package build
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -27,7 +29,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe/exe/proptools"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,8 +46,11 @@ func TestBuild(t *testing.T) {
 
 		ctx := context.Background()
 
+		client := streamclient.NewFake("u")
+
 		sink := Sink{
-			SendLimit: rate.Inf,
+			LogdogClient: client.Client,
+			SendLimit:    rate.Inf,
 			SendFunc: func(b *bbpb.Build) error {
 				sentBuild = b
 				return nil
@@ -179,6 +186,96 @@ func TestBuild(t *testing.T) {
 			})
 		})
 
+		Convey(`logs`, func() {
+			Convey(`text`, func() {
+				lastBuild, _, err := sink.Use(ctx, func(ctx context.Context, state *State) error {
+					l, err := state.Log(ctx, "cool_log")
+					So(err, ShouldBeNil)
+
+					fmt.Fprintf(l, "this is neat!\n")
+					fmt.Fprintf(l, "with some lines\n")
+					l.Close()
+
+					So(client.GetFakeData()["u/l/cool_log"].GetStreamData(),
+						ShouldResemble, "this is neat!\nwith some lines\n")
+					return nil
+				})
+				So(err, ShouldBeNil)
+
+				So(lastBuild.Output.Logs[0], ShouldResembleProto, &bbpb.Log{
+					Name: "cool_log",
+					Url:  "l/cool_log",
+				})
+			})
+
+			Convey(`binary`, func() {
+				lastBuild, _, err := sink.Use(ctx, func(ctx context.Context, state *State) error {
+					l, err := state.LogBinary(ctx, "cool_log")
+					So(err, ShouldBeNil)
+
+					fmt.Fprintf(l, "this is neat!\n")
+					fmt.Fprintf(l, "with some lines\n")
+					l.Close()
+
+					So(client.GetFakeData()["u/l/cool_log"].GetStreamData(),
+						ShouldResemble, "this is neat!\nwith some lines\n")
+					return nil
+				})
+				So(err, ShouldBeNil)
+
+				So(lastBuild.Output.Logs[0], ShouldResembleProto, &bbpb.Log{
+					Name: "cool_log",
+					Url:  "l/cool_log",
+				})
+			})
+
+			Convey(`file`, func() {
+				fname := filepath.Join(t.TempDir(), "some_file")
+				f, err := os.Create(fname)
+				So(err, ShouldBeNil)
+				fmt.Fprintf(f, "this is neat!\n")
+				fmt.Fprintf(f, "with some lines\n")
+				So(f.Close(), ShouldBeNil)
+
+				lastBuild, _, err := sink.Use(ctx, func(ctx context.Context, state *State) error {
+					So(state.LogFile(ctx, "a log", fname), ShouldBeNil)
+					So(client.GetFakeData()["u/l/0"].GetStreamData(),
+						ShouldResemble, "this is neat!\nwith some lines\n")
+					return nil
+				})
+				So(err, ShouldBeNil)
+
+				So(lastBuild.Output.Logs[0], ShouldResembleProto, &bbpb.Log{
+					Name: "a log",
+					Url:  "l/0",
+				})
+			})
+
+			Convey(`datagram`, func() {
+				lastBuild, _, err := sink.Use(ctx, func(ctx context.Context, state *State) error {
+					l, err := state.LogDatagram(ctx, "dgram")
+					So(err, ShouldBeNil)
+
+					l.WriteDatagram([]byte("this is neat!"))
+					l.WriteDatagram([]byte("with some datagrams"))
+					l.Close()
+
+					So(client.GetFakeData()["u/l/dgram"].GetDatagrams(), ShouldResemble, []string{
+						"this is neat!",
+						"with some datagrams",
+					})
+					return nil
+				})
+				So(err, ShouldBeNil)
+
+				So(lastBuild.Output.Logs[0], ShouldResembleProto, &bbpb.Log{
+					Name: "dgram",
+					Url:  "l/dgram",
+				})
+			})
+
+		})
+
 	})
 
 	Convey(`test nil build`, t, func() {
@@ -193,7 +290,23 @@ func TestBuild(t *testing.T) {
 				return nil
 			})
 
+			lf, err := state.Log(ctx, "extra_log")
+			So(err, ShouldBeNil)
+
+			_, err = lf.Write([]byte("this goes nowhere"))
+			So(err, ShouldBeNil)
+			So(lf.Close(), ShouldBeNil)
+
 			return WithStep(ctx, "some name", func(ctx context.Context, s *Step) error {
+				lf, err := s.Log(ctx, "extra_log")
+				So(err, ShouldBeNil)
+
+				_, err = lf.Write([]byte("this goes nowhere"))
+				So(err, ShouldBeNil)
+				So(lf.Close(), ShouldBeNil)
+
+				logging.Infof(ctx, "ignored")
+
 				return s.Modify(ctx, func(sv *StepView) error {
 					sv.SummaryMarkdown = "herp derp"
 					return nil
@@ -203,9 +316,13 @@ func TestBuild(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(lastBuild, ShouldResembleProto, &bbpb.Build{
-			Output:          &bbpb.Build_Output{},
-			Status:          bbpb.Status_SUCCESS,
-			EndTime:         ptime,
+			Status:  bbpb.Status_SUCCESS,
+			EndTime: ptime,
+			Output: &bbpb.Build_Output{
+				Logs: []*bbpb.Log{
+					{Name: "extra_log", Url: "l/extra_log"},
+				},
+			},
 			SummaryMarkdown: "hello",
 			Steps: []*bbpb.Step{
 				{
@@ -214,6 +331,10 @@ func TestBuild(t *testing.T) {
 					StartTime:       ptime,
 					EndTime:         ptime,
 					Status:          bbpb.Status_SUCCESS,
+					Logs: []*bbpb.Log{
+						{Name: "extra_log", Url: "s/0/l/extra_log"},
+						{Name: "log", Url: "s/0/l/log"},
+					},
 				},
 			},
 		})

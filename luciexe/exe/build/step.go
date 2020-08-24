@@ -16,6 +16,8 @@ package build
 
 import (
 	"context"
+	"io"
+	"os"
 	"strings"
 	"sync"
 
@@ -25,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	ldtypes "go.chromium.org/luci/logdog/common/types"
 )
 
 // Step tracks the state of a single Build step in this exe.
@@ -37,6 +41,7 @@ type Step struct {
 	build *State
 
 	outputMu sync.Mutex // protects everything except step.Logs
+	logsMu   sync.Mutex // protects step.Logs
 }
 
 // FullName returns the full step name, as it appears in Build.Steps.
@@ -48,6 +53,70 @@ func (s *Step) FullName() string {
 // is still SCHEDULED.
 func (s *Step) EnsureStarted(ctx context.Context) {
 	s.modLock(ctx, func() error { return nil })
+}
+
+// ldPrep adds a new Log to this Steps's Logs and returns a the build-unique
+// logdog streamname allocated for this log.
+func (s *Step) ldPrep(ctx context.Context, name string) (ldtypes.StreamName, error) {
+	return addUniqueLog(s.stepIdx, name, func(cb func(*[]*bbpb.Log) error) error {
+		return s.modLock(ctx, func() error {
+			s.logsMu.Lock()
+			defer s.logsMu.Unlock()
+			return cb(&s.step.Logs)
+		})
+	})
+}
+
+// Log attaches a new text-mode log to the step with the given name.
+//
+// Caller must close the log when they're done with it.
+func (s *Step) Log(ctx context.Context, name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	fullName, err := s.ldPrep(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return s.build.ldClient.NewTextStream(ctx, fullName, opts...)
+}
+
+// LogFile is a convenience method to attach a new text-mode log to the step
+// with the given name and copy the contents of the file at `path` into it.
+func (s *Step) LogFile(ctx context.Context, name string, path string, opts ...streamclient.Option) error {
+	out, err := s.Log(ctx, name, opts...)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	in, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+// LogBinary attaches a new binary-mode log to the step with the given name.
+//
+// Caller must close the log when they're done with it.
+func (s *Step) LogBinary(ctx context.Context, name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	fullName, err := s.ldPrep(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return s.build.ldClient.NewBinaryStream(ctx, fullName, opts...)
+}
+
+// LogDatagram attaches a new datagram-mode log to the step with the given name.
+//
+// Caller must close the log when they're done with it.
+func (s *Step) LogDatagram(ctx context.Context, name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+	fullName, err := s.ldPrep(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return s.build.ldClient.NewDatagramStream(ctx, fullName, opts...)
 }
 
 // StepView is a struct containing the modifiable portions of a Step.
@@ -161,9 +230,11 @@ func WithStep(ctx context.Context, name string, cb func(context.Context, *Step) 
 		return nil
 	})
 
-	// TODO(iannucci): logdog namespace
+	ctx = synthesizeLogdogNamespace(ctx, step.build.ldClient.Namespace(), step.stepIdx)
 
-	// TODO(iannucci): logging package
+	logFactory, closer := lazyLogger(step, fullNS)
+	ctx = logging.SetFactory(ctx, logFactory)
+	defer closer()
 
 	defer func() {
 		status, _ := GetErrorStatus(err)
