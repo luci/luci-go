@@ -96,11 +96,11 @@ func (o *orderedDict) keys() isolated.HexDigests {
 	return out
 }
 
-func (o *orderedDict) pop(key isolated.HexDigest) units.Size {
+func (o *orderedDict) pop(key isolated.HexDigest) (units.Size, bool) {
 	if e, hit := o.entries[key]; hit {
-		return o.removeElement(e).value
+		return o.removeElement(e).value, true
 	}
-	return 0
+	return 0, false
 }
 
 func (o *orderedDict) popOldest() (isolated.HexDigest, units.Size) {
@@ -122,15 +122,14 @@ func (o *orderedDict) length() int {
 	return o.ll.Len()
 }
 
-func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) bool {
+func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToFront(e)
 		e.Value.(*entry).value = value
 		e.Value.(*entry).lastAccess = time.Now().Unix()
-		return true
+		return
 	}
 	o.entries[key] = o.ll.PushFront(&entry{key, value, time.Now().Unix()})
-	return false
 }
 
 func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size, lastAccess int64) {
@@ -182,11 +181,11 @@ func (l *lruDict) length() int {
 	return l.items.length()
 }
 
-func (l *lruDict) pop(key isolated.HexDigest) units.Size {
-	out := l.items.pop(key)
+func (l *lruDict) pop(key isolated.HexDigest) (units.Size, bool) {
+	out, b := l.items.pop(key)
 	l.sum -= out
 	l.dirty = true
-	return out
+	return out, b
 }
 
 func (l *lruDict) popOldest() (isolated.HexDigest, units.Size) {
@@ -206,7 +205,9 @@ func (l *lruDict) pushFront(key isolated.HexDigest, value units.Size) {
 
 func (l *lruDict) touch(key isolated.HexDigest) bool {
 	l.dirty = true
-	return l.items.pushFront(key, l.items.pop(key))
+	value, b := l.items.pop(key)
+	l.items.pushFront(key, value)
+	return b
 }
 
 type serializedLRUDict struct {
