@@ -26,7 +26,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
-	"time"
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -173,12 +172,7 @@ func (d *Cache) Touch(digest isolated.HexDigest) bool {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	mtime := time.Now()
-	if err := os.Chtimes(d.itemPath(digest), mtime, mtime); err != nil {
-		return false
-	}
-	d.lru.touch(digest)
-	return true
+	return d.lru.touch(digest)
 }
 
 // Evict removes item from cache if it's there.
