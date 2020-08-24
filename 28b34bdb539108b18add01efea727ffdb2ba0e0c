@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "9089a42e_1a058cd5",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-24T23:37:22Z",
+      "side": 1,
+      "message": "I\u0027m not entirely sure exporting this is right since nothing is actually enforcing it. It\u0027s very easy not to respect this max, which makes this a suggestion exported as a const. Not for this CL, but I wonder if we should move step compression and decompression to Save/Load...\n\nhttps://godoc.org/go.chromium.org/luci/gae/service/datastore#PropertyLoadSaver\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/a96275fbc1522709531d1d140a019d8b9fb556bb/buildbucket/appengine/model/build.go#110",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57065fc9_62174094",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-24T23:37:22Z",
+      "side": 1,
+      "message": "Use map[pb.Status]struct{} as above? An empty struct{} takes up 0 bytes. Then change the switch below to something like:\n\nswitch _, ok :\u003d statusWithStartTime[step.Status]; {\n...\ncase ok \u0026\u0026 st.IsZero():\n...\n}",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3dd425c9_6766ae17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
