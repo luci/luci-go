@@ -22,6 +22,30 @@
       "revId": "1862ea26702e94c86b7ab2e0f2a84c2e2484e02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67947bdc_7fb1174a",
+        "filename": "common/system/environ/environment.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T17:03:18Z",
+      "side": 1,
+      "message": "I guess thinking about it from the user code, maybe:\n\n   env :\u003d environ.FromCtx(ctx)\n   ctx :\u003d env.SetInCtx(ctx)\n\nMight be better?",
+      "parentUuid": "be8c7993_afc38da3",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 9
+      },
+      "revId": "1862ea26702e94c86b7ab2e0f2a84c2e2484e02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
