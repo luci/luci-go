@@ -205,9 +205,11 @@ func (l *lruDict) pushFront(key isolated.HexDigest, value units.Size) {
 
 func (l *lruDict) touch(key isolated.HexDigest) bool {
 	l.dirty = true
-	value, b := l.items.pop(key)
-	l.items.pushFront(key, value)
-	return b
+	if value, b := l.items.pop(key); b {
+		l.items.pushFront(key, value)
+		return true
+	}
+	return false
 }
 
 type serializedLRUDict struct {
