@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ead745fc_17805148",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-24T03:55:13Z",
+      "side": 1,
+      "message": "LGTM!",
+      "revId": "ab32039e2448340861243a42d5b49a96505f142e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d50e86c_5f4fd727",
+        "filename": "server/auth/authdb/internal/realmset/realmset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-24T03:55:13Z",
+      "side": 1,
+      "message": "Is the perfect map size alloc really important?\nThis func is already pretty long to keep in my head 😞\n\nupdate: ah, so this is stuck ~forever for the process lifetime, hence you want to optimize for it. SGTM.",
+      "range": {
+        "startLine": 193,
+        "startChar": 1,
+        "endLine": 198,
+        "endChar": 2
+      },
+      "revId": "ab32039e2448340861243a42d5b49a96505f142e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9c1a893_ebb6b2a8",
+        "filename": "server/auth/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-24T03:55:13Z",
+      "side": 1,
+      "message": "While I trust you\u0027ll do cleanup, good behavior is to mark this with TODO(crbug/...) to cleanup.",
+      "revId": "ab32039e2448340861243a42d5b49a96505f142e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
