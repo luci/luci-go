@@ -59,6 +59,24 @@
     },
     {
       "key": {
+        "uuid": "4a7b560d_7182a17d",
+        "filename": "luciexe/exe/build/errors.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:22:15Z",
+      "side": 1,
+      "message": "Good call; I\u0027ll rework this to be in the style of appstatus (I hadn\u0027t seen it before)\n\nI think precluding overrides will also be fine, since I don\u0027t plan to implement \"infra_step\" style magic here; Running a subprocess will return a normal error (default FAILURE) and users will be able to add an explicit INFRA_ERROR status via this mechanism if they want to upgrade it.",
+      "parentUuid": "166d93b5_27380944",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ec979e14_df8b8165",
         "filename": "luciexe/exe/build/errors.go",
         "patchSetId": 17
@@ -174,6 +192,30 @@
     },
     {
       "key": {
+        "uuid": "6d89f67e_7a813af1",
+        "filename": "luciexe/exe/build/sink.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:22:15Z",
+      "side": 1,
+      "message": "The reason I have it here is so that `lastBuild` has consistent behavior for all uses of Sink. The reason why \u0027build\u0027 is a separate package from `exe` is because I anticipate that folks will need/want to use Sink pretty often (at the very least from tests).\n\nI agree that it\u0027s awkward that mkRawRun implements this again... however I suspect that mkRawRun will be used by exactly one thing (run_subannotations). I\u0027d rather have mkRawRun be the relatively grungy path while Sink is trivially correct to use.",
+      "parentUuid": "929c3468_155bf4d7",
+      "range": {
+        "startLine": 138,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 3
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c6a95f6_0e32f0de",
         "filename": "luciexe/exe/build/state.go",
         "patchSetId": 17
@@ -208,6 +250,24 @@
       "writtenOn": "2020-08-24T17:55:45Z",
       "side": 1,
       "message": "we hold two locks at the same time here. I think this increases the risk of deadlocks, but it is totally unavoidable. Also not sure we want to signal new ver if cb failed?\n\nwhy not\n\n  s.modMu.RLock()\n  if s.detached {\n    s.modMu.RUnlock()\n    return ErrBuildDetached\n  }\n  err :\u003d cb()\n  s.modMu.RUnlock()\n\n  if err !\u003d nil {\n     s.signalNewVersionLocked()\n  }",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "282121b2_50a99238",
+        "filename": "luciexe/exe/build/state.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:22:15Z",
+      "side": 1,
+      "message": "We shouldn\u0027t ever deadlock because we always respect the lock order; I\u0027ll add some heavier documentation around modMu.\n\nI think we should signal regardless; Note that all uses of modLock apply edits to the build even when cb returns an error.\n\nIf we wanted to fancy we\u0027d only signal \"if there was a change\", but this is more complex to compute and imo not worth it.",
+      "parentUuid": "a1dd6564_cf7cf91b",
       "revId": "61b30da391e48266c42f8b59416d22727e7de471",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -300,6 +360,24 @@
     },
     {
       "key": {
+        "uuid": "0062fd46_b41b3c4d",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:22:15Z",
+      "side": 1,
+      "message": "Yes, this is documented (though maybe in a subsequent CL). It\u0027s needed because otherwise users could launch subprocesses with, at the very least, invalid LOGDOG_NAMESPACE (and later LUCI_CONTEXT) values.\n\nIn recipes which exist, they _frequently_ manipulate the environment so that \"further down the stack\" operates with a modified environment. Without clearing the environment programs will have subtle bugs where some sections will operate on `os.Environ` (as global state) and others will correctly use the context-embedded environment. By clearing the os environment we can preclude most of those subtle bugs because environment variables won\u0027t be accessible via os.Environ at all, which should serve as a clue that this it is the wrong channel.",
+      "parentUuid": "987eeaf0_302638d5",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bdb05e80_1296e29a",
         "filename": "luciexe/exe/exe.go",
         "patchSetId": 17
@@ -311,6 +389,24 @@
       "writtenOn": "2020-08-24T17:55:45Z",
       "side": 1,
       "message": "this loses the error message. do we want to print/log it?",
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b354ba7c_ff685c5b",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T18:22:15Z",
+      "side": 1,
+      "message": "Yes, this is logged by Sink.Use",
+      "parentUuid": "bdb05e80_1296e29a",
       "revId": "61b30da391e48266c42f8b59416d22727e7de471",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
