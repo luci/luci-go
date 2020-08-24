@@ -16,6 +16,23 @@
       "revId": "a1f2fcdbc989560a0767526665bb432195ca7ba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34e70d35_d2a03ade",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-24T17:34:39Z",
+      "side": 1,
+      "message": "On third thought, I\u0027d like to take a very different approach to this.",
+      "revId": "a1f2fcdbc989560a0767526665bb432195ca7ba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
