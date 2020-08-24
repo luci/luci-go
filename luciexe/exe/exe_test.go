@@ -25,13 +25,16 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"golang.org/x/time/rate"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
-	"go.chromium.org/luci/luciexe/exe/proptools"
+	"go.chromium.org/luci/luciexe/exe/build"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -42,15 +45,6 @@ func TestExe(t *testing.T) {
 
 	Convey(`test exe`, t, func() {
 		client := streamclient.NewFake("test_namespace")
-		ldClient := &bootstrap.Bootstrap{
-			CoordinatorHost: "test.example.com",
-			Project:         "test_project",
-			Prefix:          "test_prefix",
-			Namespace:       "test_namespace",
-			Client:          client.Client,
-		}
-		var ldErr error
-		bootstrapGet := func() (*bootstrap.Bootstrap, error) { return ldClient, ldErr }
 
 		getBuilds := func(decompress bool) []*bbpb.Build {
 			fakeData := client.GetFakeData()["test_namespace/build.proto"]
@@ -89,176 +83,169 @@ func TestExe(t *testing.T) {
 
 		args := []string{"fake_test_executable"}
 
-		ctx := context.Background()
+		ptime := google.NewTimestamp(testclock.TestTimeUTC)
+
+		opts := []RunOption{
+			OptLogdogClient(client.Client),
+			OptTweakContext(func(ctx context.Context) context.Context {
+				ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+				ctx = logging.SetFactory(ctx, func(context.Context) logging.Logger { return logging.Null })
+				return ctx
+			}),
+			OptBuildRateLimit(rate.Inf),
+		}
 
 		Convey(`basic`, func() {
 			Convey(`success`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.Status = bbpb.Status_SCHEDULED
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, build *build.State, userArgs []string) error {
 					return nil
-				})
+				}))
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status: bbpb.Status_SUCCESS,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
 				})
 			})
 
 			Convey(`failure`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, build *build.State, userArgs []string) error {
 					return errors.New("bad stuff")
-				})
+				}))
 				So(exitCode, ShouldEqual, 1)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
-					Status:          bbpb.Status_FAILURE,
-					SummaryMarkdown: "Final error: bad stuff",
+					Status: bbpb.Status_FAILURE,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
 				})
 			})
 
 			Convey(`infra failure`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					return errors.New("bad stuff", InfraErrorTag)
-				})
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return errors.New("bad stuff", build.StatusInfraFailure)
+				}))
 				So(exitCode, ShouldEqual, 1)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
-					Status:          bbpb.Status_INFRA_FAILURE,
-					SummaryMarkdown: "Final infra error: bad stuff",
+					Status: bbpb.Status_INFRA_FAILURE,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
+				})
+			})
+
+			Convey(`resource exhuastion/timeout failure`, func() {
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return errors.New("bad stuff", build.StatusDetailTimeout, build.StatusDetailResourceExhaustion)
+				}))
+				So(exitCode, ShouldEqual, 1)
+				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+					Status: bbpb.Status_FAILURE,
+					StatusDetails: &bbpb.StatusDetails{
+						Timeout:            &bbpb.StatusDetails_Timeout{},
+						ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
+					},
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
+					EndTime: ptime,
 				})
 			})
 
 			Convey(`panic`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, build *build.State, userArgs []string) error {
 					panic(errors.New("bad stuff"))
-				})
+				}))
 				So(exitCode, ShouldEqual, 2)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
-					Status:          bbpb.Status_INFRA_FAILURE,
-					SummaryMarkdown: "Final panic: bad stuff",
+					Status: bbpb.Status_INFRA_FAILURE,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
-				})
-			})
-
-			Convey(`respect user program status`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.Status = bbpb.Status_INFRA_FAILURE
-					build.SummaryMarkdown = "status set inside"
-					return nil
-				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
-					Status:          bbpb.Status_INFRA_FAILURE,
-					SummaryMarkdown: "status set inside",
-					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{},
-					},
+					EndTime: ptime,
 				})
 			})
 		})
 
 		Convey(`send`, func() {
-			exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-				build.SummaryMarkdown = "Hi. I did stuff."
-				bs()
-				return errors.New("oh no i failed")
-			})
+			exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+				return s.Modify(func(bv *build.View) error {
+					bv.SummaryMarkdown = "Hi. I did stuff."
+					return errors.New("oh no i failed")
+				})
+			}))
 			So(exitCode, ShouldEqual, 1)
 			builds := getBuilds(false)
-			So(len(builds), ShouldEqual, 2)
-			So(builds[0], ShouldResembleProto, &bbpb.Build{
+			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
+				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
-			})
-			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
-				Status:          bbpb.Status_FAILURE,
-				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
-				Output: &bbpb.Build_Output{
-					Properties: &structpb.Struct{},
-				},
+				EndTime: ptime,
 			})
 		})
 
 		Convey(`send (zlib)`, func() {
-			exitCode := runCtx(ctx, args, bootstrapGet, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-				build.SummaryMarkdown = "Hi. I did stuff."
-				bs()
-				return errors.New("oh no i failed")
-			})
+			opts = append(opts, OptZlibCompression(5))
+			exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+				return s.Modify(func(bv *build.View) error {
+					bv.SummaryMarkdown = "Hi. I did stuff."
+					return errors.New("oh no i failed")
+				})
+			}))
 			So(exitCode, ShouldEqual, 1)
 			builds := getBuilds(true)
-			So(len(builds), ShouldEqual, 2)
-			So(builds[0], ShouldResembleProto, &bbpb.Build{
+			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
+				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
-			})
-			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
-				Status:          bbpb.Status_FAILURE,
-				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
-				Output: &bbpb.Build_Output{
-					Properties: &structpb.Struct{},
-				},
+				EndTime: ptime,
 			})
 		})
 
 		Convey(`output`, func() {
-			tdir, err := ioutil.TempDir("", "luciexe-exe-test")
-			So(err, ShouldBeNil)
-			defer os.RemoveAll(tdir)
+			tdir := t.TempDir()
 
 			Convey(`binary`, func() {
 				outFile := filepath.Join(tdir, "out.pb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.SummaryMarkdown = "Hi."
-					err := proptools.WriteProperties(build.Output.Properties, map[string]interface{}{
-						"some": "thing",
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return s.Modify(func(bv *build.View) error {
+						bv.SummaryMarkdown = "Hi."
+						return nil
 					})
-					if err != nil {
-						panic(err)
-					}
-
-					return nil
-				})
+				}))
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"some": {Kind: &structpb.Value_StringValue{
-									StringValue: "thing",
-								}},
-							},
-						},
+						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"`\f\x82\x01\x13\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\xa2\x01\x03Hi.")
+					"B\r\b\xf2\x87\xe7Ę\xfe\xff\xff\xff\x01\x10\a`\f\x82\x01\x02\n\x00\xa2\x01\x03Hi.")
 			})
 
 			Convey(`textpb`, func() {
 				outFile := filepath.Join(tdir, "out.textpb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.SummaryMarkdown = "Hi."
-					return nil
-				})
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return s.Modify(func(bv *build.View) error {
+						bv.SummaryMarkdown = "Hi."
+						return nil
+					})
+				}))
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
@@ -266,20 +253,23 @@ func TestExe(t *testing.T) {
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n>\n")
+					"end_time: <\n  seconds: -62132730894\n  nanos: 7\n>\nstatus: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n>\n")
 			})
 
 			Convey(`jsonpb`, func() {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.SummaryMarkdown = "Hi."
-					return nil
-				})
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return s.Modify(func(bv *build.View) error {
+						bv.SummaryMarkdown = "Hi."
+						return nil
+					})
+				}))
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
@@ -287,35 +277,36 @@ func TestExe(t *testing.T) {
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 					},
+					EndTime: ptime,
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
+					"{\n  \"end_time\": \"0001-02-03T04:05:06.000000007Z\",\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
 			})
 
 			Convey(`pass through user args`, func() {
 				// Delimiter inside user args should also be passed through
-				expectedUserArgs := []string{"foo", "bar", ArgsDelim, "baz"}
+				expectedUserArgs := []string{"foo", "bar", "--", "baz"}
 				Convey(`when output is not specified`, func() {
-					args = append(args, ArgsDelim)
+					args = append(args, "--")
 					args = append(args, expectedUserArgs...)
-					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					exitcode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
 						So(userArgs, ShouldResemble, expectedUserArgs)
 						return nil
-					})
+					}))
 					So(exitcode, ShouldEqual, 0)
 				})
 				Convey(`when output is specified`, func() {
 					tdir, err := ioutil.TempDir("", "luciexe-exe-test")
 					So(err, ShouldBeNil)
 					defer os.RemoveAll(tdir)
-					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)
+					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), "--")
 					args = append(args, expectedUserArgs...)
-					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					exitcode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
 						So(userArgs, ShouldResemble, expectedUserArgs)
 						return nil
-					})
+					}))
 					So(exitcode, ShouldEqual, 0)
 				})
 			})
@@ -323,15 +314,17 @@ func TestExe(t *testing.T) {
 			Convey(`write output on error`, func() {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-					build.SummaryMarkdown = "Hi."
-					return errors.New("bad stuff")
-				})
+				exitCode := runImpl(args, opts, mkRun(func(ctx context.Context, s *build.State, userArgs []string) error {
+					return s.Modify(func(bv *build.View) error {
+						bv.SummaryMarkdown = "Hi."
+						return errors.New("bad stuff")
+					})
+				}))
 				So(exitCode, ShouldEqual, 1)
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
+					"{\n  \"end_time\": \"0001-02-03T04:05:06.000000007Z\",\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
 			})
 		})
 	})
