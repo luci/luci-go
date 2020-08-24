@@ -138,7 +138,7 @@ type BuildOutputProperties struct {
 	Proto DSStruct `gae:"properties,noindex"`
 }
 
-// buildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes
+// buildStepsMaxBytes is the maximum length of buildSteps.Bytes. If Bytes
 // exceeds this maximum, this package will try to compress it, setting IsZipped
 // accordingly, but if this length is still exceeded it's an error to write
 // such entities to the datastore. Use FromProto to ensure this maximum is
@@ -179,22 +179,34 @@ func (s *BuildSteps) CancelIncomplete(ctx context.Context, now *timestamppb.Time
 		}
 	}
 	if changed {
-		if err := s.FromProto(ctx, stp); err != nil {
+		if err := s.FromProto(stp); err != nil {
 			return false, err
 		}
 	}
 	return changed, nil
 }
 
+// NewBuildStepsFromBuildProto creates a new BuildSteps with a given Build proto.
+func NewBuildStepsFromBuildProto(ctx context.Context, b *pb.Build) (*BuildSteps, error) {
+	if b == nil {
+		return nil, errors.Reason("build cannot be nil").Err()
+	}
+	bs := &BuildSteps{ID: 1, Build: datastore.KeyForObj(ctx, &Build{ID: b.Id})}
+	if err := bs.FromProto(b.Steps); err != nil {
+		return nil, err
+	}
+	return bs, nil
+}
+
 // FromProto overwrites the current []*pb.Step representation of these steps.
 // The caller is responsible for writing the entity to the datastore. This
 // entity will not be mutated if an error occurs.
-func (s *BuildSteps) FromProto(ctx context.Context, stp []*pb.Step) error {
+func (s *BuildSteps) FromProto(stp []*pb.Step) error {
 	b, err := proto.Marshal(&pb.Build{
 		Steps: stp,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal %q", datastore.KeyForObj(ctx, s)).Err()
+		return errors.Annotate(err, "failed to marshal").Err()
 	}
 	if len(b) <= buildStepsMaxBytes {
 		s.Bytes = b
@@ -204,10 +216,10 @@ func (s *BuildSteps) FromProto(ctx context.Context, stp []*pb.Step) error {
 	buf := &bytes.Buffer{}
 	w := zlib.NewWriter(buf)
 	if _, err := w.Write(b); err != nil {
-		return errors.Annotate(err, "error zipping %q", datastore.KeyForObj(ctx, s)).Err()
+		return errors.Annotate(err, "error zipping").Err()
 	}
 	if err := w.Close(); err != nil {
-		return errors.Annotate(err, "error closing writer for %q", datastore.KeyForObj(ctx, s)).Err()
+		return errors.Annotate(err, "error closing writer").Err()
 	}
 	s.Bytes = buf.Bytes()
 	s.IsZipped = true
