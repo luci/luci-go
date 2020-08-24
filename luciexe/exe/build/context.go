@@ -21,8 +21,18 @@ import (
 )
 
 var (
-	stateKey = "holds a *State"
+	stateKey     = "holds a *State"
+	namespaceKey = "holds the current step namespace as a string"
 )
+
+func getNS(ctx context.Context) string {
+	ret, _ := ctx.Value(&namespaceKey).(string)
+	return ret
+}
+
+func withNS(ctx context.Context, ns string) context.Context {
+	return context.WithValue(ctx, &namespaceKey, ns)
+}
 
 func getState(ctx context.Context) *State {
 	ret, ok := ctx.Value(&stateKey).(*State)
