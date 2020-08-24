@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -455,7 +455,7 @@ func (c *GetBuildersCall) Header() http.Header {
 
 func (c *GetBuildersCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200811")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -581,7 +581,7 @@ func (c *GetTaskDefCall) Header() http.Header {
 
 func (c *GetTaskDefCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200811")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -707,7 +707,7 @@ func (c *SetNextBuildNumberCall) Header() http.Header {
 
 func (c *SetNextBuildNumberCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200811")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
