@@ -19,6 +19,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 func TestEntryJSON(t *testing.T) {
@@ -69,5 +72,23 @@ func TestEntryUnmarshal(t *testing.T) {
 		if e.lastAccess != 1 {
 			t.Errorf("got %d for lastAccess, expected 1.0", e.lastAccess)
 		}
+	}
+}
+
+func TestLRU(t *testing.T) {
+	t.Parallel()
+	namespace := isolatedclient.DefaultNamespace
+	h := isolated.GetHash(namespace)
+	l := makeLRUDict(h)
+
+	empty := isolated.HashBytes(h, nil)
+	if got, want := l.touch(empty), false; got != want {
+		t.Errorf("l.touch(...)=%v; want %v", got, want)
+	}
+
+	l.pushFront(empty, 0)
+
+	if got, want := l.touch(empty), true; got != want {
+		t.Errorf("l.touch(...)=%v; want %v", got, want)
 	}
 }
