@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/exe/proptools"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -222,7 +223,7 @@ func TestExe(t *testing.T) {
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
-					err := WriteProperties(build.Output.Properties, map[string]interface{}{
+					err := proptools.WriteProperties(build.Output.Properties, map[string]interface{}{
 						"some": "thing",
 					})
 					if err != nil {

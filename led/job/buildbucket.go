@@ -19,14 +19,14 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/luciexe/exe"
+	"go.chromium.org/luci/luciexe/exe/proptools"
 )
 
 // WriteProperties writes an input property on this Buildbucket message.
 func (b *Buildbucket) WriteProperties(inputs map[string]interface{}) {
 	b.EnsureBasics()
 
-	if err := exe.WriteProperties(b.BbagentArgs.Build.Input.Properties, inputs); err != nil {
+	if err := proptools.WriteProperties(b.BbagentArgs.Build.Input.Properties, inputs); err != nil {
 		panic(errors.Annotate(err, "impossible").Err())
 	}
 }
