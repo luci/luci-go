@@ -364,6 +364,30 @@
     },
     {
       "key": {
+        "uuid": "6a156049_7eed6dbe",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-24T18:10:36Z",
+      "side": 1,
+      "message": "i think so too, but I think those who need to pass a context, might not be happy with this. What\u0027s the problem in accept context?\n\nstepping back, my general concern that applies to a couple of other comments, is that this code might be trying to solve more problems that it designed to solve, i.e. scope creep, i.e. something that happened to recipes before. \n\nwould it be possible to scope all of this only to production of Build proto? this really the only problem this code should help solving.",
+      "parentUuid": "f219a6e2_38d66517",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 1
+      },
+      "revId": "61b30da391e48266c42f8b59416d22727e7de471",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "023b972b_a2f1c5a0",
         "filename": "luciexe/exe/raw_run.go",
         "patchSetId": 17
