@@ -15,6 +15,7 @@
 package environ
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -279,6 +280,57 @@ func TestEnvironmentConstruction(t *testing.T) {
 		So(env, ShouldResemble, Env{
 			"FOO": "FOO=BAR",
 			"foo": "foo=bar",
+		})
+	})
+}
+
+func TestEnvironmentContext(t *testing.T) {
+	pretendLinux()
+
+	Convey(`Can set and retrieve env from context`, t, func() {
+		ctx := context.Background()
+
+		Convey(`Default is system`, func() {
+			So(FromCtx(ctx), ShouldResemble, System())
+		})
+
+		Convey(`Setting nil works`, func() {
+			ctx = Env(nil).SetInCtx(ctx)
+			env := FromCtx(ctx)
+			// We specifically want FromCtx to always return a mutable Env, even if
+			// the one in context is nil.
+			So(env, ShouldNotBeNil)
+			So(env, ShouldResemble, Env{})
+		})
+
+		Convey(`Can set in context`, func() {
+			env := Env{}
+			env.Load(map[string]string{
+				"FOO":  "BAR",
+				"COOL": "Stuff",
+			})
+
+			ctx = env.SetInCtx(ctx)
+
+			Convey(`And get a copy back`, func() {
+				env2 := FromCtx(ctx)
+				So(env2, ShouldNotEqual, env)
+				So(env2, ShouldResemble, env)
+
+				So(FromCtx(ctx), ShouldNotEqual, env)
+				So(FromCtx(ctx), ShouldNotEqual, env2)
+			})
+
+			Convey(`Mutating after installation has no effect`, func() {
+				env.Set("COOL", "Nope")
+
+				env2 := FromCtx(ctx)
+				So(env2, ShouldNotEqual, env)
+				So(env2, ShouldNotResemble, env)
+
+				env2.Set("COOL", "Nope")
+				So(env2, ShouldResemble, env)
+			})
 		})
 	})
 }
