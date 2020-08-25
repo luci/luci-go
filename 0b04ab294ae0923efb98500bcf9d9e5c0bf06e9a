@@ -303,6 +303,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "342fac53_fb72ebb6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2020-08-25T14:48:06Z",
+      "side": 1,
+      "message": "We haven\u0027t started on it yet. It\u0027s a candidate for one of the new team members but they got pulled into some ChromeOS stuff and haven\u0027t started on their browser infra projects yet.",
+      "parentUuid": "6b4e4ade_222893bd",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
