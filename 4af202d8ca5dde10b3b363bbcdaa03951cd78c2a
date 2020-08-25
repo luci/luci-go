@@ -22,6 +22,30 @@
       "revId": "4af202d8ca5dde10b3b363bbcdaa03951cd78c2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3adf78a1_8d3a56f7",
+        "filename": "casviewer/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-25T15:23:14Z",
+      "side": 1,
+      "message": "removed it for now.",
+      "parentUuid": "c672eed2_fde91bca",
+      "range": {
+        "startLine": 22,
+        "startChar": 29,
+        "endLine": 22,
+        "endChar": 34
+      },
+      "revId": "4af202d8ca5dde10b3b363bbcdaa03951cd78c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
