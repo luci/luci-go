@@ -16,6 +16,23 @@
       "revId": "f53539b8a414485ac8ff22ab0131c24972875e2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cfb3f8ca_c0f1612d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-25T21:46:49Z",
+      "side": 1,
+      "message": "A new RPC is always significant complexity. Is this only because we of this:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/deriver/formats/gtest.go;l\u003d187-190?q\u003dglobal_tags%20f:resultdb\n\nnothing is using this and this information gets lost when querying the invocation tree. Should we put this into TestResult? Then we don\u0027t need this RPC",
+      "revId": "f53539b8a414485ac8ff22ab0131c24972875e2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
