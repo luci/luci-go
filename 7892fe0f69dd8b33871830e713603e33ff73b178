@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa7465b5_aa761810",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-25T03:34:15Z",
+      "side": 1,
+      "message": "We can give `aud` from outside so that this method can be reused for GCE/GKE, which need to construct \"/projects/{projectNumber}/global/backendServices/{backendServiceID}\".",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 1
+      },
+      "revId": "7892fe0f69dd8b33871830e713603e33ff73b178",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "111de632_6236ce66",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-25T03:34:15Z",
+      "side": 1,
+      "message": "Will any customized validator be needed for cr-audit-commits?",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 2
+      },
+      "revId": "7892fe0f69dd8b33871830e713603e33ff73b178",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
