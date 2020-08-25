@@ -6,7 +6,7 @@
 
 // luci-notify users can define custom email templates,
 // see
-// [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md)
+// [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/luci_notify/doc/email_templates.md)
 
 syntax = "proto3";
 
