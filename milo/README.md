@@ -16,7 +16,7 @@ To push to prod, the steps are:
 1. `cd data/gae`
 1. `vim apps/luci-milo/channels.json`
 1. Modify the "stable" version in
-   [channels.json](https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/master/apps/luci-milo/channels.json)
+   [channels.json](https://chrome-internal.googlesource.com/infradata/gae/+/HEAD/apps/luci-milo/channels.json)
    (e.g. by reusing the current staging version).
 1. Run `./main.star` to regenerate the Makefile.
 1. Create a CL and add release notes to the description, as follows:

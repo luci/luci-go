@@ -414,7 +414,7 @@
       "repository": "https://chromium.googlesource.com/chromium/src.git",
       "buildername": "linux-rel",
       "got_webrtc_revision": "f7f13e0742a999c991ea3d2871dd99a042736c28",
-      "mastername": "chromium",
+      "builder_group": "chromium",
       "got_angle_revision": "91002266bd1e1aff9d0c8aeb288480be3da188e0",
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",
@@ -456,7 +456,7 @@
       "recipe": "chromium",
       "repository": "https://chromium.googlesource.com/chromium/src.git",
       "buildername": "linux-rel",
-      "mastername": "chromium",
+      "builder_group": "chromium",
       "buildnumber": 13052.0,
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",
