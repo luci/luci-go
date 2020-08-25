@@ -62,7 +62,7 @@ func main() {
 			Usage: preview_email TEMPLATE_FILE [BUILD]
 
 			BUILD is a path to a buildbucket.v2.Build JSON file
-			https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/build.proto
+			https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/build.proto
 			If not provided, reads the build JSON from stdin.
 
 			TEMPLATE_FILE is a path to a email template file.
