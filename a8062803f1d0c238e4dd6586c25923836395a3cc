@@ -59,6 +59,30 @@
     },
     {
       "key": {
+        "uuid": "55ac7c61_b245ec36",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-25T04:34:41Z",
+      "side": 1,
+      "message": "You are right. It\u0027s not necessary to export them.",
+      "parentUuid": "af91d251_c923da6e",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 2
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ee04c50_73ebe5ca",
         "filename": "cv/internal/gerrit/botdata/bot_data.go",
         "patchSetId": 2
@@ -79,6 +103,30 @@
       "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47edb520_12d18188",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-25T04:34:41Z",
+      "side": 1,
+      "message": "Nice suggestion! I change the internal implementation to use `bytes.Buffer` for efficiency. However, I kept the signature as it is for now because I guess in the application code, we will most likely get the human message as string so it probably doesn\u0027t matter whether we convert it to `bytes.Buffer` in the caller or within this function. We can easily switch later.",
+      "parentUuid": "8ee04c50_73ebe5ca",
+      "range": {
+        "startLine": 131,
+        "startChar": 5,
+        "endLine": 131,
+        "endChar": 11
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +153,30 @@
     },
     {
       "key": {
+        "uuid": "43fde31a_4e2891cd",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-25T04:34:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f044af4a_b644a51a",
+      "range": {
+        "startLine": 141,
+        "startChar": 10,
+        "endLine": 141,
+        "endChar": 29
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db52465d_33a3eab2",
         "filename": "cv/internal/gerrit/botdata/bot_data.go",
         "patchSetId": 2
@@ -116,6 +188,24 @@
       "writtenOn": "2020-08-25T00:48:00Z",
       "side": 1,
       "message": "this might as well be panic, since there is nothing CQ can do about it.",
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eef74531_f9a4ff68",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-25T04:34:41Z",
+      "side": 1,
+      "message": "I can definitely change this to panic. Since error is already part of the response signature of this func (due to json marshal failure), should we just returns error here as well?",
+      "parentUuid": "db52465d_33a3eab2",
       "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
