@@ -138,6 +138,14 @@ router.setRoutes({
                         return cmd.component('milo-timeline-tab');
                       },
                     },
+                    {
+                      path: '/blamelist',
+                      name: 'build-blamelist',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "blamelist_tab" */ './pages/build_page/blamelist_tab');
+                        return cmd.component('milo-blamelist-tab');
+                      },
+                    },
                   ],
                 },
               ],

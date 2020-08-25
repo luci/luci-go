@@ -80,58 +80,37 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   @computed get tabDefs(): TabDef[] {
+    const params = {
+      'project': this.builder.project,
+      'bucket': this.builder.bucket,
+      'builder': this.builder.builder,
+      'build_num_or_id': this.buildNumOrId,
+    };
     return [
       {
         id: 'overview',
         label: 'Overview',
-        href: router.urlForName(
-          'build-overview',
-          {
-            'project': this.builder.project,
-            'bucket': this.builder.bucket,
-            'builder': this.builder.builder,
-            'build_num_or_id': this.buildNumOrId,
-          },
-        ),
+        href: router.urlForName('build-overview', params),
       },
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName(
-          'build-test-results',
-          {
-            'project': this.builder.project,
-            'bucket': this.builder.bucket,
-            'builder': this.builder.builder,
-            'build_num_or_id': this.buildNumOrId,
-          },
-        ),
+        href: router.urlForName('build-test-results', params),
       },
       {
         id: 'related-builds',
         label: 'Related Builds',
-        href: router.urlForName(
-          'build-related-builds',
-          {
-            'project': this.builder.project,
-            'bucket': this.builder.bucket,
-            'builder': this.builder.builder,
-            'build_num_or_id': this.buildNumOrId,
-          },
-        ),
+        href: router.urlForName('build-related-builds', params),
       },
       {
         id: 'timeline',
         label: 'Timeline',
-        href: router.urlForName(
-          'build-timeline',
-          {
-            'project': this.builder.project,
-            'bucket': this.builder.bucket,
-            'builder': this.builder.builder,
-            'build_num_or_id': this.buildNumOrId,
-          },
-        ),
+        href: router.urlForName('build-timeline', params),
+      },
+      {
+        id: 'blamelist',
+        label: 'Blamelist',
+        href: router.urlForName('build-blamelist', params),
       },
     ];
   }
