@@ -429,86 +429,6 @@ func (x *HistoryOptions) GetCommit() *CommitPosition {
 	return nil
 }
 
-// CommitPosition specifies the numerical position of the commit this invocation
-// runs against, in a repository's commit log. More specifically, a ref's commit
-// log.
-// It also specifies the repo/ref combination that the commit position exists
-// in, to provide context.
-type CommitPosition struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The following fields identify a git repository and a ref within which the
-	// numerical position below identifies a single commit.
-	Host    string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
-	Ref     string `protobuf:"bytes,3,opt,name=ref,proto3" json:"ref,omitempty"`
-	// The numerical position of the commit in the log for the host/project/ref
-	// above.
-	Position int64 `protobuf:"varint,4,opt,name=position,proto3" json:"position,omitempty"`
-}
-
-func (x *CommitPosition) Reset() {
-	*x = CommitPosition{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *CommitPosition) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CommitPosition) ProtoMessage() {}
-
-func (x *CommitPosition) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CommitPosition.ProtoReflect.Descriptor instead.
-func (*CommitPosition) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *CommitPosition) GetHost() string {
-	if x != nil {
-		return x.Host
-	}
-	return ""
-}
-
-func (x *CommitPosition) GetProject() string {
-	if x != nil {
-		return x.Project
-	}
-	return ""
-}
-
-func (x *CommitPosition) GetRef() string {
-	if x != nil {
-		return x.Ref
-	}
-	return ""
-}
-
-func (x *CommitPosition) GetPosition() int64 {
-	if x != nil {
-		return x.Position
-	}
-	return 0
-}
-
 // TestResultExport indicates that test results should be exported.
 type BigQueryExport_TestResults struct {
 	state         protoimpl.MessageState
@@ -523,7 +443,7 @@ type BigQueryExport_TestResults struct {
 func (x *BigQueryExport_TestResults) Reset() {
 	*x = BigQueryExport_TestResults{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -536,7 +456,7 @@ func (x *BigQueryExport_TestResults) String() string {
 func (*BigQueryExport_TestResults) ProtoMessage() {}
 
 func (x *BigQueryExport_TestResults) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -649,18 +569,11 @@ var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDesc = []byt
 	0x38, 0x0a, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
 	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x22, 0x6c, 0x0a, 0x0e, 0x43, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x68,
-	0x6f, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12,
-	0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x12, 0x1a, 0x0a, 0x08, 0x70,
-	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x70,
-	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68,
-	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76,
-	0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x6e, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e,
+	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
+	0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -676,28 +589,28 @@ func file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDescGZIP() 
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_goTypes = []interface{}{
 	(Invocation_State)(0),              // 0: luci.resultdb.v1.Invocation.State
 	(*Invocation)(nil),                 // 1: luci.resultdb.v1.Invocation
 	(*BigQueryExport)(nil),             // 2: luci.resultdb.v1.BigQueryExport
 	(*HistoryOptions)(nil),             // 3: luci.resultdb.v1.HistoryOptions
-	(*CommitPosition)(nil),             // 4: luci.resultdb.v1.CommitPosition
-	(*BigQueryExport_TestResults)(nil), // 5: luci.resultdb.v1.BigQueryExport.TestResults
-	(*timestamp.Timestamp)(nil),        // 6: google.protobuf.Timestamp
-	(*StringPair)(nil),                 // 7: luci.resultdb.v1.StringPair
+	(*BigQueryExport_TestResults)(nil), // 4: luci.resultdb.v1.BigQueryExport.TestResults
+	(*timestamp.Timestamp)(nil),        // 5: google.protobuf.Timestamp
+	(*StringPair)(nil),                 // 6: luci.resultdb.v1.StringPair
+	(*CommitPosition)(nil),             // 7: luci.resultdb.v1.CommitPosition
 	(*TestResultPredicate)(nil),        // 8: luci.resultdb.v1.TestResultPredicate
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_depIdxs = []int32{
 	0,  // 0: luci.resultdb.v1.Invocation.state:type_name -> luci.resultdb.v1.Invocation.State
-	6,  // 1: luci.resultdb.v1.Invocation.create_time:type_name -> google.protobuf.Timestamp
-	7,  // 2: luci.resultdb.v1.Invocation.tags:type_name -> luci.resultdb.v1.StringPair
-	6,  // 3: luci.resultdb.v1.Invocation.finalize_time:type_name -> google.protobuf.Timestamp
-	6,  // 4: luci.resultdb.v1.Invocation.deadline:type_name -> google.protobuf.Timestamp
+	5,  // 1: luci.resultdb.v1.Invocation.create_time:type_name -> google.protobuf.Timestamp
+	6,  // 2: luci.resultdb.v1.Invocation.tags:type_name -> luci.resultdb.v1.StringPair
+	5,  // 3: luci.resultdb.v1.Invocation.finalize_time:type_name -> google.protobuf.Timestamp
+	5,  // 4: luci.resultdb.v1.Invocation.deadline:type_name -> google.protobuf.Timestamp
 	2,  // 5: luci.resultdb.v1.Invocation.bigquery_exports:type_name -> luci.resultdb.v1.BigQueryExport
 	3,  // 6: luci.resultdb.v1.Invocation.history_options:type_name -> luci.resultdb.v1.HistoryOptions
-	5,  // 7: luci.resultdb.v1.BigQueryExport.test_results:type_name -> luci.resultdb.v1.BigQueryExport.TestResults
-	4,  // 8: luci.resultdb.v1.HistoryOptions.commit:type_name -> luci.resultdb.v1.CommitPosition
+	4,  // 7: luci.resultdb.v1.BigQueryExport.test_results:type_name -> luci.resultdb.v1.BigQueryExport.TestResults
+	7,  // 8: luci.resultdb.v1.HistoryOptions.commit:type_name -> luci.resultdb.v1.CommitPosition
 	8,  // 9: luci.resultdb.v1.BigQueryExport.TestResults.predicate:type_name -> luci.resultdb.v1.TestResultPredicate
 	10, // [10:10] is the sub-list for method output_type
 	10, // [10:10] is the sub-list for method input_type
@@ -751,18 +664,6 @@ func file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitPosition); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BigQueryExport_TestResults); i {
 			case 0:
 				return &v.state
@@ -781,7 +682,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
