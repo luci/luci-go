@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c672eed2_fde91bca",
+        "filename": "casviewer/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-25T07:56:19Z",
+      "side": 1,
+      "message": "this is not necessary?",
+      "range": {
+        "startLine": 22,
+        "startChar": 29,
+        "endLine": 22,
+        "endChar": 34
+      },
+      "revId": "4af202d8ca5dde10b3b363bbcdaa03951cd78c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
