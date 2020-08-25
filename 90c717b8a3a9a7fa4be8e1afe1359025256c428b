@@ -1,0 +1,326 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69a47245_9aa8a9a9",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "P",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 4
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ec5ac89_e00c63a2",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "nit: sort headers, third party packages in the own group first, then luci packages",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 32
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdd0cb0e_4491da9c",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "Errors should start with lowercase: http://go/go-style/decisions#error-strings",
+      "range": {
+        "startLine": 33,
+        "startChar": 44,
+        "endLine": 33,
+        "endChar": 46
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcf14c28_b900dd0f",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "public symbols should be documented http://go/go-style/decisions#doc-comments",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 29
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b148921_d0f0ea64",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "This should be just Aud, since it is not an initialism (it is just a short for \"Audience\"): http://go/go-style/decisions#initialisms",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 8
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33292e73_aee105dd",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "Just return nil, nil so that the library can try next applicable auth method. See https://godoc.org/go.chromium.org/luci/server/auth#Method for the expected return values.",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 2
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d12d3fe_c5a48ca6",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "annotate the error instead of just logging:\n\n  return nil, errors.Annotate(err, \"couldn\u0027t validate jwt payload\").Err()\n\nThe error will be logged in the end anyhow.",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 17
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58288f5a_7667756e",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "nit: \n  jwtPayload.Claims[\"email\"].(string)\n\nThen it will not panic if \"email\" is not a string for whatever reason. And no need to do a separate cast below.",
+      "range": {
+        "startLine": 90,
+        "startChar": 14,
+        "endLine": 90,
+        "endChar": 40
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77e81a79_a4b741e4",
+        "filename": "server/auth/iap/iap_method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "Other ID tokens sometimes have `name` and `picture` fields with user\u0027s full name and profile picture. They can go into corresponding auth.User fields. Do ID tokens from IAP have them? See also https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/server/auth/openid/user.go#53",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 2
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10bf32cd_4b954ce1",
+        "filename": "server/auth/iap/iap_method_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "This package is not using GAE and should not depend on GAE packages. All go.chromium.org/luci/server/auth packages generally have no dependency on GAE.",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 34
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0053d79_52cff66f",
+        "filename": "server/auth/iap/iap_method_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "This is useless, google.golang.org/api/idtoken is not using LUCI clock. Just construct time.Time(...) manually below instead of calling clock.Now().",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 55
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e457f24_f47d30d3",
+        "filename": "server/auth/iap/iap_method_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "nit: inline \"\u0026idtoken.Payload{}\" value here, no need to have it as a separate variable not referenced anywhere else",
+      "range": {
+        "startLine": 73,
+        "startChar": 12,
+        "endLine": 73,
+        "endChar": 14
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddbf0e19_6e173ec0",
+        "filename": "server/auth/iap/iap_method_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "these fields are effectively unused, what\u0027s the point of populating them?",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 53
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5926e3df_3d846b76",
+        "filename": "server/auth/iap/iap_method_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-25T22:27:16Z",
+      "side": 1,
+      "message": "nit: not needed, it is already string",
+      "range": {
+        "startLine": 84,
+        "startChar": 46,
+        "endLine": 84,
+        "endChar": 53
+      },
+      "revId": "90c717b8a3a9a7fa4be8e1afe1359025256c428b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
