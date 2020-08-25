@@ -18,7 +18,7 @@
       "repository": "https://chromium.googlesource.com/chromium/src",
       "patch_repository_url": "https://chromium.googlesource.com/chromium/src",
       "buildername": "mac-rel",
-      "mastername": "tryserver.chromium.mac",
+      "builder_group": "tryserver.chromium.mac",
       "patch_issue": 1447158.0,
       "patch_storage": "gerrit",
       "$recipe_engine/runtime": {

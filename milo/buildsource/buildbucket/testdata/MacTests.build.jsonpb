@@ -5846,7 +5846,7 @@
   "startTime": "2019-01-30T16:40:54.897486Z",
   "output": {
     "properties": {
-      "parent_mastername": "chromium.mac",
+      "parent_builder_group": "chromium.mac",
       "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
       "parent_got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
       "parent_got_v8_revision": "cb663d8ff8d97c57c4901505a2ffa9b16b38dc4f",
@@ -5870,7 +5870,7 @@
       "parent_got_dawn_revision": "45da8c0115c53946ad09c217fa63eb9eb811f9ef",
       "got_webrtc_revision": "e706c0f0c3c530dcd7e8c51530d4dece57edd994",
       "parent_got_buildtools_revision": "2f02e1f363b1af2715536f38e239853f04ec1497",
-      "mastername": "chromium.mac",
+      "builder_group": "chromium.mac",
       "got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",
@@ -5975,7 +5975,7 @@
   },
   "input": {
     "properties": {
-      "parent_mastername": "chromium.mac",
+      "parent_builder_group": "chromium.mac",
       "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
       "parent_got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
       "parent_got_v8_revision": "cb663d8ff8d97c57c4901505a2ffa9b16b38dc4f",
@@ -6074,7 +6074,7 @@
       "buildername": "Mac10.10 Tests",
       "parent_got_dawn_revision": "45da8c0115c53946ad09c217fa63eb9eb811f9ef",
       "parent_got_buildtools_revision": "2f02e1f363b1af2715536f38e239853f04ec1497",
-      "mastername": "chromium.mac",
+      "builder_group": "chromium.mac",
       "$recipe_engine/runtime": {
         "is_experimental": false,
         "is_luci": true
@@ -6187,7 +6187,7 @@
     "buildbucket": {
       "serviceConfigRevision": "01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c",
       "requestedProperties": {
-        "parent_mastername": "chromium.mac",
+        "parent_builder_group": "chromium.mac",
         "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
         "parent_got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
         "parent_got_nacl_revision": "ff15c51d20785fa51c0ef03ccb480b87299acbeb",

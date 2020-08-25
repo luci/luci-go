@@ -50,7 +50,7 @@ export interface Build {
   readonly exe: Executable;
 }
 
-// This is from https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/common.proto;l=27
+// This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25
 export enum BuildStatus {
   Scheduled = 1,
   Started = 2,
