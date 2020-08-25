@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1efa9f32_c35f00da",
+        "filename": "common/data/caching/cache/lru_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-25T01:16:42Z",
+      "side": 1,
+      "message": "Ah, it still needs isolated.HashDigest.",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 34
+      },
+      "revId": "3cdf180b3d6117f560f43b80fb4488206523fbcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
