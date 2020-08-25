@@ -15,13 +15,13 @@
 package cache
 
 import (
+	"crypto"
 	"math"
 	"reflect"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 )
 
 func TestEntryJSON(t *testing.T) {
@@ -77,8 +77,8 @@ func TestEntryUnmarshal(t *testing.T) {
 
 func TestLRU(t *testing.T) {
 	t.Parallel()
-	namespace := isolatedclient.DefaultNamespace
-	h := isolated.GetHash(namespace)
+
+	h := crypto.SHA1
 	l := makeLRUDict(h)
 
 	empty := isolated.HashBytes(h, nil)
