@@ -202,11 +202,12 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	logger.Infof("finished permission update")
 
 	if diskcache != nil {
+		files := make(map[string]digest.Digest)
 		for d, output := range to {
-			if err := diskcache.AddFileWithoutValidation(
-				isolated.HexDigest(d.Hash), output.Path); err != nil {
-				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, d).Err()
-			}
+			files[output.Path] = d
+		}
+		if err := diskcache.AddFilesWithoutValidation(files); err != nil {
+			return errors.Annotate(err, "failed to add cache").Err()
 		}
 		logger.Infof("finished cache addition")
 	}
