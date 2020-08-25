@@ -134,15 +134,24 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	// copy duplicates files later.
 	var dups []*tree.Output
 
+	mkdirmap := make(map[string]struct{})
+	mkdir := func(dir string) error {
+		if _, ok := mkdirmap[dir]; ok {
+			return nil
+		}
+		mkdirmap[dir] = struct{}{}
+		return os.MkdirAll(dir, 0o700)
+	}
+
 	for path, output := range outputs {
 		if output.IsEmptyDirectory {
-			if err := os.MkdirAll(path, 0o700); err != nil {
+			if err := mkdir(path); err != nil {
 				return errors.Annotate(err, "failed to create directory").Err()
 			}
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		if err := mkdir(filepath.Dir(path)); err != nil {
 			return errors.Annotate(err, "failed to create directory").Err()
 		}
 
@@ -153,17 +162,16 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			continue
 		}
 
-		if diskcache != nil {
+		if diskcache != nil && diskcache.Touch(isolated.HexDigest(output.Digest.Hash)) {
 			mode := 0o600
 			if output.IsExecutable {
 				mode = 0o700
 			}
 
-			if err := diskcache.Hardlink(isolated.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err == nil {
-				continue
-			} else if !errors.Contains(err, os.ErrNotExist) {
+			if err := diskcache.Hardlink(isolated.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
 				return err
 			}
+			continue
 		}
 
 		if _, ok := to[output.Digest]; ok {
