@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9398aca1_f0840e61",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T21:15:07Z",
+      "side": 1,
+      "message": "nit: move above L30 to be next to Start and Cancel",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 0
+      },
+      "revId": "2e45d45f80f3ba66639d92d657b5f5ef577879af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67b2e054_d8160f6e",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T21:15:07Z",
+      "side": 1,
+      "message": "why not:\n  c.Host \u003d segs[0]\n  c.Number \u003d num\n?",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 2
+      },
+      "revId": "2e45d45f80f3ba66639d92d657b5f5ef577879af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

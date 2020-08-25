@@ -130,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "e5f5313a_b9c86f11",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T21:15:07Z",
+      "side": 1,
+      "message": "100% agree with the approach.",
+      "parentUuid": "47edb520_12d18188",
+      "range": {
+        "startLine": 131,
+        "startChar": 5,
+        "endLine": 131,
+        "endChar": 11
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f044af4a_b644a51a",
         "filename": "cv/internal/gerrit/botdata/bot_data.go",
         "patchSetId": 2
@@ -209,6 +233,24 @@
       "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f9d966e_04465c77",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T21:15:07Z",
+      "side": 1,
+      "message": "your choice to return the error is correct. Panic would be fine iff otherwise there won\u0027t be any error to return.",
+      "parentUuid": "eef74531_f9a4ff68",
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
