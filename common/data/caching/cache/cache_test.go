@@ -16,10 +16,13 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/isolated"
@@ -236,4 +239,113 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
+}
+
+func BenchmarkDisk(b *testing.B) {
+	tdir := b.TempDir()
+
+	for _, n := range []int{16, 256, 65536, 65536 * 4} {
+		n := n
+		b.Run(fmt.Sprintf("with %d files", n), func(b *testing.B) {
+			src := filepath.Join(tdir, "src")
+
+			if err := os.MkdirAll(src, 0700); err != nil {
+				b.Errorf("failed to create dir: %v", err)
+			}
+
+			for j := 0; j < n; j++ {
+				if err := ioutil.WriteFile(filepath.Join(src, strconv.Itoa(j)), nil, 0600); err != nil {
+					b.Errorf("failed to write file: %v", err)
+				}
+			}
+
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				cache := filepath.Join(tdir, "cache")
+				if err := os.MkdirAll(cache, 0700); err != nil {
+					b.Errorf("failed to create dir: %v", err)
+				}
+				b.StartTimer()
+
+				for j := 0; j < n; j++ {
+					if err := os.Link(filepath.Join(src, strconv.Itoa(j)), filepath.Join(cache, strconv.Itoa(j))); err != nil {
+						b.Errorf("failed to write file: %v", err)
+					}
+				}
+
+				b.StopTimer()
+				if err := os.RemoveAll(cache); err != nil {
+					b.Errorf("failed to remove dir: %v", err)
+				}
+				b.StartTimer()
+			}
+
+			b.StopTimer()
+			if err := os.RemoveAll(src); err != nil {
+				b.Errorf("failed to remove: %v", src)
+			}
+		})
+	}
+}
+
+func BenchmarkDiskParallel(b *testing.B) {
+	tdir := b.TempDir()
+
+	for _, n := range []int{16, 256, 65536, 65536 * 4} {
+		n := n
+		b.Run(fmt.Sprintf("with %d files", n), func(b *testing.B) {
+			src := filepath.Join(tdir, "src")
+
+			if err := os.MkdirAll(src, 0700); err != nil {
+				b.Errorf("failed to create dir: %v", err)
+			}
+
+			for j := 0; j < n; j++ {
+				if err := ioutil.WriteFile(filepath.Join(src, strconv.Itoa(j)), nil, 0600); err != nil {
+					b.Errorf("failed to write file: %v", err)
+				}
+			}
+
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				cache := filepath.Join(tdir, "cache")
+				if err := os.MkdirAll(cache, 0700); err != nil {
+					b.Errorf("failed to create dir: %v", err)
+				}
+
+				c := make(chan struct{}, 16)
+				b.StartTimer()
+				var wg sync.WaitGroup
+
+				for j := 0; j < n; j++ {
+					c <- struct{}{}
+					j := j
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						defer func() { <-c }()
+						if err := os.Link(filepath.Join(src, strconv.Itoa(j)), filepath.Join(cache, strconv.Itoa(j))); err != nil {
+							b.Errorf("failed to link file: %v", err)
+						}
+					}()
+				}
+				wg.Wait()
+
+				b.StopTimer()
+				if err := os.RemoveAll(cache); err != nil {
+					b.Errorf("failed to remove dir: %v", err)
+				}
+				b.StartTimer()
+			}
+
+			b.StopTimer()
+			if err := os.RemoveAll(src); err != nil {
+				b.Errorf("failed to remove: %v", src)
+			}
+		})
+	}
 }
