@@ -15,19 +15,13 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/casviewer"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 )
 
 func main() {
 	server.Main(nil, nil, func(srv *server.Server) error {
-
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			logging.Debugf(c.Context, "Hello world")
-			c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
-		})
-
+		casviewer.Route(srv.Routes)
 		return nil
 	})
 }
