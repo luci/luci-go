@@ -16,6 +16,109 @@
       "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3172b93e_302554d6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T00:48:00Z",
+      "side": 1,
+      "message": "(i have not finished, will review a fully later tonight, but WDYT about bytes.Buffer?)",
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "af91d251_c923da6e",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T00:48:00Z",
+      "side": 1,
+      "message": "intentionally public? In general, renaming is cheap in Go, so prefer private by default for better encapsulation.\n\nDitto for all other items here.",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 2
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ee04c50_73ebe5ca",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T00:48:00Z",
+      "side": 1,
+      "message": "this is fine, but I think in Go, we should be more efficient and assemble messages via bytes.Buffer https://golang.org/pkg/bytes/#Buffer\n\nIt\u0027s fine to leave as is for now. We can upgrade this later.",
+      "range": {
+        "startLine": 131,
+        "startChar": 5,
+        "endLine": 131,
+        "endChar": 11
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f044af4a_b644a51a",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T00:48:00Z",
+      "side": 1,
+      "message": "just +.",
+      "range": {
+        "startLine": 141,
+        "startChar": 10,
+        "endLine": 141,
+        "endChar": 29
+      },
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db52465d_33a3eab2",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-25T00:48:00Z",
+      "side": 1,
+      "message": "this might as well be panic, since there is nothing CQ can do about it.",
+      "revId": "a8062803f1d0c238e4dd6586c25923836395a3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
