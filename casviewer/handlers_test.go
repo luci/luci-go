@@ -12,16 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package casviewer
 
 import (
-	"go.chromium.org/luci/casviewer"
-	"go.chromium.org/luci/server"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"go.chromium.org/luci/server/router"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
-		casviewer.InstallHandlers(srv.Routes)
-		return nil
+func TestHandlers(t *testing.T) {
+	t.Parallel()
+
+	Convey("InstallHandlers", t, func() {
+		r := router.New()
+		InstallHandlers(r)
+
+		srv := httptest.NewServer(r)
+		client := &http.Client{}
+
+		resp, err := client.Get(srv.URL)
+		So(err, ShouldBeNil)
+		So(resp.StatusCode, ShouldEqual, http.StatusOK)
 	})
 }
