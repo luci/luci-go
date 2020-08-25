@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -129,4 +131,10 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
+}
+
+// ReportInvocationToUpdate implement sinkpb.SinkServer.
+// TODO(crbug.com/1108016) Implement.
+func (s *sinkServer) ReportInvocationToUpdate(ctx context.Context, in *sinkpb.ReportInvocationToUpdateRequest) (*empty.Empty, error) {
+	return nil, grpcutil.Unimplemented
 }

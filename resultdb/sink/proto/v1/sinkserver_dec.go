@@ -6,6 +6,8 @@ import (
 	"context"
 
 	proto "github.com/golang/protobuf/proto"
+
+	empty "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedSink struct {
@@ -36,6 +38,23 @@ func (s *DecoratedSink) ReportTestResults(ctx context.Context, req *ReportTestRe
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "ReportTestResults", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedSink) ReportInvocationToUpdate(ctx context.Context, req *ReportInvocationToUpdateRequest) (rsp *empty.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ReportInvocationToUpdate", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ReportInvocationToUpdate(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ReportInvocationToUpdate", rsp, err)
 	}
 	return
 }
