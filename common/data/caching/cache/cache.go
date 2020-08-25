@@ -21,11 +21,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
+
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -218,33 +223,50 @@ func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
 	return d.add(digest, src, nil)
 }
 
-// AddFileWithoutValidation adds src as cache entry with hardlink.
+// AddFilesWithoutValidation adds files as cache entries with hardlink.
 // But this doesn't do any content validation.
 //
 // TODO(tikuta): make one function and controll the behavior by option?
-func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
-	fi, err := os.Stat(src)
-	if err != nil {
-		return errors.Annotate(err, "failed to get stat").Err()
-	}
-
+func (d *Cache) AddFilesWithoutValidation(files map[string]digest.Digest) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	if err := os.Link(src, d.itemPath(digest)); err != nil && !os.IsExist(err) {
-		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+
+	ioC := make(chan struct{}, 16)
+
+	now := time.Now()
+	cnt := 0
+	prev := 0
+	var eg errgroup.Group
+	for src, dg := range files {
+		cnt++
+		src, dg := src, dg
+		if time.Since(now) > time.Second {
+			log.Printf("lcnt: %d %d", cnt, cnt-prev)
+			prev = cnt
+			now = time.Now()
+		}
+
+		ioC <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ioC }()
+
+			if err := os.Link(src, d.itemPath(isolated.HexDigest(dg.Hash))); err != nil && !os.IsExist(err) {
+				return errors.Annotate(err, "failed to link %s to %s", src, dg.Hash).Err()
+			}
+			return nil
+		})
+		d.lru.pushFront(isolated.HexDigest(dg.Hash), units.Size(dg.Size))
+		d.added = append(d.added, dg.Size)
 	}
 
-	d.lru.pushFront(digest, units.Size(fi.Size()))
 	if err := d.respectPolicies(); err != nil {
-		d.lru.pop(digest)
 		return err
 	}
 
-	d.statsMu.Lock()
-	defer d.statsMu.Unlock()
-	d.added = append(d.added, fi.Size())
-	return nil
+	return eg.Wait()
 }
 
 // AddWithHardlink reads data from src and stores it in cache and hardlink file.
