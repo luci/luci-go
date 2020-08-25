@@ -16,6 +16,9 @@ syntax = "proto3";
 
 package luci.resultsink.v1;
 
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/resultdb/sink/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
@@ -33,6 +36,11 @@ service Sink {
   // Reports test results.
   rpc ReportTestResults(ReportTestResultsRequest)
       returns (ReportTestResultsResponse) {};
+
+  // Updates the current invocation by copying the updated information in the
+  // request.
+  rpc ReportInvocationToUpdate(ReportInvocationToUpdateRequest)
+      returns (google.protobuf.Empty) {};
 }
 
 message ReportTestResultsRequest {
@@ -44,4 +52,14 @@ message ReportTestResultsResponse {
   // List of unique identifiers that can be used to link to these results
   // or requested via luci.resultdb.v1.ResultDB service.
   repeated string test_result_names = 1;
+}
+
+message ReportInvocationToUpdateRequest {
+  // Invocation message which contains the updated information.
+  // Note it's not the invocation to be updated, but only a temporary container
+  // for the updated information.
+  Invocation invocation = 1;
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
 }
