@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -192,6 +193,41 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 	default:
 		logging.Infof(c, "%s: match - %s", logPfx, allowDeny(result))
 	}
+}
+
+// ShouldEnforceRealmACL is true if the service should enforce the realm's ACLs.
+//
+// Based on `enforce_in_service` realm data. Exists temporarily during the
+// realms migration.
+//
+// TODO(crbug.com/1051724): Remove when no longer used.
+func ShouldEnforceRealmACL(c context.Context, realm string) (bool, error) {
+	s := GetState(c)
+	if s == nil {
+		return false, ErrNotConfigured
+	}
+
+	data, err := s.DB().GetRealmData(c, realm)
+	switch {
+	case err != nil:
+		return false, errors.Annotate(err, "failed to load realm data").Err()
+	case data == nil:
+		return false, nil // no realms.cfg in the project at all
+	case len(data.EnforceInService) == 0:
+		return false, nil // enforced nowhere
+	}
+
+	info, err := GetSigner(c).ServiceInfo(c)
+	if err != nil {
+		return false, errors.Annotate(err, "failed to get our own service info").Err()
+	}
+
+	for _, id := range data.EnforceInService {
+		if id == info.AppID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // IsInWhitelist returns true if the current caller is in the given IP

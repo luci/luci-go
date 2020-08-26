@@ -351,6 +351,7 @@ type fakeDB struct {
 	authServiceURL  string
 	tokenServiceURL string
 	groups          map[string][]identity.Identity
+	realmData       map[string]*protocol.RealmData
 }
 
 func (db *fakeDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
@@ -407,5 +408,5 @@ func (db *fakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 }
 
 func (db *fakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
-	return &protocol.RealmData{}, nil
+	return db.realmData[realm], nil
 }

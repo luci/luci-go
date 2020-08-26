@@ -316,6 +316,27 @@ func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
 
 // GetRealmData returns data attached to a realm.
 func (db *SnapshotDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
-	// TODO(vadimsh): Implement.
-	return &protocol.RealmData{}, nil
+	// This may happen if the AuthDB proto has no Realms yet.
+	if db.realms == nil {
+		return nil, errors.Reason("Realms API is not available").Err()
+	}
+
+	// Verify such realm is defined in the DB or fallback to its @root.
+	if !db.realms.HasRealm(realm) {
+		if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+			return nil, err
+		}
+		project, _ := realms.Split(realm)
+		root := realms.Join(project, realms.RootRealm)
+		if realm == root || !db.realms.HasRealm(root) {
+			return nil, nil // no such project or it doesn't have realms.cfg
+		}
+		realm = root
+	}
+
+	data := db.realms.Data(realm)
+	if data == nil {
+		data = &protocol.RealmData{}
+	}
+	return data, nil
 }

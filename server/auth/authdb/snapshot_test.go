@@ -195,7 +195,7 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com", "via glob", "direct"), ShouldResemble, []string{"via glob", "direct"})
 	})
 
-	Convey("HasPermission works", t, func() {
+	Convey("With realms", t, func() {
 		db, err := NewSnapshotDB(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
@@ -218,6 +218,9 @@ func TestSnapshotDB(t *testing.T) {
 								Principals:  []string{"user:root@example.com"},
 							},
 						},
+						Data: &protocol.RealmData{
+							EnforceInService: []string{"root"},
+						},
 					},
 					{
 						Name: "proj:some/realm",
@@ -226,6 +229,9 @@ func TestSnapshotDB(t *testing.T) {
 								Permissions: []uint32{0},
 								Principals:  []string{"user:realm@example.com", "group:direct"},
 							},
+						},
+						Data: &protocol.RealmData{
+							EnforceInService: []string{"some"},
 						},
 					},
 					{
@@ -236,44 +242,73 @@ func TestSnapshotDB(t *testing.T) {
 		}, "http://auth-service", 1234, false)
 		So(err, ShouldBeNil)
 
-		// A direct hit.
-		ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+		Convey("HasPermission works", func() {
 
-		// A hit through a group.
-		ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+			// A direct hit.
+			ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
 
-		// Fallback to the root.
-		ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+			// A hit through a group.
+			ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
 
-		// No permission.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+			// Fallback to the root.
+			ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
 
-		// Unknown root realm.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+			// No permission.
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
 
-		// Unknown permission.
-		ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+			// Unknown root realm.
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
 
-		// Empty realm.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty")
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+			// Unknown permission.
+			ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
 
-		// Invalid realm name.
-		_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root")
-		So(err, ShouldErrLike, "bad global realm name")
+			// Empty realm.
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty")
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
+
+			// Invalid realm name.
+			_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root")
+			So(err, ShouldErrLike, "bad global realm name")
+		})
+
+		Convey("GetRealmData works", func() {
+			// Known realm with data.
+			d, err := db.GetRealmData(c, "proj:some/realm")
+			So(err, ShouldBeNil)
+			So(d, ShouldResembleProto, &protocol.RealmData{
+				EnforceInService: []string{"some"},
+			})
+
+			// Known realm, with no data.
+			d, err = db.GetRealmData(c, "proj:empty")
+			So(err, ShouldBeNil)
+			So(d, ShouldResembleProto, &protocol.RealmData{})
+
+			// Fallback to root.
+			d, err = db.GetRealmData(c, "proj:unknown")
+			So(err, ShouldBeNil)
+			So(d, ShouldResembleProto, &protocol.RealmData{
+				EnforceInService: []string{"root"},
+			})
+
+			// Completely unknown.
+			d, err = db.GetRealmData(c, "unknown:unknown")
+			So(err, ShouldBeNil)
+			So(d, ShouldBeNil)
+		})
 	})
 
 	Convey("GetCertificates works", t, func(c C) {
