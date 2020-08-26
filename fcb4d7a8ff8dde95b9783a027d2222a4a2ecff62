@@ -16,6 +16,24 @@
       "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8f07788c_1ea677ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T23:49:31Z",
+      "side": 1,
+      "message": "I think implementation of the CL is too much.\nJust returns the client from map behind mutex is enough?",
+      "parentUuid": "a1e7f6ca_8854932a",
+      "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
