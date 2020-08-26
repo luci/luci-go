@@ -18,8 +18,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"go.chromium.org/luci/common/clock/testclock"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,12 +38,12 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("succeeds", func() {
 			Convey("with nil mask", func() {
-				So(validateUpdate(req), ShouldBeNil)
+				So(validateUpdate(req, nil), ShouldBeNil)
 			})
 
 			Convey("with empty path", func() {
 				req.UpdateMask = &field_mask.FieldMask{}
-				So(validateUpdate(req), ShouldBeNil)
+				So(validateUpdate(req, nil), ShouldBeNil)
 			})
 
 			Convey("with valid paths", func() {
@@ -50,20 +54,20 @@ func TestValidateUpdate(t *testing.T) {
 					"build.summary_markdown",
 				}}
 				req.Build.SummaryMarkdown = "this is a string"
-				So(validateUpdate(req), ShouldBeNil)
+				So(validateUpdate(req, nil), ShouldBeNil)
 			})
 		})
 
 		Convey("fails", func() {
 			Convey("with nil request", func() {
-				So(validateUpdate(nil), ShouldErrLike, "build.id: required")
+				So(validateUpdate(nil, nil), ShouldErrLike, "build.id: required")
 			})
 
 			Convey("with an invalid path", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"bucket.name",
 				}}
-				So(validateUpdate(req), ShouldErrLike, `unsupported path "bucket.name"`)
+				So(validateUpdate(req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 
 			Convey("with a mix of valid and invalid paths", func() {
@@ -72,7 +76,7 @@ func TestValidateUpdate(t *testing.T) {
 					"bucket.name",
 					"build.output",
 				}}
-				So(validateUpdate(req), ShouldErrLike, `unsupported path "bucket.name"`)
+				So(validateUpdate(req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 		})
 	})
@@ -83,12 +87,12 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("succeeds", func() {
 			req.Build.Status = pb.Status_SUCCESS
-			So(validateUpdate(req), ShouldBeNil)
+			So(validateUpdate(req, nil), ShouldBeNil)
 		})
 
 		Convey("fails", func() {
 			req.Build.Status = pb.Status_SCHEDULED
-			So(validateUpdate(req), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
+			So(validateUpdate(req, nil), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
 		})
 	})
 
@@ -96,17 +100,17 @@ func TestValidateUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
 		req.Build.Tags = []*pb.StringPair{{Key: "ci:builder", Value: ""}}
-		So(validateUpdate(req), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
+		So(validateUpdate(req, nil), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
 	})
 
 	Convey("validate SummaryMarkdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
 		req.Build.SummaryMarkdown = strings.Repeat("☕", summaryMarkdownMaxLength)
-		So(validateUpdate(req), ShouldErrLike, "too big to accept")
+		So(validateUpdate(req, nil), ShouldErrLike, "too big to accept")
 	})
 
-	Convey("validateUpdate with Commit", t, func() {
+	Convey("validate with Commit", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.gitiles_commit"}}
 		req.Build.Output = &pb.Build_Output{GitilesCommit: &pb.GitilesCommit{
@@ -114,6 +118,84 @@ func TestValidateUpdate(t *testing.T) {
 			Host:    "host",
 			Id:      "id",
 		}}
-		So(validateUpdate(req), ShouldErrLike, "ref is required")
+		So(validateUpdate(req, nil), ShouldErrLike, "ref is required")
+	})
+
+	Convey("validate with Steps", t, func() {
+		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		bs := &model.BuildSteps{ID: 1}
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
+
+		Convey("succeeds", func() {
+			req.Build.Steps = []*pb.Step{
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				{Name: "step2", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+			}
+			So(validateUpdate(req, bs), ShouldBeNil)
+		})
+
+		Convey("fails with duplicates", func() {
+			t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+			req.Build.Steps = []*pb.Step{
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+			}
+			So(validateUpdate(req, bs), ShouldErrLike, `duplicate: "step1"`)
+		})
+	})
+}
+
+func TestValidateStep(t *testing.T) {
+	t.Parallel()
+
+	Convey("validate", t, func() {
+		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		step := &pb.Step{Name: "step1"}
+
+		Convey("with status unspecified", func() {
+			step.Status = pb.Status_STATUS_UNSPECIFIED
+			So(validateStep(step), ShouldErrLike, "status: is unspecified or unknown")
+		})
+
+		Convey("with status ENDED_MASK", func() {
+			step.Status = pb.Status_ENDED_MASK
+			So(validateStep(step), ShouldErrLike, "status: must not be ENDED_MASK")
+		})
+
+		Convey("with non-terminal status", func() {
+			Convey("without start_time, when should have", func() {
+				step.Status = pb.Status_STARTED
+				So(validateStep(step), ShouldErrLike, `start_time: required by status "STARTED"`)
+			})
+
+			Convey("with start_time, when should not have", func() {
+				step.Status = pb.Status_SCHEDULED
+				step.StartTime = t
+				So(validateStep(step), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
+			})
+
+		})
+
+		Convey("with terminal status", func() {
+			step.Status = pb.Status_INFRA_FAILURE
+
+			Convey("missing start_time, but end_time", func() {
+				step.EndTime = t
+				So(validateStep(step), ShouldBeNil)
+			})
+
+			Convey("missing end_time", func() {
+				step.StartTime = t
+				So(validateStep(step), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
+			})
+
+			Convey("end_time is before start_time", func() {
+				step.EndTime = t
+				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
+				step.StartTime = st
+				So(validateStep(step), ShouldErrLike, "start_time: is after the end_time")
+			})
+		})
 	})
 }

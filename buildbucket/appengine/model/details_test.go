@@ -142,7 +142,7 @@ func TestDetails(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					s := &BuildSteps{}
-					So(s.FromProto(ctx, []*pb.Step{
+					So(s.FromProto([]*pb.Step{
 						{
 							Name: "step",
 						},
