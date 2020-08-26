@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1e7f6ca_8854932a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T15:19:05Z",
+      "side": 1,
+      "message": "I implemented ClientCache in https://crrev.com/c/2377007.\nLet me separate CLs to make the scopes small.\nThis CL implements NewClient() only.\n\nPTAL.\n",
+      "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

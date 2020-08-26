@@ -277,6 +277,30 @@
       "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db781cd8_fe4a3300",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T15:19:05Z",
+      "side": 1,
+      "message": "I made another CL for caching to keep CLs small. https://crrev.com/c/2377007",
+      "parentUuid": "49624033_4efb2aa1",
+      "range": {
+        "startLine": 32,
+        "startChar": 33,
+        "endLine": 32,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
