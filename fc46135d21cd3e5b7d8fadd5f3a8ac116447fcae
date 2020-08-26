@@ -65,6 +65,24 @@
     },
     {
       "key": {
+        "uuid": "edb625c9_5fc8fd7b",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-26T03:45:02Z",
+      "side": 1,
+      "message": "No, it will use cas-viewer-dev@appspot.gserviceaccount.com. I think we decided to use it for now. There\u0027s no _server side_ API yet to magically generate tokens through the token server.",
+      "parentUuid": "3030cf7b_be2bc5ef",
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "44ac39fd_2a5e062d",
         "filename": "casviewer/client.go",
         "patchSetId": 6
@@ -100,6 +118,30 @@
       "side": 1,
       "message": "I think it requires to have a way to inject established connection around\nhttps://github.com/bazelbuild/remote-apis-sdks/blob/41fea3730849/go/pkg/client/client.go#L324",
       "parentUuid": "44ac39fd_2a5e062d",
+      "range": {
+        "startLine": 32,
+        "startChar": 33,
+        "endLine": 32,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "723a1b9e_f32e987e",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-26T03:45:02Z",
+      "side": 1,
+      "message": "This seems complicated... I recommend to do a simple cache in this case, since we expect to have very few CAS instances (one? two?).\n\n  type Clients struct {\n    m sync.RWMutex\n    clients map[string]*client.Client\n  }\n\n  func (c *Clients) ForInstance(instance string) (*client.Client, error) {\n     // check if we already have it under the read lock\n     // if not, grab the write lock, check `clients` again and construct\n     // the new client if it is still missing, update `clients`\n  }",
+      "parentUuid": "f401cdd5_155bb4df",
       "range": {
         "startLine": 32,
         "startChar": 33,
