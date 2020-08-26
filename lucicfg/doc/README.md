@@ -1041,6 +1041,7 @@ luci.project(
     swarming = None,
     acls = None,
     bindings = None,
+    enforce_realms_in = None,
 )
 ```
 
@@ -1067,6 +1068,7 @@ be used to setup permissions that apply to all resources in the project. See
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Experimental. Will eventually replace `acls`.
+* **enforce_realms_in**: a list of LUCI service IDs that should enforce realms permissions across all realms. Used only during Realms migration to gradually roll out the enforcement. Can also be enabled realm-by-realm via `enforce_in` in [luci.realm(...)](#luci.realm).
 
 
 
@@ -1074,7 +1076,15 @@ be used to setup permissions that apply to all resources in the project. See
 ### luci.realm {#luci.realm}
 
 ```python
-luci.realm(name, extends = None, bindings = None)
+luci.realm(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    extends = None,
+    bindings = None,
+    enforce_in = None,
+)
 ```
 
 
@@ -1164,6 +1174,7 @@ Or separately one by one via [luci.binding(...)](#luci.binding) declarations:
 * **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy`. Required.
 * **extends**: a reference or a list of references to realms to inherit permission from. Optional. Default (and implicit) is `@root`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the realm.
+* **enforce_in**: a list of LUCI service IDs that should enforce this realm's permissions. Children realms inherit and extend this list. Used only during Realms migration to gradually roll out the enforcement realm by realm, service by service.
 
 
 

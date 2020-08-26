@@ -9,6 +9,7 @@ luci.project(
             groups = "root",
         ),
     ],
+    enforce_realms_in = ["cr-buildbucket"],
 )
 
 luci.bucket(
@@ -144,6 +145,7 @@ luci.realm(
 #     role: "role/a"
 #     principals: "group:root"
 #   }
+#   enforce_in_service: "cr-buildbucket"
 # }
 # realms {
 #   name: "bucket"

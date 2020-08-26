@@ -16,13 +16,15 @@
 
 load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/validate.star", "validate")
 
 def _realm(
         ctx,
         *,
         name,
         extends = None,
-        bindings = None):
+        bindings = None,
+        enforce_in = None):
     """Defines a realm.
 
     Realm is a named collection of `(<principal>, <permission>)` pairs.
@@ -109,6 +111,10 @@ def _realm(
       extends: a reference or a list of references to realms to inherit
         permission from. Optional. Default (and implicit) is `@root`.
       bindings: a list of luci.binding(...) to add to the realm.
+      enforce_in: a list of LUCI service IDs that should enforce this realm's
+        permissions. Children realms inherit and extend this list. Used only
+        during Realms migration to gradually roll out the enforcement realm by
+        realm, service by service.
     """
     realms.experiment.require()
     return realms.realm(
@@ -116,6 +122,7 @@ def _realm(
         name = name,
         extends = extends,
         bindings = bindings,
+        enforce_in_service = validate.str_list("enforce_in", enforce_in),
     )
 
 realm = lucicfg.rule(impl = _realm)

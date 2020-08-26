@@ -37,7 +37,8 @@ def _project(
         scheduler = None,
         swarming = None,
         acls = None,
-        bindings = None):
+        bindings = None,
+        enforce_realms_in = None):
     """Defines a LUCI project.
 
     There should be exactly one such definition in the top-level config file.
@@ -66,6 +67,10 @@ def _project(
       bindings: a list of luci.binding(...) to add to the root realm. They will
         be inherited by all realms in the project. Experimental. Will eventually
         replace `acls`.
+      enforce_realms_in: a list of LUCI service IDs that should enforce realms
+        permissions across all realms. Used only during Realms migration to
+        gradually roll out the enforcement. Can also be enabled realm-by-realm
+        via `enforce_in` in luci.realm(...).
     """
     key = keys.project()
     graph.add_node(key, props = {
@@ -89,7 +94,7 @@ def _project(
         bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
 
         # Add all bindings to the root realm.
-        realm(name = "@root", bindings = bindings)
+        realm(name = "@root", bindings = bindings, enforce_in = enforce_realms_in)
 
     return graph.keyset(key)
 

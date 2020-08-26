@@ -31,7 +31,7 @@ message RealmsCfg {
 }
 
 
-// Realm is a named collection of (<principal>, <permission>) pairs.
+// Realm is a named container for (<principal>, <permission>) pairs.
 //
 // A LUCI resource can point to exactly one realm by referring to its full
 // name ("<project>:<realm>"). We say that such resource "belongs to the realm"
@@ -77,6 +77,11 @@ message RealmsCfg {
 // out an appropriate realm for a legacy resource based on resource's existing
 // attributes. Some services may not have legacy resources at all. The legacy
 // realm is not used in these case. Refer to the service documentation.
+//
+// A realm can also carry some small amount of data (usually auth related) that
+// LUCI services use when dealing with this realm. It should be something that
+// all (or at least more than one) LUCI services use. Configuration specific to
+// a single service should be in this service's project config instead.
 message Realm {
   // Name of the realm.
   //
@@ -99,6 +104,14 @@ message Realm {
 
   // List of bindings that define who can do what to resources in this realm.
   repeated Binding bindings = 3;
+
+  // A list of LUCI service IDs that should enforce this realm's permissions.
+  //
+  // Children realms inherit and extend this list.
+  //
+  // Used only during Realms migration to gradually roll out the enforcement
+  // realm by realm, service by service.
+  repeated string enforce_in_service = 4;
 }
 
 
