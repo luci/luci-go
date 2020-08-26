@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3fcdf4a9_a5d1b270",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-26T22:06:21Z",
+      "side": 1,
+      "message": "delayed lgtm",
+      "revId": "abc4a63770e775cfd9b1c579033fd72e625b248f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "84950b25_29406164",
+        "filename": "common/proto/realms/realms_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-26T22:06:21Z",
+      "side": 1,
+      "message": "nit: s/this/that",
+      "range": {
+        "startLine": 84,
+        "startChar": 33,
+        "endLine": 84,
+        "endChar": 37
+      },
+      "revId": "abc4a63770e775cfd9b1c579033fd72e625b248f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
