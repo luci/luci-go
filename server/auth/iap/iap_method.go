@@ -60,8 +60,8 @@ type IAPAuthMethod struct {
 	validator idTokenValidator
 }
 
-// Authenticate returns a User if authentication is successful, otherwise it returns
-// an error.
+// Authenticate returns nil if no IAP assertion header is present, a User if authentication
+// is successful, or an error if unable to validate and identify a user from the assertion header.
 func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
 	iapJwt, ok := r.Header[iapJWTAssertionHeader]
 	if !ok {
