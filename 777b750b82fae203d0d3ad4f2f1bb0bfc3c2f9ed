@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bef42ac7_0f66ac3f",
+        "filename": "resultdb/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-26T00:30:56Z",
+      "side": 1,
+      "message": "nit: change \"this\" to \"an\"?",
+      "range": {
+        "startLine": 64,
+        "startChar": 65,
+        "endLine": 64,
+        "endChar": 69
+      },
+      "revId": "777b750b82fae203d0d3ad4f2f1bb0bfc3c2f9ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

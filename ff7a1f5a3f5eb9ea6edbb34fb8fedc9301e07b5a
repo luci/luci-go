@@ -260,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "22eaa0de_d8b2905c",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-26T00:30:56Z",
+      "side": 1,
+      "message": "I could be wrong, but I thought what Nodir meant was that in the first version we require the option to be specified?",
+      "parentUuid": "7b5f8bd1_2cc09f61",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 74
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9b98eaa1_e253d542",
         "filename": "resultdb/proto/v1/resultdb.proto",
         "patchSetId": 1
