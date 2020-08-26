@@ -36,7 +36,8 @@
 //    luciexe's within the process hierarchy.
 //  * The luciexe binary - The binary has a couple of responsibilities to be
 //    compatible with this protocol. Once the binary has fulfilled it's
-//    responsibilities it's free to do what it wants (i.e. actually do its task).
+//    responsibilities it's free to do what it wants (i.e. actually do its
+//    task).
 //
 // In general, we strive where possible to minimize the complexity of the
 // luciexe binary. This is because we expect to have a small number of 'host
@@ -113,6 +114,20 @@
 //   * Set the $LOGDOG_NAMESPACE to a prefix which namespaces all logdog streams
 //     generated from the luciexe.
 //
+//   * Set the Status of initial buildbucket.v2.Build message to `STARTED`.
+//
+//   * Set the CreateTime and StartTime of initial buildbucket.v2.Build message
+//     to the current timestamp.
+//
+//   * Clear following fields in the initial buildbucket.v2.Build message.
+//      - EndTime
+//      - Output
+//      - StatusDetails
+//      - Steps
+//      - SummaryMarkdown
+//      - Tags
+//      - UpdateTime
+//
 // The CWD is up to your application. Some contexts (like Buildbucket) will
 // guarantee an empty CWD, but others (like recursive invocation) may explicitly
 // share CWD between multiple luciexe's.
@@ -129,15 +144,26 @@
 //
 // The invoker MUST write a binary-encoded buildbucket.v2.Build to the stdin of
 // the luciexe which contains all the input parameters that the luciexe needs to
-// know to run successfully. No fields are required, but the invoker SHOULD fill
-// in as much of the Build proto as appropriate.
+// know to run successfully.
 //
 // The luciexe binary
 //
 // Once running, the luciexe MUST read a binary-encoded buildbucket.v2.Build
-// message from stdin until EOF. It MUST NOT assume that any particular fields
-// in the Build message are set. However, the Host Application MAY fill in any
-// fields it thinks are useful.
+// message from stdin until EOF.
+//
+// As per the invoker's responsibility, the luciexe binary MAY expect the
+// status of the initial Build message to be `STARTED` and CreateTime and
+// StartTime are populated. It MAY also expect following fields to be empty.
+// It MUST NOT assume other fields in the Build message are set. However, the
+// Host Application or invoker MAY fill in other fields they think are useful.
+//
+//   EndTime
+//   Output
+//   StatusDetails
+//   Steps
+//   SummaryMarkdown
+//   Tags
+//   UpdateTime
 //
 // As per the Host Application's responsibilities, the luciexe binary MAY expect
 // the "luciexe" and "local_auth" sections of LUCI_CONTEXT to be filled. Other
@@ -157,7 +183,7 @@
 //   Content-Type: "application/luci+proto; message=buildbucket.v2.Build"
 //   Type: Datagram
 //
-// Additionally, a build.proto stream may append "; encoding=zlib" to the
+// Additionally, a build.proto stream MAY append "; encoding=zlib" to the
 // Content-Type (and compress each message accordingly). This is useful for when
 // you potentially have very large builds.
 //
@@ -180,14 +206,14 @@
 // The following Build fields will be read from the luciexe-controlled
 // build.proto stream:
 //
-//   Steps
-//   SummaryMarkdown
-//   Status
-//   StatusDetails
-//   UpdateTime
-//   Tags
 //   EndTime
 //   Output
+//   Status
+//   StatusDetails
+//   Steps
+//   SummaryMarkdown
+//   Tags
+//   UpdateTime
 //
 // The luciexe binary - Reporting final status
 //
