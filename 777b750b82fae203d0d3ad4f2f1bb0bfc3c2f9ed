@@ -22,6 +22,75 @@
       "revId": "777b750b82fae203d0d3ad4f2f1bb0bfc3c2f9ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "691c2b8c_cfb3950c",
+        "filename": "resultdb/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T02:14:16Z",
+      "side": 1,
+      "message": "ResultDB\n\n(case)",
+      "range": {
+        "startLine": 69,
+        "startChar": 33,
+        "endLine": 69,
+        "endChar": 41
+      },
+      "revId": "777b750b82fae203d0d3ad4f2f1bb0bfc3c2f9ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5daf457_85590540",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T02:14:16Z",
+      "side": 1,
+      "message": "these two are fairly generic. I wonder if they should be in common.proto too",
+      "range": {
+        "startLine": 435,
+        "startChar": 0,
+        "endLine": 456,
+        "endChar": 3
+      },
+      "revId": "777b750b82fae203d0d3ad4f2f1bb0bfc3c2f9ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7d8a427_bb769706",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T02:14:16Z",
+      "side": 1,
+      "message": "since this field is optional, i recommend adding it closer to the time when you are ready to actually implement it, perhaps after the main logic of the RPC is implemented",
+      "range": {
+        "startLine": 478,
+        "startChar": 0,
+        "endLine": 480,
+        "endChar": 0
+      },
+      "revId": "777b750b82fae203d0d3ad4f2f1bb0bfc3c2f9ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
