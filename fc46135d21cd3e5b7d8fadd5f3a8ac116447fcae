@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bef80b92_6ff14b93",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T04:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ceaddb69_930eccc8",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b8c789d_8c8b0875",
         "filename": "casviewer/client.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9427e9e_e9a657ed",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T04:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b8c789d_8c8b0875",
+      "range": {
+        "startLine": 26,
+        "startChar": 36,
+        "endLine": 26,
+        "endChar": 40
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,24 @@
       "side": 1,
       "message": "Ah, I thought we use cas-viewer-dev@appspot.gserviceaccount.com to get token from token server.\n\njwata, then could you add the account using terraform to chromium-swarm-dev?",
       "parentUuid": "edb625c9_5fc8fd7b",
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c31869f0_81b827bd",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T04:23:03Z",
+      "side": 1,
+      "message": "will do.",
+      "parentUuid": "9ed120e9_3ca09cac",
       "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -160,6 +226,30 @@
       "side": 1,
       "message": "This seems complicated... I recommend to do a simple cache in this case, since we expect to have very few CAS instances (one? two?).\n\n  type Clients struct {\n    m sync.RWMutex\n    clients map[string]*client.Client\n  }\n\n  func (c *Clients) ForInstance(instance string) (*client.Client, error) {\n     // check if we already have it under the read lock\n     // if not, grab the write lock, check `clients` again and construct\n     // the new client if it is still missing, update `clients`\n  }",
       "parentUuid": "f401cdd5_155bb4df",
+      "range": {
+        "startLine": 32,
+        "startChar": 33,
+        "endLine": 32,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49624033_4efb2aa1",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-26T04:23:03Z",
+      "side": 1,
+      "message": "\u003e since we expect to have very few CAS instances (one? two?).\n5 CAS instances on prod, but it\u0027s not too many.\n\nLet me keep a cache of clients, one per instance.",
+      "parentUuid": "723a1b9e_f32e987e",
       "range": {
         "startLine": 32,
         "startChar": 33,
