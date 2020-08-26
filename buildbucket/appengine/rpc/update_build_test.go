@@ -18,10 +18,9 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/genproto/protobuf/field_mask"
-
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
@@ -194,6 +193,34 @@ func TestValidateStep(t *testing.T) {
 				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = st
 				So(validateStep(step), ShouldErrLike, "start_time: is after the end_time")
+			})
+		})
+
+		Convey("with logs", func() {
+			step.Status = pb.Status_STARTED
+			step.StartTime = t
+
+			Convey("missing name", func() {
+				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].name: required")
+			})
+
+			Convey("missing url", func() {
+				step.Logs = []*pb.Log{{Name: "name", ViewUrl: "view_url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].url: required")
+			})
+
+			Convey("missing view_url", func() {
+				step.Logs = []*pb.Log{{Name: "name", Url: "url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].view_url: required")
+			})
+
+			Convey("duplicate name", func() {
+				step.Logs = []*pb.Log{
+					{Name: "name", Url: "url", ViewUrl: "view_url"},
+					{Name: "name", Url: "url", ViewUrl: "view_url"},
+				}
+				So(validateStep(step), ShouldErrLike, `logs[1].name: duplicate: "name"`)
 			})
 		})
 	})

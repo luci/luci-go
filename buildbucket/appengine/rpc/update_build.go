@@ -148,7 +148,22 @@ func validateStep(step *pb.Step) error {
 		return errors.Reason("start_time: is after the end_time (%d > %d)", st.Unix(), et.Unix()).Err()
 	}
 
-	// TODO(ddoman): validate logs and status with parent.
+	seen := stringset.New(len(step.Logs))
+	for i, log := range step.Logs {
+		switch {
+		case log.GetName() == "":
+			return errors.Reason("logs[%d].name: required", i).Err()
+		case log.Url == "":
+			return errors.Reason("logs[%d].url: required", i).Err()
+		case log.ViewUrl == "":
+			return errors.Reason("logs[%d].view_url: required", i).Err()
+		case seen.Has(log.Name):
+			return errors.Reason("logs[%d].name: duplicate: %q", i, log.Name).Err()
+		}
+		seen.Add(log.Name)
+	}
+
+	// TODO(ddoman): validate status with parent.
 	return nil
 }
 
