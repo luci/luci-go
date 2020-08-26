@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e20b2c17_91336fd8",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-26T06:23:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9398aca1_f0840e61",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 0
+      },
+      "revId": "2e45d45f80f3ba66639d92d657b5f5ef577879af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67b2e054_d8160f6e",
         "filename": "cv/internal/gerrit/botdata/bot_data.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2e45d45f80f3ba66639d92d657b5f5ef577879af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "496d9318_34ad3b32",
+        "filename": "cv/internal/gerrit/botdata/bot_data.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-26T06:23:10Z",
+      "side": 1,
+      "message": "Yup!That\u0027s better.",
+      "parentUuid": "67b2e054_d8160f6e",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 2
+      },
+      "revId": "2e45d45f80f3ba66639d92d657b5f5ef577879af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
