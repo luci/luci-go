@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4896c1fa_8c3ca9ae",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:49:44Z",
+      "side": 1,
+      "message": "ah, nvm. :( my comment doesn\u0027t make sense at all, as this switch is not just switching the status",
+      "parentUuid": "ca557387_37351d36",
+      "range": {
+        "startLine": 134,
+        "startChar": 24,
+        "endLine": 134,
+        "endChar": 49
+      },
+      "revId": "a84e50b22c18b891e8d495309f7fcd221b79ccc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "daba97e3_2dbf929a",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 4
