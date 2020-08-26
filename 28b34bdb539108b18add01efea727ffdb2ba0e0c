@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "34903f57_0c1387ab",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Yes, it looks like that BuildSteps._pre_put_hook() has an assertion for it, and perhaps, BuildSteps in go could have the same check with PropertyLoadSaver interface.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/model.py;l\u003d438-442;drc\u003d1cfba983de10022ef4afb88c017dbd8725856d31\n\nbut also, we\u0027d like to check the byte size during the validation process, I believe.\nHow about FromProto() checks the zipped []byte size with this constant again after zipping. Then, validateUpdate() doesn\u0027t need to run the size check, and this constant doesn\u0027t need to be exposed.\n\n--------------------\nQ. was there any reason why the size of the zipped bytes were checked again inside validate_steps(), not in model.write_steps()? for example, BuildSteps with zipped steps larger than 1e6 is allowed some places, whereas it is not allowed in some other places.",
+      "parentUuid": "9089a42e_1a058cd5",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "57065fc9_62174094",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a13b082e_c7e64426",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57065fc9_62174094",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "62c137ed_0469e1b5",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3dd425c9_6766ae17",
+      "range": {
+        "startLine": 52,
+        "startChar": 20,
+        "endLine": 52,
+        "endChar": 41
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "577fd66e_7e42d04b",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
@@ -79,6 +139,30 @@
       "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64621eb4_95a03d01",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "577fd66e_7e42d04b",
+      "range": {
+        "startLine": 93,
+        "startChar": 14,
+        "endLine": 93,
+        "endChar": 23
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "c963d2d9_d157d88c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eaeabc4a_080bbcd1",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 26
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cb10829c_8d103d52",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
@@ -119,6 +227,24 @@
       "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a9c205e_504766a0",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "cb10829c_8d103d52",
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -193,6 +319,30 @@
     },
     {
       "key": {
+        "uuid": "7ae3ef03_8c952774",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Changed the err message and added an inline comment. PTAL",
+      "parentUuid": "193347a5_72798cfe",
+      "range": {
+        "startLine": 132,
+        "startChar": 6,
+        "endLine": 132,
+        "endChar": 50
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0159bb6f_e57cced7",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 2
@@ -213,6 +363,30 @@
       "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c0f1069_f7c9217a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T17:02:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0159bb6f_e57cced7",
+      "range": {
+        "startLine": 139,
+        "startChar": 6,
+        "endLine": 139,
+        "endChar": 44
+      },
+      "revId": "28b34bdb539108b18add01efea727ffdb2ba0e0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
