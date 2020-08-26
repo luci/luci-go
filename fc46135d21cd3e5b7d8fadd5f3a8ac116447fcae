@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "ceaddb69_930eccc8",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T02:55:09Z",
+      "side": 1,
+      "message": "separate these import?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b8c789d_8c8b0875",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T02:55:09Z",
+      "side": 1,
+      "message": "instance? I think it is better to avoid abbreviation here.",
+      "range": {
+        "startLine": 26,
+        "startChar": 36,
+        "endLine": 26,
+        "endChar": 40
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3030cf7b_be2bc5ef",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T02:55:09Z",
+      "side": 1,
+      "message": "does this get service account token from token server appropriately?",
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "44ac39fd_2a5e062d",
         "filename": "casviewer/client.go",
         "patchSetId": 6
@@ -13,6 +76,30 @@
       "writtenOn": "2020-08-26T02:41:56Z",
       "side": 1,
       "message": "This is unfortunate. Each new client is a new gRPC connection. Is there a way to share a client between different instances so we can have a single shared client (and a single connection) for everything? If not, you may need to keep a cache of clients, one per instance. Creating clients on the fly in each separate request will have very bad performance.",
+      "range": {
+        "startLine": 32,
+        "startChar": 33,
+        "endLine": 32,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f401cdd5_155bb4df",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T02:55:09Z",
+      "side": 1,
+      "message": "I think it requires to have a way to inject established connection around\nhttps://github.com/bazelbuild/remote-apis-sdks/blob/41fea3730849/go/pkg/client/client.go#L324",
+      "parentUuid": "44ac39fd_2a5e062d",
       "range": {
         "startLine": 32,
         "startChar": 33,
