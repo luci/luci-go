@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7f7914a_3f0d93a1",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-26T23:57:19Z",
+      "side": 1,
+      "message": "cache? Also maybe make it \"CAS client cache key\" to be more specific?",
+      "range": {
+        "startLine": 29,
+        "startChar": 29,
+        "endLine": 29,
+        "endChar": 36
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6d3bd58_46dcbe30",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-26T23:57:19Z",
+      "side": 1,
+      "message": "nit: I wonder if we can use a promise/future for this, if that\u0027s not an overkill.",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 76
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
