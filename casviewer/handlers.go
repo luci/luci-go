@@ -20,8 +20,11 @@ import (
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router) {
+func InstallHandlers(r *router.Router, cc *ClientCache) {
 	mw := router.MiddlewareChain{}
+	mw.Extend(
+		withClientCacheMW(cc),
+	)
 
 	r.GET("/", mw, rootHanlder)
 	r.GET("/projects/:proj/instances/:inst/blobs/:hash/:size/tree", mw, treeHandler)
@@ -36,8 +39,14 @@ func rootHanlder(c *router.Context) {
 
 func treeHandler(c *router.Context) {
 	// TODO(crbug.com/1121471): implement me.
+	//
+	// cl, err := clientCache(c.Context).ForInstance(
+	// 	c.Context, "projects/chromium-swarm-dev/instances/default_instance")
 }
 
 func getHandler(c *router.Context) {
 	// TODO(crbug.com/1121471): implement me.
+	//
+	// cl, err := clientCache(c.Context).ForInstance(
+	// 	c.Context, "projects/chromium-swarm-dev/instances/default_instance")
 }
