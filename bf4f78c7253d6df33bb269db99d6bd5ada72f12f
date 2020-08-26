@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7e126c62_a58905a0",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T19:48:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a39f354_ce9d287e",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 26
+      },
+      "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6cb7ce02_7c9b5847",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbfde065_1fa33430",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T19:48:25Z",
+      "side": 1,
+      "message": "It is supposed to be 1 in all of Build{Infra,InputProperties,OutputProperfiles,Steps}\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/details.go;l\u003d109?q\u003d%22%201%20%22\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fbuildbucket%2Fappengine%2Fmodel%2F\n\nPerhaps, Load/Save of them can auto set the field value with 1.\n\nI removed this ID value in this CL. The original python validator doesn\u0027t set the field with 1.\n: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/model.py;l\u003d444-454",
+      "parentUuid": "6cb7ce02_7c9b5847",
+      "range": {
+        "startLine": 163,
+        "startChar": 29,
+        "endLine": 163,
+        "endChar": 30
+      },
+      "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
