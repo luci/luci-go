@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A key-value map describing one variant of a test case.
@@ -59,4 +61,44 @@ message StringPair {
 
   // Max length: 256.
   string value = 2;
+}
+
+// CommitPosition specifies the numerical position of the commit an invocation
+// runs against, in a repository's commit log. More specifically, a ref's commit
+// log.
+// It also specifies the repo/ref combination that the commit position exists
+// in, to provide context.
+message CommitPosition {
+  // The following fields identify a git repository and a ref within which the
+  // numerical position below identifies a single commit.
+  string host = 1;
+  string project = 2;
+  string ref = 3;
+
+  // The numerical position of the commit in the log for the host/project/ref
+  // above.
+  int64 position = 4;
+}
+
+// A range of commit positions.
+// Commit positions are assumed to increase from earliest to latest.
+// Note that if both earliest and latest are set, their host/project/ref must
+// be identical.
+// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+message CommitPositionRange {
+  // The lowest commit position to include in the range.
+  CommitPosition earliest = 1;
+
+  // Include only commit positions that that are strictly lower than this.
+  CommitPosition latest = 2;
+}
+
+// A range of timestamps.
+// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+message TimeRange {
+  // The oldest timestamp to include in the range.
+  google.protobuf.Timestamp earliest = 1;
+
+  // Include only timestamps that are strictly older than this.
+  google.protobuf.Timestamp latest = 2;
 }
