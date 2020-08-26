@@ -226,12 +226,6 @@ td.DevStatus {
   background-color: #eee;
 }
 
-td.DevSlave {
-  padding: 4px 4px 4px 4px;
-  color: #333333;
-  background-color: #eee;
-}
-
 td.first {
   border-top-left-radius: 5px;
   -webkit-border-top-left-radius: 5px;
@@ -366,29 +360,6 @@ li.sublink:nth-child(odd) {
 
 .DevStatusBox a.notinbuilder {
   border-style: none;
-}
-
-.DevSlaveBox {
-  text-align: center;
-  height: 10px;
-  padding: 0 2px;
-  line-height: 0;
-  white-space: nowrap;
-}
-
-.DevSlaveBox a {
-  opacity: 0.85;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  display: block;
-  width: 90%;
-  height: 10px;
-  line-height: 20px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 a.noround {
