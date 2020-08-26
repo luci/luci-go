@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60e180e3_da5eb8cf",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T17:42:00Z",
+      "side": 1,
+      "message": "omit? i think this is constant true, i.e. GetTestResultHistoryRequest wouldn\u0027t be used in any other case",
+      "range": {
+        "startLine": 435,
+        "startChar": 5,
+        "endLine": 435,
+        "endChar": 33
+      },
+      "revId": "4e39f095b3ec5e33ba5a41f78c75c8eb9734b863",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4ab5ccf_3f170de1",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T17:42:00Z",
+      "side": 1,
+      "message": "period?",
+      "range": {
+        "startLine": 436,
+        "startChar": 18,
+        "endLine": 436,
+        "endChar": 19
+      },
+      "revId": "4e39f095b3ec5e33ba5a41f78c75c8eb9734b863",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
