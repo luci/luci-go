@@ -33,6 +33,24 @@
       "revId": "7fff45d0c713e9c0b376d460a9f742687473d91f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89fbff2d_86bfc89d",
+        "filename": "buildbucket/appengine/rpc/update_build_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-26T19:58:55Z",
+      "side": 1,
+      "message": "split imports into two groups.\n\n// Any imports from luci, but not from buldbucket\n...\n\n// Any imports from BB\n....\n\n(with an exception of \"go.chromium.org/..../assertions\")",
+      "parentUuid": "01444801_28d6abca",
+      "revId": "7fff45d0c713e9c0b376d460a9f742687473d91f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
