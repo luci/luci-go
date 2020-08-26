@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a39f354_ce9d287e",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T18:34:08Z",
+      "side": 1,
+      "message": "if !seen.Add(step.Name)",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 26
+      },
+      "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cb7ce02_7c9b5847",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T18:34:08Z",
+      "side": 1,
+      "message": "should this be a constant? currently 1 looks magical",
+      "range": {
+        "startLine": 163,
+        "startChar": 29,
+        "endLine": 163,
+        "endChar": 30
+      },
+      "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dd2da94_fe946b39",
+        "filename": "buildbucket/appengine/rpc/update_build_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-26T18:34:08Z",
+      "side": 1,
+      "message": "it seems these imports were added into random import blocks",
+      "revId": "bf4f78c7253d6df33bb269db99d6bd5ada72f12f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
