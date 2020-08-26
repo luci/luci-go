@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44ac39fd_2a5e062d",
+        "filename": "casviewer/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-26T02:41:56Z",
+      "side": 1,
+      "message": "This is unfortunate. Each new client is a new gRPC connection. Is there a way to share a client between different instances so we can have a single shared client (and a single connection) for everything? If not, you may need to keep a cache of clients, one per instance. Creating clients on the fly in each separate request will have very bad performance.",
+      "range": {
+        "startLine": 32,
+        "startChar": 33,
+        "endLine": 32,
+        "endChar": 37
+      },
+      "revId": "fc46135d21cd3e5b7d8fadd5f3a8ac116447fcae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
