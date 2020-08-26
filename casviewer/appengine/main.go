@@ -20,8 +20,11 @@ import (
 )
 
 func main() {
+	cc := casviewer.NewClientCache()
+	defer cc.Clear()
+
 	server.Main(nil, nil, func(srv *server.Server) error {
-		casviewer.InstallHandlers(srv.Routes)
+		casviewer.InstallHandlers(srv.Routes, cc)
 		return nil
 	})
 }
