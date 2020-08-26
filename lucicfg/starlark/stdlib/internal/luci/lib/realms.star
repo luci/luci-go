@@ -73,7 +73,8 @@ def _realm(
         impl,
         name,
         extends = None,
-        bindings = None):
+        bindings = None,
+        enforce_in_service = None):
     """Implementation of luci.realm(...) in terms of `impl`."""
     name = validate.string(
         "name",
@@ -93,7 +94,10 @@ def _realm(
         fail("@root realm can't extend other realms")
 
     key = impl.keys.realm(name)
-    graph.add_node(key, props = {"name": name}, idempotent = True)
+    graph.add_node(key, props = {
+        "name": name,
+        "enforce_in_service": sorted(set(enforce_in_service or [])),
+    }, idempotent = True)
     graph.add_edge(impl.keys.realms_root(), key)
     for parent in parents:
         graph.add_edge(parent, key, title = "extends")
@@ -269,6 +273,7 @@ def _generate_realm(impl, realm):
             )
             for role in sorted(per_role)
         ],
+        enforce_in_service = realm.props.enforce_in_service,
     )
 
 def _generate_custom_role(impl, role):
