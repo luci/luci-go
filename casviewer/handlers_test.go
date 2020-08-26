@@ -32,10 +32,10 @@ func TestHandlers(t *testing.T) {
 		InstallHandlers(r)
 
 		srv := httptest.NewServer(r)
+		client := &http.Client{}
 
-		resp, err := http.Get(srv.URL)
+		resp, err := client.Get(srv.URL)
 		So(err, ShouldBeNil)
-		defer resp.Body.Close()
 		So(resp.StatusCode, ShouldEqual, http.StatusOK)
 	})
 }
