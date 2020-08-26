@@ -92,7 +92,14 @@ const config: webpack.Configuration = {
       });
 
       const localDevConfigs = require('./dev-configs/local-dev-configs.json');
-      app.use(/^(?!\/(ui|static\/(dist|style))\/).*/, createProxyMiddleware({target: localDevConfigs.milo.url, changeOrigin: true}));
+      app.use(/^(?!\/(ui|static\/(dist|style))\/).*/, createProxyMiddleware({
+        ssl: {
+          key: fs.readFileSync(path.join(__dirname, 'dev-configs/dev-server.key'), 'utf-8'),
+          cert: fs.readFileSync(path.join(__dirname, 'dev-configs/dev-server.crt'), 'utf-8'),
+        },
+        target: localDevConfigs.milo.url,
+        changeOrigin: true,
+      }));
     },
   },
 };
