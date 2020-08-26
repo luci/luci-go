@@ -64,6 +64,9 @@ func TestRealms(t *testing.T) {
 							Principals:  []string{"group:g2", "user:u2@example.com"},
 						},
 					},
+					Data: &protocol.RealmData{
+						EnforceInService: []string{"a"},
+					},
 				},
 				{
 					Name: "proj:empty",
@@ -97,6 +100,10 @@ func TestRealms(t *testing.T) {
 		So(r.HasRealm("proj:r1"), ShouldBeTrue)
 		So(r.HasRealm("proj:empty"), ShouldBeTrue)
 		So(r.HasRealm("proj:unknown"), ShouldBeFalse)
+
+		So(r.Data("proj:r1").EnforceInService, ShouldResemble, []string{"a"})
+		So(r.Data("proj:empty"), ShouldBeNil)
+		So(r.Data("proj:unknown"), ShouldBeNil)
 
 		groups, idents := r.QueryAuthorized("proj:r1", 0)
 		So(groups, ShouldResemble, indexes(grp, "g1"))
