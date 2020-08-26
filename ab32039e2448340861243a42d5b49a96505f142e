@@ -56,6 +56,24 @@
       "revId": "ab32039e2448340861243a42d5b49a96505f142e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66dd8f68_cc1c66c5",
+        "filename": "server/auth/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-26T00:25:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9c1a893_ebb6b2a8",
+      "revId": "ab32039e2448340861243a42d5b49a96505f142e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
