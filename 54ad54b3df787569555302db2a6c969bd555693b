@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "67961874_96654b58",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T00:14:04Z",
+      "side": 1,
+      "message": "call resp.Body.Close()\nhttps://golang.org/pkg/net/http/#Response",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 6
+      },
+      "revId": "54ad54b3df787569555302db2a6c969bd555693b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42114ca6_e93a4f73",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-26T00:14:04Z",
+      "side": 1,
+      "message": "why not http.Get ?",
+      "range": {
+        "startLine": 37,
+        "startChar": 15,
+        "endLine": 37,
+        "endChar": 34
+      },
+      "revId": "54ad54b3df787569555302db2a6c969bd555693b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
