@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "85b0be70_c027ba1f",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T00:40:00Z",
+      "side": 1,
+      "message": "this is not necessary, mutexes in Go are usually embedded directly into the struct (especially if the struct is meant to be used via a pointer only, like *ClientCache).",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 10
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d6d3bd58_46dcbe30",
         "filename": "casviewer/client.go",
         "patchSetId": 5
@@ -41,6 +64,52 @@
         "startChar": 1,
         "endLine": 53,
         "endChar": 76
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e52e7c87_be269ae2",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T00:40:00Z",
+      "side": 1,
+      "message": "If you do this, there\u0027s no reason to use RWLock, it protect tiny portion of the code. I was suggesting to use RWLock to make sure we never create duplicate clients:\n\n  cc.lock.RLock()\n  client, ok :\u003d cc.clients[instance]\n  cc.lock.RUnlock()\n\n  if ok {\n    return client\n  }\n\n  cc.lock.Lock()\n  defer cc.lock.Unlock()\n\n  client, ok :\u003d cc.clients[instance]\n  if ok {\n    return client // someone actually created the client already\n  }\n\n  client :\u003d ...\n  cc.clients[instances] \u003d client\n  return client",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 86,
+        "endChar": 1
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1280393b_91ef18a1",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T00:40:00Z",
+      "side": 1,
+      "message": "I have a suspicion this test hits production credentials...",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 15
       },
       "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
