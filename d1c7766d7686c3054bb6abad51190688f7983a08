@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0aa7d47a_a6696ed4",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T02:25:38Z",
+      "side": 1,
+      "message": "Ah, forgot to update it.\nThanks. updated it.\n\nIMO, we can omit \"CAS\" because this app doesn\u0027t use multiple clients at this moment.",
+      "parentUuid": "e7f7914a_3f0d93a1",
+      "range": {
+        "startLine": 29,
+        "startChar": 29,
+        "endLine": 29,
+        "endChar": 36
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85b0be70_c027ba1f",
         "filename": "casviewer/client.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69225218_dd1161de",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T02:25:38Z",
+      "side": 1,
+      "message": "Updated.",
+      "parentUuid": "85b0be70_c027ba1f",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 10
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f09b7c58_9ab4af7f",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T02:25:38Z",
+      "side": 1,
+      "message": "I changed the scope the write loc, with which this problem won\u0027t happen.",
+      "parentUuid": "d6d3bd58_46dcbe30",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 76
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e52e7c87_be269ae2",
         "filename": "casviewer/client.go",
         "patchSetId": 5
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "2086a008_6a18c88b",
+        "filename": "casviewer/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T02:25:38Z",
+      "side": 1,
+      "message": "It doesn\u0027t block writers to connect to the instances. Takuto also suggested a similar. https://crrev.com/c/2376145/15#message-200f379b4158155ea29f77fc27b96bab0c614416\n\nBut I updated to your suggestion since yours looks simpler with no client duplications.",
+      "parentUuid": "e52e7c87_be269ae2",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 86,
+        "endChar": 1
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1280393b_91ef18a1",
         "filename": "casviewer/client_test.go",
         "patchSetId": 5
@@ -105,6 +201,30 @@
       "writtenOn": "2020-08-27T00:40:00Z",
       "side": 1,
       "message": "I have a suspicion this test hits production credentials...",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 15
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a449b81_63c46071",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T02:25:38Z",
+      "side": 1,
+      "message": "I added logs, but asSelfOAuthHeaders isn\u0027t called.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/auth/client.go;l\u003d649?q\u003dasSelfOauthHeaders\u0026sq\u003d\u0026ss\u003dchromium\n\nMy understanding is that it reads credentials at RPC call?",
+      "parentUuid": "1280393b_91ef18a1",
       "range": {
         "startLine": 26,
         "startChar": 5,
