@@ -52,6 +52,24 @@
       "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "babc7165_baa61f30",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T00:04:51Z",
+      "side": 1,
+      "message": "Did you suggest `Mutex` over `RWMutex`?",
+      "parentUuid": "781f9f89_f18dfe71",
+      "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
