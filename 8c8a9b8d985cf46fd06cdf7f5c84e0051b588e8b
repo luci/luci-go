@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a733b4a_f3348b91",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-27T23:24:15Z",
+      "side": 1,
+      "message": " The solution",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c94b234_2b6ddf1a",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-27T23:24:15Z",
+      "side": 1,
+      "message": "Nits: Committer",
+      "range": {
+        "startLine": 21,
+        "startChar": 20,
+        "endLine": 21,
+        "endChar": 28
+      },
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "491211ff_07874f1e",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-27T23:24:15Z",
+      "side": 1,
+      "message": "Can we put return type here?",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d3c691f_700f4a04",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-27T23:24:15Z",
+      "side": 1,
+      "message": "I think maybe you want to double check if there is any library / work that can already do the job, as it seems quite general? The solution here seems a bit hacky to me.",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
