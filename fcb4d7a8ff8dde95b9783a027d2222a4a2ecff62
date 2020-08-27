@@ -70,6 +70,24 @@
       "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b49b2f58_81e3c92f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T00:39:01Z",
+      "side": 1,
+      "message": "I don\u0027t think we see difference but RWMutex might be appropriate and pseude code is like below.\n\n```\nmu.RLock()\nclient, ok :\u003d cache[instance]\nmu.RUnlokc()\n\nif ok {\n  return client\n}\n\nclient :\u003d NewClient(...)\n\nmu.Lock()\nif c, ok :\u003d cache[instance]; ok {\n   client.Close()\n   return c\n}\ncache[instance] \u003d client\nmu.Unlock()\nreturn client\n```",
+      "parentUuid": "babc7165_baa61f30",
+      "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
