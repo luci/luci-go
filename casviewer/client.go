@@ -25,11 +25,8 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// clientCacheKey is a context key type for ClientCache value.
-type clientCacheKey struct{}
-
-// ccKey is a context key for ClientCache value.
-var ccKey = &clientCacheKey{}
+// clientCacheKey is a context key for ClientCache.
+var clientCacheKey = "client cache key"
 
 // ClientCache caches CAS clients, one per an instance.
 type ClientCache struct {
@@ -57,6 +54,7 @@ func (cc *ClientCache) Get(instance string) (*client.Client, error) {
 		return cl, nil
 	}
 
+	// Obtain the write lock.
 	cc.lock.Lock()
 	defer cc.lock.Unlock()
 
@@ -66,6 +64,7 @@ func (cc *ClientCache) Get(instance string) (*client.Client, error) {
 		return cl, nil
 	}
 
+	// Create a new client for the instance.
 	cl, err := NewClient(cc.ctx, instance)
 	if err != nil {
 		return nil, err
@@ -89,27 +88,23 @@ func (cc *ClientCache) Clear() {
 // withClientCacheMW creates a middleware that injects the ClientCache to context.
 func withClientCacheMW(cc *ClientCache) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		c.Context = context.WithValue(c.Context, ccKey, cc)
+		c.Context = context.WithValue(c.Context, &clientCacheKey, cc)
 		next(c)
 	}
 }
 
 // GetClient returns a Client by loading it from cache or creating a new one.
 func GetClient(c context.Context, instance string) (*client.Client, error) {
-	cc, err := clientCache(c)
-	if err != nil {
-		return nil, err
-	}
-	return cc.Get(instance)
+	return clientCache(c).Get(instance)
 }
 
 // clientCache returns ClientCache by retrieving it from the context.
-func clientCache(c context.Context) (*ClientCache, error) {
-	cc, ok := c.Value(ccKey).(*ClientCache)
+func clientCache(c context.Context) *ClientCache {
+	cc, ok := c.Value(&clientCacheKey).(*ClientCache)
 	if !ok {
-		return nil, errors.New("ClientCache not installed in the context")
+		panic("ClientCache not installed in the context")
 	}
-	return cc, nil
+	return cc
 }
 
 // NewClient connects to the instance of remote execution service, and returns a client.
