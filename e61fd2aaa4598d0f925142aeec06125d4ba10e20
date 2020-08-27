@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e17ebae9_480fddcf",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T21:37:14Z",
+      "side": 1,
+      "message": "It doesn\u0027t. Changing this is a separate issue.",
+      "parentUuid": "7bc34f1b_8eed01f5",
+      "range": {
+        "startLine": 351,
+        "startChar": 4,
+        "endLine": 351,
+        "endChar": 12
+      },
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08847a91_1f2ea2c2",
         "filename": "scheduler/appengine/engine/permissions.go",
         "patchSetId": 1
@@ -140,6 +164,24 @@
       "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbea38ef_82cd0220",
+        "filename": "scheduler/appengine/engine/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T21:37:14Z",
+      "side": 1,
+      "message": "See the commit message. I don\u0027t want to make two migrations at once, it will complicate things. Primarily I don\u0027t want to explain to people why I\u0027m adding some random \"administrators\" group to realms.cfg in their projects. And if I don\u0027t add it, the signal from HasPermissionDryRun will be wrong (because we are really changing ACLs now, not just migrating them).\n\nFiled https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1122740 (but it is /dev/null).",
+      "parentUuid": "cde3f5c5_5b94dbdd",
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
