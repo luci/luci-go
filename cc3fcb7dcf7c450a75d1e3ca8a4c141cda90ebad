@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ea30aa1_514db2f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-08-27T19:58:03Z",
+      "side": 1,
+      "message": "I was wondering if the fakes would benefit from:\n- Put in a subpackage with \u0027test\u0027 suffix, i.e. \u0027gitilestest\u0027\n- Then it could be made to import testing, which would enable things like t.Error() instead of a panic().\n\nbut it\u0027s more a general question and it\u0027s not worth blocking this CL, it\u0027s great as-is.",
+      "revId": "cc3fcb7dcf7c450a75d1e3ca8a4c141cda90ebad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
