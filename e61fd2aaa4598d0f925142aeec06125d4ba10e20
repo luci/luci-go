@@ -182,6 +182,24 @@
       "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f757c71f_c966aec7",
+        "filename": "scheduler/appengine/engine/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-27T21:38:53Z",
+      "side": 1,
+      "message": "\u003e the signal from HasPermissionDryRun will be wrong \n\nmakes sense to me, sorry for the noise",
+      "parentUuid": "fbea38ef_82cd0220",
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
