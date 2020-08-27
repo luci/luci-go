@@ -16,6 +16,40 @@
       "revId": "9e04ec4696f43e0bd99cc9f5b8da25ccb87fbe53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4efa192a_36be4b67",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T05:29:00Z",
+      "side": 1,
+      "message": "this is redundant?",
+      "revId": "9e04ec4696f43e0bd99cc9f5b8da25ccb87fbe53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a164be3f_951d4f1b",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T05:29:00Z",
+      "side": 1,
+      "message": "use https://godoc.org/github.com/smartystreets/assertions#ShouldHaveLength instead?",
+      "revId": "9e04ec4696f43e0bd99cc9f5b8da25ccb87fbe53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
