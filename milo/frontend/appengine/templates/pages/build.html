@@ -236,6 +236,31 @@
         Recipe: {{ .BuildPage.RecipeLink.HTML }}
       </li>
     </ul>
+
+    <h2>Timing</h2>
+    <table class="info" width="100%">
+      <tr class="alt">
+        <td class="left">Create</td>
+        <td>{{ .BuildPage.CreateTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr>
+        <td class="left">Start</td>
+        <td>{{ .BuildPage.StartTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr class="alt">
+        <td class="left">End</td>
+        <td>{{ .BuildPage.EndTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr>
+        <td class="left">Pending</td>
+        <td id="duration">{{ duration .BuildPage.CreateTime .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
+      </tr>
+      <tr class="alt">
+        <td class="left">Execution</td>
+        <td id="duration">{{ duration .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
+      </tr>
+    </table>
+
     {{ with .BuildPage.GetOutput.GetLogs }}
       <h2>Build Logs</h2>
       <ul>
@@ -275,30 +300,6 @@
         {{ template "step" . }}
       {{ end }}
     </ol>
-
-    <h2>Timing</h2>
-    <table class="info" width="100%">
-      <tr class="alt">
-        <td class="left">Create</td>
-        <td>{{ .BuildPage.CreateTime | toTime | localTime "N/A" }}</td>
-      </tr>
-      <tr>
-        <td class="left">Start</td>
-        <td>{{ .BuildPage.StartTime | toTime | localTime "N/A" }}</td>
-      </tr>
-      <tr class="alt">
-        <td class="left">End</td>
-        <td>{{ .BuildPage.EndTime | toTime | localTime "N/A" }}</td>
-      </tr>
-      <tr>
-        <td class="left">Pending</td>
-        <td id="duration">{{ duration .BuildPage.CreateTime .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
-      </tr>
-      <tr class="alt">
-        <td class="left">Execution</td>
-        <td id="duration">{{ duration .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
-      </tr>
-    </table>
   </div>
 {{end}}
 
