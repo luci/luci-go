@@ -234,6 +234,30 @@
       "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4538f553_0e3ca744",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T02:41:53Z",
+      "side": 1,
+      "message": "Ok, but this is a bit fragile. Consider using https://godoc.org/go.chromium.org/luci/server/auth/authtest#MockAuthConfig. It will setup the context is a way that GetPerRPCCredentials will use fake tokens.",
+      "parentUuid": "6a449b81_63c46071",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 15
+      },
+      "revId": "d1c7766d7686c3054bb6abad51190688f7983a08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a72de98_af0c3512",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T02:41:53Z",
+      "side": 1,
+      "message": "nit: eh, just Get is better",
+      "range": {
+        "startLine": 45,
+        "startChar": 23,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9a9074a_cc31c5ca",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T02:41:53Z",
+      "side": 1,
+      "message": "Consider instead:\n\n  func CachedClient(ctx context.Context, instance string) (*client.Client, error) {\n     cc :\u003d // get from the context\n     return cc.Get(ctx, instance)\n  }\n\nCallers don\u0027t really care about *ClientCache. They just want a client.\n\n(Not sure about the name though).",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 1
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
