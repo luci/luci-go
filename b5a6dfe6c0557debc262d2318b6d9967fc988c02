@@ -25,6 +25,75 @@
     },
     {
       "key": {
+        "uuid": "a0403e1e_bf299f43",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T02:45:20Z",
+      "side": 1,
+      "message": "maybe using global context is safer?",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 52
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fffbd907_318b067f",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T02:45:20Z",
+      "side": 1,
+      "message": "installed?",
+      "range": {
+        "startLine": 98,
+        "startChar": 36,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7b1e72b_cc1b5275",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T02:45:20Z",
+      "side": 1,
+      "message": "I think we don\u0027t need to use errors here.",
+      "range": {
+        "startLine": 98,
+        "startChar": 8,
+        "endLine": 98,
+        "endChar": 18
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a9a9074a_cc31c5ca",
         "filename": "casviewer/client.go",
         "patchSetId": 7
@@ -41,6 +110,52 @@
         "startChar": 0,
         "endLine": 101,
         "endChar": 1
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdd238f2_b352d145",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T02:45:20Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 42,
+        "startChar": 56,
+        "endLine": 42,
+        "endChar": 57
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7de0abc_a9dbef3f",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T02:45:20Z",
+      "side": 1,
+      "message": "better to check size of clients?",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 37
       },
       "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
