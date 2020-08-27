@@ -43,6 +43,10 @@ func handleLUCIBuild(c *router.Context) error {
 	}
 	numberOrID := c.Params.ByName("numberOrId")
 	forceBlamelist := c.Request.FormValue("blamelist") != ""
+	blamelistOpt := buildbucket.GetBlamelist
+	if forceBlamelist {
+		blamelistOpt = buildbucket.ForceBlamelist
+	}
 
 	// Redirect to short bucket names.
 	if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
@@ -57,7 +61,7 @@ func handleLUCIBuild(c *router.Context) error {
 		return err
 	}
 
-	bp, err := buildbucket.GetBuildPage(c, br, forceBlamelist)
+	bp, err := buildbucket.GetBuildPage(c, br, blamelistOpt)
 	return renderBuild(c, bp, err)
 }
 
@@ -76,7 +80,7 @@ func handleLUCIBuildData(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	bp, err := buildbucket.GetBuildPage(c, br, false)
+	bp, err := buildbucket.GetBuildPage(c, br, buildbucket.NoBlamelist)
 	if err != nil {
 		return err
 	}
