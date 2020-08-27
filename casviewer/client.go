@@ -16,12 +16,90 @@ package casviewer
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
+
+// clientCacheKey is a context key for ClientCache.
+var clientCacheKey = "client factory key"
+
+// ClientCache caches CAS clients, one per an instance.
+type ClientCache struct {
+	lock    *sync.RWMutex
+	clients map[string]*client.Client
+}
+
+// NewClientCache initializes ClientCache.
+func NewClientCache() *ClientCache {
+	return &ClientCache{
+		lock:    new(sync.RWMutex),
+		clients: make(map[string]*client.Client),
+	}
+}
+
+// ForInstance returns a Client by loading it from cache or creating a new one.
+func (cc *ClientCache) ForInstance(c context.Context, instance string) (*client.Client, error) {
+	// Load Client from cache.
+	cc.lock.RLock()
+	cl, ok := cc.clients[instance]
+	cc.lock.RUnlock()
+
+	if ok {
+		return cl, nil
+	}
+
+	// Obtain the write lock.
+	cc.lock.Lock()
+	defer cc.lock.Unlock()
+
+	// Somebody may have already set a client for the same instance.
+	cl, ok = cc.clients[instance]
+	if ok {
+		return cl, nil
+	}
+
+	// Create a new client for the instance.
+	cl, err := NewClient(c, instance)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the client.
+	cc.clients[instance] = cl
+	return cl, nil
+}
+
+// Clear closes Clients gracefully, and removes them from cache.
+func (cc *ClientCache) Clear() {
+	cc.lock.Lock()
+	defer cc.lock.Unlock()
+	for inst, cl := range cc.clients {
+		cl.Close()
+		delete(cc.clients, inst)
+	}
+}
+
+// withClientCacheMW creates a middleware that injects the ClientCache to context.
+func withClientCacheMW(cc *ClientCache) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		c.Context = context.WithValue(c.Context, &clientCacheKey, cc)
+		next(c)
+	}
+}
+
+// clientCache returns ClientCache by retrieving it from the context.
+func clientCache(c context.Context) *ClientCache {
+	cc, ok := c.Value(&clientCacheKey).(*ClientCache)
+	if !ok {
+		panic(errors.New("ClientCache not intalled in the context"))
+	}
+	return cc
+}
 
 // NewClient connects to the instance of remote execution service, and returns a client.
 func NewClient(ctx context.Context, instance string) (*client.Client, error) {
