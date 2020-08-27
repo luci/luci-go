@@ -41,6 +41,7 @@ func TestClient(t *testing.T) {
 			// The client should be reused for the same instance.
 			cl2, err := GetClient(c.Context, inst1)
 			So(err, ShouldBeNil)
+			So(cl2, ShouldNotBeNil)
 			So(cl2, ShouldEqual, cl1)
 
 			// A new client for a different instance will be created.
@@ -62,11 +63,10 @@ func TestClient(t *testing.T) {
 			_, err = GetClient(c.Context, inst2)
 			So(err, ShouldBeNil)
 
-			cc, err := clientCache(c.Context)
-			So(err, ShouldBeNil)
+			cc := clientCache(c.Context)
 			cc.Clear()
 
-			So(cc.clients, ShouldBeEmpty)
+			So(len(cc.clients), ShouldBeZeroValue)
 		})
 	})
 }
