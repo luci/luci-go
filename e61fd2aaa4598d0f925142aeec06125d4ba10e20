@@ -22,6 +22,47 @@
       "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45d13aa3_51d1ba03",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-27T07:09:03Z",
+      "side": 1,
+      "message": "100% onboard with the approach",
+      "parentUuid": "cb1091ee_7d142c1a",
+      "range": {
+        "startLine": 334,
+        "startChar": 2,
+        "endLine": 334,
+        "endChar": 62
+      },
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "08847a91_1f2ea2c2",
+        "filename": "scheduler/appengine/engine/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-27T07:09:03Z",
+      "side": 1,
+      "message": "can you file a go/luci-bug for this?",
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
