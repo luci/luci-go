@@ -25,7 +25,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
-	"go.chromium.org/luci/mmutex/lib"
+	//"go.chromium.org/luci/mmutex/lib"
+	"../../lib"
 )
 
 var cmdExclusive = &subcommands.Command{
@@ -42,6 +43,7 @@ type cmdExclusiveRun struct {
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, c, env)
+	logging.Infof(ctx, "[mmutex] Starting EXCLUSIVE mmutex...")
 	if err := RunExclusive(ctx, env, args); err != nil {
 		if exitCode, exitCodePresent := exitcode.Get(err); exitCodePresent {
 			return exitCode

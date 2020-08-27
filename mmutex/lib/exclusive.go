@@ -26,10 +26,12 @@ import (
 // RunExclusive runs the command with the specified context and environment while
 // holding an exclusive mmutex lock.
 func RunExclusive(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
-	lockFilePath, drainFilePath, err := computeMutexPaths(env)
-	if err != nil {
-		return err
-	}
+// 	lockFilePath, drainFilePath, err := computeMutexPaths(env)
+// 	if err != nil {
+// 		return err
+// 	}
+
+  lockFilePath, drainFilePath := "/usr/local/google/home/wenbinzhang/mmutex/mmutex.lock", "/usr/local/google/home/wenbinzhang/mmutex/mmutex.drain"
 
 	logging.Infof(ctx, "[mmutex][exclusive] LockFilePath: %s, DrainFilePath: %s.", lockFilePath, drainFilePath)
 	if len(lockFilePath) == 0 {
