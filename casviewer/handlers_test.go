@@ -29,7 +29,7 @@ func TestHandlers(t *testing.T) {
 
 	Convey("InstallHandlers", t, func() {
 		r := router.New()
-		InstallHandlers(r)
+		InstallHandlers(r, nil)
 
 		srv := httptest.NewServer(r)
 
