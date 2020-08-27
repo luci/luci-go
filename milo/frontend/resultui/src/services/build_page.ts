@@ -32,7 +32,6 @@ export interface GetBuildPageDataRequest {
  */
 export interface BuildPageData extends Build {
   now: string;
-  blame: Commit[];
   build_bug_link: string;
   buildbucket_host: string;
   can_cancel: boolean;
@@ -53,20 +52,6 @@ export interface BuildPageData extends Build {
   link: Link;
   banners: Logo[];
   timeline: string;
-}
-
-export interface Commit {
-  author_name: string;
-  author_email: string;
-  commit_time: string;
-  repo: string;
-  branch: string;
-  request_revision: Link;
-  revision: Link;
-  description: string;
-  changelist: Link;
-  commit_url: string;
-  file: string[];
 }
 
 export interface Property {

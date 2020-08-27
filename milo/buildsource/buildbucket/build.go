@@ -57,6 +57,19 @@ var (
 	ErrNotLoggedIn = errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 )
 
+// BlamelistOption specifies whether the blamelist should be fetched as part of
+// the build page request.
+type BlamelistOption int
+
+var (
+	// NoBlamelist means blamelist shouldn't be fetched.
+	NoBlamelist BlamelistOption = 0
+	// GetBlamelist means blamelist should be fetched with a short timeout.
+	GetBlamelist BlamelistOption = 1
+	// ForceBlamelist means blamelist should be fetched with a long timeout.
+	ForceBlamelist BlamelistOption = 2
+)
+
 // BuildAddress constructs the build address of a buildbucketpb.Build.
 // This is used as the key for the BuildSummary entity.
 func BuildAddress(build *buildbucketpb.Build) string {
@@ -364,7 +377,7 @@ var (
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, forceBlamelist bool) (*ui.BuildPage, error) {
+func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamelistOpt BlamelistOption) (*ui.BuildPage, error) {
 	now, _ := ptypes.TimestampProto(clock.Now(ctx.Context))
 
 	c := ctx.Context
@@ -383,11 +396,18 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, forceB
 		return nil, common.TagGRPC(c, err)
 	}
 
-	blameTimeout := 1 * time.Second
-	if forceBlamelist {
-		blameTimeout = 55 * time.Second
+	var blame []*ui.Commit
+	var blameErr error
+	switch blamelistOpt {
+	case ForceBlamelist:
+		blame, blameErr = getBlame(c, host, b, 55*time.Second)
+	case GetBlamelist:
+		blame, blameErr = getBlame(c, host, b, 1*time.Second)
+	case NoBlamelist:
+		break
+	default:
+		blameErr = errors.Reason("invalid blamelist option").Err()
 	}
-	blame, blameErr := getBlame(c, host, b, blameTimeout)
 
 	link, err := getBugLink(ctx, b)
 	if err != nil {
@@ -408,7 +428,7 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, forceB
 		BuildBugLink:    link,
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
-		ForcedBlamelist: forceBlamelist,
+		ForcedBlamelist: blamelistOpt == ForceBlamelist,
 		CanCancel:       permissions.Can(bucketID, access.CancelBuild),
 		CanRetry:        permissions.Can(bucketID, access.AddBuild),
 	}, nil
