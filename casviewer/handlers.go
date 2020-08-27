@@ -15,12 +15,21 @@
 package casviewer
 
 import (
+	"fmt"
+	"net/http"
+
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
+	"github.com/julienschmidt/httprouter"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
 func InstallHandlers(r *router.Router, cc *ClientCache) {
+	// TODO(crbug.com/1121471): Authorize request.
 	mw := router.MiddlewareChain{}
 	mw.Extend(
 		withClientCacheMW(cc),
@@ -38,9 +47,60 @@ func rootHanlder(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	// TODO(crbug.com/1121471): implement me.
+	b, err := retrieveBlob(c)
+	if err != nil {
+		return
+	}
+
+	d := &repb.Directory{}
+	if err = proto.Unmarshal(b, d); err != nil {
+		http.Error(c.Writer, "Failed to unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO(crbug.com/1121471): render html.
+	fmt.Printf("%v", d.GetDirectories())
 }
 
 func getHandler(c *router.Context) {
-	// TODO(crbug.com/1121471): implement me.
+	b, err := retrieveBlob(c)
+	if err != nil {
+		return
+	}
+
+	// TODO(crbug.com/1121471): return with appropriate headers.
+	fmt.Printf("%v", b)
+}
+
+func retrieveBlob(c *router.Context) ([]byte, error) {
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	if err != nil {
+		err = errors.Annotate(err, "failed to initialize CAS client").Err()
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		return nil, err
+	}
+
+	b, err := cl.ReadBytes(c.Context, fullResourceName(c.Params))
+	// TODO: NotFound returning here?
+	if err != nil {
+		err = errors.Annotate(err, "failed to read bytes").Err()
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		return nil, err
+	}
+	if b == nil {
+		err = errors.Annotate(err, "Blob not found").Err()
+		http.Error(c.Writer, "Not Found", http.StatusNotFound)
+		return nil, err
+	}
+	return b, nil
+}
+
+func fullInstName(p httprouter.Params) string {
+	return fmt.Sprintf("projects/%s/instances/%s", p.ByName(":proj"), p.ByName(":inst"))
+}
+
+func fullResourceName(p httprouter.Params) string {
+	return fmt.Sprintf(
+		"projects/%s/instances/%s/blobs/%s/%s",
+		p.ByName(":proj"), p.ByName(":inst"), p.ByName(":hash"), p.ByName(":size"))
 }
