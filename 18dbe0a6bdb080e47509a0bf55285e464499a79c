@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d207e048_22fd5640",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-27T23:47:02Z",
+      "side": 1,
+      "message": "Thanks for working on this Erik 😊\n",
+      "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8e7af9de_71e81f93",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-27T23:47:02Z",
+      "side": 1,
+      "message": "I\u0027m not quite sure whether most users will be interested in the timing info.\nI think it would be better to just move the timing section here.\nThis way, it will float to the 2nd column when the page is wide enough.\nWDYT?",
+      "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
