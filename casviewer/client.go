@@ -25,11 +25,8 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// clientCacheKey is a context key type for ClientCache value.
-type clientCacheKey struct{}
-
-// ccKey is a context key for ClientCache value.
-var ccKey = &clientCacheKey{}
+// clientCacheKey is a context key for ClientCache.
+var clientCacheKey = "client cache key"
 
 // ClientCache caches CAS clients, one per an instance.
 type ClientCache struct {
@@ -91,7 +88,7 @@ func (cc *ClientCache) Clear() {
 // withClientCacheMW creates a middleware that injects the ClientCache to context.
 func withClientCacheMW(cc *ClientCache) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		c.Context = context.WithValue(c.Context, ccKey, cc)
+		c.Context = context.WithValue(c.Context, &clientCacheKey, cc)
 		next(c)
 	}
 }
@@ -103,7 +100,7 @@ func GetClient(c context.Context, instance string) (*client.Client, error) {
 
 // clientCache returns ClientCache by retrieving it from the context.
 func clientCache(c context.Context) *ClientCache {
-	cc, ok := c.Value(ccKey).(*ClientCache)
+	cc, ok := c.Value(&clientCacheKey).(*ClientCache)
 	if !ok {
 		panic("ClientCache not installed in the context")
 	}
