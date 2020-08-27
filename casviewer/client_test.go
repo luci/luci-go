@@ -32,19 +32,21 @@ func TestClient(t *testing.T) {
 			inst1 := "projects/test-proj/instances/inst1"
 			inst2 := "projects/test-proj/instances/inst2"
 
+			cc := clientCache(c.Context)
+
 			// First time, it creates a new client.
-			cl1, err := GetClient(c.Context, inst1)
+			cl1, err := cc.ForInstance(c.Context, inst1)
 			So(err, ShouldBeNil)
 			So(cl1, ShouldNotBeNil)
 
-			// The client should be reused for the same instance.
-			cl2, err := GetClient(c.Context, inst1)
+			// The client should be reused for the same instance..
+			cl2, err := cc.ForInstance(c.Context, inst1)
 			So(err, ShouldBeNil)
 			So(cl2, ShouldNotBeNil)
 			So(cl2, ShouldEqual, cl1)
 
 			// A new client for a different instance will be created.
-			cl3, err := GetClient(c.Context, inst2)
+			cl3, err := cc.ForInstance(c.Context, inst2)
 			So(err, ShouldBeNil)
 			So(cl3, ShouldNotBeNil)
 			So(cl3, ShouldNotEqual, cl1)
@@ -57,26 +59,26 @@ func TestClient(t *testing.T) {
 
 			// Create clients.
 			var err error
-			_, err = GetClient(c.Context, inst1)
+			cc := clientCache(c.Context)
+			_, err = cc.ForInstance(c.Context, inst1)
 			So(err, ShouldBeNil)
-			_, err = GetClient(c.Context, inst2)
+			_, err = cc.ForInstance(c.Context, inst2)
 			So(err, ShouldBeNil)
 
-			cc := clientCache(c.Context)
 			cc.Clear()
 
-			So(len(cc.clients), ShouldBeZeroValue)
+			So(cc.clients[inst1], ShouldBeNil)
+			So(cc.clients[inst2], ShouldBeNil)
 		})
 	})
 }
 
 // newContext creats a fake context.
 func newContext() *router.Context {
-	ctx := context.Background()
 	c := &router.Context{
-		Context: ctx,
+		Context: context.Background(),
 	}
-	cc := NewClientCache(ctx)
+	cc := NewClientCache()
 	withClientCacheMW(cc)(c, func(_ *router.Context) {})
 	return c
 }
