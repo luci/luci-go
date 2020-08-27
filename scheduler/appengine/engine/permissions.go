@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/acl"
 )
 
+const adminGroup = "administrators"
+
 var (
 	permJobsGet     = realms.RegisterPermission("scheduler.jobs.get")
 	permJobsPause   = realms.RegisterPermission("scheduler.jobs.pause")
@@ -54,6 +56,46 @@ var permToRole = map[realms.Permission]acl.Role{
 func checkPermission(ctx context.Context, job *Job, perm realms.Permission) error {
 	ctx = logging.SetField(ctx, "JobID", job.JobID)
 
+	// Fallback to the @legacy realm if the job entity isn't updated yet.
+	realm := job.RealmID
+	if realm == "" {
+		realm = realms.Join(job.ProjectID, realms.LegacyRealm)
+	}
+
+	switch enforce, err := auth.ShouldEnforceRealmACL(ctx, realm); {
+	case err != nil:
+		return err
+	case enforce:
+		return checkRealmACL(ctx, perm, realm)
+	default:
+		return checkLegacyACL(ctx, job, perm, realm)
+	}
+}
+
+// checkRealmACL uses Realms ACLs, totally ignoring legacy ACLs.
+func checkRealmACL(ctx context.Context, perm realms.Permission, realm string) error {
+	// Admins have implicit access to everything.
+	// TODO(vadimsh): We should probably remove this.
+	switch yes, err := auth.IsMember(ctx, adminGroup); {
+	case err != nil:
+		return err
+	case yes:
+		return nil
+	}
+
+	// Else fallback to checking permissions.
+	switch yes, err := auth.HasPermission(ctx, perm, realm); {
+	case err != nil:
+		return err
+	case !yes:
+		return ErrNoPermission
+	default:
+		return nil
+	}
+}
+
+// checkLegacyACL uses legacy ACLs, but also compares them to realm ACLs.
+func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm string) error {
 	// Covert the permission to a legacy role and check job's AclSet for it.
 	role, ok := permToRole[perm]
 	if !ok {
@@ -64,20 +106,14 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 		return err
 	}
 
-	// Fallback to the @legacy realm if the job entity isn't updated yet.
-	realm := job.RealmID
-	if realm == "" {
-		realm = realms.Join(job.ProjectID, realms.LegacyRealm)
-	}
-
 	// Check realms ACL and compare it to `legacyResult`. The result and errors
 	// (if any) are recorded inside.
 	auth.HasPermissionDryRun{
 		ExpectedResult: legacyResult,
 		TrackingBug:    "crbug.com/1070761",
+		AdminGroup:     adminGroup,
 	}.Execute(ctx, perm, realm)
 
-	// Use the legacy result for now.
 	if !legacyResult {
 		return ErrNoPermission
 	}
