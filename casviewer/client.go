@@ -26,17 +26,18 @@ import (
 )
 
 // clientCacheKey is a context key for ClientCache.
-var clientCacheKey = "client cache key"
+var clientCacheKey = "client factory key"
 
 // ClientCache caches CAS clients, one per an instance.
 type ClientCache struct {
-	lock    sync.RWMutex
+	lock    *sync.RWMutex
 	clients map[string]*client.Client
 }
 
 // NewClientCache initializes ClientCache.
 func NewClientCache() *ClientCache {
 	return &ClientCache{
+		lock:    new(sync.RWMutex),
 		clients: make(map[string]*client.Client),
 	}
 }
@@ -44,32 +45,19 @@ func NewClientCache() *ClientCache {
 // ForInstance returns a Client by loading it from cache or creating a new one.
 func (cc *ClientCache) ForInstance(c context.Context, instance string) (*client.Client, error) {
 	// Load Client from cache.
-	cc.lock.RLock()
-	cl, ok := cc.clients[instance]
-	cc.lock.RUnlock()
-
-	if ok {
+	if cl := cc.get(instance); cl != nil {
 		return cl, nil
 	}
 
-	// Obtain the write lock.
-	cc.lock.Lock()
-	defer cc.lock.Unlock()
-
-	// Somebody may have already set a client for the same instance.
-	cl, ok = cc.clients[instance]
-	if ok {
-		return cl, nil
-	}
-
-	// Create a new client for the instance.
+	// Defer write lock until completing NewClient successfully.
+	// Competitors may create clients for the same instance, but it will be ok.
 	cl, err := NewClient(c, instance)
 	if err != nil {
 		return nil, err
 	}
 
 	// Cache the client.
-	cc.clients[instance] = cl
+	cc.set(instance, cl)
 	return cl, nil
 }
 
@@ -81,6 +69,20 @@ func (cc *ClientCache) Clear() {
 		cl.Close()
 		delete(cc.clients, inst)
 	}
+}
+
+// get loads a cached Client for the instance with read lock.
+func (cc *ClientCache) get(instance string) *client.Client {
+	cc.lock.RLock()
+	defer cc.lock.RUnlock()
+	return cc.clients[instance]
+}
+
+// set caches the Client with read lock.
+func (cc *ClientCache) set(instance string, cl *client.Client) {
+	cc.lock.Lock()
+	defer cc.lock.Unlock()
+	cc.clients[instance] = cl
 }
 
 // withClientCacheMW creates a middleware that injects the ClientCache to context.

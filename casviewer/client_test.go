@@ -67,8 +67,8 @@ func TestClient(t *testing.T) {
 
 			cc.Clear()
 
-			So(cc.clients[inst1], ShouldBeNil)
-			So(cc.clients[inst2], ShouldBeNil)
+			So(cc.get(inst1), ShouldBeNil)
+			So(cc.get(inst2), ShouldBeNil)
 		})
 	})
 }
