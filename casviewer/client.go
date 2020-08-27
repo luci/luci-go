@@ -41,8 +41,8 @@ func NewClientCache() *ClientCache {
 	}
 }
 
-// Get returns a Client by loading it from cache or creating a new one.
-func (cc *ClientCache) Get(c context.Context, instance string) (*client.Client, error) {
+// ForInstance returns a Client by loading it from cache or creating a new one.
+func (cc *ClientCache) ForInstance(c context.Context, instance string) (*client.Client, error) {
 	// Load Client from cache.
 	cc.lock.RLock()
 	cl, ok := cc.clients[instance]
@@ -91,16 +91,11 @@ func withClientCacheMW(cc *ClientCache) router.Middleware {
 	}
 }
 
-// GetClient returns a Client by loading it from cache or creating a new one.
-func GetClient(c context.Context, instance string) (*client.Client, error) {
-	return clientCache(c).Get(c, instance)
-}
-
 // clientCache returns ClientCache by retrieving it from the context.
 func clientCache(c context.Context) *ClientCache {
 	cc, ok := c.Value(&clientCacheKey).(*ClientCache)
 	if !ok {
-		panic("ClientCache not installed in the context")
+		panic(errors.New("ClientCache not intalled in the context"))
 	}
 	return cc
 }
