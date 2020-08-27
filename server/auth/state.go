@@ -154,6 +154,7 @@ func HasPermission(c context.Context, perm realms.Permission, realm string) (boo
 type HasPermissionDryRun struct {
 	ExpectedResult bool   // the expected result of this dry run
 	TrackingBug    string // identifier of a particular migration, for logs
+	AdminGroup     string // if given, implicitly grant all permissions to its members
 }
 
 // Execute calls HasPermission and compares the result to the expectations.
@@ -188,10 +189,21 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 	switch result, err := db.HasPermission(c, ident, perm, realm); {
 	case err != nil:
 		logging.Errorf(c, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
-	case result != dr.ExpectedResult:
+	case result == dr.ExpectedResult:
+		logging.Infof(c, "%s: match - %s", logPfx, allowDeny(result))
+	case dr.AdminGroup == "" || !dr.ExpectedResult:
 		logging.Warningf(c, "%s: mismatch - got %s, want %s", logPfx, allowDeny(result), allowDeny(dr.ExpectedResult))
 	default:
-		logging.Infof(c, "%s: match - %s", logPfx, allowDeny(result))
+		// We expected ALLOW, but got DENY. Maybe the legacy ACL check relied on
+		// the admin group. Check this separately.
+		switch admin, err := db.IsMember(c, ident, []string{dr.AdminGroup}); {
+		case err != nil:
+			logging.Errorf(c, "%s: error - want ALLOW, got: %s", logPfx, err)
+		case admin:
+			logging.Infof(c, "%s: match - ADMIN_ALLOW", logPfx)
+		default:
+			logging.Warningf(c, "%s: mismatch - got DENY, want ALLOW", logPfx)
+		}
 	}
 }
 

@@ -331,21 +331,44 @@ func TestQueries(t *testing.T) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
+		// TODO(vadimsh): Simplify this test when old ACLs are gone.
+		db := authtest.NewFakeDB(
+			authtest.MockMembership("user:admin@example.com", adminGroup),
+		)
+
+		mockRealm := func(realm string, readers ...string) {
+			db.AddMocks(mockEnforceRealmACL(realm))
+			for _, r := range readers {
+				db.AddMocks(authtest.MockPermission(identity.Identity(r), realm, permJobsGet))
+			}
+		}
+
+		// Mock jobs.get permission.
+		mockRealm("abc:one", "user:one@example.com")
+		mockRealm("abc:some", "user:some@example.com")
+		mockRealm("abc:public",
+			"anonymous:anonymous",
+			"user:one@example.com",
+			"user:some@example.com",
+			"user:admin@example.com",
+		)
+		mockRealm("abc:admin")
+
 		ctxAnon := auth.WithState(c, &authtest.FakeState{
-			Identity:       "anonymous:anonymous",
-			IdentityGroups: []string{"all"},
+			Identity: "anonymous:anonymous",
+			FakeDB:   db,
 		})
 		ctxOne := auth.WithState(c, &authtest.FakeState{
-			Identity:       "user:one@example.com",
-			IdentityGroups: []string{"all"},
+			Identity: "user:one@example.com",
+			FakeDB:   db,
 		})
 		ctxSome := auth.WithState(c, &authtest.FakeState{
-			Identity:       "user:some@example.com",
-			IdentityGroups: []string{"all", "some"},
+			Identity: "user:some@example.com",
+			FakeDB:   db,
 		})
 		ctxAdmin := auth.WithState(c, &authtest.FakeState{
-			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{"administrators", "all"},
+			Identity: "user:admin@example.com",
+			FakeDB:   db,
 		})
 
 		job1 := "abc/1"
@@ -353,12 +376,12 @@ func TestQueries(t *testing.T) {
 		job3 := "abc/3"
 
 		So(datastore.Put(c,
-			&Job{JobID: job1, ProjectID: "abc", Enabled: true, Acls: aclOne},
-			&Job{JobID: job2, ProjectID: "abc", Enabled: true, Acls: aclSome},
-			&Job{JobID: job3, ProjectID: "abc", Enabled: true, Acls: aclPublic},
-			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, Acls: aclPublic},
-			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, Acls: aclPublic},
-			&Job{JobID: "secret/1", ProjectID: "secret", Enabled: true, Acls: aclAdmin},
+			&Job{JobID: job1, ProjectID: "abc", Enabled: true, RealmID: "abc:one"},
+			&Job{JobID: job2, ProjectID: "abc", Enabled: true, RealmID: "abc:some"},
+			&Job{JobID: job3, ProjectID: "abc", Enabled: true, RealmID: "abc:public"},
+			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, RealmID: "abc:public"},
+			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, RealmID: "abc:public"},
+			&Job{JobID: "secret/1", ProjectID: "secret", Enabled: true, RealmID: "abc:admin"},
 		), ShouldBeNil)
 
 		// Mocked invocations, all in finished state (IndexedJobID set).
@@ -498,8 +521,8 @@ func TestPrepareTopic(t *testing.T) {
 		pubSubCalls := 0
 		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
 			pubSubCalls++
-			ctx.So(topic, ShouldEqual, "projects/app/topics/dev-scheduler.noop.some~publisher.com")
-			ctx.So(sub, ShouldEqual, "projects/app/subscriptions/dev-scheduler.noop.some~publisher.com")
+			ctx.So(topic, ShouldEqual, fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID))
+			ctx.So(sub, ShouldEqual, fmt.Sprintf("projects/%s/subscriptions/dev-scheduler.noop.some~publisher.com", fakeAppID))
 			ctx.So(pushURL, ShouldEqual, "") // pull on dev server
 			ctx.So(publisher, ShouldEqual, "some@publisher.com")
 			return nil
@@ -516,7 +539,7 @@ func TestPrepareTopic(t *testing.T) {
 		// Once.
 		topic, token, err := ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
-		So(topic, ShouldEqual, "projects/app/topics/dev-scheduler.noop.some~publisher.com")
+		So(topic, ShouldEqual, fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID))
 		So(token, ShouldNotEqual, "")
 		So(pubSubCalls, ShouldEqual, 1)
 

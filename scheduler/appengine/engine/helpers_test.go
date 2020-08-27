@@ -42,6 +42,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -49,6 +54,8 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
+
+const fakeAppID = "scheduler-app-id"
 
 var epoch = time.Unix(1442270520, 0).UTC()
 
@@ -101,10 +108,18 @@ func sortedJobIds(jobs []*Job) []string {
 }
 
 func newTestContext(now time.Time) context.Context {
-	c := memory.Use(context.Background())
+	c := memory.UseWithAppID(context.Background(), fakeAppID)
 	c = clock.Set(c, testclock.New(now))
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 	c = testsecrets.Use(c)
+
+	// Signer is used by ShouldEnforceRealmACL to discover app ID.
+	c = auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
+		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
+			AppID: fakeAppID,
+		})
+		return cfg
+	})
 
 	c, _, _ = tsmon.WithFakes(c)
 	fake := store.NewInMemory(&target.Task{})
@@ -131,6 +146,12 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 		Dispatcher:     &tq.Dispatcher{},
 		PubSubPushPath: "/push-url",
 	}).(*engineImpl), mgr
+}
+
+func mockEnforceRealmACL(realm string) authtest.MockedDatum {
+	return authtest.MockRealmData(realm, &protocol.RealmData{
+		EnforceInService: []string{fakeAppID},
+	})
 }
 
 ////
