@@ -88,6 +88,24 @@
       "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8b80be6_9dd6aeba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T00:51:48Z",
+      "side": 1,
+      "message": "Thank you.\nVadim suggested the same in the next CL.\nI mis-scoped the lock.\nWill reply on it",
+      "parentUuid": "b49b2f58_81e3c92f",
+      "revId": "fcb4d7a8ff8dde95b9783a027d2222a4a2ecff62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
