@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a813839_073e76b7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-27T22:05:47Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "18a3d2c1f7c68ad29b91da6df77978ae701dc06d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cef9a839_5e4c2f91",
+        "filename": "common/proto/gitiles/gitiles_fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-27T22:05:47Z",
+      "side": 1,
+      "message": "Recommendation, I would have a helper to generate []*git.Commit from some easier format like\n\n   MakeFakeCommits(\"A\", \"B\", \"C\", \n                   \"D-\u003eA\", \"E\", \"F\")\n\nWhere the string (letter) implies a commit ID, and \"-\u003e\" implies \"point specifically at this other commit\". If \"-\u003e\" is missing, your commit points at the previous commit. The above invocation would generate \n\n    A \u003c- B \u003c- C\n    ^\n     \\\n      D \u003c- E \u003c- F\n\nThis function could panic if the input is malformed (since it\u0027s for tests)",
+      "range": {
+        "startLine": 160,
+        "startChar": 94,
+        "endLine": 160,
+        "endChar": 100
+      },
+      "revId": "18a3d2c1f7c68ad29b91da6df77978ae701dc06d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
