@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "f5bdd21c_60f9f3ce",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a72de98_af0c3512",
+      "range": {
+        "startLine": 45,
+        "startChar": 23,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8e9cc4a5_e47f88ae",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Ah, this is a context from a request.\nI changed to ClientCache to have a context, which is given in main() of appengine/main.go. And use the context to create client here.",
+      "parentUuid": "a0403e1e_bf299f43",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 52
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fffbd907_318b067f",
         "filename": "casviewer/client.go",
         "patchSetId": 7
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "abed3ecd_571e2725",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fffbd907_318b067f",
+      "range": {
+        "startLine": 98,
+        "startChar": 36,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5bd7630f_0a610e25",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7b1e72b_cc1b5275",
+      "range": {
+        "startLine": 98,
+        "startChar": 8,
+        "endLine": 98,
+        "endChar": 18
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9a9074a_cc31c5ca",
         "filename": "casviewer/client.go",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39905e54_eec37d53",
+        "filename": "casviewer/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "I updated and named it `GetClient`... well, should be ok.",
+      "parentUuid": "a9a9074a_cc31c5ca",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 1
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "205f10a2_3ec1d6bc",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdd238f2_b352d145",
+      "range": {
+        "startLine": 42,
+        "startChar": 56,
+        "endLine": 42,
+        "endChar": 57
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7de0abc_a9dbef3f",
         "filename": "casviewer/client_test.go",
         "patchSetId": 7
@@ -160,6 +304,30 @@
       "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b621b4d0_b41c1608",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-27T04:44:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7de0abc_a9dbef3f",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 37
+      },
+      "revId": "b5a6dfe6c0557debc262d2318b6d9967fc988c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
