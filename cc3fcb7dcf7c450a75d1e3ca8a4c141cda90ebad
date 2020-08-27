@@ -16,6 +16,24 @@
       "revId": "cc3fcb7dcf7c450a75d1e3ca8a4c141cda90ebad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2fbc83a0_29cfc66c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1393469
+      },
+      "writtenOn": "2020-08-27T20:13:18Z",
+      "side": 1,
+      "message": "In case there is an issue with setting up fake gitiles, it seems to me it\u0027s better to use t.FailNow since we can\u0027t really move forward with any other testing, at least not for things that use gitiles api. So, that should yield similar results as panic.\nI\u0027ll merge this as is so I can move forward with cr-rev rewrite, but happy to revisit if we find that using gitilestest package is better.",
+      "parentUuid": "6ea30aa1_514db2f4",
+      "revId": "cc3fcb7dcf7c450a75d1e3ca8a4c141cda90ebad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
