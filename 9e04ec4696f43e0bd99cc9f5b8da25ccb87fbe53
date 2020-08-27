@@ -50,6 +50,24 @@
       "revId": "9e04ec4696f43e0bd99cc9f5b8da25ccb87fbe53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36e53afc_aef8ba5d",
+        "filename": "casviewer/client_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T05:30:15Z",
+      "side": 1,
+      "message": "https://godoc.org/github.com/smartystreets/assertions#ShouldBeEmpty is more appropriate.",
+      "parentUuid": "a164be3f_951d4f1b",
+      "revId": "9e04ec4696f43e0bd99cc9f5b8da25ccb87fbe53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
