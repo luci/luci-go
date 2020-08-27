@@ -15,15 +15,12 @@
 package main
 
 import (
-	"context"
-
 	"go.chromium.org/luci/casviewer"
 	"go.chromium.org/luci/server"
 )
 
 func main() {
-	ctx := context.Background()
-	cc := casviewer.NewClientCache(ctx)
+	cc := casviewer.NewClientCache()
 	defer cc.Clear()
 
 	server.Main(nil, nil, func(srv *server.Server) error {

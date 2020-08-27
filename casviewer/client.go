@@ -32,19 +32,17 @@ var clientCacheKey = "client cache key"
 type ClientCache struct {
 	lock    sync.RWMutex
 	clients map[string]*client.Client
-	ctx     context.Context
 }
 
 // NewClientCache initializes ClientCache.
-func NewClientCache(ctx context.Context) *ClientCache {
+func NewClientCache() *ClientCache {
 	return &ClientCache{
 		clients: make(map[string]*client.Client),
-		ctx:     ctx,
 	}
 }
 
-// Get returns a Client by loading it from cache or creating a new one.
-func (cc *ClientCache) Get(instance string) (*client.Client, error) {
+// ForInstance returns a Client by loading it from cache or creating a new one.
+func (cc *ClientCache) ForInstance(c context.Context, instance string) (*client.Client, error) {
 	// Load Client from cache.
 	cc.lock.RLock()
 	cl, ok := cc.clients[instance]
@@ -65,7 +63,7 @@ func (cc *ClientCache) Get(instance string) (*client.Client, error) {
 	}
 
 	// Create a new client for the instance.
-	cl, err := NewClient(cc.ctx, instance)
+	cl, err := NewClient(c, instance)
 	if err != nil {
 		return nil, err
 	}
@@ -93,16 +91,11 @@ func withClientCacheMW(cc *ClientCache) router.Middleware {
 	}
 }
 
-// GetClient returns a Client by loading it from cache or creating a new one.
-func GetClient(c context.Context, instance string) (*client.Client, error) {
-	return clientCache(c).Get(instance)
-}
-
 // clientCache returns ClientCache by retrieving it from the context.
 func clientCache(c context.Context) *ClientCache {
 	cc, ok := c.Value(&clientCacheKey).(*ClientCache)
 	if !ok {
-		panic("ClientCache not installed in the context")
+		panic(errors.New("ClientCache not intalled in the context"))
 	}
 	return cc
 }
