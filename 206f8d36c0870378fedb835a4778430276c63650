@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a123f842_8979faf8",
+        "filename": "casviewer/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T06:58:46Z",
+      "side": 1,
+      "message": "this comment is not necessary?",
+      "revId": "206f8d36c0870378fedb835a4778430276c63650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2189cc69_782c2eb4",
+        "filename": "casviewer/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-27T06:58:46Z",
+      "side": 1,
+      "message": "this comment is not necessary?",
+      "revId": "206f8d36c0870378fedb835a4778430276c63650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
