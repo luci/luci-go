@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb1091ee_7d142c1a",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-27T02:45:46Z",
+      "side": 1,
+      "message": "I didn\u0027t want to change the actual checks the test makes. Just \"redirect\" the checks to use realm ACLs. I plan to clean up tests properly when removing old ACLs (in a distant, distant future...).",
+      "range": {
+        "startLine": 334,
+        "startChar": 2,
+        "endLine": 334,
+        "endChar": 62
+      },
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
