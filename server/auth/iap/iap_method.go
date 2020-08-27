@@ -64,6 +64,7 @@ type IAPAuthMethod struct {
 // is successful, or an error if unable to validate and identify a user from the assertion header.
 func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
 	iapJwt, ok := r.Header[iapJWTAssertionHeader]
+	fmt.Printf("IAPAuthMethod: iapJwt=%v", iapJwt)
 	if !ok {
 		logging.Errorf(ctx, "iap: missing assertion header")
 		return nil, nil
