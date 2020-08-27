@@ -104,6 +104,24 @@
       "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47d27c3d_742313b5",
+        "filename": "scheduler/appengine/engine/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-27T07:55:03Z",
+      "side": 1,
+      "message": "I don\u0027t think so: @root is per-project. Administrators are everywhere.",
+      "parentUuid": "117bf6df_60ce60a6",
+      "revId": "e61fd2aaa4598d0f925142aeec06125d4ba10e20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
