@@ -57,7 +57,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 			// to keep report() simple. For more details, visit
 			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateTestResultsRequest
 			BatchSize:     500,
-			MaxLeases:     4,
+			MaxLeases:     int(cfg.TRMaxLease),
 			BatchDuration: time.Second,
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},

@@ -60,6 +60,12 @@ const (
 	// Note that that retry.Default stops the iteration ~3m24s after the first try.
 	// Any value greater than 3m24s won't make sense.
 	maxWarmUpDuration = 30 * time.Second
+
+	// DefaultAUMaxLease is the default value of ServerConfig.AUMaxLease
+	DefaultAUMaxLease = 16
+
+	// DefaultAUMaxLease is the default value of ServerConfig.TRMaxLease
+	DefaultTRMaxLease = 4
 )
 
 // ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
@@ -97,6 +103,35 @@ type ServerConfig struct {
 
 	// Listener for tests
 	testListener net.Listener
+
+	// AUMaxLease specifies the maximum number of goroutines processing artifact uploads.
+	// If not specified or set with 0, DefaultAUMaxLease will be set.
+	AUMaxLease uint
+
+	// TRMaxLease specifies the maximum number of goroutines processing test result uploads.
+	// If not specified or set with 0, DefaultTRMaxLease will be set.
+	TRMaxLease uint
+}
+
+// SetDefaultValues sets the default values of the optional fields.
+func (c *ServerConfig) SetDefaultValues(ctx context.Context) error {
+	if c.Address == "" {
+		c.Address = DefaultAddr
+	}
+	if c.AuthToken == "" {
+		tk, err := genAuthToken(ctx)
+		if err != nil {
+			return errors.Annotate(err, "failed to generate AuthToken").Err()
+		}
+		c.AuthToken = tk
+	}
+	if c.AUMaxLease == 0 {
+		c.AUMaxLease = DefaultAUMaxLease
+	}
+	if c.TRMaxLease == 0 {
+		c.TRMaxLease = DefaultTRMaxLease
+	}
+	return nil
 }
 
 func (c *ServerConfig) Validate() error {
@@ -143,24 +178,15 @@ type Server struct {
 // NewServer creates a Server value and populates optional values with defaults.
 func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	// validate the config for required fields
+	if err := cfg.SetDefaultValues(ctx); err != nil {
+		return nil, errors.Annotate(err, "failed to set ServerConfig default values").Err()
+	}
 	if err := cfg.Validate(); err != nil {
 		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
 	}
 	// extract the invocation ID from cfg.Invocation so that other modules don't need to
 	// parse the name to extract ID repeatedly.
 	cfg.invocationID, _ = pbutil.ParseInvocationName(cfg.Invocation)
-
-	// set the default values for the optional config fields missing.
-	if cfg.Address == "" {
-		cfg.Address = DefaultAddr
-	}
-	if cfg.AuthToken == "" {
-		tk, err := genAuthToken(ctx)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to generate AuthToken").Err()
-		}
-		cfg.AuthToken = tk
-	}
 
 	s := &Server{
 		cfg:   cfg,
