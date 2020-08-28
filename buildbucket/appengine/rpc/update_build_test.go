@@ -197,5 +197,33 @@ func TestValidateStep(t *testing.T) {
 				So(validateStep(step), ShouldErrLike, "start_time: is after the end_time")
 			})
 		})
+
+		Convey("with logs", func() {
+			step.Status = pb.Status_STARTED
+			step.StartTime = t
+
+			Convey("missing name", func() {
+				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].name: required")
+			})
+
+			Convey("missing url", func() {
+				step.Logs = []*pb.Log{{Name: "name", ViewUrl: "view_url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].url: required")
+			})
+
+			Convey("missing view_url", func() {
+				step.Logs = []*pb.Log{{Name: "name", Url: "url"}}
+				So(validateStep(step), ShouldErrLike, "logs[0].view_url: required")
+			})
+
+			Convey("duplicate name", func() {
+				step.Logs = []*pb.Log{
+					{Name: "name", Url: "url", ViewUrl: "view_url"},
+					{Name: "name", Url: "url", ViewUrl: "view_url"},
+				}
+				So(validateStep(step), ShouldErrLike, `logs[1].name: duplicate: "name"`)
+			})
+		})
 	})
 }
