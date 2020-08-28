@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "496bd1fe_51a2d7a4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T02:45:31Z",
+      "side": 1,
+      "message": "The new exposed function will be used to display timestamp in the blamelist tab.",
+      "revId": "92081896eacdfdd0311b1fba23f507b3ad39996f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
