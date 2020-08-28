@@ -39,6 +39,30 @@
       "revId": "18a3d2c1f7c68ad29b91da6df77978ae701dc06d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afdcaa9a_62bc1d3c",
+        "filename": "common/proto/gitiles/gitiles_fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1393469
+      },
+      "writtenOn": "2020-08-28T19:40:08Z",
+      "side": 1,
+      "message": "Agreed, having a helper function could be useful and could simplify usage of this library. This proposal is missing branch off point , for example:\n\n  TOT  \u003c- A \u003c- B  -\u003c  C \u003c- ROOT\n          ^          /\n           \\        /\n            D \u003c- E \u003c\n\n MakeFakeCommits(\"TOT\", \"A\", \"B\", \"C\", \"ROOT\",\n                 \"D-\u003eA\", \"E\", \"C)\n\nCould do the trick, but could introduce more complexity.\n\nI suggest we keep this as is, and keep an eye on the usage.  If we see the need, we can revisit.",
+      "parentUuid": "cef9a839_5e4c2f91",
+      "range": {
+        "startLine": 160,
+        "startChar": 94,
+        "endLine": 160,
+        "endChar": 100
+      },
+      "revId": "18a3d2c1f7c68ad29b91da6df77978ae701dc06d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
