@@ -33,6 +33,24 @@
       "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8ddc446_b435e8f1",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2020-08-28T00:47:32Z",
+      "side": 1,
+      "message": "I can speak for Browser Infra, which probably spends the most time on build pages out of any team in Chrome. It\u0027s important for the timing info to be at the top. We complain about it in multiple meetings per week when we\u0027re debugging builds and have to scroll past all of the steps.\n\nThe second column is not a good place for it because when the window is narrow it becomes a single column and the information is all the way at the bottom, which is the same as the current arrangement.\n\nThis is more than a nice-to-have for us. The current organization is incredibly frustrating, enough for me to update my infra checkout to write this patch.\n\nThe timing box is very small and only moves the rest of the info down slightly - is that the concern or something else?",
+      "parentUuid": "8e7af9de_71e81f93",
+      "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
