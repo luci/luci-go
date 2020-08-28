@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "054413e1_9ca86900",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "does \"au\" stand for \"artifact upload\"? I find this a bit cryptic. This also applies to fields and constants in this CL\n\nWhy does this one has \"upload\" but \"tr\" below doesn\u0027t?\n\nisn\u0027t \"max-lease\" an impl detail - it is coming from the fact that we are using dispatcher.Channel which calls this max leases.\n\nI recommend a name that would make more sense to the users of this binary e.g. Erik Stabb should understand this without guessing. Ideally the name entails the meaning/description. For example, https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/limiter/module.go;l\u003d44 uses word \"concurrency\".\n\nit is also easier when related flags have common prefix, e.g. \"-max-concurrent-\" rather than common suffix.",
+      "range": {
+        "startLine": 83,
+        "startChar": 35,
+        "endLine": 83,
+        "endChar": 37
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13c061f1_f2db01f1",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "uploading artifacts",
+      "range": {
+        "startLine": 84,
+        "startChar": 37,
+        "endLine": 84,
+        "endChar": 64
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c290545_cbb594a0",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "uploading test results",
+      "range": {
+        "startLine": 87,
+        "startChar": 37,
+        "endLine": 87,
+        "endChar": 67
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2aaab49f_82090e67",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "should we validate flags?\n\nand if we do, would it be simpler to have them as int, rather than uint?",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff7066d3_fa8f6a3c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "was there a reason why this was moved? This isn\u0027t a LUCI import",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "111e736c_3e66d157",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "is there a reason why this is public?",
+      "range": {
+        "startLine": 117,
+        "startChar": 23,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e08c2993_9be52079",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-28T20:46:27Z",
+      "side": 1,
+      "message": "nit: \n\nwouldn\u0027t it be easier to have\n\n  if opts.Buffer.MaxLeases \u003d 0 {\n    opts.Buffer.MaxLeases \u003d DefaultAUMaxLease\n  }\n\nin https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2382470/6/resultdb/sink/artifact_channel.go#b24\n?\n\nThen the logic would be more consolidated (in one place), and that code wouldn\u0027t have to assume that cfg.AUMaxLeases isn\u0027t 0",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
