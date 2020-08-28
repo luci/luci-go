@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1af2b4f_a771e0a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-28T19:05:04Z",
+      "side": 1,
+      "message": "See https://groups.google.com/a/google.com/g/luci-eng/c/4_Y30fTJ6wg/m/a7IpnEnFAQAJ\n\nRegenerating protobufs using new lib makes test hang in infinite loops + stack overflows. ",
+      "revId": "70d41b9a4e559ada878daec1d726e8d3cbce55b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
