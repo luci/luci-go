@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { sanitizeHTML } from '../libs/sanitize_html';
+import { safeHrefHtml } from '../libs/safe_href_html';
 
 
 /**
@@ -32,17 +32,11 @@ export class ErrorPageElement extends MobxLitElement implements BeforeEnterObser
     this.reason = searchParams.get('reason') ?? 'something went wrong';
   }
 
-  protected renderSourceUrl() {
-    // lit-html doesn't fully sanitize href attributes, use sanitizeHTML
-    // instead.
-    return sanitizeHTML(`<a href="${this.sourceUrl}">${this.sourceUrl}</a>`);
-  }
-
   protected render() {
     return html`
       <div>
         ${this.sourceUrl ?
-          html`An error occurred when visiting the following URL:<br>${this.renderSourceUrl()}` :
+          safeHrefHtml`An error occurred when visiting the following URL:<br><a href="${this.sourceUrl}">${this.sourceUrl}</a>` :
           'An error occurred:'}
       </div>
       <div id="reason">
