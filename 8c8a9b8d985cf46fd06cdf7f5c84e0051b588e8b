@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e12e0851_5e8dce51",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T00:27:57Z",
+      "side": 1,
+      "message": "sorry what do you mean?",
+      "parentUuid": "5a733b4a_f3348b91",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c94b234_2b6ddf1a",
         "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
         "patchSetId": 3
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "6c493849_91d9cfef",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T00:27:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c94b234_2b6ddf1a",
+      "range": {
+        "startLine": 21,
+        "startChar": 20,
+        "endLine": 21,
+        "endChar": 28
+      },
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "491211ff_07874f1e",
         "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
         "patchSetId": 3
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "8faa0c1a_571349de",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T00:27:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "491211ff_07874f1e",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d3c691f_700f4a04",
         "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
         "patchSetId": 3
@@ -73,6 +133,24 @@
       "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf2ed056_afe60a4f",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T00:27:57Z",
+      "side": 1,
+      "message": "There are, but those libs will need to be approved by google.\nWe can replace the implementation after we get one approved.",
+      "parentUuid": "0d3c691f_700f4a04",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
