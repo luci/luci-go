@@ -241,44 +241,6 @@ func (d *Downloader) RootIsolated() (*isolated.Isolated, error) {
 	return nil, errors.New("there is no isolated for root hash")
 }
 
-// CmdAndCwd returns the effective command and relative_cwd entries
-// from the fetched isolated.
-//
-// Must be called after the Downloader is completed.
-//
-// Note that new uses of isolated should NOT use cmd or relative_cwd!
-func (d *Downloader) CmdAndCwd() ([]string, string, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	finished := d.finished
-	if !finished {
-		return nil, "", errors.New(
-			"can only call CmdAndCwd on a finished Downloader")
-	}
-
-	if d.err != nil {
-		return nil, "", d.err
-	}
-
-	queue := []*isolated.Isolated{d.isoMap[d.rootHash]}
-
-	for len(queue) > 0 {
-		iso := queue[0]
-
-		if len(iso.Command) > 0 {
-			return iso.Command, iso.RelativeCwd, nil
-		}
-
-		toPrepend := []*isolated.Isolated{}
-		for _, inc := range iso.Includes {
-			toPrepend = append(toPrepend, d.isoMap[inc])
-		}
-		queue = append(toPrepend, queue[1:]...)
-	}
-
-	return nil, "", nil
-}
-
 func (d *Downloader) addError(ty downloadType, name string, err error) {
 	err = errors.Annotate(err, "%s %s", ty, name).Err()
 	d.mu.Lock()
