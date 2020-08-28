@@ -87,6 +87,24 @@
       "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f235b79f_d33cae57",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2020-08-28T05:47:46Z",
+      "side": 1,
+      "message": "Thanks! I had filed a bug but I unfortunately set it to pri-3, which didn\u0027t express how much we were interested in this.\n\nI\u0027ll have a look at the newest mocks and add comments, thanks.",
+      "parentUuid": "6af6c9e3_93f4e2b4",
+      "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
