@@ -39,23 +39,38 @@ func TestNewServer(t *testing.T) {
 
 	Convey("NewServer", t, func() {
 		ctx := context.Background()
+		cfg := testServerConfig(ctl, ":42", "my_token")
 
 		Convey("succeeds", func() {
-			srv, err := NewServer(ctx, testServerConfig(ctl, ":42", "my_token"))
+			srv, err := NewServer(ctx, cfg)
 			So(err, ShouldBeNil)
 			So(srv, ShouldNotBeNil)
 		})
 		Convey("uses the default address, if missing", func() {
-			srv, err := NewServer(ctx, testServerConfig(ctl, "", "my_token"))
+			cfg.Address = ""
+			srv, err := NewServer(ctx, cfg)
 			So(err, ShouldBeNil)
-			So(srv, ShouldNotBeNil)
 			So(srv.cfg.Address, ShouldNotEqual, "")
 		})
 		Convey("generates a random auth token, if missing", func() {
-			srv, err := NewServer(ctx, testServerConfig(ctl, ":42", ""))
+			cfg.AuthToken = ""
+			srv, err := NewServer(ctx, cfg)
 			So(err, ShouldBeNil)
-			So(srv, ShouldNotBeNil)
 			So(srv.cfg.AuthToken, ShouldNotEqual, "")
+		})
+		Convey("uses the default max leases, if missing or 0", func() {
+			srv, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(srv.cfg.AUMaxLease, ShouldEqual, DefaultAUMaxLease)
+			So(srv.cfg.TRMaxLease, ShouldEqual, DefaultTRMaxLease)
+		})
+		Convey("use the custom max leases, if specified", func() {
+			cfg.AUMaxLease, cfg.TRMaxLease = 123, 456
+			srv, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(srv.cfg.AUMaxLease, ShouldEqual, 123)
+			So(srv.cfg.TRMaxLease, ShouldEqual, 456)
+			testServerConfig(ctl, "", "my_token")
 		})
 	})
 }
