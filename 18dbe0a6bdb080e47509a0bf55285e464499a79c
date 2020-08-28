@@ -51,6 +51,24 @@
       "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1cc528a_0975da3a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-28T02:21:31Z",
+      "side": 1,
+      "message": "I see. I\u0027m happy to move the timing section.\nWe can seek alternative solutions if someone complains.\nAgain, thanks for working on this.",
+      "parentUuid": "a8ddc446_b435e8f1",
+      "revId": "18dbe0a6bdb080e47509a0bf55285e464499a79c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
