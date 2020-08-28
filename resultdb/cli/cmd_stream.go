@@ -80,6 +80,12 @@ func cmdStream(p Params) *subcommands.Command {
 				If the test command adds a variant with the same key, the value given by
 				this flag will get overridden.
 			`))
+			r.Flags.UintVar(&r.auMaxLease, "au-max-lease", sink.DefaultAUMaxLease, text.Doc(`
+				The maximum number of goroutines processing artifact uploads.
+			`))
+			r.Flags.UintVar(&r.trMaxLease, "tr-max-lease", sink.DefaultTRMaxLease, text.Doc(`
+				The maximum number of goroutines processing test result uploads.
+			`))
 
 			return r
 		},
@@ -94,6 +100,8 @@ type streamRun struct {
 	realm        string
 	testIDPrefix string
 	vars         stringmapflag.Value
+	auMaxLease   uint
+	trMaxLease   uint
 
 	// TODO(ddoman): add flags
 	// - tag (invocation-tag)
