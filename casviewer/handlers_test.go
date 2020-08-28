@@ -15,6 +15,7 @@
 package casviewer
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,6 +35,34 @@ func TestHandlers(t *testing.T) {
 		srv := httptest.NewServer(r)
 
 		resp, err := http.Get(srv.URL)
+		So(err, ShouldBeNil)
+		defer resp.Body.Close()
+		So(resp.StatusCode, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("treeHandler", t, func() {
+
+		r := router.New()
+		cc := NewClientCache(context.Background())
+		InstallHandlers(r, cc)
+
+		srv := httptest.NewServer(r)
+
+		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
+		So(err, ShouldBeNil)
+		defer resp.Body.Close()
+		So(resp.StatusCode, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("getHandler", t, func() {
+
+		r := router.New()
+		cc := NewClientCache(context.Background())
+		InstallHandlers(r, cc)
+
+		srv := httptest.NewServer(r)
+
+		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
 		So(err, ShouldBeNil)
 		defer resp.Body.Close()
 		So(resp.StatusCode, ShouldEqual, http.StatusOK)
