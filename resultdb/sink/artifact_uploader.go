@@ -141,6 +141,7 @@ func (u *ArtifactUploader) UploadFromFile(ctx context.Context, name, contentType
 }
 
 func (u *ArtifactUploader) send(req *http.Request) error {
+	c := http.Client{}
 	return retry.Retry(req.Context(), transient.Only(retry.Default), func() error {
 		resp, err := u.Client.Do(req)
 		if err != nil {
