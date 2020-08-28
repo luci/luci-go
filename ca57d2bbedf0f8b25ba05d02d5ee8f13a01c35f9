@@ -69,6 +69,24 @@
       "revId": "ca57d2bbedf0f8b25ba05d02d5ee8f13a01c35f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9eb5c865_6707d3dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-28T21:07:07Z",
+      "side": 1,
+      "message": "We need more information and actual data to see if it\u0027s a real problem or not. Also, we may apply different limits on bots and users. For example, if rdb-stream was executed on a bot, we remove the limit, but if it was executed in a workstation, we could enforce a certain QPS.",
+      "parentUuid": "31af0bd3_29c51651",
+      "revId": "ca57d2bbedf0f8b25ba05d02d5ee8f13a01c35f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
