@@ -90,8 +90,8 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${this.generateBuildLink(build)}</td>
         <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
         <td>${displayTimestamp(build.create_time)}</td>
-        <td>${displayTimeDiff(build.create_time, build.start_time)}</td>
-        <td>${displayTimeDiff(build.start_time, build.end_time)}</td>
+        <td>${displayTimeDiff(build.create_time, build.start_time!)}</td>
+        <td>${displayTimeDiff(build.start_time!, build.end_time!)}</td>
         <td>${this.displayMarkdown(build.summary_markdown)}</td>
     `;
   }
