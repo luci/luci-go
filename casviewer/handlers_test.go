@@ -41,7 +41,6 @@ func TestHandlers(t *testing.T) {
 	})
 
 	Convey("treeHandler", t, func() {
-
 		r := router.New()
 		cc := NewClientCache(context.Background())
 		InstallHandlers(r, cc)
@@ -55,7 +54,6 @@ func TestHandlers(t *testing.T) {
 	})
 
 	Convey("getHandler", t, func() {
-
 		r := router.New()
 		cc := NewClientCache(context.Background())
 		InstallHandlers(r, cc)
