@@ -28,7 +28,7 @@ func TestClient(t *testing.T) {
 	t.Parallel()
 
 	Convey("ClientCache", t, func() {
-		Convey("ForInstance", func() {
+		Convey("Get", func() {
 			c := newContext()
 			inst1 := "projects/test-proj/instances/inst1"
 			inst2 := "projects/test-proj/instances/inst2"
@@ -76,7 +76,7 @@ func newContext() *router.Context {
 	cc := NewClientCache(context.Background())
 
 	ctx := context.Background()
-	authtest.MockAuthConfig(ctx)
+	ctx = authtest.MockAuthConfig(ctx)
 	c := &router.Context{
 		Context: ctx,
 	}
