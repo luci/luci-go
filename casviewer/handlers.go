@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 )
@@ -34,7 +32,7 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
-	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
+	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
 }
 
 func rootHanlder(c *router.Context) {
@@ -43,36 +41,22 @@ func rootHanlder(c *router.Context) {
 	c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
 }
 
-func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob and render html.
+// renderNotFound renders 400 BadRequest page.
+func renderBadRequest(c *router.Context, errMsg string) {
+	// TODO(crbug.com/1121471): render 404 html.
+	m := fmt.Sprintf("Error: Bad Request. %s", errMsg)
+	http.Error(c.Writer, m, http.StatusBadRequest)
 }
 
-func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob.
+// renderNotFound renders 404 NotFound page.
+func renderNotFound(c *router.Context) {
+	// TODO(crbug.com/1121471): render 400 html.
+	http.Error(c.Writer, "Error: Not Found", http.StatusNotFound)
 }
 
-func fullInstanceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"projects/%s/instances/%s", p.ByName(":project"), p.ByName(":instance"))
-}
-
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName(":hash"), p.ByName(":size"))
+// renderInternalServerError renders 500 InternalServerError page.
+func renderInternalServerError(c *router.Context, errMsg string) {
+	// TODO(crbug.com/1121471): render 500 html.
+	m := fmt.Sprintf("Error: %s", errMsg)
+	http.Error(c.Writer, m, http.StatusInternalServerError)
 }
