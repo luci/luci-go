@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
@@ -202,10 +203,24 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	logger.Infof("finished permission update")
 
 	if diskcache != nil {
+		type pathHash struct {
+			path string
+			hash string
+		}
+		var pathHashes []pathHash
 		for d, output := range to {
+			pathHashes = append(pathHashes, pathHash{output.Path, d.Hash})
+		}
+
+		// This is to utilize locality of disk access.
+		sort.Slice(pathHashes, func(i, j int) bool {
+			return pathHashes[i].path < pathHashes[j].path
+		})
+
+		for _, ph := range pathHashes {
 			if err := diskcache.AddFileWithoutValidation(
-				isolated.HexDigest(d.Hash), output.Path); err != nil {
-				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, d).Err()
+				isolated.HexDigest(ph.hash), ph.path); err != nil {
+				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", ph.path, ph.hash).Err()
 			}
 		}
 		logger.Infof("finished cache addition")
