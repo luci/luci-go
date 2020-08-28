@@ -16,8 +16,10 @@ package casviewer
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth/authtest"
@@ -67,6 +69,19 @@ func TestClient(t *testing.T) {
 			cc.Clear()
 
 			So(cc.clients, ShouldBeEmpty)
+		})
+
+		Convey("ReadBlob", func() {
+			c := newContext()
+			inst := "projects/test-proj/instances/inst"
+
+			cl, err := GetClient(c.Context, inst)
+			So(err, ShouldBeNil)
+
+			b, err := cl.ReadBlob(c.Context, digest.Digest{Hash: "12345", Size: 6})
+			So(err, ShouldBeNil)
+
+			fmt.Println(b)
 		})
 	})
 }
