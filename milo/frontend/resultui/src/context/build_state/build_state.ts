@@ -30,6 +30,8 @@ export class BuildState {
   @observable.ref builder?: BuilderID;
   @observable.ref buildNumOrId?: string;
 
+  @observable.ref private timestamp = Date.now();
+
   constructor(private appState: AppState) {}
 
   @computed
@@ -39,6 +41,9 @@ export class BuildState {
       // ready.
       return fromPromise(new Promise(() => {}));
     }
+    // Since response can be different when queried at different time,
+    // establish a dependency on timestamp.
+    this.timestamp;  // tslint:disable-line: no-unused-expression
     return fromPromise(this.appState.buildPageService.getBuildPageData({
       builder: this.builder,
       buildNumOrId: this.buildNumOrId,
@@ -55,6 +60,9 @@ export class BuildState {
 
   @computed({keepAlive: true})
   get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
+    // Since response can be different when queried at different time,
+    // establish a dependency on timestamp.
+    this.timestamp;  // tslint:disable-line: no-unused-expression
     if (!this.appState.buildPageService || !this.buildPageData) {
       return fromPromise(new Promise(() => {}));
     }
@@ -92,6 +100,11 @@ export class BuildState {
       } while (res.next_page_token);
     }
     return iter.teeAsync(streamBlamelist());
+  }
+
+  // Refresh all data that depends on the timestamp.
+  refresh() {
+    this.timestamp = Date.now();
   }
 }
 
