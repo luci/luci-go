@@ -14,33 +14,33 @@
 
 import { assert } from 'chai';
 
-import { displayDuration } from '../../src/libs/time_utils';
+import { displayTimeDiff } from '../../src/libs/time_utils';
 import { Timestamp } from '../services/buildbucket';
 
 describe('Time Utils Tests', () => {
   it('should display correct duration in days and hours', async () => {
     const beginTime: Timestamp = {seconds: 0, nanos: 0};
     const endTime: Timestamp = {seconds: 300000, nanos: 999999999};
-    assert.strictEqual(displayDuration(beginTime, endTime), '3 days 11 hours');
+    assert.strictEqual(displayTimeDiff(beginTime, endTime), '3 days 11 hours');
   });
   it('should display correct duration in hours and minutes', async () => {
     const beginTime: Timestamp = {seconds: 0, nanos: 0};
     const endTime: Timestamp = {seconds: 4300, nanos: 999999999};
-    assert.strictEqual(displayDuration(beginTime, endTime), '1 hour 11 mins');
+    assert.strictEqual(displayTimeDiff(beginTime, endTime), '1 hour 11 mins');
   });
   it('should display correct duration in minutes and seconds', async () => {
     const beginTime: Timestamp = {seconds: 0, nanos: 0};
     const endTime: Timestamp = {seconds: 123, nanos: 999999999};
-    assert.strictEqual(displayDuration(beginTime, endTime), '2 mins 3 secs');
+    assert.strictEqual(displayTimeDiff(beginTime, endTime), '2 mins 3 secs');
   });
   it('should display correct duration in seconds', async () => {
     const beginTime: Timestamp = {seconds: 0, nanos: 0};
     const endTime: Timestamp = {seconds: 15, nanos: 999999999};
-    assert.strictEqual(displayDuration(beginTime, endTime), '15 secs');
+    assert.strictEqual(displayTimeDiff(beginTime, endTime), '15 secs');
   });
   it('should display correct duration in milliseconds', async () => {
     const beginTime: Timestamp = {seconds: 0, nanos: 0};
     const endTime: Timestamp = {seconds: 0, nanos: 999999999};
-    assert.strictEqual(displayDuration(beginTime, endTime), '999 ms');
+    assert.strictEqual(displayTimeDiff(beginTime, endTime), '999 ms');
   });
 });
