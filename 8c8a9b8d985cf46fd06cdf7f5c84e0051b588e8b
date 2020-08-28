@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "71b4b985_cc24af32",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-28T00:56:10Z",
+      "side": 1,
+      "message": "Sorry, my bad. I was distracted when writing this comment. Please ignore it.",
+      "parentUuid": "e12e0851_5e8dce51",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c94b234_2b6ddf1a",
         "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
         "patchSetId": 3
@@ -148,6 +166,24 @@
       "side": 1,
       "message": "There are, but those libs will need to be approved by google.\nWe can replace the implementation after we get one approved.",
       "parentUuid": "0d3c691f_700f4a04",
+      "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f957361b_82eaefac",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-28T00:56:10Z",
+      "side": 1,
+      "message": "Perhaps we should put a TODO somewhere for this.",
+      "parentUuid": "cf2ed056_afe60a4f",
       "revId": "8c8a9b8d985cf46fd06cdf7f5c84e0051b588e8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
