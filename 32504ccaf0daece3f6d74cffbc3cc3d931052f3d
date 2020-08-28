@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "00d8d70c_9a5432bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-28T06:32:17Z",
+      "side": 1,
+      "message": "Can you add this to the docs in go.chromium.org/luci/luciexe in this CL as well, too?\n\nMaybe even factor out mkInitialBuild into the main luciexe package as `PrepareSubbuildInput(ctx, build)`?",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 8
+      },
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f1b727da_fbe9d1d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +39,46 @@
       "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c2ef9a8_c5d572ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-28T06:32:17Z",
+      "side": 1,
+      "message": "lgtm w/ comments",
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0b2976a8_7cd5bd78",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-28T06:32:17Z",
+      "side": 1,
+      "message": "maybe mkInitialBuildReader?",
+      "range": {
+        "startLine": 70,
+        "startChar": 12,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
