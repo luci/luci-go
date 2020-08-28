@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "465d4b68_a2dc8ee1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-28T17:11:31Z",
+      "side": 1,
+      "message": "\u003e Maybe even factor out mkInitialBuild into the main luciexe package as `PrepareSubbuildInput(ctx, build)`?\n\nI think this is not limited to Subbuild? This applies to the top-level build as well. Do you have a strong preference moving it to luciexe package? I\u0027d keep it here as the doc says it\u0027s the invoker\u0027s responsibility and I don\u0027t foresee this logic will be reused somewhere else (because I think user is likely to use invoke.Start and invoke.Wait directly).",
+      "parentUuid": "61194b28_f94381af",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 8
+      },
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1b727da_fbe9d1d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -103,6 +127,30 @@
       "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04ae0889_cb0a8163",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-28T17:11:31Z",
+      "side": 1,
+      "message": "`InitialBuildReader` sounds confusing to me actually, I change the function signature to return *Build only so that it matches the function name and do marshaling and converting to io.Reader in the caller which reuse the old behavior, I think it\u0027s more readable this way.",
+      "parentUuid": "0b2976a8_7cd5bd78",
+      "range": {
+        "startLine": 70,
+        "startChar": 12,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
