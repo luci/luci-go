@@ -23,7 +23,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { displayDuration, displayTimestamp } from '../../libs/time_utils';
+import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { BuildStatus, Timestamp } from '../../services/buildbucket';
 
 const STATUS_DISPLAY_MAP = new Map([
@@ -67,11 +67,11 @@ export class OverviewTabElement extends MobxLitElement {
       case BuildStatus.Started:
         return `since ${displayTimestamp(bpd.start_time)}`;
       case BuildStatus.Canceled:
-        return `after ${displayDuration(bpd.start_time, bpd.end_time)} by ${bpd.canceled_by}`;
+        return `after ${displayTimeDiff(bpd.start_time, bpd.end_time)} by ${bpd.canceled_by}`;
       case BuildStatus.Failure:
       case BuildStatus.InfraFailure:
       case BuildStatus.Success:
-        return `after ${displayDuration(bpd.start_time, bpd.end_time)}`;
+        return `after ${displayTimeDiff(bpd.start_time, bpd.end_time)}`;
       default:
         return '';
       }})()}
@@ -161,7 +161,7 @@ export class OverviewTabElement extends MobxLitElement {
     const bpd = this.buildState.buildPageData!;
     const displayDurationOpt = (start?: Timestamp, end?: Timestamp) => {
       if (start && end) {
-        return displayDuration(start, end);
+        return displayTimeDiff(start, end);
       }
       return 'N/A';
     };
