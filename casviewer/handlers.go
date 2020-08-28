@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"net/http"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 )
@@ -37,6 +40,16 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
 }
 
+func fullInstName(p httprouter.Params) string {
+	return fmt.Sprintf("projects/%s/instances/%s", p.ByName(":proj"), p.ByName(":inst"))
+}
+
+func fullResourceName(p httprouter.Params) string {
+	return fmt.Sprintf(
+		"projects/%s/instances/%s/blobs/%s/%s",
+		p.ByName(":proj"), p.ByName(":inst"), p.ByName(":hash"), p.ByName(":size"))
+}
+
 func rootHanlder(c *router.Context) {
 	// TODO(crbug.com/1121471): Add top page.
 	logging.Debugf(c.Context, "Hello world")
@@ -44,35 +57,63 @@ func rootHanlder(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	b, err := retrieveBlob(c)
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if b == nil {
+		http.Error(c.Writer, "Not Found", http.StatusNotFound)
 		return
 	}
 
-	// TODO(crbug.com/1121471): retrieve blob and render html.
+	d := &repb.Directory{}
+	if err = proto.Unmarshal(b, d); err != nil {
+		http.Error(c.Writer, "Please specify directory node.", http.StatusBadRequest)
+		return
+	}
+
+	renderDirectory(c, d)
 }
 
 func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	b, err := retrieveBlob(c)
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
+		logging.Errorf(c.Context, "failed to read blob: %v", err)
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if b == nil {
+		http.Error(c.Writer, "Not Found", http.StatusNotFound)
 		return
 	}
 
-	// TODO(crbug.com/1121471): retrieve blob.
+	// TODO(crbug.com/1121471): add appropriate
+	c.Writer.Write(b)
 }
 
-func fullInstanceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"projects/%s/instances/%s", p.ByName(":project"), p.ByName(":instance"))
+func retrieveBlob(c *router.Context) ([]byte, error) {
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to initialize CAS client").Err()
+	}
+
+	b, err := cl.ReadBytes(c.Context, fullResourceName(c.Params))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read bytes").Err()
+	}
+
+	return b, nil
 }
 
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName(":hash"), p.ByName(":size"))
+func renderDirectory(c *router.Context, d *repb.Directory) {
+	// TODO(crbug.com/1121471): render html.
+	dirs := d.GetDirectories()
+	c.Writer.Write([]byte(fmt.Sprintf("dirs: %v", dirs)))
+
+	files := d.GetFiles()
+	c.Writer.Write([]byte(fmt.Sprintf("files: %v", files)))
+
+	links := d.GetSymlinks()
+	c.Writer.Write([]byte(fmt.Sprintf("symlinks %v", links)))
 }
