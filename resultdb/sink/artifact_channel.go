@@ -19,9 +19,6 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -55,7 +52,6 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	var err error
 	c := &artifactChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 1),
 		Buffer: buffer.Options{
 			// BatchSize MUST be 1, or the processing logic needs to be updated.
 			//
