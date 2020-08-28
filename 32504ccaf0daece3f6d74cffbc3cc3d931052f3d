@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "61194b28_f94381af",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-28T06:32:48Z",
+      "side": 1,
+      "message": "herp, read these cls out of order.",
+      "parentUuid": "00d8d70c_9a5432bb",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 8
+      },
+      "revId": "32504ccaf0daece3f6d74cffbc3cc3d931052f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1b727da_fbe9d1d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
