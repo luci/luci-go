@@ -104,9 +104,11 @@
           "enum": [
             "COMPLETED",
             "SCHEDULED",
-            "STARTED"
+            "STARTED",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             ""
@@ -435,9 +437,11 @@
         "cancelation_reason": {
           "enum": [
             "CANCELED_EXPLICITLY",
-            "TIMEOUT"
+            "TIMEOUT",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             ""
           ],
@@ -463,9 +467,11 @@
             "BUILDBUCKET_FAILURE",
             "BUILD_FAILURE",
             "INFRA_FAILURE",
-            "INVALID_BUILD_DEFINITION"
+            "INVALID_BUILD_DEFINITION",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -487,9 +493,11 @@
           "enum": [
             "CANCELED",
             "FAILURE",
-            "SUCCESS"
+            "SUCCESS",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             ""
@@ -764,9 +772,11 @@
         "cancelation_reason": {
           "enum": [
             "CANCELED_EXPLICITLY",
-            "TIMEOUT"
+            "TIMEOUT",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             ""
           ],
@@ -791,9 +801,11 @@
             "BUILDBUCKET_FAILURE",
             "BUILD_FAILURE",
             "INFRA_FAILURE",
-            "INVALID_BUILD_DEFINITION"
+            "INVALID_BUILD_DEFINITION",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -824,9 +836,11 @@
           "enum": [
             "CANCELED",
             "FAILURE",
-            "SUCCESS"
+            "SUCCESS",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             ""
@@ -851,9 +865,11 @@
           "enum": [
             "COMPLETED",
             "SCHEDULED",
-            "STARTED"
+            "STARTED",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             ""
@@ -934,9 +950,11 @@
             "BUILDBUCKET_FAILURE",
             "BUILD_FAILURE",
             "INFRA_FAILURE",
-            "INVALID_BUILD_DEFINITION"
+            "INVALID_BUILD_DEFINITION",
+            "UNSET"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",

@@ -513,9 +513,16 @@ type ListChangesRequest struct {
 	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// What to include in the response.
 	Options []QueryOption `protobuf:"varint,2,rep,packed,name=options,proto3,enum=gerrit.QueryOption" json:"options,omitempty"`
-	// The number of results to return. This should always be provided.
+	// Caps the number of results to return. Required.
+	//
+	// Defaults to 25 if not provided; maximum value 1000.
 	Limit int64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// The number of changes to skip from the start, for pagination.
+	//
+	// Note that without using offset, it's also possible to do paging by
+	// including a "before:" time in the query, and querying for changes before
+	// the earliest change in the current page. This may be preferred but is not
+	// very trivial to implement correctly.
 	Offset int64 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
 }
 
@@ -586,6 +593,10 @@ type ListChangesResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The changes that matched the query, with the fields requested.
+	//
+	// The order of the changes is expected to be decreasing by update time,
+	// however the The Gerrit API doc doesn't explicitly specify the order:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html
 	Changes []*ChangeInfo `protobuf:"bytes,1,rep,name=changes,proto3" json:"changes,omitempty"`
 	// True if there are more changes not returned.
 	//
