@@ -61,7 +61,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			//
 			// The dispatcher uploads only the first item in each Batch.
 			BatchSize:    1,
-			MaxLeases:    16,
+			MaxLeases:    int(cfg.AUMaxLease),
 			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
