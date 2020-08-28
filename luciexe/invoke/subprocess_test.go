@@ -23,9 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -97,6 +99,38 @@ func TestSubprocess(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(build, ShouldNotBeNil)
 			So(build.SummaryMarkdown, ShouldEqual, "hi")
+		})
+
+		Convey(`clear fields in initial build`, func() {
+			o.CollectOutput = true
+			initialBuildTime := time.Date(2020, time.January, 2, 3, 4, 5, 6, time.UTC)
+			ctx, _ := testclock.UseTime(ctx, initialBuildTime)
+			inputBuild := &bbpb.Build{
+				Id:              11,
+				Status:          bbpb.Status_CANCELED,
+				StatusDetails:   &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
+				SummaryMarkdown: "Heyo!",
+				CreateTime:      timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 0, time.UTC)),
+				StartTime:       timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 1, time.UTC)),
+				EndTime:         timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 10, time.UTC)),
+				UpdateTime:      timestamppb.New(time.Date(2020, time.January, 2, 3, 4, 5, 11, time.UTC)),
+				Steps:           []*bbpb.Step{{Name: "Step cool"}},
+				Tags:            []*bbpb.StringPair{{Key: "foo", Value: "bar"}},
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{{Name: "stdout"}},
+				},
+			}
+			sp, err := Start(ctx, selfArgs, inputBuild, o)
+			So(err, ShouldBeNil)
+			build, err := sp.Wait()
+			So(err, ShouldBeNil)
+			So(build, ShouldResembleProto, &bbpb.Build{
+				Id:              11,
+				Status:          bbpb.Status_STARTED,
+				SummaryMarkdown: "hi",
+				CreateTime:      timestamppb.New(initialBuildTime),
+				StartTime:       timestamppb.New(initialBuildTime),
+			})
 		})
 
 		Convey(`cancel context`, func() {
