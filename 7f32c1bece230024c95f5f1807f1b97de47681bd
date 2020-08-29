@@ -70,6 +70,30 @@
       "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "096fa8bd_697dff07",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-29T07:17:24Z",
+      "side": 1,
+      "message": "Probably the fix here is that every segment of the step name must be non-empty and start and end with a non-whitespace char?",
+      "parentUuid": "3b86f8d6_7bf9ee7b",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
