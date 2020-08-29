@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24f97531_ddbf772e",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-29T00:49:09Z",
+      "side": 1,
+      "message": "AFAIK, the existing python implementation allows any step names as long as it\u0027s unique and not an empty string.\n\nThe field-description in the proto doesn\u0027t describe about the acceptable form of values, either.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/step.proto;l\u003d28-35\n\nTherefore, all of the following step names are valid.\n- \"   \"\n- \" |   | \"\n- \"a|b||\"\n- \"|a|\"\n\nIs it intended?",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
