@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "8b12f848_4e2d24e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-29T18:14:46Z",
+      "side": 1,
+      "message": "Though, another more general question; does it matter? Could we just have buildbucket do a stable sort of the steps hierarchically?",
+      "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73458b5c_064e073a",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
