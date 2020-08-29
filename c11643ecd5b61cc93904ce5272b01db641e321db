@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "0fb13d3e_ee59a715",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fb6f0e6_0e9d65e4",
+      "range": {
+        "startLine": 83,
+        "startChar": 35,
+        "endLine": 83,
+        "endChar": 37
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13c061f1_f2db01f1",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 6
@@ -178,6 +202,24 @@
     },
     {
       "key": {
+        "uuid": "591b1549_9a8cb4ae",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "you are right. also I didn\u0027t know about flga package printing \"uint\". cool",
+      "parentUuid": "5fe02d63_b36b1b0f",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff7066d3_fa8f6a3c",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 6
@@ -260,6 +302,30 @@
     },
     {
       "key": {
+        "uuid": "d7062610_55b9f14d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "+1 to making Validate() private.\n\nI can see a use case for having Validate() public, e.g. ServerSettings are a part of another struct, and that struct has Validate(), which needs to call this Validate()\n\nbut I SetDfeaultValues() exists only because it is an implementation detail of this package. The alternative implementation to have the following code where we use individual fields\n\n  val :\u003d c.myField\n  if val \u003d\u003d 0 {\n    val \u003d DefaultForMyField\n  }\n  // use val\n\nthen we wouldn\u0027t have SetDefaultValues() to begin with",
+      "parentUuid": "c3a16918_3fde83b2",
+      "range": {
+        "startLine": 117,
+        "startChar": 23,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e08c2993_9be52079",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
@@ -289,6 +355,24 @@
       "side": 1,
       "message": "I\u0027m not sure if I understood you comment correctly. ServerConfig{} needs a dedicated field so that users can specify the value in ServerConfig{} via NewServer(). Are you proposing that\n- SetDefaultValues() copies the value of ServerConfig.AUMaxLease to ArtifactChannel.opts.Buffer.MaxLease, and\n- artifact_channel.go#b24 assigns the default value to Buffer.MaxLeases conditionally?",
       "parentUuid": "e08c2993_9be52079",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5988a44e_7dd69b84",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "I meant an alternative implementation (possibly simpler and with smaller API surface) that I also described in the comment above. There we don\u0027t need SetDefaultValues to begin with.",
+      "parentUuid": "35fbf44a_085ca70a",
       "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

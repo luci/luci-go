@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95446e1e_196f9c2f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 7,
+        "startChar": 28,
+        "endLine": 7,
+        "endChar": 35
+      },
+      "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "627defcc_2dd4de1b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "LGTM % comments",
+      "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "190ce327_d65277f1",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-29T20:19:24Z",
+      "side": 1,
+      "message": "was validation moved after setting default values intentionally? now we validate not exactly what the caller gave us.\n\nthis would make more sense to me if Validate() also validated the values that we ensure initialized in SetDefaultValues.\n(but that\u0027s extra work. I don\u0027t recommend it)",
+      "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
