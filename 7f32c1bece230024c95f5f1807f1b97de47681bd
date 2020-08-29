@@ -118,6 +118,30 @@
       "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc29359f_7f7d0511",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-29T18:12:53Z",
+      "side": 1,
+      "message": "Yes, step names allow unicode (and in general, strings in go should be treated as utf-8). The https://golang.org/pkg/unicode/ package has some tools, but golang regexes also support unicode character classes. I think it would be good enough though to just match the first character as not-a-space.\n\nAlternately we could just let users do dumb stuff and only care about \"|\" and non-empty segments.",
+      "parentUuid": "b8de3347_1944440d",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
