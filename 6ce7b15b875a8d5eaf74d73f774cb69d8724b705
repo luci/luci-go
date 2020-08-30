@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "314776f8_5ddbf4b9",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-30T23:13:37Z",
+      "side": 1,
+      "message": "I think if we don\u0027t want to duplicate the comments here, we should at least put a link to the original proto file, like https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/builds_service.proto;l\u003d353",
+      "revId": "6ce7b15b875a8d5eaf74d73f774cb69d8724b705",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "472e828d_c28f883e",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-30T23:13:37Z",
+      "side": 1,
+      "message": "Do you mean parent_run_id?",
+      "revId": "6ce7b15b875a8d5eaf74d73f774cb69d8724b705",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aebb3f99_f6a0f614",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-30T23:13:37Z",
+      "side": 1,
+      "message": "Should we return a Build Promise here?",
+      "revId": "6ce7b15b875a8d5eaf74d73f774cb69d8724b705",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
