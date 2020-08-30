@@ -98,6 +98,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         href: router.urlForName('build-test-results', params),
       },
       {
+        id: 'steps',
+        label: 'Steps & Logs',
+        href: router.urlForName('build-steps', params),
+      },
+      {
         id: 'related-builds',
         label: 'Related Builds',
         href: router.urlForName('build-related-builds', params),

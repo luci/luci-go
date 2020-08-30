@@ -123,6 +123,14 @@ router.setRoutes({
                       },
                     },
                     {
+                      path: '/steps',
+                      name: 'build-steps',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "steps_tab" */ './pages/build_page/steps_tab');
+                        return cmd.component('milo-steps-tab');
+                      },
+                    },
+                    {
                       path: '/related-builds',
                       name: 'build-related-builds',
                       action: async (_ctx, cmd) => {
