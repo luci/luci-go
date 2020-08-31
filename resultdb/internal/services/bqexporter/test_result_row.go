@@ -67,8 +67,12 @@ type Invocation struct {
 // test case.
 type TestResultRow struct {
 	// ExportedInvocation contains info of the exported invocation.
-	// Note that it's possible that this invocation is not the result's
+	//
+	// Note: it's possible that this invocation is not the result's
 	// immediate parent invocation, but the including invocation.
+	// For example if the BigQuery table is for all test results of CI builds,
+	// then the exported invocation is for a CI build, which includes multiple
+	// invocations for swarming tasks within that build.
 	ExportedInvocation Invocation `bigquery:"exported"`
 
 	// ParentInvocation contains info of the result's immediate parent
@@ -83,7 +87,7 @@ type TestResultRow struct {
 	ResultID string `bigquery:"result_id"`
 
 	// Variant describes one specific way of running the test,
-	//  e.g. a specific bucket, builder and a test suite.
+	// e.g. a specific bucket, builder and a test suite.
 	Variant []StringPair `bigquery:"variant"`
 
 	// A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
@@ -94,6 +98,7 @@ type TestResultRow struct {
 	Expected bool `bigquery:"expected"`
 
 	// Status of the test result.
+	// See pb.TestStatus for possible values.
 	Status string `bigquery:"status"`
 
 	// SummaryHTML is a human-readable explanation of the result, in HTML.
@@ -114,7 +119,7 @@ type TestResultRow struct {
 	Exonerated bool `bigquery:"exonerated"`
 
 	// PartitionTime is used to partition the table.
-	// It is the time when exported invocation was created.
+	// It is the time when exported invocation was created in Spanner.
 	// https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
 	// mentions "The partitioning column must be a top-level field."
 	// So we keep this column here instead of adding the CreateTime to Invocation.
