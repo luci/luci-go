@@ -13,6 +13,11 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
+import '@material/mwc-dialog';
+import '@material/mwc-textarea';
+import { TextArea } from '@material/mwc-textarea';
+import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import MarkdownIt from 'markdown-it';
 import { observable } from 'mobx';
@@ -24,6 +29,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state/build_s
 import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { router } from '../../routes';
 import { BuildStatus, Timestamp } from '../../services/buildbucket';
 
 const STATUS_DISPLAY_MAP = new Map([
@@ -48,6 +54,9 @@ export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
 
+  @observable.ref private showRetryDialog = false;
+  @observable.ref private showCancelDialog = false;
+
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'overview';
@@ -57,25 +66,52 @@ export class OverviewTabElement extends MobxLitElement {
     const bpd = this.buildState.buildPageData!;
 
     return html`
-      Build
-      <span class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
-        ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
-      </span>
-      ${(() => { switch (bpd.status) {
-      case BuildStatus.Scheduled:
-        return `since ${displayTimestamp(bpd.create_time)}`;
-      case BuildStatus.Started:
-        return `since ${displayTimestamp(bpd.start_time)}`;
-      case BuildStatus.Canceled:
-        return `after ${displayTimeDiff(bpd.start_time, bpd.end_time)} by ${bpd.canceled_by}`;
-      case BuildStatus.Failure:
-      case BuildStatus.InfraFailure:
-      case BuildStatus.Success:
-        return `after ${displayTimeDiff(bpd.start_time, bpd.end_time)}`;
-      default:
-        return '';
-      }})()}
+      <div id="status">
+        Build
+        <i class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
+          ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
+        </i>
+        ${(() => { switch (bpd.status) {
+        case BuildStatus.Scheduled:
+          return `since ${displayTimestamp(bpd.create_time)}`;
+        case BuildStatus.Started:
+          return `since ${displayTimestamp(bpd.start_time!)}`;
+        case BuildStatus.Canceled:
+          return `after ${displayTimeDiff(bpd.create_time, bpd.end_time!)} by ${bpd.canceled_by}`;
+        case BuildStatus.Failure:
+        case BuildStatus.InfraFailure:
+        case BuildStatus.Success:
+          return `after ${displayTimeDiff(bpd.start_time || bpd.create_time, bpd.end_time!)}`;
+        default:
+          return '';
+        }})()}
+        ${bpd.end_time ?
+          html`<mwc-button dense unelevated @click=${() => this.showRetryDialog = true}>Retry</mwc-button>` :
+          html`<mwc-button dense unelevated @click=${() => this.showCancelDialog = true}>Cancel</mwc-button>`}
+      </div>
     `;
+  }
+
+  private async cancelBuild(reason: string) {
+    await this.appState.buildsService!.cancelBuild({
+      id: this.buildState.buildPageData!.id,
+      summary_markdown: reason,
+    });
+    this.buildState.refresh();
+  }
+
+  private async retryBuild() {
+    const build = await this.appState.buildsService!.scheduleBuild({
+      template_build_id: this.buildState.buildPageData!.id,
+    });
+    Router.go({
+      pathname: router.urlForName('build', {
+        project: build.builder.project,
+        bucket: build.builder.bucket,
+        builder: build.builder.builder,
+        build_num_or_id: build.number,
+      }),
+    });
   }
 
   private renderSummary() {
@@ -171,8 +207,8 @@ export class OverviewTabElement extends MobxLitElement {
         <h3>Timing</h3>
         <table>
           <tr><td>Create:</td><td>${displayTimestamp(bpd.create_time)}</td></tr>
-          <tr><td>Start:</td><td>${displayTimestamp(bpd.start_time)}</td></tr>
-          <tr><td>End:</td><td>${displayTimestamp(bpd.end_time)}</td></tr>
+          <tr><td>Start:</td><td>${bpd.start_time ? displayTimestamp(bpd.start_time) : 'N/A'}</td></tr>
+          <tr><td>End:</td><td>${bpd.end_time ? displayTimestamp(bpd.end_time) : 'N/A'}</td></tr>
           <tr><td>Pending:</td><td>${displayDurationOpt(bpd.create_time, bpd.start_time)}</td></tr>
           <tr><td>Execution:</td><td>${displayDurationOpt(bpd.start_time, bpd.end_time)}</td></tr>
         </table>
@@ -227,7 +263,36 @@ export class OverviewTabElement extends MobxLitElement {
     }
 
     return html`
-      <div id="status">${this.renderStatusTime()}</div>
+      <mwc-dialog
+        heading="Retry Build"
+        ?open=${this.showRetryDialog}
+        @closed=${async (event: CustomEvent<{action: string}>) => {
+          if (event.detail.action === 'retry') {
+            await this.retryBuild();
+          }
+          this.showRetryDialog = false;
+        }}
+      >
+        <p>Note: this doesn't trigger anything else (e.g. CQ).</p>
+        <mwc-button slot="primaryAction" dialogAction="retry" dense unelevated>Retry</mwc-button>
+        <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
+      </mwc-dialog>
+      <mwc-dialog
+        heading="Cancel Build"
+        ?open=${this.showCancelDialog}
+        @closed=${async (event: CustomEvent<{action: string}>) => {
+          if (event.detail.action === 'cancel') {
+            const reason = (this.shadowRoot!.getElementById('cancel-reason') as TextArea).value;
+            await this.cancelBuild(reason);
+          }
+          this.showCancelDialog = false;
+        }}
+      >
+        <mwc-textarea id="cancel-reason" label="Reason" required></mwc-textarea>
+        <mwc-button slot="primaryAction" dialogAction="cancel" dense unelevated>Cancel</mwc-button>
+        <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
+      </mwc-dialog>
+      ${this.renderStatusTime()}
       <!-- TODO(crbug/1116824): render action buttons -->
       ${this.renderSummary()}
       ${this.renderInput()}
@@ -245,6 +310,7 @@ export class OverviewTabElement extends MobxLitElement {
     :host > * {
       margin: 5px 24px;
     }
+
     #status {
       font-weight: 500;
     }
@@ -265,6 +331,19 @@ export class OverviewTabElement extends MobxLitElement {
     }
     .status.canceled {
       color: #6c757d;
+    }
+
+    :host > mwc-dialog {
+      margin: 0 0;
+    }
+    #cancel-reason {
+      width: 500px;
+      height: 200px;
+    }
+    mwc-button {
+      --mdc-theme-primary: rgb(0, 123, 255);
+      transform: scale(0.8);
+      vertical-align: middle;
     }
 
     #summary-html {

@@ -51,8 +51,8 @@ export interface Build {
   readonly created_by: string;
   readonly canceled_by: string;
   readonly create_time: Timestamp;
-  readonly start_time: Timestamp;
-  readonly end_time: Timestamp;
+  readonly start_time?: Timestamp;
+  readonly end_time?: Timestamp;
   readonly update_time: Timestamp;
   readonly status: BuildStatus;
   readonly summary_markdown?: string;
