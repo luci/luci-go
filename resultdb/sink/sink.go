@@ -60,6 +60,12 @@ const (
 	// Note that that retry.Default stops the iteration ~3m24s after the first try.
 	// Any value greater than 3m24s won't make sense.
 	maxWarmUpDuration = 30 * time.Second
+
+	// DefaultArtChannelMaxLeases is the default value of ServerConfig.ArtChannelMaxLeases
+	DefaultArtChannelMaxLeases = 16
+
+	// DefaultTestResultChannelMaxLeases is the default value of ServerConfig.TestResultChannelMaxLeases
+	DefaultTestResultChannelMaxLeases = 4
 )
 
 // ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
@@ -97,8 +103,15 @@ type ServerConfig struct {
 
 	// Listener for tests
 	testListener net.Listener
+
+	// ArtChannelMaxLeases specifies that the max lease of the Artifact upload channel.
+	ArtChannelMaxLeases uint
+
+	// TestResultChannelMaxLeases specifies that the max lease of the TestResult upload channel.
+	TestResultChannelMaxLeases uint
 }
 
+// Validate validates all the config fields.
 func (c *ServerConfig) Validate() error {
 	if c.Recorder == nil {
 		return errors.Reason("Recorder: unspecified").Err()
@@ -142,25 +155,31 @@ type Server struct {
 
 // NewServer creates a Server value and populates optional values with defaults.
 func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
-	// validate the config for required fields
 	if err := cfg.Validate(); err != nil {
 		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
 	}
-	// extract the invocation ID from cfg.Invocation so that other modules don't need to
-	// parse the name to extract ID repeatedly.
-	cfg.invocationID, _ = pbutil.ParseInvocationName(cfg.Invocation)
 
-	// set the default values for the optional config fields missing.
+	// set the optional fields with the default values.
 	if cfg.Address == "" {
 		cfg.Address = DefaultAddr
 	}
 	if cfg.AuthToken == "" {
 		tk, err := genAuthToken(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to generate AuthToken").Err()
+			return nil, errors.Annotate(err, "ServerConfig: failed to generate AuthToken").Err()
 		}
 		cfg.AuthToken = tk
 	}
+	if cfg.ArtChannelMaxLeases == 0 {
+		cfg.ArtChannelMaxLeases = DefaultArtChannelMaxLeases
+	}
+	if cfg.TestResultChannelMaxLeases == 0 {
+		cfg.TestResultChannelMaxLeases = DefaultTestResultChannelMaxLeases
+	}
+
+	// extract the invocation ID from cfg.Invocation so that other modules don't need to
+	// parse the name to extract ID repeatedly.
+	cfg.invocationID, _ = pbutil.ParseInvocationName(cfg.Invocation)
 
 	s := &Server{
 		cfg:   cfg,
