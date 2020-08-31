@@ -418,6 +418,24 @@
       "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3d68d33a_87cbf149",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-31T17:43:33Z",
+      "side": 1,
+      "message": "yeah, my point didn\u0027t apply to Address and AuthToken. I meant that they\u0027d stay where they are",
+      "parentUuid": "9a9515d1_b44fd567",
+      "revId": "c11643ecd5b61cc93904ce5272b01db641e321db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -16,6 +16,24 @@
       "revId": "48f6a5db43e90603d7caa5297b5d1b40f2c1f71c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64603fe2_a054100b",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-31T17:43:33Z",
+      "side": 1,
+      "message": "good catch",
+      "parentUuid": "e931294c_7a7d0e00",
+      "revId": "48f6a5db43e90603d7caa5297b5d1b40f2c1f71c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
