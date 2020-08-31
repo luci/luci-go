@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "78448ba8_616cc8cf",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-31T19:48:08Z",
+      "side": 1,
+      "message": "Is server/tq AddTask writing these records serially?",
+      "revId": "65628e24e07c6fdb0200958a0d93c85bf8c0f06d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
