@@ -33,6 +33,24 @@
       "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa87c352_1e217d90",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-31T19:56:23Z",
+      "side": 1,
+      "message": "You tell me:\nhttps://chromium.googlesource.com/infra/infra/+/aab7cecb97ece850eefc420b07bd26fb4165936f/appengine/cr-buildbucket/model.py#245\n\nIs this a blocker? For now I\u0027m enqueueing a task (from Go, handled by Python) which notifies Pub/Sub based on the LocalStructuredProperty.",
+      "parentUuid": "f58848cf_b1b7a898",
+      "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
