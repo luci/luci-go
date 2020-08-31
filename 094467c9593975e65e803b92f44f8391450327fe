@@ -25,6 +25,69 @@
     },
     {
       "key": {
+        "uuid": "bb9b4143_de9a27c0",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-31T00:47:01Z",
+      "side": 1,
+      "message": "use 64",
+      "range": {
+        "startLine": 101,
+        "startChar": 53,
+        "endLine": 101,
+        "endChar": 54
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2e376b8_19d01410",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-31T00:47:01Z",
+      "side": 1,
+      "message": "could you fix this first before exposing access to blob?",
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5d16458_4b41289b",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-31T00:47:01Z",
+      "side": 1,
+      "message": "const?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 3
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e2e7748f_d5401850",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 28
@@ -64,6 +127,29 @@
         "startChar": 3,
         "endLine": 25,
         "endChar": 17
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6ddf1f7_aff6998e",
+        "filename": "casviewer/views.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-31T00:47:01Z",
+      "side": 1,
+      "message": "\u0027: \u0027?",
+      "range": {
+        "startLine": 54,
+        "startChar": 44,
+        "endLine": 54,
+        "endChar": 45
       },
       "revId": "094467c9593975e65e803b92f44f8391450327fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
