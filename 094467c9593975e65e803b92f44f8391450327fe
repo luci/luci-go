@@ -148,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "a9d04330_401ac4e9",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T04:38:55Z",
+      "side": 1,
+      "message": "reparented this branch https://crrev.com/c/2377021.\nWill work on it before this CL.",
+      "parentUuid": "7605b2de_7dc25599",
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5d16458_4b41289b",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 28
