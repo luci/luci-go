@@ -140,6 +140,9 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if len(b.LegacyProperties.ResultDetails) == 0 {
 		p["result_details"] = datastore.MkProperty(nil)
 	}
+	// Writing a value for PubSubCallback confuses the Python implementation which
+	// expects PubSubCallback to be a LocalStructuredProperty. See also unused.go.
+	delete(p, "pubsub_callback")
 	return p, nil
 }
 
