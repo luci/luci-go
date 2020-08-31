@@ -16,6 +16,24 @@
       "revId": "2f28debac5358f73ade3f0aea74af6c9ca5c59ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84a9f5e1_b64a30c6",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T05:48:33Z",
+      "side": 1,
+      "message": "normally no.\nIt will just be a no-op.\nPresumably, buildbucket can fail.",
+      "parentUuid": "2f5d6a3a_794cbba1",
+      "revId": "2f28debac5358f73ade3f0aea74af6c9ca5c59ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
