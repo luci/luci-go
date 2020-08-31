@@ -39,6 +39,23 @@
       "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8b087d6_61ed3fec",
+        "filename": "buildbucket/protoutil/step.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-31T16:36:37Z",
+      "side": 1,
+      "message": "Is this for nested steps?",
+      "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
