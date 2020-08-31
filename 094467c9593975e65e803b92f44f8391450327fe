@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "bf799f66_1ab32a0c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 28
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Did minor fixes.\nHane\u0027t done authorization.",
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86ca52af_2d3d3209",
         "filename": "casviewer/blobs.go",
         "patchSetId": 28
@@ -48,6 +65,54 @@
     },
     {
       "key": {
+        "uuid": "afccb54d_fc3c65cc",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86ca52af_2d3d3209",
+      "range": {
+        "startLine": 101,
+        "startChar": 53,
+        "endLine": 101,
+        "endChar": 54
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ab94893c_84a2fcab",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb9b4143_de9a27c0",
+      "range": {
+        "startLine": 101,
+        "startChar": 53,
+        "endLine": 101,
+        "endChar": 54
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2e376b8_19d01410",
         "filename": "casviewer/handlers.go",
         "patchSetId": 28
@@ -59,6 +124,24 @@
       "writtenOn": "2020-08-31T00:47:01Z",
       "side": 1,
       "message": "could you fix this first before exposing access to blob?",
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7605b2de_7dc25599",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "I see.",
+      "parentUuid": "d2e376b8_19d01410",
       "revId": "094467c9593975e65e803b92f44f8391450327fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -88,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "74dc6c25_0ee22923",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5d16458_4b41289b",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 3
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2e7748f_d5401850",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 28
@@ -99,6 +206,30 @@
       "writtenOn": "2020-08-31T00:42:16Z",
       "side": 1,
       "message": "nit: Could you convert d.Files[0].Digest to digest.Digest (https://github.com/bazelbuild/remote-apis-sdks/blob/e0c399322a6478ac3387452d68c1bd010fdf5031/go/pkg/digest/digest.go#L96-L99), then directly call its String() method?",
+      "range": {
+        "startLine": 108,
+        "startChar": 3,
+        "endLine": 109,
+        "endChar": 95
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e951cf6d_61a24de7",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Well, the response doesn\u0027t include the digest in \"hash/size\" format *yet*.\nBut yeah, the HTML will include the hash string in href or somewhere for sure.\nLet me do that when I implement the rendering part.",
+      "parentUuid": "e2e7748f_d5401850",
       "range": {
         "startLine": 108,
         "startChar": 3,
@@ -134,6 +265,30 @@
     },
     {
       "key": {
+        "uuid": "41a7307f_2caebfb8",
+        "filename": "casviewer/views.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Thanks",
+      "parentUuid": "5e388d94_295898e4",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 17
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6ddf1f7_aff6998e",
         "filename": "casviewer/views.go",
         "patchSetId": 28
@@ -154,6 +309,30 @@
       "revId": "094467c9593975e65e803b92f44f8391450327fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3524b776_268754d6",
+        "filename": "casviewer/views.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T02:14:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6ddf1f7_aff6998e",
+      "range": {
+        "startLine": 54,
+        "startChar": 44,
+        "endLine": 54,
+        "endChar": 45
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
