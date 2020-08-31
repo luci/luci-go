@@ -41,7 +41,7 @@ Here's an example of creating a certificate using openssl.
 3. Trust the root SSL certificate.
 4. Create a server certificate key:   
 `openssl req -new -sha256 -nodes -out dev-server.csr -newkey rsa:2048 -keyout dev-server.key`
-5. Create a v3.et file.   
+5. Create a v3.ext file.   
 ```
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
