@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "3275a5a7_e28a01d3",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T06:07:59Z",
+      "side": 1,
+      "message": "This can not be inlined because `this` keyword in non-arrow funtions is not lexical-binded.",
+      "parentUuid": "aeaeb984_5023c86e",
+      "revId": "df09f298d3dc9ee1d53a1525b1237b382d92cb49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "738bf8db_3c0cbd2f",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 6
@@ -56,6 +74,30 @@
       "revId": "df09f298d3dc9ee1d53a1525b1237b382d92cb49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17921e69_43db62f1",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T06:07:59Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "738bf8db_3c0cbd2f",
+      "range": {
+        "startLine": 90,
+        "startChar": 35,
+        "endLine": 90,
+        "endChar": 49
+      },
+      "revId": "df09f298d3dc9ee1d53a1525b1237b382d92cb49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
