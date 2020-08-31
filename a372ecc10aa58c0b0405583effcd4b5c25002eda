@@ -51,6 +51,24 @@
       "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95dc7ef7_a4d17aad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-31T20:20:20Z",
+      "side": 1,
+      "message": "this is not a problem as long as the entity is created by Python, but i presume you landed this change because you plan to start creating the entity via Go soon. Done as is, it will break Python code that reads pubsub_callback, in that it won\u0027t be scheduling notifications.\n\ni think you have two options:\n1) land this CL and fix the TODO in Python\n2) do not land this CL and use \"pubsub_callback\" property in Go\n\nmy question was which one of the two you prefer? I assume (1) because you wrote this CL.",
+      "parentUuid": "fa87c352_1e217d90",
+      "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
