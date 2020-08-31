@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -51,7 +50,6 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	var err error
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
 			// to keep report() simple. For more details, visit
