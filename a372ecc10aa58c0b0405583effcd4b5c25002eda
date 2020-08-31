@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eba6b9b0_74dd6471",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-31T19:42:17Z",
+      "side": 1,
+      "message": "Recall https://chromium.googlesource.com/infra/luci/luci-go/+/7ce644dc13dad204910f01e420ca96029aea41c5/buildbucket/appengine/model/unused.go for the reason why we have this in the first place.",
+      "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
