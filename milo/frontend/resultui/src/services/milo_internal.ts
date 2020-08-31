@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
-import { BuilderID, GitilesCommit, Timestamp } from './buildbucket';
+import { BuilderID, GitilesCommit } from './buildbucket';
 
 /**
  * Manually coded type definition and classes for milo internal service.
@@ -31,7 +31,7 @@ export interface QueryBlamelistRequest {
 export interface CommitUser {
   readonly name: string;
   readonly email: string;
-  readonly time: Timestamp;
+  readonly time: string;
 }
 
 export const enum CommitTreeDiffChangeType {
@@ -56,8 +56,8 @@ export interface GitCommit {
   readonly id: string;
   readonly tree: string;
   readonly parents?: string[];
-  readonly author: CommitTreeDiffChangeType;
-  readonly commiter: CommitTreeDiffChangeType;
+  readonly author: CommitUser;
+  readonly committer: CommitUser;
   readonly message: string;
   readonly tree_diff: CommitTreeDiff[];
 }
@@ -73,7 +73,7 @@ export class MiloInternal {
   private prpcClient: PrpcClient;
 
   constructor(accessToken: string) {
-    this.prpcClient = new PrpcClient({host: '', accessToken, insecure: true});
+    this.prpcClient = new PrpcClient({host: '', accessToken});
   }
 
   async queryBlamelist(req: QueryBlamelistRequest) {

@@ -17,8 +17,10 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
+import * as iter from '../../libs/iter_utils';
 import { BuilderID } from '../../services/buildbucket';
 import { BuildPageData, RelatedBuildsData } from '../../services/build_page';
+import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
 /**
@@ -65,6 +67,31 @@ export class BuildState {
       return null;
     }
     return this.relatedBuildsDataReq.value;
+  }
+
+  @computed({keepAlive: true})
+  get queryBlamelistResIterFn() {
+    if (!this.appState.milo || !this.buildPageData) {
+      return async function*() { await Promise.race([]); };
+    }
+    if (!this.buildPageData.input.gitiles_commit) {
+      return async function*() {};
+    }
+
+    let req: QueryBlamelistRequest = {
+      gitiles_commit: this.buildPageData.input.gitiles_commit,
+      builder: this.buildPageData.builder,
+    };
+    const milo = this.appState.milo;
+    async function* streamBlamelist() {
+      let res: QueryBlamelistResponse;
+      do {
+        res = await milo.queryBlamelist(req);
+        req = {...req, page_token: res.next_page_token};
+        yield res;
+      } while (res.next_page_token);
+    }
+    return iter.teeAsync(streamBlamelist());
   }
 }
 
