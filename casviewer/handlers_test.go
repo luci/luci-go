@@ -16,14 +16,24 @@ package casviewer
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
-	"go.chromium.org/luci/server/router"
-
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/server/router"
 )
+
+const testInstance = "projects/test-proj/instances/default_instance"
 
 func TestHandlers(t *testing.T) {
 	t.Parallel()
@@ -31,7 +41,6 @@ func TestHandlers(t *testing.T) {
 	Convey("InstallHandlers", t, func() {
 		r := router.New()
 		InstallHandlers(r, nil)
-
 		srv := httptest.NewServer(r)
 
 		resp, err := http.Get(srv.URL)
@@ -41,28 +50,113 @@ func TestHandlers(t *testing.T) {
 	})
 
 	Convey("treeHandler", t, func() {
-		r := router.New()
-		cc := NewClientCache(context.Background())
-		InstallHandlers(r, cc)
+		Convey("Not Found", func() {
+			srv, _ := setupServerWithFakeCAS(t)
 
-		srv := httptest.NewServer(r)
+			url := fmt.Sprintf(
+				"%s/%s/blobs/%s/%d/tree", srv.URL, testInstance, "123", 1)
+			resp, err := http.Get(url)
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
 
-		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
-		So(err, ShouldBeNil)
-		defer resp.Body.Close()
-		So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+		})
+
+		Convey("Must be Directory", func() {
+			srv, cl := setupServerWithFakeCAS(t)
+
+			// upload a blob. but it's not directory.
+			bd, err := cl.WriteBlob(context.Background(), []byte{1})
+
+			url := fmt.Sprintf(
+				"%s/%s/blobs/%s/%d/tree", srv.URL, testInstance, bd.Hash, bd.Size)
+			resp, err := http.Get(url)
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
+
+			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+		})
+
+		Convey("OK", func() {
+			srv, cl := setupServerWithFakeCAS(t)
+
+			// upload a director node.
+			d := &repb.Directory{
+				Files: []*repb.FileNode{
+					{
+						Name:   "foo",
+						Digest: digest.NewFromBlob([]byte{1}).ToProto(),
+					},
+				},
+			}
+			b, err := proto.Marshal(d)
+			So(err, ShouldBeNil)
+			bd, err := cl.WriteBlob(context.Background(), b)
+			So(err, ShouldBeNil)
+
+			url := fmt.Sprintf(
+				"%s/%s/blobs/%s/%d/tree", srv.URL, testInstance, bd.Hash, bd.Size)
+			resp, err := http.Get(url)
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
+
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			body, err := ioutil.ReadAll(resp.Body)
+			So(err, ShouldBeNil)
+			// body should contain file name, hash, size.
+			So(string(body), ShouldContainSubstring, d.Files[0].Name)
+			So(string(body), ShouldContainSubstring, d.Files[0].Digest.Hash)
+			So(string(body), ShouldContainSubstring, strconv.FormatInt(d.Files[0].Digest.SizeBytes, 10))
+		})
 	})
 
 	Convey("getHandler", t, func() {
-		r := router.New()
-		cc := NewClientCache(context.Background())
-		InstallHandlers(r, cc)
+		Convey("Not Found", func() {
+			srv, _ := setupServerWithFakeCAS(t)
 
-		srv := httptest.NewServer(r)
+			url := fmt.Sprintf(
+				"%s/%s/blobs/%s/%d", srv.URL, testInstance, "123", 1)
+			resp, err := http.Get(url)
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
 
-		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
-		So(err, ShouldBeNil)
-		defer resp.Body.Close()
-		So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+		})
+
+		Convey("OK", func() {
+			srv, cl := setupServerWithFakeCAS(t)
+
+			// upload a blob. but it's not directory.
+			b := []byte{1}
+			bd, err := cl.WriteBlob(context.Background(), b)
+
+			url := fmt.Sprintf(
+				"%s/%s/blobs/%s/%d", srv.URL, testInstance, bd.Hash, bd.Size)
+			resp, err := http.Get(url)
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
+
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			body, err := ioutil.ReadAll(resp.Body)
+			So(err, ShouldBeNil)
+			So(body, ShouldResemble, b)
+		})
 	})
+}
+
+// setupServer sets up a server with a fake CAS client.
+func setupServerWithFakeCAS(t *testing.T) (*httptest.Server, *client.Client) {
+	casSrv, err := fakes.NewServer(t)
+	So(err, ShouldBeNil)
+
+	cl, err := casSrv.NewTestClient(context.Background())
+	So(err, ShouldBeNil)
+
+	r := router.New()
+
+	cc := NewClientCache(context.Background())
+	cc.clients[testInstance] = cl // Inject fake client.
+	InstallHandlers(r, cc)
+
+	return httptest.NewServer(r), cl
 }
