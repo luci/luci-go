@@ -249,7 +249,7 @@ func (b *Build) BuildSetLinks() []template.HTML {
 			// to parallel CQ.
 			buildbucketId := result[1]
 			builderURL := fmt.Sprintf("https://ci.chromium.org/b/%s", buildbucketId)
-			ariaLabel := fmt.Sprintf("Master builder %s", buildbucketId)
+			ariaLabel := fmt.Sprintf("Main builder %s", buildbucketId)
 			link := NewLink(buildSet, builderURL, ariaLabel)
 			links = append(links, link.HTML())
 		}
