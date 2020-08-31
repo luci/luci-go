@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3c3279a8_688a02d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-31T17:03:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95446e1e_196f9c2f",
+      "range": {
+        "startLine": 7,
+        "startChar": 28,
+        "endLine": 7,
+        "endChar": 35
+      },
+      "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "627defcc_2dd4de1b",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 8
@@ -56,6 +80,24 @@
       "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d01c307_0687f7e7",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-31T17:03:34Z",
+      "side": 1,
+      "message": "Reordered to validate first.\nIt was intentional, but stepping back, I found that it is more reasonable to validate it first.",
+      "parentUuid": "190ce327_d65277f1",
+      "revId": "574ec915df5a69d169e4164fd8615b63f116d85d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
