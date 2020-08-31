@@ -33,6 +33,29 @@
       "revId": "e995220b7709c120fcf8e84010221c8f163a5ba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f52f84af_8fdf0ed0",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-31T21:36:16Z",
+      "side": 1,
+      "message": "this LGTM for this file, but probably makes little sense for someone coming from go/resultdb-bq, who are not familiar with ResultDB codebase.\n\nin addition to improving comment shere, should we document the schema in g3doc?",
+      "range": {
+        "startLine": 101,
+        "startChar": 8,
+        "endLine": 101,
+        "endChar": 21
+      },
+      "revId": "e995220b7709c120fcf8e84010221c8f163a5ba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
