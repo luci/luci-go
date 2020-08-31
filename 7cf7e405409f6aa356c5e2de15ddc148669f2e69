@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0a7318bd_8c11e2d6",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T05:45:13Z",
+      "side": 1,
+      "message": "Yes. That\u0027s how it is in the existing build page.\nWe can always change that if there\u0027s request for it.",
+      "parentUuid": "4c08ac4a_014efe05",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2da2f24a_b280b1dd",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "eb6a4a25_7c622cf7",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T05:45:13Z",
+      "side": 1,
+      "message": "cancelling a build in ended state will be a no-op and the build object will be returned.\nSo the handling of the request will be the same.\n\nWe can maybe open a popup saying \"oops, the build has already finished\" in a future CL if users find it confusing.",
+      "parentUuid": "2da2f24a_b280b1dd",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5c791a89_cf90940a",
         "filename": "milo/frontend/resultui/src/pages/build_page/related_builds_tab.ts",
         "patchSetId": 3
@@ -47,6 +83,24 @@
       "writtenOn": "2020-08-31T01:43:34Z",
       "side": 1,
       "message": "I think a related build may have null start/end time as well. I think we should update displayTimeDiff to just return N.A. in those cases",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9009f917_c9248ece",
+        "filename": "milo/frontend/resultui/src/pages/build_page/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-31T05:45:13Z",
+      "side": 1,
+      "message": "I feel that makes the function less generic.\nAnyway, I\u0027ll have another CL to refactor it.",
+      "parentUuid": "5c791a89_cf90940a",
       "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
