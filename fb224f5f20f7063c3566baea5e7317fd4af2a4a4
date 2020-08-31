@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "320110ba_b99abfdd",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 30
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-31T06:35:16Z",
+      "side": 1,
+      "message": "better to set this just after server setup?",
+      "revId": "fb224f5f20f7063c3566baea5e7317fd4af2a4a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
