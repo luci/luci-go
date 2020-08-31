@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "86ca52af_2d3d3209",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-31T00:45:03Z",
+      "side": 1,
+      "message": "nit: digest.Digest::Size is int64: https://github.com/bazelbuild/remote-apis-sdks/blob/e0c399322a6478ac3387452d68c1bd010fdf5031/go/pkg/digest/digest.go#L30.",
+      "range": {
+        "startLine": 101,
+        "startChar": 53,
+        "endLine": 101,
+        "endChar": 54
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e2e7748f_d5401850",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 28
