@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c08ac4a_014efe05",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-31T01:43:34Z",
+      "side": 1,
+      "message": "Do we only allow retry after the build ended?",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2da2f24a_b280b1dd",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-31T01:43:34Z",
+      "side": 1,
+      "message": "Do you want to read the response here, in case the cancel was unsuccessful (e.g. when the build finished, but the UI has not updated yet, so the cancel was unsuccessful)",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c791a89_cf90940a",
+        "filename": "milo/frontend/resultui/src/pages/build_page/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-31T01:43:34Z",
+      "side": 1,
+      "message": "I think a related build may have null start/end time as well. I think we should update displayTimeDiff to just return N.A. in those cases",
+      "revId": "7cf7e405409f6aa356c5e2de15ddc148669f2e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

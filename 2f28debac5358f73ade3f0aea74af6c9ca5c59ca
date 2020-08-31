@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f5d6a3a_794cbba1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-31T01:43:34Z",
+      "side": 1,
+      "message": "Is there any cases where the cancel is unsuccessful?",
+      "revId": "2f28debac5358f73ade3f0aea74af6c9ca5c59ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
