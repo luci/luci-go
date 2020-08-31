@@ -52,9 +52,9 @@ export class TimelineTabElement extends MobxLitElement {
     }
 
     const container = this.shadowRoot!.getElementById('timeline')!;
-    function groupTemplater(group: { data: { label: string; duration: string; } }): string {
+    function groupTemplater(group: { data: { label: string; duration: string; statusClassName: string} }): string {
       return `
-        <div>
+        <div class="group-title ${group.data.statusClassName}">
           <span class="title">${group.data.label}</span>
           <span class="duration">( ${group.data.duration} )</span>
         </div>
@@ -106,6 +106,61 @@ export class TimelineTabElement extends MobxLitElement {
   static styles = css`
     .vis-range {
       cursor: pointer;
+    }
+
+    .status-INFRA_FAILURE {
+      color: #FFFFFF;
+      background-color: #c6c;
+      border-color: #ACA0B3;
+    }
+
+    .status-RUNNING {
+      color: #000;
+      background-color: #fd3;
+      border-color: #C5C56D;
+    }
+
+    .status-FAILURE {
+      color: #000;
+      background-color: #e88;
+      border-color: #A77272;
+      border-style: solid;
+    }
+
+    .status-CANCELED {
+      color: #000;
+      background-color: #8ef;
+      border-color: #00d8fc;
+      border-style: solid;
+    }
+
+    .status-SUCCESS {
+      color: #000;
+      background-color: #8d4;
+      border-color: #4F8530;
+    }
+
+    .group-title > .title{
+      display: inline-block;
+      white-space: nowrap;
+      max-width: 50em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .group-title > .duration{
+      display: inline-block;
+      text-align: right;
+      float: right;
+    }
+
+    .group-title {
+      font-weight: bold;
+      padding: 5px;
+    }
+
+    .vis-labelset .vis-label .vis-inner {
+      display: block;
     }
   `;
 }
