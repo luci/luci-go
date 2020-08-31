@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2e7748f_d5401850",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-31T00:42:16Z",
+      "side": 1,
+      "message": "nit: Could you convert d.Files[0].Digest to digest.Digest (https://github.com/bazelbuild/remote-apis-sdks/blob/e0c399322a6478ac3387452d68c1bd010fdf5031/go/pkg/digest/digest.go#L96-L99), then directly call its String() method?",
+      "range": {
+        "startLine": 108,
+        "startChar": 3,
+        "endLine": 109,
+        "endChar": 95
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e388d94_295898e4",
+        "filename": "casviewer/views.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-31T00:42:16Z",
+      "side": 1,
+      "message": "renderBadRequest",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 17
+      },
+      "revId": "094467c9593975e65e803b92f44f8391450327fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
