@@ -32,12 +32,22 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
+// rejectionHandler returns a tq.Handler which rejects the given task.
+// Used by tasks which are handled in Python.
+// TODO(crbug/1042991): Remove once all handlers are implemented in Go.
+func rejectionHandler(tq string) tq.Handler {
+	return func(ctx context.Context, payload proto.Message) error {
+		logging.Errorf(ctx, "tried to handle %s: %q", tq, payload)
+		return errors.Reason("handler called").Err()
+	}
+}
+
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "cancel-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.CancelSwarmingTask)
-			body, err := json.Marshal(map[string]string{
+			body, err := json.Marshal(map[string]interface{}{
 				"hostname": task.Hostname,
 				"task_id":  task.TaskId,
 				"realm":    task.Realm,
@@ -51,25 +61,59 @@ func init() {
 				RelativeURI: fmt.Sprintf("/internal/task/buildbucket/cancel_swarming_task/%s/%s", task.Hostname, task.TaskId),
 			}, nil
 		},
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			// These tasks are handled by Python, it's an error for Go to receive them.
-			// TODO(crbug/1042991): Implement these task queues in Go.
-			logging.Errorf(ctx, "tried to handle cancel-swarming-task: %q", payload)
-			return errors.Reason("handler called").Err()
-		},
+		Handler:   rejectionHandler("cancel-swarming-task"),
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.CancelSwarmingTask)(nil),
 		Queue:     "backend-default",
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID: "notify-pubsub",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			task := m.(*taskdefs.NotifyPubSub)
+			mode := "global"
+			if task.Callback {
+				mode = "callback"
+			}
+			body, err := json.Marshal(map[string]interface{}{
+				"id":   task.BuildId,
+				"mode": mode,
+			})
+			if err != nil {
+				return nil, errors.Annotate(err, "error marshaling payload").Err()
+			}
+			return &tq.CustomPayload{
+				Body:        body,
+				Method:      "POST",
+				RelativeURI: fmt.Sprintf("/internal/task/buildbucket/notify/%d", task.BuildId),
+			}, nil
+		},
+		Handler:   rejectionHandler("notify-pubsub"),
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.NotifyPubSub)(nil),
+		Queue:     "backend-default",
+	})
 }
 
-// CancelSwarmingTask enqueues a task queue task to cancel the given Swarming task.
+// CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
+// task.
 func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) error {
 	switch {
 	case task.GetHostname() == "":
 		return errors.Reason("hostname is required").Err()
 	case task.TaskId == "":
 		return errors.Reason("task_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: task,
+	})
+}
+
+// NotifyPubSub enqueues a task to publish a Pub/Sub notification for the given
+// build.
+func NotifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,

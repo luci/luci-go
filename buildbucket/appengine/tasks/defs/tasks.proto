@@ -18,3 +18,11 @@ message CancelSwarmingTask {
   // LUCI realm the task belongs to or "" if realms is disabled.
   string realm = 3;
 }
+
+// A task to send a build notification on Pub/Sub.
+message NotifyPubSub {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+  // Whether to use the global or build-specific callback Pub/Sub topic.
+  bool callback = 2;
+}

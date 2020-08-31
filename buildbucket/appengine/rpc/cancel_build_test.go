@@ -273,7 +273,7 @@ func TestCancelBuild(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Status: pb.Status_CANCELED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks(), ShouldHaveLength, 2)
 			})
 		})
 	})
