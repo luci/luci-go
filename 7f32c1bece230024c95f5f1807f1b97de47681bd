@@ -166,6 +166,30 @@
       "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa6aecf9_b99268f0",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-31T19:58:53Z",
+      "side": 1,
+      "message": "I don\u0027t have an objection for names with a leading/trailing whitespace char. However, it can be confusing if an empty space is allowed.\n\nAt https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/validation.py;l\u003d378-379, the validator validates the status and timestamps with the parent step. Therefore, it needs to find who the parent step is, but.\n\nQ. What\u0027s the parent of \"|\"? Does it have a parent?\nIf Yes, then the step itself is the parent and child?\nIf No, then what\u0027s the parent of \"a|\"?  it doesn\u0027t have a parent either?",
+      "parentUuid": "2c80c43a_2e061b48",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

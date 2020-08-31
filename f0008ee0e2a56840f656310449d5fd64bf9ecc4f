@@ -56,6 +56,24 @@
       "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb62267a_1da083bd",
+        "filename": "buildbucket/protoutil/step.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-31T19:58:53Z",
+      "side": 1,
+      "message": "I guess so. It was added in https://crrev.com/c/947397 for https://crbug.com/742478",
+      "parentUuid": "e8b087d6_61ed3fec",
+      "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
