@@ -9,6 +9,9 @@ Follow the steps below to run a local instance.
     "RESULT_DB": {
         "HOST": "<ResultDB Host Name>" // e.g. "staging.results.api.cr.dev"
     },
+    "BUILDBUCKET": {
+        "HOST": "<Buildbucket Host Name>" // e.g. "cr-buildbucket-dev.appspot.com"
+    },
     "OAUTH2": {
         "CLIENT_ID": "<OAuth2 Client ID>"
     }

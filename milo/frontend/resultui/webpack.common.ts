@@ -87,6 +87,7 @@ const config: webpack.Configuration = {
         const configsTemplate = fs.readFileSync('./configs.template.js', 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
+          .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
           .replace('{{.OAuth2.ClientID}}', appConfigs.OAUTH2.CLIENT_ID);
         res.send(config);
       });
