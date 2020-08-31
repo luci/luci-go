@@ -16,6 +16,24 @@
       "revId": "fb224f5f20f7063c3566baea5e7317fd4af2a4a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85d8798f_079ef224",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 30
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-31T08:32:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "320110ba_b99abfdd",
+      "revId": "fb224f5f20f7063c3566baea5e7317fd4af2a4a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
