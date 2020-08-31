@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { PrpcClient } from '@chopsui/prpc-client';
+
+/**
+ * Manually coded type definition and classes for resultdb service.
+ * TODO(weiweilin): To be replaced by code generated version once we have one.
+ * source: https://chromium.googlesource.com/infra/luci/luci-go/+/ea9b54c38d87a4813576454fac9ac868bab8d9bc/buildbucket/proto/builder_service.proto
+ */
+
+export const enum Trinary {
+  Unset = 0,
+  Yes = 1,
+  No = 2,
+}
+
 export interface GetBuildRequest {
   readonly id: string;
   readonly builder?: BuilderID;
@@ -186,4 +200,62 @@ export interface PermittedActionsResponse {
 
 export interface ResourcePermissions {
   readonly actions: readonly string[];
+}
+
+export interface CancelBuildRequest {
+  id: string;
+  summary_markdown: string;
+  fields?: string;
+}
+
+export interface ScheduleBuildRequest {
+  request_id?: string;
+  template_build_id?: string;
+  builder?: BuilderID;
+  experiments?: {[key: string]: boolean};
+  properties?: {};
+  gitiles_commit?: GitilesCommit;
+  gerrit_changes?: GerritChange[];
+  tags?: StringPair[];
+  dimensions?: RequestedDimension[];
+  priority?: string;
+  notify?: Notification;
+  fields?: string;
+  critical?: Trinary;
+  exe?: Executable;
+  swarming?: {
+    parent_run_id: string;
+  };
+}
+
+const BUILDS_SERVICE = 'buildbucket.v2.Builds';
+
+export class BuildsService {
+  private prpcClient: PrpcClient;
+
+  constructor(readonly host: string, accessToken: string) {
+    this.prpcClient = new PrpcClient({host, accessToken});
+  }
+
+  async cancelBuild(req: CancelBuildRequest) {
+    return await this.call(
+      'CancelBuild',
+      req,
+    ) as Build;
+  }
+
+  async scheduleBuild(req: ScheduleBuildRequest) {
+    return await this.call(
+      'ScheduleBuild',
+      req,
+    ) as Build;
+  }
+
+  private call(method: string, message: object) {
+    return this.prpcClient.call(
+      BUILDS_SERVICE,
+      method,
+      message,
+    );
+  }
 }
