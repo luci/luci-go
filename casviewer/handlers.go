@@ -15,19 +15,27 @@
 package casviewer
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/iap"
 	"go.chromium.org/luci/server/router"
 )
 
+const metadataEndpointRoot = "http://metadata.google.internal/computeMetadata/v1"
+
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router, cc *ClientCache) {
-	// TODO(crbug.com/1121471): Authorize request.
-	baseMW := router.MiddlewareChain{}
+func InstallHandlers(r *router.Router, cc *ClientCache, v iap.IDTokenValidator) {
+	baseMW := router.NewMiddlewareChain(
+		authMW(cc.ctx, v),
+	)
 	blobMW := baseMW.Extend(
 		withClientCacheMW(cc),
 	)
@@ -37,10 +45,35 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
 }
 
+func authMW(c context.Context, v iap.IDTokenValidator) router.Middleware {
+	aud := iap.AudForGAE(numericProjectID(), os.Getenv("GOOGLE_CLOUD_PROJECT"))
+	logging.Debugf(c, "%v\n", aud)
+	authMethods := []auth.Method{
+		&iap.IAPAuthMethod{Aud: aud, Validator: v},
+	}
+	a := &auth.Authenticator{Methods: authMethods}
+	return a.GetMiddleware()
+}
+
+// numericProjectID returns the numeric project ID by accessing the metadata server.
+func numericProjectID() string {
+	resp, err := http.Get(metadataEndpointRoot + "/project/numeric-project-id")
+	if err != nil {
+		panic(err)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	return string(body)
+}
+
 func rootHanlder(c *router.Context) {
 	// TODO(crbug.com/1121471): Add top page.
 	logging.Debugf(c.Context, "Hello world")
-	c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
+	hello := fmt.Sprintf(
+		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentUser(c.Context).Identity)
+	c.Writer.Write([]byte(hello))
 }
 
 func treeHandler(c *router.Context) {

@@ -27,7 +27,7 @@ func main() {
 	defer cc.Clear()
 
 	server.Main(nil, nil, func(srv *server.Server) error {
-		casviewer.InstallHandlers(srv.Routes, cc)
+		casviewer.InstallHandlers(srv.Routes, cc, nil)
 		return nil
 	})
 }
