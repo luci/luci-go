@@ -14,7 +14,11 @@
 
 package protoutil
 
-import "strings"
+import (
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
+)
 
 // StepNameSep is the separator between each node in step names.
 const StepNameSep = "|"
@@ -28,4 +32,20 @@ func ParentStepName(stepName string) string {
 		return ""
 	}
 	return stepName[:i]
+}
+
+// ValidateStepName validates a given step name.
+func ValidateStepName(stepName string) error {
+	if stepName == "" {
+		return errors.Reason("required").Err()
+	}
+
+	nodes := strings.Split(stepName, StepNameSep)
+	for _, node := range nodes {
+		if node == "" {
+			return errors.Reason("there must be at least one character before and after %q (%q)",
+				StepNameSep, stepName).Err()
+		}
+	}
+	return nil
 }

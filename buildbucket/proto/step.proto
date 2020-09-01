@@ -32,6 +32,12 @@ message Step {
   // For example, value "a|b" indicates step "b" under step "a".
   // If this is a child step, a parent MUST exist and MUST precede this step in
   // the list of steps.
+  // All step names, including child and parent names recursively,
+  // MUST NOT be an empty string.
+  // For example, all of the below names are invalid.
+  // - |a
+  // - a|
+  // - a||b
   string name = 1;
 
   // The timestamp when the step started.

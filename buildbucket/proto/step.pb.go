@@ -55,6 +55,12 @@ type Step struct {
 	// For example, value "a|b" indicates step "b" under step "a".
 	// If this is a child step, a parent MUST exist and MUST precede this step in
 	// the list of steps.
+	// All step names, including child and parent names recursively,
+	// MUST NOT be an empty string.
+	// For example, all of the below names are invalid.
+	// - |a
+	// - a|
+	// - a||b
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The timestamp when the step started.
 	// Required iff status is STARTED, SUCCESS or FAILURE, or if the step has

@@ -101,12 +101,16 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 
 	seen := stringset.New(len(steps))
 	for i, step := range steps {
+		if err := protoutil.ValidateStepName(step.Name); err != nil {
+			return errors.Annotate(err, "step[%d].name", i).Err()
+		}
 		if !seen.Add(step.Name) {
 			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
 		}
 		if pn := protoutil.ParentStepName(step.Name); pn != "" && !seen.Has(pn) {
 			return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
 		}
+
 		if err := validateStep(step); err != nil {
 			return errors.Annotate(err, "step[%d]", i).Err()
 		}
@@ -115,10 +119,6 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 }
 
 func validateStep(step *pb.Step) error {
-	if step.GetName() == "" {
-		return errors.Reason("name: required").Err()
-	}
-
 	var st, et time.Time
 	var err error
 	if step.StartTime != nil {
