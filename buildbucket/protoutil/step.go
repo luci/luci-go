@@ -37,7 +37,7 @@ func ParentStepName(stepName string) string {
 // ValidateStepName validates a given step name.
 func ValidateStepName(stepName string) error {
 	if stepName == "" {
-		return errors.Reason("required").Err()
+		return errors.New("required")
 	}
 
 	nodes := strings.Split(stepName, StepNameSep)
