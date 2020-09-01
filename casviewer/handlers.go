@@ -16,9 +16,6 @@ package casviewer
 
 import (
 	"fmt"
-	"net/http"
-
-	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
@@ -37,7 +34,7 @@ func InstallHandlers(r *router.Router, cc *ClientCache, v iap.IDTokenValidator) 
 
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
-	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
+	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
 }
 
 func authMW(v iap.IDTokenValidator) router.Middleware {
@@ -57,38 +54,4 @@ func rootHanlder(c *router.Context) {
 	hello := fmt.Sprintf(
 		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentUser(c.Context).Identity)
 	c.Writer.Write([]byte(hello))
-}
-
-func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob and render html.
-}
-
-func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob.
-}
-
-func fullInstanceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"projects/%s/instances/%s", p.ByName(":project"), p.ByName(":instance"))
-}
-
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName(":hash"), p.ByName(":size"))
 }
