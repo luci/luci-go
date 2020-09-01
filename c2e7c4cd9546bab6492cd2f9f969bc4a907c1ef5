@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d9219bb1_97e27135",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-01T08:32:48Z",
+      "side": 1,
+      "message": "if this is used only from main.go, I think it is better to move iapAuthMW() to main.go and not pass nil to InstallHandlers.",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0cb9d2e_8bd7b1a4",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-01T08:32:48Z",
+      "side": 1,
+      "message": "extract this and belows to outer scope?",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31118f7f_4fdbe316",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-01T08:32:48Z",
+      "side": 1,
+      "message": "call close in cleanup?\nhttps://golang.org/pkg/net/http/httptest/#Server.Close",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
