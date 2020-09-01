@@ -16,6 +16,24 @@
       "revId": "20ecb690231bb23f9f371e5a713579368b1029af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "745a037d_d4155633",
+        "filename": "buildbucket/protoutil/step.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-01T22:31:16Z",
+      "side": 1,
+      "message": "+1. https://crrev.com/c/2388987 sent.",
+      "parentUuid": "1a0c4be5_36345201",
+      "revId": "20ecb690231bb23f9f371e5a713579368b1029af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
