@@ -52,6 +52,24 @@
       "revId": "bf733f1ce6e099816a566af539d8991ead38d049",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6482c67_a0ccf5b2",
+        "filename": "buildbucket/protoutil/step_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-01T18:19:59Z",
+      "side": 1,
+      "message": "Acked. thanks for the suggestion.",
+      "parentUuid": "79d92107_b9928424",
+      "revId": "bf733f1ce6e099816a566af539d8991ead38d049",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
