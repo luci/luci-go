@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "54bb0065_2eed86da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-01T17:32:00Z",
+      "side": 1,
+      "message": "I am submitting this CL, but please feel free to re-raise this topic in the sync up meeting, if necessary.",
+      "parentUuid": "8b12f848_4e2d24e6",
+      "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73458b5c_064e073a",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d1f4865_4ac108f7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-01T17:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73458b5c_064e073a",
+      "range": {
+        "startLine": 108,
+        "startChar": 42,
+        "endLine": 108,
+        "endChar": 44
+      },
+      "revId": "f0008ee0e2a56840f656310449d5fd64bf9ecc4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

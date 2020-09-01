@@ -238,6 +238,30 @@
       "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd53f6ba_03faf16a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-01T17:32:00Z",
+      "side": 1,
+      "message": "Sent https://crrev.com/c/2386605 for checking empty step names. PTAL",
+      "parentUuid": "9e8cfe8d_b60bc533",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7f32c1bece230024c95f5f1807f1b97de47681bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
