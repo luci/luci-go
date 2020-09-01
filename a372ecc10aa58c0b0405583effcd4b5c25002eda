@@ -69,6 +69,24 @@
       "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "57449a0e_a532c80d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-01T13:36:42Z",
+      "side": 1,
+      "message": "I\u0027m not sure that I understand the relation. I landed this CL because pubsub_callback being an empty string confuses Python, even though pubsub_callback.topic and whatnot exist, ndb loads from the pubsub_callback field which produces an empty struct which as you say, means it can no longer do per-topic notifications. With this CL this is no longer broken. pubsub_callback.topic is in the datastore but pubsub_callback is not, so Python can parse the struct and continue to issue callback notifications. From Go, when writing this entity, I\u0027d fill out pubsub_callback.topic and the other fields. So why do I need to change anything in Python?",
+      "parentUuid": "95dc7ef7_a4d17aad",
+      "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
