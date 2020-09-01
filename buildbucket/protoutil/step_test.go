@@ -17,6 +17,8 @@ package protoutil
 import (
 	"testing"
 
+	pb "go.chromium.org/luci/buildbucket/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -63,4 +65,76 @@ func TestValidateStepName(t *testing.T) {
 			So(ValidateStepName("a||b"), ShouldErrLike, errMsg)
 		})
 	})
+}
+
+func TestIsWorseStepStatus(t *testing.T) {
+	t.Parallel()
+
+	Convey("compare", t, func() {
+		Convey("with non-precedence statuss", func() {
+			So(IsWorseStepStatus(pb.Status_SCHEDULED, pb.Status_SUCCESS), ShouldBeFalse)
+			So(IsWorseStepStatus(pb.Status_SUCCESS, pb.Status_SCHEDULED), ShouldBeFalse)
+			So(IsWorseStepStatus(pb.Status_SCHEDULED, pb.Status_SCHEDULED), ShouldBeFalse)
+		})
+		Convey("with a worse status", func() {
+			So(IsWorseStepStatus(pb.Status_FAILURE, pb.Status_SUCCESS), ShouldBeTrue)
+		})
+		Convey("with a better status", func() {
+			So(IsWorseStepStatus(pb.Status_SUCCESS, pb.Status_FAILURE), ShouldBeFalse)
+		})
+	})
+}
+
+func BenchmarkWorseWithMap(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithMap(pb.Status_SUCCESS, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkWorsekWithBS(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithBS(pb.Status_SUCCESS, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkWorseWithLinear(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithLinear(pb.Status_SUCCESS, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkBetterWithMap(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithMap(pb.Status_CANCELED, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkBetterWithBS(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithBS(pb.Status_SUCCESS, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkBetterWithLinear(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithLinear(pb.Status_SUCCESS, pb.Status_CANCELED)
+	}
+}
+
+func BenchmarkNeitherWithMap(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithMap(pb.Status_SCHEDULED, pb.Status_FAILURE)
+	}
+}
+
+func BenchmarkNeitherWithBS(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithBS(pb.Status_SCHEDULED, pb.Status_FAILURE)
+	}
+}
+
+func BenchmarkNeitherWithLinear(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		IsWorseStepStatusWithLinear(pb.Status_SCHEDULED, pb.Status_FAILURE)
+	}
 }

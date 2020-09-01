@@ -15,13 +15,33 @@
 package protoutil
 
 import (
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // StepNameSep is the separator between each node in step names.
 const StepNameSep = "|"
+
+// statusPrecedence is a set of step statuses that can be compared with others.
+// list of step statuses, ordered from best to worst.
+// See https://chromium.googlesource.com/infra/luci/luci-go/+/a38cde76483f9c6f6ad6b2dff42f8411691273b8/buildbucket/proto/step.proto#58
+var StatusPrecedence = []int{
+	int(pb.Status_SUCCESS), // best
+	int(pb.Status_FAILURE),
+	int(pb.Status_INFRA_FAILURE),
+	int(pb.Status_CANCELED), // worst
+}
+
+var RelationStatuses = map[pb.Status]int{
+	pb.Status_SUCCESS:       0,
+	pb.Status_FAILURE:       1,
+	pb.Status_INFRA_FAILURE: 2,
+	pb.Status_CANCELED:      3,
+}
 
 // ParentStepName returns the name of the parent step.
 //
@@ -48,4 +68,57 @@ func ValidateStepName(stepName string) error {
 		}
 	}
 	return nil
+}
+
+// IsWorseStepStatusWithMap returns true if lhs is worse than lhs.
+// If either of lhs or rhs is not one of the statuses in StatusPrecedence,
+// this always returns false.
+func IsWorseStepStatusWithMap(lhs, rhs pb.Status) bool {
+	lp, exist := RelationStatuses[lhs]
+	if !exist {
+		return false
+	}
+	rp, exist := RelationStatuses[rhs]
+	if !exist {
+		return false
+	}
+	return lp > rp
+}
+
+// IsWorseStepStatusWithBS returns true if lhs is worse than lhs.
+// If either of lhs or rhs is not one of the statuses in StatusPrecedence,
+// this always returns false.
+func IsWorseStepStatusWithBS(lhs, rhs pb.Status) bool {
+	li := sort.SearchInts(StatusPrecedence, int(lhs))
+	if li >= len(StatusPrecedence) || StatusPrecedence[li] != int(lhs) {
+		return false
+	}
+	ri := sort.SearchInts(StatusPrecedence, int(rhs))
+	if ri >= len(StatusPrecedence) || StatusPrecedence[ri] != int(rhs) {
+		return false
+	}
+	return li > ri
+}
+
+func IsWorseStepStatus(lhs, rhs pb.Status) bool {
+	return IsWorseStepStatusWithLinear(lhs, rhs)
+}
+
+// IsWorseStepStatusWithLinear returns true if lhs is worse than lhs.
+// If either of lhs or rhs is not one of the statuses in StatusPrecedence,
+// this always returns false.
+func IsWorseStepStatusWithLinear(lhs, rhs pb.Status) bool {
+	li, ri := -1, -1
+	for i, s := range StatusPrecedence {
+		switch s {
+		case int(lhs):
+			li = i
+		case int(rhs):
+			ri = i
+		}
+	}
+	if ri == -1 {
+		return false
+	}
+	return li > ri
 }
