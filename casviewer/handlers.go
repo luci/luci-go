@@ -15,19 +15,26 @@
 package casviewer
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
+	"cloud.google.com/go/compute/metadata"
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/iap"
 	"go.chromium.org/luci/server/router"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router, cc *ClientCache) {
-	// TODO(crbug.com/1121471): Authorize request.
-	baseMW := router.MiddlewareChain{}
+func InstallHandlers(r *router.Router, cc *ClientCache, v iap.IDTokenValidator) {
+	baseMW := router.NewMiddlewareChain(
+		authMW(cc.ctx, v),
+	)
 	blobMW := baseMW.Extend(
 		withClientCacheMW(cc),
 	)
@@ -37,10 +44,36 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
 }
 
+func authMW(c context.Context, v iap.IDTokenValidator) router.Middleware {
+	aud, err := authAudience()
+	if err != nil {
+		// We can do nothing if we can't get audience.
+		panic(err)
+	}
+	logging.Debugf(c, "authMW: aud=%v\n", aud)
+	authMethods := []auth.Method{
+		&iap.IAPAuthMethod{Aud: aud, Validator: v},
+	}
+	a := &auth.Authenticator{Methods: authMethods}
+	return a.GetMiddleware()
+}
+
+func authAudience() (string, error) {
+	mcl := metadata.NewClient(nil)
+	pID, err := mcl.NumericProjectID()
+	if err != nil {
+		return "", err
+	}
+	appID := strings.Split(os.Getenv("GAE_APPLICATION"), "~")[1]
+	return iap.AudForGAE(pID, appID), nil
+}
+
 func rootHanlder(c *router.Context) {
 	// TODO(crbug.com/1121471): Add top page.
 	logging.Debugf(c.Context, "Hello world")
-	c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
+	hello := fmt.Sprintf(
+		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentUser(c.Context).Identity)
+	c.Writer.Write([]byte(hello))
 }
 
 func treeHandler(c *router.Context) {
