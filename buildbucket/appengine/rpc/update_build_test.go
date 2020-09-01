@@ -143,6 +143,23 @@ func TestValidateUpdate(t *testing.T) {
 			}
 			So(validateUpdate(req, bs), ShouldErrLike, `duplicate: "step1"`)
 		})
+
+		Convey("with a parent step", func() {
+			Convey("before child", func() {
+				req.Build.Steps = []*pb.Step{
+					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				}
+				So(validateUpdate(req, bs), ShouldBeNil)
+			})
+			Convey("after child", func() {
+				req.Build.Steps = []*pb.Step{
+					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
+				}
+				So(validateUpdate(req, bs), ShouldErrLike, `parent of "parent|child" must precede`)
+			})
+		})
 	})
 }
 

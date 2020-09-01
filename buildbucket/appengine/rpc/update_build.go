@@ -104,6 +104,9 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 		if !seen.Add(step.Name) {
 			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
 		}
+		if pn := protoutil.ParentStepName(step.Name); pn != "" && !seen.Has(pn) {
+			return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
+		}
 		if err := validateStep(step); err != nil {
 			return errors.Annotate(err, "step[%d]", i).Err()
 		}
