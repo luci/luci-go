@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fff27636_46e0c4b6",
+        "filename": "buildbucket/protoutil/step_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-01T18:00:56Z",
+      "side": 1,
+      "message": "ShouldErrLike can accept a partial string so you don\u0027t necessarily need the function. You can just write:\nShouldErrLike, \"must be at least one character\"",
+      "revId": "bf733f1ce6e099816a566af539d8991ead38d049",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
