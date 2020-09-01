@@ -43,7 +43,7 @@ func TestIAPAuthenticator(t *testing.T) {
 		Convey("invalid jwt assertion header bytes", func() {
 			a := &IAPAuthMethod{}
 			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"some invalid header bytes"}
+			r.Header[IapJWTAssertionHeader] = []string{"some invalid header bytes"}
 
 			user, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
@@ -53,7 +53,7 @@ func TestIAPAuthenticator(t *testing.T) {
 		Convey("invalid multiple assertion header values", func() {
 			a := &IAPAuthMethod{}
 			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"only", "expect", "one", "header", "value"}
+			r.Header[IapJWTAssertionHeader] = []string{"only", "expect", "one", "header", "value"}
 
 			user, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
@@ -63,7 +63,7 @@ func TestIAPAuthenticator(t *testing.T) {
 		Convey("invalid no email claims", func() {
 			a := &IAPAuthMethod{
 				Aud: AudForGAE("1234", "some-app-id"),
-				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
+				Validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
 					return &idtoken.Payload{
 						Issuer:   "",
 						IssuedAt: 0,
@@ -72,7 +72,7 @@ func TestIAPAuthenticator(t *testing.T) {
 				},
 			}
 			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"just needs to be non-empty for testing"}
+			r.Header[IapJWTAssertionHeader] = []string{"just needs to be non-empty for testing"}
 
 			user, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
@@ -82,7 +82,7 @@ func TestIAPAuthenticator(t *testing.T) {
 		Convey("happy path", func() {
 			a := &IAPAuthMethod{
 				Aud: AudForGAE("1234", "some-app-id"),
-				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
+				Validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
 					return &idtoken.Payload{
 						Issuer:   "",
 						IssuedAt: 0,
@@ -95,7 +95,7 @@ func TestIAPAuthenticator(t *testing.T) {
 			}
 
 			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{string("just needs to be non-empty for testing")}
+			r.Header[IapJWTAssertionHeader] = []string{string("just needs to be non-empty for testing")}
 
 			user, err := a.Authenticate(c, r)
 			So(err, ShouldBeNil)
