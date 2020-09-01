@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	iapJWTAssertionHeader = "X-Goog-Iap-Jwt-Assertion"
+	IapJWTAssertionHeader = "X-Goog-Iap-Jwt-Assertion"
 )
 
 // AudForGAE returns an audience string for the GAE application as it will be formatted
@@ -48,7 +48,7 @@ func AudForGlobalBackendService(projectNumber, backendServiceID string) string {
 	return fmt.Sprintf("/projects/%s/global/backendServices/%s", projectNumber, backendServiceID)
 }
 
-type idTokenValidator func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error)
+type IDTokenValidator func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error)
 
 // IAPAuthMethod implements auth.Method for use with GCP's Identity Aware Proxy.
 type IAPAuthMethod struct {
@@ -56,20 +56,20 @@ type IAPAuthMethod struct {
 	// validation by your service.
 	Aud string
 
-	// validator field is only intended for use by unit tests.
-	validator idTokenValidator
+	// Validator field is only intended for use by unit tests.
+	Validator IDTokenValidator
 }
 
 // Authenticate returns nil if no IAP assertion header is present, a User if authentication
 // is successful, or an error if unable to validate and identify a user from the assertion header.
 func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
-	iapJwt, ok := r.Header[iapJWTAssertionHeader]
+	iapJwt, ok := r.Header[IapJWTAssertionHeader]
 	if !ok {
 		logging.Errorf(ctx, "iap: missing assertion header")
 		return nil, nil
 	}
 
-	validateFunc := a.validator
+	validateFunc := a.Validator
 	if validateFunc == nil {
 		validateFunc = idtoken.Validate
 	}
