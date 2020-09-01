@@ -16,53 +16,86 @@ package casviewer
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
-	"go.chromium.org/luci/server/router"
-
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 )
 
 func TestHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("InstallHandlers", t, func() {
-		r := router.New()
-		InstallHandlers(r, nil)
-
-		srv := httptest.NewServer(r)
+		srv := setupServer(t)
 
 		resp, err := http.Get(srv.URL)
 		So(err, ShouldBeNil)
 		defer resp.Body.Close()
+
 		So(resp.StatusCode, ShouldEqual, http.StatusOK)
+		// Body should contain user email address.
+		body, err := ioutil.ReadAll(resp.Body)
+		So(err, ShouldBeNil)
+		So(string(body), ShouldContainSubstring, "user@example.com")
 	})
 
 	Convey("treeHandler", t, func() {
-		r := router.New()
-		cc := NewClientCache(context.Background())
-		InstallHandlers(r, cc)
+		srv := setupServer(t)
 
-		srv := httptest.NewServer(r)
-
-		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
+		resp, err := http.Get(
+			srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
 		So(err, ShouldBeNil)
 		defer resp.Body.Close()
 		So(resp.StatusCode, ShouldEqual, http.StatusOK)
 	})
 
 	Convey("getHandler", t, func() {
-		r := router.New()
-		cc := NewClientCache(context.Background())
-		InstallHandlers(r, cc)
+		srv := setupServer(t)
 
-		srv := httptest.NewServer(r)
-
-		resp, err := http.Get(srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
+		resp, err := http.Get(
+			srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
 		So(err, ShouldBeNil)
 		defer resp.Body.Close()
 		So(resp.StatusCode, ShouldEqual, http.StatusOK)
 	})
+}
+
+// setupServer sets up a server.
+func setupServer(t *testing.T) *httptest.Server {
+	// Set appenengine specific environment variables.
+	os.Setenv("GOOGLE_CLOUD_PROJECT", "12345")
+	os.Setenv("GAE_APPLICATION", "s~")
+
+	r := router.New()
+	r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+		c.Context = authtest.MockAuthConfig(c.Context)
+		db := authtest.NewFakeDB()
+		c.Context = db.Use(c.Context)
+		next(c)
+	}))
+
+	cc := NewClientCache(context.Background())
+	t.Cleanup(cc.Clear)
+	InstallHandlers(r, cc, fakeAuthMiddleware())
+
+	return httptest.NewServer(r)
+}
+
+func fakeAuthMiddleware() router.Middleware {
+	authMethods := []auth.Method{
+		&authtest.FakeAuth{User: &auth.User{
+			Identity: "user:user@example.com",
+			Email:    "user@example.com",
+		}},
+	}
+	a := &auth.Authenticator{Methods: authMethods}
+	return a.GetMiddleware()
+
 }
