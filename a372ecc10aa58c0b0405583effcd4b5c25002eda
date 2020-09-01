@@ -105,6 +105,24 @@
       "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9e13cb8_a6f9db89",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-01T17:56:24Z",
+      "side": 1,
+      "message": "Ah, I didn\u0027t feel like repeating it. It\u0027s written in unused.go.",
+      "parentUuid": "80cb8d3f_d009b3f0",
+      "revId": "a372ecc10aa58c0b0405583effcd4b5c25002eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
