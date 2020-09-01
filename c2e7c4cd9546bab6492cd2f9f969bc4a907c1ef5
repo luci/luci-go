@@ -19,6 +19,29 @@
     },
     {
       "key": {
+        "uuid": "b63c9797_1426ecc8",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-01T12:15:21Z",
+      "side": 1,
+      "message": "IIUC, panic() is like assert(), which is used mostly to check invariants of the implementation. This feels more like an error that we should propagate back?",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 12
+      },
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b0cb9d2e_8bd7b1a4",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 15
