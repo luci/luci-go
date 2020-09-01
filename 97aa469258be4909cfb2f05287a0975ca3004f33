@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cebb39b_fe78eff1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-01T20:43:12Z",
+      "side": 1,
+      "message": "Hi Robbie, can you help to review this CL? ",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc42b118_8fc6056f",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-01T20:43:12Z",
+      "side": 1,
+      "message": "Putting Queryiterator.go in `datastore/internal/` instead of `datastore/` to avoid cycle imports for `datastore/serialize`. And Queryiterator should not be used outside of `datastore` pkg as well.",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dccbcc5_07a5c27d",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-01T20:43:12Z",
+      "side": 1,
+      "message": "Add all properties under PropertySlice into the ItemOrder instead of only the first or last one.",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
