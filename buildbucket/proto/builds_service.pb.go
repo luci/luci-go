@@ -796,11 +796,9 @@ type BuildPredicate struct {
 	Status Status `protobuf:"varint,2,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
 	// A build's Build.Input.gerrit_changes must include ALL of these changes.
 	GerritChanges []*GerritChange `protobuf:"bytes,3,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
-	// A build's Build.Output.gitiles_commit must match this commit.
-	// One of the following subfield sets must specified:
-	// - host, project, id
-	// - host, project, ref
-	// - host, project, ref, position
+	// DEPRECATED
+	//
+	// Never implemented.
 	OutputGitilesCommit *GitilesCommit `protobuf:"bytes,4,opt,name=output_gitiles_commit,json=outputGitilesCommit,proto3" json:"output_gitiles_commit,omitempty"`
 	// A build must be created by this identity.
 	CreatedBy string `protobuf:"bytes,5,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
