@@ -15,9 +15,11 @@
 package protoutil
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestParentStepName(t *testing.T) {
@@ -36,6 +38,32 @@ func TestParentStepName(t *testing.T) {
 
 		Convey("without a paraent", func() {
 			So(ParentStepName("a.b"), ShouldEqual, "")
+		})
+	})
+}
+
+func TestValidateStepName(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate", t, func() {
+		Convey("with an empty name", func() {
+			So(ValidateStepName(""), ShouldErrLike, "name: required")
+		})
+
+		Convey("with valid names", func() {
+			So(ValidateStepName("a"), ShouldBeNil)
+			So(ValidateStepName("a|b"), ShouldBeNil)
+			So(ValidateStepName("a|b|c"), ShouldBeNil)
+		})
+
+		Convey("with invalid names", func() {
+			errMsg := func(name string) string {
+				return fmt.Sprintf(`name(%q): there must be at least one character before and after "|"`, name)
+			}
+			So(ValidateStepName("|"), ShouldErrLike, errMsg("|"))
+			So(ValidateStepName("a|"), ShouldErrLike, errMsg("a|"))
+			So(ValidateStepName("|a"), ShouldErrLike, errMsg("|a"))
+			So(ValidateStepName("a||b"), ShouldErrLike, errMsg("a||b"))
 		})
 	})
 }

@@ -99,14 +99,21 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 		return errors.Reason("too big to accept").Err()
 	}
 
-	seen := stringset.New(len(steps))
+	seen := make(map[string]*pb.Step, len(steps))
 	for i, step := range steps {
-		if !seen.Add(step.Name) {
+		if err := protoutil.ValidateStepName(step.Name); err != nil {
+			return errors.Annotate(err, "step[%d]", i).Err()
+		}
+		if _, exist := seen[step.Name]; exist {
 			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
 		}
-		if pn := protoutil.ParentStepName(step.Name); pn != "" && !seen.Has(pn) {
-			return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
+		if pn := protoutil.ParentStepName(step.Name); pn != "" {
+			if _, exist := seen[pn]; !exist {
+				return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
+			}
 		}
+		seen[step.Name] = step
+
 		if err := validateStep(step); err != nil {
 			return errors.Annotate(err, "step[%d]", i).Err()
 		}
@@ -115,10 +122,6 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 }
 
 func validateStep(step *pb.Step) error {
-	if step.GetName() == "" {
-		return errors.Reason("name: required").Err()
-	}
-
 	var st, et time.Time
 	var err error
 	if step.StartTime != nil {
