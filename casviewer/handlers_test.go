@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth"
@@ -30,12 +31,16 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+const testInstance = "projects/test-proj/instances/default_instance"
+
 func TestHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("InstallHandlers", t, func() {
-		// Install handlers with fake auth settings.
+		// Install handlers with fake auth settings and CAS server/client.
 		r := router.New()
+
+		// fake auth config and DB.
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 			fakeAuthState := &authtest.FakeState{
 				Identity: "user:user@example.com",
@@ -55,10 +60,22 @@ func TestHandlers(t *testing.T) {
 			})
 			next(c)
 		}))
+
+		// fake CAS server.
+		casSrv, err := fakes.NewServer(t)
+		So(err, ShouldBeNil)
+
+		// fake CAS client.
+		cli, err := casSrv.NewTestClient(context.Background())
+		t.Cleanup(casSrv.Clear)
+		So(err, ShouldBeNil)
+
+		// Inject fake CAS client to cache.
 		cc := NewClientCache(context.Background())
 		t.Cleanup(cc.Clear)
+		cc.clients[testInstance] = cli
 
-		InstallHandlers(r, cc)
+		InstallHandlers(r, cc, nil)
 
 		srv := httptest.NewServer(r)
 		t.Cleanup(srv.Close)
@@ -80,7 +97,6 @@ func TestHandlers(t *testing.T) {
 				srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
 			So(err, ShouldBeNil)
 			defer resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
 
 		Convey("getHandler", func() {
@@ -88,7 +104,6 @@ func TestHandlers(t *testing.T) {
 				srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
 			So(err, ShouldBeNil)
 			defer resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
 
 		Convey("checkPermission", func() {
