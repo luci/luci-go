@@ -36,7 +36,10 @@ func main() {
 		if err != nil {
 			return err
 		}
-		casviewer.InstallHandlers(srv.Routes, cc, authMW)
+		srv.Routes.Use(router.NewMiddlewareChain(
+			authMW,
+		))
+		casviewer.InstallHandlers(srv.Routes, cc)
 		return nil
 	})
 }

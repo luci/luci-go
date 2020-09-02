@@ -24,7 +24,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -35,15 +37,29 @@ func TestHandlers(t *testing.T) {
 		// Install handlers with fake auth settings.
 		r := router.New()
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-			c.Context = authtest.MockAuthConfig(c.Context)
-			db := authtest.NewFakeDB()
-			c.Context = db.Use(c.Context)
+			fakeAuthState := &authtest.FakeState{
+				Identity: "user:user@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "@internal:test-proj/cas-read-only",
+						Permission: realms.RegisterPermission("luci.serviceAccounts.mintToken"),
+					},
+				},
+			}
+			c.Context = auth.WithState(c.Context, fakeAuthState)
+			c.Context = auth.ModifyConfig(c.Context, func(cfg auth.Config) auth.Config {
+				cfg.DBProvider = func(context.Context) (authdb.DB, error) {
+					return fakeAuthState.DB(), nil
+				}
+				return cfg
+			})
 			next(c)
 		}))
 		cc := NewClientCache(context.Background())
 		t.Cleanup(cc.Clear)
 
-		InstallHandlers(r, cc, fakeAuthMiddleware())
+		InstallHandlers(r, cc)
+
 		srv := httptest.NewServer(r)
 		t.Cleanup(srv.Close)
 
@@ -74,14 +90,13 @@ func TestHandlers(t *testing.T) {
 			defer resp.Body.Close()
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
+
+		Convey("checkPermission", func() {
+			resp, err := http.Get(
+				srv.URL + "/projects/test-proj-no-perm/instances/default_instance/blobs/12345/6/tree")
+			So(err, ShouldBeNil)
+			defer resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusForbidden)
+		})
 	})
-
-}
-
-func fakeAuthMiddleware() router.Middleware {
-	return auth.Authenticate(&authtest.FakeAuth{
-		User: &auth.User{
-			Identity: "user:user@example.com",
-			Email:    "user@example.com",
-		}})
 }
