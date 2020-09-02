@@ -36,6 +36,29 @@
     },
     {
       "key": {
+        "uuid": "0e61bcd4_55eace70",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-02T21:02:02Z",
+      "side": 1,
+      "message": "nit: I would rename this struct to CommentRange instead for disambiguation as there\u0027re other Range concept in Gerrit (e.g. Voting Range)",
+      "range": {
+        "startLine": 406,
+        "startChar": 5,
+        "endLine": 406,
+        "endChar": 10
+      },
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c1fd8bc6_7736a77d",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 4
@@ -47,6 +70,29 @@
       "writtenOn": "2020-09-02T20:46:54Z",
       "side": 1,
       "message": "I think this comment should be updated/removed; you could note that it returns comments for each file path. Presumably this would also include magic pseudofiles, like \"/COMMIT_MSG\".",
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f2c7076_f41ce3c0",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 444,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-02T21:02:02Z",
+      "side": 1,
+      "message": "Why a pointer to map? I think you probably mean `map[string]*Comment` from the convention in this package.",
+      "range": {
+        "startLine": 444,
+        "startChar": 75,
+        "endLine": 444,
+        "endChar": 96
+      },
       "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
