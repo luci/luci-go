@@ -221,7 +221,7 @@ func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
 // AddFileWithoutValidation adds src as cache entry with hardlink.
 // But this doesn't do any content validation.
 //
-// TODO(tikuta): make one function and controll the behavior by option?
+// TODO(tikuta): make one function and control the behavior by option?
 func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
 	fi, err := os.Stat(src)
 	if err != nil {
