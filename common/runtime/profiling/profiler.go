@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
 	"sync/atomic"
 	"time"
 
@@ -51,6 +52,14 @@ type Profiler struct {
 	//
 	// Can also be set with "-profile-cpu".
 	ProfileCPU bool
+
+	// ProfileTrace, if true, indicates that the profiler should enable
+	// runtime tracing.
+	//
+	// Requires Dir to be set, since it's where the profiler output is dumped.
+	//
+	// Can also be set with "-profile-trace".
+	ProfileTrace bool
 
 	// ProfileHeap, if true, indicates that the profiler should profile heap
 	// allocations.
@@ -82,6 +91,9 @@ type Profiler struct {
 
 	// profilingCPU is true if 'Start' successfully launched CPU profiling.
 	profilingCPU bool
+
+	// profilingTrace is true if 'Start' successfully launched runtime tracing.
+	profilingTrace bool
 }
 
 // AddFlags adds command line flags to common Profiler fields.
@@ -91,6 +103,7 @@ func (p *Profiler) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&p.Dir, "profile-output-dir", "",
 		"If specified, allow generation of profiling artifacts, which will be written here.")
 	fs.BoolVar(&p.ProfileCPU, "profile-cpu", false, "If specified, enables CPU profiling.")
+	fs.BoolVar(&p.ProfileHeap, "profile-trace", false, "If specified, enables runtime tracing.")
 	fs.BoolVar(&p.ProfileHeap, "profile-heap", false, "If specified, enables heap profiling.")
 	fs.DurationVar(&p.ProfileHeapFrequency, "profile-heap-frequency", 0, "If specified non-zero, enables periodic heap profiler snapshots dump.")
 }
@@ -104,6 +117,9 @@ func (p *Profiler) Start() error {
 	if p.Dir == "" {
 		if p.ProfileCPU {
 			return errors.New("-profile-cpu requires -profile-output-dir to be set")
+		}
+		if p.ProfileTrace {
+			return errors.New("-profile-trace requires -profile-output-dir to be set")
 		}
 		if p.ProfileHeap {
 			return errors.New("-profile-heap requires -profile-output-dir to be set")
@@ -129,6 +145,15 @@ func (p *Profiler) Start() error {
 		}
 		pprof.StartCPUProfile(out)
 		p.profilingCPU = true
+	}
+
+	if p.ProfileTrace {
+		out, err := os.Create(p.generateOutPath("trace"))
+		if err != nil {
+			return errors.Annotate(err, "failed to create runtime trace output file").Err()
+		}
+		trace.Start(out)
+		p.profilingTrace = true
 	}
 
 	if p.ProfileHeapFrequency > 0 {
@@ -186,6 +211,11 @@ func (p *Profiler) Stop() {
 	if p.profilingCPU {
 		pprof.StopCPUProfile()
 		p.profilingCPU = false
+	}
+
+	if p.profilingTrace {
+		trace.Stop()
+		p.profilingTrace = false
 	}
 
 	if p.listener != nil {
