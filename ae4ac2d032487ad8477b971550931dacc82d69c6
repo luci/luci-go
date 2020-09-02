@@ -16,6 +16,23 @@
       "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29ab7f40_816cad03",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 48
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:55:27Z",
+      "side": 1,
+      "message": "Error handling and reporting is all over the place. \n\nConsider:\n\n1. Making all functions either *return* an error, or *write* successful response to ResponseWriter (but never *writing* errors to ResponseWriter). This will make the functions look like normal Go functions and will simplify testing for error conditions (no need for tests to parse HTTP output). You also won\u0027t need to comment all naked \"return\" statements (they\u0027ll be regular \"return err\").\n2. Write errors to ResponseWriter in a single place, at the top of the call chain.\n3. To distinguish different kinds of errors, either tag them using LUCI error tags or just use gRPC error codes (https://godoc.org/google.golang.org/grpc/status#Errorf), translating them into HTTP status codes at the top.",
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
