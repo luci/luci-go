@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b5dffad_0a31bb37",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:45:00Z",
+      "side": 1,
+      "message": "Please use https://godoc.org/go.chromium.org/luci/server/auth#HasPermission.\n\nGetDB() is for advanced cases. I\u0027ll send a CL to update the documentation.",
+      "range": {
+        "startLine": 50,
+        "startChar": 12,
+        "endLine": 50,
+        "endChar": 33
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d167a45d_b60ff8ac",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:45:00Z",
+      "side": 1,
+      "message": "This is intended to be used during init() time (e.g. in an func init() {...} or to initialize global variable).\n\n  var mintTokenPerm \u003d realms.RegisterPermission(\"luci.serviceAccounts.mintToken\")\n\n  func checkPermission(...) {\n    ... mintTokenPerm\n  }\n\nCalling it all the time is wasteful (why would we want keep registering same permission over and over again?).",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 61
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07b0809d_9eaf6ace",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:45:00Z",
+      "side": 1,
+      "message": "nit: \n\n  switch ok, err :\u003d auth.HasPermission(...); {\n    case err !\u003d nil:\n      http.Error(...)\n    case !ok:\n      http.Error(...)\n    default:\n      next(c)\n  }",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 8
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1a88fe7_6be9c94e",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:45:00Z",
+      "side": 1,
+      "message": "If you stop using auth.GetDB() this will not be necessary, the DB is installed into the state via fakeAuthState.",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 5
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
