@@ -77,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "54891fa8_09db002d",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-02T20:58:44Z",
+      "side": 1,
+      "message": "Nice catch! My original thought was wrong. I thought it needs to first call NewQueryIterator and then call startQueryIterator. But this would cause the itemCh be blocked forever if the `Next()` is called by accidentally before `startQueryIterator()`.  \n\nSo no need a separate initialization function. I\u0027m going to add a TODO and will change on it in the following CL.",
+      "parentUuid": "4c78b201_c68e25a6",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dccbcc5_07a5c27d",
         "filename": "gae/service/datastore/internal/queryiterator.go",
         "patchSetId": 2
@@ -106,6 +130,24 @@
       "side": 1,
       "message": "I don\u0027t think this is correct; When datastore indexes:\n\n   Kind\n     id \u003d 1\n     Field \u003d a, b, c\n\nWith the index\n  (Field, __key__)\n\nIt will generate the index entries:\n  (\"Kind\", Field\u003d(string, a), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, b), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, c), __key__\u003d\u003d(\"Kind\", 1))\n\nWhen querying for \"ORDER BY Field\", the index will match the first one, return it and then skip the rows with the duplicate __key__. In the reverse index, the index rows generated look like:\n\n  (\"Kind\", Field\u003d(string, inv(c)), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, inv(b)), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, inv(a)), __key__\u003d\u003d(\"Kind\", 1))\n\nAgain, only the first row would match, and the rest of the rows with the same key would be skippend.",
       "parentUuid": "6dccbcc5_07a5c27d",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4d59d08_b87303c2",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-02T20:58:44Z",
+      "side": 1,
+      "message": "Thanks for the explanation. But it seems the `index entries` concept is an irrelevant factor to this `CurrentItemOrder()` func. Multiple index entries points to the same entity will lead to duplicates. But the raw/native datastore deduplicates internally and only return unique result. We don\u0027t need to consider duplicate here.\n\n\nSo in your above example, after calling `CurrentItemOrder()`, it returns \"abc\". \nBut if we only fetch the first element as the code piece written in the meeting doc - `serialize.WriteProperty(invBuf, kc, columnData[0])`, it would return \"a\". \n\nI did an experiment locally. Let\u0027s say we\u0027ve passed something into `itemCh`.\n```\n\traw.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {\n\t\tqi.itemCh \u003c- \u0026rawQueryResult{key:k, data:pm}\n\t}\n\n```\nIn the line 68, it would be `columnData :\u003d qi.currentQueryResult.data[\"Field\"].Slice()`\nthe value for columnData is [Property{value:\"a\"...}, Property{value:\"b\"}, Property{value:\"c\"}].\nThen, in the following for-loop in line 75, it would concatenate all the property a, b and c.",
+      "parentUuid": "76d9bcb0_7d29dd40",
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
