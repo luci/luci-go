@@ -618,7 +618,7 @@ type Console struct {
 	// monotonically non-decreasing. Gerrit will take care of this if you require
 	// each commmit to go through Gerrit by prohibiting "git push" on these refs.
 	//
-	// Eg. refs/heads/master, regexp:refs/branch-heads/\d+\.\d+
+	// Eg. refs/heads/main, regexp:refs/branch-heads/\d+\.\d+
 	Refs []string `protobuf:"bytes,14,rep,name=refs,proto3" json:"refs,omitempty"`
 	// ExcludeRef is a ref, commits from which are ignored even when they are
 	// reachable from the ref specified above. This must be specified as a single
@@ -629,10 +629,10 @@ type Console struct {
 	// some commits.
 	//
 	// E.g. the config below allows to track commits from all release branches,
-	// but ignore the commits from the master branch, from which these release
+	// but ignore the commits from the main branch, from which these release
 	// branches are branched off:
 	//   ref: "regexp:refs/branch-heads/\d+\.\d+"
-	//   exlude_ref: "refs/heads/master"
+	//   exlude_ref: "refs/heads/main"
 	ExcludeRef string `protobuf:"bytes,13,opt,name=exclude_ref,json=excludeRef,proto3" json:"exclude_ref,omitempty"`
 	// ManifestName the name of the manifest the waterfall looks at.
 	// This should always be "REVISION".
@@ -675,7 +675,7 @@ type Console struct {
 	// be set except for Id and Name.
 	ExternalId string `protobuf:"bytes,18,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
 	// Realm that the console exists under.
-	// See https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/proto/realms_config.proto
+	// See https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/appengine/auth_service/proto/realms_config.proto
 	Realm string `protobuf:"bytes,19,opt,name=realm,proto3" json:"realm,omitempty"`
 }
 

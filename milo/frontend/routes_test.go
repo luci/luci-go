@@ -303,10 +303,10 @@ func Search() []TestBundle {
 					Name: "Module 1",
 					BuilderGroups: []ui.BuilderGroup{
 						{
-							Name: "Example master A",
+							Name: "Example main A",
 							Builders: []ui.Link{
-								*ui.NewLink("Example builder", "/master1/buildera", "Example label"),
-								*ui.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
+								*ui.NewLink("Example builder", "/main1/buildera", "Example label"),
+								*ui.NewLink("Example builder 2", "/main1/builderb", "Example label 2"),
 							},
 						},
 					},
@@ -426,7 +426,7 @@ func builderPageData() []TestBundle {
 								GitilesCommit: &buildbucketpb.GitilesCommit{
 									Host:     "chromium.googlesource.com",
 									Project:  "chromium/src",
-									Ref:      "refs/heads/master",
+									Ref:      "refs/heads/main",
 									Id:       "e57f4e87022d765b45e741e478a8351d9789bc37",
 									Position: 32,
 								},
@@ -443,7 +443,7 @@ func builderPageData() []TestBundle {
 								GitilesCommit: &buildbucketpb.GitilesCommit{
 									Host:     "chromium.googlesource.com",
 									Project:  "chromium/src",
-									Ref:      "refs/heads/master",
+									Ref:      "refs/heads/main",
 									Id:       "e57f4e87022d765b45e741e478a8351d9789bc37",
 									Position: 32,
 								},

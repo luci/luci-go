@@ -18,7 +18,7 @@ import { BuilderID, GitilesCommit } from './buildbucket';
 /**
  * Manually coded type definition and classes for milo internal service.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
- * source: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/service/v1/rpc.proto
+ * source: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/milo/api/service/v1/rpc.proto
  */
 
 export interface QueryBlamelistRequest {
