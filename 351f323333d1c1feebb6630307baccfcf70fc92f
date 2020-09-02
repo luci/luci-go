@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ac4c5305_6094c98c",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-02T07:26:55Z",
+      "side": 1,
+      "message": "better to use r.Use everywhere instead of this?",
+      "range": {
+        "startLine": 61,
+        "startChar": 25,
+        "endLine": 61,
+        "endChar": 28
+      },
+      "revId": "351f323333d1c1feebb6630307baccfcf70fc92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
