@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e18cc53e_1988e66a",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T01:19:19Z",
+      "side": 1,
+      "message": "Agree because IAP auth method is AppEngine specific.\nDone.",
+      "parentUuid": "d9219bb1_97e27135",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b63c9797_1426ecc8",
         "filename": "casviewer/handlers.go",
         "patchSetId": 15
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "3eaca93e_edf3b728",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T01:19:19Z",
+      "side": 1,
+      "message": "I changed to return err.",
+      "parentUuid": "b63c9797_1426ecc8",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 12
+      },
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0cb9d2e_8bd7b1a4",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 15
@@ -53,6 +95,24 @@
       "writtenOn": "2020-09-01T08:32:48Z",
       "side": 1,
       "message": "extract this and belows to outer scope?",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8018a44_3a3f1d2f",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T01:19:19Z",
+      "side": 1,
+      "message": "It works. But wouldn\u0027t it be preferable to do setup for each test?",
+      "parentUuid": "b0cb9d2e_8bd7b1a4",
       "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -73,6 +133,24 @@
       "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "908b58fa_e621e0de",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T01:19:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31118f7f_4fdbe316",
+      "revId": "c2e7c4cd9546bab6492cd2f9f969bc4a907c1ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
