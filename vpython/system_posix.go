@@ -47,7 +47,7 @@ func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLin
 			// "dup2" doesn't change flags if the source and destination file
 			// descriptors are the same. Explicitly remove the close-on-exec flag, which
 			// Go enables by default.
-			if _, _, err := unix.Syscall(unix.SYS_FCNTL, lockFD, unix.F_SETFD, 0); err != 0 {
+			if _, err := unix.FcntlInt(lockFD, unix.F_SETFD, 0); err != nil {
 				return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
 			}
 		} else {
