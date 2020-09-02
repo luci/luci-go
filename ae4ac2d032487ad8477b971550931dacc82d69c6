@@ -125,6 +125,30 @@
       "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0c27b2b_4b6b5ac6",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-02T23:15:16Z",
+      "side": 1,
+      "message": "\u003e Also, don\u0027t we need to validate \"hash\" as well?\n\nActually, CAS may support other than sha256. So I think it is fine to rely on validation happened on CAS backend.",
+      "parentUuid": "c93d14dd_718693e0",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 14
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
