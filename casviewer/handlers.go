@@ -15,20 +15,23 @@
 package casviewer
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/julienschmidt/httprouter"
-
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/grpc/status"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
 func InstallHandlers(r *router.Router, cc *ClientCache, authMW router.Middleware) {
-	// TODO(crbug.com/1121471): Authorize request.
 	baseMW := router.NewMiddlewareChain(
 		authMW,
 	)
@@ -39,7 +42,7 @@ func InstallHandlers(r *router.Router, cc *ClientCache, authMW router.Middleware
 
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
-	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
+	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
 }
 
 // checkPermission checks if the user has permission to read the blob.
@@ -47,7 +50,7 @@ func checkPermission(c *router.Context, next router.Handler) {
 	ctx := c.Context
 	authDB, err := auth.GetDB(ctx)
 	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		renderInternalServerError(c.Context, c.Writer, err.Error())
 		return
 	}
 	ok, err := authDB.HasPermission(
@@ -56,11 +59,11 @@ func checkPermission(c *router.Context, next router.Handler) {
 		realms.RegisterPermission("luci.serviceAccounts.mintToken"),
 		readRealm(c.Params))
 	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		renderInternalServerError(c.Context, c.Writer, err.Error())
 		return
 	}
 	if !ok {
-		http.Error(c.Writer, "Not allowed", http.StatusForbidden)
+		renderForbidden(c.Context, c.Writer)
 		return
 	}
 	next(c)
@@ -75,39 +78,81 @@ func rootHanlder(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	cl, bd, err := prepcoessBlobRequest(c)
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
 		return
 	}
-
-	// TODO(crbug.com/1121471): retrieve blob and render html.
+	renderTree(c.Context, c.Writer, cl, bd)
 }
 
 func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	cl, bd, err := prepcoessBlobRequest(c)
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
 		return
 	}
+	returnBlob(c.Context, c.Writer, cl, bd)
+}
 
-	// TODO(crbug.com/1121471): retrieve blob.
+// prepcoessBlobRequest returns Client and Digest for the requested blob.
+func prepcoessBlobRequest(c *router.Context) (*client.Client, *digest.Digest, error) {
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	if err != nil {
+		logging.Errorf(c.Context, "failed to get CAS client: %s", err)
+		renderInternalServerError(c.Context, c.Writer, status.Code(err).String())
+		return nil, nil, err
+	}
+	d, err := blobDigest(c.Params)
+	if err != nil {
+		renderBadRequest(c.Context, c.Writer, "Digest size must be number")
+		return nil, nil, err
+	}
+	return cl, d, nil
 }
 
 func readRealm(p httprouter.Params) string {
 	return fmt.Sprintf("@internal:%s/cas-read-only", p.ByName("project"))
 }
 
-func fullInstanceName(p httprouter.Params) string {
+// fullInstName constructs full instance name from the URL parameters.
+func fullInstName(p httprouter.Params) string {
 	return fmt.Sprintf(
 		"projects/%s/instances/%s", p.ByName("project"), p.ByName("instance"))
 }
 
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName("hash"), p.ByName("size"))
+// blobDigest constructs a Digest from the URL parameters.
+func blobDigest(p httprouter.Params) (*digest.Digest, error) {
+	size, err := strconv.ParseInt(p.ByName("size"), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	d := &digest.Digest{
+		Hash: p.ByName("hash"),
+		Size: size,
+	}
+	return d, nil
+}
+
+func renderForbidden(ctx context.Context, w http.ResponseWriter) {
+	http.Error(w, "Error: Permission Denied", http.StatusForbidden)
+}
+
+// renderBadRequest renders 400 BadRequest page.
+func renderBadRequest(ctx context.Context, w http.ResponseWriter, errMsg string) {
+	// TODO(crbug.com/1121471): render 400 html.
+	m := fmt.Sprintf("Error: Bad Request. %s", errMsg)
+	http.Error(w, m, http.StatusBadRequest)
+}
+
+// renderNotFound renders 404 NotFound page.
+func renderNotFound(ctx context.Context, w http.ResponseWriter) {
+	// TODO(crbug.com/1121471): render 404 html.
+	http.Error(w, "Error: Not Found", http.StatusNotFound)
+}
+
+// renderInternalServerError renders 500 InternalServerError page.
+func renderInternalServerError(ctx context.Context, w http.ResponseWriter, errMsg string) {
+	// TODO(crbug.com/1121471): render 500 html.
+	m := fmt.Sprintf("Error: %s", errMsg)
+	http.Error(w, m, http.StatusInternalServerError)
 }
