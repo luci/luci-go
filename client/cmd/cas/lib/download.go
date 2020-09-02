@@ -191,18 +191,36 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
+	// limit the number of concurrent I/O threads.
+	ch := make(chan struct{}, runtime.NumCPU())
 
 	start = time.Now()
+
+	eg, ctx := errgroup.WithContext(ctx)
+
 	// DownloadFiles does not set desired file permission.
 	for _, output := range to {
-		mode := 0o600
-		if output.IsExecutable {
-			mode = 0o700
-		}
-		if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
-			return errors.Annotate(err, "failed to change mode").Err()
-		}
+		output := output
+
+		ch <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ch }()
+
+			mode := 0o600
+			if output.IsExecutable {
+				mode = 0o700
+			}
+			if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to change mode").Err()
+			}
+			return nil
+		})
 	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
 	logger.Infof("finished permission update, took %s", time.Since(start))
 
 	if diskcache != nil {
@@ -231,10 +249,7 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	}
 
 	start = time.Now()
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent I/O threads.
-	ch := make(chan struct{}, runtime.NumCPU())
+	eg, ctx = errgroup.WithContext(ctx)
 
 	for _, dup := range dups {
 		src := to[dup.Digest]
