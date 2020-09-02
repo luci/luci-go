@@ -16,18 +16,22 @@ package casviewer
 
 import (
 	"fmt"
-	"net/http"
+	"os"
+	"strings"
 
-	"github.com/julienschmidt/httprouter"
+	"cloud.google.com/go/compute/metadata"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/iap"
 	"go.chromium.org/luci/server/router"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
 func InstallHandlers(r *router.Router, cc *ClientCache, authMW router.Middleware) {
-	// TODO(crbug.com/1121471): Authorize request.
+	if authMW == nil {
+		authMW = iapAuthMW()
+	}
 	baseMW := router.NewMiddlewareChain(
 		authMW,
 	)
@@ -37,7 +41,30 @@ func InstallHandlers(r *router.Router, cc *ClientCache, authMW router.Middleware
 
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
-	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
+	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
+}
+
+func iapAuthMW() router.Middleware {
+	aud, err := authAudience()
+	if err != nil {
+		// We can do nothing if we can't get audience.
+		panic(err)
+	}
+	authMethods := []auth.Method{
+		&iap.IAPAuthMethod{Aud: aud},
+	}
+	a := &auth.Authenticator{Methods: authMethods}
+	return a.GetMiddleware()
+}
+
+func authAudience() (string, error) {
+	mcl := metadata.NewClient(nil)
+	pID, err := mcl.NumericProjectID()
+	if err != nil {
+		return "", err
+	}
+	appID := strings.Split(os.Getenv("GAE_APPLICATION"), "~")[1]
+	return iap.AudForGAE(pID, appID), nil
 }
 
 func rootHanlder(c *router.Context) {
@@ -46,38 +73,4 @@ func rootHanlder(c *router.Context) {
 	hello := fmt.Sprintf(
 		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentUser(c.Context).Identity)
 	c.Writer.Write([]byte(hello))
-}
-
-func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob and render html.
-}
-
-func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
-	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	// TODO(crbug.com/1121471): retrieve blob.
-}
-
-func fullInstanceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"projects/%s/instances/%s", p.ByName(":project"), p.ByName(":instance"))
-}
-
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName(":hash"), p.ByName(":size"))
 }
