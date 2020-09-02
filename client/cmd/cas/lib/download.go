@@ -264,6 +264,7 @@ func (r *downloadRun) Run(a subcommands.Application, args []string, env subcomma
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	defer r.profiler.Stop()
 
 	if err := r.doDownload(ctx, args); err != nil {
 		errors.Log(ctx, err)

@@ -159,6 +159,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	defer c.profiler.Stop()
 
 	// TODO: handle the stats
 	if _, err := c.doArchive(ctx, args); err != nil {
