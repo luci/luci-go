@@ -16,16 +16,9 @@ package main
 
 import (
 	"context"
-	"os"
-	"strings"
-
-	"cloud.google.com/go/compute/metadata"
 
 	"go.chromium.org/luci/casviewer"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/iap"
-	"go.chromium.org/luci/server/router"
 )
 
 func main() {
@@ -34,31 +27,7 @@ func main() {
 	defer cc.Clear()
 
 	server.Main(nil, nil, func(srv *server.Server) error {
-		authMW, err := iapAuthMW()
-		if err != nil {
-			return err
-		}
-		casviewer.InstallHandlers(srv.Routes, cc, authMW)
+		casviewer.InstallHandlers(srv.Routes, cc, nil)
 		return nil
 	})
-}
-
-// iapAuthMW returns authentication middleware with IAPAuthMethod.
-func iapAuthMW() (router.Middleware, error) {
-	aud, err := authAudience()
-	if err != nil {
-		return nil, err
-	}
-	return auth.Authenticate(
-		&iap.IAPAuthMethod{Aud: aud}), nil
-}
-
-func authAudience() (string, error) {
-	mcl := metadata.NewClient(nil)
-	pID, err := mcl.NumericProjectID()
-	if err != nil {
-		return "", err
-	}
-	appID := strings.Split(os.Getenv("GAE_APPLICATION"), "~")[1]
-	return iap.AudForGAE(pID, appID), nil
 }
