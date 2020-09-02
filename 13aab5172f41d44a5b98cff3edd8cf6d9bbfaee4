@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d383b81_444f6d7b",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-02T07:25:19Z",
+      "side": 1,
+      "message": "I feel this is rather getRealm?\nOr do you mean readOnlyRealm?",
+      "range": {
+        "startLine": 101,
+        "startChar": 5,
+        "endLine": 101,
+        "endChar": 14
+      },
+      "revId": "13aab5172f41d44a5b98cff3edd8cf6d9bbfaee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
