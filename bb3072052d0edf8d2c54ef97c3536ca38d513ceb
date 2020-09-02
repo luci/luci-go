@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "865108e7_35dc4d65",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-02T23:18:35Z",
+      "side": 1,
+      "message": "This is duplicated from services/resultdb we should move this somewhere common but I am not sure yet where.",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
