@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "578f1aca_c1c841b0",
+        "filename": "common/runtime/profiling/profiler.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T05:32:14Z",
+      "side": 1,
+      "message": "this looks like it should be the new variable?",
+      "range": {
+        "startLine": 106,
+        "startChar": 15,
+        "endLine": 106,
+        "endChar": 26
+      },
+      "revId": "93e8421b6c13568f8bfedcf223f01e50c23e8465",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
