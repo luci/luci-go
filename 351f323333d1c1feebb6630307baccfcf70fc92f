@@ -22,6 +22,30 @@
       "revId": "351f323333d1c1feebb6630307baccfcf70fc92f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "172a70ff_c9b6ec71",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T07:37:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac4c5305_6094c98c",
+      "range": {
+        "startLine": 61,
+        "startChar": 25,
+        "endLine": 61,
+        "endChar": 28
+      },
+      "revId": "351f323333d1c1feebb6630307baccfcf70fc92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
