@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c255aea_943b7183",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-02T20:31:25Z",
+      "side": 1,
+      "message": "Also I have another question for Vadim:\n\nThe logs for luci-change-verifier-dev after uploading this indicate that more set-up needs to be done for luci-change-verifier-dev to be authenticated to make requests to chrome-infra-auth-dev, although I\u0027m not sure what that set-up is. Is there something that should be added to the chrome-infra-auth service config or elsewhere?",
+      "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
