@@ -93,6 +93,30 @@
       "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e185547e_c3afc52d",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-02T21:32:42Z",
+      "side": 1,
+      "message": "We intend set up infradata/gae to deploy the prod luci-change-verifier, and we can use -dev until that\u0027s set up, so I\u0027ll remove the entry for prod luci-change-verifier from here.",
+      "parentUuid": "edcd9fc3_6fd5be02",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 52
+      },
+      "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
