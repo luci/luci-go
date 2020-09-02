@@ -15,8 +15,12 @@
 package frontend
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"html/template"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/milo/api/config"
@@ -25,6 +29,36 @@ import (
 
 func TestRenderOncallers(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+	Convey("Oncall fetching works", t, func() {
+		Convey("Fetch failed", func() {
+			oncallConfig := config.Oncall{
+				Name: "Bad rotation",
+				Url:  "http://fake-rota.appspot.com/bad.json",
+			}
+			fn := func(ctx context.Context, url string, expiration time.Duration, target interface{}) error {
+				return fmt.Errorf("Fetch failed")
+			}
+			result, err := getOncallData(ctx, &oncallConfig, fn)
+			So(err, ShouldBeNil)
+			So(result.Name, ShouldEqual, "Bad rotation")
+			So(result.Oncallers, ShouldEqual, template.HTML(`ERROR: Fetching oncall failed`))
+		})
+		Convey("Fetch succeeded", func() {
+			oncallConfig := config.Oncall{
+				Name: "Good rotation",
+				Url:  "http://fake-rota.appspot.com/good.json",
+			}
+			fn := func(c context.Context, url string, expiration time.Duration, target interface{}) error {
+				json.Unmarshal([]byte(`{"emails":["foo"]}`), target)
+				return nil
+			}
+			result, err := getOncallData(ctx, &oncallConfig, fn)
+			So(err, ShouldBeNil)
+			So(result.Name, ShouldEqual, "Good rotation")
+			So(result.Oncallers, ShouldEqual, template.HTML(`foo`))
+		})
+	})
 
 	Convey("Rendering oncallers works", t, func() {
 		Convey("Legacy trooper format", func() {
