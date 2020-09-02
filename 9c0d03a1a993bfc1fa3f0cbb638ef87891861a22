@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "88163fa5_418f6c20",
+        "filename": "casviewer/appengine/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T02:30:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d712ee22_f6a30703",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 30
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66e9e8e2_bccee047",
         "filename": "casviewer/appengine/main.go",
         "patchSetId": 16
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "39cd32e5_2d66c09c",
+        "filename": "casviewer/appengine/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T02:30:56Z",
+      "side": 1,
+      "message": "Is GAE APP ID always same with Cloud Project ID?",
+      "parentUuid": "66e9e8e2_bccee047",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "517ec666_17b56dac",
         "filename": "casviewer/handlers.go",
         "patchSetId": 16
@@ -92,6 +140,30 @@
       "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2e955c6_82901c4d",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T02:30:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "517ec666_17b56dac",
+      "range": {
+        "startLine": 47,
+        "startChar": 52,
+        "endLine": 47,
+        "endChar": 88
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "86dd7e5b_3cb6467d",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T02:30:56Z",
+      "side": 1,
+      "message": "OK, sounds good.\nI will do the separation in https://crrev.com/c/2377005 or another CL.",
+      "parentUuid": "442935e7_ab369f42",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 1
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8b149094_f6bdfb72",
         "filename": "casviewer/handlers_test.go",
         "patchSetId": 16
@@ -129,6 +225,30 @@
       "writtenOn": "2020-09-02T01:49:51Z",
       "side": 1,
       "message": "as *unit* tests go, this is not a very good unit test since it sets up a lot of server stuff.\n\nIf you want to test a middleware specifically, this is fine. But for testing individual handlers a much simpler approach is to test them individually without all this cruft:\n\n  ctx :\u003d context.Background()\n  ctx \u003d auth.WithState(ctx, \u0026authtest.FakeState{\n    Identity: \"user:user@example.com\",\n  })\n  \n  rr :\u003d httptest.NewRecorder()\n  err :\u003d renderTree(ctx, \"instance\", rr)\n  ...",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 1
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd5437f_5ced445b",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T02:30:56Z",
+      "side": 1,
+      "message": "Yeah, I realized that they are not unit testing.\nI will focus the tests if InstallHandlers installs all handlers properly.\n\nAnd will have unit tests for each handler with fake context as you suggest.",
+      "parentUuid": "8b149094_f6bdfb72",
       "range": {
         "startLine": 69,
         "startChar": 0,
