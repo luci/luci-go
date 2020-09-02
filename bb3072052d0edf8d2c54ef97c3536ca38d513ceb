@@ -39,6 +39,76 @@
       "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc50c6fb_8841e7ba",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-02T23:33:44Z",
+      "side": 1,
+      "message": "Probably resultdb/internal/common.go?  Or create a new file resultdb/internal/permissions.go?",
+      "parentUuid": "865108e7_35dc4d65",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "360a8739_bfe21902",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-02T23:33:44Z",
+      "side": 1,
+      "message": "recorder?",
+      "range": {
+        "startLine": 45,
+        "startChar": 43,
+        "endLine": 45,
+        "endChar": 51
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d01b43a1_9737fd2f",
+        "filename": "resultdb/internal/services/recorder/update_included_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-02T23:33:44Z",
+      "side": 1,
+      "message": "Should this be A?",
+      "range": {
+        "startLine": 74,
+        "startChar": 48,
+        "endLine": 74,
+        "endChar": 49
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
