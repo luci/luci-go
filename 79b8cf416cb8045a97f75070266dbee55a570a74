@@ -16,6 +16,40 @@
       "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47987c59_dfe1fde2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-02T20:46:54Z",
+      "side": 1,
+      "message": "Most of the Gerrit API method implementations are in .../api/gerrit/rest.go[1]; and the methods and the input/return values are defined in .../proto/gerrit/gerrit.proto[2]. Where separate structs are required from JSON serialization, they are in json.go[3].\n\nUnless there\u0027s a good reason to do otherwise, it looks like this probably belongs in rest.go in order to avoid possibly duplicating code in both api/gerrit/rest.go and api/gerrit/gerrit.go.\n\n[1] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/api/gerrit/rest.go;l\u003d95\n[2] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/gerrit/gerrit.proto\n[3] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/api/gerrit/json.go",
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1fd8bc6_7736a77d",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-02T20:46:54Z",
+      "side": 1,
+      "message": "I think this comment should be updated/removed; you could note that it returns comments for each file path. Presumably this would also include magic pseudofiles, like \"/COMMIT_MSG\".",
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
