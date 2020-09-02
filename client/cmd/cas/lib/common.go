@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/profiling"
 )
 
 var _ cli.ContextModificator = (*commonFlags)(nil)
@@ -32,6 +33,7 @@ type commonFlags struct {
 	subcommands.CommandRunBase
 	casFlags  cas.Flags
 	logConfig logging.Config // for -log-level, used by ModifyContext
+	profiler  profiling.Profiler
 }
 
 func (c *commonFlags) Init() {
@@ -39,6 +41,7 @@ func (c *commonFlags) Init() {
 
 	c.logConfig.Level = logging.Warning
 	c.logConfig.AddFlags(&c.Flags)
+	c.profiler.AddFlags(&c.Flags)
 }
 
 func (c *commonFlags) Parse() error {
@@ -55,6 +58,10 @@ func (c *commonFlags) Parse() error {
 	if c.logConfig.Level == logging.Debug {
 		logtostderr.Value.Set("true")
 		v.Value.Set("9")
+	}
+
+	if err := c.profiler.Start(); err != nil {
+		return err
 	}
 
 	return c.casFlags.Parse()
