@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aad982a_1bd41065",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-02T18:40:39Z",
+      "side": 1,
+      "message": "Friendly ping for stamps. thanks!",
+      "revId": "a5a99da6591f15932908e3c946c94e8c42b4b3f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
