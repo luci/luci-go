@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "842931b8_3da07292",
+        "filename": "cv/appengine/README.md",
+        "patchSetId": 6
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-02T18:34:31Z",
+      "side": 1,
+      "message": "make it a TODO(top level crbug) so we don\u0027t forget.",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 17
+      },
+      "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea2e0519_4dded162",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-02T18:34:31Z",
+      "side": 1,
+      "message": "vadim, I have memory loss here. Is this actual value hardcoding necessary with infradata/gae? \nor is this for ease of deployment against -dev? If so, why not leave just -dev one?",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 52
+      },
+      "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
