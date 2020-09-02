@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "648ca16b_9a23d6c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 48
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-02T17:45:09Z",
+      "side": 1,
+      "message": "Authorization has been implemented in https://crrev.com/c/2389293.\nPTAL.",
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
