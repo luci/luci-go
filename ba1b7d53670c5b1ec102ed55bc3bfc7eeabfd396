@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a945742_acc3d77c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:11:58Z",
+      "side": 1,
+      "message": "this is definitely not RPC-specific and may be useful to apply in luciexe library",
+      "range": {
+        "startLine": 126,
+        "startChar": 5,
+        "endLine": 126,
+        "endChar": 17
+      },
+      "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cea2dfa4_f8e89578",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:11:58Z",
+      "side": 1,
+      "message": "is it valid for parent step not to have start time, but for its child to have start time?\npresumably, if the child has started, then the parent must have started too\n\nsame below, if the parent has an EndTime, its child gotta have an EndTime too",
+      "range": {
+        "startLine": 200,
+        "startChar": 32,
+        "endLine": 200,
+        "endChar": 55
+      },
+      "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
