@@ -21,13 +21,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router, cc *ClientCache) {
+func InstallHandlers(r *router.Router, cc *ClientCache, authMW router.Middleware) {
 	// TODO(crbug.com/1121471): Authorize request.
-	baseMW := router.MiddlewareChain{}
+	baseMW := router.NewMiddlewareChain(
+		authMW,
+	)
 	blobMW := baseMW.Extend(
 		withClientCacheMW(cc),
 	)
@@ -40,7 +43,9 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 func rootHanlder(c *router.Context) {
 	// TODO(crbug.com/1121471): Add top page.
 	logging.Debugf(c.Context, "Hello world")
-	c.Writer.Write([]byte("Hello, world. This is CAS Viewer."))
+	hello := fmt.Sprintf(
+		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentIdentity(c.Context))
+	c.Writer.Write([]byte(hello))
 }
 
 func treeHandler(c *router.Context) {
