@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d712ee22_f6a30703",
+        "filename": "casviewer/appengine/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T01:49:51Z",
+      "side": 1,
+      "message": "nit:\n  return auth.Authenticate(\u0026iap.IAPAuthMethod{Aud: aud}), nil\n\n(See https://godoc.org/go.chromium.org/luci/server/auth#Authenticate)\n(I really should delete GetMiddleware...)",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 30
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66e9e8e2_bccee047",
+        "filename": "casviewer/appengine/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T01:49:51Z",
+      "side": 1,
+      "message": "You can also use srv.Options.CloudProject for this, see https://godoc.org/go.chromium.org/luci/server#Options but as you prefer.",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "517ec666_17b56dac",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T01:49:51Z",
+      "side": 1,
+      "message": "auth.CurrentIdentity(c.Context)",
+      "range": {
+        "startLine": 47,
+        "startChar": 52,
+        "endLine": 47,
+        "endChar": 88
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "442935e7_ab369f42",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T01:49:51Z",
+      "side": 1,
+      "message": "Just in general I strongly recommend you implement the actual logic in a separate function that doesn\u0027t depend on router.Context, and just takes a regular context.Context, parsed arguments, maybe a http.ResponseWriter and returns an error. That way the code of the handler is less convoluted (ctx everywhere instead of c.Context), and it can be tested in isolation from HTTP-level stuff.\n\n\nSomething like:\n\n  func treeHandler(c *router.Context) {\n    err :\u003d renderTree(c.Context, fullInstanceName(c.Params), c.Writer)\n    if err !\u003d nil {\n       ...\n    }\n  }\n\n  func renderTree(ctx context.Context, instance string, rw http.ResponseWriter) error {\n     ...\n  }",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 1
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b149094_f6bdfb72",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T01:49:51Z",
+      "side": 1,
+      "message": "as *unit* tests go, this is not a very good unit test since it sets up a lot of server stuff.\n\nIf you want to test a middleware specifically, this is fine. But for testing individual handlers a much simpler approach is to test them individually without all this cruft:\n\n  ctx :\u003d context.Background()\n  ctx \u003d auth.WithState(ctx, \u0026authtest.FakeState{\n    Identity: \"user:user@example.com\",\n  })\n  \n  rr :\u003d httptest.NewRecorder()\n  err :\u003d renderTree(ctx, \"instance\", rr)\n  ...",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 1
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
