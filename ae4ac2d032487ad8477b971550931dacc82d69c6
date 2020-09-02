@@ -33,6 +33,98 @@
       "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ead1dafa_7fecb95e",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T22:02:35Z",
+      "side": 1,
+      "message": "nit: move to top",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d66b2d2_20c355d9",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T22:02:35Z",
+      "side": 1,
+      "message": "typo, should be preprocessBlobRequest",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 25
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "731ea7eb_9995e2d7",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T22:02:35Z",
+      "side": 1,
+      "message": "Log/render errors in a single place. Let this function just return the error as usual. Also once all error rendering is removing, this function may not even be necessary and can be replaced with \"casClient(c.Params)\" and \"blobDigest(c.Params)\" (https://en.wikipedia.org/wiki/Single-responsibility_principle)",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 75
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c93d14dd_718693e0",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T22:02:35Z",
+      "side": 1,
+      "message": "nit: return \u0026digest.Digest{...}, nil\n\nAlso, don\u0027t we need to validate \"hash\" as well?",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 14
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
