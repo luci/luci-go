@@ -225,15 +225,15 @@ func TestNew(t *testing.T) {
 
 		emptyHash := isolated.HashBytes(h, nil)
 
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		So(c.AddFileWithoutValidation(emptyHash, 0, empty), ShouldBeNil)
 
 		So(c.Touch(emptyHash), ShouldBeTrue)
 
 		// Adding already existing file is fine.
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		So(c.AddFileWithoutValidation(emptyHash, 0, empty), ShouldBeNil)
 
 		empty2 := filepath.Join(dir, "empty2")
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
-		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
+		So(c.AddFileWithoutValidation(emptyHash, 0, empty2), ShouldBeNil)
 	})
 }

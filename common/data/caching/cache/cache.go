@@ -222,12 +222,7 @@ func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
 // But this doesn't do any content validation.
 //
 // TODO(tikuta): make one function and controll the behavior by option?
-func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
-	fi, err := os.Stat(src)
-	if err != nil {
-		return errors.Annotate(err, "failed to get stat").Err()
-	}
-
+func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, size int64, src string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -235,7 +230,7 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
 	}
 
-	d.lru.pushFront(digest, units.Size(fi.Size()))
+	d.lru.pushFront(digest, units.Size(size))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
 		return err
@@ -243,7 +238,7 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
-	d.added = append(d.added, fi.Size())
+	d.added = append(d.added, size)
 	return nil
 }
 
