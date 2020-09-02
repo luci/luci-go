@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4da78a58_f4255669",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "why is it defined here? it is not used after the loop.",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 15
+      },
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf5b46b3_ac86896a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "nit: combine?",
+      "range": {
+        "startLine": 113,
+        "startChar": 14,
+        "endLine": 114,
+        "endChar": 11
+      },
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "271b73c1_0a6fc376",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "should this be right after L109 check? not sure I understand why the parent check is between this and L109,\nor why this is between finding the parent (L112) and using it in L120",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 24
+      },
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90955b58_39453bd0",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "why not just `step.Status`?\nStatus type already implements fmt.Stringer: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/common.pb.go;l\u003d107\n\nsame below",
+      "range": {
+        "startLine": 187,
+        "startChar": 4,
+        "endLine": 187,
+        "endChar": 38
+      },
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ac371ae_2e25b357",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "this is probably OK for now, but i suspect this will change later where users have more control over steps in luciexe. Need Robbie\u0027s input here",
+      "range": {
+        "startLine": 188,
+        "startChar": 17,
+        "endLine": 188,
+        "endChar": 34
+      },
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815970ac_3924d8eb",
+        "filename": "buildbucket/protoutil/step.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-02T19:22:35Z",
+      "side": 1,
+      "message": "nit: \n \n  lp, le :\u003d \n  rp, re :\u003d \n  return le \u0026\u0026 le \u0026\u0026 lp \u003e rp",
+      "revId": "8b4aab41da0d6965b8cfa9e3593522c711b9601e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
