@@ -17,9 +17,11 @@ package rpc
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 
@@ -29,6 +31,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func addTS(ts *timestamppb.Timestamp, d time.Duration) *timestamppb.Timestamp {
+	t, _ := ptypes.Timestamp(ts)
+	ts, _ = ptypes.TimestampProto(t.Add(d))
+	return ts
+}
 
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
@@ -244,34 +252,75 @@ func TestValidateStep(t *testing.T) {
 		})
 
 		Convey("with a parent step", func() {
-			step.StartTime, step.EndTime = t, t
-			parent := &pb.Step{Name: "step1", StartTime: t, EndTime: t}
+			parent := &pb.Step{Name: "step1"}
+			setST := func(s, ps pb.Status) { step.Status, parent.Status = s, ps }
+			setTS := func(s, e, ps, pe *timestamppb.Timestamp) {
+				step.StartTime, step.EndTime = s, e
+				parent.StartTime, parent.EndTime = ps, pe
+			}
 
 			Convey("parent status is SCHEDULED", func() {
-				step.Status = pb.Status_STARTED
-				step.EndTime = nil
-				parent.StartTime, parent.EndTime = nil, nil
-				parent.Status = pb.Status_SCHEDULED
+				setST(pb.Status_STARTED, pb.Status_SCHEDULED)
+				setTS(t, nil, t, nil)
 				So(validateStep(step, parent), ShouldErrLike, `parent "step1" must be at least STARTED`)
 			})
 
 			Convey("child status is STARTED, but parent status is not", func() {
-				step.Status = pb.Status_STARTED
-				step.EndTime = nil
-				parent.Status = pb.Status_SUCCESS
+				setST(pb.Status_STARTED, pb.Status_SUCCESS)
+				setTS(t, nil, t, t)
 				So(validateStep(step, parent), ShouldErrLike, "the parent status must be STARTED")
 			})
 
 			Convey("child status is worse", func() {
-				step.Status = pb.Status_FAILURE
-				parent.Status = pb.Status_SUCCESS
+				setST(pb.Status_FAILURE, pb.Status_SUCCESS)
+				setTS(t, t, t, t)
 				So(validateStep(step, parent), ShouldErrLike, "worse than parent status")
 			})
 
 			Convey("child status is better", func() {
-				step.Status = pb.Status_SUCCESS
-				parent.Status = pb.Status_FAILURE
+				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+				setTS(t, t, t, t)
 				So(validateStep(step, parent), ShouldBeNil)
+			})
+
+			Convey("with start_time", func() {
+				Convey("parent missing start_time", func() {
+					setST(pb.Status_STARTED, pb.Status_STARTED)
+					setTS(t, nil, nil, nil)
+					So(validateStep(step, parent), ShouldBeNil)
+				})
+
+				Convey("preceding to parent.start_time", func() {
+					setST(pb.Status_STARTED, pb.Status_STARTED)
+					setTS(t, nil, addTS(t, time.Second), nil)
+					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+				})
+
+				Convey("following parent.end_time", func() {
+					setST(pb.Status_FAILURE, pb.Status_CANCELED)
+					setTS(addTS(t, time.Minute), addTS(t, time.Hour), t, addTS(t, time.Second))
+					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+				})
+			})
+
+			Convey("with end_time", func() {
+				Convey("parent missing end_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_STARTED)
+					setTS(t, t, t, nil)
+					So(validateStep(step, parent), ShouldBeNil)
+				})
+
+				Convey("preceding to parent.start_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+					setTS(addTS(t, -time.Hour), addTS(t, -time.Minute), t, t)
+					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+				})
+
+				Convey("following parent.end_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+					setTS(t, addTS(t, time.Hour), t, t)
+					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+				})
 			})
 		})
 	})
