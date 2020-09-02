@@ -296,8 +296,11 @@ func getJSONData(c context.Context, url string, expiration time.Duration, target
 	if err != nil {
 		return errors.Annotate(err, "failed to get data from %q", url).Err()
 	}
-	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return errors.Annotate(err, "Failed to fetch data: %q returned code %q", url, response.Status).Err()
+	}
 
+	defer response.Body.Close()
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return errors.Annotate(err, "failed to read response body from %q", url).Err()
@@ -343,15 +346,18 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 }
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
-func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
+func getOncallData(c context.Context, config *config.Oncall, getJSONFunc func(c context.Context, url string, expiration time.Duration, target interface{}) error) (*ui.OncallSummary, error) {
 	result := ui.Oncall{}
-	err := getJSONData(c, config.Url, 10*time.Minute, &result)
-	if err != nil {
-		return nil, err
+	err := getJSONFunc(c, config.Url, 10*time.Minute, &result)
+	var renderedHTML template.HTML
+	if err == nil {
+		renderedHTML = renderOncallers(config, &result)
+	} else {
+		renderedHTML = template.HTML("ERROR: Fetching oncall failed")
 	}
 	return &ui.OncallSummary{
 		Name:      config.Name,
-		Oncallers: renderOncallers(config, &result),
+		Oncallers: renderedHTML,
 	}, nil
 }
 
@@ -397,7 +403,7 @@ func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]*ui.Onca
 			i := i
 			oc := oc
 			ch <- func() (err error) {
-				oncalls[i], err = getOncallData(c, oc)
+				oncalls[i], err = getOncallData(c, oc, getJSONData)
 				return
 			}
 		}
