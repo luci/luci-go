@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "60f886bc_10867d00",
+        "filename": "casviewer/appengine/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-02T02:24:18Z",
+      "side": 1,
+      "message": "or better to use\nhttps://pkg.go.dev/cloud.google.com/go/compute/metadata?tab\u003ddoc#Client.ProjectID\n?",
+      "parentUuid": "66e9e8e2_bccee047",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "9c0d03a1a993bfc1fa3f0cbb638ef87891861a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "517ec666_17b56dac",
         "filename": "casviewer/handlers.go",
         "patchSetId": 16
