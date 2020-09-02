@@ -16,6 +16,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	"cloud.google.com/go/compute/metadata"
 
@@ -52,15 +54,11 @@ func iapAuthMW() (router.Middleware, error) {
 }
 
 func authAudience() (string, error) {
-	c := metadata.NewClient(nil)
-	pID, err := c.NumericProjectID()
+	mcl := metadata.NewClient(nil)
+	pID, err := mcl.NumericProjectID()
 	if err != nil {
 		return "", err
 	}
-	// Cloud Project ID is AppEngine Application ID.
-	appID, err := c.ProjectID()
-	if err != nil {
-		return "", err
-	}
+	appID := strings.Split(os.Getenv("GAE_APPLICATION"), "~")[1]
 	return iap.AudForGAE(pID, appID), nil
 }
