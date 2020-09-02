@@ -16,6 +16,24 @@
       "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ee8858e_50d2546b",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:08:38Z",
+      "side": 1,
+      "message": "Add luci-change-verifier-dev@appspot.gserviceaccount.com to https://chrome-infra-auth-dev.appspot.com/auth/groups/auth-luci-services (it will grant access to all groups, among other things).",
+      "parentUuid": "7c255aea_943b7183",
+      "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

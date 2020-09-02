@@ -69,6 +69,30 @@
       "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edcd9fc3_6fd5be02",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-02T21:08:38Z",
+      "side": 1,
+      "message": "Hardcoding is necessary if you want to deploy manually. If deploying via infradata/gae, the preferred way is to keep configuration there (like here: https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/master/apps/commit-queue/dev/app.star#16). Since there\u0027s no infradata/gae setup for this app yet, keeping configuration hardcoded is fine...",
+      "parentUuid": "ea2e0519_4dded162",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 52
+      },
+      "revId": "1365f458faa5b6aef65a36165de1caf7b7e8c038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
