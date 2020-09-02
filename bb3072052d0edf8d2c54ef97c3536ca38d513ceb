@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "166c328e_5612606d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-02T23:38:45Z",
+      "side": 1,
+      "message": "Does it mean that I need to be resultdb.reader of realm A to include invocations in that realm to another realm?",
+      "parentUuid": "3f43addf_1f24de2e",
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "865108e7_35dc4d65",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 1
