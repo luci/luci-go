@@ -36,6 +36,47 @@
     },
     {
       "key": {
+        "uuid": "5c191bfd_b1a9e0f5",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "that\u0027s unfortunate, but seems OK; refactoring it later, if needed, is also possible.",
+      "parentUuid": "bc42b118_8fc6056f",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c78b201_c68e25a6",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "I guess this will be fully implemented in a later CL?",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6dccbcc5_07a5c27d",
         "filename": "gae/service/datastore/internal/queryiterator.go",
         "patchSetId": 2
@@ -47,6 +88,162 @@
       "writtenOn": "2020-09-01T20:43:12Z",
       "side": 1,
       "message": "Add all properties under PropertySlice into the ItemOrder instead of only the first or last one.",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76d9bcb0_7d29dd40",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "I don\u0027t think this is correct; When datastore indexes:\n\n   Kind\n     id \u003d 1\n     Field \u003d a, b, c\n\nWith the index\n  (Field, __key__)\n\nIt will generate the index entries:\n  (\"Kind\", Field\u003d(string, a), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, b), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, c), __key__\u003d\u003d(\"Kind\", 1))\n\nWhen querying for \"ORDER BY Field\", the index will match the first one, return it and then skip the rows with the duplicate __key__. In the reverse index, the index rows generated look like:\n\n  (\"Kind\", Field\u003d(string, inv(c)), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, inv(b)), __key__\u003d\u003d(\"Kind\", 1))\n  (\"Kind\", Field\u003d(string, inv(a)), __key__\u003d\u003d(\"Kind\", 1))\n\nAgain, only the first row would match, and the rest of the rows with the same key would be skippend.",
+      "parentUuid": "6dccbcc5_07a5c27d",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4cfde4c_a98b74ce",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "imo this is worth a panic; No code will ever correctly handle this without requiring code changes and a recompile.",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 8
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31d85a40_14cd8f8e",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "I don\u0027t think this is a valid order. All order statements must end with __key__ or __key__ DESC.",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 42
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a9b49fc_4452aa92",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "note that this goroutine will leak if the test crashes. Probably not a big deal though.",
+      "range": {
+        "startLine": 41,
+        "startChar": 8,
+        "endLine": 41,
+        "endChar": 14
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65527b84_7c2e7005",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "probably `defer close(qi.itemCh)` at the top of the function",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 9
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "932b8932_52201225",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "I would recommend each of these as a separate Convey; they can all share the same setup, but probably should be asserted separately.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 27
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f793ad37_8d77768f",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-02T00:27:36Z",
+      "side": 1,
+      "message": "Since Stop is a sentinel, I would use ShouldEqual here.",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 25
+      },
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
