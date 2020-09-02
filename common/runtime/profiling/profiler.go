@@ -103,7 +103,7 @@ func (p *Profiler) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&p.Dir, "profile-output-dir", "",
 		"If specified, allow generation of profiling artifacts, which will be written here.")
 	fs.BoolVar(&p.ProfileCPU, "profile-cpu", false, "If specified, enables CPU profiling.")
-	fs.BoolVar(&p.ProfileHeap, "profile-trace", false, "If specified, enables runtime tracing.")
+	fs.BoolVar(&p.ProfileTrace, "profile-trace", false, "If specified, enables runtime tracing.")
 	fs.BoolVar(&p.ProfileHeap, "profile-heap", false, "If specified, enables heap profiling.")
 	fs.DurationVar(&p.ProfileHeapFrequency, "profile-heap-frequency", 0, "If specified non-zero, enables periodic heap profiler snapshots dump.")
 }
