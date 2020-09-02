@@ -34,7 +34,7 @@
       "name": "report builders",
       "startTime": "2018-12-14T01:02:28.891218198Z",
       "endTime": "2018-12-14T01:02:29.111869148Z",
-      "summaryMarkdown": "<br/>running builder/tester 'linux-rel' on master 'chromium'",
+      "summaryMarkdown": "<br/>running builder/tester 'linux-rel' on main 'chromium'",
       "logs": [
         {
           "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/report_builders/0/stdout",
@@ -403,13 +403,13 @@
       "got_revision": "62c93f6041326a2c4781680583e433bbfad93884",
       "recipe": "chromium",
       "got_dawn_revision": "ff9562f7927b614f16449f3c757c57c70543eb37",
-      "got_webrtc_revision_cp": "refs/heads/master@{#25992}",
+      "got_webrtc_revision_cp": "refs/heads/main@{#25992}",
       "$recipe_engine/path": {
         "cache_dir": "/b/swarming/w/ir/cache",
         "temp_dir": "/b/swarming/w/ir/tmp/rt"
       },
-      "got_revision_cp": "refs/heads/master@{#616534}",
-      "branch": "refs/heads/master",
+      "got_revision_cp": "refs/heads/main@{#616534}",
+      "branch": "refs/heads/main",
       "revision": "62c93f6041326a2c4781680583e433bbfad93884",
       "repository": "https://chromium.googlesource.com/chromium/src.git",
       "buildername": "linux-rel",
@@ -424,7 +424,7 @@
             "builder:linux-rel",
             "buildset:commit/git/62c93f6041326a2c4781680583e433bbfad93884",
             "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/62c93f6041326a2c4781680583e433bbfad93884",
-            "gitiles_ref:refs/heads/master",
+            "gitiles_ref:refs/heads/main",
             "scheduler_invocation_id:9092636694632938592",
             "scheduler_job_id:chromium/linux-rel",
             "user_agent:luci-scheduler"
@@ -466,7 +466,7 @@
             "builder:linux-rel",
             "buildset:commit/git/62c93f6041326a2c4781680583e433bbfad93884",
             "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/62c93f6041326a2c4781680583e433bbfad93884",
-            "gitiles_ref:refs/heads/master",
+            "gitiles_ref:refs/heads/main",
             "scheduler_invocation_id:9092636694632938592",
             "scheduler_job_id:chromium/linux-rel",
             "user_agent:luci-scheduler"
@@ -481,7 +481,7 @@
         "devshell": true,
         "git_auth": true
       },
-      "branch": "refs/heads/master",
+      "branch": "refs/heads/main",
       "revision": "62c93f6041326a2c4781680583e433bbfad93884"
     },
     "gitilesCommit": {

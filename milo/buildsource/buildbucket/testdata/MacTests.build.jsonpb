@@ -35,7 +35,7 @@
       "name": "report builders",
       "startTime": "2019-01-30T16:41:05.873866Z",
       "endTime": "2019-01-30T16:41:06.193730Z",
-      "summaryMarkdown": "<br/>running tester 'Mac10.10 Tests' on master 'chromium.mac'",
+      "summaryMarkdown": "<br/>running tester 'Mac10.10 Tests' on main 'chromium.mac'",
       "logs": [
         {
           "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8922889567037688512/+/steps/report_builders/0/stdout",
@@ -5847,14 +5847,14 @@
   "output": {
     "properties": {
       "parent_builder_group": "chromium.mac",
-      "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
+      "parent_got_webrtc_revision_cp": "refs/heads/main@{#26459}",
       "parent_got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
       "parent_got_v8_revision": "cb663d8ff8d97c57c4901505a2ffa9b16b38dc4f",
       "got_swarming_client_revision": "0e3e1c4dc4e79f25a5b58fcbc135dc93183c0c54",
       "got_revision": "9b2a2e5310b7f63e0601d235016769dbcf8a592f",
       "recipe": "chromium",
       "got_dawn_revision": "45da8c0115c53946ad09c217fa63eb9eb811f9ef",
-      "got_webrtc_revision_cp": "refs/heads/master@{#26459}",
+      "got_webrtc_revision_cp": "refs/heads/main@{#26459}",
       "got_nacl_revision": "ff15c51d20785fa51c0ef03ccb480b87299acbeb",
       "$recipe_engine/path": {
         "cache_dir": "/b/s/w/ir/cache",
@@ -5862,8 +5862,8 @@
       },
       "parent_got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
       "parent_got_swarming_client_revision": "0e3e1c4dc4e79f25a5b58fcbc135dc93183c0c54",
-      "got_revision_cp": "refs/heads/master@{#627439}",
-      "parent_got_revision_cp": "refs/heads/master@{#627439}",
+      "got_revision_cp": "refs/heads/main@{#627439}",
+      "parent_got_revision_cp": "refs/heads/main@{#627439}",
       "revision": "9b2a2e5310b7f63e0601d235016769dbcf8a592f",
       "parent_got_webrtc_revision": "e706c0f0c3c530dcd7e8c51530d4dece57edd994",
       "buildername": "Mac10.10 Tests",
@@ -5880,7 +5880,7 @@
             "build_address:luci.chromium.ci/Mac10.10 Tests/38948",
             "builder:Mac10.10 Tests",
             "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/9b2a2e5310b7f63e0601d235016769dbcf8a592f",
-            "gitiles_ref:refs/heads/master",
+            "gitiles_ref:refs/heads/main",
             "parent_buildername:Mac Builder",
             "parent_buildnumber:94857",
             "scheduler_invocation_id:9088319629333457984",
@@ -5961,7 +5961,7 @@
             "gitilesCommit": {
               "project": "chromium/src",
               "host": "chromium.googlesource.com",
-              "ref": "refs/heads/master",
+              "ref": "refs/heads/main",
               "id": "9b2a2e5310b7f63e0601d235016769dbcf8a592f"
             }
           },
@@ -5976,12 +5976,12 @@
   "input": {
     "properties": {
       "parent_builder_group": "chromium.mac",
-      "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
+      "parent_got_webrtc_revision_cp": "refs/heads/main@{#26459}",
       "parent_got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
       "parent_got_v8_revision": "cb663d8ff8d97c57c4901505a2ffa9b16b38dc4f",
       "parent_got_swarming_client_revision": "0e3e1c4dc4e79f25a5b58fcbc135dc93183c0c54",
       "parent_got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
-      "parent_got_revision_cp": "refs/heads/master@{#627439}",
+      "parent_got_revision_cp": "refs/heads/main@{#627439}",
       "recipe": "chromium",
       "swarm_hashes": {
         "cronet_tests": "b38fff5c2eb81ce866c3e02e94f7a336e457172d",
@@ -6087,7 +6087,7 @@
             "build_address:luci.chromium.ci/Mac10.10 Tests/38948",
             "builder:Mac10.10 Tests",
             "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/9b2a2e5310b7f63e0601d235016769dbcf8a592f",
-            "gitiles_ref:refs/heads/master",
+            "gitiles_ref:refs/heads/main",
             "parent_buildername:Mac Builder",
             "parent_buildnumber:94857",
             "scheduler_invocation_id:9088319629333457984",
@@ -6165,7 +6165,7 @@
             "gitilesCommit": {
               "project": "chromium/src",
               "host": "chromium.googlesource.com",
-              "ref": "refs/heads/master",
+              "ref": "refs/heads/main",
               "id": "9b2a2e5310b7f63e0601d235016769dbcf8a592f"
             }
           },
@@ -6177,7 +6177,7 @@
     "gitilesCommit": {
       "project": "chromium/src",
       "host": "chromium.googlesource.com",
-      "ref": "refs/heads/master",
+      "ref": "refs/heads/main",
       "id": "9b2a2e5310b7f63e0601d235016769dbcf8a592f"
     }
   },
@@ -6188,7 +6188,7 @@
       "serviceConfigRevision": "01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c",
       "requestedProperties": {
         "parent_builder_group": "chromium.mac",
-        "parent_got_webrtc_revision_cp": "refs/heads/master@{#26459}",
+        "parent_got_webrtc_revision_cp": "refs/heads/main@{#26459}",
         "parent_got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
         "parent_got_nacl_revision": "ff15c51d20785fa51c0ef03ccb480b87299acbeb",
         "parent_got_webrtc_revision": "e706c0f0c3c530dcd7e8c51530d4dece57edd994",
@@ -6198,7 +6198,7 @@
         "parent_got_buildtools_revision": "2f02e1f363b1af2715536f38e239853f04ec1497",
         "parent_buildername": "Mac Builder",
         "parent_got_revision": "9b2a2e5310b7f63e0601d235016769dbcf8a592f",
-        "parent_got_revision_cp": "refs/heads/master@{#627439}",
+        "parent_got_revision_cp": "refs/heads/main@{#627439}",
         "parent_got_angle_revision": "915d4068a65c48daa361a5168e9a9bc7df396121",
         "revision": "9b2a2e5310b7f63e0601d235016769dbcf8a592f",
         "swarm_hashes": {

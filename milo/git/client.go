@@ -47,7 +47,7 @@ type Client interface {
 
 	// Log returns ancestors commits of the given repository host
 	// (e.g. "chromium.googlesource.com"), project (e.g. "chromium/src")
-	// and descendant committish (e.g. "refs/heads/master" or commit hash).
+	// and descendant committish (e.g. "refs/heads/main" or commit hash).
 	//
 	// Limit specifies the maximum number of commits to return.
 	// If limit<=0, 50 is used.
