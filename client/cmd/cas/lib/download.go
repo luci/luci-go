@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
@@ -103,13 +104,15 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to read root directory proto").Err()
 	}
 
+	start := time.Now()
 	dirs, err := c.GetDirectoryTree(ctx, d.ToProto())
 	if err != nil {
 		return errors.Annotate(err, "failed to call GetDirectoryTree").Err()
 	}
 	logger := logging.Get(ctx)
-	logger.Infof("finished GetDirectoryTree api call: %d", len(dirs))
+	logger.Infof("finished GetDirectoryTree api call: %d, took %s", len(dirs), time.Since(start))
 
+	start = time.Now()
 	t := &repb.Tree{
 		Root:     rootDir,
 		Children: dirs,
@@ -181,14 +184,15 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			to[output.Digest] = output
 		}
 	}
-	logger.Infof("finished copy from cache (if any), dups: %d, to: %d", len(dirs), len(to))
+	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dirs), len(to), time.Since(start))
 
+	start = time.Now()
 	if err := c.DownloadFiles(ctx, ".", to); err != nil {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
+	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
 
-	logger.Infof("finished DownloadFiles api call")
-
+	start = time.Now()
 	// DownloadFiles does not set desired file permission.
 	for _, output := range to {
 		mode := 0o600
@@ -199,10 +203,10 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			return errors.Annotate(err, "failed to change mode").Err()
 		}
 	}
-
-	logger.Infof("finished permission update")
+	logger.Infof("finished permission update, took %s", time.Since(start))
 
 	if diskcache != nil {
+		start = time.Now()
 		type pathHash struct {
 			path string
 			hash string
@@ -223,9 +227,10 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", ph.path, ph.hash).Err()
 			}
 		}
-		logger.Infof("finished cache addition")
+		logger.Infof("finished cache addition, took %s", time.Since(start))
 	}
 
+	start = time.Now()
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O threads.
@@ -251,7 +256,7 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	}
 	err = eg.Wait()
 
-	logger.Infof("finished file copy")
+	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
 
 	return err
 }
