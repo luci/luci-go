@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package recorder
 
 import (
 	"go.chromium.org/luci/server/auth/realms"
 )
 
 var (
-	permGetInvocation      = realms.RegisterPermission("resultdb.invocations.get")
-	permGetTestExoneration = realms.RegisterPermission("resultdb.testExonerations.get")
-	permGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
-	permGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
+	permCreateInvocation  = realms.RegisterPermission("resultdb.invocations.create")
+	permIncludeInvocation = realms.RegisterPermission("resultdb.invocations.include")
 
-	permListTestExonerations = realms.RegisterPermission("resultdb.testExonerations.list")
-	permListTestResults      = realms.RegisterPermission("resultdb.testResults.list")
-	permListArtifacts        = realms.RegisterPermission("resultdb.artifacts.list")
+	// Internal permissions
+	permCreateWithReservedID = realms.RegisterPermission("resultdb.invocations.createWithReservedID")
+	permExportToBigQuery     = realms.RegisterPermission("resultdb.invocations.exportToBigQuery")
+	permSetProducerResource  = realms.RegisterPermission("resultdb.invocations.setProducerResource")
 )

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -65,7 +66,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	if err := verifyPermission(ctx, permListArtifacts, invID); err != nil {
+	if err := permissions.VerifyInvocation(ctx, permListArtifacts, invID); err != nil {
 		return nil, err
 	}
 

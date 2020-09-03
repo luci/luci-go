@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -68,6 +69,13 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	including := invocations.MustParseName(in.IncludingInvocation)
 	add := invocations.MustParseNames(in.AddInvocations)
 	remove := invocations.MustParseNames(in.RemoveInvocations)
+
+	// To include invocation A into invocation B, in addition to checking the
+	// update token for B in mutateInvocation below, verify that the caller has
+	// permission 'resultdb.invocation.include' on A's realm.
+	if err := permissions.VerifyBatch(ctx, permIncludeInvocation, add); err != nil {
+		return nil, err
+	}
 
 	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
 		// Accumulate keys to remove in a single KeySet.
