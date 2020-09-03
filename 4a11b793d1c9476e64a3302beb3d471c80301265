@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "9f8eadb0_c9f28475",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:57:45Z",
+      "side": 1,
+      "message": "I will make a CL to follow up the comments.  \nI will create NewPermission() in realms package.",
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b5dffad_0a31bb37",
         "filename": "casviewer/handlers.go",
         "patchSetId": 6
@@ -48,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "0a7215ba_28ae6913",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:57:45Z",
+      "side": 1,
+      "message": "I thought we have \"NewPermission\" in realms package, but there isn\u0027t. \nAnd couldn\u0027t make a Permission because `name` isn\u0027t exposed.\nAnd found this one saying.\n\n```\nRegisterPermission ... or returns an existing one.\n```\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/server/auth/realms/permissions.go\n\nBut looking at the code, this takes mutex lock. \nSo should be called in each request, indeed.\n\nWould it make sense to have `NewPermission`? like\n\n\n  NewPermission(name string) (Permission, error) {\n    if err :\u003d ValidatePermissionName(name); err !\u003d nil {\n      return nil, err\n    }\n    return Permission{name: name}\n  }",
+      "parentUuid": "d167a45d_b60ff8ac",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 61
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "07b0809d_9eaf6ace",
         "filename": "casviewer/handlers.go",
         "patchSetId": 6
@@ -59,6 +100,30 @@
       "writtenOn": "2020-09-02T21:45:00Z",
       "side": 1,
       "message": "nit: \n\n  switch ok, err :\u003d auth.HasPermission(...); {\n    case err !\u003d nil:\n      http.Error(...)\n    case !ok:\n      http.Error(...)\n    default:\n      next(c)\n  }",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 8
+      },
+      "revId": "4a11b793d1c9476e64a3302beb3d471c80301265",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30d0ea4d_0b359ae7",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:57:45Z",
+      "side": 1,
+      "message": "I like that. Thanks.",
+      "parentUuid": "07b0809d_9eaf6ace",
       "range": {
         "startLine": 55,
         "startChar": 0,
