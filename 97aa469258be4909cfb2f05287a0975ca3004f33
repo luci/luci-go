@@ -154,6 +154,24 @@
     },
     {
       "key": {
+        "uuid": "062932e0_3e613031",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Chatted offline. Have fixed it to make them have same number of columns for ordering keys.",
+      "parentUuid": "f4d59d08_b87303c2",
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4cfde4c_a98b74ce",
         "filename": "gae/service/datastore/internal/queryiterator.go",
         "patchSetId": 2
@@ -174,6 +192,30 @@
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be773ac_4861a434",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4cfde4c_a98b74ce",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 8
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -200,6 +242,30 @@
     },
     {
       "key": {
+        "uuid": "1226151a_ebbcadc5",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31d85a40_14cd8f8e",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 42
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a9b49fc_4452aa92",
         "filename": "gae/service/datastore/internal/queryiterator_test.go",
         "patchSetId": 2
@@ -220,6 +286,30 @@
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a315a1c1_98dacfa5",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Should be fine as it only has one iteration. I\u0027m going to tests two or more iterations after the starting QueryIterator functionality is implemented.",
+      "parentUuid": "6a9b49fc_4452aa92",
+      "range": {
+        "startLine": 41,
+        "startChar": 8,
+        "endLine": 41,
+        "endChar": 14
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -246,6 +336,30 @@
     },
     {
       "key": {
+        "uuid": "c7ac5301_3e24fe2e",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65527b84_7c2e7005",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 9
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "932b8932_52201225",
         "filename": "gae/service/datastore/internal/queryiterator_test.go",
         "patchSetId": 2
@@ -269,6 +383,30 @@
     },
     {
       "key": {
+        "uuid": "dd46f201_59bbe5ef",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "932b8932_52201225",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 27
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f793ad37_8d77768f",
         "filename": "gae/service/datastore/internal/queryiterator_test.go",
         "patchSetId": 2
@@ -289,6 +427,30 @@
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45f9772d_29b97510",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-03T00:42:22Z",
+      "side": 1,
+      "message": "The cli result asks to use ShouldResemble as their types are the same.",
+      "parentUuid": "f793ad37_8d77768f",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 25
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
