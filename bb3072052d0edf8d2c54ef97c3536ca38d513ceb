@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "eaa7e6d8_c8564b89",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T08:28:18Z",
+      "side": 1,
+      "message": "+1, or a subpackage under internal/",
+      "parentUuid": "865108e7_35dc4d65",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "360a8739_bfe21902",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 1
