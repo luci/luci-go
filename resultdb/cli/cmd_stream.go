@@ -88,6 +88,10 @@ func cmdStream(p Params) *subcommands.Command {
 				sink.DefaultTestResultChannelMaxLeases, text.Doc(`
 				The maximum number of goroutines uploading test results.
 			`))
+			r.Flags.StringVar(&r.locationBase, "location-base", "", text.Doc(`
+				Prefix to prepend to the test location file name of every test result.
+				It only makes sense to set the flag for blink_web_tests and webgl_conformance_tests.
+			`))
 
 			return r
 		},
@@ -101,6 +105,7 @@ type streamRun struct {
 	isNew               bool
 	realm               string
 	testIDPrefix        string
+	locationBase        string
 	vars                stringmapflag.Value
 	artChannelMaxLeases uint
 	trChannelMaxLeases  uint
@@ -216,6 +221,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		ArtifactUploader:           &sink.ArtifactUploader{Client: r.http, Host: r.host},
 		ArtChannelMaxLeases:        r.artChannelMaxLeases,
 		TestResultChannelMaxLeases: r.trChannelMaxLeases,
+		LocationBase:               r.locationBase,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
