@@ -52,6 +52,24 @@
       "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "117ccddb_b3fc6f43",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-03T00:46:34Z",
+      "side": 1,
+      "message": "Vadim, didn\u0027t we have a doc for this? I vaguely recall it reading something when I was setting up commit-queue app, but I can\u0027t easily find it.",
+      "parentUuid": "98fad09c_566742ca",
+      "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
