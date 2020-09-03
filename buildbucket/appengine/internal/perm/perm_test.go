@@ -271,3 +271,32 @@ func TestBucketsByPerm(t *testing.T) {
 		So(buckets4, ShouldBeNil)
 	})
 }
+
+func TestCanUpdateBuild(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocked auth DB", t, func() {
+		member := identity.Identity("member@example.com")
+		not_member := identity.Identity("not-member@example.com")
+		s := &authtest.FakeState{
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockMembership(member, UpdateBuildAllowedUsers),
+			),
+		}
+		ctx := auth.WithState(memory.Use(context.Background()), s)
+
+		Convey("With a member of the updater group", func() {
+			s.Identity = member
+			can, err := CanUpdateBuild(ctx)
+			So(err, ShouldBeNil)
+			So(can, ShouldBeTrue)
+		})
+
+		Convey("With a non-member of the updater group", func() {
+			s.Identity = not_member
+			can, err := CanUpdateBuild(ctx)
+			So(err, ShouldBeNil)
+			So(can, ShouldBeFalse)
+		})
+	})
+}
