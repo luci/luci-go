@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "37c47f31_e7d3ced2",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T05:43:30Z",
+      "side": 1,
+      "message": "I guess that you are proposing moving this to buildbucket.protoutil, so that luciexe may import and use this from protoutil, right?\n\nI still have a TODO to move validator functions from appengine/rpc to protoutil. I will do it once I finish implementing UpdateBuild.",
+      "parentUuid": "5a945742_acc3d77c",
+      "range": {
+        "startLine": 126,
+        "startChar": 5,
+        "endLine": 126,
+        "endChar": 17
+      },
+      "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cea2dfa4_f8e89578",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64885ca6_9c846354",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T05:43:30Z",
+      "side": 1,
+      "message": "You are right. Removed unnecessary checks.",
+      "parentUuid": "cea2dfa4_f8e89578",
+      "range": {
+        "startLine": 200,
+        "startChar": 32,
+        "endLine": 200,
+        "endChar": 55
+      },
+      "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
