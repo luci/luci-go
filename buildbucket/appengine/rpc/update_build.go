@@ -58,7 +58,6 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	}
 
 	for _, p := range req.UpdateMask.GetPaths() {
-		// TODO(1110990): validate gitiles_commit, summary_markdown, and steps
 		switch p {
 		case "build.output":
 		case "build.output.properties":
@@ -176,7 +175,7 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 		}
 	}
 
-	// check for the status consistency
+	// check for the status and timing consistency
 	if parent != nil {
 		switch {
 		case parent.Status == pb.Status_SCHEDULED:
@@ -186,9 +185,27 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 		case protoutil.IsWorseStepStatus(step.Status, parent.Status):
 			return errors.Reason("status: status %q is worse than parent status %q", step.Status, parent.Status).Err()
 		}
+
+		// The parent's start_time and end_time have been validated already
+		// when it was the current step.
+		pst, _ := ptypes.Timestamp(parent.StartTime)
+		pet, _ := ptypes.Timestamp(parent.EndTime)
+
+		// start_time and end_time must be in range [parent.start_time, parent.end_time],
+		// if present.
+		switch {
+		case step.StartTime != nil && st.Before(pst):
+			return errors.New("start_time: cannot precede parent's start_time")
+		case step.StartTime != nil && st.After(pet):
+			return errors.New("start_time: cannot follow parent's end_time")
+
+		case step.EndTime != nil && et.Before(pst):
+			return errors.New("end_time: cannot precede parent's start_time")
+		case step.EndTime != nil && et.After(pet):
+			return errors.New("end_time: cannot follow parent's end_time")
+		}
 	}
 
-	// TODO(ddoman): validate status with parent.
 	return nil
 }
 
