@@ -41,26 +41,17 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 
 // checkPermission checks if the user has permission to read the blob.
 func checkPermission(c *router.Context, next router.Handler) {
-	ctx := c.Context
-	authDB, err := auth.GetDB(ctx)
-	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	ok, err := authDB.HasPermission(
-		ctx,
-		auth.CurrentIdentity(ctx),
-		realms.RegisterPermission("luci.serviceAccounts.mintToken"),
-		readOnlyRealm(c.Params))
-	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !ok {
+	// TODO: replace with realms.NewPermission()
+	perm := realms.RegisterPermission("luci.serviceAccounts.mintToken")
+	switch ok, err := auth.HasPermission(
+		c.Context, perm, readOnlyRealm(c.Params)); {
+	case !ok:
 		http.Error(c.Writer, "Not allowed", http.StatusForbidden)
-		return
+	case err != nil:
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+	default:
+		next(c)
 	}
-	next(c)
 }
 
 func rootHanlder(c *router.Context) {

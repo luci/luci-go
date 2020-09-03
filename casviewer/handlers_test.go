@@ -24,7 +24,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
@@ -34,7 +33,7 @@ func TestHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("InstallHandlers", t, func() {
-		// Install handlers with fake auth settings.
+		// Install handlers with fake auth state.
 		r := router.New()
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 			fakeAuthState := &authtest.FakeState{
@@ -47,12 +46,6 @@ func TestHandlers(t *testing.T) {
 				},
 			}
 			c.Context = auth.WithState(c.Context, fakeAuthState)
-			c.Context = auth.ModifyConfig(c.Context, func(cfg auth.Config) auth.Config {
-				cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-					return fakeAuthState.DB(), nil
-				}
-				return cfg
-			})
 			next(c)
 		}))
 		cc := NewClientCache(context.Background())
