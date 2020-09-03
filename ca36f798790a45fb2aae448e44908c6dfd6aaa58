@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "267d6cd7_74f29339",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:32:25Z",
+      "side": 1,
+      "message": "Could this help message describe how this option is applied to artifacts with relative paths and absolute paths?",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 74
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07226bf8_b1e67d25",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:32:25Z",
+      "side": 1,
+      "message": "I\u0027d remove this statement.\n\nI don\u0027t see any of blink and webgl specific logic in this CL, and this feature is general enough to be used for any cases, where the base location needs to be changed by a command line flag.",
+      "range": {
+        "startLine": 93,
+        "startChar": 4,
+        "endLine": 93,
+        "endChar": 88
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "693800ac_2a1455c4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:32:25Z",
+      "side": 1,
+      "message": "How does this work with Windows?",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 52
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90e14916_be6c5f55",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:32:25Z",
+      "side": 1,
+      "message": "would this work on Windows?\n\nFor example, if a file path was an absolute path with the drive name, like \"c:\\artifacts\\image.png\", a simply string concatenation won\u0027t work.",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 75
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
