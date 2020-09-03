@@ -70,6 +70,24 @@
       "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef9ed2ce_8ec3b495",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-03T01:22:29Z",
+      "side": 1,
+      "message": "No discoverable docs. There are some instructions in https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/README.md#linking but they are not discoverable.",
+      "parentUuid": "117ccddb_b3fc6f43",
+      "revId": "d547ac368bca9f1551169e55a12a99c282dd35a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
