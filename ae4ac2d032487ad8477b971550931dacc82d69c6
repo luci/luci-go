@@ -230,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "80dc58ee_7d16a1b3",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T16:03:52Z",
+      "side": 1,
+      "message": "I updated to add gRPC code tag to LUCI errors, and log/render in `renderErrorPage`. \nPTAL.",
+      "parentUuid": "e40d25b7_234ed761",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 75
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c93d14dd_718693e0",
         "filename": "casviewer/handlers.go",
         "patchSetId": 48

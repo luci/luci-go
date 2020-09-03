@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c5d080ee_44bf26b7",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T16:03:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "966ae409_47f7b0b2",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 4
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cb3bd12b_4044233b",
         "filename": "casviewer/blobs_test.go",
         "patchSetId": 49
@@ -144,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "3da5dc4f_4bab326f",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T16:03:52Z",
+      "side": 1,
+      "message": "I see. it works.",
+      "parentUuid": "4b438d8b_51503288",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ccc82cf2_3117571b",
         "filename": "casviewer/blobs_test.go",
         "patchSetId": 49
@@ -188,6 +236,30 @@
       "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34730aac_d97b147c",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T16:03:52Z",
+      "side": 1,
+      "message": "I moved to the top of the test.",
+      "parentUuid": "d8858032_3e9df86e",
+      "range": {
+        "startLine": 57,
+        "startChar": 27,
+        "endLine": 57,
+        "endChar": 47
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
