@@ -36,6 +36,41 @@
     },
     {
       "key": {
+        "uuid": "11c66930_5272e1de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 48
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "I will change error handlings.",
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a398762a_19f9cea6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 48
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "I see. Thank you for the advice.\nI will consider using gRPC error code.",
+      "parentUuid": "29ab7f40_816cad03",
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ead1dafa_7fecb95e",
         "filename": "casviewer/handlers.go",
         "patchSetId": 48
@@ -56,6 +91,30 @@
       "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "904c36be_ad9c0394",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ead1dafa_7fecb95e",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +141,30 @@
     },
     {
       "key": {
+        "uuid": "339a66e1_bc0c3411",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d66b2d2_20c355d9",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 25
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "731ea7eb_9995e2d7",
         "filename": "casviewer/handlers.go",
         "patchSetId": 48
@@ -93,6 +176,30 @@
       "writtenOn": "2020-09-02T22:02:35Z",
       "side": 1,
       "message": "Log/render errors in a single place. Let this function just return the error as usual. Also once all error rendering is removing, this function may not even be necessary and can be replaced with \"casClient(c.Params)\" and \"blobDigest(c.Params)\" (https://en.wikipedia.org/wiki/Single-responsibility_principle)",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 75
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e40d25b7_234ed761",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "731ea7eb_9995e2d7",
       "range": {
         "startLine": 98,
         "startChar": 0,
@@ -149,6 +256,30 @@
       "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d52a7a5a_143c0d7e",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 48
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T05:42:00Z",
+      "side": 1,
+      "message": "CAS will return InvalidArgument error for invalid digests.  \nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2377005/48/casviewer/blobs.go#77\n\nIMO, it\u0027s better to rely on CAS\u0027s validation rather than having validation at multiple layers.",
+      "parentUuid": "a0c27b2b_4b6b5ac6",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 14
+      },
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
