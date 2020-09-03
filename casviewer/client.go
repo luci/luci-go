@@ -19,8 +19,10 @@ import (
 	"sync"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -116,7 +118,7 @@ func clientCache(c context.Context) (*ClientCache, error) {
 func NewClient(ctx context.Context, instance string) (*client.Client, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials").Err()
+		return nil, errors.Annotate(err, "failed to get RPC credentials").Err()
 	}
 
 	c, err := client.NewClient(ctx, instance,
@@ -125,7 +127,9 @@ func NewClient(ctx context.Context, instance string) (*client.Client, error) {
 			TransportCredsOnly: true,
 		}, &client.PerRPCCreds{Creds: creds})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create client").Err()
+		// convert gRPC code to LUCI errors tag.
+		t := grpcutil.Tag.With(status.Code(err))
+		return nil, errors.Annotate(err, "failed to create client").Tag(t).Err()
 	}
 
 	return c, nil
