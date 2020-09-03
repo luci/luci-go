@@ -284,6 +284,12 @@ func TestValidateStep(t *testing.T) {
 			})
 
 			Convey("with start_time", func() {
+				Convey("parent missing start_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_INFRA_FAILURE)
+					setTS(t, t, nil, t)
+					So(validateStep(step, parent), ShouldErrLike, "parent's start_time not specified")
+				})
+
 				Convey("preceding to parent.start_time", func() {
 					setST(pb.Status_STARTED, pb.Status_STARTED)
 					setTS(t, nil, addTS(t, time.Second), nil)
