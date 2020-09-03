@@ -24,12 +24,13 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // QueryTestResultStatistics implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
-	if err := verifyPermissionInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
 		return nil, err
 	}
 
