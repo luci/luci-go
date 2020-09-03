@@ -19,7 +19,6 @@ import '@material/mwc-textarea';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import MarkdownIt from 'markdown-it';
 import { observable } from 'mobx';
 
 import '../../components/ace_editor';
@@ -27,8 +26,8 @@ import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { renderMarkdown } from '../../libs/utils';
 import { router } from '../../routes';
 import { BuildStatus, Timestamp } from '../../services/buildbucket';
 
@@ -117,10 +116,9 @@ export class OverviewTabElement extends MobxLitElement {
   private renderSummary() {
     const bpd = this.buildState.buildPageData!;
     if (bpd.summary_markdown) {
-      const md = new MarkdownIt();
       return html`
         <div id="summary-html">
-          ${sanitizeHTML(md.render(bpd.summary_markdown))}
+          ${renderMarkdown(bpd.summary_markdown)}
         </div>
       `;
     }
