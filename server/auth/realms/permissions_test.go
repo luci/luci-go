@@ -48,10 +48,19 @@ func TestRegister(t *testing.T) {
 		So(fmt.Sprintf("%s", p1), ShouldEqual, "luci.dev.testing1")
 		So(fmt.Sprintf("%q", p1), ShouldEqual, `"luci.dev.testing1"`)
 
+		rp1, err := RegisteredPermission("luci.dev.testing1")
+		So(err, ShouldBeNil)
+		So(rp1, ShouldResemble, p1)
 		So(RegisteredPermissions(), ShouldResemble, []Permission{p1})
 
 		p2 := RegisterPermission("luci.dev.testing2")
+		rp2, err := RegisteredPermission("luci.dev.testing2")
+		So(err, ShouldBeNil)
+		So(rp2, ShouldResemble, p2)
 		So(RegisteredPermissions(), ShouldResemble, []Permission{p1, p2})
+
+		_, err = RegisteredPermission("luci.dev.testing3")
+		So(err, ShouldBeError)
 	})
 
 	Convey("Panics on bad name", t, func() {
