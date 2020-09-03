@@ -99,26 +99,32 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 		return errors.Reason("too big to accept").Err()
 	}
 
-	seen := stringset.New(len(steps))
+	seen := make(map[string]*pb.Step, len(steps))
 	for i, step := range steps {
+		var parent *pb.Step
+		var exist bool
+
 		if err := protoutil.ValidateStepName(step.Name); err != nil {
 			return errors.Annotate(err, "step[%d].name", i).Err()
 		}
-		if !seen.Add(step.Name) {
+		if _, exist = seen[step.Name]; exist {
 			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
 		}
-		if pn := protoutil.ParentStepName(step.Name); pn != "" && !seen.Has(pn) {
-			return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
-		}
+		seen[step.Name] = step
 
-		if err := validateStep(step); err != nil {
+		if pn := protoutil.ParentStepName(step.Name); pn != "" {
+			if parent, exist = seen[pn]; !exist {
+				return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
+			}
+		}
+		if err := validateStep(step, parent); err != nil {
 			return errors.Annotate(err, "step[%d]", i).Err()
 		}
 	}
 	return nil
 }
 
-func validateStep(step *pb.Step) error {
+func validateStep(step *pb.Step, parent *pb.Step) error {
 	var st, et time.Time
 	var err error
 	if step.StartTime != nil {
@@ -167,6 +173,18 @@ func validateStep(step *pb.Step) error {
 			return errors.Reason("logs[%d].view_url: required", i).Err()
 		case !seen.Add(log.Name):
 			return errors.Reason("logs[%d].name: duplicate: %q", i, log.Name).Err()
+		}
+	}
+
+	// check for the status consistency
+	if parent != nil {
+		switch {
+		case parent.Status == pb.Status_SCHEDULED:
+			return errors.Reason("status: parent %q must be at least STARTED", parent.Name).Err()
+		case !protoutil.IsEnded(step.Status) && parent.Status != pb.Status_STARTED:
+			return errors.Reason("status: for non-terminal status %q, the parent status must be STARTED, but %q", step.Status, parent.Status).Err()
+		case protoutil.IsWorseStepStatus(step.Status, parent.Status):
+			return errors.Reason("status: status %q is worse than parent status %q", step.Status, parent.Status).Err()
 		}
 	}
 

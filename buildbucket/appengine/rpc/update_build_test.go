@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 
@@ -172,24 +173,24 @@ func TestValidateStep(t *testing.T) {
 
 		Convey("with status unspecified", func() {
 			step.Status = pb.Status_STATUS_UNSPECIFIED
-			So(validateStep(step), ShouldErrLike, "status: is unspecified or unknown")
+			So(validateStep(step, nil), ShouldErrLike, "status: is unspecified or unknown")
 		})
 
 		Convey("with status ENDED_MASK", func() {
 			step.Status = pb.Status_ENDED_MASK
-			So(validateStep(step), ShouldErrLike, "status: must not be ENDED_MASK")
+			So(validateStep(step, nil), ShouldErrLike, "status: must not be ENDED_MASK")
 		})
 
 		Convey("with non-terminal status", func() {
 			Convey("without start_time, when should have", func() {
 				step.Status = pb.Status_STARTED
-				So(validateStep(step), ShouldErrLike, `start_time: required by status "STARTED"`)
+				So(validateStep(step, nil), ShouldErrLike, `start_time: required by status "STARTED"`)
 			})
 
 			Convey("with start_time, when should not have", func() {
 				step.Status = pb.Status_SCHEDULED
 				step.StartTime = t
-				So(validateStep(step), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
+				So(validateStep(step, nil), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
 			})
 
 		})
@@ -199,19 +200,19 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("missing start_time, but end_time", func() {
 				step.EndTime = t
-				So(validateStep(step), ShouldBeNil)
+				So(validateStep(step, nil), ShouldBeNil)
 			})
 
 			Convey("missing end_time", func() {
 				step.StartTime = t
-				So(validateStep(step), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
+				So(validateStep(step, nil), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
 			})
 
 			Convey("end_time is before start_time", func() {
 				step.EndTime = t
 				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = st
-				So(validateStep(step), ShouldErrLike, "start_time: is after the end_time")
+				So(validateStep(step, nil), ShouldErrLike, "start_time: is after the end_time")
 			})
 		})
 
@@ -221,17 +222,17 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("missing name", func() {
 				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
-				So(validateStep(step), ShouldErrLike, "logs[0].name: required")
+				So(validateStep(step, nil), ShouldErrLike, "logs[0].name: required")
 			})
 
 			Convey("missing url", func() {
 				step.Logs = []*pb.Log{{Name: "name", ViewUrl: "view_url"}}
-				So(validateStep(step), ShouldErrLike, "logs[0].url: required")
+				So(validateStep(step, nil), ShouldErrLike, "logs[0].url: required")
 			})
 
 			Convey("missing view_url", func() {
 				step.Logs = []*pb.Log{{Name: "name", Url: "url"}}
-				So(validateStep(step), ShouldErrLike, "logs[0].view_url: required")
+				So(validateStep(step, nil), ShouldErrLike, "logs[0].view_url: required")
 			})
 
 			Convey("duplicate name", func() {
@@ -239,7 +240,40 @@ func TestValidateStep(t *testing.T) {
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 				}
-				So(validateStep(step), ShouldErrLike, `logs[1].name: duplicate: "name"`)
+				So(validateStep(step, nil), ShouldErrLike, `logs[1].name: duplicate: "name"`)
+			})
+		})
+
+		Convey("with a parent step", func() {
+			parent := &pb.Step{Name: "step1"}
+			setST := func(s, ps pb.Status) { step.Status, parent.Status = s, ps }
+			setTS := func(s, e, ps, pe *timestamppb.Timestamp) {
+				step.StartTime, step.EndTime = s, e
+				parent.StartTime, parent.EndTime = ps, pe
+			}
+
+			Convey("parent status is SCHEDULED", func() {
+				setST(pb.Status_STARTED, pb.Status_SCHEDULED)
+				setTS(t, nil, t, nil)
+				So(validateStep(step, parent), ShouldErrLike, `parent "step1" must be at least STARTED`)
+			})
+
+			Convey("child status is STARTED, but parent status is not", func() {
+				setST(pb.Status_STARTED, pb.Status_SUCCESS)
+				setTS(t, nil, t, t)
+				So(validateStep(step, parent), ShouldErrLike, "the parent status must be STARTED")
+			})
+
+			Convey("child status is worse", func() {
+				setST(pb.Status_FAILURE, pb.Status_SUCCESS)
+				setTS(t, t, t, t)
+				So(validateStep(step, parent), ShouldErrLike, "worse than parent status")
+			})
+
+			Convey("child status is better", func() {
+				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+				setTS(t, t, t, t)
+				So(validateStep(step, parent), ShouldBeNil)
 			})
 		})
 	})
