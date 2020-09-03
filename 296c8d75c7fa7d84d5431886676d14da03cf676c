@@ -137,6 +137,30 @@
       "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbee915d_d12f1cb2",
+        "filename": "resultdb/internal/services/recorder/update_included_invocations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:05:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77708839_a6a72141",
+      "range": {
+        "startLine": 75,
+        "startChar": 48,
+        "endLine": 75,
+        "endChar": 49
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
