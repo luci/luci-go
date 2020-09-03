@@ -93,6 +93,30 @@
       "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "97abd933_b067c6c8",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T06:27:09Z",
+      "side": 1,
+      "message": "oh, i meant we are missing validation code that checks this, separately these checks\n\nanother CL is fine",
+      "parentUuid": "64885ca6_9c846354",
+      "range": {
+        "startLine": 200,
+        "startChar": 32,
+        "endLine": 200,
+        "endChar": 55
+      },
+      "revId": "ba1b7d53670c5b1ec102ed55bc3bfc7eeabfd396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
