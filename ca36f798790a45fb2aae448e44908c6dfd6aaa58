@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0ada0229_c0113031",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:56:00Z",
+      "side": 1,
+      "message": "oops. \"file name\" in the help message made me think that this is artifact. 😂",
+      "parentUuid": "aaf74541_fb5b0d35",
+      "range": {
+        "startLine": 91,
+        "startChar": 39,
+        "endLine": 91,
+        "endChar": 47
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "267d6cd7_74f29339",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -165,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "d9afa46d_c3300e97",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:56:00Z",
+      "side": 1,
+      "message": "please ignore my comment.",
+      "parentUuid": "fd80c48a_a867058b",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 52
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32ae8782_98ee1b47",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 4
@@ -208,6 +256,30 @@
       "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5aa0de6_53c42f82",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:56:00Z",
+      "side": 1,
+      "message": "nvm. please ignore this comment.",
+      "parentUuid": "90e14916_be6c5f55",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 75
+      },
+      "revId": "ca36f798790a45fb2aae448e44908c6dfd6aaa58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
