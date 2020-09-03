@@ -179,6 +179,30 @@
     },
     {
       "key": {
+        "uuid": "c0a4b21b_1accf543",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-03T21:05:05Z",
+      "side": 1,
+      "message": "I\u0027m wondering if it could be just \"resultdb.VerifyBatch\" now.",
+      "parentUuid": "4ba3f4bf_1f41ba8a",
+      "range": {
+        "startLine": 45,
+        "startChar": 43,
+        "endLine": 45,
+        "endChar": 51
+      },
+      "revId": "bb3072052d0edf8d2c54ef97c3536ca38d513ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d01b43a1_9737fd2f",
         "filename": "resultdb/internal/services/recorder/update_included_invocations.go",
         "patchSetId": 1
