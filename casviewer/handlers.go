@@ -29,8 +29,11 @@ import (
 // InstallHandlers install CAS Viewer handlers to the router.
 func InstallHandlers(r *router.Router, cc *ClientCache) {
 	baseMW := router.NewMiddlewareChain()
+
+	perm := realms.RegisterPermission("luci.serviceAccounts.mintToken")
+
 	blobMW := baseMW.Extend(
-		checkPermission,
+		checkPermissionMW(perm),
 		withClientCacheMW(cc),
 	)
 
@@ -39,28 +42,19 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
 }
 
-// checkPermission checks if the user has permission to read the blob.
-func checkPermission(c *router.Context, next router.Handler) {
-	ctx := c.Context
-	authDB, err := auth.GetDB(ctx)
-	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
-		return
+// checkPermissionMW returna a middleware that checks if the user has permission to read the blob.
+func checkPermissionMW(perm realms.Permission) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		switch ok, err := auth.HasPermission(
+			c.Context, perm, readOnlyRealm(c.Params)); {
+		case !ok:
+			http.Error(c.Writer, "Not allowed", http.StatusForbidden)
+		case err != nil:
+			http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		default:
+			next(c)
+		}
 	}
-	ok, err := authDB.HasPermission(
-		ctx,
-		auth.CurrentIdentity(ctx),
-		realms.RegisterPermission("luci.serviceAccounts.mintToken"),
-		readOnlyRealm(c.Params))
-	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !ok {
-		http.Error(c.Writer, "Not allowed", http.StatusForbidden)
-		return
-	}
-	next(c)
 }
 
 func rootHanlder(c *router.Context) {
