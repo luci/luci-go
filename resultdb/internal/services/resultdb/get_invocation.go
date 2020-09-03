@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -41,7 +42,7 @@ func validateGetInvocationRequest(req *pb.GetInvocationRequest) error {
 
 // GetInvocation implements pb.ResultDBServer.
 func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
-	if err := verifyPermissionInvNames(ctx, permGetInvocation, in.Name); err != nil {
+	if err := permissions.VerifyInvNames(ctx, permGetInvocation, in.Name); err != nil {
 		return nil, err
 	}
 
