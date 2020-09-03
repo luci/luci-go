@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "637f1bbb_c9ed7841",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T20:56:32Z",
+      "side": 1,
+      "message": "please explain that it must start with //",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab2ebb3a_4a798dd4",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T20:56:32Z",
+      "side": 1,
+      "message": "not every, but those that don\u0027t start with //",
+      "range": {
+        "startLine": 92,
+        "startChar": 56,
+        "endLine": 92,
+        "endChar": 61
+      },
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6265095_d2477af8",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T20:56:32Z",
+      "side": 1,
+      "message": "this still doesn\u0027t tell that the path must start with *double* slashes.\nalso i imagine someome may be passing C:\\a\\b\\c which is an absolute path\nwhy not say that directly? \"file_name: does not start with //\" ?\n\nbtw, we should reject back slashes too",
+      "range": {
+        "startLine": 137,
+        "startChar": 42,
+        "endLine": 137,
+        "endChar": 50
+      },
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51faf4c8_861140b3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T20:56:32Z",
+      "side": 1,
+      "message": "why not use ValidateTestLocationPath here? e.g. if we reject back-slashes there, then we need to check it here too",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d8629d1_7547e19a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T20:56:32Z",
+      "side": 1,
+      "message": "what if base doesn\u0027t end with slash and fileName doesn\u0027t start with slash?\nwhat if base ends with slash and fileName start with a single slash?\n\nconsider \"/\" + path.Join(s.cfg.TestLocationBase, tr.TestLocation.FileName)",
+      "range": {
+        "startLine": 127,
+        "startChar": 52,
+        "endLine": 127,
+        "endChar": 55
+      },
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
