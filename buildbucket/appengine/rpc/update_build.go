@@ -191,18 +191,24 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 		pst, _ := ptypes.Timestamp(parent.StartTime)
 		pet, _ := ptypes.Timestamp(parent.EndTime)
 
-		// start_time and end_time must be in range [parent.start_time, parent.end_time],
-		// if present.
-		switch {
-		case step.StartTime != nil && st.Before(pst):
-			return errors.New("start_time: cannot precede parent's start_time")
-		case step.StartTime != nil && st.After(pet):
-			return errors.New("start_time: cannot follow parent's end_time")
+		if step.StartTime != nil {
+			switch {
+			case parent.StartTime == nil:
+				return errors.New("start_time: cannot be specified, if parent's start_time not specified")
+			case st.Before(pst):
+				return errors.New("start_time: cannot precede parent's start_time")
+			case st.After(pet):
+				return errors.New("start_time: cannot follow parent's end_time")
+			}
+		}
 
-		case step.EndTime != nil && et.Before(pst):
-			return errors.New("end_time: cannot precede parent's start_time")
-		case step.EndTime != nil && et.After(pet):
-			return errors.New("end_time: cannot follow parent's end_time")
+		if step.EndTime != nil {
+			switch {
+			case et.Before(pst):
+				return errors.New("end_time: cannot precede parent's start_time")
+			case et.After(pet):
+				return errors.New("end_time: cannot follow parent's end_time")
+			}
 		}
 	}
 
