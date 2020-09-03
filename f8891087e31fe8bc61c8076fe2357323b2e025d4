@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "5f66178f_1fd14f0f",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T07:04:05Z",
+      "side": 1,
+      "message": "Yes, I can do that.  \nIt will return CAS client *and* a Writer, ok?",
+      "parentUuid": "205096dc_46f07684",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ccc82cf2_3117571b",
         "filename": "casviewer/blobs_test.go",
         "patchSetId": 49
@@ -107,6 +131,30 @@
       "writtenOn": "2020-09-03T06:42:09Z",
       "side": 1,
       "message": "I feel it is better to take context.Background once in a test.",
+      "range": {
+        "startLine": 57,
+        "startChar": 27,
+        "endLine": 57,
+        "endChar": 47
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8858032_3e9df86e",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T07:04:05Z",
+      "side": 1,
+      "message": "I will create a ctx at the top convey.",
+      "parentUuid": "ccc82cf2_3117571b",
       "range": {
         "startLine": 57,
         "startChar": 27,
