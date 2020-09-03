@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b65c781_6505f044",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T06:23:08Z",
+      "side": 1,
+      "message": "idk, that piece of code is responsible for uploading (single responsibility principle), while this is more glue code. besides, there may be code between this code and uploading that may need content type, so coercing content type earlier seems better",
+      "parentUuid": "8353bb06_a15a9bbe",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 3
+      },
+      "revId": "02d1f78d5e60a5abcf981d812a99062e024ad568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "989d2586_1871c101",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2020-09-03T06:10:31Z",
       "side": 1,
       "message": "strings.ToLower(path.Ext(a.GetFilePath()))",
+      "range": {
+        "startLine": 145,
+        "startChar": 8,
+        "endLine": 145,
+        "endChar": 33
+      },
+      "revId": "02d1f78d5e60a5abcf981d812a99062e024ad568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d870b0c_b31d4ce4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T06:23:08Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "989d2586_1871c101",
       "range": {
         "startLine": 145,
         "startChar": 8,
