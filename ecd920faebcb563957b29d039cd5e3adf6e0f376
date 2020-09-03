@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f6dbfb9_1879e592",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T08:18:51Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "ecd920faebcb563957b29d039cd5e3adf6e0f376",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1acbb8c9_ed982b89",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T08:18:51Z",
+      "side": 1,
+      "message": "invalid for a test result.",
+      "range": {
+        "startLine": 130,
+        "startChar": 60,
+        "endLine": 130,
+        "endChar": 67
+      },
+      "revId": "ecd920faebcb563957b29d039cd5e3adf6e0f376",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
