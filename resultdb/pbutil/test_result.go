@@ -118,13 +118,24 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
 	case ec.isErr(ValidateVariant(msg.Variant), "variant"):
 	// skip `Expected`
-	case ec.isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
+	case ec.isErr(ValidateTestResultStatus(msg.Status), "status"):
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case msg.TestLocation != nil && ec.isErr(ValidateTestLocation(msg.TestLocation), "test_location"):
 	}
 	return err
+}
+
+// ValidateTestResultStatus returns a non-nil error if s is invalid for a test result.
+func ValidateTestResultStatus(s pb.TestStatus) error {
+	if err := ValidateEnum(int32(s), pb.TestStatus_name); err != nil {
+		return err
+	}
+	if s == pb.TestStatus_STATUS_UNSPECIFIED {
+		return errors.Reason("cannot be %s", pb.TestStatus_STATUS_UNSPECIFIED).Err()
+	}
+	return nil
 }
 
 // ValidateTestLocation returns a non-nil error if loc is invalid.

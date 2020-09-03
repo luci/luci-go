@@ -203,6 +203,11 @@ func TestValidateTestResult(t *testing.T) {
 			So(validate(msg), ShouldErrLike, "status: invalid value")
 		})
 
+		Convey("with STATUS_UNSPECIFIED", func() {
+			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			So(validate(msg), ShouldErrLike, "status: cannot be STATUS_UNSPECIFIED")
+		})
+
 		Convey("with too big summary", func() {
 			msg.SummaryHtml = strings.Repeat("☕", maxLenSummaryHTML)
 			So(validate(msg), ShouldErrLike, "summary_html: exceeds the maximum size")
