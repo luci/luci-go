@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8195e53_d0f2f79d",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T07:28:54Z",
+      "side": 1,
+      "message": "if we ever add TestResultPredicate.status, then UNSPECIFIED would be valid there.\nThis should probably say \"invalid for a test result\" or something like that.\nand if so, the function signature should reflect that too.\nconsider\n\n  func ValidateTestStatus(s pb.TestStatus, allowUnspecified bool) error",
+      "range": {
+        "startLine": 130,
+        "startChar": 55,
+        "endLine": 130,
+        "endChar": 62
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3aa5972_309eaf89",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T07:28:54Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 130,
+        "startChar": 36,
+        "endLine": 130,
+        "endChar": 40
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d96ed19f_5a492f99",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T07:28:54Z",
+      "side": 1,
+      "message": "i think %s is more appropriate. this isn\u0027t user-input, doesn\u0027t require escaping",
+      "range": {
+        "startLine": 136,
+        "startChar": 35,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
