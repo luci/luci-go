@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfa7f777_a95d4885",
+        "filename": "resultdb/internal/permissions/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "consider ... here and NewIDSet(ids...) below",
+      "range": {
+        "startLine": 34,
+        "startChar": 75,
+        "endLine": 34,
+        "endChar": 76
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1592494_107f2265",
+        "filename": "resultdb/internal/permissions/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "stale?",
+      "range": {
+        "startLine": 41,
+        "startChar": 43,
+        "endLine": 41,
+        "endChar": 51
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a542b59c_6fe7a84b",
+        "filename": "resultdb/internal/permissions/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 41,
+        "startChar": 58,
+        "endLine": 41,
+        "endChar": 68
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3edc61d_b7296995",
+        "filename": "resultdb/internal/permissions/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "this will panic if ctx already has a txn. \nplease document it in the func comment that txn must not have a txn",
+      "range": {
+        "startLine": 44,
+        "startChar": 39,
+        "endLine": 44,
+        "endChar": 55
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fe7c77a_6dc212e0",
+        "filename": "resultdb/internal/permissions/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 66,
+        "startChar": 52,
+        "endLine": 66,
+        "endChar": 53
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77708839_a6a72141",
+        "filename": "resultdb/internal/services/recorder/update_included_invocations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T21:04:21Z",
+      "side": 1,
+      "message": "A",
+      "range": {
+        "startLine": 75,
+        "startChar": 48,
+        "endLine": 75,
+        "endChar": 49
+      },
+      "revId": "296c8d75c7fa7d84d5431886676d14da03cf676c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
