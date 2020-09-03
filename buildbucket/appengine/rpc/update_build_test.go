@@ -17,6 +17,7 @@ package rpc
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -30,6 +31,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func addTS(ts *timestamppb.Timestamp, d time.Duration) *timestamppb.Timestamp {
+	t, _ := ptypes.Timestamp(ts)
+	ts, _ = ptypes.TimestampProto(t.Add(d))
+	return ts
+}
 
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
@@ -274,6 +281,34 @@ func TestValidateStep(t *testing.T) {
 				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
 				setTS(t, t, t, t)
 				So(validateStep(step, parent), ShouldBeNil)
+			})
+
+			Convey("with start_time", func() {
+				Convey("preceding to parent.start_time", func() {
+					setST(pb.Status_STARTED, pb.Status_STARTED)
+					setTS(t, nil, addTS(t, time.Second), nil)
+					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+				})
+
+				Convey("following parent.end_time", func() {
+					setST(pb.Status_FAILURE, pb.Status_CANCELED)
+					setTS(addTS(t, time.Minute), addTS(t, time.Hour), t, addTS(t, time.Second))
+					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+				})
+			})
+
+			Convey("with end_time", func() {
+				Convey("preceding to parent.start_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+					setTS(addTS(t, -time.Hour), addTS(t, -time.Minute), t, t)
+					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+				})
+
+				Convey("following parent.end_time", func() {
+					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
+					setTS(t, addTS(t, time.Hour), t, t)
+					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+				})
 			})
 		})
 	})
