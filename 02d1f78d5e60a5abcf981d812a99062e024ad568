@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8353bb06_a15a9bbe",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:10:31Z",
+      "side": 1,
+      "message": "the artifact map of each test result is iterated at https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/artifact_channel.go;l\u003d98.\n\nI think it\u0027d be better to guess the content type at\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/artifact_channel.go;l\u003d66",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 3
+      },
+      "revId": "02d1f78d5e60a5abcf981d812a99062e024ad568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "989d2586_1871c101",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T06:10:31Z",
+      "side": 1,
+      "message": "strings.ToLower(path.Ext(a.GetFilePath()))",
+      "range": {
+        "startLine": 145,
+        "startChar": 8,
+        "endLine": 145,
+        "endChar": 33
+      },
+      "revId": "02d1f78d5e60a5abcf981d812a99062e024ad568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
