@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "c6d46adf_fdf57ce8",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T07:51:06Z",
+      "side": 1,
+      "message": "The intent of this function is to validate TestResult.status, which is not allowed to have STATUS_UNSPECIFIED.\n: \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/test_result.proto;l\u003d89-91\n\nHowever, I realized that this function can be seen as a general validator for any TestStatus enum values. All the validator functions in pbutil/test_result.go are intended to validate the corresponding field in message TestResult{}.\n\nHow about renaming this to ValidateTestResultStatus(), instead?\nIf TestResultPredicate.status is added, we can add ValidatePredicateStatus() under pbutil/predicate.go.",
+      "parentUuid": "f8195e53_d0f2f79d",
+      "range": {
+        "startLine": 130,
+        "startChar": 55,
+        "endLine": 130,
+        "endChar": 62
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abf5fa92_3aa7ca28",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T07:51:06Z",
+      "side": 1,
+      "message": "oops. done",
+      "parentUuid": "b3aa5972_309eaf89",
+      "range": {
+        "startLine": 130,
+        "startChar": 36,
+        "endLine": 130,
+        "endChar": 40
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d96ed19f_5a492f99",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa4d6570_3fbf5120",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T07:51:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d96ed19f_5a492f99",
+      "range": {
+        "startLine": 136,
+        "startChar": 35,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "6567553b1ae0f3bc621775a5403ab6635b7aeb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
