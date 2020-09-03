@@ -122,6 +122,10 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
 
+		if tr.GetTestLocation().GetFileName() != "" && s.cfg.LocationBase != "" {
+			tr.TestLocation.FileName = s.cfg.LocationBase + tr.TestLocation.FileName
+		}
+
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 		}

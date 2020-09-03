@@ -227,3 +227,39 @@ func TestServerExport(t *testing.T) {
 		So(sink.AuthToken, ShouldEqual, "hello")
 	})
 }
+
+func TestValidateLocationBase(t *testing.T) {
+	t.Parallel()
+
+	Convey("empty", t, func() {
+		config := ServerConfig{
+			LocationBase: "",
+		}
+		err := config.validateLocationBase()
+		So(err, ShouldBeNil)
+	})
+
+	Convey("success", t, func() {
+		config := ServerConfig{
+			LocationBase: "//base/",
+		}
+		err := config.validateLocationBase()
+		So(err, ShouldBeNil)
+	})
+
+	Convey("missing leading double slashes", t, func() {
+		config := ServerConfig{
+			LocationBase: "base/",
+		}
+		err := config.validateLocationBase()
+		So(err, ShouldErrLike, "does not match ^//.*/$")
+	})
+
+	Convey("missing trailing slash", t, func() {
+		config := ServerConfig{
+			LocationBase: "//base",
+		}
+		err := config.validateLocationBase()
+		So(err, ShouldErrLike, "does not match ^//.*/$")
+	})
+}
