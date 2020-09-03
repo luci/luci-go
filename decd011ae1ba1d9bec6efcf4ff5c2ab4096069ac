@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5811cd3_b8a6a547",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-03T00:26:46Z",
+      "side": 1,
+      "message": "shall we check whether the status code is in 4xx and 5xx range?",
+      "revId": "decd011ae1ba1d9bec6efcf4ff5c2ab4096069ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ad22ad4_5e94f4b3",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-03T00:26:46Z",
+      "side": 1,
+      "message": "it seems quite weird to me that we need to made the signature a lot more complex just to test it.\nI\u0027m not quite sure what\u0027s the standard practice in golang. Maybe add someone else to review this as well.\nDoes owen have go redability?",
+      "range": {
+        "startLine": 349,
+        "startChar": 61,
+        "endLine": 349,
+        "endChar": 160
+      },
+      "revId": "decd011ae1ba1d9bec6efcf4ff5c2ab4096069ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
