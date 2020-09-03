@@ -71,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "ed981610_00861c80",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 48
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:33:24Z",
+      "side": 1,
+      "message": "Ah, there is grpcutil for LUCI error tags. Maybe I should use this.\nhttps://pkg.go.dev/github.com/luci/luci-go/grpc/grpcutil",
+      "parentUuid": "a398762a_19f9cea6",
+      "revId": "ae4ac2d032487ad8477b971550931dacc82d69c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ead1dafa_7fecb95e",
         "filename": "casviewer/handlers.go",
         "patchSetId": 48

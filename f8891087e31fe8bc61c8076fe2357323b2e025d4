@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1f6a64a4_84cb9cb9",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:33:24Z",
+      "side": 1,
+      "message": "Do you recommend having another Convey layer to merge them?\nI feel they would make tests too nested. But it\u0027s necessary to share the setup code.",
+      "parentUuid": "cb3bd12b_4044233b",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "beef08cc_d5abefa0",
         "filename": "casviewer/blobs_test.go",
         "patchSetId": 49
@@ -45,6 +69,30 @@
       "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536e253b_6fb302a5",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-03T06:33:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "beef08cc_d5abefa0",
+      "range": {
+        "startLine": 66,
+        "startChar": 15,
+        "endLine": 66,
+        "endChar": 23
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
