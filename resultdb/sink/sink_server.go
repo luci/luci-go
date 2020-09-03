@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path"
+	"strings"
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
@@ -120,6 +121,10 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		// assign a random, unique ID if resultID omitted.
 		if tr.ResultId == "" {
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
+		}
+
+		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
+			tr.TestLocation.FileName = s.cfg.TestLocationBase + tr.TestLocation.FileName
 		}
 
 		for _, a := range tr.GetArtifacts() {

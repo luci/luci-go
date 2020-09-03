@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -132,6 +133,8 @@ func ValidateTestLocation(loc *pb.TestLocation) error {
 	switch {
 	case loc.FileName == "":
 		return errors.Reason("file_name: unspecified").Err()
+	case !strings.HasPrefix(loc.FileName, "//"):
+		return errors.Reason("file_name: not an absolute path").Err()
 	case len(loc.FileName) > 512:
 		return errors.Reason("file_name: length exceeds 512").Err()
 	case loc.Line < 0:

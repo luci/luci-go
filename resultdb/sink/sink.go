@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -72,6 +73,8 @@ const (
 // started.
 var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").Err()
 
+var locationPrefixRe = regexp.MustCompile(`^//.*/$`)
+
 // ServerConfig defines the parameters of the server.
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
@@ -100,6 +103,9 @@ type ServerConfig struct {
 	// BaseVariant will be added to the variant of each TestResult. If there are duplicate
 	// keys, the variant value given by the test command always wins.
 	BaseVariant *pb.Variant
+
+	// TestLocationBase will be prepended to the Location.FileName of each TestResult.
+	TestLocationBase string
 
 	// Listener for tests
 	testListener net.Listener
@@ -134,7 +140,21 @@ func (c *ServerConfig) Validate() error {
 		return errors.Annotate(err, "BaseVariant").Err()
 	}
 
+	if err := c.validateTestLocationBase(); err != nil {
+		return errors.Annotate(err, "TestLocationBase").Err()
+	}
 	return nil
+}
+
+func (c *ServerConfig) validateTestLocationBase() error {
+	switch {
+	case c.TestLocationBase == "":
+		return nil
+	case !locationPrefixRe.MatchString(c.TestLocationBase):
+		return errors.Reason("does not match %s", locationPrefixRe).Err()
+	default:
+		return nil
+	}
 }
 
 // Server contains state relevant to the server itself.
