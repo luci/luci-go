@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "4b438d8b_51503288",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 49
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-03T08:07:57Z",
+      "side": 1,
+      "message": "I think you can make writer out of Convey scope.",
+      "parentUuid": "5f66178f_1fd14f0f",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "f8891087e31fe8bc61c8076fe2357323b2e025d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ccc82cf2_3117571b",
         "filename": "casviewer/blobs_test.go",
         "patchSetId": 49
