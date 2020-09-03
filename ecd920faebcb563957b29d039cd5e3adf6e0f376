@@ -39,6 +39,30 @@
       "revId": "ecd920faebcb563957b29d039cd5e3adf6e0f376",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94d20fe2_ea65a15d",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-03T08:26:21Z",
+      "side": 1,
+      "message": "thanks :)",
+      "parentUuid": "1acbb8c9_ed982b89",
+      "range": {
+        "startLine": 130,
+        "startChar": 60,
+        "endLine": 130,
+        "endChar": 67
+      },
+      "revId": "ecd920faebcb563957b29d039cd5e3adf6e0f376",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
