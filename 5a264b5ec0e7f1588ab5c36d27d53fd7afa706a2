@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4a49816_81880727",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-03T08:30:51Z",
+      "side": 1,
+      "message": "perhaps we should use service-level realms instead of using groups directly.\n+Vadim to correct me if they aren\u0027t ready",
+      "revId": "5a264b5ec0e7f1588ab5c36d27d53fd7afa706a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
