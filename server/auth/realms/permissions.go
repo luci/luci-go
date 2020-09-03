@@ -91,6 +91,18 @@ func RegisteredPermissions() []Permission {
 	return all
 }
 
+// RegisteredPermission returns a registered permission.
+//
+// It returns an error if the permission isn't registered.
+func RegisteredPermission(name string) (Permission, error) {
+	for _, perm := range RegisteredPermissions() {
+		if perm.name == name {
+			return perm, nil
+		}
+	}
+	return Permission{}, errors.Reason("permission %s not found - should be registered", name).Err()
+}
+
 // ValidatePermissionName returns an error if the permission name is invalid.
 //
 // It checks the name looks like "<service>.<subject>.<verb>".
