@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -33,7 +32,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(pbutil.ValidateTestID(msg.TestId), "test_id"):
 	case ec.isErr(pbutil.ValidateResultID(msg.ResultId), "result_id"):
 	// skip `Expected`
-	case ec.isErr(pbutil.ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
+	case ec.isErr(pbutil.ValidateTestResultStatus(msg.Status), "status"):
 	case ec.isErr(pbutil.ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(pbutil.ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(pbutil.ValidateStringPairs(msg.Tags), "tags"):
