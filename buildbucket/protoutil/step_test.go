@@ -17,6 +17,8 @@ package protoutil
 import (
 	"testing"
 
+	pb "go.chromium.org/luci/buildbucket/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -61,6 +63,24 @@ func TestValidateStepName(t *testing.T) {
 			So(ValidateStepName("a|"), ShouldErrLike, errMsg)
 			So(ValidateStepName("|a"), ShouldErrLike, errMsg)
 			So(ValidateStepName("a||b"), ShouldErrLike, errMsg)
+		})
+	})
+}
+
+func TestIsWorseStepStatus(t *testing.T) {
+	t.Parallel()
+
+	Convey("compare", t, func() {
+		Convey("with non-precedence statuss", func() {
+			So(IsWorseStepStatus(pb.Status_SCHEDULED, pb.Status_SUCCESS), ShouldBeFalse)
+			So(IsWorseStepStatus(pb.Status_SUCCESS, pb.Status_SCHEDULED), ShouldBeFalse)
+			So(IsWorseStepStatus(pb.Status_SCHEDULED, pb.Status_SCHEDULED), ShouldBeFalse)
+		})
+		Convey("with a worse status", func() {
+			So(IsWorseStepStatus(pb.Status_FAILURE, pb.Status_SUCCESS), ShouldBeTrue)
+		})
+		Convey("with a better status", func() {
+			So(IsWorseStepStatus(pb.Status_SUCCESS, pb.Status_FAILURE), ShouldBeFalse)
 		})
 	})
 }
