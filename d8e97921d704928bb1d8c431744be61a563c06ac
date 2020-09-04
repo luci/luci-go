@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0070923b_8f46eb99",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:29:30Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "676366de_7bb5fe38",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:29:30Z",
+      "side": 1,
+      "message": "That\u0027s interesting; I would expect INFRA_FAILURE to still require a start time? I guess I can see it either way.\n\nIn any event, I think \"CAN\" should be spelled \"MAY\"?",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 8
+      },
+      "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
