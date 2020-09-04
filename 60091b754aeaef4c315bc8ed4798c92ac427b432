@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c70501e_d4ca287f",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:52:35Z",
+      "side": 1,
+      "message": "assumes the callsite. I think errors.Annotate(\"file_name\", err) should be in L140, not here, and not in L161",
+      "range": {
+        "startLine": 158,
+        "startChar": 24,
+        "endLine": 158,
+        "endChar": 33
+      },
+      "revId": "60091b754aeaef4c315bc8ed4798c92ac427b432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a71290b2_909ea212",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:52:35Z",
+      "side": 1,
+      "message": "return ValidateFilePath(name)",
+      "range": {
+        "startLine": 160,
+        "startChar": 1,
+        "endLine": 163,
+        "endChar": 11
+      },
+      "revId": "60091b754aeaef4c315bc8ed4798c92ac427b432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
