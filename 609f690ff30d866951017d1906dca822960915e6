@@ -53,6 +53,23 @@
     },
     {
       "key": {
+        "uuid": "36a6b101_cee1eb76",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:48:36Z",
+      "side": 1,
+      "message": "I am thinking to group test categories and test location into TestResult.test_metadata field, with fields location and categories. Then it would be simpler in Spanner (just store binary proto) and BigQuery (dump entire message as is)",
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "34c4d775_e0092a08",
         "filename": "resultdb/proto/v1/test_result.pb.go",
         "patchSetId": 3
@@ -246,6 +263,30 @@
       "revId": "609f690ff30d866951017d1906dca822960915e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11cf62be_ebf55934",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:48:36Z",
+      "side": 1,
+      "message": "yeah, I think its reasonable to reserve /",
+      "parentUuid": "380f7176_0dc4801a",
+      "range": {
+        "startLine": 225,
+        "startChar": 16,
+        "endLine": 225,
+        "endChar": 54
+      },
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
