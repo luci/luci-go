@@ -16,6 +16,92 @@
       "revId": "2cc65312a446bb966df66e651762a70789a440d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dc076e3b_b53347ce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:20:39Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "2cc65312a446bb966df66e651762a70789a440d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3c2987a2_5519b343",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:20:39Z",
+      "side": 1,
+      "message": "nit: these can be closed over (don\u0027t need to be explicitly passed)\n\n  go func() {\n    // using `ctx` here binds it.\n  }()",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 12
+      },
+      "revId": "2cc65312a446bb966df66e651762a70789a440d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fd051f1_c83866c1",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:20:39Z",
+      "side": 1,
+      "message": "nit: can inline `ds.Raw(ctx).Run(...)`",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 12
+      },
+      "revId": "2cc65312a446bb966df66e651762a70789a440d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "038abf24_fa4dafb1",
+        "filename": "gae/service/datastore/internal/queryiterator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:20:39Z",
+      "side": 1,
+      "message": "I think this should probably look like:\n\n   item :\u003d \u0026rawQueryResult{key: k, data: pm}\n   select {\n   case \u003c-ctx.Done():\n     return ds.Stop\n   case qi.itemCh \u003c- item:\n     return nil\n   }\n\nOtherwise what will happen is that the select will immediately go into the \u0027default\u0027 case and block on pushing the item to itemCh. Canceling the context at this point will have no effect at all (since it\u0027s not being selected on). You want this goroutine to wake up when either the context is canceled OR it\u0027s pushed an item into itemCh.",
+      "range": {
+        "startLine": 47,
+        "startChar": 3,
+        "endLine": 47,
+        "endChar": 10
+      },
+      "revId": "2cc65312a446bb966df66e651762a70789a440d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
