@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "fc5214c3_1a03ecf8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:27:46Z",
+      "side": 1,
+      "message": "its a good question.\n\nI think this is because in a source control, the root of the repo is indicated with //",
+      "parentUuid": "d96ba973_57f66df8",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6265095_d2477af8",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 5
@@ -136,6 +154,24 @@
       "side": 1,
       "message": "I think this is because the prefix MUST end with a slash, but a full test location MUST NOT",
       "parentUuid": "51faf4c8_861140b3",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b58d18b_6fc211f9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-04T01:27:46Z",
+      "side": 1,
+      "message": "this is a not a prefix though. It is called \"base\", as in base directory. As a user, I\u0027d expect the tool to be smart enough to add missing slash, rather than require me to always specify it",
+      "parentUuid": "33e23265_72148609",
       "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
