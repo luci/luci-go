@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "3a1e8ef0_f3f6725c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-04T15:35:56Z",
+      "side": 1,
+      "message": "Corrected with an additional check.\nYou are right. The parent step doesn\u0027t have to be with a terminal status at this point.",
+      "parentUuid": "bdcc9c76_072f5e0e",
+      "range": {
+        "startLine": 206,
+        "startChar": 44,
+        "endLine": 207,
+        "endChar": 41
+      },
+      "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "676366de_7bb5fe38",
         "filename": "buildbucket/proto/step.proto",
         "patchSetId": 4
@@ -86,6 +110,30 @@
       "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87911283_a3f343b0",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-04T15:35:56Z",
+      "side": 1,
+      "message": "INFRA_FAILURE added to one of the statuses requiring start_time.\ns/CAN/MAY",
+      "parentUuid": "c559c711_3d4259c1",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 8
+      },
+      "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
