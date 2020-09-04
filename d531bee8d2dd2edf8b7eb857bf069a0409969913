@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "d96ba973_57f66df8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:37:10Z",
+      "side": 1,
+      "message": "OOC, why is this (that it must start with //)?",
+      "parentUuid": "637f1bbb_c9ed7841",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6265095_d2477af8",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 5
@@ -65,6 +83,30 @@
     },
     {
       "key": {
+        "uuid": "f797b44a_0a18867d",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:37:10Z",
+      "side": 1,
+      "message": "maybe also that it doesn\u0027t end with slash? Maybe that\u0027s already accounted for somewhere.",
+      "parentUuid": "b6265095_d2477af8",
+      "range": {
+        "startLine": 137,
+        "startChar": 42,
+        "endLine": 137,
+        "endChar": 50
+      },
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "51faf4c8_861140b3",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 5
@@ -76,6 +118,24 @@
       "writtenOn": "2020-09-03T20:56:32Z",
       "side": 1,
       "message": "why not use ValidateTestLocationPath here? e.g. if we reject back-slashes there, then we need to check it here too",
+      "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33e23265_72148609",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:37:10Z",
+      "side": 1,
+      "message": "I think this is because the prefix MUST end with a slash, but a full test location MUST NOT",
+      "parentUuid": "51faf4c8_861140b3",
       "revId": "d531bee8d2dd2edf8b7eb857bf069a0409969913",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
