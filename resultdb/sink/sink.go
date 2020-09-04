@@ -101,6 +101,9 @@ type ServerConfig struct {
 	// keys, the variant value given by the test command always wins.
 	BaseVariant *pb.Variant
 
+	// TestLocationBase will be prepended to the Location.FileName of each TestResult.
+	TestLocationBase string
+
 	// Listener for tests
 	testListener net.Listener
 
@@ -134,6 +137,19 @@ func (c *ServerConfig) Validate() error {
 		return errors.Annotate(err, "BaseVariant").Err()
 	}
 
+	if err := c.validateTestLocationBase(); err != nil {
+		return errors.Annotate(err, "TestLocationBase").Err()
+	}
+	return nil
+}
+
+func (c *ServerConfig) validateTestLocationBase() error {
+	if c.TestLocationBase == "" {
+		return nil
+	}
+	if err := pbutil.ValidateFilePath(c.TestLocationBase); err != nil {
+		return errors.Annotate(err, "TestLocationBase").Err()
+	}
 	return nil
 }
 

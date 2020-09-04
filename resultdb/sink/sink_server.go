@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path"
+	"strings"
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
@@ -122,10 +123,13 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
 
+		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
+			tr.TestLocation.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestLocation.FileName)
+		}
+
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 		}
-
 		if err := validateTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
