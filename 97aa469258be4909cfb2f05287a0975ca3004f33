@@ -451,6 +451,30 @@
       "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d514b6f_cd79f032",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:23:18Z",
+      "side": 1,
+      "message": "what do you mean? ShouldEqual is checking that items are identical, ShouldResemble just checks that they\u0027re similar (same type/content). For ds.Stop it needs to be _exactly_ ds.Stop, not just an error which looks like it, so I think the test should assert that?",
+      "parentUuid": "45f9772d_29b97510",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 25
+      },
+      "revId": "97aa469258be4909cfb2f05287a0975ca3004f33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -16,6 +16,46 @@
       "revId": "df40421afb6e45d966269668a6e8128689cf515c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "78b4b35b_f51e5d69",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:23:18Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "df40421afb6e45d966269668a6e8128689cf515c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29ad5176_711f3c85",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-04T00:23:18Z",
+      "side": 1,
+      "message": "note that this should change in your next CL; test should try to rely on QueryIterator\u0027s public interface, I think (i.e. just rely on context cancelation)",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 9
+      },
+      "revId": "df40421afb6e45d966269668a6e8128689cf515c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
