@@ -63,14 +63,18 @@ type Step struct {
 	// - a||b
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The timestamp when the step started.
-	// Required iff status is STARTED, SUCCESS or FAILURE, or if the step has
-	// children.
-	// MUST NOT be after start_time/end_time of any of the children.
+	//
+	// MUST NOT be specified, if status is SCHEDULED.
+	// MUST be specified, if status is STARTED, SUCCESS, FAILURE, or INFRA_FAILURE
+	// MAY be specified, if status is CANCELED.
+	//
+	// MUST be specified, if specified in any of its children.
+	// MUST be in range [parent.start_time, parent.end_time].
 	StartTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp when the step ended.
 	// Present iff status is terminal.
 	// MUST NOT be before start_time.
-	// MUST NOT be before start/end_time of any of the children.
+	// MUST be in range [parent.start_time, parent.end_time], or unspecified.
 	EndTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
