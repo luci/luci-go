@@ -16,10 +16,13 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
+import '../../components/build_step_entry';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
@@ -27,12 +30,20 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   protected render() {
+    const steps = this.buildState.buildPageData?.steps;
+    if (!steps) {
+      return html``;
+    }
     return html`
-      <div>This is the steps & logs tab<div>
+      ${steps.map((step, i) => html`
+      <milo-build-step-entry .number=${i + 1} .step=${step}></milo-build-step-entry>
+      `)}
     `;
   }
 }
 
 customElement('milo-steps-tab')(
-  consumeAppState(StepsTabElement),
+  consumeBuildState(
+    consumeAppState(StepsTabElement),
+  ),
 );
