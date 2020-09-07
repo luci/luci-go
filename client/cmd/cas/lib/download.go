@@ -207,24 +207,20 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 
 	if diskcache != nil {
 		start = time.Now()
-		type pathHash struct {
-			path string
-			hash string
-		}
-		var pathHashes []pathHash
-		for d, output := range to {
-			pathHashes = append(pathHashes, pathHash{output.Path, d.Hash})
+		outputs := make([]*tree.Output, 0, len(to))
+		for _, output := range to {
+			outputs = append(outputs, output)
 		}
 
 		// This is to utilize locality of disk access.
-		sort.Slice(pathHashes, func(i, j int) bool {
-			return pathHashes[i].path < pathHashes[j].path
+		sort.Slice(outputs, func(i, j int) bool {
+			return outputs[i].Path < outputs[j].Path
 		})
 
-		for _, ph := range pathHashes {
+		for _, output := range outputs {
 			if err := diskcache.AddFileWithoutValidation(
-				isolated.HexDigest(ph.hash), ph.path); err != nil {
-				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", ph.path, ph.hash).Err()
+				isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
+				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
 			}
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
