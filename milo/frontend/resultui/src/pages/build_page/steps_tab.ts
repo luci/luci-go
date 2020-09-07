@@ -13,13 +13,17 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
+import '../../components/build_step_entry';
+import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
@@ -27,12 +31,27 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   protected render() {
+    // TODO(crbug/1123362): add filters and expand/collapse all buttons.
     return html`
-      <div>This is the steps & logs tab<div>
+      ${this.buildState.buildPageData?.steps.map((step, i) => html`
+      <milo-build-step-entry .expanded=${true} .number=${i + 1} .step=${step}></milo-build-step-entry>
+      `) || html`<span id="load">Loading <milo-dot-spinner></milo-dot-spinner></span>`}
     `;
   }
+
+  static styles = css`
+    :host {
+      padding-left: 10px;
+    }
+
+    #load {
+      color: blue;
+    }
+  `;
 }
 
 customElement('milo-steps-tab')(
-  consumeAppState(StepsTabElement),
+  consumeBuildState(
+    consumeAppState(StepsTabElement),
+  ),
 );

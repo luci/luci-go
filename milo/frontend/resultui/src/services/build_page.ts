@@ -60,7 +60,7 @@ export interface Property {
 }
 
 export interface StepExt extends Step {
-  children: StepExt[];
+  children?: StepExt[];
   collapsed: boolean;
   interval: Interval;
 }
