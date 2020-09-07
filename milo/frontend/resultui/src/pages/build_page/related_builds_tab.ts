@@ -15,14 +15,13 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import MarkdownIt from 'markdown-it';
 import { observable } from 'mobx';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { renderMarkdown } from '../../libs/utils';
 import { Build, BuildStatus } from '../../services/buildbucket';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
@@ -92,7 +91,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${displayTimestamp(build.create_time)}</td>
         <td>${displayTimeDiff(build.create_time, build.start_time!)}</td>
         <td>${displayTimeDiff(build.start_time!, build.end_time!)}</td>
-        <td>${this.displayMarkdown(build.summary_markdown)}</td>
+        <td>${renderMarkdown(build.summary_markdown || '')}</td>
     `;
   }
 
@@ -100,14 +99,6 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     const href = getURLForBuild(build);
     const display = build.number ? build.number : build.id;
     return html`<a href="${href}">${display}</a>`;
-  }
-
-  private displayMarkdown(markdown: string | undefined) {
-    if (markdown === undefined) {
-      return html ``;
-    }
-    const md = new MarkdownIt();
-    return sanitizeHTML(md.render(markdown));
   }
 
   static styles = css`

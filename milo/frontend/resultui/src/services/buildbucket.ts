@@ -110,11 +110,11 @@ export interface Log {
 
 export interface Step {
   readonly name: string;
-  readonly start_time: string;
-  readonly end_time: string;
+  readonly start_time: Timestamp;
+  readonly end_time: Timestamp;
   readonly status: BuildStatus;
-  readonly logs: Log[];
-  readonly summary_markdown: string;
+  readonly logs?: Log[];
+  readonly summary_markdown?: string;
 }
 
 export interface BuildInfra {
