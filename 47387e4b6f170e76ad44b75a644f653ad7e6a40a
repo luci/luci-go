@@ -76,6 +76,24 @@
     },
     {
       "key": {
+        "uuid": "ac1bf813_0d6b0b90",
+        "filename": "casviewer/blobs_test.go",
+        "patchSetId": 54
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-07T05:27:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20ccc7b6_5816a11f",
+      "revId": "47387e4b6f170e76ad44b75a644f653ad7e6a40a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55e4b05c_26376b06",
         "filename": "casviewer/handlers.go",
         "patchSetId": 54
@@ -93,6 +111,24 @@
     },
     {
       "key": {
+        "uuid": "7a4e1ff0_f2c1217b",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 54
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-07T05:27:16Z",
+      "side": 1,
+      "message": "will followup in another CL after submitting https://crrev.com/c/2391887.",
+      "parentUuid": "55e4b05c_26376b06",
+      "revId": "47387e4b6f170e76ad44b75a644f653ad7e6a40a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "59ffb182_ab5a05e3",
         "filename": "casviewer/handlers.go",
         "patchSetId": 54
@@ -104,6 +140,30 @@
       "writtenOn": "2020-09-07T03:50:04Z",
       "side": 1,
       "message": "show given param?",
+      "range": {
+        "startLine": 128,
+        "startChar": 15,
+        "endLine": 128,
+        "endChar": 23
+      },
+      "revId": "47387e4b6f170e76ad44b75a644f653ad7e6a40a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "673d4532_9d44bb69",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 54
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-07T05:27:16Z",
+      "side": 1,
+      "message": "I think it\u0027s obvious to users since it\u0027s a URL parameter.",
+      "parentUuid": "59ffb182_ab5a05e3",
       "range": {
         "startLine": 128,
         "startChar": 15,
