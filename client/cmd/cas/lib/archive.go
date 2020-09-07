@@ -17,14 +17,13 @@ package lib
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/ioutil"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/cas"
@@ -56,7 +55,7 @@ working directory, '-paths :foo' is sufficient.`,
 			c := archiveRun{}
 			c.Init()
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
-			c.Flags.StringVar(&c.digestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
+			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest in the format of `<Hash>/<Size>`")
 			return &c
 		},
 	}
@@ -65,7 +64,7 @@ working directory, '-paths :foo' is sufficient.`,
 type archiveRun struct {
 	commonFlags
 	paths      isolated.ScatterGather
-	digestJSON string
+	dumpDigest string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -133,19 +132,10 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Dig
 		return nil, errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
-	dj := c.digestJSON
-	if dj == "" {
-		return uploadedDigests, nil
-	}
-
-	f, err := os.Create(dj)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create file").Err()
-	}
-	defer f.Close()
-
-	if err := (&jsonpb.Marshaler{}).Marshal(f, rootDg.ToProto()); err != nil {
-		return nil, errors.Annotate(err, "failed to marshal digest proto").Err()
+	if dd := c.dumpDigest; dd != "" {
+		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
+			return nil, errors.Annotate(err, "failed to dump digest").Err()
+		}
 	}
 
 	return uploadedDigests, nil
