@@ -16,8 +16,10 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"sort"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -30,6 +32,7 @@ import (
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -56,6 +59,7 @@ working directory, '-paths :foo' is sufficient.`,
 			c.Init()
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest in the format of `<Hash>/<Size>`")
+			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump upload stats to json file.")
 			return &c
 		},
 	}
@@ -63,8 +67,9 @@ working directory, '-paths :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	paths      isolated.ScatterGather
-	dumpDigest string
+	paths         isolated.ScatterGather
+	dumpDigest    string
+	dumpStatsJSON string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -135,6 +140,46 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Dig
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
 			return nil, errors.Annotate(err, "failed to dump digest").Err()
+		}
+	}
+
+	if dsj := c.dumpStatsJSON; dsj != "" {
+		uploaded := make([]int64, 0, len(uploadedDigests))
+		uploadedSet := make(map[digest.Digest]struct{})
+		for _, d := range uploadedDigests {
+			uploaded = append(uploaded, d.Size)
+			uploadedSet[d] = struct{}{}
+		}
+		sort.Slice(uploaded, func(i, j int) bool { return uploaded[i] < uploaded[j] })
+		notUploaded := make([]int64, 0, len(chunkers)-len(uploadedDigests))
+		for _, d := range chunkers {
+			if _, ok := uploadedSet[d.Digest()]; !ok {
+				notUploaded = append(notUploaded, d.Digest().Size)
+			}
+		}
+		sort.Slice(notUploaded, func(i, j int) bool { return notUploaded[i] < notUploaded[j] })
+
+		cold, err := isol.Pack(uploaded)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to pack uploaded items").Err()
+		}
+		hot, err := isol.Pack(notUploaded)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to pack not uploaded items").Err()
+		}
+
+		statsJSON, err := json.Marshal(struct {
+			ItemsCold []byte `json:"items_cold"`
+			ItemsHot  []byte `json:"items_hot"`
+		}{
+			ItemsCold: cold,
+			ItemsHot:  hot,
+		})
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to marshal stats json").Err()
+		}
+		if err := ioutil.WriteFile(dsj, statsJSON, 0600); err != nil {
+			return nil, errors.Annotate(err, "failed to write stats json").Err()
 		}
 	}
 
