@@ -85,7 +85,7 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 }
 
 // doDownload downloads directory tree from the CAS server.
-func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
+func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
 
@@ -267,7 +267,7 @@ func (r *downloadRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 	defer r.profiler.Stop()
 
-	if err := r.doDownload(ctx, args); err != nil {
+	if err := r.doDownload(ctx); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
