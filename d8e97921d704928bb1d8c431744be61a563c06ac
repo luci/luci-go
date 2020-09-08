@@ -157,6 +157,30 @@
       "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5018d056_cf935dc2",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-08T20:33:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae70e18b_99fb3c15",
+      "range": {
+        "startLine": 56,
+        "startChar": 58,
+        "endLine": 56,
+        "endChar": 59
+      },
+      "revId": "d8e97921d704928bb1d8c431744be61a563c06ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
