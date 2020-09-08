@@ -16,6 +16,24 @@
       "revId": "fd52ad647c616f9722679153276b19ed2e237d96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6d4349e_c29bee3a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T07:30:13Z",
+      "side": 1,
+      "message": "Done, but i don\u0027t think it actuallly simplifies in this case.",
+      "parentUuid": "9809d437_0399f7ee",
+      "revId": "fd52ad647c616f9722679153276b19ed2e237d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
