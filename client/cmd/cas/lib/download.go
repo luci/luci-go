@@ -30,7 +30,6 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
@@ -94,7 +93,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := cas.NewClient(ctx, r.casFlags.Instance, r.casFlags.TokenServerHost, true)
+	c, err := newCasClient(ctx, r.casFlags.Instance, r.casFlags.TokenServerHost, true)
 	if err != nil {
 		return err
 	}
@@ -187,7 +186,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dirs), len(to), time.Since(start))
 
 	start = time.Now()
-	if err := c.DownloadFiles(ctx, ".", to); err != nil {
+	if err := c.DownloadFiles(ctx, "", to); err != nil {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
