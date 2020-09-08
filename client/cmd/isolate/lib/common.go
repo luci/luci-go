@@ -25,6 +25,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -219,26 +220,26 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 	return nil
 }
 
-func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
-	cl, err := cas.NewClient(ctx, fl.Instance, fl.TokenServerHost, false)
+func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	cl, err := newCasClient(ctx, fl.Instance, fl.TokenServerHost, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer cl.Close()
 
-	uploader := cas.NewUploader(cl)
-	digests, err := uploader.Upload(ctx, opts...)
+	up := cas.NewUploader(cl)
+	digests, err := up.Upload(ctx, opts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if dumpJSON == "" {
-		return nil
+		return digests, nil
 	}
 
 	f, err := os.Create(dumpJSON)
 	if err != nil {
-		return err
+		return digests, err
 	}
 	defer f.Close()
 
@@ -246,5 +247,8 @@ func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*i
 	for i, o := range opts {
 		m[filesystem.GetFilenameNoExt(o.Isolate)] = digests[i].String()
 	}
-	return json.NewEncoder(f).Encode(m)
+	return digests, json.NewEncoder(f).Encode(m)
 }
+
+// This is overwritten in test.
+var newCasClient = cas.NewClient
