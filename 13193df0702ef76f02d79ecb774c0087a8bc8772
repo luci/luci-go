@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "41200968_7050b1a9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T09:11:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42af2ee9_a210c9ee",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 14
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b4dcd57_11db65c0",
         "filename": "client/cmd/isolate/lib/common_test.go",
         "patchSetId": 6
@@ -141,6 +165,30 @@
       "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c1289e_56ac8fcf",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T09:11:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f159fc90_317065ef",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
