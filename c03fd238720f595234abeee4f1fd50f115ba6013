@@ -124,6 +124,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcb5fe1b_55faa112",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:46:09Z",
+      "side": 1,
+      "message": "Then I\u0027ll just remove the uploader struct after https://crrev.com/c/2397027?",
+      "parentUuid": "684f0560_6c72f8bf",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
