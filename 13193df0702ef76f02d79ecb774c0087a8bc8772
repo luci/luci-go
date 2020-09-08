@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0946b5cc_98bcfdc9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:24:46Z",
+      "side": 1,
+      "message": "why do we need to have similar tests?",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 14
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b4dcd57_11db65c0",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:24:46Z",
+      "side": 1,
+      "message": "you don\u0027t need this anymore?",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dff79bce_a8ffa65c",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:24:46Z",
+      "side": 1,
+      "message": "do not run test in parallel if you change global variable newCasClient.",
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab128886_9f098f90",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:24:46Z",
+      "side": 1,
+      "message": "can you move this to out of this scope?",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 3
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
