@@ -32,7 +32,6 @@ import (
 type Uploader struct {
 	cas     *client.Client
 	fmCache filemetadata.Cache
-	deduper *ChunkerDeduper
 }
 
 // UploaderOption is the type to configure an Uploader object.
@@ -49,8 +48,7 @@ func WithCache(c filemetadata.Cache) UploaderOption {
 // NewUploader creates a new Uploader object.
 func NewUploader(cas *client.Client, opts ...UploaderOption) *Uploader {
 	up := &Uploader{
-		cas:     cas,
-		deduper: NewChunkerDeduper(),
+		cas: cas,
 	}
 	for _, o := range opts {
 		o(up)
@@ -99,7 +97,7 @@ func (up *Uploader) Upload(ctx context.Context, opts ...*isolate.ArchiveOptions)
 			return nil, errors.Annotate(err, "failed to call ComputeMerkleTree() exeRoot=%s inputSpec=%+v", execRoot, inputSpec).Err()
 		}
 		rootDgs = append(rootDgs, rootDg)
-		chunkers = append(chunkers, up.deduper.Deduplicate(chks)...)
+		chunkers = append(chunkers, chks...)
 	}
 	// TODO: handle the stats
 	if _, err := up.cas.UploadIfMissing(ctx, chunkers...); err != nil {
