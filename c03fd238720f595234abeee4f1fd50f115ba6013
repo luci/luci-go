@@ -70,6 +70,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d3b651c_3119a071",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T06:41:50Z",
+      "side": 1,
+      "message": "filemetadata.Cache doesn\u0027t work with server?",
+      "parentUuid": "934671a9_b0688df5",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
