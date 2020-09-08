@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5422311d_37a21f2b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-08T22:02:10Z",
+      "side": 1,
+      "message": "This CL broke `make release` on bots: https://ci.chromium.org/p/infra-internal/builders/prod/infra-gae-tarballs-continuous/4232",
+      "revId": "7ee174c12d681665000286a44fc5559d56ebb17f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
