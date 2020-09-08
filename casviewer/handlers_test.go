@@ -31,31 +31,36 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 const testInstance = "projects/test-proj/instances/default_instance"
+
+var perm = realms.RegisterPermission("luci.serviceAccounts.mintToken")
 
 func TestHandlers(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	perm := realms.RegisterPermission("luci.serviceAccounts.mintToken")
+
+	// Basic template rendering tests.
+	Convey("Templates", t, func() {
+		c := &router.Context{
+			Context: auth.WithState(ctx, fakeAuthState()),
+		}
+		templateBundleMW := templates.WithTemplates(getTemplateBundle("templates"))
+		templateBundleMW(c, func(c *router.Context) {
+			home, err := templates.Render(c.Context, "pages/home.html", nil)
+			So(err, ShouldBeNil)
+			So(string(home), ShouldContainSubstring, "user@example.com")
+		})
+	})
 
 	Convey("InstallHandlers", t, func() {
 		// Install handlers with fake auth state.
 		r := router.New()
-
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-			fakeAuthState := &authtest.FakeState{
-				Identity: "user:user@example.com",
-				IdentityPermissions: []authtest.RealmPermission{
-					{
-						Realm:      "@internal:test-proj/cas-read-only",
-						Permission: perm,
-					},
-				},
-			}
-			c.Context = auth.WithState(c.Context, fakeAuthState)
+			c.Context = auth.WithState(c.Context, fakeAuthState())
 			next(c)
 		}))
 
@@ -102,10 +107,8 @@ func TestHandlers(t *testing.T) {
 			defer resp.Body.Close()
 
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			// Body should contain user email address.
-			body, err := ioutil.ReadAll(resp.Body)
+			_, err = ioutil.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
-			So(string(body), ShouldContainSubstring, "user@example.com")
 		})
 
 		Convey("treeHandler", func() {
@@ -162,4 +165,17 @@ func TestHandlers(t *testing.T) {
 			So(resp.StatusCode, ShouldEqual, http.StatusForbidden)
 		})
 	})
+}
+
+// fakeAuthState returns fake state that has identity and realm permission.
+func fakeAuthState() *authtest.FakeState {
+	return &authtest.FakeState{
+		Identity: "user:user@example.com",
+		IdentityPermissions: []authtest.RealmPermission{
+			{
+				Realm:      "@internal:test-proj/cas-read-only",
+				Permission: perm,
+			},
+		},
+	}
 }
