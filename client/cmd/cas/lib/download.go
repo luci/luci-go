@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
@@ -54,6 +55,7 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
+			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump download stats to json file.")
 			return &c
 		},
 	}
@@ -61,8 +63,9 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 
 type downloadRun struct {
 	commonFlags
-	digest string
-	dir    string
+	digest        string
+	dir           string
+	dumpStatsJSON string
 
 	cacheDir      string
 	cachePolicies cache.Policies
@@ -252,6 +255,24 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	err = eg.Wait()
 
 	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
+
+	if dsj := r.dumpStatsJSON; dsj != "" {
+		cold := make([]int64, 0, len(to))
+		for d := range to {
+			cold = append(cold, d.Size)
+		}
+		hot := make([]int64, 0, len(outputs)-len(to))
+		for _, output := range outputs {
+			d := output.Digest
+			if _, ok := to[d]; !ok {
+				hot = append(hot, d.Size)
+			}
+		}
+
+		if err := isol.WriteStats(dsj, hot, cold); err != nil {
+			return errors.Annotate(err, "failed to write stats json").Err()
+		}
+	}
 
 	return err
 }
