@@ -49,8 +49,7 @@ func TestArchiveDownload(t *testing.T) {
 		var ar archiveRun
 		ar.dumpDigest = filepath.Join(t.TempDir(), "digest")
 		So(ar.paths.Set(uploaded+":."), ShouldBeNil)
-		_, err := ar.doArchive(ctx)
-		So(err, ShouldBeNil)
+		So(ar.doArchive(ctx), ShouldBeNil)
 
 		digest, err := ioutil.ReadFile(ar.dumpDigest)
 		So(err, ShouldBeNil)

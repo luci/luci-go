@@ -104,13 +104,13 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 }
 
 // Does the archive by uploading to isolate-server.
-func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
+func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
 
 	root, err := getRoot(c.paths)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	is := command.InputSpec{}
@@ -120,23 +120,23 @@ func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
 
 	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
 	client, err := newCasClient(ctx, c.casFlags.Instance, c.casFlags.TokenServerHost, false)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create cas client").Err()
+		return errors.Annotate(err, "failed to create cas client").Err()
 	}
 	defer client.Close()
 
 	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call UploadIfMissing").Err()
+		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
-			return nil, errors.Annotate(err, "failed to dump digest").Err()
+			return errors.Annotate(err, "failed to dump digest").Err()
 		}
 	}
 
@@ -156,11 +156,11 @@ func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
 		}
 
 		if err := isol.WriteStats(dsj, notUploaded, uploaded); err != nil {
-			return nil, errors.Annotate(err, "failed to write stats json").Err()
+			return errors.Annotate(err, "failed to write stats json").Err()
 		}
 	}
 
-	return uploadedDigests, nil
+	return nil
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -173,7 +173,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 	defer c.profiler.Stop()
 
-	if _, err := c.doArchive(ctx); err != nil {
+	if err := c.doArchive(ctx); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
