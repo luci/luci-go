@@ -106,6 +106,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "684f0560_6c72f8bf",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:37:53Z",
+      "side": 1,
+      "message": "\u003e It\u0027s a fake environment, including both a server and a client? See https://github.com/bazelbuild/remote-apis-sdks/blob/e0c399322a6478ac3387452d68c1bd010fdf5031/go/pkg/fakes/server.go#L110.\n\u003e \n\nfilemetadata.Cache doesn\u0027t work with client too.\n\n\u003e BTW, I\u0027m doing a series of refactoring to make Uploader usable in both `isolate` and `cas` (right now it is tied with isolate). Maybe we can discuss the necessity of this cache after the refactoring finishes?\n\nI\u0027m not sure what is the end state, but it is not so worth to deduplicate just these lines?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cmd/cas/lib/archive.go;l\u003d116-135;drc\u003d560c97ffc990461519d3aa7571d46fbd241ddb73",
+      "parentUuid": "4b3d3642_c8830186",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
