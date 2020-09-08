@@ -25,6 +25,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -219,26 +224,59 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 	return nil
 }
 
-func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
-	cl, err := cas.NewClient(ctx, fl.Instance, fl.TokenServerHost, false)
+func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec, error) {
+	inputPaths, execRoot, err := isolate.ProcessIsolateForCAS(opts)
 	if err != nil {
-		return err
+		return "", nil, err
+	}
+
+	inputSpec := &command.InputSpec{
+		Inputs: inputPaths,
+	}
+	if opts.IgnoredPathFilterRe != "" {
+		inputSpec.InputExclusions = []*command.InputExclusion{
+			{
+				Regex: opts.IgnoredPathFilterRe,
+				Type:  command.UnspecifiedInputType,
+			},
+		}
+	}
+
+	return execRoot, inputSpec, nil
+}
+
+func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	cl, err := newCasClient(ctx, fl.Instance, fl.TokenServerHost, false)
+	if err != nil {
+		return nil, err
 	}
 	defer cl.Close()
 
-	uploader := cas.NewUploader(cl)
-	digests, err := uploader.Upload(ctx, opts...)
+	fmCache := filemetadata.NewSingleFlightCache()
+	var digests []digest.Digest
+	var chunkers []*chunker.Chunker
+	for _, o := range opts {
+		execRoot, is, err := buildCASInputSpec(o)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to buildCASInputSpec").Err()
+		}
+		rootDg, chks, _, err := tree.ComputeMerkleTree(execRoot, is, chunker.DefaultChunkSize, fmCache)
+		digests = append(digests, rootDg)
+		chunkers = append(chunkers, chks...)
+	}
+	// TODO: Handle uploaded digests
+	_, err = cl.UploadIfMissing(ctx, chunkers...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if dumpJSON == "" {
-		return nil
+		return digests, nil
 	}
 
 	f, err := os.Create(dumpJSON)
 	if err != nil {
-		return err
+		return digests, err
 	}
 	defer f.Close()
 
@@ -246,5 +284,8 @@ func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*i
 	for i, o := range opts {
 		m[filesystem.GetFilenameNoExt(o.Isolate)] = digests[i].String()
 	}
-	return json.NewEncoder(f).Encode(m)
+	return digests, json.NewEncoder(f).Encode(m)
 }
+
+// This is overwritten in test.
+var newCasClient = cas.NewClient

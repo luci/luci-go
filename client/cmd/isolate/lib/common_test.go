@@ -15,9 +15,22 @@
 package lib
 
 import (
+	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/client/isolate"
 )
 
 func TestElideNestedPaths(t *testing.T) {
@@ -85,4 +98,174 @@ func TestElideNestedPaths(t *testing.T) {
 		// Make sure "a/b" elides neither "a/bc" nor "a/bcd"
 		So(doElision(deps), ShouldResemble, []string{"a/b", "a/bc", "a/bcd", "a/c"})
 	})
+}
+
+func TestUploadToCAS(t *testing.T) {
+	Convey(`Top-level Setup`, t, func() {
+		// We need a top-level Convey so that the fake env is reset for each test cases.
+		// See https://github.com/smartystreets/goconvey/wiki/Execution-order
+		tmpDir := t.TempDir()
+		fooContent := []byte("foo")
+		barContent := []byte("bar")
+		bazContent := []byte("baz")
+		fooDg := digest.NewFromBlob(fooContent)
+		barDg := digest.NewFromBlob(barContent)
+		bazDg := digest.NewFromBlob(bazContent)
+		fakeFlags := cas.Flags{
+			Instance: "foo",
+		}
+		e, cleanup := fakes.NewTestEnv(t)
+		defer cleanup()
+		newCasClient = func(ctx context.Context, instance string, tokenServerHost string, readOnly bool) (*client.Client, error) {
+			return e.Server.NewTestClient(ctx)
+		}
+		cas := e.Server.CAS
+
+		Convey(`Basic`, func() {
+			isol1Content := `{
+			  'variables': {
+			    'files': [
+			      'foo',
+			      'bar',
+			    ],
+			  },
+			}`
+			isol2Content := `{
+			  'variables': {
+			    'files': [
+			      'foo2',
+			      'baz',
+			    ],
+			  },
+			}`
+
+			writeFile(tmpDir, "foo", fooContent)
+			writeFile(tmpDir, "foo2", fooContent)
+			writeFile(tmpDir, "bar", barContent)
+			writeFile(tmpDir, "baz", bazContent)
+			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
+			isol2Path := writeFile(tmpDir, "isol2.isolate", []byte(isol2Content))
+
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+				Isolate: isol1Path,
+			}, &isolate.ArchiveOptions{
+				Isolate: isol2Path,
+			})
+			So(err, ShouldBeNil)
+			So(dgs, ShouldHaveLength, 2)
+
+			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
+				{Name: "bar", Digest: barDg.ToProto()},
+				{Name: "foo", Digest: fooDg.ToProto()},
+			}}
+			isol2Dir := &repb.Directory{Files: []*repb.FileNode{
+				{Name: "baz", Digest: bazDg.ToProto()},
+				{Name: "foo2", Digest: fooDg.ToProto()},
+			}}
+			blob, ok := cas.Get(dgs[0])
+			So(ok, ShouldBeTrue)
+			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+			blob, ok = cas.Get(dgs[1])
+			So(ok, ShouldBeTrue)
+			So(blob, ShouldResemble, mustMarshal(isol2Dir))
+
+			So(cas.BlobWrites(fooDg), ShouldEqual, 1)
+			So(cas.BlobWrites(barDg), ShouldEqual, 1)
+			So(cas.BlobWrites(bazDg), ShouldEqual, 1)
+		})
+
+		Convey(`No upload if already on the server`, func() {
+			isol1Content := `{
+			  'variables': {
+			    'files': [
+			      'foo',
+			      'bar',
+			      'baz',
+			    ],
+			  },
+			}`
+
+			writeFile(tmpDir, "foo", fooContent)
+			writeFile(tmpDir, "bar", barContent)
+			writeFile(tmpDir, "baz", bazContent)
+			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
+
+			// Upload `foo` and `bar` to the server
+			cas.Put(fooContent)
+			cas.Put(barContent)
+
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+				Isolate: isol1Path,
+			})
+			So(err, ShouldBeNil)
+			So(dgs, ShouldHaveLength, 1)
+
+			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
+				{Name: "bar", Digest: barDg.ToProto()},
+				{Name: "baz", Digest: bazDg.ToProto()},
+				{Name: "foo", Digest: fooDg.ToProto()},
+			}}
+			blob, ok := cas.Get(dgs[0])
+			So(ok, ShouldBeTrue)
+			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+
+			So(cas.BlobWrites(fooDg), ShouldEqual, 0)
+			So(cas.BlobWrites(barDg), ShouldEqual, 0)
+			So(cas.BlobWrites(bazDg), ShouldEqual, 1)
+		})
+
+		Convey(`Filter files`, func() {
+			isol1Content := `{
+			  'variables': {
+			    'files': [
+			      'filtered/foo',
+			      'filtered/foo2',
+			      'bar',
+			    ],
+			  },
+			}`
+
+			filteredDir := filepath.Join(tmpDir, "filtered")
+			So(os.Mkdir(filteredDir, 0700), ShouldBeNil)
+			writeFile(filteredDir, "foo", fooContent)
+			writeFile(filteredDir, "foo2", fooContent)
+			writeFile(tmpDir, "bar", barContent)
+			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
+
+			filteredRe := filepath.Join("filtered", "foo")
+			if runtime.GOOS == "windows" {
+				// Need to escape `\` on Windows
+				filteredRe = `filtered\\foo`
+			}
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+				Isolate:             isol1Path,
+				IgnoredPathFilterRe: filteredRe,
+			})
+			So(err, ShouldBeNil)
+			So(dgs, ShouldHaveLength, 1)
+
+			// `foo*` files are filtered away
+			isol1Dir := &repb.Directory{Files: []*repb.FileNode{
+				{Name: "bar", Digest: barDg.ToProto()},
+			}}
+			blob, ok := cas.Get(dgs[0])
+			So(ok, ShouldBeTrue)
+			So(blob, ShouldResemble, mustMarshal(isol1Dir))
+
+			So(cas.BlobWrites(fooDg), ShouldEqual, 0)
+			So(cas.BlobWrites(barDg), ShouldEqual, 1)
+		})
+	})
+}
+
+func mustMarshal(p proto.Message) []byte {
+	b, err := proto.Marshal(p)
+	So(err, ShouldBeNil)
+	return b
+}
+
+func writeFile(dir, name string, content []byte) string {
+	p := filepath.Join(dir, name)
+	So(ioutil.WriteFile(p, content, 0600), ShouldBeNil)
+	return p
 }
