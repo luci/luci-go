@@ -114,7 +114,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 			"art1": artf,
 		},
 		TestLocation: &pb.TestLocation{
-			FileName: "//a_test.cc",
+			FileName: "//artifact_dir/a_test.cc",
 		},
 	}, cleanup
 }

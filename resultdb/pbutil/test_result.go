@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -143,13 +144,34 @@ func ValidateTestLocation(loc *pb.TestLocation) error {
 	switch {
 	case loc.FileName == "":
 		return errors.Reason("file_name: unspecified").Err()
-	case len(loc.FileName) > 512:
-		return errors.Reason("file_name: length exceeds 512").Err()
 	case loc.Line < 0:
 		return errors.Reason("line: must not be negative").Err()
 	}
 
+	if err := validateFileName(loc.FileName); err != nil {
+		return errors.Annotate(err, "file_name").Err()
+	}
 	return nil
+}
+
+// ValidateFilePath returns a non-nil error if path is invalid.
+func ValidateFilePath(path string) error {
+	switch {
+	case !strings.HasPrefix(path, "//"):
+		return errors.Reason("doesn't start with //").Err()
+	case strings.Contains(path, "\\"):
+		return errors.Reason("has \\").Err()
+	case len(path) > 512:
+		return errors.Reason("length exceeds 512").Err()
+	}
+	return nil
+}
+
+func validateFileName(name string) error {
+	if strings.HasSuffix(name, "/") {
+		return errors.Reason("ends with /").Err()
+	}
+	return ValidateFilePath(name)
 }
 
 // ParseTestResultName extracts the invocation ID, unescaped test id, and

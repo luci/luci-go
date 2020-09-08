@@ -66,16 +66,17 @@ func TestReportTestResults(t *testing.T) {
 		defer cleanup()
 
 		expected := &pb.TestResult{
-			TestId:       tr.TestId,
-			ResultId:     tr.ResultId,
-			Expected:     tr.Expected,
-			SummaryHtml:  tr.SummaryHtml,
-			StartTime:    tr.StartTime,
-			Duration:     tr.Duration,
-			Tags:         tr.Tags,
-			TestLocation: tr.TestLocation,
+			TestId:      tr.TestId,
+			ResultId:    tr.ResultId,
+			Expected:    tr.Expected,
+			SummaryHtml: tr.SummaryHtml,
+			StartTime:   tr.StartTime,
+			Duration:    tr.Duration,
+			Tags:        tr.Tags,
+			TestLocation: &pb.TestLocation{
+				FileName: tr.TestLocation.FileName,
+			},
 		}
-
 		Convey("works", func() {
 			Convey("with ServerConfig.TestIDPrefix", func() {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
@@ -96,6 +97,13 @@ func TestReportTestResults(t *testing.T) {
 		Convey("generates a random ResultID, if omitted", func() {
 			tr.ResultId = ""
 			expected.ResultId = "foo-00101"
+			check(ctx, cfg, tr, expected)
+		})
+
+		Convey("with ServerConfig.TestLocationBase", func() {
+			cfg.TestLocationBase = "//base/"
+			tr.TestLocation.FileName = "artifact_dir/a_test.cc"
+			expected.TestLocation.FileName = "//base/artifact_dir/a_test.cc"
 			check(ctx, cfg, tr, expected)
 		})
 

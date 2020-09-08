@@ -246,8 +246,20 @@ func TestValidateTestResult(t *testing.T) {
 					So(validate(msg), ShouldErrLike, "test_location: file_name: unspecified")
 				})
 				Convey("too long", func() {
-					msg.TestLocation.FileName = strings.Repeat("super long", 100)
+					msg.TestLocation.FileName = "//" + strings.Repeat("super long", 100)
 					So(validate(msg), ShouldErrLike, "test_location: file_name: length exceeds 512")
+				})
+				Convey("no double slashes", func() {
+					msg.TestLocation.FileName = "file_name"
+					So(validate(msg), ShouldErrLike, "test_location: file_name: doesn't start with //")
+				})
+				Convey("back slash", func() {
+					msg.TestLocation.FileName = "//dir\\file"
+					So(validate(msg), ShouldErrLike, "test_location: file_name: has \\")
+				})
+				Convey("trailing slash", func() {
+					msg.TestLocation.FileName = "//file_name/"
+					So(validate(msg), ShouldErrLike, "test_location: file_name: ends with /")
 				})
 			})
 			Convey("line", func() {
