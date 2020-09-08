@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9809d437_0399f7ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T06:57:53Z",
+      "side": 1,
+      "message": "I think you rather want to change cas.NewClient like\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2397018/5/client/cmd/cas/lib/common.go\n?",
+      "revId": "fd52ad647c616f9722679153276b19ed2e237d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
