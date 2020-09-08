@@ -142,6 +142,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73680133_01049fc0",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:47:28Z",
+      "side": 1,
+      "message": "why not move instead of fork then?",
+      "parentUuid": "dcb5fe1b_55faa112",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
