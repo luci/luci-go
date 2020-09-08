@@ -52,6 +52,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "934671a9_b0688df5",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T06:39:24Z",
+      "side": 1,
+      "message": "I\u0027m using whatever is returned by fakes.NewTestEnv(): https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cas/uploader_test.go;l\u003d70;drc\u003d1886ac9f1ea371000c9c513b552dc3f0768cc077",
+      "parentUuid": "713edd89_3649170d",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
