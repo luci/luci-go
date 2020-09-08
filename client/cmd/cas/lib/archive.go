@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -55,6 +56,7 @@ working directory, '-paths :foo' is sufficient.`,
 			c.Init()
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest in the format of `<Hash>/<Size>`")
+			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump upload stats to json file.")
 			return &c
 		},
 	}
@@ -62,8 +64,9 @@ working directory, '-paths :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	paths      isolated.ScatterGather
-	dumpDigest string
+	paths         isolated.ScatterGather
+	dumpDigest    string
+	dumpStatsJSON string
 }
 
 func (c *archiveRun) parse(a subcommands.Application, args []string) error {
@@ -137,6 +140,26 @@ func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
 		}
 	}
 
+	if dsj := c.dumpStatsJSON; dsj != "" {
+		uploaded := make([]int64, 0, len(uploadedDigests))
+		uploadedSet := make(map[digest.Digest]struct{})
+		for _, d := range uploadedDigests {
+			uploaded = append(uploaded, d.Size)
+			uploadedSet[d] = struct{}{}
+		}
+
+		notUploaded := make([]int64, 0, len(chunkers)-len(uploadedDigests))
+		for _, d := range chunkers {
+			if _, ok := uploadedSet[d.Digest()]; !ok {
+				notUploaded = append(notUploaded, d.Digest().Size)
+			}
+		}
+
+		if err := isol.WriteStats(dsj, notUploaded, uploaded); err != nil {
+			return nil, errors.Annotate(err, "failed to write stats json").Err()
+		}
+	}
+
 	return uploadedDigests, nil
 }
 
@@ -150,7 +173,6 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 	defer c.profiler.Stop()
 
-	// TODO: handle the stats
 	if _, err := c.doArchive(ctx); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
