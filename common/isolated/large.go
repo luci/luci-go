@@ -17,7 +17,9 @@ package isolated
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/json"
 	"io/ioutil"
+	"sort"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -97,4 +99,40 @@ func Unpack(data []byte) ([]int64, error) {
 	}
 
 	return ret, nil
+}
+
+// WriteStats writes cache stats in packed format.
+func WriteStats(path string, hot, cold []int64) error {
+	// Copy before sort.
+	cold = append([]int64{}, cold...)
+	hot = append([]int64{}, hot...)
+
+	sort.Slice(cold, func(i, j int) bool { return cold[i] < cold[j] })
+	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
+
+	packedCold, err := Pack(cold)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack uploaded items").Err()
+	}
+
+	packedHot, err := Pack(hot)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack not uploaded items").Err()
+	}
+
+	statsJSON, err := json.Marshal(struct {
+		ItemsCold []byte `json:"items_cold"`
+		ItemsHot  []byte `json:"items_hot"`
+	}{
+		ItemsCold: packedCold,
+		ItemsHot:  packedHot,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal stats json").Err()
+	}
+	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
+		return errors.Annotate(err, "failed to write stats json").Err()
+	}
+
+	return nil
 }
