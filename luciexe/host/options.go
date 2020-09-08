@@ -179,7 +179,14 @@ func (o *Options) initialize() (err error) {
 	}
 
 	if runtime.GOOS != "windows" {
-		o.streamServerPath = filepath.Join(o.streamServerPath, "sock")
+		tFile, err := ioutil.TempFile(o.streamServerPath, "sock.")
+		if err != nil {
+			return errors.Annotate(err, "creating tempfile").Err()
+		}
+		o.streamServerPath = tFile.Name()
+		if err := tFile.Close(); err != nil {
+			return errors.Annotate(err, "closing tempfile %q", o.streamServerPath).Err()
+		}
 	}
 
 	if o.LogdogOutput == nil {
