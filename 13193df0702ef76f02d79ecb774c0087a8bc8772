@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "81e72460_94e75e0d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T08:46:38Z",
+      "side": 1,
+      "message": "I still not sure how the end state will be like, could you show that?",
+      "parentUuid": "1c85d1db_34995932",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 14
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6b4dcd57_11db65c0",
         "filename": "client/cmd/isolate/lib/common_test.go",
         "patchSetId": 6
