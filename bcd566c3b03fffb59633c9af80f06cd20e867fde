@@ -16,6 +16,40 @@
       "revId": "bcd566c3b03fffb59633c9af80f06cd20e867fde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c7232cd_859a069d",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-08T04:11:53Z",
+      "side": 1,
+      "message": "Isn\u0027t this build status, not step status? Are we reusing Build status for step status? I think we should separate the 2.",
+      "revId": "bcd566c3b03fffb59633c9af80f06cd20e867fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b86759c8_8adc1c9b",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-08T04:11:53Z",
+      "side": 1,
+      "message": "Does a step always have end time? (Is there any cases that we have ongoing steps?)",
+      "revId": "bcd566c3b03fffb59633c9af80f06cd20e867fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
