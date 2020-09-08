@@ -17,9 +17,9 @@ package isolated
 import (
 	"bytes"
 	"compress/zlib"
-	"errors"
-	"fmt"
 	"io/ioutil"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // Pack returns a deflate'd buffer of delta encoded varints.
@@ -28,10 +28,10 @@ func Pack(values []int64) ([]byte, error) {
 		return nil, nil
 	}
 	if values[0] < 0 {
-		return nil, errors.New("values must be between 0 and 2**63")
+		return nil, errors.Reason("values must be between 0 and 2**63").Err()
 	}
 	if values[len(values)-1] < 0 {
-		return nil, errors.New("values must be between 0 and 2**63")
+		return nil, errors.Reason("values must be between 0 and 2**63").Err()
 	}
 
 	var b bytes.Buffer
@@ -41,22 +41,22 @@ func Pack(values []int64) ([]byte, error) {
 		v := value
 		value -= last
 		if value < 0 {
-			return nil, errors.New("list must be sorted ascending")
+			return nil, errors.Reason("list must be sorted ascending").Err()
 		}
 		last = v
 		for value > 127 {
 			if _, err := w.Write([]byte{byte(1<<7 | value&0x7f)}); err != nil {
-				return nil, fmt.Errorf("failed to write: %v", err)
+				return nil, errors.Annotate(err, "failed to write").Err()
 			}
 			value >>= 7
 		}
 		if _, err := w.Write([]byte{byte(value)}); err != nil {
-			return nil, fmt.Errorf("failed to write: %v", err)
+			return nil, errors.Annotate(err, "failed to write").Err()
 		}
 
 	}
 	if err := w.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close zlib writer: %v", err)
+		return nil, errors.Annotate(err, "failed to close zlib writer").Err()
 	}
 
 	return b.Bytes(), nil
@@ -75,13 +75,13 @@ func Unpack(data []byte) ([]int64, error) {
 
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get zlib reader: %v", err)
+		return nil, errors.Annotate(err, "failed to get zlib reader").Err()
 	}
 	defer r.Close()
 
 	data, err = ioutil.ReadAll(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read all: %v", err)
+		return nil, errors.Annotate(err, "failed to read all").Err()
 	}
 
 	for _, valByte := range data {
