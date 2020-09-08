@@ -16,12 +16,10 @@ package lib
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"sort"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -181,34 +179,11 @@ func dumpStatsJSON(jsonPath string, stats *archiver.Stats) error {
 	for i, h := range stats.Hits {
 		hits[i] = int64(h)
 	}
-	sort.Slice(hits, func(i, j int) bool { return hits[i] < hits[j] })
-	itemsHot, err := isol.Pack(hits)
-	if err != nil {
-		return errors.Annotate(err, "failed to pack itemsHot").Err()
-	}
 
 	pushed := make([]int64, len(stats.Pushed))
 	for i, p := range stats.Pushed {
 		pushed[i] = int64(p.Size)
 	}
-	sort.Slice(pushed, func(i, j int) bool { return pushed[i] < pushed[j] })
-	itemsCold, err := isol.Pack(pushed)
-	if err != nil {
-		return errors.Annotate(err, "failed to pack itemsCold").Err()
-	}
 
-	statsJSON, err := json.Marshal(struct {
-		ItemsCold []byte `json:"items_cold"`
-		ItemsHot  []byte `json:"items_hot"`
-	}{
-		ItemsCold: itemsCold,
-		ItemsHot:  itemsHot,
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal result json").Err()
-	}
-	if err := ioutil.WriteFile(jsonPath, statsJSON, 0664); err != nil {
-		return errors.Annotate(err, "failed to write stats json to %s", jsonPath).Err()
-	}
-	return nil
+	return isol.WriteStats(jsonPath, hits, pushed)
 }
