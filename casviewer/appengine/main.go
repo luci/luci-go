@@ -26,6 +26,9 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// Path to the templates dir.
+const templatePath = "templates"
+
 func main() {
 	ctx := context.Background()
 	cc := casviewer.NewClientCache(ctx)
@@ -39,7 +42,7 @@ func main() {
 		srv.Routes.Use(router.NewMiddlewareChain(
 			authMW,
 		))
-		casviewer.InstallHandlers(srv.Routes, cc)
+		casviewer.InstallHandlers(srv.Routes, cc, templatePath)
 		return nil
 	})
 }

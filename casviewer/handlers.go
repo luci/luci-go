@@ -24,19 +24,20 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router, cc *ClientCache) {
-	baseMW := router.NewMiddlewareChain()
-
+func InstallHandlers(r *router.Router, cc *ClientCache, templatePath string) {
 	perm := realms.RegisterPermission("luci.serviceAccounts.mintToken")
 
+	baseMW := router.NewMiddlewareChain(
+		templates.WithTemplates(getTemplateBundle(templatePath)),
+	)
 	blobMW := baseMW.Extend(
 		checkPermissionMW(perm),
 		withClientCacheMW(cc),
@@ -45,6 +46,20 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
+}
+
+// getTemplateBundles returns template Bundle with base args.
+func getTemplateBundle(templatePath string) *templates.Bundle {
+	return &templates.Bundle{
+		Loader:          templates.FileSystemLoader(templatePath),
+		DefaultTemplate: "base",
+		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
+			return templates.Args{
+				// "AppVersion": strings.Split(info.VersionID(c), ".")[0],
+				"User": auth.CurrentUser(c),
+			}, nil
+		},
+	}
 }
 
 // checkPermissionMW returna a middleware that checks if the user has permission to read the blob.
@@ -63,12 +78,9 @@ func checkPermissionMW(perm realms.Permission) router.Middleware {
 	}
 }
 
+// rootHanlder renders Home page.
 func rootHanlder(c *router.Context) {
-	// TODO(crbug.com/1121471): Add top page.
-	logging.Debugf(c.Context, "Hello world")
-	hello := fmt.Sprintf(
-		"Hello, world. This is CAS Viewer. Identity: %v", auth.CurrentIdentity(c.Context))
-	c.Writer.Write([]byte(hello))
+	templates.MustRender(c.Context, c.Writer, "pages/home.html", nil)
 }
 
 func treeHandler(c *router.Context) {
