@@ -31,29 +31,9 @@ Replace `<OAuth2 Client ID>` with the OAuth 2.0 client ID you get from the [luci
 }
 ```
 
-### 3. Create ${PROJECT_ROOT}/dev-configs/dev-server.crt & dev-server.key
-This certificate is used for a local HTTPS proxy.
-Here's an example of creating a certificate using openssl.
-1. Create a RSA-2048 key:   
-`openssl genrsa -des3 -out dev-root-ca.key 2048`
-2. Create a Root SSL certificate:   
-`openssl req -x509 -new -nodes -key dev-root-ca.key -sha256 -days 1024 -out dev-root-ca.pem`
-3. Trust the root SSL certificate.
-4. Create a server certificate key:   
-`openssl req -new -sha256 -nodes -out dev-server.csr -newkey rsa:2048 -keyout dev-server.key`
-5. Create a v3.ext file.   
-```
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = localhost
-```
-6. Create a server certificate:   
-`openssl x509 -req -in dev-server.csr -CA dev-root-ca.pem -CAkey dev-root-ca.key -CAcreateserial -out dev-server.crt -days 500 -sha256 -extfile v3.ext`
-7. Move `dev-server.key` and `dev-server.crt` to `${PROJECT_ROOT}/dev-configs/`
+### 3. Create & trust a Self-signed certificate.
+1. Run `make gen_cert`.
+2. Trust `dev-configs/cert.pem`.
 
 ### 4. Start the local instance.
 Run the following command to start a local instance.
