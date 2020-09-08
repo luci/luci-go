@@ -15,12 +15,17 @@
 package casviewer
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/julienschmidt/httprouter"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
@@ -36,7 +41,7 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 
 	r.GET("/", baseMW, rootHanlder)
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/tree", blobMW, treeHandler)
-	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size/", blobMW, getHandler)
+	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
 }
 
 // checkPermission checks if the user has permission to read the blob.
@@ -44,7 +49,7 @@ func checkPermission(c *router.Context, next router.Handler) {
 	ctx := c.Context
 	authDB, err := auth.GetDB(ctx)
 	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
 	ok, err := authDB.HasPermission(
@@ -53,11 +58,12 @@ func checkPermission(c *router.Context, next router.Handler) {
 		realms.RegisterPermission("luci.serviceAccounts.mintToken"),
 		readOnlyRealm(c.Params))
 	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
 	if !ok {
-		http.Error(c.Writer, "Not allowed", http.StatusForbidden)
+		err = errors.New("permission denied", grpcutil.PermissionDeniedTag)
+		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
 	next(c)
@@ -72,39 +78,67 @@ func rootHanlder(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
+		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
-
-	// TODO(crbug.com/1121471): retrieve blob and render html.
+	bd, err := blobDigest(c.Params)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	err = renderTree(c.Context, c.Writer, cl, bd)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+	}
 }
 
 func getHandler(c *router.Context) {
-	_, err := GetClient(c.Context, fullInstanceName(c.Params))
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
 	if err != nil {
-		errMsg := "failed to initialize CAS client"
-		logging.Errorf(c.Context, "%s: %s", errMsg, err)
-		http.Error(c.Writer, errMsg, http.StatusInternalServerError)
+		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
-
-	// TODO(crbug.com/1121471): retrieve blob.
+	bd, err := blobDigest(c.Params)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	err = returnBlob(c.Context, c.Writer, cl, bd)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+	}
 }
 
 func readOnlyRealm(p httprouter.Params) string {
 	return fmt.Sprintf("@internal:%s/cas-read-only", p.ByName("project"))
 }
 
-func fullInstanceName(p httprouter.Params) string {
+// fullInstName constructs full instance name from the URL parameters.
+func fullInstName(p httprouter.Params) string {
 	return fmt.Sprintf(
 		"projects/%s/instances/%s", p.ByName("project"), p.ByName("instance"))
 }
 
-func fullResourceName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"%s/blobs/%s/%s", fullInstanceName(p), p.ByName("hash"), p.ByName("size"))
+// blobDigest constructs a Digest from the URL parameters.
+func blobDigest(p httprouter.Params) (*digest.Digest, error) {
+	size, err := strconv.ParseInt(p.ByName("size"), 10, 64)
+	if err != nil {
+		err = errors.Annotate(err, "Digest size must be number").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, err
+	}
+
+	return &digest.Digest{
+		Hash: p.ByName("hash"),
+		Size: size,
+	}, nil
+}
+
+// renderErrorPage renders an appropriate error page.
+func renderErrorPage(ctx context.Context, w http.ResponseWriter, err error) {
+	errors.Log(ctx, err)
+	// TODO(crbug.com/1121471): render error page.
+	statusCode := grpcutil.CodeStatus(grpcutil.Code(err))
+	http.Error(w, fmt.Sprintf("Error: %s", err.Error()), statusCode)
 }
