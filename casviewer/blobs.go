@@ -18,16 +18,75 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/router"
 )
+
+// treeHandler handles GET blob tree request.
+func treeHandler(c *router.Context) {
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	bd, err := blobDigest(c.Params)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	err = renderTree(c.Context, c.Writer, cl, bd)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+	}
+}
+
+// treeHandler handles GET blob request.
+func getHandler(c *router.Context) {
+	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	bd, err := blobDigest(c.Params)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+		return
+	}
+	err = returnBlob(c.Context, c.Writer, cl, bd)
+	if err != nil {
+		renderErrorPage(c.Context, c.Writer, err)
+	}
+}
+
+// fullInstName constructs full instance name from the URL parameters.
+func fullInstName(p httprouter.Params) string {
+	return fmt.Sprintf(
+		"projects/%s/instances/%s", p.ByName("project"), p.ByName("instance"))
+}
+
+// blobDigest constructs a Digest from the URL parameters.
+func blobDigest(p httprouter.Params) (*digest.Digest, error) {
+	size, err := strconv.ParseInt(p.ByName("size"), 10, 64)
+	if err != nil {
+		err = errors.Annotate(err, "Digest size must be number").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, err
+	}
+
+	return &digest.Digest{
+		Hash: p.ByName("hash"),
+		Size: size,
+	}, nil
+}
 
 // renderTree renders a Directory.
 func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, bd *digest.Digest) error {
