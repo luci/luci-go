@@ -34,6 +34,24 @@
       "revId": "fd52ad647c616f9722679153276b19ed2e237d96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebce5082_569ebd7d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T07:31:33Z",
+      "side": 1,
+      "message": "(because i had to overwrite `newCasClient` in every Convey test case)",
+      "parentUuid": "d6d4349e_c29bee3a",
+      "revId": "fd52ad647c616f9722679153276b19ed2e237d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
