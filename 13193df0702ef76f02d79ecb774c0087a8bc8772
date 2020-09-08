@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "42af2ee9_a210c9ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:54:26Z",
+      "side": 1,
+      "message": "Done in the same CL now. I\u0027m basically moving the cas.Uploader into isolate.",
+      "parentUuid": "81e72460_94e75e0d",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 14
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6b4dcd57_11db65c0",
         "filename": "client/cmd/isolate/lib/common_test.go",
         "patchSetId": 6
