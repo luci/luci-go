@@ -34,6 +34,23 @@
       "revId": "5a264b5ec0e7f1588ab5c36d27d53fd7afa706a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caf0a2c8_48789b0a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-08T23:22:27Z",
+      "side": 1,
+      "message": "lgtm, agree about doing any sort of realms entanglement as a separate project. Current project should be about turning down python to make other projects easier :)",
+      "revId": "5a264b5ec0e7f1588ab5c36d27d53fd7afa706a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
