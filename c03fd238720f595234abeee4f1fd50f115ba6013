@@ -88,6 +88,24 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b3d3642_c8830186",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T06:44:38Z",
+      "side": 1,
+      "message": "It\u0027s a fake environment, including both a server and a client? See https://github.com/bazelbuild/remote-apis-sdks/blob/e0c399322a6478ac3387452d68c1bd010fdf5031/go/pkg/fakes/server.go#L110.\n\nBTW, I\u0027m doing a series of refactoring to make Uploader usable in both `isolate` and `cas` (right now it is tied with isolate). Maybe we can discuss the necessity of this cache after the refactoring finishes?",
+      "parentUuid": "6d3b651c_3119a071",
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
