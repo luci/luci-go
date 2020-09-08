@@ -15,16 +15,22 @@
 package rpc
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -316,6 +322,28 @@ func TestValidateStep(t *testing.T) {
 					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
 				})
 			})
+		})
+	})
+}
+
+func TestUpdateBuild(t *testing.T) {
+	t.Parallel()
+
+	Convey("UpdateBuild", t, func() {
+		srv := &Builds{}
+		s := &authtest.FakeState{
+			Identity: "user:user",
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockMembership("user:user", perm.UpdateBuildAllowedUsers),
+			),
+		}
+		ctx := auth.WithState(memory.Use(context.Background()), s)
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+
+		Convey("permission deined, if sender is not in updater group", func() {
+			s.Identity = "anonymous:anonymous"
+			_, err := srv.UpdateBuild(ctx, req)
+			So(err, ShouldHaveRPCCode, codes.PermissionDenied)
 		})
 	})
 }

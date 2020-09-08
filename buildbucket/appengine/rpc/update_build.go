@@ -25,7 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -218,6 +220,13 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
+	switch can, err := perm.CanUpdateBuild(ctx); {
+	case err != nil:
+		return nil, appstatus.Errorf(codes.Internal, "failed to check membership of the updater group: %s", err)
+	case !can:
+		return nil, appstatus.Errorf(codes.PermissionDenied, "%q not permitted to update build", auth.CurrentIdentity(ctx))
+	}
+
 	var bs model.BuildSteps
 	if err := validateUpdate(req, &bs); err != nil {
 		return nil, appstatus.BadRequest(err)

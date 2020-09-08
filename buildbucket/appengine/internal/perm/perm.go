@@ -39,6 +39,10 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+// UpdateBuildAllowedUsers is a group of users allowed to update builds.
+// They are expected to be robots.
+const UpdateBuildAllowedUsers = "buildbucket-update-build-users"
+
 var (
 	// BuildsGet allows to see all information about a build.
 	BuildsGet = realms.RegisterPermission("buildbucket.builds.get")
@@ -201,4 +205,9 @@ func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (bu
 	})
 	sort.Strings(buckets)
 	return
+}
+
+// CanUpdateBuild returns whether the caller has a permission to update builds.
+func CanUpdateBuild(ctx context.Context) (bool, error) {
+	return auth.IsMember(ctx, UpdateBuildAllowedUsers)
 }
