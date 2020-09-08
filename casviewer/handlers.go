@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/common/errors"
@@ -77,62 +75,9 @@ func rootHanlder(c *router.Context) {
 	c.Writer.Write([]byte(hello))
 }
 
-func treeHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	bd, err := blobDigest(c.Params)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	err = renderTree(c.Context, c.Writer, cl, bd)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-	}
-}
-
-func getHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	bd, err := blobDigest(c.Params)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	err = returnBlob(c.Context, c.Writer, cl, bd)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-	}
-}
-
+// readOnlyRealm constructs a read-only realm name corresponding to the project in the URL params.
 func readOnlyRealm(p httprouter.Params) string {
 	return fmt.Sprintf("@internal:%s/cas-read-only", p.ByName("project"))
-}
-
-// fullInstName constructs full instance name from the URL parameters.
-func fullInstName(p httprouter.Params) string {
-	return fmt.Sprintf(
-		"projects/%s/instances/%s", p.ByName("project"), p.ByName("instance"))
-}
-
-// blobDigest constructs a Digest from the URL parameters.
-func blobDigest(p httprouter.Params) (*digest.Digest, error) {
-	size, err := strconv.ParseInt(p.ByName("size"), 10, 64)
-	if err != nil {
-		err = errors.Annotate(err, "Digest size must be number").Tag(grpcutil.InvalidArgumentTag).Err()
-		return nil, err
-	}
-
-	return &digest.Digest{
-		Hash: p.ByName("hash"),
-		Size: size,
-	}, nil
 }
 
 // renderErrorPage renders an appropriate error page.
