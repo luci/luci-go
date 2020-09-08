@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "936852d4_63565bfa",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T09:06:45Z",
+      "side": 1,
+      "message": "I prefer to move this to outer.",
+      "revId": "b32d99b8afd9422ff7e69707d55d1d5fb91268cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "171d79fa_3b67223a",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-08T09:06:45Z",
+      "side": 1,
+      "message": "I prefer to move this to outer.",
+      "revId": "b32d99b8afd9422ff7e69707d55d1d5fb91268cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
