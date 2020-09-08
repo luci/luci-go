@@ -288,24 +288,6 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 	return opts, nil
 }
 
-// writeFile writes data to filePath. File permission is set to user only.
-func writeFile(filePath string, data []byte) error {
-	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return errors.Annotate(err, "opening %s", filePath).Err()
-	}
-	// NOTE: We don't defer f.Close here, because it may return an error.
-
-	_, writeErr := f.Write(data)
-	closeErr := f.Close()
-	if writeErr != nil {
-		return errors.Annotate(writeErr, "writing %s", filePath).Err()
-	} else if closeErr != nil {
-		return errors.Annotate(closeErr, "closing %s", filePath).Err()
-	}
-	return nil
-}
-
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
