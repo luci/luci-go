@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1c85d1db_34995932",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:44:14Z",
+      "side": 1,
+      "message": "I will rewrite those tests in cas.Uploader, so that they do not depend on isolate knowledge in anyway.",
+      "parentUuid": "0946b5cc_98bcfdc9",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 14
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6b4dcd57_11db65c0",
         "filename": "client/cmd/isolate/lib/common_test.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2020-09-08T08:24:46Z",
       "side": 1,
       "message": "you don\u0027t need this anymore?",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f159fc90_317065ef",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:44:14Z",
+      "side": 1,
+      "message": "I do. This is to comply with the existing function uploadToCAS()\u0027s signature.",
+      "parentUuid": "6b4dcd57_11db65c0",
       "range": {
         "startLine": 110,
         "startChar": 0,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "34fca95d_a4276a54",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:44:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dff79bce_a8ffa65c",
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab128886_9f098f90",
         "filename": "client/cmd/isolate/lib/common_test.go",
         "patchSetId": 6
@@ -85,6 +151,30 @@
       "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbbe5b69_08e8b90b",
+        "filename": "client/cmd/isolate/lib/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-08T08:44:14Z",
+      "side": 1,
+      "message": "Done. (Note that in order for this to work, the setup code needs to be put inside a Convey. https://github.com/smartystreets/goconvey/wiki/Execution-order)",
+      "parentUuid": "ab128886_9f098f90",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 3
+      },
+      "revId": "13193df0702ef76f02d79ecb774c0087a8bc8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
