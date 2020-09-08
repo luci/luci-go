@@ -16,11 +16,15 @@ package casviewer
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth"
@@ -30,12 +34,17 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+const testInstance = "projects/test-proj/instances/default_instance"
+
 func TestHandlers(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	Convey("InstallHandlers", t, func() {
-		// Install handlers with fake auth settings.
+		// Install handlers with fake auth settings and CAS server/client.
 		r := router.New()
+
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 			fakeAuthState := &authtest.FakeState{
 				Identity: "user:user@example.com",
@@ -55,13 +64,43 @@ func TestHandlers(t *testing.T) {
 			})
 			next(c)
 		}))
-		cc := NewClientCache(context.Background())
+
+		// Inject fake CAS client to cache.
+		cl := fakeClient(ctx, t)
+		cc := NewClientCache(ctx)
 		t.Cleanup(cc.Clear)
+		cc.clients[testInstance] = cl
 
 		InstallHandlers(r, cc)
 
 		srv := httptest.NewServer(r)
 		t.Cleanup(srv.Close)
+
+		// Simple blob.
+		bd, err := cl.WriteBlob(ctx, []byte{1})
+		So(err, ShouldBeNil)
+		rSimple := fmt.Sprintf("/%s/blobs/%s/%d", testInstance, bd.Hash, bd.Size)
+
+		// Directory.
+		d := &repb.Directory{
+			Files: []*repb.FileNode{
+				{
+					Name:   "foo",
+					Digest: digest.NewFromBlob([]byte{1}).ToProto(),
+				},
+			},
+		}
+		b, err := proto.Marshal(d)
+		So(err, ShouldBeNil)
+		bd, err = cl.WriteBlob(context.Background(), b)
+		So(err, ShouldBeNil)
+		rDict := fmt.Sprintf("/%s/blobs/%s/%d", testInstance, bd.Hash, bd.Size)
+
+		// Unknown blob.
+		rUnknown := fmt.Sprintf("/%s/blobs/12345/6", testInstance)
+
+		// Invalid digest size.
+		rInvalidDigest := fmt.Sprintf("/%s/blobs/12345/a", testInstance)
 
 		Convey("rootHanlder", func() {
 			resp, err := http.Get(srv.URL)
@@ -76,18 +115,48 @@ func TestHandlers(t *testing.T) {
 		})
 
 		Convey("treeHandler", func() {
-			resp, err := http.Get(
-				srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6/tree")
+			// Not found.
+			resp, err := http.Get(srv.URL + rUnknown + "/tree")
 			So(err, ShouldBeNil)
-			defer resp.Body.Close()
+			resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+
+			// Bad Request - Must be Directory.
+			resp, err = http.Get(srv.URL + rSimple + "/tree")
+			So(err, ShouldBeNil)
+			resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+
+			// Bad Request - Digest size must be number.
+			resp, err = http.Get(srv.URL + rInvalidDigest + "/tree")
+			So(err, ShouldBeNil)
+			resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+
+			// OK.
+			resp, err = http.Get(srv.URL + rDict + "/tree")
+			So(err, ShouldBeNil)
+			resp.Body.Close()
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
 
 		Convey("getHandler", func() {
-			resp, err := http.Get(
-				srv.URL + "/projects/test-proj/instances/default_instance/blobs/12345/6")
+			// Not found.
+			resp, err := http.Get(srv.URL + rUnknown)
 			So(err, ShouldBeNil)
-			defer resp.Body.Close()
+			resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusNotFound)
+
+			// Bad Request - Digest size must be number.
+			resp, err = http.Get(srv.URL + rInvalidDigest)
+			So(err, ShouldBeNil)
+			resp.Body.Close()
+			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+
+			// OK.
+			resp, err = http.Get(srv.URL + rDict)
+			So(err, ShouldBeNil)
+			resp.Body.Close()
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
 
