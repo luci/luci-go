@@ -67,7 +67,7 @@ type archiveRun struct {
 	dumpDigest string
 }
 
-func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
+func (c *archiveRun) parse(a subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 }
 
 // Does the archive by uploading to isolate-server.
-func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Digest, error) {
+func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
 
@@ -144,7 +144,7 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Dig
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, c, env)
 
-	if err := c.Parse(a, args); err != nil {
+	if err := c.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
@@ -152,7 +152,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	defer c.profiler.Stop()
 
 	// TODO: handle the stats
-	if _, err := c.doArchive(ctx, args); err != nil {
+	if _, err := c.doArchive(ctx); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
