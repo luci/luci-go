@@ -71,3 +71,6 @@ func (c *commonFlags) Parse() error {
 func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
+
+// This is overwritten in test.
+var newCasClient = cas.NewClient

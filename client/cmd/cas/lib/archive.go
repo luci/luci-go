@@ -26,7 +26,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -121,7 +120,7 @@ func (c *archiveRun) doArchive(ctx context.Context) ([]digest.Digest, error) {
 		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
-	client, err := cas.NewClient(ctx, c.casFlags.Instance, c.casFlags.TokenServerHost, false)
+	client, err := newCasClient(ctx, c.casFlags.Instance, c.casFlags.TokenServerHost, false)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create cas client").Err()
 	}
