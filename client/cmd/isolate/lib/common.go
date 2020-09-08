@@ -25,6 +25,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -219,6 +221,10 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 	return nil
 }
 
+func uploadToCASCore(ctx context.Context, cl *client.Client, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	return cas.NewUploader(cl).Upload(ctx, opts...)
+}
+
 func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
 	cl, err := cas.NewClient(ctx, fl.Instance, fl.TokenServerHost, false)
 	if err != nil {
@@ -226,8 +232,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*i
 	}
 	defer cl.Close()
 
-	uploader := cas.NewUploader(cl)
-	digests, err := uploader.Upload(ctx, opts...)
+	digests, err := uploadToCASCore(ctx, cl, opts...)
 	if err != nil {
 		return err
 	}
