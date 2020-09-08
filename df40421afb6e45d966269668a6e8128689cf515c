@@ -56,6 +56,30 @@
       "revId": "df40421afb6e45d966269668a6e8128689cf515c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07a81ca7_c0eeff69",
+        "filename": "gae/service/datastore/internal/queryiterator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-08T19:27:35Z",
+      "side": 1,
+      "message": "Done in next CL.",
+      "parentUuid": "29ad5176_711f3c85",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 9
+      },
+      "revId": "df40421afb6e45d966269668a6e8128689cf515c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
