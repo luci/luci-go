@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "32e30f9d_04bf3f80",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-08T23:23:27Z",
+      "side": 0,
+      "message": "this was there intentionally\nit separates \"buildbucket.builds.*\" from \"buildbucket.builders.*\".",
+      "revId": "2211657eba30bc478dca4ed1d5bc77afcb5ad5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
