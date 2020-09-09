@@ -62,6 +62,12 @@ const (
 	// MachineDatabaseDevHost is the URL of the Machine Database dev instance.
 	MachineDatabaseDevHost = "machine-db-dev.appspot.com"
 
+	// UFSProdHost is the URL of the ufs service.
+	UFSProdHost = "ufs.api.cr.dev"
+
+	// UFSStagingHost is the URL of the staging ufs service.
+	UFSStagingHost = "staging.ufs.api.cr.dev"
+
 	// ConfigServiceHost is the default host of LUCI config service.
 	ConfigServiceHost = "luci-config.appspot.com"
 
