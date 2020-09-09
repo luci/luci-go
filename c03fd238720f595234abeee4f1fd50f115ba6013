@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0c02abb_cb012af9",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T07:56:04Z",
+      "side": 0,
+      "message": "Ah, this does the magic.",
+      "range": {
+        "startLine": 58,
+        "startChar": 103,
+        "endLine": 58,
+        "endChar": 104
+      },
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
