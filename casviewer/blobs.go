@@ -27,10 +27,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/templates"
 )
 
 // renderTree renders a Directory.
-func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, bd *digest.Digest) error {
+func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, bd *digest.Digest, instance string) error {
 	b, err := readBlob(ctx, cl, bd)
 	if err != nil {
 		return err
@@ -42,23 +43,13 @@ func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 		return errors.Annotate(err, "blob must be directory").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	// TODO(crbug.com/1121471): render html.
-
-	dirs := d.GetDirectories()
-	_, err = w.Write([]byte(fmt.Sprintf("dirs: %v\n", dirs)))
-	if err != nil {
-		return err
-	}
-	files := d.GetFiles()
-	_, err = w.Write([]byte(fmt.Sprintf("files: %v\n", files)))
-	if err != nil {
-		return err
-	}
-	links := d.GetSymlinks()
-	_, err = w.Write([]byte(fmt.Sprintf("symlinks: %v\n", links)))
-	if err != nil {
-		return err
-	}
+	templates.MustRender(ctx, w, "pages/tree.html", templates.Args{
+		"Instance":    instance,
+		"Directories": d.GetDirectories(),
+		"Files":       d.GetFiles(),
+		// There are no symlinks uploaded by `cas` client because `remote-apis-sdks` treats symlinks as normal files.
+		// "Links":       d.GetSymlinks(),
+	})
 
 	return nil
 }
@@ -89,4 +80,14 @@ func readBlob(ctx context.Context, cl *client.Client, bd *digest.Digest) ([]byte
 		return nil, errors.Annotate(err, "failed to read blob").Tag(t).Err()
 	}
 	return b, nil
+}
+
+// treeURL renders a URL to the tree page.
+func treeURL(instance string, d *repb.DirectoryNode) string {
+	return fmt.Sprintf("/%s/blobs/%s/%d/tree", instance, d.Digest.Hash, d.Digest.SizeBytes)
+}
+
+// getURL renders a URL to the tree page.
+func getURL(instance string, f *repb.FileNode) string {
+	return fmt.Sprintf("/%s/blobs/%s/%d", instance, f.Digest.Hash, f.Digest.SizeBytes)
 }
