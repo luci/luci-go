@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f835251_ffc911e6",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "I\u0027m wondering if it\u0027s better to return a list of structs containing invID and historyTime instead of pb.Invocation.",
+      "range": {
+        "startLine": 31,
+        "startChar": 84,
+        "endLine": 31,
+        "endChar": 94
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acee1950_5ab11be7",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "If the earliest is earlier than 2 years, should we cap it?\n\nSame for the latest, if it\u0027s a time in future, should we reset it to the present?",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 58
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10012e50_1e136d83",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Should in.PageSize be passed in the function and used here?",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 17
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e94d9671_1b032e86",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Should this be permListTestResults or permGetTestResult?",
+      "range": {
+        "startLine": 98,
+        "startChar": 48,
+        "endLine": 98,
+        "endChar": 65
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6db16f6f_07a7e22b",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "So this CL will require TimeRange, and in a later CL when we support CpRange this check will be updated, right?",
+      "range": {
+        "startLine": 113,
+        "startChar": 7,
+        "endLine": 113,
+        "endChar": 19
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "213047d3_558acd25",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Nit: remove",
+      "range": {
+        "startLine": 122,
+        "startChar": 71,
+        "endLine": 122,
+        "endChar": 81
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ee14636_79ec9f43",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Such results may contain more information (https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/testresults/query.go;l\u003d45) we need in test history, should we also pass in a mask to control what information we want?",
+      "range": {
+        "startLine": 157,
+        "startChar": 28,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5232ab9_b169438a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Pardon my English... But which invocation does this \"itself\" stand for?",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 9
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d6839c9_bd6510ec",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Based on the usage, I think it\u0027s better to use invID instead of inv names.",
+      "range": {
+        "startLine": 175,
+        "startChar": 1,
+        "endLine": 175,
+        "endChar": 5
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "057c30e5_f7fdcdc0",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "reachables?",
+      "range": {
+        "startLine": 200,
+        "startChar": 51,
+        "endLine": 200,
+        "endChar": 56
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e20b2a7_c9181691",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-09T19:48:21Z",
+      "side": 1,
+      "message": "Why convert invIDs to Names?",
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
