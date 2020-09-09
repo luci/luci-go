@@ -60,14 +60,14 @@ export interface Property {
 }
 
 export interface StepExt extends Step {
-  children: StepExt[];
+  children?: StepExt[];
   collapsed: boolean;
-  interval: Interval;
+  interval?: Interval;
 }
 
 export interface Interval {
-  start: string;
-  end: string;
+  start?: string;
+  end?: string;
   now: string;
 }
 
