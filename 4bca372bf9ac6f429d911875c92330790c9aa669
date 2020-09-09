@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d79f6d2_47f3d58a",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T07:15:45Z",
+      "side": 1,
+      "message": "❯ go run go.chromium.org/luci/client/cmd/cas archive -help\n...\n  -dump-digest \u003cHash\u003e/\u003cSize\u003e\n    \tDump uploaded CAS root digest in the format of \u003cHash\u003e/\u003cSize\u003e\n...\n\nThis help is confusing. looks we need to specify \"\u003cHash\u003e/\u003cSize\u003e\". Where is the type(?) specified?",
+      "revId": "4bca372bf9ac6f429d911875c92330790c9aa669",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
