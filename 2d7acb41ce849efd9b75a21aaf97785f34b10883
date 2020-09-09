@@ -52,6 +52,24 @@
       "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf5aedbb_3bd6a513",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T04:23:45Z",
+      "side": 1,
+      "message": "I confirmed that os.Setenv() doesn\u0027t affect other test functions, the functions take *testing.T. \nEven in the same test file handlers_test.py, \"func TestFoo(t *testing.T) {...}\" doesn\u0027t have GAE_VERSION and GAE_DEPLOYMENT_ID.",
+      "parentUuid": "2ad8b9bd_55ba9632",
+      "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
