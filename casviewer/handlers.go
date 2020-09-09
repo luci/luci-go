@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/julienschmidt/httprouter"
 
@@ -68,15 +69,9 @@ func rootHanlder(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	cl, bd, err := handleBlobParams(c.Context, c.Params)
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	bd, err := blobDigest(c.Params)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
 	}
 	err = renderTree(c.Context, c.Writer, cl, bd)
 	if err != nil {
@@ -85,20 +80,26 @@ func treeHandler(c *router.Context) {
 }
 
 func getHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	cl, bd, err := handleBlobParams(c.Context, c.Params)
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	bd, err := blobDigest(c.Params)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
 	}
 	err = returnBlob(c.Context, c.Writer, cl, bd)
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
 	}
+}
+
+func handleBlobParams(ctx context.Context, p httprouter.Params) (*client.Client, *digest.Digest, error) {
+	cl, err := GetClient(ctx, fullInstName(p))
+	if err != nil {
+		return nil, nil, err
+	}
+	bd, err := blobDigest(p)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cl, bd, nil
 }
 
 func readOnlyRealm(p httprouter.Params) string {
