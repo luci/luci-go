@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86698f71_0d82f92c",
+        "filename": "casviewer/templates/pages/error.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-09T06:03:04Z",
+      "side": 1,
+      "message": "copyright?",
+      "revId": "4a8f4b2486f9b75385cab49351865f57832e0e62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
