@@ -65,11 +65,11 @@ export class BuildStepEntryElement extends MobxLitElement {
   }
 
   @computed private get header() {
-    return this.step.summary_markdown?.split(/\<br\/?\>/)[0] || '';
+    return this.step.summary_markdown?.split(/\<br\/?\>/i)[0] || '';
   }
 
   @computed private get summary() {
-    return this.step.summary_markdown?.split(/\<br\/?\>/).slice(1).join('<br>') || '';
+    return this.step.summary_markdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
   }
 
   protected render() {
