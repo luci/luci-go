@@ -14,34 +14,98 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { styleMap } from 'lit-html/directives/style-map';
+import { computed, observable } from 'mobx';
 
 import '../../components/build_step_entry';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { BuildStatus } from '../../services/buildbucket';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
+
+  // TODO(crbug/1123362): save the setting.
+  @observable.ref showPassed = true;
 
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
   }
 
+  @computed private get loaded() {
+    return this.buildState.buildPageData !== null;
+  }
+
+  @computed private get noDisplayedStep() {
+    if (this.showPassed) {
+      return !this.buildState.buildPageData?.steps.length;
+    }
+    return !this.buildState.buildPageData?.steps.find((s) => s.status !== BuildStatus.Success);
+  }
+
   protected render() {
-    // TODO(crbug/1123362): add filters and expand/collapse all buttons.
+    // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
-      ${this.buildState.buildPageData?.steps.map((step, i) => html`
-      <milo-build-step-entry .expanded=${true} .number=${i + 1} .step=${step}></milo-build-step-entry>
-      `) || html`<span id="load">Loading <milo-dot-spinner></milo-dot-spinner></span>`}
+      <div id="header">
+        Show:
+        <div class="filter">
+          <input
+            id="passed"
+            type="checkbox"
+            ?checked=${this.showPassed}
+            @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
+          >
+          <label for="passed" style="color: #33ac71;">Passed Steps</label>
+        </div class="filter">
+        <div class="filter">
+          <input id="others" type="checkbox" disabled checked>
+          <label for="others">Other Steps</label>
+        </div class="filter">
+      </div>
+      <div id="main">
+        ${this.buildState.buildPageData?.steps.map((step, i) => html`
+        <milo-build-step-entry
+          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showPassed ? '' : 'none'})}
+          class="list-entry"
+          .expanded=${true}
+          .number=${i + 1}
+          .step=${step}
+        ></milo-build-step-entry>
+        `) || ''}
+        <div
+          class="list-entry"
+          style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
+        >
+          No ${this.showPassed ? '' : 'failed'} steps.
+        </div>
+        <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
+          Loading <milo-dot-spinner></milo-dot-spinner>
+        </div>
+      </div>
     `;
   }
 
   static styles = css`
-    :host {
+    #header {
+      padding: 0 10px;
+      margin: 5px;
+    }
+
+    .filter {
+      display: inline-block;
+      padding: 0 5px;
+    }
+
+    #main {
       padding-left: 10px;
+      border-top: 1px solid #DDDDDD;
+    }
+
+    .list-entry {
+      margin-top: 5px;
     }
 
     #load {
