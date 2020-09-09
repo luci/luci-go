@@ -69,6 +69,24 @@
       "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e583ea2_577ee781",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-09T16:13:25Z",
+      "side": 1,
+      "message": "renamed to\n\"Passed Steps\" and \"Other Steps\"",
+      "parentUuid": "aa691caf_a86180ba",
+      "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
