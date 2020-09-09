@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "70342f3c_10b7ebeb",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T00:58:23Z",
+      "side": 1,
+      "message": "Removed the line break.\n\nI think I did it manually when the permission was `realms.RegisterPermission(\"luci.serviceAccounts.mintToken\")` since it looked too long.\nWhile later, I found a style guide recommends not to have line brake.",
+      "parentUuid": "c26567f3_6d7046c8",
+      "range": {
+        "startLine": 51,
+        "startChar": 19,
+        "endLine": 52,
+        "endChar": 54
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe9d99db_d5319f22",
         "filename": "casviewer/handlers.go",
         "patchSetId": 9
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "71403704_2d8872de",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe9d99db_d5319f22",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71a7294e_12636259",
         "filename": "casviewer/handlers.go",
         "patchSetId": 9
@@ -68,6 +116,30 @@
       "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bef4884_7ddecf5c",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T00:58:23Z",
+      "side": 1,
+      "message": "fixed in another CL.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2397024/11/casviewer/handlers.go#22",
+      "parentUuid": "71a7294e_12636259",
+      "range": {
+        "startLine": 63,
+        "startChar": 9,
+        "endLine": 63,
+        "endChar": 16
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
