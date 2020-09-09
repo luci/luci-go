@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "45e00923_59fb0255",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T01:26:11Z",
+      "side": 1,
+      "message": "Yes, getHandler/blobHandler are handlers, too.\nI think the naming isn\u0027t good... \n\nThe motivation is to keep only common logics on handlers.go. (or we should call it router.go or something?) \nAnd the blob request handling logics to blobs.go.\n\nDoes this CL make sense with this reason? or better to rename files, too?",
+      "parentUuid": "987173a7_485197d0",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 56
+      },
+      "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28e81ead_6d58d4f9",
         "filename": "casviewer/blobs.go",
         "patchSetId": 2
@@ -69,6 +93,30 @@
       "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c551a122_6fe5c43d",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T01:26:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28e81ead_6d58d4f9",
+      "range": {
+        "startLine": 53,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 14
+      },
+      "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
