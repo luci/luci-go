@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"time"
@@ -105,40 +104,6 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 
 	return c.archiveToIsolate(ctx, start)
-}
-
-// archiveLogger reports stats to stderr.
-type archiveLogger struct {
-	start time.Time
-	quiet bool
-}
-
-// LogSummary logs (to eventlog and stderr) a high-level summary of archive operations(s).
-func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int64, bytesHit, bytesPushed units.Size, digests []string) {
-	end := time.Now()
-
-	if !al.quiet {
-		duration := end.Sub(al.start)
-		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", hits, bytesHit)
-		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesPushed)
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration.Round(time.Millisecond))
-	}
-}
-
-// Print acts like fmt.Printf, but may prepend a prefix to format, depending on the value of al.quiet.
-func (al *archiveLogger) Printf(format string, a ...interface{}) (n int, err error) {
-	return al.Fprintf(os.Stdout, format, a...)
-}
-
-// Print acts like fmt.fprintf, but may prepend a prefix to format, depending on the value of al.quiet.
-func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
-	prefix := "\n"
-	if al.quiet {
-		prefix = ""
-	}
-	args := []interface{}{prefix}
-	args = append(args, a...)
-	return fmt.Printf("%s"+format, args...)
 }
 
 // archiveToIsolate performs the archiveToIsolate operation for an isolate specified by opts.
