@@ -92,6 +92,7 @@ export class StepsTabElement extends MobxLitElement {
     #header {
       padding: 0 10px;
       margin: 5px;
+      height: 30px;
     }
 
     .filter {
