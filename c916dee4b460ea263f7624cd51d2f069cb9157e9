@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "d007d30c_57effe34",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T01:58:23Z",
+      "side": 1,
+      "message": "Ok, will keep the request handling code in handlers.go as it looks more make sense to all.\nThank you for your opinions.",
+      "parentUuid": "07101075_b71c74d7",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 56
+      },
+      "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28e81ead_6d58d4f9",
         "filename": "casviewer/blobs.go",
         "patchSetId": 2
@@ -189,6 +213,30 @@
       "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9974ab4d_47084aaa",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T01:58:23Z",
+      "side": 1,
+      "message": "Oops, done.",
+      "parentUuid": "9b5c86c1_14aa2411",
+      "range": {
+        "startLine": 53,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 14
+      },
+      "revId": "c916dee4b460ea263f7624cd51d2f069cb9157e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
