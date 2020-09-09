@@ -17,7 +17,6 @@ package casviewer
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -141,12 +140,4 @@ func blobDigest(p httprouter.Params) (*digest.Digest, error) {
 		Hash: p.ByName("hash"),
 		Size: size,
 	}, nil
-}
-
-// renderErrorPage renders an appropriate error page.
-func renderErrorPage(ctx context.Context, w http.ResponseWriter, err error) {
-	errors.Log(ctx, err)
-	// TODO(crbug.com/1121471): render error page.
-	statusCode := grpcutil.CodeStatus(grpcutil.Code(err))
-	http.Error(w, fmt.Sprintf("Error: %s", err.Error()), statusCode)
 }
