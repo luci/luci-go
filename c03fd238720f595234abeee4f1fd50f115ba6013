@@ -118,6 +118,30 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e1d6640_e2763a14",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T02:12:41Z",
+      "side": 0,
+      "message": "The reason for putting readBlob() in blobs.go is this discussion.\n\n\u003e Context: https://crrev.com/c/2377021/comment/442935e7_ab369f42/\n\nAnd yes, we could have a new function handleBlobParams() or something which does GetClient() and blobDigest(). \nI just thought it\u0027s too much.",
+      "parentUuid": "e9c190d7_b1e7d963",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
