@@ -20,6 +20,7 @@ import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
 
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
+import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { sanitizeHTML } from '../libs/sanitize_html';
 import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
@@ -29,7 +30,8 @@ import './expandable_entry';
 // /\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b/ links in the description.
 const md = MarkdownIt('zero', {breaks: true, linkify: true})
   .enable(['linkify', 'newline'])
-  .use(bugLine);
+  .use(bugLine)
+  .use(crbugLink);
 
 /**
  * Renders an expandable entry of the given commit.
@@ -62,6 +64,9 @@ export class CommitEntryElement extends MobxLitElement {
   }
 
   @computed get description() {
+    return `
+crbug/1, crbug:2, b:3, crbug.com/4, b/5, crbug/proj/6
+`;
     return this.commit.message.slice(this.title.length + 1);
   }
 
