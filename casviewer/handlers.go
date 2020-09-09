@@ -31,9 +31,12 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+var permMintToken = realms.RegisterPermission("luci.serviceAccounts.mintToken")
+
 // InstallHandlers install CAS Viewer handlers to the router.
 func InstallHandlers(r *router.Router, cc *ClientCache) {
 	baseMW := router.NewMiddlewareChain()
+
 	blobMW := baseMW.Extend(
 		checkPermission,
 		withClientCacheMW(cc),
@@ -44,29 +47,18 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 	r.GET("/projects/:project/instances/:instance/blobs/:hash/:size", blobMW, getHandler)
 }
 
-// checkPermission checks if the user has permission to read the blob.
+// checkPermission is a middleware that checks if the user has permission to read the blob.
 func checkPermission(c *router.Context, next router.Handler) {
-	ctx := c.Context
-	authDB, err := auth.GetDB(ctx)
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	ok, err := authDB.HasPermission(
-		ctx,
-		auth.CurrentIdentity(ctx),
-		realms.RegisterPermission("luci.serviceAccounts.mintToken"),
-		readOnlyRealm(c.Params))
-	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
-		return
-	}
-	if !ok {
+	switch ok, err := auth.HasPermission(
+		c.Context, permMintToken, readOnlyRealm(c.Params)); {
+	case !ok:
 		err = errors.New("permission denied", grpcutil.PermissionDeniedTag)
 		renderErrorPage(c.Context, c.Writer, err)
-		return
+	case err != nil:
+		renderErrorPage(c.Context, c.Writer, err)
+	default:
+		next(c)
 	}
-	next(c)
 }
 
 func rootHanlder(c *router.Context) {
