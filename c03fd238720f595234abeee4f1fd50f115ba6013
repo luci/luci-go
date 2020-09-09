@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d98f7788_1021ff66",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-09T01:43:37Z",
+      "side": 0,
+      "message": "I think it is better to extract this to function with readBlob.",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
