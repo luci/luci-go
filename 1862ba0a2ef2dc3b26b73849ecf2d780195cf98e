@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "04abc504_c474f8fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-09T12:20:03Z",
+      "side": 1,
+      "message": "Oops. My bad.\n\nDemo with failed steps: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7121/steps",
+      "parentUuid": "60867c1b_608ca23f",
+      "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa691caf_a86180ba",
         "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
         "patchSetId": 1
