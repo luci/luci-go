@@ -30,12 +30,15 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/templates"
 )
 
 func TestBlobs(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	ctx = templates.Use(ctx, getTemplateBundle(), nil)
+
 	w := httptest.NewRecorder()
 
 	Convey("renderTree", t, func() {
@@ -45,7 +48,7 @@ func TestBlobs(t *testing.T) {
 			// This blob doesn't exist on CAS.
 			bd := digest.NewFromBlob([]byte{1})
 
-			err := renderTree(ctx, w, cl, &bd)
+			err := renderTree(ctx, w, cl, &bd, testInstance)
 
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(w.Body.String(), ShouldEqual, "")
@@ -56,7 +59,7 @@ func TestBlobs(t *testing.T) {
 			bd, err := cl.WriteBlob(context.Background(), []byte{1})
 			So(err, ShouldBeNil)
 
-			err = renderTree(ctx, w, cl, &bd)
+			err = renderTree(ctx, w, cl, &bd, testInstance)
 
 			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(w.Body.String(), ShouldEqual, "")
@@ -65,6 +68,12 @@ func TestBlobs(t *testing.T) {
 		Convey("OK", func() {
 			// Upload a directory node.
 			d := &repb.Directory{
+				Directories: []*repb.DirectoryNode{
+					{
+						Name:   "subDir",
+						Digest: digest.NewFromBlob([]byte{}).ToProto(),
+					},
+				},
 				Files: []*repb.FileNode{
 					{
 						Name:   "foo",
@@ -77,7 +86,7 @@ func TestBlobs(t *testing.T) {
 			bd, err := cl.WriteBlob(context.Background(), b)
 			So(err, ShouldBeNil)
 
-			err = renderTree(ctx, w, cl, &bd)
+			err = renderTree(ctx, w, cl, &bd, testInstance)
 
 			So(err, ShouldBeNil)
 			body, err := ioutil.ReadAll(w.Body)

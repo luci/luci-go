@@ -1,0 +1,29 @@
+<!--
+  Copyright 2020 The LUCI Authors. All rights reserved.
+  Use of this source code is governed under the Apache License, Version 2.0
+  that can be found in the LICENSE file.
+-->
+{{define "body"}}
+<table>
+  <thead>
+    <th>Name</th>
+    <th>Size</th>
+    <th>Hash</th>
+  </thead>
+  {{range .Directories}}
+  <tbody>
+    <td><a href="{{ treeURL $.Instance . }}">{{.Name}}/</a></td>
+    <td>{{.Digest.SizeBytes}}</td>
+    <td>{{.Digest.Hash}}</td>
+  </tbody>
+  {{end}}
+  {{range .Files}}
+  <tbody>
+    <td>{{.Name}}</td>
+    <td>{{.Digest.SizeBytes}}</td>
+    <td>{{.Digest.Hash}}</td>
+  </tbody>
+  {{end}}
+</table>
+
+{{end}} <!-- body -->
