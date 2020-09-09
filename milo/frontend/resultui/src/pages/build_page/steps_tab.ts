@@ -29,6 +29,7 @@ export class StepsTabElement extends MobxLitElement {
 
   // TODO(crbug/1123362): save the setting.
   @observable.ref showPassed = true;
+  @observable.ref showDebugLogs = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -53,16 +54,25 @@ export class StepsTabElement extends MobxLitElement {
         Show:
         <div class="filter">
           <input
-            id="passed"
+            id="passed-filter"
             type="checkbox"
             ?checked=${this.showPassed}
             @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
           >
-          <label for="passed" style="color: #33ac71;">Passed Steps</label>
+          <label for="passed-filter" style="color: #33ac71;">Passed Steps</label>
         </div class="filter">
         <div class="filter">
-          <input id="others" type="checkbox" disabled checked>
-          <label for="others">Other Steps</label>
+          <input id="others-filter" type="checkbox" disabled checked>
+          <label for="others-filter">Other Steps</label>
+        </div class="filter">
+        <div class="filter">
+          <input
+            id="debug-logs-filter"
+            type="checkbox"
+            ?checked=${this.showDebugLogs}
+            @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
+          >
+          <label for="debug-logs-filter">Debug Logs</label>
         </div class="filter">
       </div>
       <div id="main">
@@ -73,6 +83,7 @@ export class StepsTabElement extends MobxLitElement {
           .expanded=${true}
           .number=${i + 1}
           .step=${step}
+          .showDebugLogs=${this.showDebugLogs}
         ></milo-build-step-entry>
         `) || ''}
         <div
