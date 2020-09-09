@@ -15,14 +15,271 @@
 package resultdb
 
 import (
+	"go.chromium.org/luci/common/logging"
+
 	"context"
 
-	"go.chromium.org/luci/common/errors"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const (
+	// DefaultPageSize is used when not specified or set to 0.
+	DefaultPageSize = 100
+)
+
+// verifyGetResultHistoryPermission checks that the caller has permission to
+// get test results from the specified realm.
+func verifyGetResultHistoryPermission(ctx context.Context, realm string) error {
+	if realm == "" {
+		return appstatus.BadRequest(errors.Reason("realm is required").Err())
+	}
+	switch allowed, err := auth.HasPermission(ctx, permGetTestResult, realm); {
+	case err != nil:
+		return err
+	case !allowed:
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm %q`, permGetTestResult, realm)
+	}
+	return nil
+}
+
+// validateGetTestResultHistoryRequest checks that the required fields are set,
+// and that field values are valid.
+func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) error {
+	if in.GetRealm() == "" {
+		return appstatus.BadRequest(errors.Reason("realm is required").Err())
+	}
+	// There is no need to check for both being set because of the oneof field
+	// in the request message.
+	if in.GetTimeRange() == nil {
+		return appstatus.BadRequest(errors.Reason("time_range must be specified").Err())
+	}
+	if in.GetPageSize() < 0 {
+		return appstatus.BadRequest(errors.Reason("page_size, if specified, must be a positive integer").Err())
+	}
+
+	if in.GetVariantPredicate() != nil {
+		// Skip this validation if variant predicate is not specified, as it would fail otherwise.
+		if err := pbutil.ValidateVariantPredicate(in.GetVariantPredicate()); err != nil {
+			return appstatus.BadRequest(errors.Annotate(err, "variant_predicate is invalid").Err())
+		}
+	}
+	return nil
+}
+
 // GetTestResultHistory implements pb.ResultDBServer.
 func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTestResultHistoryRequest) (*pb.GetTestResultHistoryResponse, error) {
-	return nil, errors.Reason("Not yet implemented").Err()
+	if err := verifyGetResultHistoryPermission(ctx, in.GetRealm()); err != nil {
+		return nil, err
+	}
+	if err := validateGetTestResultHistoryRequest(in); err != nil {
+		return nil, err
+	}
+
+	if in.PageSize == 0 {
+		in.PageSize = DefaultPageSize
+	}
+
+	// This channel will be passed along to the generators to surface any
+	// errors they encounter to this goroutine.
+	errC := make(chan error)
+	defer close(errC)
+
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	// Start streaming results.
+	results := resultsForRequest(ctx, in, errC)
+
+	// Accumulate them here.
+	entries := make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize)
+
+	moreResults := true
+	for moreResults {
+		select {
+		case entry, ok := <-results:
+			if !ok {
+				moreResults = false
+				break
+			}
+			entries = append(entries, entry)
+			if len(entries) == int(in.PageSize) {
+				moreResults = false
+				break
+			}
+		case <-ctx.Done():
+			moreResults = false
+			break
+		case err := <-errC:
+			return nil, err
+		}
+	}
+	return &pb.GetTestResultHistoryResponse{
+		Entries: entries,
+	}, nil
+
+}
+
+// resultsForRequest iterates over the invocations that correspond to the
+// request andstreams the results they contain on the returned channel.
+func resultsForRequest(ctx context.Context, in *pb.GetTestResultHistoryRequest, errC chan<- error) <-chan *pb.GetTestResultHistoryResponse_Entry {
+	ret := make(chan *pb.GetTestResultHistoryResponse_Entry)
+	go func() {
+		defer close(ret)
+		rInvs := resultInvocationsForRequest(ctx, in, errC)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case rInv, ok := <-rInvs:
+				if !ok {
+					// no more invocations for this request
+					return
+				}
+				results := relevantResultsForInv(ctx, rInv.Name, in, errC)
+				moreResults := true
+				for moreResults {
+					select {
+					case result, ok := <-results:
+						if !ok {
+							// Use flag to break out of both the select and the for.
+							moreResults = false
+							break
+						}
+						ret <- &pb.GetTestResultHistoryResponse_Entry{
+							Result:              result,
+							InvocationTimestamp: rInv.Timestamp,
+						}
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+
+	}()
+	return ret
+}
+
+// resultsInvocation represents a reference to an invocation containing results
+// paired with the ordinal fields of an indexed invocation, which could be
+// itself or one that transitively includes it.
+type resultsInvocation struct {
+	Name      string
+	Timestamp *timestamp.Timestamp
+}
+
+// resultInvocationsForRequest gets the invocations in the requested range via
+// the history index, and streams their transitive closure over the returned
+// channel.
+func resultInvocationsForRequest(ctx context.Context, in *pb.GetTestResultHistoryRequest, errC chan<- error) <-chan resultsInvocation {
+	ret := make(chan resultsInvocation)
+	go func() {
+		defer close(ret)
+		idxInvs, err := invocations.ByTimestamp(ctx, in.GetTimeRange(), int(in.PageSize), in.Realm)
+		if err != nil {
+			select {
+			case errC <- err:
+			default:
+				logging.Warningf(ctx, "Got %s, but error channel is closed gorouting dying.", err)
+				return
+			}
+		}
+		for _, indexedInv := range idxInvs {
+			invNames := streamReachable(ctx, indexedInv.Name, errC)
+			moreInvocations := true
+			for moreInvocations {
+				select {
+				case invName, ok := <-invNames:
+					if !ok {
+						moreInvocations = false
+						break
+					}
+					ret <- resultsInvocation{
+						Name:      invName,
+						Timestamp: indexedInv.CreateTime,
+					}
+				case <-ctx.Done():
+					return
+				}
+
+			}
+
+		}
+	}()
+	return ret
+}
+
+// streamReachable gets reachable invocations and streams them to the returned channel.
+func streamReachable(ctx context.Context, indexedInvName string, errC chan<- error) <-chan string {
+	ret := make(chan string)
+	go func() {
+		defer close(ret)
+		invIDs, err := invocations.Reachable(ctx, invocations.MustParseNames([]string{indexedInvName}))
+		if err != nil {
+			err = errors.Annotate(err, "failed to read the reach").Err()
+			select {
+			case errC <- err:
+			default:
+				logging.Warningf(ctx, "Got %s, but error channel is closed gorouting dying.", err)
+				return
+			}
+		}
+		for _, invName := range invIDs.Names() {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				ret <- invName
+			}
+		}
+
+	}()
+	return ret
+}
+
+// relevantResultsForInv queries spanner for the results of the given invocation
+// matching the request's predicate, and streams them on the returned channel.
+func relevantResultsForInv(ctx context.Context, invName string, in *pb.GetTestResultHistoryRequest, errC chan<- error) <-chan *pb.TestResult {
+	ret := make(chan *pb.TestResult)
+	go func() {
+		defer close(ret)
+		query := testresults.Query{
+			InvocationIDs: invocations.MustParseNames([]string{invName}),
+			Predicate: &pb.TestResultPredicate{
+				Variant:      in.VariantPredicate,
+				TestIdRegexp: in.TestIdRegexp,
+			},
+		}
+		stopQuery := errors.New("stop querying test results")
+		err := query.Run(ctx, func(r *pb.TestResult) error {
+			select {
+			case <-ctx.Done():
+				return stopQuery
+			default:
+				ret <- r
+			}
+			return nil
+		})
+		if err != nil && err != stopQuery {
+			select {
+			case errC <- err:
+			default:
+				logging.Warningf(ctx, "Got %s, but error channel is closed gorouting dying.", err)
+				return
+			}
+
+		}
+	}()
+	return ret
 }
