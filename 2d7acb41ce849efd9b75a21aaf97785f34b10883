@@ -16,6 +16,24 @@
       "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e21b9f91_6ee00442",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T02:38:28Z",
+      "side": 1,
+      "message": "Do you mean other tests in handlers_test.go?\nThen, yes. appengine.VersionID() needs these environment vars in other tests, too.",
+      "parentUuid": "76482a94_eec27773",
+      "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
