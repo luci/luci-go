@@ -154,12 +154,17 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		return errors.Annotate(err, "failed to process input JSONs").Err()
 	}
 
+	al := &archiveLogger{
+		start: start,
+		quiet: c.defaultFlags.Quiet,
+	}
+
 	if c.casFlags.Instance != "" {
-		_, err := uploadToCAS(ctx, c.dumpJSON, &c.casFlags, opts...)
+		_, err := uploadToCAS(ctx, c.dumpJSON, &c.casFlags, al, opts...)
 		return err
 	}
 
-	return c.batchArchiveToIsolate(ctx, start, opts)
+	return c.batchArchiveToIsolate(ctx, al, opts)
 }
 
 func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) {
@@ -175,17 +180,12 @@ func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) 
 }
 
 // batchArchiveToIsolate archives a series of isolate files to isolate server.
-func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, start time.Time, opts []*isolate.ArchiveOptions) error {
+func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archiveLogger, opts []*isolate.ArchiveOptions) error {
 	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}
 	client := c.createIsolatedClient(authClient)
-
-	al := archiveLogger{
-		start: start,
-		quiet: c.defaultFlags.Quiet,
-	}
 
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
@@ -214,7 +214,7 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, start time.
 		if err != nil && errArchive == nil {
 			errArchive = errors.Annotate(err, "isolate %s: failed to archive", opt.Isolate).Err()
 		} else {
-			printSummary(al, isolSummary)
+			al.printSummary(isolSummary)
 			isolSummaries = append(isolSummaries, isolSummary)
 		}
 	}

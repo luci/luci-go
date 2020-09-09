@@ -98,27 +98,26 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
 
+	al := &archiveLogger{
+		start: start,
+		quiet: c.defaultFlags.Quiet,
+	}
 	if c.casFlags.Instance != "" {
-		_, err := uploadToCAS(ctx, c.dumpJSON, &c.casFlags, &c.ArchiveOptions)
+		_, err := uploadToCAS(ctx, c.dumpJSON, &c.casFlags, al, &c.ArchiveOptions)
 		return err
 	}
 
-	return c.archiveToIsolate(ctx, start)
+	return c.archiveToIsolate(ctx, al)
 }
 
 // archiveToIsolate performs the archiveToIsolate operation for an isolate specified by opts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func (c *archiveRun) archiveToIsolate(ctx context.Context, start time.Time) error {
+func (c *archiveRun) archiveToIsolate(ctx context.Context, al *archiveLogger) error {
 	authCl, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}
 	client := c.createIsolatedClient(authCl)
-
-	al := archiveLogger{
-		start: start,
-		quiet: c.defaultFlags.Quiet,
-	}
 
 	opts := &c.ArchiveOptions
 	// Parse the incoming isolate file.
@@ -152,7 +151,7 @@ func (c *archiveRun) archiveToIsolate(ctx context.Context, start time.Time) erro
 		return err
 	}
 
-	printSummary(al, isolSummary)
+	al.printSummary(isolSummary)
 	if err := dumpSummaryJSON(c.dumpJSON, isolSummary); err != nil {
 		return err
 	}
@@ -171,10 +170,6 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	return 0
-}
-
-func printSummary(al archiveLogger, summary archiver.IsolatedSummary) {
-	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
 func dumpSummaryJSON(filename string, summaries ...archiver.IsolatedSummary) error {
