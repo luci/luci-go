@@ -146,7 +146,7 @@ func TestUploadToCAS(t *testing.T) {
 			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
 			isol2Path := writeFile(tmpDir, "isol2.isolate", []byte(isol2Content))
 
-			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			}, &isolate.ArchiveOptions{
 				Isolate: isol2Path,
@@ -194,7 +194,7 @@ func TestUploadToCAS(t *testing.T) {
 			cas.Put(fooContent)
 			cas.Put(barContent)
 
-			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			})
 			So(err, ShouldBeNil)
@@ -237,7 +237,7 @@ func TestUploadToCAS(t *testing.T) {
 				// Need to escape `\` on Windows
 				filteredRe = `filtered\\foo`
 			}
-			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, &isolate.ArchiveOptions{
+			dgs, err := uploadToCAS(context.Background(), "", &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate:             isol1Path,
 				IgnoredPathFilterRe: filteredRe,
 			})

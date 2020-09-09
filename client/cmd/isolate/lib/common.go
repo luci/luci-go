@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
@@ -261,6 +262,10 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	return fmt.Printf("%s"+format, args...)
 }
 
+func (al *archiveLogger) printSummary(summary archiver.IsolatedSummary) {
+	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
+}
+
 func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec, error) {
 	inputPaths, execRoot, err := isolate.ProcessIsolateForCAS(opts)
 	if err != nil {
@@ -282,7 +287,7 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 	return execRoot, inputSpec, nil
 }
 
-func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
 	cl, err := newCasClient(ctx, fl.Instance, fl.TokenServerHost, false)
 	if err != nil {
 		return nil, err
@@ -290,7 +295,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*i
 	defer cl.Close()
 
 	fmCache := filemetadata.NewSingleFlightCache()
-	var digests []digest.Digest
+	var rootDgs []digest.Digest
 	var chunkers []*chunker.Chunker
 	for _, o := range opts {
 		execRoot, is, err := buildCASInputSpec(o)
@@ -298,30 +303,48 @@ func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*i
 			return nil, errors.Annotate(err, "failed to buildCASInputSpec").Err()
 		}
 		rootDg, chks, _, err := tree.ComputeMerkleTree(execRoot, is, chunker.DefaultChunkSize, fmCache)
-		digests = append(digests, rootDg)
+		rootDgs = append(rootDgs, rootDg)
 		chunkers = append(chunkers, chks...)
 	}
-	// TODO: Handle uploaded digests
-	_, err = cl.UploadIfMissing(ctx, chunkers...)
+	uploadedDgs, err := cl.UploadIfMissing(ctx, chunkers...)
 	if err != nil {
 		return nil, err
 	}
 
+	if al != nil {
+		missing := int64(len(uploadedDgs))
+		hits := int64(len(chunkers)) - missing
+		bytesPushed := int64(0)
+		bytesTotal := int64(0)
+		for _, c := range chunkers {
+			bytesTotal += c.Digest().Size
+		}
+		for _, dg := range uploadedDgs {
+			bytesPushed += dg.Size
+		}
+
+		var dgsStr []string
+		for _, dg := range rootDgs {
+			dgsStr = append(dgsStr, dg.String())
+		}
+		al.LogSummary(ctx, missing, hits, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed), dgsStr)
+	}
+
 	if dumpJSON == "" {
-		return digests, nil
+		return rootDgs, nil
 	}
 
 	f, err := os.Create(dumpJSON)
 	if err != nil {
-		return digests, err
+		return rootDgs, err
 	}
 	defer f.Close()
 
 	m := make(map[string]string)
 	for i, o := range opts {
-		m[filesystem.GetFilenameNoExt(o.Isolate)] = digests[i].String()
+		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
 	}
-	return digests, json.NewEncoder(f).Encode(m)
+	return rootDgs, json.NewEncoder(f).Encode(m)
 }
 
 // This is overwritten in test.
