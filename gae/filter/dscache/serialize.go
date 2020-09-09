@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 func encodeItemValue(pm ds.PropertyMap) []byte {

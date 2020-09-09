@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
