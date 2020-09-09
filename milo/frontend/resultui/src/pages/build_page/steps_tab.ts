@@ -50,20 +50,22 @@ export class StepsTabElement extends MobxLitElement {
     // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
       <div id="header">
-        Show:
-        <div class="filter">
-          <input
-            id="passed"
-            type="checkbox"
-            ?checked=${this.showPassed}
-            @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
-          >
-          <label for="passed" style="color: #33ac71;">Passed Steps</label>
-        </div class="filter">
-        <div class="filter">
-          <input id="others" type="checkbox" disabled checked>
-          <label for="others">Other Steps</label>
-        </div class="filter">
+        <div id="filters">
+          Show:
+          <div class="filter">
+            <input
+              id="passed"
+              type="checkbox"
+              ?checked=${this.showPassed}
+              @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
+            >
+            <label for="passed" style="color: #33ac71;">Passed Steps</label>
+          </div class="filter">
+          <div class="filter">
+            <input id="others" type="checkbox" disabled checked>
+            <label for="others">Other Steps</label>
+          </div>
+        </div>
       </div>
       <div id="main">
         ${this.buildState.buildPageData?.steps.map((step, i) => html`
@@ -90,10 +92,14 @@ export class StepsTabElement extends MobxLitElement {
 
   static styles = css`
     #header {
+      height: 30px;
+    }
+
+    #filters {
+      display: inline-block;
       padding: 0 10px;
       margin: 5px;
     }
-
     .filter {
       display: inline-block;
       padding: 0 5px;

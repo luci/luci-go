@@ -210,6 +210,7 @@ export class TestResultsTabElement extends MobxLitElement {
     #header {
       display: grid;
       grid-template-columns: 1fr auto auto;
+      height: 30px;
     }
 
     .action-button {
