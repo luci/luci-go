@@ -74,6 +74,7 @@ var funcMap = template.FuncMap{
 	"percent":          percent,
 	"prefix":           prefix,
 	"renderMarkdown":   renderMarkdown,
+	"sanitizeHTML":     sanitizeHTML,
 	"shortenEmail":     common.ShortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -400,6 +401,15 @@ func renderMarkdown(t string) (results template.HTML) {
 	if err := sanitizehtml.Sanitize(out, buf); err != nil {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
 	}
+	return template.HTML(out.String())
+}
+
+// sanitizeHTML santizes the given HTML.
+// Only a limited set of tags is supported.
+// See sanitizehtml/sanitize.go
+func sanitizeHTML(s string) (results template.HTML) {
+	out := bytes.NewBuffer(nil)
+	sanitizehtml.Sanitize(out, strings.NewReader(s))
 	return template.HTML(out.String())
 }
 
