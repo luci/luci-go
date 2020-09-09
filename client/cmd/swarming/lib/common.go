@@ -68,7 +68,7 @@ type swarmingService interface {
 	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, CASRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
@@ -161,7 +161,7 @@ func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) 
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, CASRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
 
@@ -181,11 +181,11 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 	// uniform behavior, so that there is an ID-namespaced directory for each
 	// task's outputs, with an empty directory signifying there having been no
 	// outputs.
-	if ref == nil {
+	if isolateRef == nil {
 		return nil, nil
 	}
 
-	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(SwarmingUserAgent))
+	isolatedClient := isolatedclient.NewClient(isolateRef.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(isolateRef.Namespace), isolatedclient.WithUserAgent(SwarmingUserAgent))
 
 	var filesMu sync.Mutex
 	var files []string
@@ -205,7 +205,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 				taskID)
 		},
 	}
-	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
+	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(isolateRef.Isolated), dir, opts)
 	return files, dl.Wait()
 }
 
