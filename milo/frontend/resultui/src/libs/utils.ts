@@ -16,7 +16,7 @@ import MarkdownIt from 'markdown-it';
 
 import { sanitizeHTML } from './sanitize_html';
 
-const md = new MarkdownIt({html: true});
+const md = MarkdownIt({html: true});
 
 export function renderMarkdown(markdown: string) {
   return sanitizeHTML(md.render(markdown));

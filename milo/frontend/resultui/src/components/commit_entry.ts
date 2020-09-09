@@ -16,11 +16,20 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
+import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
-import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 
+import { bugLine } from '../libs/markdown_it_plugins/bug_line';
+import { sanitizeHTML } from '../libs/sanitize_html';
+import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
+
+// TODO(crbug/1113995): support rendering
+// /\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b/ links in the description.
+const md = MarkdownIt('zero', {breaks: true, linkify: true})
+  .enable(['linkify', 'newline'])
+  .use(bugLine);
 
 /**
  * Renders an expandable entry of the given commit.
@@ -52,8 +61,13 @@ export class CommitEntryElement extends MobxLitElement {
     return lines;
   }
 
-  // TODO(crbug/1113995): support rendering links in the description.
-  private renderDescriptionLine(line: string) { return html`${line}<br>`; }
+  @computed get description() {
+    return this.commit.message.slice(this.title.length + 1);
+  }
+
+  @computed get descriptionHTML() {
+    return sanitizeHTML(md.render(this.description));
+  }
 
   protected render() {
     return html`
@@ -70,7 +84,7 @@ export class CommitEntryElement extends MobxLitElement {
             <tr><td>Changed at:</td><td>${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
             <tr><td>Revision:</td><td><a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id}</a></td></tr>
           </table>
-          <div id="summary">${this.descriptionLines.map((line) => this.renderDescriptionLine(line))}</div>
+          <div id="summary">${this.descriptionHTML}</div>
         </div>
       </milo-expandable-entry>
     `;
@@ -80,12 +94,16 @@ export class CommitEntryElement extends MobxLitElement {
     :host {
       display: block;
     }
+
     #summary {
       background-color: rgb(245, 245, 245);
       padding: 5px;
     }
-    #summary > br:last-child {
-      display: none;
+    #summary > p:first-child {
+      margin-block-start: 0;
+    }
+    #summary > p:last-child {
+      margin-block-end: 0;
     }
   `;
 }
