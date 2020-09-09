@@ -21,3 +21,16 @@ const md = MarkdownIt({html: true});
 export function renderMarkdown(markdown: string) {
   return sanitizeHTML(md.render(markdown));
 }
+
+/**
+ * Add an additional param to the given URL.
+ */
+export function urlWithSearchParam(urlStr: string, key: string, value: string, override = false): string {
+  const url = new URL(urlStr);
+  if (override) {
+    url.searchParams.set(key, value);
+  } else {
+    url.searchParams.append(key, value);
+  }
+  return url.toString();
+}
