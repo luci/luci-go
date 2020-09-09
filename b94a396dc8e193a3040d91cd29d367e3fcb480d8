@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f8f0c0c_18cbcb10",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-09T08:44:37Z",
+      "side": 1,
+      "message": "have",
+      "range": {
+        "startLine": 349,
+        "startChar": 48,
+        "endLine": 349,
+        "endChar": 51
+      },
+      "revId": "b94a396dc8e193a3040d91cd29d367e3fcb480d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
