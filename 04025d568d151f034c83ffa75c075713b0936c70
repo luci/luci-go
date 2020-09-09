@@ -16,6 +16,74 @@
       "revId": "04025d568d151f034c83ffa75c075713b0936c70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d93cdb91_7ecf7163",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T01:33:35Z",
+      "side": 1,
+      "message": "LGTM, just some readability issues with the code.",
+      "revId": "04025d568d151f034c83ffa75c075713b0936c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eddba7b5_a7be3db9",
+        "filename": "milo/frontend/resultui/karma.conf.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T01:33:35Z",
+      "side": 1,
+      "message": "Is this something related to this CL?",
+      "revId": "04025d568d151f034c83ffa75c075713b0936c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a33220b_06e946a1",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bug_line.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T01:33:35Z",
+      "side": 1,
+      "message": "I find it would be much easier to read this code if I know about your general approach here (e.g. to extend the functionality of Markdown-it, first step is to add hidden tokens, and use them as markers to replace the bug text with \u003ca\u003e elements...).\n\nSome examples at the beginning will help big time too (e.g. What is the input, what is the expected output).",
+      "revId": "04025d568d151f034c83ffa75c075713b0936c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d21eb1db_9bc6797b",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bug_line.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T01:33:35Z",
+      "side": 1,
+      "message": "I found it hard to read the comment with regex. Putting some example may help here.",
+      "revId": "04025d568d151f034c83ffa75c075713b0936c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
