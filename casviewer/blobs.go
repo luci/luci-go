@@ -16,7 +16,6 @@ package casviewer
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -27,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/templates"
 )
 
 // renderTree renders a Directory.
@@ -42,23 +42,11 @@ func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 		return errors.Annotate(err, "blob must be directory").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	// TODO(crbug.com/1121471): render html.
-
-	dirs := d.GetDirectories()
-	_, err = w.Write([]byte(fmt.Sprintf("dirs: %v\n", dirs)))
-	if err != nil {
-		return err
-	}
-	files := d.GetFiles()
-	_, err = w.Write([]byte(fmt.Sprintf("files: %v\n", files)))
-	if err != nil {
-		return err
-	}
-	links := d.GetSymlinks()
-	_, err = w.Write([]byte(fmt.Sprintf("symlinks: %v\n", links)))
-	if err != nil {
-		return err
-	}
+	templates.MustRender(ctx, w, "pages/tree.html", templates.Args{
+		"Directories": d.GetDirectories(),
+		"Files":       d.GetFiles(),
+		"Links":       d.GetSymlinks(),
+	})
 
 	return nil
 }

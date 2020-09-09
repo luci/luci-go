@@ -30,12 +30,15 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/templates"
 )
 
 func TestBlobs(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	ctx = templates.Use(ctx, getTemplateBundle(), nil)
+
 	w := httptest.NewRecorder()
 
 	Convey("renderTree", t, func() {
