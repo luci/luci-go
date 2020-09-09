@@ -22,6 +22,30 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35e072be_e326072a",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T01:53:28Z",
+      "side": 0,
+      "message": "I wanted readBlob() to be independent from router.Context.\nContext: https://crrev.com/c/2377021/comment/442935e7_ab369f42/",
+      "parentUuid": "d98f7788_1021ff66",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
