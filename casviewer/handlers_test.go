@@ -28,9 +28,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -42,7 +40,7 @@ func TestHandlers(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("InstallHandlers", t, func() {
-		// Install handlers with fake auth settings and CAS server/client.
+		// Install handlers with fake auth state.
 		r := router.New()
 
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
@@ -51,17 +49,11 @@ func TestHandlers(t *testing.T) {
 				IdentityPermissions: []authtest.RealmPermission{
 					{
 						Realm:      "@internal:test-proj/cas-read-only",
-						Permission: realms.RegisterPermission("luci.serviceAccounts.mintToken"),
+						Permission: permMintToken,
 					},
 				},
 			}
 			c.Context = auth.WithState(c.Context, fakeAuthState)
-			c.Context = auth.ModifyConfig(c.Context, func(cfg auth.Config) auth.Config {
-				cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-					return fakeAuthState.DB(), nil
-				}
-				return cfg
-			})
 			next(c)
 		}))
 
