@@ -16,6 +16,41 @@
       "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60867c1b_608ca23f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T11:35:05Z",
+      "side": 1,
+      "message": "Isn\u0027t the 2 URL the same?",
+      "parentUuid": "08f2d39a_ab8ef722",
+      "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa691caf_a86180ba",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T11:35:05Z",
+      "side": 1,
+      "message": "Is there any steps other than \"failed\" and \"passed\" (e.g. Running step)? I supposed we are treating them the same as \"Failed\" steps? Then perhaps we should change \"Failed\" to \"Non-pass\"?",
+      "revId": "1862ba0a2ef2dc3b26b73849ecf2d780195cf98e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
