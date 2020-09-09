@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff10f504_a5d83c0c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1142534
+      },
+      "writtenOn": "2020-09-09T20:44:02Z",
+      "side": 1,
+      "message": "\u003e \"consants\" is a possible misspelling of \"constants\".\n\nPlease fix.",
+      "parentUuid": "a6cad0de_8dcfebee",
+      "range": {
+        "startLine": 7,
+        "startChar": 39,
+        "endLine": 7,
+        "endChar": 47
+      },
+      "revId": "1714a02867269f33c8849d909a7202e3531da21c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
