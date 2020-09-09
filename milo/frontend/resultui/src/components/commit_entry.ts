@@ -18,18 +18,22 @@ import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
+import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
+import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
+import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { sanitizeHTML } from '../libs/sanitize_html';
 import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
-// TODO(crbug/1113995): support rendering
-// /\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b/ links in the description.
 const md = MarkdownIt('zero', {breaks: true, linkify: true})
   .enable(['linkify', 'newline'])
-  .use(bugLine);
+  .use(bugLine)
+  .use(crbugLink)
+  .use(bugnizerLink)
+  .use(defaultTarget, '_blank');
 
 /**
  * Renders an expandable entry of the given commit.

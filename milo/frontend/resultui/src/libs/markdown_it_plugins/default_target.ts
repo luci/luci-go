@@ -14,12 +14,16 @@
 
 import MarkdownIt from 'markdown-it';
 
-import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
+/**
+ * Set default target for link_open elements.
+ */
+export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
+  const existingRule = (md.renderer.rules['link_open'] ||
+    md.renderer.renderToken).bind(md.renderer);
 
-const md = MarkdownIt({html: true})
-  .use(defaultTarget, '_blank');
-
-export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(md.render(markdown));
+  md.renderer.rules['link_open'] = (tokens, i, ...params) => {
+    const target = tokens[i].attrGet('target') || defaultTarget;
+    tokens[i].attrSet('target', target);
+    return existingRule(tokens, i, ...params);
+  };
 }

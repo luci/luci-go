@@ -14,12 +14,22 @@
 
 import MarkdownIt from 'markdown-it';
 
-import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
+const RE_CRBUG = /\bcrbug(\.com)?(?<path>([:/]\w+)?[:/]\d+)\b/i;
+const RE_CRBUG_TAIL = /^(\.com)?([:/]\w+)?[:/]\d+\b/i;
 
-const md = MarkdownIt({html: true})
-  .use(defaultTarget, '_blank');
-
-export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(md.render(markdown));
+/**
+ * Support converting crbug link texts (e.g. 'crbug/123', 'crbug.com/234',
+ * 'crbug.com:proj:123') to links.
+ *
+ * You MUST enable linkify for this to work.
+ */
+export function crbugLink(md: MarkdownIt) {
+  md.linkify.add('crbug', {
+    validate: RE_CRBUG_TAIL,
+    normalize: (match) => {
+      const reMatch = RE_CRBUG.exec(match.raw)!;
+      const path = reMatch.groups!['path'].replace(':', '/');
+      match.url = 'https://crbug.com' + path;
+    },
+  });
 }
