@@ -16,6 +16,40 @@
       "revId": "a9af352fc16480470743f88f42a154e7ca27cdbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26d70d94_5e9b5f8c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T21:27:10Z",
+      "side": 1,
+      "message": "Is there any reasons you need a \u003cspan\u003e here?",
+      "revId": "a9af352fc16480470743f88f42a154e7ca27cdbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be599ad2_055383eb",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T21:27:10Z",
+      "side": 1,
+      "message": "I think you can remove this comment",
+      "revId": "a9af352fc16480470743f88f42a154e7ca27cdbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
