@@ -34,6 +34,24 @@
       "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ad8b9bd_55ba9632",
+        "filename": "casviewer/handlers_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-09T02:40:48Z",
+      "side": 1,
+      "message": "I\u0027m wondering whether this changes global state and that can be seen from other test or not.\n\nIf so, we cannot use t.Parallel() and should not leave modified env.",
+      "parentUuid": "e21b9f91_6ee00442",
+      "revId": "2d7acb41ce849efd9b75a21aaf97785f34b10883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
