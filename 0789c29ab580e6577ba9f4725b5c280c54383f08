@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c26567f3_6d7046c8",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-09T00:48:32Z",
+      "side": 1,
+      "message": "nit: is it how \"go fmt\" format it? Seems weird to have a line break there.",
+      "range": {
+        "startLine": 51,
+        "startChar": 19,
+        "endLine": 52,
+        "endChar": 54
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9d99db_d5319f22",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-09T00:48:32Z",
+      "side": 1,
+      "message": "Check the error before \"!ok\". On error \u0027ok\u0027 will also be false, but we still should return an error page (not \"permission denied\" page).",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71a7294e_12636259",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-09T00:48:32Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 63,
+        "startChar": 9,
+        "endLine": 63,
+        "endChar": 16
+      },
+      "revId": "0789c29ab580e6577ba9f4725b5c280c54383f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
