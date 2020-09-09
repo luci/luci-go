@@ -1,0 +1,26 @@
+{{define "base"}}
+<!DOCTYPE html>
+<!--
+  Copyright 2020 The LUCI Authors. All rights reserved.
+  Use of this source code is governed under the Apache License, Version 2.0.
+  that can be found in the LICENSE file.
+-->
+<html lang="en">
+<meta charset="utf-8">
+<meta name="google" value="notranslate">
+<title>CAS Viewer</title>
+
+<!-- TODO(crbug.com/1121471): apply style -->
+<body>
+  <header>
+    <h1>CAS Viewer</h1>
+    <p>AppVersion: {{ .AppVersion }}</p>
+    <p>User: {{ .User.Email }}</p>
+  </header>
+  <hr>
+  <main>
+    {{template "body" .}}
+  </main>
+</body>
+</html>
+{{end}}
