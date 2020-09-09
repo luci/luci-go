@@ -16,6 +16,29 @@
       "revId": "e2e60e6ad26de2fdf239b5a9a74aeedd79297595",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e43314f_3076efbb",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-09T21:20:23Z",
+      "side": 1,
+      "message": "Are you planning to use this somewhere else? If we plan to use it elsewhere, perhaps it worths it to make it a bit more generic by accepting multiple keys/values?\n\nAnd it would be nice to add some unittests to this.",
+      "range": {
+        "startLine": 28,
+        "startChar": 16,
+        "endLine": 28,
+        "endChar": 34
+      },
+      "revId": "e2e60e6ad26de2fdf239b5a9a74aeedd79297595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
