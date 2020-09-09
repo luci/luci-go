@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "002eaae4_60db46fd",
+        "filename": "casviewer/templates/includes/base.html",
+        "patchSetId": 16
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T06:10:31Z",
+      "side": 1,
+      "message": "I think it\u0027s better to have the comment after \u003c!DOCTYPE html\u003e because it\u0027s a *HTML* comment.\n\nBtw, I browed it from milo\u0027s base.html. \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/appengine/templates/includes/base.html;l\u003d3?q\u003dbase.html\u0026start\u003d21",
+      "parentUuid": "fc8cb43d_2e071750",
+      "revId": "155c870a1ddad7b7d94a7fc0f639ff5cf686f0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a5df5660_ff9e7ec6",
         "filename": "casviewer/templates/pages/index.html",
         "patchSetId": 16
@@ -33,6 +51,24 @@
       "revId": "155c870a1ddad7b7d94a7fc0f639ff5cf686f0a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a5807ce_bbb1c827",
+        "filename": "casviewer/templates/pages/index.html",
+        "patchSetId": 16
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T06:10:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5df5660_ff9e7ec6",
+      "revId": "155c870a1ddad7b7d94a7fc0f639ff5cf686f0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
