@@ -55,7 +55,7 @@ working directory, '-paths :foo' is sufficient.`,
 			c := archiveRun{}
 			c.Init()
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
-			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest in the format of `<Hash>/<Size>`")
+			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest to file in the format of '<Hash>/<Size>'")
 			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump upload stats to json file.")
 			return &c
 		},
@@ -138,6 +138,8 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
 			return errors.Annotate(err, "failed to dump digest").Err()
 		}
+	} else {
+		fmt.Printf("uploaded digest is %s\n", rootDg.String())
 	}
 
 	if dsj := c.dumpStatsJSON; dsj != "" {
