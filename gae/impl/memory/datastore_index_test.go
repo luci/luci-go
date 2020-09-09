@@ -20,7 +20,7 @@ import (
 	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
