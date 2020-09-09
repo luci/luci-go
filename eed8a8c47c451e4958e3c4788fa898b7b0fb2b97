@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a095ec8_3aeadec4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-09T01:53:09Z",
+      "side": 1,
+      "message": "FYI, that currently `isolate` doesn\u0027t really dump the stats to JSON, like `cas` does: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cmd/cas/lib/archive.go;l\u003d158-160;drc\u003d560c97ffc990461519d3aa7571d46fbd241ddb73. Therefore i think this CL is good enough for CAS stats reporting.",
+      "revId": "eed8a8c47c451e4958e3c4788fa898b7b0fb2b97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
