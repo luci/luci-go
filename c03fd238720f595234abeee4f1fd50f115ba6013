@@ -70,6 +70,30 @@
       "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d12dd970_62fe9362",
+        "filename": "casviewer/handlers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-09T02:04:08Z",
+      "side": 0,
+      "message": "Sorry I don\u0027t get your suggestion.  \nAre you suggesting to have a new function which looks like below?\n\nfunc (c c.Context) {\n  cl, err :\u003d GetClient(c.Context, fullInstName(c.Params))\n  ...\n  bd, err :\u003d blobDigest(c.Params)  \n  ...\n  return readBlob(c.Context, cl, bd)\n}",
+      "parentUuid": "1d54ef22_206195fa",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "c03fd238720f595234abeee4f1fd50f115ba6013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
