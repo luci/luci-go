@@ -266,3 +266,22 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		})
 	})
 }
+
+func TestProcessTriggerOptions_CAS(t *testing.T) {
+	t.Parallel()
+	Convey(`Make sure that processing trigger options handles cas digest.`, t, func() {
+		c := triggerRun{}
+		c.digest = "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd/10430"
+		c.commonFlags.serverURL = "https://cas.appspot.com"
+		result, err := c.processTriggerOptions([]string(nil), nil)
+		So(err, ShouldBeNil)
+		So(result.Properties.CasInputRoot, ShouldResemble,
+			&swarming.SwarmingRpcsCASReference{
+				CasInstance: "projects/cas/instances/default_instance",
+				Digest: &swarming.SwarmingRpcsDigest{
+					Hash:      "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd",
+					SizeBytes: 10430,
+				},
+			})
+	})
+}

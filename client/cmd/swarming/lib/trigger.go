@@ -19,11 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
@@ -133,6 +135,7 @@ type triggerRun struct {
 	isolateServer             string
 	namespace                 string
 	isolated                  string
+	digest                    string
 	dimensions                stringmapflag.Value
 	env                       stringmapflag.Value
 	envPrefix                 stringlistflag.Flag
@@ -172,6 +175,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.StringVar(&c.isolated, "s", "", "Alias for -isolated.")
+	c.Flags.StringVar(&c.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.dimensions, "d", "Alias for -dimension.")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
@@ -327,6 +331,33 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		}
 	}
 
+	var CASRef *swarming.SwarmingRpcsCASReference
+	if c.digest != "" {
+		d, err := digest.NewFromString(c.digest)
+		if err != nil {
+			return nil, errors.Annotate(err, "invalid digest: %s", c.digest).Err()
+		}
+
+		// infer cas instance from server URL.
+		u, err := url.Parse(c.serverURL)
+		if err != nil {
+			return nil, errors.Annotate(err, "invalid server url: %s", c.serverURL).Err()
+		}
+
+		const appspot = ".appspot.com"
+		if !strings.HasSuffix(u.Host, appspot) {
+			return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, c.serverURL).Err()
+		}
+
+		CASRef = &swarming.SwarmingRpcsCASReference{
+			CasInstance: "projects/" + strings.TrimSuffix(u.Host, appspot) + "/instances/default_instance",
+			Digest: &swarming.SwarmingRpcsDigest{
+				Hash:      d.Hash,
+				SizeBytes: d.Size,
+			},
+		}
+	}
+
 	properties := swarming.SwarmingRpcsTaskProperties{
 		Command:              commands,
 		RelativeCwd:          c.relativeCwd,
@@ -338,6 +369,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		GracePeriodSecs:      30,
 		Idempotent:           c.idempotent,
 		InputsRef:            inputsRefs,
+		CasInputRoot:         CASRef,
 		Outputs:              c.outputs,
 		IoTimeoutSecs:        c.ioTimeout,
 		Containment: &swarming.SwarmingRpcsContainment{
