@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 var (
