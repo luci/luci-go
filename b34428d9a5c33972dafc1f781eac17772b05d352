@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "93bd6c8d_cdb9a562",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T19:26:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3663da25_e2fcd7fb",
+      "range": {
+        "startLine": 31,
+        "startChar": 6,
+        "endLine": 31,
+        "endChar": 16
+      },
+      "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36d70aa3_db572c46",
         "filename": "resultdb/internal/resultcount/resultcount.go",
         "patchSetId": 2
@@ -59,6 +83,24 @@
     },
     {
       "key": {
+        "uuid": "989ef532_5326f859",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T19:26:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36d70aa3_db572c46",
+      "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1bb63c2_a83a0488",
         "filename": "resultdb/internal/resultcount/resultcount.go",
         "patchSetId": 2
@@ -70,6 +112,24 @@
       "writtenOn": "2020-09-10T18:24:58Z",
       "side": 1,
       "message": "IIUC this (rowCount \u003d\u003d 0) may happen if we bump up the number of shards. I.e. we bump it from 10 to 20, but the invocation was initialized with 10 and the random shardId is e.g. 11. We could handle this by inserting a new shard row with the selected shardID and testResultCount set to delta.\n\nOtherwise we can\u0027t ever increment the number of shards.\n\nAlso, is there an advantage to initializing the shard rows? Or could we just insert them as they are first needed?",
+      "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60095753_0cd043ff",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T19:26:11Z",
+      "side": 1,
+      "message": "\u003e IIUC this (rowCount \u003d\u003d 0) may happen if we bump up the number of shards. I.e. we bump it from 10 to 20, but the invocation was initialized with 10 and the random shardId is e.g. 11. We could handle this by inserting a new shard row with the selected shardID and testResultCount set to delta.\n\nSince the shard id is a random number between 0 and totalShard, we should be able to safely assume that the row exists, right?\n  \n\u003e Otherwise we can\u0027t ever increment the number of shards.\nAre you concerning the case that we increment totalShard in a CL and deploy it, then it could mess up some active invocations? I think it\u0027s possible, though I think maybe we\u0027ll not change totalShard too often or at all.\n\n\u003e Also, is there an advantage to initializing the shard rows? Or could we just insert them as they are first needed?\n\nI think initializing the shard rows can help us save some requests to spanner. Without initialization, we either try to update one row, then insert one if update fails; or read one row, then insert/update one based on read result. \n\nBut probably trying update then inserting doesn\u0027t cost us much, since we\u0027ll make extra (totalShard-1) requests at most.",
+      "parentUuid": "e1bb63c2_a83a0488",
       "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -96,6 +156,30 @@
       "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "477d0e61_966f8ccf",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T19:26:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ff98d9b_31ca279f",
+      "range": {
+        "startLine": 69,
+        "startChar": 71,
+        "endLine": 69,
+        "endChar": 74
+      },
+      "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
