@@ -136,6 +136,24 @@
     },
     {
       "key": {
+        "uuid": "80c9c10b_cf2d6d52",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T19:35:05Z",
+      "side": 1,
+      "message": "I\u0027m okay with this as-is. My concern is that I don\u0027t understand why \"10\" was chosen, and what happens if it turns out to be too low.\n\nI think initialization is good, because these are 10 small rows per invocation which doesn\u0027t seem too much space.",
+      "parentUuid": "60095753_0cd043ff",
+      "revId": "b34428d9a5c33972dafc1f781eac17772b05d352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ff98d9b_31ca279f",
         "filename": "resultdb/internal/resultcount/resultcount.go",
         "patchSetId": 2
