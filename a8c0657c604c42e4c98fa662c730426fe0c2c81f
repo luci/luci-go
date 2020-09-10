@@ -36,6 +36,23 @@
     },
     {
       "key": {
+        "uuid": "7c78ee50_4ee696b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-10T18:56:42Z",
+      "side": 1,
+      "message": "Will rename \"types\" to \"dstypes\" in the followup CL and address the nits.",
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51528a84_157159b4",
         "filename": "gae/service/datastore/properties.go",
         "patchSetId": 7
@@ -50,6 +67,24 @@
       "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0913f09a_3565e661",
+        "filename": "gae/service/datastore/properties.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-10T18:56:42Z",
+      "side": 1,
+      "message": "Will do in the followup.",
+      "parentUuid": "51528a84_157159b4",
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -73,6 +108,30 @@
       "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67b31f51_1c8a0d14",
+        "filename": "gae/service/datastore/types/serialize/serialize_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-10T18:56:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9e2fb8a_9ed5c3af",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 8
+      },
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
