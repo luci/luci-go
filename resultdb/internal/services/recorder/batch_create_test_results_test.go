@@ -182,7 +182,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				trNum, err := invocations.ReadTestResultCount(ctx, invocations.NewIDSet(invID))
+				trNum, err := resultcount.ReadTestResultCount(ctx, invocations.NewIDSet(invID))
 				So(err, ShouldBeNil)
 				So(trNum, ShouldEqual, 2)
 			})
