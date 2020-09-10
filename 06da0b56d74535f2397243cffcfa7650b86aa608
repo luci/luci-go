@@ -39,6 +39,29 @@
       "revId": "06da0b56d74535f2397243cffcfa7650b86aa608",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8d222a1_02941dc2",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bugnizer_link.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-10T04:32:37Z",
+      "side": 1,
+      "message": "(This comment is not related to this CL, I just put here for visibility)\nI just noticed that some projects have \"-\" in their names (https://bugs.chromium.org/). In your CL for crbug, you used \\w+ for project name, perhaps it should be changed. Sorry for not noticing it earlier.",
+      "range": {
+        "startLine": 17,
+        "startChar": 22,
+        "endLine": 17,
+        "endChar": 32
+      },
+      "revId": "06da0b56d74535f2397243cffcfa7650b86aa608",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
