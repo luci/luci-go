@@ -69,6 +69,24 @@
       "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cb8a07b_15dfcbd3",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-10T04:55:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef28f5e3_3dee4ce4",
+      "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
