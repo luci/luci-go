@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
 import '../../components/commit_entry';
+import { CommitEntryElement } from '../../components/commit_entry';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -68,34 +70,67 @@ export class BlamelistTabElement extends MobxLitElement {
     this.isLoading = false;
   }
 
+  private toggleAllVariants(expand: boolean) {
+    this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry')
+      .forEach((e) => e.expanded = expand);
+  }
+
   protected render() {
     return html`
-      ${this.commits.map((commit, i) => html`
-      <milo-commit-entry .number=${i + 1} .repoUrl=${this.repoUrl} .commit=${commit}></milo-commit-entry>
-      `)}
-      <hr class="divider" style=${styleMap({'display': this.commits.length === 0 ? 'none' : ''})}>
-      <div class="list-entry">
-        <span>Showing ${this.commits.length} commits.</span>
-        <span id="load" style=${styleMap({'display': this.endOfPage ? 'none' : ''})}>
-          <span
-            id="load-more"
-            style=${styleMap({'display': this.isLoading ? 'none' : ''})}
-            @click=${this.loadNextPage}
-          >
-            Load More
+      <div id="header">
+        <span></span>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllVariants(true)}
+        >Expand All</mwc-button>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllVariants(false)}
+        >Collapse All</mwc-button>
+      </div>
+      <div id="main">
+        ${this.commits.map((commit, i) => html`
+        <milo-commit-entry .number=${i + 1} .repoUrl=${this.repoUrl} .commit=${commit}></milo-commit-entry>
+        `)}
+        <hr class="divider" style=${styleMap({'display': this.commits.length === 0 ? 'none' : ''})}>
+        <div class="list-entry">
+          <span>Showing ${this.commits.length} commits.</span>
+          <span id="load" style=${styleMap({'display': this.endOfPage ? 'none' : ''})}>
+            <span
+              id="load-more"
+              style=${styleMap({'display': this.isLoading ? 'none' : ''})}
+              @click=${this.loadNextPage}
+            >
+              Load More
+            </span>
+            <span style=${styleMap({'display': this.isLoading ? '' : 'none'})}>
+              Loading <milo-dot-spinner></milo-dot-spinner>
+            </span>
           </span>
-          <span style=${styleMap({'display': this.isLoading ? '' : 'none'})}>
-            Loading <milo-dot-spinner></milo-dot-spinner>
-          </span>
-        </span>
+        </div>
       </div>
     `;
   }
 
   static styles = css`
-    :host {
-      padding-left: 10px;
+    #header {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      height: 30px;
     }
+
+    .action-button {
+      margin: 0 5px;
+      --mdc-theme-primary: rgb(0, 123, 255);
+    }
+
+    #main {
+      padding-left: 10px;
+      border-top: 1px solid #DDDDDD;
+    }
+
     .divider {
       border: none;
       border-top: 1px solid rgb(235, 235, 235);
