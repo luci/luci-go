@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "112e5c5d_ec47e17f",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-10T19:47:26Z",
+      "side": 1,
+      "message": "What if we need to change the value of nShards?",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
