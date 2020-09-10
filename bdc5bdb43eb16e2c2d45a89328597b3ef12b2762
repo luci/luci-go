@@ -69,6 +69,24 @@
       "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f7043db_4e7c2f4b",
+        "filename": "casviewer/templates/pages/tree.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-10T03:38:41Z",
+      "side": 1,
+      "message": "Repeating what I said in chat,\n\n\u003e I will apply it with minimum design using an existing CSS like.\n\u003e https://github.com/material-components/material-components-web\n\nWe can use only css part of this or pure CSS framework like https://bulma.io/.",
+      "parentUuid": "c60d09e3_a300af29",
+      "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
