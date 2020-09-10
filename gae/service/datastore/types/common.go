@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package datastore
+package types
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"fmt"
+	"strings"
 )
 
-type IndexColumn = types.IndexColumn
-type IndexDefinition = types.IndexDefinition
+var escaper = strings.NewReplacer(
+	"\\%", `\%`,
+	"\\_", `\_`,
+	"\\", `\\`,
+	"\x00", `\0`,
+	"\b", `\b`,
+	"\n", `\n`,
+	"\r", `\r`,
+	"\t", `\t`,
+	"\x1A", `\Z`,
+	"'", `\'`,
+	"\"", `\"`,
+	"`", "\\`",
+)
 
-func ParseIndexColumn(spec string) (IndexColumn, error) {
-	return types.ParseIndexColumn(spec)
+func gqlQuoteName(s string) string {
+	return fmt.Sprintf("`%s`", escaper.Replace(s))
+}
+
+func gqlQuoteString(s string) string {
+	return fmt.Sprintf(`"%s"`, escaper.Replace(s))
 }

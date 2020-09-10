@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package datastore
+package types
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"reflect"
+	"time"
+
+	"go.chromium.org/luci/gae/service/blobstore"
 )
 
-type IndexColumn = types.IndexColumn
-type IndexDefinition = types.IndexDefinition
-
-func ParseIndexColumn(spec string) (IndexColumn, error) {
-	return types.ParseIndexColumn(spec)
-}
+var (
+	typeOfBSKey = reflect.TypeOf(blobstore.Key(""))
+	typeOfKey   = reflect.TypeOf((*Key)(nil))
+	typeOfTime  = reflect.TypeOf(time.Time{})
+)
