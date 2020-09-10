@@ -14,26 +14,22 @@
 
 import MarkdownIt from 'markdown-it';
 
-import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
-
-const md = MarkdownIt({html: true})
-  .use(defaultTarget, '_blank');
-
-export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(md.render(markdown));
-}
+const RE_BUGNIZER = /\bb([:/]\w+)?[:/]\d+\b/i;
+const RE_BUGNIZER_TAIL = /^([:/]\w+)?[:/]\d+\b/i;
 
 /**
- * Extend URL with methods that can be chained.
+ * Support converting bugnizer link texts (e.g. 'b/123', 'b:234',
+ * 'b:proj:123') to links.
+ *
+ * You MUST enable linkify for this to work.
  */
-export class ChainableURL extends URL {
-  withSearchParam(key: string, value: string, override = false) {
-    if (override) {
-      this.searchParams.set(key, value);
-    } else {
-      this.searchParams.append(key, value);
-    }
-    return this;
-  }
+export function bugnizerLink(md: MarkdownIt) {
+  md.linkify.add('b', {
+    validate: RE_BUGNIZER_TAIL,
+    normalize: (match) => {
+      const reMatch = RE_BUGNIZER.exec(match.raw)!;
+      const path = reMatch[0].replace(':', '/');
+      match.url = 'http://' + path;
+    },
+  });
 }
