@@ -33,6 +33,24 @@
       "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c60d09e3_a300af29",
+        "filename": "casviewer/templates/pages/tree.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-10T01:39:22Z",
+      "side": 1,
+      "message": "There are some variations.\nBut we can probably use `monospace` at all browsers.\nhttps://developer.mozilla.org/en-US/docs/Web/CSS/font-family\n\nIt looks a bit odd now, so I will apply it with minimum design using an existing CSS like.\nhttps://github.com/material-components/material-components-web",
+      "parentUuid": "31059326_d828ba11",
+      "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
