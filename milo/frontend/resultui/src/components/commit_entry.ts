@@ -18,6 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
+import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
 import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
@@ -26,11 +27,11 @@ import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
-// TODO(crbug/1113995): support rendering bugnizer links in the description.
 const md = MarkdownIt('zero', {breaks: true, linkify: true})
   .enable(['linkify', 'newline'])
   .use(bugLine)
-  .use(crbugLink);
+  .use(crbugLink)
+  .use(bugnizerLink);
 
 /**
  * Renders an expandable entry of the given commit.
