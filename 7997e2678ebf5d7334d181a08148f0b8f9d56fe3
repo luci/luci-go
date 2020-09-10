@@ -427,6 +427,30 @@
     },
     {
       "key": {
+        "uuid": "e6acae1c_77e2e103",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T23:08:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "847ce9bb_2f5d428e",
+      "range": {
+        "startLine": 157,
+        "startChar": 28,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5232ab9_b169438a",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8

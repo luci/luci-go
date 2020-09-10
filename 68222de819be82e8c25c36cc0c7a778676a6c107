@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c434c857_907e9cc8",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T23:08:23Z",
+      "side": 1,
+      "message": "Add fields to the same struct. Added todo.",
+      "parentUuid": "a26f85cf_be5bd894",
+      "range": {
+        "startLine": 29,
+        "startChar": 62,
+        "endLine": 29,
+        "endChar": 69
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b99dd1bd_77ed066a",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6654e9e0_851051d4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T23:08:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b99dd1bd_77ed066a",
+      "range": {
+        "startLine": 113,
+        "startChar": 7,
+        "endLine": 113,
+        "endChar": 19
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "d525b3dd_8e949d9f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T23:08:23Z",
+      "side": 1,
+      "message": "Added a TODO for implementing the correct sorting order. I am currently trying to use testresults.Query as-is to limit the scope of this change.",
+      "parentUuid": "375fe228_6a6222b0",
+      "range": {
+        "startLine": 132,
+        "startChar": 5,
+        "endLine": 132,
+        "endChar": 22
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4caf8825_c3eded56",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 10
@@ -91,6 +163,30 @@
       "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7d3da56_955cff3a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T23:08:23Z",
+      "side": 1,
+      "message": "I was sorting it for making the test pass (IDSet is unordered), but since it contradicts the eventual correct ordering I removed it and updated the test.",
+      "parentUuid": "4caf8825_c3eded56",
+      "range": {
+        "startLine": 204,
+        "startChar": 3,
+        "endLine": 204,
+        "endChar": 29
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
