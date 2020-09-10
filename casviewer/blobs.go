@@ -62,6 +62,12 @@ func returnBlob(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 	}
 
 	// TODO(crbug.com/1121471): append appropriate headers.
+	// Set "text/plan" for the browser to detect the file type and display it.
+	// - An image will be wrapped in <image>.
+	// - A text will be wrapped in <pre>.
+	//  -A video will be wrapped in <video>.
+	// etc.
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 
 	_, err = w.Write(b)
 	if err != nil {
