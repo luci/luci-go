@@ -16,6 +16,29 @@
       "revId": "cda2bb56b7fcfcd6861ed72412a033c2d84a46fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "84338173_15bc0415",
+        "filename": "led/ledcmd/clients.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-10T23:54:02Z",
+      "side": 1,
+      "message": "I would prefer that this be plumbed through from https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/ledcli/main.go;l\u003d148\n\nCould we instead add a user agent around http.Client for all these methods? I believe this would solve the issue?",
+      "range": {
+        "startLine": 41,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 16
+      },
+      "revId": "cda2bb56b7fcfcd6861ed72412a033c2d84a46fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
