@@ -21,3 +21,17 @@ const md = MarkdownIt({html: true});
 export function renderMarkdown(markdown: string) {
   return sanitizeHTML(md.render(markdown));
 }
+
+/**
+ * Extend URL with methods that can be chained.
+ */
+export class ChainableURL extends URL {
+  withSearchParam(key: string, value: string, override = false) {
+    if (override) {
+      this.searchParams.set(key, value);
+    } else {
+      this.searchParams.append(key, value);
+    }
+    return this;
+  }
+}
