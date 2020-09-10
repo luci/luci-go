@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 )
 
 // ErrMissingIndex is returned when the current indexes are not sufficient

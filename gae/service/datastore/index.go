@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Type aliases for the file dstypes/index.go
+
 package datastore
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 )
 
-type IndexColumn = types.IndexColumn
-type IndexDefinition = types.IndexDefinition
+type IndexColumn = dstypes.IndexColumn
+type IndexDefinition = dstypes.IndexDefinition
 
-func ParseIndexColumn(spec string) (IndexColumn, error) {
-	return types.ParseIndexColumn(spec)
-}
+var ParseIndexColumn = dstypes.ParseIndexColumn

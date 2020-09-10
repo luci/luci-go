@@ -17,11 +17,11 @@
 package datastore
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 )
 
 // GeoPoint is an alias for GeoPoint in datastore/types.
-type GeoPoint = types.GeoPoint
+type GeoPoint = dstypes.GeoPoint
 
 // TransactionOptions are the options for running a transaction.
 type TransactionOptions struct {
