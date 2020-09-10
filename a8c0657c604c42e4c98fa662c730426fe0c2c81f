@@ -16,6 +16,63 @@
       "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "adb319e5_ab7f007b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-10T04:20:14Z",
+      "side": 1,
+      "message": "lgtm, but I do think dstypes would be a better name",
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51528a84_157159b4",
+        "filename": "gae/service/datastore/properties.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-10T04:20:14Z",
+      "side": 1,
+      "message": "var MkProperty \u003d types.MkProperty\n\nshould work too, right? I think we should probably remove as much of these aliases as makes sense in a followup CL (e.g. have things use dstypes directly)",
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9e2fb8a_9ed5c3af",
+        "filename": "gae/service/datastore/types/serialize/serialize_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-10T04:20:14Z",
+      "side": 1,
+      "message": "this is an example of what I\u0027m talking about; naming the package \u0027dstypes\u0027 directly would avoid this problem.",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 8
+      },
+      "revId": "a8c0657c604c42e4c98fa662c730426fe0c2c81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
