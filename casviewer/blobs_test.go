@@ -18,7 +18,6 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -94,7 +93,7 @@ func TestBlobs(t *testing.T) {
 			// body should contain file name, hash, size.
 			So(string(body), ShouldContainSubstring, d.Files[0].Name)
 			So(string(body), ShouldContainSubstring, d.Files[0].Digest.Hash)
-			So(string(body), ShouldContainSubstring, strconv.FormatInt(d.Files[0].Digest.SizeBytes, 10))
+			So(string(body), ShouldContainSubstring, "1 B")
 		})
 	})
 
