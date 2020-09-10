@@ -62,6 +62,54 @@
       "revId": "06da0b56d74535f2397243cffcfa7650b86aa608",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d9fd098a_c2ccf073",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bugnizer_link.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-10T12:03:03Z",
+      "side": 1,
+      "message": "Will fix that in a new CL.",
+      "parentUuid": "f8d222a1_02941dc2",
+      "range": {
+        "startLine": 17,
+        "startChar": 22,
+        "endLine": 17,
+        "endChar": 32
+      },
+      "revId": "06da0b56d74535f2397243cffcfa7650b86aa608",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51cdadb5_33f84f45",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bugnizer_link.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-10T12:03:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba9a7ae4_246cc91d",
+      "range": {
+        "startLine": 17,
+        "startChar": 26,
+        "endLine": 17,
+        "endChar": 32
+      },
+      "revId": "06da0b56d74535f2397243cffcfa7650b86aa608",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
