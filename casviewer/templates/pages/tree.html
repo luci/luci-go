@@ -21,7 +21,7 @@
   {{range .Files}}
     <tr>
       <td><a href="{{ getURL $.Instance . }}" target="_blank">{{.Name}}</a></td>
-      <td>{{.Digest.SizeBytes}}</td>
+      <td>{{.Digest.SizeBytes | readableBytes}}</td>
       <td>{{.Digest.Hash}}</td>
     </tr>
   {{end}}

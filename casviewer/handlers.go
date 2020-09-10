@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/appengine"
 
@@ -65,8 +66,9 @@ func getTemplateBundle() *templates.Bundle {
 			}, nil
 		},
 		FuncMap: template.FuncMap{
-			"treeURL": treeURL,
-			"getURL":  getURL,
+			"treeURL":       treeURL,
+			"getURL":        getURL,
+			"readableBytes": func(s int64) string { return humanize.Bytes(uint64(s)) },
 		},
 	}
 }
