@@ -34,6 +34,41 @@
       "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d28e462f_3f7dd819",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-10T04:20:45Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "23984acb_5557a27f",
+      "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef28f5e3_3dee4ce4",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-10T04:20:45Z",
+      "side": 1,
+      "message": "why not have this in handlers.go or make this lambda?",
+      "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
