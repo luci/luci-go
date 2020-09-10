@@ -87,6 +87,24 @@
       "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d2b43e0_1c37b5aa",
+        "filename": "casviewer/templates/pages/tree.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-10T03:43:08Z",
+      "side": 1,
+      "message": "I see, but could you check whether we have common css library in chops?",
+      "parentUuid": "8f7043db_4e7c2f4b",
+      "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
