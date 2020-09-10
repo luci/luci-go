@@ -76,8 +76,6 @@ export class TestFilterElement extends MobxLitElement {
   static styles = css`
     :host {
       display: inline-block;
-      padding: 0 10px;
-      margin: 5px;
     }
     mwc-formfield > mwc-checkbox {
       margin-right: -10px;

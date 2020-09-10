@@ -138,6 +138,11 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       display: flex;
     }
 
+    milo-tab-bar {
+      margin: 0 10px;
+      padding-top: 10px;
+    }
+
     #test-invocation-id {
       flex: 0 auto;
     }
