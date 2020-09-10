@@ -538,7 +538,7 @@ func TestAllocateIDs(t *testing.T) {
 			Convey("single key will fail", func() {
 				singleKey := MakeKey(c, "FooParent", "BarParent", "Foo", "Bar")
 				So(func() { AllocateIDs(c, singleKey) }, ShouldPanicLike,
-					"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
+					"invalid input type (*types.Key): not a PLS, pointer-to-struct, or slice thereof")
 			})
 
 			Convey("key slice", func() {
@@ -646,7 +646,7 @@ func TestPut(t *testing.T) {
 
 				Convey("get with *Key is an error", func() {
 					So(func() { Get(c, &Key{}) }, ShouldPanicLike,
-						"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
+						"invalid input type (*types.Key): not a PLS, pointer-to-struct, or slice thereof")
 				})
 
 				Convey("struct with no $kind is an error", func() {
@@ -1164,7 +1164,7 @@ func TestGetAll(t *testing.T) {
 			Convey("bad type (underspecified)", func() {
 				output := []PropertyLoadSaver(nil)
 				So(func() { GetAll(c, q, &output) }, ShouldPanicLike,
-					"invalid GetAll dst (non-concrete element type): *[]datastore.PropertyLoadSaver")
+					"invalid GetAll dst (non-concrete element type): *[]types.PropertyLoadSaver")
 			})
 		})
 
