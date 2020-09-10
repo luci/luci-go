@@ -15,28 +15,28 @@
 package datastore
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 )
 
 // KeyTok is a single token from a multi-part Key.
-type KeyTok = types.KeyTok
+type KeyTok = dstypes.KeyTok
 
 // KeyContext is the context in which a key is generated.
-type KeyContext = types.KeyContext
+type KeyContext = dstypes.KeyContext
 
 // MkKeyContext is a helper function to create a new KeyContext.
 //
 // It is preferable to field-based struct initialization because, as a function,
 // it has the ability to enforce an exact number of parameters.
 func MkKeyContext(appID, namespace string) KeyContext {
-	return types.MkKeyContext(appID, namespace)
+	return dstypes.MkKeyContext(appID, namespace)
 }
 
 // Key is the type used for all datastore operations.
-type Key = types.Key
+type Key = dstypes.Key
 
 // NewKeyEncoded decodes and returns a *Key
 func NewKeyEncoded(encoded string) (ret *Key, err error) {
-	types.NewKeyEncoded(encoded)
+	dstypes.NewKeyEncoded(encoded)
 	return
 }

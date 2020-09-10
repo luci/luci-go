@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 
 	"go.chromium.org/luci/gae/service/blobstore"
-	dstypes "go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 )
 
 // MaxIndexColumns is the maximum number of sort columns (e.g. sort orders) that

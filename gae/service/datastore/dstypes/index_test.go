@@ -14,7 +14,7 @@
 
 // adapted from github.com/golang/appengine/datastore
 
-package types
+package dstypes
 
 import (
 	"fmt"

@@ -15,12 +15,12 @@
 package datastore
 
 import (
-	"go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 )
 
-type IndexColumn = types.IndexColumn
-type IndexDefinition = types.IndexDefinition
+type IndexColumn = dstypes.IndexColumn
+type IndexDefinition = dstypes.IndexDefinition
 
 func ParseIndexColumn(spec string) (IndexColumn, error) {
-	return types.ParseIndexColumn(spec)
+	return dstypes.ParseIndexColumn(spec)
 }
