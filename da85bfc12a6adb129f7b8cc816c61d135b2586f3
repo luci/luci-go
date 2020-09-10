@@ -22,6 +22,30 @@
       "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "854fd991_d5613029",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-10T20:01:00Z",
+      "side": 1,
+      "message": "I meant, I was wondering about the following scenario.\n(1) nShards was 10\n(2) An invocation was created by a Swarming Task, and 10 result counts were inserted with 0.\n(3) a new binary was deployed with `nShards :\u003d 20`\n(4) The test binary in the swarming task started reporting test results, and they were served by the new binary.\n\nIf the randomly picked shardID is higher than the previous nShards, wouldn\u0027t the UPDATE query fail?",
+      "parentUuid": "112e5c5d_ec47e17f",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
