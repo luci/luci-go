@@ -16,7 +16,6 @@ import { assert } from 'chai';
 import chai from 'chai';
 import sinon from 'sinon';
 
-import '../libs/extensions';
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
 import { QueryTestExonerationsRequest, QueryTestResultsRequest, ResultDb, TestExoneration, TestResult } from '../services/resultdb';
 import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from './test_loader';
