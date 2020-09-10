@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // AddToJournal records one or more Mutation to the tumble journal, but does not

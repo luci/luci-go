@@ -34,7 +34,7 @@ import (
 
 	"go.chromium.org/luci/gae/filter/txnBuf"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/serialize"
+	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	"go.chromium.org/luci/gae/service/info"
 	mc "go.chromium.org/luci/gae/service/memcache"
 )
