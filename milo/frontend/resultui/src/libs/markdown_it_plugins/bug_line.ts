@@ -36,6 +36,7 @@
  * ```
  */
 
+import flatMap from 'lodash-es/flatMap';
 import MarkdownIt from 'markdown-it';
 import StateCore from 'markdown-it/lib/rules_core/state_core';
 import StateInline from 'markdown-it/lib/rules_inline/state_inline';
@@ -91,14 +92,12 @@ function postProcess(s: StateCore): boolean {
     if (blockToken.type !== 'inline') {
       continue;
     }
-    const tokens = blockToken.children!;
 
-    // Process in reverse order so newly inserted nodes do not get processed.
-    for (let i = tokens.length - 1; i >= 0; --i) {
-      const srcToken = tokens[i];
+    blockToken.children = flatMap(blockToken.children!, (srcToken, i, tokens) => {
       if (srcToken.type !== 'text' || !isInBugLine(tokens, i)) {
-        continue;
+        return [srcToken];
       }
+
       const reBug = /\b(\w+:)?#?\d+\b/g;
       let pos = 0;
       let match = reBug.exec(srcToken.content);
@@ -142,8 +141,8 @@ function postProcess(s: StateCore): boolean {
         newTokens.push(token);
       }
 
-      blockToken.children!.splice(i, 1, ...newTokens);
-    }
+      return newTokens;
+    });
   }
   return true;
 }
@@ -151,7 +150,7 @@ function postProcess(s: StateCore): boolean {
 /**
  * Check whether the token at the given index is in the bug line.
  */
-function isInBugLine(tokens: Token[], index: number) {
+function isInBugLine(tokens: ArrayLike<Token>, index: number) {
   const level = tokens[index].level;
   for (let i = index; i >= 0; --i) {
     const target = tokens[i];
