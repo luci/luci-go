@@ -23,7 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/service/blobstore"
-	dstypes "go.chromium.org/luci/gae/service/datastore/types"
+	"go.chromium.org/luci/gae/service/datastore/dstypes"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

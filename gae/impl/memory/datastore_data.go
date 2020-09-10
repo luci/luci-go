@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	prodConstraints "go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 
 	"golang.org/x/net/context"
 )
