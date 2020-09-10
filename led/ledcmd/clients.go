@@ -37,6 +37,17 @@ import (
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
+// ledUserAgent stores the user agent name for this CLI.
+var ledUserAgent = "led"
+
+func init() {
+	if info, err := version.GetCurrentVersion(); err != nil {
+		ledUserAgent = fmt.Sprintf("led, %s @ %s", info.PackageName, info.InstanceID)
+	} else {
+		ledUserAgent = "led, <unknown version>"
+	}
+}
+
 var isolateTestIfaceKey = "holds an isoClientIface during tests"
 
 type pendingItem interface {
@@ -81,6 +92,7 @@ func mkIsoClient(ctx context.Context, authClient *http.Client, tree *api.CASTree
 		tree.Server, isolatedclient.WithAuthClient(authClient),
 		isolatedclient.WithNamespace(tree.Namespace),
 		isolatedclient.WithRetryFactory(retry.Default),
+		isolatedclient.WithUserAgent(ledUserAgent),
 	)
 	// The archiver is pretty noisy at Info level, so we skip giving it
 	// a logging-enabled context unless the user actually requseted verbose.
@@ -115,6 +127,7 @@ func newSwarmClient(authClient *http.Client, host string) *swarming.Service {
 		panic(err)
 	}
 	swarm.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
+	swarm.UserAgent = ledUserAgent
 	return swarm
 }
 
@@ -125,17 +138,13 @@ func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Ser
 		panic(err)
 	}
 	sbucket.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", host)
+	sbucket.UserAgent = ledUserAgent
 	return sbucket
 }
 
 func newBuildbucketClient(authClient *http.Client, host string) bbpb.BuildsClient {
 	rpcOpts := prpc.DefaultOptions()
-
-	if info, err := version.GetCurrentVersion(); err != nil {
-		rpcOpts.UserAgent = fmt.Sprintf("led, %s @ %s", info.PackageName, info.InstanceID)
-	} else {
-		rpcOpts.UserAgent = "led, <unknown version>"
-	}
+	rpcOpts.UserAgent = ledUserAgent
 
 	return bbpb.NewBuildsPRPCClient(&prpc.Client{
 		C:       authClient,
