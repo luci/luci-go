@@ -251,10 +251,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
 			So(err, ShouldBeNil)
 
-			trNum, err := invocations.ReadTestResultCount(ctx, invIDs)
-			So(err, ShouldBeNil)
-			So(trNum, ShouldEqual, 3)
-
 			q := testresults.Query{
 				InvocationIDs: invIDs,
 				PageSize:      100,
