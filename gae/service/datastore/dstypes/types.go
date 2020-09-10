@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package types
+//go:generate stringer -type=Toggle
 
-import (
-	"reflect"
-	"time"
+package dstypes
 
-	"go.chromium.org/luci/gae/service/blobstore"
-)
+// GeoPoint represents a location as latitude/longitude in degrees.
+//
+// You probably shouldn't use these, but their inclusion here is so that the
+// datastore service can interact (and round-trip) correctly with other
+// datastore API implementations.
+type GeoPoint struct {
+	Lat, Lng float64
+}
 
-var (
-	typeOfBSKey = reflect.TypeOf(blobstore.Key(""))
-	typeOfKey   = reflect.TypeOf((*Key)(nil))
-	typeOfTime  = reflect.TypeOf(time.Time{})
-)
+// Valid returns whether a GeoPoint is within [-90, 90] latitude and [-180,
+// 180] longitude.
+func (g GeoPoint) Valid() bool {
+	return -90 <= g.Lat && g.Lat <= 90 && -180 <= g.Lng && g.Lng <= 180
+}

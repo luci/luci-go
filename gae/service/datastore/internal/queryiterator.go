@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 )
 
 // QueryIterator is an iterator for datastore query results.

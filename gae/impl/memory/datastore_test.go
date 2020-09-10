@@ -24,7 +24,7 @@ import (
 	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 	infoS "go.chromium.org/luci/gae/service/info"
 
 	"golang.org/x/net/context"

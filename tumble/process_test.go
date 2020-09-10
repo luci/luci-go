@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 	mc "go.chromium.org/luci/gae/service/memcache"
 )
 

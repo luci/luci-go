@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 
