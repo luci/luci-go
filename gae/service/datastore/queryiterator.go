@@ -19,30 +19,29 @@ import (
 	"context"
 	"sort"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/dstypes/serialize"
 )
 
 // QueryIterator is an iterator for datastore query results.
 type QueryIterator struct {
-	order              []ds.IndexColumn
+	order              []IndexColumn
 	currentQueryResult *rawQueryResult
 	itemCh             chan *rawQueryResult
 }
 
 // StartQueryIterator starts to run the given query and return the iterator for query results.
-func StartQueryIterator(ctx context.Context, fq *ds.FinalizedQuery) *QueryIterator {
+func StartQueryIterator(ctx context.Context, fq *FinalizedQuery) *QueryIterator {
 	qi := &QueryIterator{
 		order:  fq.Orders(),
 		itemCh: make(chan *rawQueryResult),
 	}
 
-	go func(fq *ds.FinalizedQuery, qi *QueryIterator) {
+	go func(fq *FinalizedQuery, qi *QueryIterator) {
 		defer close(qi.itemCh)
-		err := ds.Raw(ctx).Run(fq, func(k *ds.Key, pm ds.PropertyMap, _ ds.CursorCB) error {
+		err := Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
 			select {
 			case <-ctx.Done():
-				return ds.Stop
+				return Stop
 			case qi.itemCh <- &rawQueryResult{
 				key:  k,
 				data: pm,
@@ -61,9 +60,9 @@ func StartQueryIterator(ctx context.Context, fq *ds.FinalizedQuery) *QueryIterat
 }
 
 // CurrentItem returns the current query result.
-func (qi *QueryIterator) CurrentItem() (*ds.Key, ds.PropertyMap) {
+func (qi *QueryIterator) CurrentItem() (*Key, PropertyMap) {
 	if qi.currentQueryResult == nil {
-		return nil, ds.PropertyMap{}
+		return nil, PropertyMap{}
 	}
 	return qi.currentQueryResult.key, qi.currentQueryResult.data
 }
@@ -114,14 +113,14 @@ func (qi *QueryIterator) Next() error {
 	var ok bool
 	qi.currentQueryResult, ok = <-qi.itemCh
 	if !ok {
-		return ds.Stop
+		return Stop
 	}
 	return qi.currentQueryResult.err
 }
 
 // rawQueryResult captures the result from raw datastore query snapshot.
 type rawQueryResult struct {
-	key  *ds.Key
-	data ds.PropertyMap
+	key  *Key
+	data PropertyMap
 	err  error
 }
