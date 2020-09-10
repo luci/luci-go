@@ -17,6 +17,7 @@ package casviewer
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"strconv"
 	"strings"
 
@@ -63,6 +64,10 @@ func getTemplateBundle() *templates.Bundle {
 				"User":       auth.CurrentUser(c),
 			}, nil
 		},
+		FuncMap: template.FuncMap{
+			"treeURL": treeURL,
+			"getURL":  getURL,
+		},
 	}
 }
 
@@ -85,7 +90,8 @@ func rootHandler(c *router.Context) {
 }
 
 func treeHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	inst := fullInstName(c.Params)
+	cl, err := GetClient(c.Context, inst)
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
 		return
@@ -95,7 +101,7 @@ func treeHandler(c *router.Context) {
 		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
-	err = renderTree(c.Context, c.Writer, cl, bd)
+	err = renderTree(c.Context, c.Writer, cl, bd, inst)
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
 	}
