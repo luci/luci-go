@@ -104,7 +104,7 @@ func TestBlobs(t *testing.T) {
 			// This blob doesn't exist on CAS.
 			bd := digest.NewFromBlob([]byte{1})
 
-			err := returnBlob(ctx, w, cl, &bd)
+			err := returnBlob(ctx, w, cl, &bd, "")
 
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(w.Body.String(), ShouldEqual, "")
@@ -116,7 +116,7 @@ func TestBlobs(t *testing.T) {
 			bd, err := cl.WriteBlob(context.Background(), b)
 			So(err, ShouldBeNil)
 
-			err = returnBlob(ctx, w, cl, &bd)
+			err = returnBlob(ctx, w, cl, &bd, "test.txt")
 
 			So(err, ShouldBeNil)
 			body, err := ioutil.ReadAll(w.Body)
