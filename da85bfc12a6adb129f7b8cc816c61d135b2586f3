@@ -46,6 +46,30 @@
       "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58e0d1ab_c8ad41d1",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T20:22:49Z",
+      "side": 1,
+      "message": "Yeah I have the same concern but I think the possibility should be pretty low.\n\nA possible solution could be we try update first, if no row is updated insert it. But the problem for that is: if 2 requests are trying to update/insert the same shard, they may end up compete insert a row with the same primary key, and one of them will fail.",
+      "parentUuid": "854fd991_d5613029",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
