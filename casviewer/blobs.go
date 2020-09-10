@@ -22,6 +22,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/status"
 
@@ -90,4 +91,9 @@ func treeURL(instance string, d *repb.DirectoryNode) string {
 // getURL renders a URL to the tree page.
 func getURL(instance string, f *repb.FileNode) string {
 	return fmt.Sprintf("/%s/blobs/%s/%d", instance, f.Digest.Hash, f.Digest.SizeBytes)
+}
+
+// readableBytes converts bytes to human readable format.
+func readableBytes(s int64) string {
+	return humanize.Bytes(uint64(s))
 }
