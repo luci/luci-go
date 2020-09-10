@@ -94,6 +94,30 @@
       "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de48aef3_1eae7c2c",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-10T20:59:52Z",
+      "side": 1,
+      "message": "Probably not. :) If we ever need to change nShards, then we can add retry UPDATE with shardID\u003d0 later, but I agree that it\u0027s not necessary to worry about it now.",
+      "parentUuid": "7fee6333_be154e23",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
