@@ -55,13 +55,23 @@ func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 }
 
 // returnBlob writes a blob to response.
-func returnBlob(ctx context.Context, w http.ResponseWriter, cl *client.Client, bd *digest.Digest) error {
+func returnBlob(ctx context.Context, w http.ResponseWriter, cl *client.Client, bd *digest.Digest, filename string) error {
 	b, err := readBlob(ctx, cl, bd)
 	if err != nil {
 		return err
 	}
 
-	// TODO(crbug.com/1121471): append appropriate headers.
+	// Set "text/plan" for the browser to detect the file type and display it.
+	// - Images will be wrapped in <image>.
+	// - Texts will be wrapped in <pre>.
+	// - Videos/Audios will be wrapped in <video>.
+	// etc.
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+
+	// Set the filename for download.
+	if filename != "" {
+		w.Header().Add("Content-Disposition", fmt.Sprintf("filename=%s", filename))
+	}
 
 	_, err = w.Write(b)
 	if err != nil {
@@ -89,5 +99,5 @@ func treeURL(instance string, d *repb.DirectoryNode) string {
 
 // getURL renders a URL to the tree page.
 func getURL(instance string, f *repb.FileNode) string {
-	return fmt.Sprintf("/%s/blobs/%s/%d", instance, f.Digest.Hash, f.Digest.SizeBytes)
+	return fmt.Sprintf("/%s/blobs/%s/%d?filename=%s", instance, f.Digest.Hash, f.Digest.SizeBytes, f.Name)
 }
