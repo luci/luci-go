@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "f85a62b4_c588e117",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-10T01:25:08Z",
+      "side": 1,
+      "message": "not quite sure. I\u0027m just keeping the existing implementation.",
+      "parentUuid": "0421aed0_dfdf5da0",
+      "range": {
+        "startLine": 78,
+        "startChar": 61,
+        "endLine": 78,
+        "endChar": 85
+      },
+      "revId": "eeb4ea08fa8303e140cf2f35b5b99dcdbb84960f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b0b418f_11fd76fd",
         "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
         "patchSetId": 1
@@ -56,6 +80,24 @@
       "revId": "eeb4ea08fa8303e140cf2f35b5b99dcdbb84960f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fed17b0_d1ea9cc0",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-10T01:25:08Z",
+      "side": 1,
+      "message": "Added delimiter between filter groups.",
+      "parentUuid": "3b0b418f_11fd76fd",
+      "revId": "eeb4ea08fa8303e140cf2f35b5b99dcdbb84960f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
