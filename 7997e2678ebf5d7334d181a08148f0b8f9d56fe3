@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9bfb4da0_a5e25350",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f835251_ffc911e6",
+      "range": {
+        "startLine": 31,
+        "startChar": 84,
+        "endLine": 31,
+        "endChar": 94
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "acee1950_5ab11be7",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f398cdc_c4276acd",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "I don\u0027t know about restricting the request based on the current assumptions (as they may change) I just wanted to provide reasonable defaults for when things are unspecified.",
+      "parentUuid": "acee1950_5ab11be7",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 58
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "72c9ff8d_056554cb",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Correct. I don\u0027t know what\u0027s the right number of invocations to query for a given page size of results, but I am sure this will be different when we have the UVariant and Test prefix optimizations.",
+      "parentUuid": "53cf5356_d0a47879",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 17
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e94d9671_1b032e86",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8
@@ -106,6 +178,30 @@
       "writtenOn": "2020-09-09T19:48:21Z",
       "side": 1,
       "message": "Should this be permListTestResults or permGetTestResult?",
+      "range": {
+        "startLine": 98,
+        "startChar": 48,
+        "endLine": 98,
+        "endChar": 65
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4059e1ee_fac01b7d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Maybe we need both? I am not sure. +Vadimsh",
+      "parentUuid": "e94d9671_1b032e86",
       "range": {
         "startLine": 98,
         "startChar": 48,
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "6f6538b4_beace04a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Correct, it will require that one or the other be set.",
+      "parentUuid": "6db16f6f_07a7e22b",
+      "range": {
+        "startLine": 113,
+        "startChar": 7,
+        "endLine": 113,
+        "endChar": 19
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "213047d3_558acd25",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8
@@ -161,6 +281,30 @@
       "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebddc55e_e9f29848",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "213047d3_558acd25",
+      "range": {
+        "startLine": 122,
+        "startChar": 71,
+        "endLine": 122,
+        "endChar": 81
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "727bf5e6_2a5e5482",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Yes, field mask will be added to the request later.",
+      "parentUuid": "0ee14636_79ec9f43",
+      "range": {
+        "startLine": 157,
+        "startChar": 28,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5232ab9_b169438a",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8
@@ -207,6 +375,30 @@
       "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "920ff0c2_367491eb",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "This means that the invocation may be paired with its own time/cp or the time/cp of some invocation that contains it. I\u0027ve moved this struct to internal/invocations/history.go",
+      "parentUuid": "a5232ab9_b169438a",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 9
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -233,6 +425,30 @@
     },
     {
       "key": {
+        "uuid": "30ed36c1_c70c88da",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d6839c9_bd6510ec",
+      "range": {
+        "startLine": 175,
+        "startChar": 1,
+        "endLine": 175,
+        "endChar": 5
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b95d6ec_950d2f89",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8
@@ -244,6 +460,30 @@
       "writtenOn": "2020-09-09T23:02:47Z",
       "side": 1,
       "message": "I guess you\u0027re getting reachables for each indexedInv separately because  of the concern that too many invIDs will be returned if we calling Reachable for the entire idxInvs at once?",
+      "range": {
+        "startLine": 198,
+        "startChar": 37,
+        "endLine": 198,
+        "endChar": 46
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "75a89ddd_8e3a74d6",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "I was more concerned about making the code as simple as possible for the first iteration. Once we settle on the approach then we can do things like batching invocations to get their closure and other optimizations.\n\nBut also, I want to map each invocation in the closure with the timestamp/cp of the corresponding invocation from the index.",
+      "parentUuid": "4b95d6ec_950d2f89",
       "range": {
         "startLine": 198,
         "startChar": 37,
@@ -279,6 +519,30 @@
     },
     {
       "key": {
+        "uuid": "53a4b9ff_6ecde21e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "057c30e5_f7fdcdc0",
+      "range": {
+        "startLine": 200,
+        "startChar": 51,
+        "endLine": 200,
+        "endChar": 56
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e20b2a7_c9181691",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8
@@ -293,6 +557,24 @@
       "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b77ac510_69eb7a00",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-10T01:19:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e20b2a7_c9181691",
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
