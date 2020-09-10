@@ -123,6 +123,24 @@
       "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a124d8e0_6b0902aa",
+        "filename": "casviewer/templates/pages/tree.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-10T05:01:37Z",
+      "side": 1,
+      "message": "Regardless whether we use CSS framework or not,\nI would like to do styling changes in another CL since it usually take time to change and review.\nCan I submit this CL?",
+      "parentUuid": "507de403_d55a8b38",
+      "revId": "bdc5bdb43eb16e2c2d45a89328597b3ef12b2762",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
