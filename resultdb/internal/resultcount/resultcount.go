@@ -28,13 +28,13 @@ import (
 )
 
 // Total number of shards for each invocation in TestResultCount table.
-const totalShard = 10
+const nShards = 10
 
 // InitializeCounters inserts shard rows with 0 counts for the invocation into TestResultCounts table.
 func InitializeCounters(id invocations.ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, totalShard)
+	ms := make([]*spanner.Mutation, nShards)
 
-	for i := 0; i < totalShard; i++ {
+	for i := 0; i < nShards; i++ {
 		ms[i] = spanutil.InsertMap("TestResultCounts", map[string]interface{}{
 			"InvocationId":    id,
 			"ShardId":         i,
@@ -50,7 +50,6 @@ func IncrementTestResultCount(ctx context.Context, id invocations.ID, delta int6
 		return nil
 	}
 
-	shardID := mathrand.Intn(ctx, totalShard)
 	st := spanner.NewStatement(`
 		UPDATE TestResultCounts
 		SET TestResultCount = TestResultCount + @delta
@@ -59,14 +58,14 @@ func IncrementTestResultCount(ctx context.Context, id invocations.ID, delta int6
 	`)
 	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"invID":   id,
-		"shardID": shardID,
+		"shardID": mathrand.Intn(ctx, nShards),
 		"delta":   delta,
 	})
 	switch rowCount, err := span.Update(ctx, st); {
 	case err != nil:
 		return err
 	case rowCount != 1:
-		return fmt.Errorf("resultcount: expected to update 1 row, updated %d row instead", rowCount)
+		return fmt.Errorf("resultcount: expected to update 1 row, updated %d rows instead", rowCount)
 	default:
 		return nil
 	}
