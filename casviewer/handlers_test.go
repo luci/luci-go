@@ -152,10 +152,11 @@ func TestHandlers(t *testing.T) {
 			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 
 			// OK.
-			resp, err = http.Get(srv.URL + rDict)
+			resp, err = http.Get(srv.URL + rDict + "?filename=text.txt")
 			So(err, ShouldBeNil)
 			resp.Body.Close()
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			fmt.Println(resp.Header)
 		})
 
 		Convey("checkPermission", func() {
