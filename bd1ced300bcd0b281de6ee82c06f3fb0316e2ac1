@@ -16,6 +16,24 @@
       "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23984acb_5557a27f",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-10T03:49:12Z",
+      "side": 1,
+      "message": "Oh, there is one for binary units.\n\nI see we are already using humanize.Bytes.\nhttps://source.chromium.org/search?q\u003dhumanize.Bytes\u0026sq\u003d\u0026ss\u003dchromium\nShall we use the same one at least in CAS related code?\n\nIMO, decimal unit is fine.",
+      "parentUuid": "85cfcd52_969fbc62",
+      "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
