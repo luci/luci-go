@@ -20,16 +20,17 @@ import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
 
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
+import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { sanitizeHTML } from '../libs/sanitize_html';
 import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
-// TODO(crbug/1113995): support rendering
-// /\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b/ links in the description.
+// TODO(crbug/1113995): support rendering bugnizer links in the description.
 const md = MarkdownIt('zero', {breaks: true, linkify: true})
   .enable(['linkify', 'newline'])
-  .use(bugLine);
+  .use(bugLine)
+  .use(crbugLink);
 
 /**
  * Renders an expandable entry of the given commit.
