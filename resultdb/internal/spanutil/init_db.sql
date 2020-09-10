@@ -302,3 +302,17 @@ CREATE TABLE TQReminders (
   FreshUntil TIMESTAMP NOT NULL,
   Payload BYTES(102400) NOT NULL,
 ) PRIMARY KEY (ID ASC);
+
+-- Stores ids of invocations included in another invocation.
+-- Interleaved in Invocations table.
+CREATE TABLE TestResultCounts (
+  -- ID of the including invocation, the "source" node of the edge.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- A random value in [0, 10).
+  ShardId INT64 NOT NULL,
+
+-- Counter of TesultResults that belongs to this shard of invocation directly.
+  TestResultCount INT64,
+) PRIMARY KEY (InvocationId, ShardId),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
