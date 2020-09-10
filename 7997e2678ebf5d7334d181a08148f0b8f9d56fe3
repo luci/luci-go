@@ -403,6 +403,30 @@
     },
     {
       "key": {
+        "uuid": "847ce9bb_2f5d428e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T04:13:54Z",
+      "side": 1,
+      "message": "Probably add a TODO?",
+      "parentUuid": "727bf5e6_2a5e5482",
+      "range": {
+        "startLine": 157,
+        "startChar": 28,
+        "endLine": 157,
+        "endChar": 34
+      },
+      "revId": "7997e2678ebf5d7334d181a08148f0b8f9d56fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a5232ab9_b169438a",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 8

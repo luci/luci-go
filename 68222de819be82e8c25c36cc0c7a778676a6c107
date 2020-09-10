@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a26f85cf_be5bd894",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T04:13:54Z",
+      "side": 1,
+      "message": "When support query by commit position, will we define another struct or adding the ordinal fields in the same struct?",
+      "range": {
+        "startLine": 29,
+        "startChar": 62,
+        "endLine": 29,
+        "endChar": 69
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b99dd1bd_77ed066a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T04:13:54Z",
+      "side": 1,
+      "message": "Should we check the latest is no earlier than 2 years? Since we couldn\u0027t be able to provide the full history for that range.",
+      "range": {
+        "startLine": 113,
+        "startChar": 7,
+        "endLine": 113,
+        "endChar": 19
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "375fe228_6a6222b0",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T04:13:54Z",
+      "side": 1,
+      "message": "In https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/resultdb.proto;l\u003d472 it mentions that \"If multiple entries exist for the same commit position/timestamp they will be internally ordered by TestId, and then by VariantHash.\"  Based on the implementation here entries are ordered by invID, then testID, but not variantHash?",
+      "range": {
+        "startLine": 132,
+        "startChar": 5,
+        "endLine": 132,
+        "endChar": 22
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4caf8825_c3eded56",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-10T04:13:54Z",
+      "side": 1,
+      "message": "What\u0027s the intention of sorting the invIDs?",
+      "range": {
+        "startLine": 204,
+        "startChar": 3,
+        "endLine": 204,
+        "endChar": 29
+      },
+      "revId": "68222de819be82e8c25c36cc0c7a778676a6c107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
