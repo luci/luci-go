@@ -92,7 +92,12 @@ export class BlamelistTabElement extends MobxLitElement {
       </div>
       <div id="main">
         ${this.commits.map((commit, i) => html`
-        <milo-commit-entry .number=${i + 1} .repoUrl=${this.repoUrl} .commit=${commit}></milo-commit-entry>
+        <milo-commit-entry
+          class="list-entry"
+          .number=${i + 1}
+          .repoUrl=${this.repoUrl}
+          .commit=${commit}
+        ></milo-commit-entry>
         `)}
         <hr class="divider" style=${styleMap({'display': this.commits.length === 0 ? 'none' : ''})}>
         <div class="list-entry">
@@ -130,6 +135,9 @@ export class BlamelistTabElement extends MobxLitElement {
     #main {
       padding-left: 10px;
       border-top: 1px solid #DDDDDD;
+    }
+    .list-entry {
+      margin-top: 5px;
     }
 
     .divider {
