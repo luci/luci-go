@@ -65,8 +65,9 @@ func getTemplateBundle() *templates.Bundle {
 			}, nil
 		},
 		FuncMap: template.FuncMap{
-			"treeURL": treeURL,
-			"getURL":  getURL,
+			"treeURL":       treeURL,
+			"getURL":        getURL,
+			"readableBytes": readableBytes,
 		},
 	}
 }
