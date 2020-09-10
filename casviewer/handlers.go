@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -120,7 +121,7 @@ func getHandler(c *router.Context) {
 		renderErrorPage(c.Context, c.Writer, err)
 		return
 	}
-	err = returnBlob(c.Context, c.Writer, cl, bd)
+	err = returnBlob(c.Context, c.Writer, cl, bd, fileName(c.Request))
 	if err != nil {
 		renderErrorPage(c.Context, c.Writer, err)
 	}
@@ -148,4 +149,14 @@ func blobDigest(p httprouter.Params) (*digest.Digest, error) {
 		Hash: p.ByName("hash"),
 		Size: size,
 	}, nil
+}
+
+// fileName extracts file name from query params.
+func fileName(r *http.Request) string {
+	names := r.URL.Query()["filename"]
+	if len(names) >= 1 {
+		return names[0]
+	} else {
+		return ""
+	}
 }
