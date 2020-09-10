@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14659567_2782ab5b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-10T04:15:32Z",
+      "side": 1,
+      "message": "lg, though I would strongly prefer the folder to be \u0027dstypes\u0027 instead of \u0027types\u0027.\n\nOtherwise users importing this will have the very general-sounding \u0027types\u0027 package in their module namespace and (probably) will have to add some different local name for it.",
+      "revId": "1fdf51fce149428d2d91ed05c130bf228642f406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
