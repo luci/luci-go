@@ -52,6 +52,7 @@ export class BuildStepEntryElement extends MobxLitElement {
   @observable.ref number = 0;
   @observable.ref expanded = false;
   @observable.ref step!: StepExt;
+  @observable.ref showDebugLogs = false;
 
   @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
 
@@ -72,6 +73,11 @@ export class BuildStepEntryElement extends MobxLitElement {
     return this.step.summary_markdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
   }
 
+  @computed private get logs() {
+    const logs = this.step.logs || [];
+    return this.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
+  }
+
   protected render() {
     return html`
       <milo-expandable-entry .expanded=${this.expanded}>
@@ -89,7 +95,7 @@ export class BuildStepEntryElement extends MobxLitElement {
             ${renderMarkdown(this.summary)}
           </div>
           <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
-            ${(this.step.logs || []).map((log) => html`
+            ${this.logs.map((log) => html`
             <li>
               <a href=${log.view_url} target="_blank">${log.name}</a>
               <!-- TODO(crbug/1116824): render logdog link -->
@@ -97,7 +103,7 @@ export class BuildStepEntryElement extends MobxLitElement {
             `)}
           </ul>
           ${this.step.children?.map((child, i) => html`
-          <milo-build-step-entry .number=${i + 1} .step=${child}></milo-build-step-entry>
+          <milo-build-step-entry .number=${i + 1} .step=${child} .showDebugLogs=${this.showDebugLogs}></milo-build-step-entry>
           `) || ''}
         </div>
       </milo-expandable-entry>

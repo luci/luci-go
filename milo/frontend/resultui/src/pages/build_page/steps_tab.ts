@@ -29,6 +29,7 @@ export class StepsTabElement extends MobxLitElement {
 
   // TODO(crbug/1123362): save the setting.
   @observable.ref showPassed = true;
+  @observable.ref showDebugLogs = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -50,8 +51,8 @@ export class StepsTabElement extends MobxLitElement {
     // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
       <div id="header">
-        <div id="filters">
-          Show:
+        <div class="filters-container">
+          Steps:
           <div class="filter">
             <input
               id="passed"
@@ -59,12 +60,25 @@ export class StepsTabElement extends MobxLitElement {
               ?checked=${this.showPassed}
               @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
             >
-            <label for="passed" style="color: #33ac71;">Passed Steps</label>
+            <label for="passed" style="color: #33ac71;">Passed</label>
           </div class="filter">
           <div class="filter">
             <input id="others" type="checkbox" disabled checked>
-            <label for="others">Other Steps</label>
+            <label for="others">Others</label>
           </div>
+        </div>
+        <div class="filters-container-delimiter"></div>
+        <div class="filters-container">
+          Logs:
+          <div class="filter">
+            <input
+              id="debug-logs-filter"
+              type="checkbox"
+              ?checked=${this.showDebugLogs}
+              @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
+            >
+            <label for="debug-logs-filter">Debug</label>
+          </div class="filter">
         </div>
       </div>
       <div id="main">
@@ -75,6 +89,7 @@ export class StepsTabElement extends MobxLitElement {
           .expanded=${true}
           .number=${i + 1}
           .step=${step}
+          .showDebugLogs=${this.showDebugLogs}
         ></milo-build-step-entry>
         `) || ''}
         <div
@@ -92,17 +107,29 @@ export class StepsTabElement extends MobxLitElement {
 
   static styles = css`
     #header {
-      height: 30px;
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      grid-gap: 5px;
+      height: 28px;
+      padding: 5px 10px 3px 10px;
     }
 
-    #filters {
+    .filters-container {
       display: inline-block;
-      padding: 0 10px;
-      margin: 5px;
+      padding: 0 5px;
+      padding-top: 5px;
     }
     .filter {
       display: inline-block;
-      padding: 0 5px;
+      margin: 0 5px;
+    }
+    .filter:last-child {
+      margin-right: 0px;
+    }
+    .filters-container-delimiter {
+      border-left: 1px solid #DDDDDD;
+      width: 0px;
+      height: 100%;
     }
 
     #main {

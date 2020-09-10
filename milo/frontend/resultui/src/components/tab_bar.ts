@@ -38,34 +38,28 @@ export class TabBarElement extends LitElement {
 
   protected render() {
     return html`
-      <div id="tab-bar">
-        ${this.tabs.map((tab) => html`
-          <a
-            class=${classMap({'tab': true, 'selected': this.selectedTabId === tab.id})}
-            @click=${() => {
-              if (this.selectedTabId === tab.id) {
-                return;
-              }
-              this.onTabClicked(this.selectedTabId);
-            }}
-            href=${tab.href}
-          >${tab.label}</a>
-        `)}
-      </div>
+      ${this.tabs.map((tab) => html`
+        <a
+          class=${classMap({'tab': true, 'selected': this.selectedTabId === tab.id})}
+          @click=${() => {
+            if (this.selectedTabId === tab.id) {
+              return;
+            }
+            this.onTabClicked(this.selectedTabId);
+          }}
+          href=${tab.href}
+        >${tab.label}</a>
+      `)}
     `;
   }
 
   static styles = css`
     :host {
       display: block;
-      margin: 10px;
-      margin-bottom: 5px;
-    }
-
-    #tab-bar {
       height: 25px;
       border-bottom: 1px solid #EBEBEB;
     }
+
     .tab {
       color: #212121;
       padding: 7px 14px 7px 14px;

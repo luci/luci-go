@@ -118,11 +118,12 @@ export class BlamelistTabElement extends MobxLitElement {
     #header {
       display: grid;
       grid-template-columns: 1fr auto auto;
-      height: 30px;
+      grid-gap: 5px;
+      height: 28px;
+      padding: 5px 10px 3px 10px;
     }
 
     .action-button {
-      margin: 0 5px;
       --mdc-theme-primary: rgb(0, 123, 255);
     }
 

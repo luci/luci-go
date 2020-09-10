@@ -167,6 +167,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       margin-left: auto;
       flex: 0 auto;
     }
+
+    milo-tab-bar {
+      margin: 0 10px;
+      padding-top: 10px;
+    }
   `;
 }
 
