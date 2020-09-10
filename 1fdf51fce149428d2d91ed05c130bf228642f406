@@ -16,6 +16,24 @@
       "revId": "1fdf51fce149428d2d91ed05c130bf228642f406",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0d81948d_51fc69a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-10T18:55:55Z",
+      "side": 1,
+      "message": "make sense. Renaming in a followup CL.",
+      "parentUuid": "14659567_2782ab5b",
+      "revId": "1fdf51fce149428d2d91ed05c130bf228642f406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
