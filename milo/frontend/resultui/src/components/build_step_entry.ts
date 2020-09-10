@@ -21,7 +21,7 @@ import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import { displayDuration } from '../libs/time_utils';
-import { renderMarkdown } from '../libs/utils';
+import { ChainableURL, renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
 import './expandable_entry';
@@ -98,7 +98,11 @@ export class BuildStepEntryElement extends MobxLitElement {
             ${this.logs.map((log) => html`
             <li>
               <a href=${log.view_url} target="_blank">${log.name}</a>
-              <!-- TODO(crbug/1116824): render logdog link -->
+              <a
+                style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
+                href=${new ChainableURL(log.view_url).withSearchParam('format', 'raw', true).toString()}
+                target="_blank"
+              >[raw]</a>
             </li>
             `)}
           </ul>
