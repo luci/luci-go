@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85cfcd52_969fbc62",
+        "filename": "casviewer/blobs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-10T02:26:17Z",
+      "side": 1,
+      "message": "use https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/data/text/units/units.go\n?",
+      "revId": "bd1ced300bcd0b281de6ee82c06f3fb0316e2ac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
