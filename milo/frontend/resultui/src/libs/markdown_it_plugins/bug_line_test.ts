@@ -18,13 +18,14 @@ import MarkdownIt from 'markdown-it';
 
 import { bugLine } from './bug_line';
 
-const singleBugLine = 'Bug: 123, 234, not a project, proj:345';
+const singleBugLine = 'Bug: 123, 234, not a project, proj-1:345';
 const multipleBugLinesWithSoftBreak = 'Bug: 123\nBUG:234';
 const multipleBugLinesWithHardBreak = `Bug: 123  \nBUG:234`;
 
 describe('bug_line', () => {
   it('can render single bug line correctly', async () => {
     const md = MarkdownIt('zero', {breaks: true})
+      .enable('newline')
       .use(bugLine);
 
     const ele = await fixture(md.render(singleBugLine));
@@ -41,14 +42,15 @@ describe('bug_line', () => {
     assert.equal(anchor2.text, '234');
 
     const anchor3 =  anchors.item(2);
-    assert.equal(anchor3.href, 'https://crbug.com/proj/345');
-    assert.equal(anchor3.text, 'proj:345');
+    assert.equal(anchor3.href, 'https://crbug.com/proj-1/345');
+    assert.equal(anchor3.text, 'proj-1:345');
 
     assert.equal(ele.childNodes[4].textContent, ', not a project, ');
   });
 
   describe('When breaks is set to true', () => {
     const md = MarkdownIt('zero', {breaks: true})
+      .enable('newline')
       .use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
@@ -84,6 +86,7 @@ describe('bug_line', () => {
 
   describe('When breaks is set to false', () => {
     const md = MarkdownIt('zero', {breaks: false})
+      .enable('newline')
       .use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
