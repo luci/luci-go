@@ -21,10 +21,24 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
+	// This duplicates (part of) validateGetTestResultRequest, only because the
+	// resultName needs to be valid to parse from it the invID needed to check
+	// permissions in its realm.
+	if err := pbutil.ValidateTestResultName(resultName); err != nil {
+		return errors.Annotate(err, "name").Err()
+	}
+
+	invID, _, _ := testresults.MustParseName(resultName)
+
+	return permissions.VerifyInvocation(ctx, permGetTestResult, invID)
+}
 
 func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 	if err := pbutil.ValidateTestResultName(req.Name); err != nil {
@@ -35,6 +49,9 @@ func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 }
 
 func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
+	if err := verifyGetTestResultPermission(ctx, in.GetName()); err != nil {
+		return nil, err
+	}
 	if err := validateGetTestResultRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
