@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "6c95d312_2d15b621",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T08:42:18Z",
+      "side": 1,
+      "message": "I think python\u0027s logic now does more than necessary. And I prefer to keep simplicity by not doing such unnecessary things or by being lazy.",
+      "parentUuid": "b4c983e4_c42a1d97",
+      "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1a316876_90ddd101",
         "filename": "client/cmd/swarming/lib/trigger_test.go",
         "patchSetId": 4
