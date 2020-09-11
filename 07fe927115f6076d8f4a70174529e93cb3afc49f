@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6d9b873d_5d560edb",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "yeah I was thinking about trying to un-do this in a subsequent CL.",
+      "parentUuid": "26c10dab_7215373c",
+      "range": {
+        "startLine": 21,
+        "startChar": 24,
+        "endLine": 21,
+        "endChar": 40
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29f68fe7_dd183cf3",
         "filename": "gae/service/datastore/types/serialize/invertible.go",
         "patchSetId": 1
@@ -46,6 +70,30 @@
       "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa3d7a44_4691f3d2",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "Actually fixed in the last (merge) CL incidentally.",
+      "parentUuid": "29f68fe7_dd183cf3",
+      "range": {
+        "startLine": 22,
+        "startChar": 17,
+        "endLine": 22,
+        "endChar": 25
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -72,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "5087d338_23984456",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "yeah, but I think I could embed *bytes.Buffer here...",
+      "parentUuid": "43b8b7a7_155fbf2f",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3469fbd_c404275b",
         "filename": "gae/service/datastore/types/serialize/serialize.go",
         "patchSetId": 1
@@ -92,6 +164,30 @@
       "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bfa7e2a_cca8205e",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3469fbd_c404275b",
+      "range": {
+        "startLine": 57,
+        "startChar": 16,
+        "endLine": 57,
+        "endChar": 25
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "ecc442d8_f37bf4e2",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "considered this but it really should be SerializeWithKeyContext... which is just super long. I think it\u0027s good enough.",
+      "parentUuid": "ce4fb86e_fb801526",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 12
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53303399_ff48649e",
         "filename": "gae/service/datastore/types/serialize/serialize.go",
         "patchSetId": 1
@@ -129,6 +249,30 @@
       "writtenOn": "2020-09-11T22:52:49Z",
       "side": 1,
       "message": "(unrelated, but I wonder what\u0027s the runtime overhead of this trick on happy path? is it as fast as just returning errors as usual? IIUC, KeyTok is a very hot functions and it might be better to copy-paste 20 lines of error checking code to speed it up even a bit)",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a94e4a57_08c7d97f",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T23:26:34Z",
+      "side": 1,
+      "message": "I believe that as of Go 1.14 defers are much lower overhead, and the compiler is better with inlining; I would be surprised if the defer bit here was a source of problems.\n\nThe PANIC bit, on the other hand, is probably not very performant... but we also ~never have errors here.\n\nIf I can replace the interfaces with a *bytes.Buffer, I can assume some things about the implementation here (and maybe just remove the returned errors from most of these).",
+      "parentUuid": "53303399_ff48649e",
       "range": {
         "startLine": 86,
         "startChar": 1,
