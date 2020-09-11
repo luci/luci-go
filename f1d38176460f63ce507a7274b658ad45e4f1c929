@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "d5042a89_aa506bb0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T00:53:30Z",
+      "side": 1,
+      "message": "do you still need user agent specification in\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/5309ddcaa9ca4a73cc102a545255a67822958309/led/ledcmd/clients.go#134\n?",
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88ba4ec6_03416c1e",
+        "filename": "led/ledcli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T00:53:30Z",
+      "side": 1,
+      "message": "no needs to be public yet?",
+      "range": {
+        "startLine": 37,
+        "startChar": 4,
+        "endLine": 37,
+        "endChar": 13
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97683a32_08200ec8",
         "filename": "led/ledcli/main.go",
         "patchSetId": 2
