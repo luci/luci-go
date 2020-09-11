@@ -206,6 +206,30 @@
       "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4229f5f6_b4a085f4",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T18:05:58Z",
+      "side": 1,
+      "message": "We\u0027re not. I added a call in recorder main().",
+      "parentUuid": "e92b8a3f_97698a25",
+      "range": {
+        "startLine": 61,
+        "startChar": 13,
+        "endLine": 61,
+        "endChar": 21
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
