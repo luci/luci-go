@@ -20,6 +20,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -34,14 +36,18 @@ type commonFlags struct {
 	casFlags  cas.Flags
 	logConfig logging.Config // for -log-level, used by ModifyContext
 	profiler  profiling.Profiler
+	authFlags authcli.Flags
+
+	parsedAuthOpts auth.Options
 }
 
-func (c *commonFlags) Init() {
+func (c *commonFlags) Init(authOpts auth.Options) {
 	c.casFlags.Init(&c.Flags)
 
 	c.logConfig.Level = logging.Warning
 	c.logConfig.AddFlags(&c.Flags)
 	c.profiler.AddFlags(&c.Flags)
+	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonFlags) Parse() error {
@@ -63,6 +69,13 @@ func (c *commonFlags) Parse() error {
 	if err := c.profiler.Start(); err != nil {
 		return err
 	}
+	var err error
+	c.parsedAuthOpts, err = c.authFlags.Options()
+	if err != nil {
+		return err
+	}
+
+	c.parsedAuthOpts.TokenServerHost = c.casFlags.TokenServerHost
 
 	return c.casFlags.Parse()
 }

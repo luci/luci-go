@@ -24,6 +24,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/testing/testfs"
 )
 
@@ -34,7 +35,7 @@ func TestArchiveDownload(t *testing.T) {
 		fakeEnv, cleanup := fakes.NewTestEnv(t)
 		t.Cleanup(cleanup)
 
-		newCasClient = func(ctx context.Context, instance string, tokenServerHost string, readOnly bool) (*client.Client, error) {
+		newCasClient = func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 			return fakeEnv.Server.NewTestClient(ctx)
 		}
 

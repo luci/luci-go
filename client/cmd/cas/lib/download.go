@@ -30,6 +30,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
@@ -41,7 +42,7 @@ import (
 )
 
 // CmdDownload returns an object for the `download` subcommand.
-func CmdDownload() *subcommands.Command {
+func CmdDownload(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "download <options>...",
 		ShortDesc: "download directory tree from a CAS server.",
@@ -50,7 +51,7 @@ func CmdDownload() *subcommands.Command {
 Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
-			c.Init()
+			c.Init(defaultAuthOpts)
 			c.cachePolicies.AddFlags(&c.Flags)
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
@@ -96,7 +97,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := newCasClient(ctx, r.casFlags.Instance, r.casFlags.TokenServerHost, true)
+	c, err := newCasClient(ctx, r.casFlags.Instance, r.parsedAuthOpts, true)
 	if err != nil {
 		return err
 	}

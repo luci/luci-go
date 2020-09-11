@@ -287,8 +287,9 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 	return execRoot, inputSpec, nil
 }
 
-func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
-	cl, err := newCasClient(ctx, fl.Instance, fl.TokenServerHost, false)
+func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	authOpts.TokenServerHost = fl.TokenServerHost
+	cl, err := newCasClient(ctx, fl.Instance, authOpts, false)
 	if err != nil {
 		return nil, err
 	}
