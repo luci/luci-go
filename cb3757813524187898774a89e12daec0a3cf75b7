@@ -16,6 +16,24 @@
       "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "54bedbcf_f23ce52a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T19:12:21Z",
+      "side": 1,
+      "message": "It is a concern and I missed it.\n\nAnd it seems that querying Invocation.TotalResultCount when finding no rows in the new table cannot solve the concern entirely. If a build reuses some old swarming tasks, either way will only return a partial results.\n\nI\u0027m thinking about adding rows to the new table for the old invocations. So that resultcount.ReadTestResultCount will also cover their counts.\n\nWDYT?",
+      "parentUuid": "8e900c71_70328e93",
+      "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
