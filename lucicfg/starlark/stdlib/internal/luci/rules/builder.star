@@ -236,7 +236,7 @@ def _builder(
         "triggering_policy": schedulerimpl.validate_policy("triggering_policy", triggering_policy, required = False),
         "build_numbers": validate.bool("build_numbers", build_numbers, required = False),
         "experimental": validate.bool("experimental", experimental, required = False),
-        "experiments": _validate_experiments("experiments", experiments),
+        "experiments": _validate_experiments("experiments", experiments, allow_none = True),
         "task_template_canary_percentage": validate.int("task_template_canary_percentage", task_template_canary_percentage, min = 0, max = 100, required = False),
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
@@ -248,7 +248,7 @@ def _builder(
         def_val = var.get() if var else None
         if def_val == None:
             continue
-        if k in ("properties", "dimensions"):
+        if k in ("properties", "dimensions", "experiments"):
             props[k] = _merge_dicts(def_val, prop_val)
         elif k in ("caches", "swarming_tags"):
             props[k] = _merge_lists(def_val, prop_val)
@@ -260,8 +260,10 @@ def _builder(
     # informative stack trace.
     _ = to_json(props["properties"])
 
-    # There should be no dimensions with value None after merging.
+    # There should be no dimensions and experiments with value None after
+    # merging.
     swarming.validate_dimensions("dimensions", props["dimensions"], allow_none = False)
+    _validate_experiments("experiments", props["experiments"], allow_none = False)
 
     # Add a node that carries the full definition of the builder.
     builder_key = keys.builder(bucket_key.id, name)
@@ -324,15 +326,16 @@ def _merge_dicts(defaults, extra):
 def _merge_lists(defaults, extra):
     return defaults + extra
 
-def _validate_experiments(attr, val):
+def _validate_experiments(attr, val, allow_none = False):
     """Validates that the value is a dict of {string: int[1-100]}
 
     Args:
       attr: field name with this value, for error messages.
       val: a value to validate.
+      allow_none: True to also allow None as dict values.
 
     Returns:
-      The validated dict or None.
+      The validated dict or {}.
     """
     if val == None:
         return {}
@@ -340,6 +343,8 @@ def _validate_experiments(attr, val):
     validate.str_dict(attr, val)
 
     for k, percent in val.items():
+        if percent == None and allow_none:
+            continue
         perc_type = type(percent)
         if perc_type != "int":
             fail("bad %r: got %s for key %s, want int from 0-100" % (attr, perc_type, k))
