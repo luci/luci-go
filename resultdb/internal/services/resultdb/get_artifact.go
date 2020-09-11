@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -35,7 +36,7 @@ func verifyReadArtifactPermission(ctx context.Context, name string) error {
 		return appstatus.BadRequest(inputErr)
 	}
 
-	return verifyPermission(ctx, permGetArtifact, invocations.ID(invIDStr))
+	return permissions.VerifyInvocation(ctx, permGetArtifact, invocations.ID(invIDStr))
 }
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {

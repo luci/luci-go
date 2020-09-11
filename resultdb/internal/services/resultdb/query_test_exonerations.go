@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -43,7 +44,7 @@ func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) 
 
 // QueryTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error) {
-	if err := verifyPermissionInvNames(ctx, permListTestExonerations, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvNames(ctx, permListTestExonerations, in.Invocations...); err != nil {
 		return nil, err
 	}
 

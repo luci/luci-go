@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -42,7 +43,7 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
-	if err := verifyPermissionInvNames(ctx, permListArtifacts, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvNames(ctx, permListArtifacts, in.Invocations...); err != nil {
 		return nil, err
 	}
 

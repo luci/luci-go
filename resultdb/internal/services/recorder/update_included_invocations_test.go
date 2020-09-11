@@ -20,6 +20,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -86,7 +89,12 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 
 func TestUpdateIncludedInvocations(t *testing.T) {
 	Convey(`TestIncludedInvocations`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
+			},
+		})
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "including")
@@ -125,6 +133,10 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 			}
 
 			Convey(`No including invocation`, func() {
+				testutil.MustApply(ctx,
+					insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, req)
 				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
 			})
@@ -132,7 +144,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 			Convey(`With existing inclusion`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("including", pb.Invocation_ACTIVE, nil),
-					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, nil),
+					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 					IncludingInvocation: "invocations/including",
@@ -143,13 +155,24 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				Convey(`No included invocation`, func() {
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldHaveAppStatus, codes.NotFound, `one of the included invocations does not exist`)
+					So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included`)
+				})
+
+				Convey(`Leaking disallowed`, func() {
+					testutil.MustApply(ctx,
+						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:secretrealm"}),
+					)
+
+					_, err := recorder.UpdateIncludedInvocations(ctx, req)
+					So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission resultdb.invocations.include in realm of invocation included2`)
+					assertNotIncluded("included2")
 				})
 
 				Convey(`Success - idempotent`, func() {
 					testutil.MustApply(ctx,
-						insert.Invocation("included", pb.Invocation_FINALIZED, nil),
-						insert.Invocation("included2", pb.Invocation_FINALIZED, nil),
+						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
