@@ -172,7 +172,7 @@ func TestIndexRowGen(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				mvals := serialize.PropertyMapPartially(fakeKey, tc.pmap)
+				mvals := serialize.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
 					idxs = append(defaultIndexes("coolKind", tc.pmap), tc.idxs...)
@@ -213,7 +213,7 @@ func TestIndexRowGen(t *testing.T) {
 			})
 
 			Convey("indexEntries", func() {
-				sip := serialize.PropertyMapPartially(fakeKey, nil)
+				sip := serialize.Serialize.PropertyMapPartially(fakeKey, nil)
 				s := indexEntries(fakeKey, sip, defaultIndexes("knd", ds.PropertyMap(nil)))
 				So(countItems(s.Snapshot().GetCollection("idx")), ShouldEqual, 1)
 				itm := s.GetCollection("idx").MinItem()
@@ -255,7 +255,7 @@ func TestIndexEntries(t *testing.T) {
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
-					sip := serialize.PropertyMapPartially(fakeKey, tc.pmap)
+					sip := serialize.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
 					store = indexEntries(fakeKey, sip, tc.idxs)
 				}
 				for colName, vals := range tc.collections {

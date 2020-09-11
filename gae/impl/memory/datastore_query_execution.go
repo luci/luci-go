@@ -84,7 +84,7 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 		pmap[p.propertyName] = decodedProps[p.suffixIndex]
 	}
 	if s.distinct != nil {
-		if !s.distinct.Add(string(serialize.Join(projectedRaw...))) {
+		if !s.distinct.Add(string(cmpbin.ConcatBytes(projectedRaw...))) {
 			return nil
 		}
 	}
@@ -131,7 +131,7 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, 
 		// entity doesn't exist at head
 		return nil
 	}
-	pm, err := serialize.ReadPropertyMap(bytes.NewBuffer(rawEnt), serialize.WithoutContext, s.kc)
+	pm, err := serialize.Deserializer{KeyContext: s.kc}.PropertyMap(bytes.NewBuffer(rawEnt))
 	memoryCorruption(err)
 
 	return s.cb(key, pm, gc)
@@ -161,14 +161,14 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 		needInvert := suffixFormat[i].Descending
 
 		buf.SetInvert(needInvert)
-		decoded[i], err = serialize.ReadProperty(buf, serialize.WithoutContext, kc)
+		decoded[i], err = serialize.Deserializer{KeyContext: kc}.Property(buf)
 		memoryCorruption(err)
 
 		offset := len(suffix) - buf.Len()
 		raw[i] = suffix[:offset]
 		suffix = suffix[offset:]
 		if needInvert {
-			raw[i] = serialize.Invert(raw[i])
+			raw[i] = cmpbin.InvertBytes(raw[i])
 		}
 	}
 
@@ -275,14 +275,14 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 				memoryCorruption(err)
 
 				for _, col := range rq.suffixFormat {
-					err := serialize.WriteIndexColumn(buf, col)
+					err := serialize.Serialize.IndexColumn(buf, col)
 					memoryCorruption(err)
 				}
 				cursorPrefix = buf.Bytes()
 			}
 			// TODO(riannucci): Do we need to decrement suffix instead of increment
 			// if we're sorting by __key__ DESCENDING?
-			return queryCursor(serialize.Join(cursorPrefix, increment(suffix))), nil
+			return queryCursor(cmpbin.ConcatBytes(cursorPrefix, increment(suffix))), nil
 		}
 	}
 

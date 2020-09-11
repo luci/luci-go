@@ -63,7 +63,7 @@ func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.In
 	if pm == nil {
 		return newMemStore()
 	}
-	sip = serialize.PropertyMapPartially(k, pm)
+	sip = serialize.Serialize.PropertyMapPartially(k, pm)
 	return indexEntries(k, sip, append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
@@ -164,7 +164,7 @@ func indexEntries(key *ds.Key, sip serialize.SerializedPmap, idxs []*ds.IndexDef
 			continue
 		}
 		if irg, ok := mtch.match(idx.GetFullSortOrder(), sip); ok {
-			idxBin := serialize.ToBytes(*idx.PrepForIdxTable())
+			idxBin := serialize.Serialize.ToBytes(*idx.PrepForIdxTable())
 			idxColl.Set(idxBin, []byte{})
 			coll := ret.GetOrCreateCollection(
 				fmt.Sprintf("idx:%s:%s", key.Namespace(), idxBin))
@@ -186,14 +186,14 @@ func walkCompIdxs(store memStore, endsWith *ds.IndexDefinition, cb func(*ds.Inde
 	itrDef := iterDefinition{c: idxColl}
 
 	if endsWith != nil {
-		full := serialize.ToBytes(*endsWith.Flip())
+		full := serialize.Serialize.ToBytes(*endsWith.Flip())
 		// chop off the null terminating byte
 		itrDef.prefix = full[:len(full)-1]
 	}
 
 	it := itrDef.mkIter()
 	for ent := it.next(); ent != nil; ent = it.next() {
-		qi, err := serialize.ReadIndexDefinition(bytes.NewReader(ent.key))
+		qi, err := serialize.Deserialize.IndexDefinition(bytes.NewReader(ent.key))
 		memoryCorruption(err)
 		if !cb(qi.Flip()) {
 			break
@@ -249,7 +249,7 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 	idxColl := store.GetOrCreateCollection("idx")
 	for i, idx := range compIdx {
 		normalized[i] = idx.Normalize()
-		idxColl.Set(serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
+		idxColl.Set(serialize.Serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
 	}
 
 	for _, ns := range namespaces(store) {
@@ -259,12 +259,12 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 				pm, err := readPropMap(iv)
 				memoryCorruption(err)
 
-				prop, err := serialize.ReadProperty(bytes.NewBuffer(ik), serialize.WithoutContext, kctx)
+				prop, err := serialize.Deserializer{KeyContext: kctx}.Property(bytes.NewBuffer(ik))
 				memoryCorruption(err)
 
 				k := prop.Value().(*ds.Key)
 
-				sip := serialize.PropertyMapPartially(k, pm)
+				sip := serialize.Serialize.PropertyMapPartially(k, pm)
 
 				mergeIndexes(ns, store,
 					newMemStore(),

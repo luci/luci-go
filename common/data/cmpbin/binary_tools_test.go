@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package cmpbin
 
 import (
 	"testing"
@@ -25,55 +25,55 @@ func TestBinaryTools(t *testing.T) {
 
 	Convey("Test Join", t, func() {
 		Convey("returns bytes with nil separator", func() {
-			join := Join([]byte("hello"), []byte("world"))
+			join := ConcatBytes([]byte("hello"), []byte("world"))
 			So(join, ShouldResemble, []byte("helloworld"))
 		})
 	})
 
 	Convey("Test Invert", t, func() {
 		Convey("returns nil for nil input", func() {
-			inv := Invert(nil)
+			inv := InvertBytes(nil)
 			So(inv, ShouldBeNil)
 		})
 
 		Convey("returns nil for empty input", func() {
-			inv := Invert([]byte{})
+			inv := InvertBytes([]byte{})
 			So(inv, ShouldBeNil)
 		})
 
 		Convey("returns byte slice of same length as input", func() {
 			input := []byte("こんにちは, world")
-			inv := Invert(input)
+			inv := InvertBytes(input)
 			So(len(input), ShouldEqual, len(inv))
 		})
 
 		Convey("returns byte slice with each byte inverted", func() {
-			inv := Invert([]byte("foo"))
+			inv := InvertBytes([]byte("foo"))
 			So(inv, ShouldResemble, []byte{153, 144, 144})
 		})
 	})
 
 	Convey("Test Increment", t, func() {
 		Convey("returns empty slice and overflow true when input is nil", func() {
-			incr, overflow := Increment(nil)
+			incr, overflow := IncrementBytes(nil)
 			So(incr, ShouldBeNil)
 			So(overflow, ShouldBeTrue)
 		})
 
 		Convey("returns empty slice and overflow true when input is empty", func() {
-			incr, overflow := Increment([]byte{})
+			incr, overflow := IncrementBytes([]byte{})
 			So(incr, ShouldBeNil)
 			So(overflow, ShouldBeTrue)
 		})
 
 		Convey("handles overflow", func() {
-			incr, overflow := Increment([]byte{0xFF, 0xFF})
+			incr, overflow := IncrementBytes([]byte{0xFF, 0xFF})
 			So(incr, ShouldResemble, []byte{0, 0})
 			So(overflow, ShouldBeTrue)
 		})
 
 		Convey("increments with overflow false when there is no overflow", func() {
-			incr, overflow := Increment([]byte{0xCA, 0xFF, 0xFF})
+			incr, overflow := IncrementBytes([]byte{0xCA, 0xFF, 0xFF})
 			So(incr, ShouldResemble, []byte{0xCB, 0, 0})
 			So(overflow, ShouldBeFalse)
 		})

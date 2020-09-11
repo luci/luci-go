@@ -18,10 +18,10 @@ import (
 	"bytes"
 )
 
-// WriteBuffer is the interface which corresponds to the subset of *bytes.Buffer
-// that this package requires.
-type WriteBuffer interface {
-	ReadBuffer
+// WriteableBytesBuffer is the interface which corresponds to the subset of
+// *bytes.Buffer requried for serialization.
+type WriteableBytesBuffer interface {
+	ReadableBytesBuffer
 
 	String() string
 	Bytes() []byte
@@ -33,9 +33,9 @@ type WriteBuffer interface {
 	WriteString(s string) (int, error)
 }
 
-// ReadBuffer is the interface which corresponds to the subset of *bytes.Reader
-// that this package requires.
-type ReadBuffer interface {
+// ReadableBytesBuffer is the interface which corresponds to the subset of
+// *bytes.Reader required for deserialization.
+type ReadableBytesBuffer interface {
 	Len() int
 
 	Read([]byte) (int, error)
@@ -43,11 +43,11 @@ type ReadBuffer interface {
 }
 
 var (
-	_ WriteBuffer = (*bytes.Buffer)(nil)
-	_ ReadBuffer  = (*bytes.Reader)(nil)
+	_ WriteableBytesBuffer = (*bytes.Buffer)(nil)
+	_ ReadableBytesBuffer  = (*bytes.Reader)(nil)
 )
 
-// InvertibleBuffer is just like Buffer, except that it also has a stateful
+// InvertibleBytesBuffer is just like Buffer, except that it also has a stateful
 // Invert() method, which will cause all reads and writes to/from it to be
 // inverted (e.g. every byte XOR 0xFF).
 //
@@ -62,28 +62,28 @@ var (
 // decode a reverse-ordered field (including the bytes of all fields after the
 // one we intend to parse) so that the parser can consume as many bytes as it
 // needs (and it only knows the number of bytes it needs as it decodes them).
-// This InvertibleBuffer lets that happen on the fly without having to flip the
+// This InvertibleBytesBuffer lets that happen on the fly without having to flip the
 // whole []byte.
 //
 // If you know you need it, you'll know it's the right thing. If you're not sure
 // then you definitely don't need it!
-type InvertibleBuffer interface {
-	WriteBuffer
+type InvertibleBytesBuffer interface {
+	WriteableBytesBuffer
 	SetInvert(inverted bool)
 }
 
-type invertibleBuffer struct {
-	WriteBuffer
+type invertibleBytesBuffer struct {
+	WriteableBytesBuffer
 	invert bool
 }
 
 // Invertible returns an InvertibleBuffer based on the Buffer.
-func Invertible(b WriteBuffer) InvertibleBuffer {
-	return &invertibleBuffer{b, false}
+func Invertible(b WriteableBytesBuffer) InvertibleBytesBuffer {
+	return &invertibleBytesBuffer{b, false}
 }
 
-func (ib *invertibleBuffer) Read(bs []byte) (int, error) {
-	n, err := ib.WriteBuffer.Read(bs)
+func (ib *invertibleBytesBuffer) Read(bs []byte) (int, error) {
+	n, err := ib.WriteableBytesBuffer.Read(bs)
 	if ib.invert {
 		for i, b := range bs {
 			bs[i] = b ^ 0xFF
@@ -92,47 +92,47 @@ func (ib *invertibleBuffer) Read(bs []byte) (int, error) {
 	return n, err
 }
 
-func (ib *invertibleBuffer) WriteString(s string) (int, error) {
+func (ib *invertibleBytesBuffer) WriteString(s string) (int, error) {
 	if ib.invert {
 		ib.Grow(len(s))
 		for i := 0; i < len(s); i++ {
-			if err := ib.WriteBuffer.WriteByte(s[i] ^ 0xFF); err != nil {
+			if err := ib.WriteableBytesBuffer.WriteByte(s[i] ^ 0xFF); err != nil {
 				return i, err
 			}
 		}
 		return len(s), nil
 	}
-	return ib.WriteBuffer.WriteString(s)
+	return ib.WriteableBytesBuffer.WriteString(s)
 }
 
-func (ib *invertibleBuffer) Write(bs []byte) (int, error) {
+func (ib *invertibleBytesBuffer) Write(bs []byte) (int, error) {
 	if ib.invert {
 		ib.Grow(len(bs))
 		for i, b := range bs {
-			if err := ib.WriteBuffer.WriteByte(b ^ 0xFF); err != nil {
+			if err := ib.WriteableBytesBuffer.WriteByte(b ^ 0xFF); err != nil {
 				return i, err
 			}
 		}
 		return len(bs), nil
 	}
-	return ib.WriteBuffer.Write(bs)
+	return ib.WriteableBytesBuffer.Write(bs)
 }
 
-func (ib *invertibleBuffer) WriteByte(b byte) error {
+func (ib *invertibleBytesBuffer) WriteByte(b byte) error {
 	if ib.invert {
 		b = b ^ 0xFF
 	}
-	return ib.WriteBuffer.WriteByte(b)
+	return ib.WriteableBytesBuffer.WriteByte(b)
 }
 
-func (ib *invertibleBuffer) ReadByte() (byte, error) {
-	ret, err := ib.WriteBuffer.ReadByte()
+func (ib *invertibleBytesBuffer) ReadByte() (byte, error) {
+	ret, err := ib.WriteableBytesBuffer.ReadByte()
 	if ib.invert {
 		ret = ret ^ 0xFF
 	}
 	return ret, err
 }
 
-func (ib *invertibleBuffer) SetInvert(inverted bool) {
+func (ib *invertibleBytesBuffer) SetInvert(inverted bool) {
 	ib.invert = inverted
 }

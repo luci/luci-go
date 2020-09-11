@@ -29,7 +29,7 @@ func encodeItemValue(pm ds.PropertyMap) []byte {
 	buf := bytes.Buffer{}
 	// errs can't happen, since we're using a byte buffer.
 	_ = buf.WriteByte(byte(NoCompression))
-	_ = serialize.WritePropertyMap(&buf, serialize.WithoutContext, pm)
+	_ = serialize.Serialize.PropertyMap(&buf, pm)
 
 	data := buf.Bytes()
 	if buf.Len() > CompressionThreshold {
@@ -66,5 +66,5 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		}
 		buf = bytes.NewBuffer(data)
 	}
-	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, kc)
+	return serialize.Deserializer{KeyContext: kc}.PropertyMap(buf)
 }

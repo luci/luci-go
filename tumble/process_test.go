@@ -37,7 +37,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 
 		Convey("early exit logic works", func() {
 			future := clock.Now(ctx).UTC().Add(time.Hour)
-			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.ToBytes(future))
+			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.Serialize.ToBytes(future))
 			So(mc.Set(ctx, itm), ShouldBeNil)
 
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{

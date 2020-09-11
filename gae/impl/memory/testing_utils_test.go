@@ -161,13 +161,13 @@ func cat(bytethings ...interface{}) []byte {
 		case []byte:
 			_, err = buf.Write(x)
 		case time.Time:
-			err = serialize.WriteTime(buf, x)
+			err = serialize.Serialize.Time(buf, x)
 		case *ds.Key:
-			err = serialize.WriteKey(buf, serialize.WithoutContext, x)
+			err = serialize.Serialize.Key(buf, x)
 		case *ds.IndexDefinition:
-			err = serialize.WriteIndexDefinition(buf, *x)
+			err = serialize.Serialize.IndexDefinition(buf, *x)
 		case ds.Property:
-			err = serialize.WriteProperty(buf, serialize.WithoutContext, x)
+			err = serialize.Serialize.Property(buf, x)
 		default:
 			panic(fmt.Errorf("I don't know how to deal with %T: %#v", thing, thing))
 		}

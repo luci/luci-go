@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/types/serialize"
@@ -206,7 +207,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	// a builtin and it doesn't exist, it still needs to be one of the 'possible'
 	// indexes... it just means that the user's query will end up with no results.
 	coll := s.GetCollection(
-		fmt.Sprintf("idx:%s:%s", q.kc.Namespace, serialize.ToBytes(*id.PrepForIdxTable())))
+		fmt.Sprintf("idx:%s:%s", q.kc.Namespace, serialize.Serialize.ToBytes(*id.PrepForIdxTable())))
 
 	// First, see if it's a perfect match. If it is, then our search is over.
 	//
@@ -344,11 +345,11 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 	for _, sb := range idx.eqFilts {
 		val := c.peel(sb.Property)
 		if sb.Descending {
-			val = serialize.Invert(val)
+			val = cmpbin.InvertBytes(val)
 		}
 		toJoin = append(toJoin, val)
 	}
-	def.prefix = serialize.Join(toJoin...)
+	def.prefix = bytes.Join(toJoin, nil)
 	def.prefixLen = len(def.prefix)
 
 	if q.eqFilters["__ancestor__"] != nil && !idx.hasAncestor() {
@@ -381,9 +382,9 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 		// it would be a closed range of EXACTLY this key.
 		chopped := []byte(anc[:len(anc)-1])
 		if q.suffixFormat[0].Descending {
-			chopped = serialize.Invert(chopped)
+			chopped = cmpbin.InvertBytes(chopped)
 		}
-		def.prefix = serialize.Join(def.prefix, chopped)
+		def.prefix = cmpbin.ConcatBytes(def.prefix, chopped)
 
 		// Update start and end, since we know that if they contain anything, they
 		// contain values for the __key__ field. This is necessary because bytes
