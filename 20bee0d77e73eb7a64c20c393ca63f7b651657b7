@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebe58764_cc6055ef",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:26:47Z",
+      "side": 1,
+      "message": "I feel like this should be the default state of affairs, somehow (i.e. by default our http clients should have user agents configured)",
+      "revId": "20bee0d77e73eb7a64c20c393ca63f7b651657b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
