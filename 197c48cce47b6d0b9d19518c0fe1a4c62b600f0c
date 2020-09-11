@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7ce2fc2_235de1ad",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-11T13:02:38Z",
+      "side": 1,
+      "message": "While the code LGTM, \nI\u0027m wondering if we could implement the additional slice generation logic in the trigger script.\n\nyekuang, bpastene, \nWDYT?",
+      "range": {
+        "startLine": 9,
+        "startChar": 207,
+        "endLine": 9,
+        "endChar": 239
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
