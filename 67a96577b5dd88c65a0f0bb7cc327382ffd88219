@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "79314da3_e75da852",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T10:05:40Z",
+      "side": 1,
+      "message": "make struct for optional dimension and implement\nhttps://golang.org/pkg/flag/#Value\n?",
+      "range": {
+        "startLine": 153,
+        "startChar": 27,
+        "endLine": 153,
+        "endChar": 33
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86d7b10c_f3195ee1",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T10:05:40Z",
+      "side": 1,
+      "message": "this paren is not necessary?",
+      "range": {
+        "startLine": 318,
+        "startChar": 13,
+        "endLine": 318,
+        "endChar": 14
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b0e882a_70ebfd67",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T10:05:40Z",
+      "side": 1,
+      "message": "this paren is not necessary?",
+      "range": {
+        "startLine": 323,
+        "startChar": 37,
+        "endLine": 323,
+        "endChar": 38
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c7cfe1a_aebde19f",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-11T10:05:40Z",
+      "side": 1,
+      "message": "I think only doing deep copy for dimensions is sufficient.",
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
