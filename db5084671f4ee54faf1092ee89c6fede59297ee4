@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "68e687c8_e86c36a7",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T22:29:50Z",
+      "side": 1,
+      "message": "I think my reply to the comment in batch_create_invocations also applies here.",
+      "parentUuid": "1c343b24_b927e132",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b61ca1d6_ac5d910a",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 4
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "812d7f8d_62fac748",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T22:29:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b61ca1d6_ac5d910a",
+      "range": {
+        "startLine": 320,
+        "startChar": 40,
+        "endLine": 320,
+        "endChar": 41
+      },
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec95318b_548ee943",
         "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
         "patchSetId": 4
@@ -53,6 +95,24 @@
       "writtenOn": "2020-09-11T21:59:40Z",
       "side": 1,
       "message": "why is this needed? we are populating the database with zeros.\n\nthe rest of the code must tolerate absence of rows anyway because we need the ability to increase the shard number at any point in the future",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67cd1115_fd5cc265",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T22:29:50Z",
+      "side": 1,
+      "message": "I assumed that we would not change the shard number too often.\n\nThe alternative will be we try to update a row, if no row is updated, insert one.\n\nOne special case is when 2 requests compete with inserting rows with the same primary key, then one of them will fail, then we should catch that error and do update again.",
+      "parentUuid": "ec95318b_548ee943",
       "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
