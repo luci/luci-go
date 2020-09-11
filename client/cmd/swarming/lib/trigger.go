@@ -305,6 +305,41 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	return nil
 }
 
+func replaceOrAppendDimensions(dims, overrides []*swarming.SwarmingRpcsStringPair) []*swarming.SwarmingRpcsStringPair {
+	// Add optional dimension overrides to the original task slice dimension dims, replacing
+	// a dimension that has the same key if it is a dimension where repeating isn't valid
+	// (otherwise we append it).  Currently the only dimension we can repeat is "caches";
+	// the rest (os, cpu, etc) shouldn't be repeated.
+	// See: https://source.chromium.org/chromium/infra/infra/+/master:luci/client/swarming.py;l=1261-1269;drc=8bac3377922a34a76b975123aa37561dc4710c12
+	keyToDims := make(map[string][]*swarming.SwarmingRpcsStringPair)
+	for _, d := range dims {
+		k := d.Key
+		keyToDims[k] = append(keyToDims[k], d)
+	}
+
+	for _, od := range overrides {
+		k := od.Key
+		if k == `caches` {
+			keyToDims[k] = append(keyToDims[k], od)
+		} else {
+			keyToDims[k] = []*swarming.SwarmingRpcsStringPair{od}
+		}
+	}
+	var result []*swarming.SwarmingRpcsStringPair
+	for _, dims := range keyToDims {
+		result = append(result, dims...)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		l := result[i]
+		r := result[j]
+		if l.Key != r.Key {
+			return l.Key < r.Key
+		}
+		return l.Value < r.Value
+	})
+	return result
+}
+
 func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string

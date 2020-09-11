@@ -100,6 +100,31 @@ func TestListToStringListPairArray(t *testing.T) {
 	})
 }
 
+func TestReplaceOrAppendDimensions(t *testing.T) {
+	Convey(`TestListToStringListPairArray`, t, func() {
+		dims := []*swarming.SwarmingRpcsStringPair{
+			&swarming.SwarmingRpcsStringPair{Key: "overriden", Value: "base"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c1"},
+			&swarming.SwarmingRpcsStringPair{Key: "kept", Value: "kept"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c3"},
+		}
+		overrides := []*swarming.SwarmingRpcsStringPair{
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c4"},
+			&swarming.SwarmingRpcsStringPair{Key: "overriden", Value: "overriden"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c2"},
+		}
+		expected := []*swarming.SwarmingRpcsStringPair{
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c1"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c2"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c3"},
+			&swarming.SwarmingRpcsStringPair{Key: "caches", Value: "c4"},
+			&swarming.SwarmingRpcsStringPair{Key: "kept", Value: "kept"},
+			&swarming.SwarmingRpcsStringPair{Key: "overriden", Value: "overriden"},
+		}
+		So(replaceOrAppendDimensions(dims, overrides), ShouldResemble, expected)
+	})
+}
+
 func TestNamePartFromDimensions(t *testing.T) {
 	Convey(`Make sure that a string name can be constructed from dimensions.`, t, func() {
 		type item struct {
