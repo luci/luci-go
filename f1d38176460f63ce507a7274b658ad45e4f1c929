@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "17a0b012_17922f81",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:57:15Z",
+      "side": 1,
+      "message": "good point; I can remove this now.",
+      "parentUuid": "d5042a89_aa506bb0",
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88ba4ec6_03416c1e",
         "filename": "led/ledcli/main.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a0392f7_c6dc8568",
+        "filename": "led/ledcli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:57:15Z",
+      "side": 1,
+      "message": "yeah, I can make this private for now.",
+      "parentUuid": "88ba4ec6_03416c1e",
+      "range": {
+        "startLine": 37,
+        "startChar": 4,
+        "endLine": 37,
+        "endChar": 13
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b254e8a4_bf015f1c",
+        "filename": "led/ledcli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:57:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97683a32_08200ec8",
+      "range": {
+        "startLine": 161,
+        "startChar": 26,
+        "endLine": 161,
+        "endChar": 29
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d32f9be_b89a7549",
         "filename": "led/ledcli/util.go",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "845ae3dd_43506606",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:57:15Z",
+      "side": 1,
+      "message": "good tip!",
+      "parentUuid": "7d32f9be_b89a7549",
+      "range": {
+        "startLine": 179,
+        "startChar": 5,
+        "endLine": 179,
+        "endChar": 20
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
