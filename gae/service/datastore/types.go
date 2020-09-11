@@ -16,12 +16,20 @@
 
 package datastore
 
-import (
-	"go.chromium.org/luci/gae/service/datastore/types"
-)
+// GeoPoint represents a location as latitude/longitude in degrees.
+//
+// You probably shouldn't use these, but their inclusion here is so that the
+// datastore service can interact (and round-trip) correctly with other
+// datastore API implementations.
+type GeoPoint struct {
+	Lat, Lng float64
+}
 
-// GeoPoint is an alias for GeoPoint in datastore/types.
-type GeoPoint = types.GeoPoint
+// Valid returns whether a GeoPoint is within [-90, 90] latitude and [-180,
+// 180] longitude.
+func (g GeoPoint) Valid() bool {
+	return -90 <= g.Lat && g.Lat <= 90 && -180 <= g.Lng && g.Lng <= 180
+}
 
 // TransactionOptions are the options for running a transaction.
 type TransactionOptions struct {

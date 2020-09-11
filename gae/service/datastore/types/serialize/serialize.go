@@ -23,9 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
-
 	"go.chromium.org/luci/gae/service/blobstore"
-	dstypes "go.chromium.org/luci/gae/service/datastore/types"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // MaxIndexColumns is the maximum number of sort columns (e.g. sort orders) that
@@ -62,7 +61,7 @@ const (
 
 // WriteKey encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
-func WriteKey(buf WriteBuffer, context KeyContext, k *dstypes.Key) (err error) {
+func WriteKey(buf WriteBuffer, context KeyContext, k *ds.Key) (err error) {
 	// [appid ++ namespace]? ++ [1 ++ token]* ++ NULL
 	defer recoverTo(&err)
 	appid, namespace, toks := k.Split()
@@ -86,12 +85,12 @@ func WriteKey(buf WriteBuffer, context KeyContext, k *dstypes.Key) (err error) {
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func ReadKey(buf ReadBuffer, context KeyContext, inKC dstypes.KeyContext) (ret *dstypes.Key, err error) {
+func ReadKey(buf ReadBuffer, context KeyContext, inKC ds.KeyContext) (ret *ds.Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
 
-	var kc dstypes.KeyContext
+	var kc ds.KeyContext
 	if actualCtx == 1 {
 		kc.AppID, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -107,7 +106,7 @@ func ReadKey(buf ReadBuffer, context KeyContext, inKC dstypes.KeyContext) (ret *
 		kc = inKC
 	}
 
-	toks := []dstypes.KeyTok{}
+	toks := []ds.KeyTok{}
 	for {
 		ctrlByte, e := buf.ReadByte()
 		panicIf(e)
@@ -132,17 +131,17 @@ func ReadKey(buf ReadBuffer, context KeyContext, inKC dstypes.KeyContext) (ret *
 
 // WriteKeyTok writes a KeyTok to the buffer. You usually want WriteKey
 // instead of this.
-func WriteKeyTok(buf WriteBuffer, tok dstypes.KeyTok) (err error) {
+func WriteKeyTok(buf WriteBuffer, tok ds.KeyTok) (err error) {
 	// tok.kind ++ typ ++ [tok.stringID || tok.intID]
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteString(buf, tok.Kind)
 	panicIf(e)
 	if tok.StringID != "" {
-		panicIf(buf.WriteByte(byte(dstypes.PTString)))
+		panicIf(buf.WriteByte(byte(ds.PTString)))
 		_, e := cmpbin.WriteString(buf, tok.StringID)
 		panicIf(e)
 	} else {
-		panicIf(buf.WriteByte(byte(dstypes.PTInt)))
+		panicIf(buf.WriteByte(byte(ds.PTInt)))
 		_, e := cmpbin.WriteInt(buf, tok.IntID)
 		panicIf(e)
 	}
@@ -151,7 +150,7 @@ func WriteKeyTok(buf WriteBuffer, tok dstypes.KeyTok) (err error) {
 
 // ReadKeyTok reads a KeyTok from the buffer. You usually want ReadKey
 // instead of this.
-func ReadKeyTok(buf ReadBuffer) (ret dstypes.KeyTok, err error) {
+func ReadKeyTok(buf ReadBuffer) (ret ds.KeyTok, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	ret.Kind, _, e = cmpbin.ReadString(buf)
@@ -160,22 +159,22 @@ func ReadKeyTok(buf ReadBuffer) (ret dstypes.KeyTok, err error) {
 	typ, e := buf.ReadByte()
 	panicIf(e)
 
-	switch dstypes.PropertyType(typ) {
-	case dstypes.PTString:
+	switch ds.PropertyType(typ) {
+	case ds.PTString:
 		ret.StringID, _, err = cmpbin.ReadString(buf)
-	case dstypes.PTInt:
+	case ds.PTInt:
 		ret.IntID, _, err = cmpbin.ReadInt(buf)
 		if err == nil && ret.IntID <= 0 {
 			err = errors.New("helper: decoded key with empty stringID and zero/negative intID")
 		}
 	default:
-		err = fmt.Errorf("helper: invalid type %s", dstypes.PropertyType(typ))
+		err = fmt.Errorf("helper: invalid type %s", ds.PropertyType(typ))
 	}
 	return
 }
 
 // WriteGeoPoint writes a GeoPoint to the buffer.
-func WriteGeoPoint(buf WriteBuffer, gp dstypes.GeoPoint) (err error) {
+func WriteGeoPoint(buf WriteBuffer, gp ds.GeoPoint) (err error) {
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteFloat64(buf, gp.Lat)
 	panicIf(e)
@@ -184,7 +183,7 @@ func WriteGeoPoint(buf WriteBuffer, gp dstypes.GeoPoint) (err error) {
 }
 
 // ReadGeoPoint reads a GeoPoint from the buffer.
-func ReadGeoPoint(buf ReadBuffer) (gp dstypes.GeoPoint, err error) {
+func ReadGeoPoint(buf ReadBuffer) (gp ds.GeoPoint, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	gp.Lat, _, e = cmpbin.ReadFloat64(buf)
@@ -209,7 +208,7 @@ func WriteTime(buf WriteBuffer, t time.Time) error {
 		panic(fmt.Errorf("helper: UTC OR DEATH: %s", t))
 	}
 
-	_, err := cmpbin.WriteInt(buf, dstypes.TimeToInt(t))
+	_, err := cmpbin.WriteInt(buf, ds.TimeToInt(t))
 	return err
 }
 
@@ -219,26 +218,26 @@ func ReadTime(buf ReadBuffer) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return dstypes.IntToTime(v), nil
+	return ds.IntToTime(v), nil
 }
 
 // WriteProperty writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
 // Key as its IndexValue.
-func WriteProperty(buf WriteBuffer, context KeyContext, p dstypes.Property) error {
+func WriteProperty(buf WriteBuffer, context KeyContext, p ds.Property) error {
 	return writePropertyImpl(buf, context, &p, false)
 }
 
 // WriteIndexProperty writes a Property to the buffer as its native index type.
 // `context` behaves the same way that it does for WriteKey, but only has an
 // effect if `p` contains a Key as its IndexValue.
-func WriteIndexProperty(buf WriteBuffer, context KeyContext, p dstypes.Property) error {
+func WriteIndexProperty(buf WriteBuffer, context KeyContext, p ds.Property) error {
 	return writePropertyImpl(buf, context, &p, true)
 }
 
 // writePropertyImpl is an implementation of WriteProperty and
 // WriteIndexProperty.
-func writePropertyImpl(buf WriteBuffer, context KeyContext, p *dstypes.Property, index bool) (err error) {
+func writePropertyImpl(buf WriteBuffer, context KeyContext, p *ds.Property, index bool) (err error) {
 	defer recoverTo(&err)
 
 	it, v := p.IndexTypeAndValue()
@@ -246,7 +245,7 @@ func writePropertyImpl(buf WriteBuffer, context KeyContext, p *dstypes.Property,
 		it = p.Type()
 	}
 	typb := byte(it)
-	if p.IndexSetting() != dstypes.NoIndex {
+	if p.IndexSetting() != ds.NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
@@ -257,7 +256,7 @@ func writePropertyImpl(buf WriteBuffer, context KeyContext, p *dstypes.Property,
 
 // writeIndexValue writes the index value of v to buf.
 //
-// v may be one of the return types from dstypes.Property's GetIndexTypeAndValue
+// v may be one of the return types from ds.Property's GetIndexTypeAndValue
 // method.
 func writeIndexValue(buf WriteBuffer, context KeyContext, v interface{}) (err error) {
 	switch t := v.(type) {
@@ -276,11 +275,11 @@ func writeIndexValue(buf WriteBuffer, context KeyContext, v interface{}) (err er
 		_, err = cmpbin.WriteString(buf, t)
 	case []byte:
 		_, err = cmpbin.WriteBytes(buf, t)
-	case dstypes.GeoPoint:
+	case ds.GeoPoint:
 		err = WriteGeoPoint(buf, t)
-	case dstypes.PropertyMap:
+	case ds.PropertyMap:
 		err = WritePropertyMap(buf, context, t)
-	case *dstypes.Key:
+	case *ds.Key:
 		err = WriteKey(buf, context, t)
 
 	default:
@@ -292,38 +291,38 @@ func writeIndexValue(buf WriteBuffer, context KeyContext, v interface{}) (err er
 // ReadProperty reads a Property from the buffer. `context` and `kc` behave the
 // same way they do for ReadKey, but only have an effect if the decoded property
 // has a Key value.
-func ReadProperty(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) (p dstypes.Property, err error) {
+func ReadProperty(buf ReadBuffer, context KeyContext, kc ds.KeyContext) (p ds.Property, err error) {
 	val := interface{}(nil)
 	b, err := buf.ReadByte()
 	if err != nil {
 		return
 	}
-	is := dstypes.ShouldIndex
+	is := ds.ShouldIndex
 	if (b & 0x80) == 0 {
-		is = dstypes.NoIndex
+		is = ds.NoIndex
 	}
-	switch dstypes.PropertyType(b & 0x7f) {
-	case dstypes.PTNull:
-	case dstypes.PTBool:
+	switch ds.PropertyType(b & 0x7f) {
+	case ds.PTNull:
+	case ds.PTBool:
 		b, err = buf.ReadByte()
 		val = (b != 0)
-	case dstypes.PTInt:
+	case ds.PTInt:
 		val, _, err = cmpbin.ReadInt(buf)
-	case dstypes.PTFloat:
+	case ds.PTFloat:
 		val, _, err = cmpbin.ReadFloat64(buf)
-	case dstypes.PTString:
+	case ds.PTString:
 		val, _, err = cmpbin.ReadString(buf)
-	case dstypes.PTBytes:
+	case ds.PTBytes:
 		val, _, err = cmpbin.ReadBytes(buf)
-	case dstypes.PTTime:
+	case ds.PTTime:
 		val, err = ReadTime(buf)
-	case dstypes.PTGeoPoint:
+	case ds.PTGeoPoint:
 		val, err = ReadGeoPoint(buf)
-	case dstypes.PTPropertyMap:
+	case ds.PTPropertyMap:
 		val, err = ReadPropertyMap(buf, context, kc)
-	case dstypes.PTKey:
+	case ds.PTKey:
 		val, err = ReadKey(buf, context, kc)
-	case dstypes.PTBlobKey:
+	case ds.PTBlobKey:
 		s := ""
 		if s, _, err = cmpbin.ReadString(buf); err != nil {
 			break
@@ -346,7 +345,7 @@ func ReadProperty(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) (p 
 // but also potentially useful if you need to make a hash of the property data).
 //
 // Write skips metadata keys.
-func WritePropertyMap(buf WriteBuffer, context KeyContext, pm dstypes.PropertyMap) (err error) {
+func WritePropertyMap(buf WriteBuffer, context KeyContext, pm ds.PropertyMap) (err error) {
 	defer recoverTo(&err)
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
@@ -357,12 +356,12 @@ func WritePropertyMap(buf WriteBuffer, context KeyContext, pm dstypes.PropertyMa
 		panicIf(e)
 
 		switch t := pdata.(type) {
-		case dstypes.Property:
+		case ds.Property:
 			_, e = cmpbin.WriteInt(tmpBuf, -1)
 			panicIf(e)
 			panicIf(WriteProperty(tmpBuf, context, t))
 
-		case dstypes.PropertySlice:
+		case ds.PropertySlice:
 			_, e = cmpbin.WriteInt(tmpBuf, int64(len(t)))
 			panicIf(e)
 			for _, p := range t {
@@ -390,7 +389,7 @@ func WritePropertyMap(buf WriteBuffer, context KeyContext, pm dstypes.PropertyMa
 
 // ReadPropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func ReadPropertyMap(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) (pm dstypes.PropertyMap, err error) {
+func ReadPropertyMap(buf ReadBuffer, context KeyContext, kc ds.KeyContext) (pm ds.PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -401,9 +400,9 @@ func ReadPropertyMap(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) 
 		return
 	}
 
-	pm = make(dstypes.PropertyMap, numRows)
+	pm = make(ds.PropertyMap, numRows)
 
-	name, prop := "", dstypes.Property{}
+	name, prop := "", ds.Property{}
 	for i := uint64(0); i < numRows; i++ {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -422,7 +421,7 @@ func ReadPropertyMap(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) 
 			return
 
 		default:
-			props := make(dstypes.PropertySlice, 0, numProps)
+			props := make(ds.PropertySlice, 0, numProps)
 			for j := int64(0); j < numProps; j++ {
 				prop, err = ReadProperty(buf, context, kc)
 				panicIf(err)
@@ -435,7 +434,7 @@ func ReadPropertyMap(buf ReadBuffer, context KeyContext, kc dstypes.KeyContext) 
 }
 
 // WriteIndexColumn writes an IndexColumn to the buffer.
-func WriteIndexColumn(buf WriteBuffer, c dstypes.IndexColumn) (err error) {
+func WriteIndexColumn(buf WriteBuffer, c ds.IndexColumn) (err error) {
 	defer recoverTo(&err)
 
 	if !c.Descending {
@@ -448,7 +447,7 @@ func WriteIndexColumn(buf WriteBuffer, c dstypes.IndexColumn) (err error) {
 }
 
 // ReadIndexColumn reads an IndexColumn from the buffer.
-func ReadIndexColumn(buf ReadBuffer) (c dstypes.IndexColumn, err error) {
+func ReadIndexColumn(buf ReadBuffer) (c ds.IndexColumn, err error) {
 	defer recoverTo(&err)
 
 	dir, err := buf.ReadByte()
@@ -460,7 +459,7 @@ func ReadIndexColumn(buf ReadBuffer) (c dstypes.IndexColumn, err error) {
 }
 
 // WriteIndexDefinition writes an IndexDefinition to the buffer
-func WriteIndexDefinition(buf WriteBuffer, i dstypes.IndexDefinition) (err error) {
+func WriteIndexDefinition(buf WriteBuffer, i ds.IndexDefinition) (err error) {
 	defer recoverTo(&err)
 
 	_, err = cmpbin.WriteString(buf, i.Kind)
@@ -478,7 +477,7 @@ func WriteIndexDefinition(buf WriteBuffer, i dstypes.IndexDefinition) (err error
 }
 
 // ReadIndexDefinition reads an IndexDefinition from the buffer.
-func ReadIndexDefinition(buf ReadBuffer) (i dstypes.IndexDefinition, err error) {
+func ReadIndexDefinition(buf ReadBuffer) (i ds.IndexDefinition, err error) {
 	defer recoverTo(&err)
 
 	i.Kind, _, err = cmpbin.ReadString(buf)
@@ -520,11 +519,11 @@ func (s SerializedPslice) Less(i, j int) bool { return bytes.Compare(s[i], s[j])
 // PropertySlice serializes a single row of a DSProperty map.
 //
 // It does not differentiate between single- and multi- properties.
-func PropertySlice(vals dstypes.PropertySlice) SerializedPslice {
+func PropertySlice(vals ds.PropertySlice) SerializedPslice {
 	dups := stringset.New(0)
 	ret := make(SerializedPslice, 0, len(vals))
 	for _, v := range vals {
-		if v.IndexSetting() == dstypes.NoIndex {
+		if v.IndexSetting() == ds.NoIndex {
 			continue
 		}
 
@@ -547,12 +546,12 @@ type SerializedPmap map[string]SerializedPslice
 // PropertyMapPartially turns a regular PropertyMap into a SerializedPmap.
 // Essentially all the []Property's become SerializedPslice, using cmpbin and
 // datastore/serialize's encodings.
-func PropertyMapPartially(k *dstypes.Key, pm dstypes.PropertyMap) (ret SerializedPmap) {
+func PropertyMapPartially(k *ds.Key, pm ds.PropertyMap) (ret SerializedPmap) {
 	ret = make(SerializedPmap, len(pm)+2)
 	if k != nil {
-		ret["__key__"] = [][]byte{ToBytes(dstypes.MkProperty(k))}
+		ret["__key__"] = [][]byte{ToBytes(ds.MkProperty(k))}
 		for k != nil {
-			ret["__ancestor__"] = append(ret["__ancestor__"], ToBytes(dstypes.MkProperty(k)))
+			ret["__ancestor__"] = append(ret["__ancestor__"], ToBytes(ds.MkProperty(k)))
 			k = k.Parent()
 		}
 	}
@@ -569,23 +568,23 @@ func toBytesErr(i interface{}, ctx KeyContext) (ret []byte, err error) {
 	buf := bytes.Buffer{}
 
 	switch t := i.(type) {
-	case dstypes.IndexColumn:
+	case ds.IndexColumn:
 		err = WriteIndexColumn(&buf, t)
 
-	case dstypes.IndexDefinition:
+	case ds.IndexDefinition:
 		err = WriteIndexDefinition(&buf, t)
 
-	case dstypes.KeyTok:
+	case ds.KeyTok:
 		err = WriteKeyTok(&buf, t)
 
-	case dstypes.Property:
+	case ds.Property:
 		err = WriteIndexProperty(&buf, ctx, t)
 
-	case dstypes.PropertyMap:
+	case ds.PropertyMap:
 		err = WritePropertyMap(&buf, ctx, t)
 
 	default:
-		_, v := dstypes.MkProperty(i).IndexTypeAndValue()
+		_, v := ds.MkProperty(i).IndexTypeAndValue()
 		err = writeIndexValue(&buf, ctx, v)
 	}
 
