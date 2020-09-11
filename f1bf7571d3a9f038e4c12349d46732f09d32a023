@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "360c9e5e_b37327bd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-11T07:08:55Z",
+      "side": 1,
+      "message": "See the 6th entry.\nDemo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7120/blamelist\n",
+      "revId": "f1bf7571d3a9f038e4c12349d46732f09d32a023",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
