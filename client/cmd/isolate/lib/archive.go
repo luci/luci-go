@@ -103,7 +103,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 	if c.casFlags.Instance != "" {
-		_, err := uploadToCAS(ctx, c.dumpJSON, &c.casFlags, al, &c.ArchiveOptions)
+		_, err := uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, &c.ArchiveOptions)
 		return err
 	}
 
