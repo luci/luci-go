@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "20ec2248_6e782f9c",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T11:38:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79314da3_e75da852",
+      "range": {
+        "startLine": 153,
+        "startChar": 27,
+        "endLine": 153,
+        "endChar": 33
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86d7b10c_f3195ee1",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "340ff5e6_5b71ffe7",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T11:38:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86d7b10c_f3195ee1",
+      "range": {
+        "startLine": 318,
+        "startChar": 13,
+        "endLine": 318,
+        "endChar": 14
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b29e4a1e_14bd2a45",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T11:38:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b0e882a_70ebfd67",
+      "range": {
+        "startLine": 323,
+        "startChar": 37,
+        "endLine": 323,
+        "endChar": 38
+      },
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c7cfe1a_aebde19f",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 1
@@ -82,6 +154,24 @@
       "writtenOn": "2020-09-11T10:05:40Z",
       "side": 1,
       "message": "I think only doing deep copy for dimensions is sufficient.",
+      "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d8c07e1_30a32945",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T11:38:47Z",
+      "side": 1,
+      "message": "I don\u0027t think so, we need independent properties in each task slice.",
+      "parentUuid": "7c7cfe1a_aebde19f",
       "revId": "67a96577b5dd88c65a0f0bb7cc327382ffd88219",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
