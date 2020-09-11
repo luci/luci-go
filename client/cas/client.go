@@ -38,6 +38,11 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	opts.ActViaLUCIRealm = "@internal:" + project + "/" + role
 	opts.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
 
+	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
+		// use dev token server for dev/staging projects.
+		opts.TokenServerHost = "luci-token-server-dev.appspot.com"
+	}
+
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	creds, err := a.PerRPCCredentials()
 	if err != nil {
