@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "332f0149_a0d17282",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T08:45:58Z",
+      "side": 1,
+      "message": "Is there anything else in the python part that\u0027s unnecessary? I\u0027d like to know these before writing any more code.",
+      "parentUuid": "6c95d312_2d15b621",
+      "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1a316876_90ddd101",
         "filename": "client/cmd/swarming/lib/trigger_test.go",
         "patchSetId": 4
