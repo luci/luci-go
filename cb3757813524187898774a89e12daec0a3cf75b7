@@ -34,6 +34,24 @@
       "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccef7fbd_726467e1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-11T21:48:17Z",
+      "side": 1,
+      "message": "why is it a concern? Nobody is using this RPC: https://source.chromium.org/search?q\u003dQueryTestResultStatistics%20-f:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fresultdb%20-f:recipe",
+      "parentUuid": "54bedbcf_f23ce52a",
+      "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
