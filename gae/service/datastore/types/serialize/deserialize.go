@@ -64,7 +64,7 @@ var Deserialize Deserializer
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func (d Deserializer) Key(buf ReadableBytesBuffer) (ret *ds.Key, err error) {
+func (d Deserializer) Key(buf cmpbin.ReadableBytesBuffer) (ret *ds.Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
@@ -110,7 +110,7 @@ func (d Deserializer) Key(buf ReadableBytesBuffer) (ret *ds.Key, err error) {
 
 // KeyTok reads a KeyTok from the buffer. You usually want ReadKey
 // instead of this.
-func (d Deserializer) KeyTok(buf ReadableBytesBuffer) (ret ds.KeyTok, err error) {
+func (d Deserializer) KeyTok(buf cmpbin.ReadableBytesBuffer) (ret ds.KeyTok, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	ret.Kind, _, e = cmpbin.ReadString(buf)
@@ -134,7 +134,7 @@ func (d Deserializer) KeyTok(buf ReadableBytesBuffer) (ret ds.KeyTok, err error)
 }
 
 // GeoPoint reads a GeoPoint from the buffer.
-func (d Deserializer) GeoPoint(buf ReadableBytesBuffer) (gp ds.GeoPoint, err error) {
+func (d Deserializer) GeoPoint(buf cmpbin.ReadableBytesBuffer) (gp ds.GeoPoint, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	gp.Lat, _, e = cmpbin.ReadFloat64(buf)
@@ -150,7 +150,7 @@ func (d Deserializer) GeoPoint(buf ReadableBytesBuffer) (gp ds.GeoPoint, err err
 }
 
 // Time reads a time.Time from the buffer.
-func (d Deserializer) Time(buf ReadableBytesBuffer) (time.Time, error) {
+func (d Deserializer) Time(buf cmpbin.ReadableBytesBuffer) (time.Time, error) {
 	v, _, err := cmpbin.ReadInt(buf)
 	if err != nil {
 		return time.Time{}, err
@@ -161,7 +161,7 @@ func (d Deserializer) Time(buf ReadableBytesBuffer) (time.Time, error) {
 // Property reads a Property from the buffer. `context` and `kc` behave the
 // same way they do for Key, but only have an effect if the decoded property
 // has a Key value.
-func (d Deserializer) Property(buf ReadableBytesBuffer) (p ds.Property, err error) {
+func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p ds.Property, err error) {
 	val := interface{}(nil)
 	b, err := buf.ReadByte()
 	if err != nil {
@@ -209,7 +209,7 @@ func (d Deserializer) Property(buf ReadableBytesBuffer) (p ds.Property, err erro
 
 // PropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func (d Deserializer) PropertyMap(buf ReadableBytesBuffer) (pm ds.PropertyMap, err error) {
+func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm ds.PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -254,7 +254,7 @@ func (d Deserializer) PropertyMap(buf ReadableBytesBuffer) (pm ds.PropertyMap, e
 }
 
 // IndexColumn reads an IndexColumn from the buffer.
-func (d Deserializer) IndexColumn(buf ReadableBytesBuffer) (c ds.IndexColumn, err error) {
+func (d Deserializer) IndexColumn(buf cmpbin.ReadableBytesBuffer) (c ds.IndexColumn, err error) {
 	defer recoverTo(&err)
 
 	dir, err := buf.ReadByte()
@@ -266,7 +266,7 @@ func (d Deserializer) IndexColumn(buf ReadableBytesBuffer) (c ds.IndexColumn, er
 }
 
 // IndexDefinition reads an IndexDefinition from the buffer.
-func (d Deserializer) IndexDefinition(buf ReadableBytesBuffer) (i ds.IndexDefinition, err error) {
+func (d Deserializer) IndexDefinition(buf cmpbin.ReadableBytesBuffer) (i ds.IndexDefinition, err error) {
 	defer recoverTo(&err)
 
 	i.Kind, _, err = cmpbin.ReadString(buf)

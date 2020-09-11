@@ -40,7 +40,7 @@ func curs(pairs ...interface{}) queryCursor {
 	if _, err := cmpbin.WriteUint(pre, uint64(len(pairs)/2)); err != nil {
 		panic(err)
 	}
-	post := serialize.Invertible(&bytes.Buffer{})
+	post := cmpbin.Invertible(&bytes.Buffer{})
 	for i := 0; i < len(pairs); i += 2 {
 		k, v := pairs[i].(string), pairs[i+1]
 

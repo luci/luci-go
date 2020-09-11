@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package cmpbin
 
 import (
 	"bytes"
 )
 
 // WriteableBytesBuffer is the interface which corresponds to the subset of
-// *bytes.Buffer requried for serialization.
+// *bytes.Buffer required for writing.
 type WriteableBytesBuffer interface {
 	ReadableBytesBuffer
 
@@ -34,7 +34,7 @@ type WriteableBytesBuffer interface {
 }
 
 // ReadableBytesBuffer is the interface which corresponds to the subset of
-// *bytes.Reader required for deserialization.
+// *bytes.Reader required for reading.
 type ReadableBytesBuffer interface {
 	Len() int
 
@@ -48,25 +48,29 @@ var (
 )
 
 // InvertibleBytesBuffer is just like Buffer, except that it also has a stateful
-// Invert() method, which will cause all reads and writes to/from it to be
+// SetInvert() method, which will cause all reads and writes to/from it to be
 // inverted (e.g. every byte XOR 0xFF).
 //
-// Implementing queries requires manipulating the index entries (e.g.
-// synthesizing them, parsing them, etc.). In particular, when you have
-// a reverse-sorted field (e.g. high to low instead of low to high), it's
-// achieved by having all the bits inverted.
+// In contexts where you need comparable byte sequences, like datastore queries,
+// it requires manipulating the sortable fields (e.g. synthesizing them,
+// parsing them, etc.). In particular, when you have a reverse-sorted field
+// (e.g. high to low instead of low to high), it's achieved by having all the
+// bits inverted.
 //
-// All the serialization formats include delimiter information, which the
-// parsers only know to parse non-inverted. If we don't have this buffer, we'd
-// basically have to invert every byte in the []byte array when we're trying to
-// decode a reverse-ordered field (including the bytes of all fields after the
-// one we intend to parse) so that the parser can consume as many bytes as it
-// needs (and it only knows the number of bytes it needs as it decodes them).
-// This InvertibleBytesBuffer lets that happen on the fly without having to flip the
-// whole []byte.
+// Serialization formats (like gae/service/datastore.Serialize) can include
+// delimiter information, which the parsers only know to parse non-inverted. If
+// we don't have this Invertible buffer, we'd basically have to invert every
+// byte in the []byte array when we're trying to decode a reverse-ordered field
+// (including the bytes of all fields after the one we intend to parse) so that
+// the parser can consume as many bytes as it needs (and it only knows the
+// number of bytes it needs as it decodes them). This InvertibleBytesBuffer
+// lets that happen on the fly without having to flip the whole underlying
+// []byte.
 //
-// If you know you need it, you'll know it's the right thing. If you're not sure
-// then you definitely don't need it!
+// If you know you need it, you'll know it's the right thing.
+// If you're not sure then you definitely don't need it!
+//
+// See InvertBytes for doing one-off []byte inversions.
 type InvertibleBytesBuffer interface {
 	WriteableBytesBuffer
 	SetInvert(inverted bool)

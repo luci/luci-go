@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
@@ -117,7 +118,7 @@ func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 		for pvalSliceIdx, pvalIdx := range iVec {
 			bufsiz += len(s.propVec[pvalSliceIdx][pvalIdx])
 		}
-		buf := serialize.Invertible(bytes.NewBuffer(make([]byte, 0, bufsiz)))
+		buf := cmpbin.Invertible(bytes.NewBuffer(make([]byte, 0, bufsiz)))
 		for pvalSliceIdx, pvalIdx := range iVec {
 			data := s.propVec[pvalSliceIdx][pvalIdx]
 			buf.SetInvert(s.decending[pvalSliceIdx])
