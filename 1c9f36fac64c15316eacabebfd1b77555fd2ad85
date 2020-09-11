@@ -69,6 +69,24 @@
       "revId": "1c9f36fac64c15316eacabebfd1b77555fd2ad85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1757484_cb5484c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:31:32Z",
+      "side": 1,
+      "message": "An empty realm is fine and it is important (it signals this realm exists). On the other hand, empty bindings are totally noop. Each binding is just a set of pairs (role, principal) added to the total set in the realm. An empty binding is an empty set, it contributes nothing.",
+      "parentUuid": "3a9723c3_3adc7f96",
+      "revId": "1c9f36fac64c15316eacabebfd1b77555fd2ad85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
