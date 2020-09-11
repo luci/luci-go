@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"testing"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/types/serialize"
@@ -78,7 +79,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 				itemOrder, err := qi.CurrentItemOrder()
 				So(err, ShouldBeNil)
 
-				invBuf := serialize.Invertible(&bytes.Buffer{})
+				invBuf := cmpbin.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
 				err = serialize.Serialize.Property(invBuf, ds.MkProperty(strconv.Itoa(11)))
 				invBuf.SetInvert(false)

@@ -47,8 +47,8 @@ func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
 	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
-func mkBuf(data []byte) WriteableBytesBuffer {
-	return Invertible(bytes.NewBuffer(data))
+func mkBuf(data []byte) cmpbin.WriteableBytesBuffer {
+	return cmpbin.Invertible(bytes.NewBuffer(data))
 }
 
 // TODO(riannucci): dedup with datastore/key testing file
