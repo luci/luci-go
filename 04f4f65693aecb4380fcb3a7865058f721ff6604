@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58fde930_14fae30a",
+        "filename": "client/cas/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-11T12:41:37Z",
+      "side": 1,
+      "message": "While I agree to hardcode token server, it would be better to define constants for the dev host and suffixes.\n\nFor the dev token server, this is good place?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/hardcoded/chromeinfra/chromeinfra.go;l\u003d57?q\u003dchromeinfra.go\u0026ss\u003dchromium\n\nIt also may make sense to define the suffixes in the hardcoded/chromeinfra package, or a helper like `IsDevProject()`.\nThis way, the code would look like,\n\n  if chromeinfra.IsDevProject(project) {\n    opts.TokenServerHost \u003d chromeinfra.TokenServerDevHost\n  }",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 0
+      },
+      "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
