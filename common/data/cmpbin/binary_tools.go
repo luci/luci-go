@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package cmpbin
 
 import (
 	"bytes"
 )
 
-// Join is a convenience invocation of bytes.Join(itms, nil)
-func Join(itms ...[]byte) []byte {
+// ConcatBytes is a convenience invocation of bytes.Join(itms, nil)
+func ConcatBytes(itms ...[]byte) []byte {
 	return bytes.Join(itms, nil)
 }
 
-// Invert simply inverts all the bytes in bs.
-func Invert(bs []byte) []byte {
+// InvertBytes simply inverts all the bytes in bs.
+func InvertBytes(bs []byte) []byte {
 	if len(bs) == 0 {
 		return nil
 	}
@@ -35,12 +35,12 @@ func Invert(bs []byte) []byte {
 	return ret
 }
 
-// Increment attempts to increment a copy of bstr as if adding 1 to an integer.
+// IncrementBytes attempts to increment a copy of bstr as if adding 1 to an integer.
 //
 // If it overflows, the returned []byte will be all 0's, and the overflow bool
 // will be true.
-func Increment(bstr []byte) ([]byte, bool) {
-	ret := Join(bstr)
+func IncrementBytes(bstr []byte) ([]byte, bool) {
+	ret := ConcatBytes(bstr)
 	for i := len(ret) - 1; i >= 0; i-- {
 		if ret[i] == 0xFF {
 			ret[i] = 0

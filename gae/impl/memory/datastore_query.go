@@ -74,7 +74,7 @@ func (q queryCursor) decode() ([]ds.IndexColumn, []byte, error) {
 
 	cols := make([]ds.IndexColumn, count)
 	for i := range cols {
-		if cols[i], err = serialize.ReadIndexColumn(buf); err != nil {
+		if cols[i], err = serialize.Deserialize.IndexColumn(buf); err != nil {
 			return nil, nil, fmt.Errorf("invalid cursor: unable to decode IndexColumn %d: %s", i, err)
 		}
 	}
@@ -127,7 +127,7 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 	if ineqProp := fq.IneqFilterProp(); ineqProp != "" {
 		_, startOp, startV := fq.IneqFilterLow()
 		if startOp != "" {
-			lower = serialize.ToBytes(startV)
+			lower = serialize.Serialize.ToBytes(startV)
 			if startOp == ">" {
 				lower = increment(lower)
 			}
@@ -135,7 +135,7 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 
 		_, endOp, endV := fq.IneqFilterHigh()
 		if endOp != "" {
-			upper = serialize.ToBytes(endV)
+			upper = serialize.Serialize.ToBytes(endV)
 			if endOp == "<=" {
 				upper = increment(upper)
 			}
@@ -153,10 +153,10 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 		if fq.Orders()[0].Descending {
 			hi, lo := []byte(nil), []byte(nil)
 			if len(lower) > 0 {
-				lo = increment(serialize.Invert(lower))
+				lo = increment(cmpbin.InvertBytes(lower))
 			}
 			if len(upper) > 0 {
-				hi = increment(serialize.Invert(upper))
+				hi = increment(cmpbin.InvertBytes(upper))
 			}
 			upper, lower = lo, hi
 		}
@@ -189,7 +189,7 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 	for prop, vals := range eqFilts {
 		sVals := stringset.New(len(vals))
 		for _, v := range vals {
-			sVals.Add(string(serialize.ToBytes(v)))
+			sVals.Add(string(serialize.Serialize.ToBytes(v)))
 		}
 		ret.eqFilters[prop] = sVals
 	}
@@ -266,7 +266,7 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 }
 
 func increment(bstr []byte) []byte {
-	ret, overflow := serialize.Increment(bstr)
+	ret, overflow := cmpbin.IncrementBytes(bstr)
 	if overflow {
 		// This byte string was ALL 0xFF's. The only safe incrementation to do here
 		// would be to add a new byte to the beginning of bstr with the value 0x01,

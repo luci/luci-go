@@ -50,14 +50,14 @@ func curs(pairs ...interface{}) queryCursor {
 		}
 
 		post.SetInvert(col.Descending)
-		if err := serialize.WriteIndexColumn(pre, col); err != nil {
+		if err := serialize.Serialize.IndexColumn(pre, col); err != nil {
 			panic(err)
 		}
-		if err := serialize.WriteProperty(post, serialize.WithoutContext, prop(v)); err != nil {
+		if err := serialize.Serialize.Property(post, prop(v)); err != nil {
 			panic(err)
 		}
 	}
-	return queryCursor(serialize.Join(pre.Bytes(), post.Bytes()))
+	return queryCursor(cmpbin.ConcatBytes(pre.Bytes(), post.Bytes()))
 }
 
 type queryTest struct {
@@ -133,8 +133,8 @@ var queryTests = []queryTest{
 				{Property: "Foo"},
 				{Property: "__key__"},
 			},
-			increment(serialize.ToBytes(dstore.MkProperty(3))),
-			serialize.ToBytes(dstore.MkProperty(10)),
+			increment(serialize.Serialize.ToBytes(dstore.MkProperty(3))),
+			serialize.Serialize.ToBytes(dstore.MkProperty(10)),
 			2,
 		}},
 

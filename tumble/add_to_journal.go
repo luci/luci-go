@@ -40,7 +40,7 @@ type addToJournalMutation []Mutation
 func (a addToJournalMutation) Root(c context.Context) *ds.Key {
 	hsh := sha256.New()
 	for _, m := range a {
-		hsh.Write(serialize.ToBytesWithContext(m.Root(c)))
+		hsh.Write(serialize.SerializeKC.ToBytes(m.Root(c)))
 	}
 	return ds.MakeKey(c, "tumble.temp", hex.EncodeToString(hsh.Sum(nil)))
 }
