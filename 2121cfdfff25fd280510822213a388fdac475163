@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8a1bd91_711a6d43",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-11T04:13:57Z",
+      "side": 1,
+      "message": "Nit: extract",
+      "range": {
+        "startLine": 7,
+        "startChar": 11,
+        "endLine": 7,
+        "endChar": 17
+      },
+      "revId": "2121cfdfff25fd280510822213a388fdac475163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a544f26_715abc3e",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bug_line.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-11T04:13:57Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be proj/234?",
+      "range": {
+        "startLine": 81,
+        "startChar": 42,
+        "endLine": 81,
+        "endChar": 45
+      },
+      "revId": "2121cfdfff25fd280510822213a388fdac475163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
