@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a24c7fcd_418aa28e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-11T03:13:31Z",
+      "side": 1,
+      "message": "special_line_plugin can be used to implement links for\nChange-Id: xxx\nR \u003d www.google.com\netc.\n\nNo test case for the special_line_plugin because it\u0027s hard to test it alone.\nIt will be indirectly tested by plugins implemented using special_line_plugin.\n",
+      "revId": "ef5d00b5368386ec5ead7a88048240c40c07ac7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
