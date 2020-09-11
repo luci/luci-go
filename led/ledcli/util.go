@@ -96,6 +96,7 @@ func readJobDefinition(ctx context.Context) (*job.Definition, error) {
 func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args []string, env subcommands.Env) int {
 	ctx := c.logFlags.Set(cli.GetContext(a, cmd, env))
 	authOpts, err := c.authFlags.Options()
+	authOpts.Transport = &injectUserAgent{http.DefaultTransport, UserAgent}
 	if err != nil {
 		logging.Errorf(ctx, "bad auth arguments: %s\n\n", err)
 		c.GetFlags().Usage()
@@ -173,4 +174,22 @@ func pingHost(host string) error {
 		return errors.Reason("%q: bad status %d", host, rsp.StatusCode).Err()
 	}
 	return nil
+}
+
+type injectUserAgent struct {
+	rt http.RoundTripper
+	ua string
+}
+
+func (i *injectUserAgent) RoundTrip(req *http.Request) (*http.Response, error) {
+	// per documentation of RoundTripper, we should not modify `req`
+	req2 := *req
+	req2.Header = make(http.Header, len(req.Header))
+	for k, v := range req.Header {
+		if http.CanonicalHeaderKey(k) != "User-Agent" {
+			req2.Header[k] = v
+		}
+	}
+	req2.Header.Add("User-Agent", i.ua)
+	return i.rt.RoundTrip(&req2)
 }
