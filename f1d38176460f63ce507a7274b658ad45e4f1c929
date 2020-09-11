@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97683a32_08200ec8",
+        "filename": "led/ledcli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T00:41:46Z",
+      "side": 1,
+      "message": "UserAgent here too",
+      "range": {
+        "startLine": 161,
+        "startChar": 26,
+        "endLine": 161,
+        "endChar": 29
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d32f9be_b89a7549",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T00:41:46Z",
+      "side": 1,
+      "message": "you can use https://godoc.org/go.chromium.org/luci/auth#NewModifyingTransport to simplify this a bit.\n\n  authOpts.Transport :\u003d auth.NewModifyingTransport(http.DefaultTransport, func(req *http.Request) error {\n    req.Header.Set(\"User-Agent\", ...)\n    return nil\n  })",
+      "range": {
+        "startLine": 179,
+        "startChar": 5,
+        "endLine": 179,
+        "endChar": 20
+      },
+      "revId": "f1d38176460f63ce507a7274b658ad45e4f1c929",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
