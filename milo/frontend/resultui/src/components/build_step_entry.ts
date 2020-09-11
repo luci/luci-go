@@ -107,7 +107,12 @@ export class BuildStepEntryElement extends MobxLitElement {
             `)}
           </ul>
           ${this.step.children?.map((child, i) => html`
-          <milo-build-step-entry .number=${i + 1} .step=${child} .showDebugLogs=${this.showDebugLogs}></milo-build-step-entry>
+          <milo-build-step-entry
+            class="list-entry"
+            .number=${i + 1}
+            .step=${child}
+            .showDebugLogs=${this.showDebugLogs}
+          ></milo-build-step-entry>
           `) || ''}
         </div>
       </milo-expandable-entry>
@@ -184,6 +189,10 @@ export class BuildStepEntryElement extends MobxLitElement {
     }
     #log-links>li>a {
       color: #333;
+    }
+
+    milo-build-step-entry {
+      margin-bottom: 2px;
     }
   `;
 }
