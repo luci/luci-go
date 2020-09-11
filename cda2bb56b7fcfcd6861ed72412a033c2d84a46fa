@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "ddb7dd98_4da37656",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T00:19:58Z",
+      "side": 1,
+      "message": "Let\u0027s consider https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2405478",
+      "revId": "cda2bb56b7fcfcd6861ed72412a033c2d84a46fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84338173_15bc0415",
         "filename": "led/ledcmd/clients.go",
         "patchSetId": 6
