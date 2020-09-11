@@ -97,9 +97,9 @@ class SpecialLineRulesProcessor {
 
         // When encountering a new special line, update activeRule and
         // ruleLevel.
-        const match = /^special_line_(?<index>\d+)$/.exec(srcToken.type);
+        const match = /^special_line_(\d+)$/.exec(srcToken.type);
         if (match) {
-          const ruleIndex = Number(match.groups!['index']);
+          const ruleIndex = Number(match[1]);
           activeRule = this.rules[ruleIndex]!;
           ruleLevel = srcToken.level;
 

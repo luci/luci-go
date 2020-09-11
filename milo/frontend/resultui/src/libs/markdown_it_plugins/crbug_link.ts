@@ -14,7 +14,7 @@
 
 import MarkdownIt from 'markdown-it';
 
-const RE_CRBUG = /\bcrbug(\.com)?(?<path>([:/]\w+)?[:/]\d+)\b/i;
+const RE_CRBUG = /\bcrbug(\.com)?(([:/]\w+)?[:/]\d+)\b/i;
 const RE_CRBUG_TAIL = /^(\.com)?([:/]\w+)?[:/]\d+\b/i;
 
 /**
@@ -28,7 +28,7 @@ export function crbugLink(md: MarkdownIt) {
     validate: RE_CRBUG_TAIL,
     normalize: (match) => {
       const reMatch = RE_CRBUG.exec(match.raw)!;
-      const path = reMatch.groups!['path'].replace(':', '/');
+      const path = reMatch[2].replace(':', '/');
       match.url = 'https://crbug.com' + path;
     },
   });
