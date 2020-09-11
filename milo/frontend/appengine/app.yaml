@@ -16,7 +16,17 @@ handlers:
   static_files: static/robots.txt
   upload: static/robots.txt
 
-# For other static resources such as css and js files (including ResultUI).
+# Generated files in ResultUI.
+# They all have content hash in their file names, so can be cached longer.
+- url: /static/dist
+  secure: always
+  static_dir: static/dist
+  http_headers:
+    # Set max-age to 1 hour, stale-while-revalidate to 7 days.
+    Cache-Control: public max-age=3600 stale-while-revalidate=604800
+
+# For other static resources such as css and js files (including other ResultUI
+# files).
 - url: /static
   secure: always
   static_dir: static
@@ -42,10 +52,15 @@ handlers:
   login: admin
 
 # ResultUI frontend routes.
+# Explicitly set Cache-Control to ensure that the page lives shorter than its
+# dependencies (e.g. generated JS files).
 - url: /ui/.*
   secure: always
   static_files: index.html
   upload: index.html
+  http_headers:
+    # Set max-age to 10mins, stale-while-revalidate to 1 day.
+    Cache-Control: public max-age=600 stale-while-revalidate=86400
 
 # The rest is handled by Go code.
 - url: /.*
