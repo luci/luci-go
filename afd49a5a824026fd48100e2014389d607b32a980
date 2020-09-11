@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "66d5d983_bd72902f",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-11T04:44:10Z",
+      "side": 1,
+      "message": "AppEngine append max-age:xxx to the Cache-Control header.\nWe will end up having two max-age:xxx if we set it in the header.\n\nIncreased stale-while-revalidate to 28 days.\nI think extending max-age is dangerous, because there\u0027s no way to purge that cache if anything goes wrong.\nhttps://cloud.google.com/appengine/docs/standard/python/how-requests-are-handled#static_cache_expiration",
+      "parentUuid": "d6b15122_c73939e9",
+      "revId": "afd49a5a824026fd48100e2014389d607b32a980",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aa9684f9_2fb081ea",
         "filename": "milo/frontend/appengine/app.yaml",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2020-09-11T03:57:42Z",
       "side": 1,
       "message": "I am not sure if it worths it to cache the index.html. The content of the file seems very small to me. And it may be a bit troublesome if we forgot that we cached this file. WDYT?",
+      "revId": "afd49a5a824026fd48100e2014389d607b32a980",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8397cfb2_d346c373",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-11T04:44:10Z",
+      "side": 1,
+      "message": "10m is the default expiration time and is short enough to not cause prolonged problems.\nSetting it here is more about ensuring that it\u0027s shorter than other files.",
+      "parentUuid": "aa9684f9_2fb081ea",
       "revId": "afd49a5a824026fd48100e2014389d607b32a980",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
