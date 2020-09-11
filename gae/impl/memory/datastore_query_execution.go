@@ -148,7 +148,7 @@ func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, 
 }
 
 func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, count int) (raw [][]byte, decoded []ds.Property) {
-	buf := serialize.Invertible(bytes.NewBuffer(suffix))
+	buf := cmpbin.Invertible(bytes.NewBuffer(suffix))
 	decoded = make([]ds.Property, len(suffixFormat))
 	raw = make([][]byte, len(suffixFormat))
 

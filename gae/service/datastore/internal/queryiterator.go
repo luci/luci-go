@@ -19,6 +19,7 @@ import (
 	"context"
 	"sort"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
@@ -82,7 +83,7 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 		return
 	}
 
-	invBuf := serialize.Invertible(&bytes.Buffer{})
+	invBuf := cmpbin.Invertible(&bytes.Buffer{})
 	for _, column := range qi.order {
 		invBuf.SetInvert(column.Descending)
 		if column.Property == "__key__" {

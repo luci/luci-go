@@ -60,7 +60,7 @@ var (
 
 // Key encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
-func (s Serializer) Key(buf WriteableBytesBuffer, k *ds.Key) (err error) {
+func (s Serializer) Key(buf cmpbin.WriteableBytesBuffer, k *ds.Key) (err error) {
 	// [appid ++ namespace]? ++ [1 ++ token]* ++ NULL
 	defer recoverTo(&err)
 	appid, namespace, toks := k.Split()
@@ -81,7 +81,7 @@ func (s Serializer) Key(buf WriteableBytesBuffer, k *ds.Key) (err error) {
 }
 
 // KeyTok writes a KeyTok to the buffer. You usually want Key instead of this.
-func (s Serializer) KeyTok(buf WriteableBytesBuffer, tok ds.KeyTok) (err error) {
+func (s Serializer) KeyTok(buf cmpbin.WriteableBytesBuffer, tok ds.KeyTok) (err error) {
 	// tok.kind ++ typ ++ [tok.stringID || tok.intID]
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteString(buf, tok.Kind)
@@ -99,7 +99,7 @@ func (s Serializer) KeyTok(buf WriteableBytesBuffer, tok ds.KeyTok) (err error) 
 }
 
 // GeoPoint writes a GeoPoint to the buffer.
-func (s Serializer) GeoPoint(buf WriteableBytesBuffer, gp ds.GeoPoint) (err error) {
+func (s Serializer) GeoPoint(buf cmpbin.WriteableBytesBuffer, gp ds.GeoPoint) (err error) {
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteFloat64(buf, gp.Lat)
 	panicIf(e)
@@ -111,7 +111,7 @@ func (s Serializer) GeoPoint(buf WriteableBytesBuffer, gp ds.GeoPoint) (err erro
 //
 // The supplied time is rounded via datastore.RoundTime and written as a
 // microseconds-since-epoch integer to comform to datastore storage standards.
-func (s Serializer) Time(buf WriteableBytesBuffer, t time.Time) error {
+func (s Serializer) Time(buf cmpbin.WriteableBytesBuffer, t time.Time) error {
 	name, off := t.Zone()
 	if name != "UTC" || off != 0 {
 		panic(fmt.Errorf("helper: UTC OR DEATH: %s", t))
@@ -124,20 +124,20 @@ func (s Serializer) Time(buf WriteableBytesBuffer, t time.Time) error {
 // Property writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
 // Key as its IndexValue.
-func (s Serializer) Property(buf WriteableBytesBuffer, p ds.Property) error {
+func (s Serializer) Property(buf cmpbin.WriteableBytesBuffer, p ds.Property) error {
 	return s.propertyImpl(buf, &p, false)
 }
 
 // IndexProperty writes a Property to the buffer as its native index type.
 // `context` behaves the same way that it does for WriteKey, but only has an
 // effect if `p` contains a Key as its IndexValue.
-func (s Serializer) IndexProperty(buf WriteableBytesBuffer, p ds.Property) error {
+func (s Serializer) IndexProperty(buf cmpbin.WriteableBytesBuffer, p ds.Property) error {
 	return s.propertyImpl(buf, &p, true)
 }
 
 // propertyImpl is an implementation of WriteProperty and
 // WriteIndexProperty.
-func (s Serializer) propertyImpl(buf WriteableBytesBuffer, p *ds.Property, index bool) (err error) {
+func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *ds.Property, index bool) (err error) {
 	defer recoverTo(&err)
 
 	it, v := p.IndexTypeAndValue()
@@ -158,7 +158,7 @@ func (s Serializer) propertyImpl(buf WriteableBytesBuffer, p *ds.Property, index
 //
 // v may be one of the return types from ds.Property's GetIndexTypeAndValue
 // method.
-func (s Serializer) indexValue(buf WriteableBytesBuffer, v interface{}) (err error) {
+func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v interface{}) (err error) {
 	switch t := v.(type) {
 	case nil:
 	case bool:
@@ -196,7 +196,7 @@ func (s Serializer) indexValue(buf WriteableBytesBuffer, v interface{}) (err err
 // but also potentially useful if you need to make a hash of the property data).
 //
 // Write skips metadata keys.
-func (s Serializer) PropertyMap(buf WriteableBytesBuffer, pm ds.PropertyMap) (err error) {
+func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm ds.PropertyMap) (err error) {
 	defer recoverTo(&err)
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
@@ -239,7 +239,7 @@ func (s Serializer) PropertyMap(buf WriteableBytesBuffer, pm ds.PropertyMap) (er
 }
 
 // IndexColumn writes an IndexColumn to the buffer.
-func (s Serializer) IndexColumn(buf WriteableBytesBuffer, c ds.IndexColumn) (err error) {
+func (s Serializer) IndexColumn(buf cmpbin.WriteableBytesBuffer, c ds.IndexColumn) (err error) {
 	defer recoverTo(&err)
 
 	if !c.Descending {
@@ -252,7 +252,7 @@ func (s Serializer) IndexColumn(buf WriteableBytesBuffer, c ds.IndexColumn) (err
 }
 
 // IndexDefinition writes an IndexDefinition to the buffer
-func (s Serializer) IndexDefinition(buf WriteableBytesBuffer, i ds.IndexDefinition) (err error) {
+func (s Serializer) IndexDefinition(buf cmpbin.WriteableBytesBuffer, i ds.IndexDefinition) (err error) {
 	defer recoverTo(&err)
 
 	_, err = cmpbin.WriteString(buf, i.Kind)
