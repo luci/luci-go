@@ -24,7 +24,6 @@ import (
 	"os"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/archiver"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -129,17 +128,8 @@ func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Ser
 }
 
 func newBuildbucketClient(authClient *http.Client, host string) bbpb.BuildsClient {
-	rpcOpts := prpc.DefaultOptions()
-
-	if info, err := version.GetCurrentVersion(); err != nil {
-		rpcOpts.UserAgent = fmt.Sprintf("led, %s @ %s", info.PackageName, info.InstanceID)
-	} else {
-		rpcOpts.UserAgent = "led, <unknown version>"
-	}
-
 	return bbpb.NewBuildsPRPCClient(&prpc.Client{
-		C:       authClient,
-		Host:    host,
-		Options: rpcOpts,
+		C:    authClient,
+		Host: host,
 	})
 }

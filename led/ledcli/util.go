@@ -96,6 +96,10 @@ func readJobDefinition(ctx context.Context) (*job.Definition, error) {
 func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args []string, env subcommands.Env) int {
 	ctx := c.logFlags.Set(cli.GetContext(a, cmd, env))
 	authOpts, err := c.authFlags.Options()
+	authOpts.Transport = auth.NewModifyingTransport(http.DefaultTransport, func(req *http.Request) error {
+		req.Header.Set("User-Agent", userAgent)
+		return nil
+	})
 	if err != nil {
 		logging.Errorf(ctx, "bad auth arguments: %s\n\n", err)
 		c.GetFlags().Usage()

@@ -16,12 +16,14 @@ package ledcli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -30,6 +32,17 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/led/job"
 )
+
+// userAgent is the HTTP user agent string for led.
+var userAgent = "led 1.0.0"
+
+func init() {
+	ver, err := version.GetStartupVersion()
+	if err != nil || ver.InstanceID == "" {
+		return
+	}
+	userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+}
 
 func handleInterruption(ctx context.Context) context.Context {
 	ctx, cancel := context.WithCancel(ctx)
@@ -145,7 +158,7 @@ The spec (as it is) for JobDefinition is at:
 			{}, // spacer
 
 			subcommands.CmdHelp,
-			versioncli.CmdVersion("led"),
+			versioncli.CmdVersion(userAgent),
 
 			{}, // spacer
 
