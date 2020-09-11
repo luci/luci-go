@@ -14,26 +14,16 @@
 
 import MarkdownIt from 'markdown-it';
 
-import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
-
-const md = MarkdownIt({html: true})
-  .use(defaultTarget, '_blank');
-
-export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(md.render(markdown));
-}
-
 /**
- * Extend URL with methods that can be chained.
+ * Set default target for link_open elements.
  */
-export class ChainableURL extends URL {
-  withSearchParam(key: string, value: string, override = false) {
-    if (override) {
-      this.searchParams.set(key, value);
-    } else {
-      this.searchParams.append(key, value);
-    }
-    return this;
-  }
+export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
+  const existingRule = (md.renderer.rules['link_open'] ||
+    md.renderer.renderToken).bind(md.renderer);
+
+  md.renderer.rules['link_open'] = (tokens, i, ...params) => {
+    const target = tokens[i].attrGet('target') || defaultTarget;
+    tokens[i].attrSet('target', target);
+    return existingRule(tokens, i, ...params);
+  };
 }
