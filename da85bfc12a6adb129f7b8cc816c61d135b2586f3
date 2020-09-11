@@ -162,6 +162,30 @@
     },
     {
       "key": {
+        "uuid": "80225588_23333c51",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T06:30:18Z",
+      "side": 1,
+      "message": "Ah, nevermind; the query below means that the total shard count doesn\u0027t matter.",
+      "parentUuid": "5fbdc3f5_01a9e7f6",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "da85bfc12a6adb129f7b8cc816c61d135b2586f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e92b8a3f_97698a25",
         "filename": "resultdb/internal/resultcount/resultcount.go",
         "patchSetId": 3
