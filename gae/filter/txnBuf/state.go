@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	"go.chromium.org/luci/gae/service/info"
 	"golang.org/x/net/context"
 )
@@ -199,7 +198,7 @@ type item struct {
 
 func (i *item) getEncKey() string {
 	if i.encKey == "" {
-		i.encKey = string(serialize.Serialize.ToBytes(i.key))
+		i.encKey = string(datastore.Serialize.ToBytes(i.key))
 	}
 	return i.encKey
 }
@@ -483,7 +482,7 @@ func (t *txnBufState) effect() (toPut []datastore.PropertyMap, toPutKeys, toDel 
 
 	for keyStr, size := range t.entState.keyToSize {
 		if size == 0 {
-			k, err := serialize.Deserializer{KeyContext: t.kc}.Key(bytes.NewBufferString(keyStr))
+			k, err := datastore.Deserializer{KeyContext: t.kc}.Key(bytes.NewBufferString(keyStr))
 			memoryCorruption(err)
 			toDel = append(toDel, k)
 		}
@@ -538,8 +537,8 @@ func toEncoded(keys []*datastore.Key) (full []string, roots stringset.Set) {
 	roots = stringset.New(len(keys))
 	full = make([]string, len(keys))
 	for i, k := range keys {
-		roots.Add(string(serialize.Serialize.ToBytes(k.Root())))
-		full[i] = string(serialize.Serialize.ToBytes(k))
+		roots.Add(string(datastore.Serialize.ToBytes(k.Root())))
+		full[i] = string(datastore.Serialize.ToBytes(k))
 	}
 	return
 }

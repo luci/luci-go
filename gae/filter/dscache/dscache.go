@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 var (
@@ -144,7 +143,7 @@ func MakeMemcacheKey(shard int, k *datastore.Key) string {
 
 // HashKey generates just the hashed portion of the MemcacheKey.
 func HashKey(k *datastore.Key) string {
-	dgst := sha1.Sum(serialize.Serialize.ToBytes(k))
+	dgst := sha1.Sum(datastore.Serialize.ToBytes(k))
 	buf := bytes.Buffer{}
 	enc := base64.NewEncoder(base64.StdEncoding, &buf)
 	_, _ = enc.Write(dgst[:])
