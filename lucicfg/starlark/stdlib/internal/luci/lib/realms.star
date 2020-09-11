@@ -262,6 +262,9 @@ def _generate_realm(impl, realm):
             else:
                 per_role[role] = set(principals)
 
+    # Convert into a sorted list of pairs (role, set of principals).
+    per_role = sorted(per_role.items(), key = lambda x: x[0])
+
     parents = graph.parents(realm.key, impl.kinds.realm)
     return realms_pb.Realm(
         name = realm.props.name,
@@ -269,9 +272,10 @@ def _generate_realm(impl, realm):
         bindings = [
             realms_pb.Binding(
                 role = role,
-                principals = sorted(per_role[role]),
+                principals = sorted(bindings),
             )
-            for role in sorted(per_role)
+            for role, bindings in per_role
+            if bindings
         ],
         enforce_in_service = realm.props.enforce_in_service,
     )
