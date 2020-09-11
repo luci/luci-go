@@ -47,8 +47,8 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 
-			lib.CmdArchive(),
-			lib.CmdDownload(),
+			lib.CmdArchive(defaultAuthOpts),
+			lib.CmdDownload(defaultAuthOpts),
 
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
