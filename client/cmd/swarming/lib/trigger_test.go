@@ -222,9 +222,13 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(err, ShouldBeNil)
-		So(result.Properties.Command, ShouldResemble, []string{"arg1", "arg2"})
-		So(result.Properties.ExtraArgs, ShouldResemble, ([]string)(nil))
-		So(result.Properties.InputsRef, ShouldBeNil)
+		// Setting properties directly on the task is deprecated.
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 1)
+		properties := result.TaskSlices[0].Properties
+		So(properties.Command, ShouldResemble, []string{"arg1", "arg2"})
+		So(properties.ExtraArgs, ShouldResemble, ([]string)(nil))
+		So(properties.InputsRef, ShouldBeNil)
 	})
 }
 
@@ -238,9 +242,13 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(err, ShouldBeNil)
-		So(result.Properties.Command, ShouldBeNil)
-		So(result.Properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
-		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
+		// Setting properties directly on the task is deprecated.
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 1)
+		properties := result.TaskSlices[0].Properties
+		So(properties.Command, ShouldBeNil)
+		So(properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
+		So(properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
 			Isolated:       "1234567890123456789012345678901234567890",
 			Isolatedserver: "http://localhost:10050",
 			Namespace:      "default-gzip",
@@ -257,7 +265,11 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		}
 		result, err := c.processTriggerOptions([]string(nil), nil)
 		So(err, ShouldBeNil)
-		So(result.Properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
+		// Setting properties directly on the task is deprecated.
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 1)
+		properties := result.TaskSlices[0].Properties
+		So(properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
 			Packages: []*swarming.SwarmingRpcsCipdPackage{{
 				PackageName: "name",
 				Path:        "path",
@@ -275,7 +287,11 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 		c.commonFlags.serverURL = "https://cas.appspot.com"
 		result, err := c.processTriggerOptions([]string(nil), nil)
 		So(err, ShouldBeNil)
-		So(result.Properties.CasInputRoot, ShouldResemble,
+		// Setting properties directly on the task is deprecated.
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 1)
+		properties := result.TaskSlices[0].Properties
+		So(properties.CasInputRoot, ShouldResemble,
 			&swarming.SwarmingRpcsCASReference{
 				CasInstance: "projects/cas/instances/default_instance",
 				Digest: &swarming.SwarmingRpcsDigest{
