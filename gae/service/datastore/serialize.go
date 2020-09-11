@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package datastore
 
 import (
 	"bytes"
@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
-	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // WritePropertyMapDeterministic allows tests to make Serializer.PropertyMap
@@ -60,7 +59,7 @@ var (
 
 // Key encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
-func (s Serializer) Key(buf cmpbin.WriteableBytesBuffer, k *ds.Key) (err error) {
+func (s Serializer) Key(buf cmpbin.WriteableBytesBuffer, k *Key) (err error) {
 	// [appid ++ namespace]? ++ [1 ++ token]* ++ NULL
 	defer recoverTo(&err)
 	appid, namespace, toks := k.Split()
@@ -81,17 +80,17 @@ func (s Serializer) Key(buf cmpbin.WriteableBytesBuffer, k *ds.Key) (err error) 
 }
 
 // KeyTok writes a KeyTok to the buffer. You usually want Key instead of this.
-func (s Serializer) KeyTok(buf cmpbin.WriteableBytesBuffer, tok ds.KeyTok) (err error) {
+func (s Serializer) KeyTok(buf cmpbin.WriteableBytesBuffer, tok KeyTok) (err error) {
 	// tok.kind ++ typ ++ [tok.stringID || tok.intID]
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteString(buf, tok.Kind)
 	panicIf(e)
 	if tok.StringID != "" {
-		panicIf(buf.WriteByte(byte(ds.PTString)))
+		panicIf(buf.WriteByte(byte(PTString)))
 		_, e := cmpbin.WriteString(buf, tok.StringID)
 		panicIf(e)
 	} else {
-		panicIf(buf.WriteByte(byte(ds.PTInt)))
+		panicIf(buf.WriteByte(byte(PTInt)))
 		_, e := cmpbin.WriteInt(buf, tok.IntID)
 		panicIf(e)
 	}
@@ -99,7 +98,7 @@ func (s Serializer) KeyTok(buf cmpbin.WriteableBytesBuffer, tok ds.KeyTok) (err 
 }
 
 // GeoPoint writes a GeoPoint to the buffer.
-func (s Serializer) GeoPoint(buf cmpbin.WriteableBytesBuffer, gp ds.GeoPoint) (err error) {
+func (s Serializer) GeoPoint(buf cmpbin.WriteableBytesBuffer, gp GeoPoint) (err error) {
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteFloat64(buf, gp.Lat)
 	panicIf(e)
@@ -117,27 +116,27 @@ func (s Serializer) Time(buf cmpbin.WriteableBytesBuffer, t time.Time) error {
 		panic(fmt.Errorf("helper: UTC OR DEATH: %s", t))
 	}
 
-	_, err := cmpbin.WriteInt(buf, ds.TimeToInt(t))
+	_, err := cmpbin.WriteInt(buf, TimeToInt(t))
 	return err
 }
 
 // Property writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
 // Key as its IndexValue.
-func (s Serializer) Property(buf cmpbin.WriteableBytesBuffer, p ds.Property) error {
+func (s Serializer) Property(buf cmpbin.WriteableBytesBuffer, p Property) error {
 	return s.propertyImpl(buf, &p, false)
 }
 
 // IndexProperty writes a Property to the buffer as its native index type.
 // `context` behaves the same way that it does for WriteKey, but only has an
 // effect if `p` contains a Key as its IndexValue.
-func (s Serializer) IndexProperty(buf cmpbin.WriteableBytesBuffer, p ds.Property) error {
+func (s Serializer) IndexProperty(buf cmpbin.WriteableBytesBuffer, p Property) error {
 	return s.propertyImpl(buf, &p, true)
 }
 
 // propertyImpl is an implementation of WriteProperty and
 // WriteIndexProperty.
-func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *ds.Property, index bool) (err error) {
+func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *Property, index bool) (err error) {
 	defer recoverTo(&err)
 
 	it, v := p.IndexTypeAndValue()
@@ -145,7 +144,7 @@ func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *ds.Property
 		it = p.Type()
 	}
 	typb := byte(it)
-	if p.IndexSetting() != ds.NoIndex {
+	if p.IndexSetting() != NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
@@ -156,7 +155,7 @@ func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *ds.Property
 
 // indexValue writes the index value of v to buf.
 //
-// v may be one of the return types from ds.Property's GetIndexTypeAndValue
+// v may be one of the return types from Property's GetIndexTypeAndValue
 // method.
 func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v interface{}) (err error) {
 	switch t := v.(type) {
@@ -175,11 +174,11 @@ func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v interface{}) (
 		_, err = cmpbin.WriteString(buf, t)
 	case []byte:
 		_, err = cmpbin.WriteBytes(buf, t)
-	case ds.GeoPoint:
+	case GeoPoint:
 		err = s.GeoPoint(buf, t)
-	case ds.PropertyMap:
+	case PropertyMap:
 		err = s.PropertyMap(buf, t)
-	case *ds.Key:
+	case *Key:
 		err = s.Key(buf, t)
 
 	default:
@@ -196,7 +195,7 @@ func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v interface{}) (
 // but also potentially useful if you need to make a hash of the property data).
 //
 // Write skips metadata keys.
-func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm ds.PropertyMap) (err error) {
+func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm PropertyMap) (err error) {
 	defer recoverTo(&err)
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
@@ -207,12 +206,12 @@ func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm ds.PropertyM
 		panicIf(e)
 
 		switch t := pdata.(type) {
-		case ds.Property:
+		case Property:
 			_, e = cmpbin.WriteInt(tmpBuf, -1)
 			panicIf(e)
 			panicIf(s.Property(tmpBuf, t))
 
-		case ds.PropertySlice:
+		case PropertySlice:
 			_, e = cmpbin.WriteInt(tmpBuf, int64(len(t)))
 			panicIf(e)
 			for _, p := range t {
@@ -239,7 +238,7 @@ func (s Serializer) PropertyMap(buf cmpbin.WriteableBytesBuffer, pm ds.PropertyM
 }
 
 // IndexColumn writes an IndexColumn to the buffer.
-func (s Serializer) IndexColumn(buf cmpbin.WriteableBytesBuffer, c ds.IndexColumn) (err error) {
+func (s Serializer) IndexColumn(buf cmpbin.WriteableBytesBuffer, c IndexColumn) (err error) {
 	defer recoverTo(&err)
 
 	if !c.Descending {
@@ -252,7 +251,7 @@ func (s Serializer) IndexColumn(buf cmpbin.WriteableBytesBuffer, c ds.IndexColum
 }
 
 // IndexDefinition writes an IndexDefinition to the buffer
-func (s Serializer) IndexDefinition(buf cmpbin.WriteableBytesBuffer, i ds.IndexDefinition) (err error) {
+func (s Serializer) IndexDefinition(buf cmpbin.WriteableBytesBuffer, i IndexDefinition) (err error) {
 	defer recoverTo(&err)
 
 	_, err = cmpbin.WriteString(buf, i.Kind)
@@ -281,11 +280,11 @@ func (s SerializedPslice) Less(i, j int) bool { return bytes.Compare(s[i], s[j])
 // It does not differentiate between single- and multi- properties.
 //
 // This is "partial" because it returns something other than `[]byte`
-func (s Serializer) PropertySlicePartially(vals ds.PropertySlice) SerializedPslice {
+func (s Serializer) PropertySlicePartially(vals PropertySlice) SerializedPslice {
 	dups := stringset.New(0)
 	ret := make(SerializedPslice, 0, len(vals))
 	for _, v := range vals {
-		if v.IndexSetting() == ds.NoIndex {
+		if v.IndexSetting() == NoIndex {
 			continue
 		}
 
@@ -310,12 +309,12 @@ type SerializedPmap map[string]SerializedPslice
 // Serializer's encodings.
 //
 // This is "partial" because it returns something other than `[]byte`
-func (s Serializer) PropertyMapPartially(k *ds.Key, pm ds.PropertyMap) (ret SerializedPmap) {
+func (s Serializer) PropertyMapPartially(k *Key, pm PropertyMap) (ret SerializedPmap) {
 	ret = make(SerializedPmap, len(pm)+2)
 	if k != nil {
-		ret["__key__"] = [][]byte{Serialize.ToBytes(ds.MkProperty(k))}
+		ret["__key__"] = [][]byte{Serialize.ToBytes(MkProperty(k))}
 		for k != nil {
-			ret["__ancestor__"] = append(ret["__ancestor__"], Serialize.ToBytes(ds.MkProperty(k)))
+			ret["__ancestor__"] = append(ret["__ancestor__"], Serialize.ToBytes(MkProperty(k)))
 			k = k.Parent()
 		}
 	}
@@ -337,23 +336,23 @@ func (s Serializer) ToBytesErr(i interface{}) (ret []byte, err error) {
 	buf := bytes.Buffer{}
 
 	switch t := i.(type) {
-	case ds.IndexColumn:
+	case IndexColumn:
 		err = s.IndexColumn(&buf, t)
 
-	case ds.IndexDefinition:
+	case IndexDefinition:
 		err = s.IndexDefinition(&buf, t)
 
-	case ds.KeyTok:
+	case KeyTok:
 		err = s.KeyTok(&buf, t)
 
-	case ds.Property:
+	case Property:
 		err = s.IndexProperty(&buf, t)
 
-	case ds.PropertyMap:
+	case PropertyMap:
 		err = s.PropertyMap(&buf, t)
 
 	default:
-		_, v := ds.MkProperty(i).IndexTypeAndValue()
+		_, v := MkProperty(i).IndexTypeAndValue()
 		err = s.indexValue(&buf, v)
 	}
 

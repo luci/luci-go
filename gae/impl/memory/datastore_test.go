@@ -24,7 +24,6 @@ import (
 	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	infoS "go.chromium.org/luci/gae/service/info"
 
 	"golang.org/x/net/context"
@@ -714,7 +713,7 @@ func TestCompoundIndexes(t *testing.T) {
 
 	idxKey := func(def ds.IndexDefinition) string {
 		So(def, ShouldNotBeNil)
-		return "idx::" + string(serialize.Serialize.ToBytes(*def.PrepForIdxTable()))
+		return "idx::" + string(ds.Serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
 	Convey("Test Compound indexes", t, func() {

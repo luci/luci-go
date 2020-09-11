@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // AddToJournal records one or more Mutation to the tumble journal, but does not
@@ -40,7 +39,7 @@ type addToJournalMutation []Mutation
 func (a addToJournalMutation) Root(c context.Context) *ds.Key {
 	hsh := sha256.New()
 	for _, m := range a {
-		hsh.Write(serialize.SerializeKC.ToBytes(m.Root(c)))
+		hsh.Write(ds.SerializeKC.ToBytes(m.Root(c)))
 	}
 	return ds.MakeKey(c, "tumble.temp", hex.EncodeToString(hsh.Sum(nil)))
 }

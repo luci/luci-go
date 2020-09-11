@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // queryToIter takes a FinalizedQuery and returns an iterator function which
@@ -269,12 +268,12 @@ func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 func toComparableString(start, end []byte, order []ds.IndexColumn, k *ds.Key, pm ds.PropertyMap) (row, key []byte) {
 	doCmp := true
 	soFar := []byte{}
-	ps := serialize.Serialize.PropertyMapPartially(k, nil)
+	ps := ds.Serialize.PropertyMapPartially(k, nil)
 	for _, ord := range order {
 		row, ok := ps[ord.Property]
 		if !ok {
 			if pslice := pm.Slice(ord.Property); len(pslice) > 0 {
-				row = serialize.Serialize.PropertySlicePartially(pslice)
+				row = ds.Serialize.PropertySlicePartially(pslice)
 			}
 		}
 		sort.Sort(row)

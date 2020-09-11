@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package datastore
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/service/blobstore"
-	ds "go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -33,33 +31,17 @@ func init() {
 	WritePropertyMapDeterministic = true
 }
 
-var (
-	mp   = ds.MkProperty
-	mpNI = ds.MkPropertyNI
-)
-
 type dspmapTC struct {
 	name  string
-	props ds.PropertyMap
+	props PropertyMap
 }
 
-func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
-	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
+func mkKeyCtx(appID, namespace string, elems ...interface{}) *Key {
+	return MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
 func mkBuf(data []byte) cmpbin.WriteableBytesBuffer {
 	return cmpbin.Invertible(bytes.NewBuffer(data))
-}
-
-// TODO(riannucci): dedup with datastore/key testing file
-func ShouldEqualKey(actual interface{}, expected ...interface{}) string {
-	if len(expected) != 1 {
-		return fmt.Sprintf("Assertion requires 1 expected value, got %d", len(expected))
-	}
-	if actual.(*ds.Key).Equal(expected[0].(*ds.Key)) {
-		return ""
-	}
-	return fmt.Sprintf("Expected: %q\nActual: %q", actual, expected[0])
 }
 
 func TestPropertyMapSerialization(t *testing.T) {
@@ -69,29 +51,29 @@ func TestPropertyMapSerialization(t *testing.T) {
 	tests := []dspmapTC{
 		{
 			"basic",
-			ds.PropertyMap{
-				"R": ds.PropertySlice{mp(false), mp(2.1), mpNI(3)},
-				"S": ds.PropertySlice{mp("hello"), mp("world")},
+			PropertyMap{
+				"R": PropertySlice{mp(false), mp(2.1), mpNI(3)},
+				"S": PropertySlice{mp("hello"), mp("world")},
 			},
 		},
 		{
 			"keys",
-			ds.PropertyMap{
-				"DS": ds.PropertySlice{
-					mp(mkKey("appy", "ns", "Foo", 7)),
-					mp(mkKey("other", "", "Yot", "wheeep")),
-					mp((*ds.Key)(nil)),
+			PropertyMap{
+				"DS": PropertySlice{
+					mp(mkKeyCtx("appy", "ns", "Foo", 7)),
+					mp(mkKeyCtx("other", "", "Yot", "wheeep")),
+					mp((*Key)(nil)),
 				},
-				"blobstore": ds.PropertySlice{mp(blobstore.Key("sup")), mp(blobstore.Key("nerds"))},
+				"blobstore": PropertySlice{mp(blobstore.Key("sup")), mp(blobstore.Key("nerds"))},
 			},
 		},
 		{
 			"property map",
-			ds.PropertyMap{
-				"pm": ds.PropertySlice{
-					mpNI(ds.PropertyMap{
-						"k": mpNI(mkKey("entity", "id")),
-						"map": mpNI(ds.PropertyMap{
+			PropertyMap{
+				"pm": PropertySlice{
+					mpNI(PropertyMap{
+						"k": mpNI(mkKeyCtx("entity", "id")),
+						"map": mpNI(PropertyMap{
 							"b": mpNI([]byte("byte")),
 						}),
 						"str": mpNI("string")},
@@ -101,21 +83,21 @@ func TestPropertyMapSerialization(t *testing.T) {
 		},
 		{
 			"geo",
-			ds.PropertyMap{
-				"G": mp(ds.GeoPoint{Lat: 1, Lng: 2}),
+			PropertyMap{
+				"G": mp(GeoPoint{Lat: 1, Lng: 2}),
 			},
 		},
 		{
 			"data",
-			ds.PropertyMap{
-				"S":                    ds.PropertySlice{mp("sup"), mp("fool"), mp("nerd")},
-				"Deserialize.Foo.Nerd": ds.PropertySlice{mp([]byte("sup")), mp([]byte("fool"))},
+			PropertyMap{
+				"S":                    PropertySlice{mp("sup"), mp("fool"), mp("nerd")},
+				"Deserialize.Foo.Nerd": PropertySlice{mp([]byte("sup")), mp([]byte("fool"))},
 			},
 		},
 		{
 			"time",
-			ds.PropertyMap{
-				"T": ds.PropertySlice{
+			PropertyMap{
+				"T": PropertySlice{
 					mp(now),
 					mp(now.Add(time.Second)),
 				},
@@ -123,11 +105,11 @@ func TestPropertyMapSerialization(t *testing.T) {
 		},
 		{
 			"empty vals",
-			ds.PropertyMap{
-				"T": ds.PropertySlice{mp(true), mp(true)},
-				"F": ds.PropertySlice{mp(false), mp(false)},
-				"N": ds.PropertySlice{mp(nil), mp(nil)},
-				"E": ds.PropertySlice{},
+			PropertyMap{
+				"T": PropertySlice{mp(true), mp(true)},
+				"F": PropertySlice{mp(false), mp(false)},
+				"N": PropertySlice{mp(nil), mp(nil)},
+				"E": PropertySlice{},
 			},
 		},
 	}
@@ -185,29 +167,29 @@ func TestSerializationReadMisc(t *testing.T) {
 			buf := mkBuf(nil)
 			wf(buf, 10)
 			wf(buf, 20)
-			So(string(Serialize.ToBytes(ds.GeoPoint{Lat: 10, Lng: 20})), ShouldEqual, buf.String())
+			So(string(Serialize.ToBytes(GeoPoint{Lat: 10, Lng: 20})), ShouldEqual, buf.String())
 		})
 
 		Convey("IndexColumn", func() {
 			buf := mkBuf(nil)
 			die(buf.WriteByte(1))
 			ws(buf, "hi")
-			So(string(Serialize.ToBytes(ds.IndexColumn{Property: "hi", Descending: true})),
+			So(string(Serialize.ToBytes(IndexColumn{Property: "hi", Descending: true})),
 				ShouldEqual, buf.String())
 		})
 
 		Convey("KeyTok", func() {
 			buf := mkBuf(nil)
 			ws(buf, "foo")
-			die(buf.WriteByte(byte(ds.PTInt)))
+			die(buf.WriteByte(byte(PTInt)))
 			wi(buf, 20)
-			So(string(Serialize.ToBytes(ds.KeyTok{Kind: "foo", IntID: 20})),
+			So(string(Serialize.ToBytes(KeyTok{Kind: "foo", IntID: 20})),
 				ShouldEqual, buf.String())
 		})
 
 		Convey("Property", func() {
 			buf := mkBuf(nil)
-			die(buf.WriteByte(0x80 | byte(ds.PTString)))
+			die(buf.WriteByte(0x80 | byte(PTString)))
 			ws(buf, "nerp")
 			So(string(Serialize.ToBytes(mp("nerp"))),
 				ShouldEqual, buf.String())
@@ -228,43 +210,43 @@ func TestSerializationReadMisc(t *testing.T) {
 
 		Convey("ReadKey", func() {
 			Convey("good cases", func() {
-				dwc := Deserializer{ds.MkKeyContext("spam", "nerd")}
+				dwc := Deserializer{MkKeyContext("spam", "nerd")}
 
 				Convey("w/ ctx decodes normally w/ ctx", func() {
-					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
+					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := SerializeKC.ToBytes(k)
 					dk, err := Deserialize.Key(mkBuf(data))
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, k)
 				})
 				Convey("w/ ctx decodes normally w/o ctx", func() {
-					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
+					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := SerializeKC.ToBytes(k)
 					dk, err := dwc.Key(mkBuf(data))
 					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKey("spam", "nerd", "knd", "yo", "other", 10))
+					So(dk, ShouldEqualKey, mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10))
 				})
 				Convey("w/o ctx decodes normally w/ ctx", func() {
-					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
+					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := Serialize.ToBytes(k)
 					dk, err := Deserialize.Key(mkBuf(data))
 					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKey("", "", "knd", "yo", "other", 10))
+					So(dk, ShouldEqualKey, mkKeyCtx("", "", "knd", "yo", "other", 10))
 				})
 				Convey("w/o ctx decodes normally w/o ctx", func() {
-					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
+					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := Serialize.ToBytes(k)
 					dk, err := dwc.Key(mkBuf(data))
 					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKey("spam", "nerd", "knd", "yo", "other", 10))
+					So(dk, ShouldEqualKey, mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10))
 				})
 				Convey("IntIDs always sort before StringIDs", func() {
 					// -1 writes as almost all 1's in the first byte under cmpbin, even
 					// though it's technically not a valid key.
-					k := mkKey("aid", "ns", "knd", -1)
+					k := mkKeyCtx("aid", "ns", "knd", -1)
 					data := Serialize.ToBytes(k)
 
-					k = mkKey("aid", "ns", "knd", "hat")
+					k = mkKeyCtx("aid", "ns", "knd", "hat")
 					data2 := Serialize.ToBytes(k)
 
 					So(string(data), ShouldBeLessThan, string(data2))
@@ -308,7 +290,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "ns")
 					for i := 1; i < 60; i++ {
 						die(buf.WriteByte(1))
-						die(Serialize.KeyTok(buf, ds.KeyTok{Kind: "sup", IntID: int64(i)}))
+						die(Serialize.KeyTok(buf, KeyTok{Kind: "sup", IntID: int64(i)}))
 					}
 					die(buf.WriteByte(0))
 					_, err := Deserialize.Key(buf)
@@ -337,7 +319,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "ns")
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
-					die(buf.WriteByte(byte(ds.PTString)))
+					die(buf.WriteByte(byte(PTString)))
 					_, err := Deserialize.Key(buf)
 					So(err, ShouldEqual, io.EOF)
 				})
@@ -347,7 +329,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "ns")
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
-					die(buf.WriteByte(byte(ds.PTBlobKey)))
+					die(buf.WriteByte(byte(PTBlobKey)))
 					_, err := Deserialize.Key(buf)
 					So(err, ShouldErrLike, "invalid type PTBlobKey")
 				})
@@ -357,7 +339,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "ns")
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
-					die(buf.WriteByte(byte(ds.PTInt)))
+					die(buf.WriteByte(byte(PTInt)))
 					wi(buf, -2)
 					_, err := Deserialize.Key(buf)
 					So(err, ShouldErrLike, "zero/negative")
@@ -406,21 +388,21 @@ func TestSerializationReadMisc(t *testing.T) {
 			Convey("trunc 1", func() {
 				p, err := Deserialize.Property(buf)
 				So(err, ShouldEqual, io.EOF)
-				So(p.Type(), ShouldEqual, ds.PTNull)
+				So(p.Type(), ShouldEqual, PTNull)
 				So(p.Value(), ShouldBeNil)
 			})
 			Convey("trunc (PTBytes)", func() {
-				die(buf.WriteByte(byte(ds.PTBytes)))
+				die(buf.WriteByte(byte(PTBytes)))
 				_, err := Deserialize.Property(buf)
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc (PTBlobKey)", func() {
-				die(buf.WriteByte(byte(ds.PTBlobKey)))
+				die(buf.WriteByte(byte(PTBlobKey)))
 				_, err := Deserialize.Property(buf)
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid type", func() {
-				die(buf.WriteByte(byte(ds.PTUnknown + 1)))
+				die(buf.WriteByte(byte(PTUnknown + 1)))
 				_, err := Deserialize.Property(buf)
 				So(err, ShouldErrLike, "unknown type!")
 			})
@@ -465,19 +447,19 @@ func TestSerializationReadMisc(t *testing.T) {
 		})
 
 		Convey("IndexDefinition", func() {
-			id := ds.IndexDefinition{Kind: "kind"}
+			id := IndexDefinition{Kind: "kind"}
 			data := Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err := Deserialize.IndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
-			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "prop"})
+			id.SortBy = append(id.SortBy, IndexColumn{Property: "prop"})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
-			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "other", Descending: true})
+			id.SortBy = append(id.SortBy, IndexColumn{Property: "other", Descending: true})
 			id.Ancestor = true
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
@@ -485,16 +467,16 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			// invalid
-			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "", Descending: true})
+			id.SortBy = append(id.SortBy, IndexColumn{Property: "", Descending: true})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			Convey("too many", func() {
-				id := ds.IndexDefinition{Kind: "wat"}
+				id := IndexDefinition{Kind: "wat"}
 				for i := 0; i < maxIndexColumns+1; i++ {
-					id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "Hi", Descending: true})
+					id.SortBy = append(id.SortBy, IndexColumn{Property: "Hi", Descending: true})
 				}
 				data := Serialize.ToBytes(*id.PrepForIdxTable())
 				newID, err = Deserialize.IndexDefinition(mkBuf(data))
@@ -507,12 +489,12 @@ func TestSerializationReadMisc(t *testing.T) {
 func TestPartialSerialization(t *testing.T) {
 	t.Parallel()
 
-	fakeKey := mkKey("dev~app", "ns", "parentKind", "sid", "knd", 10)
+	fakeKey := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "knd", 10)
 
 	Convey("TestPartialSerialization", t, func() {
 		Convey("list", func() {
-			pm := ds.PropertyMap{
-				"wat":  ds.PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
+			pm := PropertyMap{
+				"wat":  PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
 				"nerd": mp(103.7),
 				"spaz": mpNI(false),
 			}

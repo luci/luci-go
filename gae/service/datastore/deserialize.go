@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialize
+package datastore
 
 import (
 	"errors"
@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/service/blobstore"
-	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 const (
@@ -51,7 +50,7 @@ type Deserializer struct {
 	//
 	// If supplied, any encoded appid/namespace will be ignored and this will be
 	// used to fill in the appid and namespace for all returned *Key objects.
-	KeyContext ds.KeyContext
+	KeyContext KeyContext
 }
 
 // Deserialize is a Deserializer without KeyContext (i.e. appid/namespace
@@ -64,12 +63,12 @@ var Deserialize Deserializer
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func (d Deserializer) Key(buf cmpbin.ReadableBytesBuffer) (ret *ds.Key, err error) {
+func (d Deserializer) Key(buf cmpbin.ReadableBytesBuffer) (ret *Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
 
-	var kc ds.KeyContext
+	var kc KeyContext
 	if actualCtx == 1 {
 		kc.AppID, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -85,7 +84,7 @@ func (d Deserializer) Key(buf cmpbin.ReadableBytesBuffer) (ret *ds.Key, err erro
 		kc = d.KeyContext
 	}
 
-	toks := []ds.KeyTok{}
+	toks := []KeyTok{}
 	for {
 		ctrlByte, e := buf.ReadByte()
 		panicIf(e)
@@ -110,7 +109,7 @@ func (d Deserializer) Key(buf cmpbin.ReadableBytesBuffer) (ret *ds.Key, err erro
 
 // KeyTok reads a KeyTok from the buffer. You usually want ReadKey
 // instead of this.
-func (d Deserializer) KeyTok(buf cmpbin.ReadableBytesBuffer) (ret ds.KeyTok, err error) {
+func (d Deserializer) KeyTok(buf cmpbin.ReadableBytesBuffer) (ret KeyTok, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	ret.Kind, _, e = cmpbin.ReadString(buf)
@@ -119,22 +118,22 @@ func (d Deserializer) KeyTok(buf cmpbin.ReadableBytesBuffer) (ret ds.KeyTok, err
 	typ, e := buf.ReadByte()
 	panicIf(e)
 
-	switch ds.PropertyType(typ) {
-	case ds.PTString:
+	switch PropertyType(typ) {
+	case PTString:
 		ret.StringID, _, err = cmpbin.ReadString(buf)
-	case ds.PTInt:
+	case PTInt:
 		ret.IntID, _, err = cmpbin.ReadInt(buf)
 		if err == nil && ret.IntID <= 0 {
 			err = errors.New("helper: decoded key with empty stringID and zero/negative intID")
 		}
 	default:
-		err = fmt.Errorf("helper: invalid type %s", ds.PropertyType(typ))
+		err = fmt.Errorf("helper: invalid type %s", PropertyType(typ))
 	}
 	return
 }
 
 // GeoPoint reads a GeoPoint from the buffer.
-func (d Deserializer) GeoPoint(buf cmpbin.ReadableBytesBuffer) (gp ds.GeoPoint, err error) {
+func (d Deserializer) GeoPoint(buf cmpbin.ReadableBytesBuffer) (gp GeoPoint, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	gp.Lat, _, e = cmpbin.ReadFloat64(buf)
@@ -155,44 +154,44 @@ func (d Deserializer) Time(buf cmpbin.ReadableBytesBuffer) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return ds.IntToTime(v), nil
+	return IntToTime(v), nil
 }
 
 // Property reads a Property from the buffer. `context` and `kc` behave the
 // same way they do for Key, but only have an effect if the decoded property
 // has a Key value.
-func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p ds.Property, err error) {
+func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p Property, err error) {
 	val := interface{}(nil)
 	b, err := buf.ReadByte()
 	if err != nil {
 		return
 	}
-	is := ds.ShouldIndex
+	is := ShouldIndex
 	if (b & 0x80) == 0 {
-		is = ds.NoIndex
+		is = NoIndex
 	}
-	switch ds.PropertyType(b & 0x7f) {
-	case ds.PTNull:
-	case ds.PTBool:
+	switch PropertyType(b & 0x7f) {
+	case PTNull:
+	case PTBool:
 		b, err = buf.ReadByte()
 		val = (b != 0)
-	case ds.PTInt:
+	case PTInt:
 		val, _, err = cmpbin.ReadInt(buf)
-	case ds.PTFloat:
+	case PTFloat:
 		val, _, err = cmpbin.ReadFloat64(buf)
-	case ds.PTString:
+	case PTString:
 		val, _, err = cmpbin.ReadString(buf)
-	case ds.PTBytes:
+	case PTBytes:
 		val, _, err = cmpbin.ReadBytes(buf)
-	case ds.PTTime:
+	case PTTime:
 		val, err = d.Time(buf)
-	case ds.PTGeoPoint:
+	case PTGeoPoint:
 		val, err = d.GeoPoint(buf)
-	case ds.PTPropertyMap:
+	case PTPropertyMap:
 		val, err = d.PropertyMap(buf)
-	case ds.PTKey:
+	case PTKey:
 		val, err = d.Key(buf)
-	case ds.PTBlobKey:
+	case PTBlobKey:
 		s := ""
 		if s, _, err = cmpbin.ReadString(buf); err != nil {
 			break
@@ -209,7 +208,7 @@ func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p ds.Property, e
 
 // PropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm ds.PropertyMap, err error) {
+func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -220,9 +219,9 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm ds.Propert
 		return
 	}
 
-	pm = make(ds.PropertyMap, numRows)
+	pm = make(PropertyMap, numRows)
 
-	name, prop := "", ds.Property{}
+	name, prop := "", Property{}
 	for i := uint64(0); i < numRows; i++ {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -241,7 +240,7 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm ds.Propert
 			return
 
 		default:
-			props := make(ds.PropertySlice, 0, numProps)
+			props := make(PropertySlice, 0, numProps)
 			for j := int64(0); j < numProps; j++ {
 				prop, err = d.Property(buf)
 				panicIf(err)
@@ -254,7 +253,7 @@ func (d Deserializer) PropertyMap(buf cmpbin.ReadableBytesBuffer) (pm ds.Propert
 }
 
 // IndexColumn reads an IndexColumn from the buffer.
-func (d Deserializer) IndexColumn(buf cmpbin.ReadableBytesBuffer) (c ds.IndexColumn, err error) {
+func (d Deserializer) IndexColumn(buf cmpbin.ReadableBytesBuffer) (c IndexColumn, err error) {
 	defer recoverTo(&err)
 
 	dir, err := buf.ReadByte()
@@ -266,7 +265,7 @@ func (d Deserializer) IndexColumn(buf cmpbin.ReadableBytesBuffer) (c ds.IndexCol
 }
 
 // IndexDefinition reads an IndexDefinition from the buffer.
-func (d Deserializer) IndexDefinition(buf cmpbin.ReadableBytesBuffer) (i ds.IndexDefinition, err error) {
+func (d Deserializer) IndexDefinition(buf cmpbin.ReadableBytesBuffer) (i IndexDefinition, err error) {
 	defer recoverTo(&err)
 
 	i.Kind, _, err = cmpbin.ReadString(buf)

@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
@@ -37,7 +37,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 
 		Convey("early exit logic works", func() {
 			future := clock.Now(ctx).UTC().Add(time.Hour)
-			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.Serialize.ToBytes(future))
+			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(ds.Serialize.ToBytes(future))
 			So(mc.Set(ctx, itm), ShouldBeNil)
 
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
