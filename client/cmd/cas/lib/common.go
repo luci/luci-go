@@ -75,8 +75,6 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 
-	c.parsedAuthOpts.TokenServerHost = c.casFlags.TokenServerHost
-
 	return c.casFlags.Parse()
 }
 
