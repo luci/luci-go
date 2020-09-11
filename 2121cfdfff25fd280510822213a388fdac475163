@@ -45,6 +45,30 @@
       "revId": "2121cfdfff25fd280510822213a388fdac475163",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa66743b_8b025cd1",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/bug_line.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-11T04:24:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a544f26_715abc3e",
+      "range": {
+        "startLine": 81,
+        "startChar": 42,
+        "endLine": 81,
+        "endChar": 45
+      },
+      "revId": "2121cfdfff25fd280510822213a388fdac475163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
