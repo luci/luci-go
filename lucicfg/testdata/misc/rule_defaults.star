@@ -15,6 +15,11 @@ luci.builder.defaults.expiration_timeout.set(2 * time.hour)
 luci.builder.defaults.triggering_policy.set(scheduler.greedy_batching(max_batch_size = 5))
 luci.builder.defaults.build_numbers.set(True)
 luci.builder.defaults.experimental.set(True)
+luci.builder.defaults.experiments.set({
+    "def-exp-3": 30,
+    "def-exp-2": 20,
+    "def-exp-1": 10,
+})
 luci.builder.defaults.task_template_canary_percentage.set(90)
 
 luci.recipe.defaults.cipd_package.set("cipd/default")
@@ -52,6 +57,11 @@ luci.builder(
         "overridden": ["new 1", "new 2"],  # will override, not merge
     },
     swarming_tags = ["extra:tag"],
+    experiments = {
+        "def-exp-1": None,  # won't override the default
+        "def-exp-2": 0,  # will override the default
+        "builder-exp": 100,
+    },
 )
 
 # Override various scalar values. In particular False, 0 and '' are treated as
@@ -108,6 +118,18 @@ luci.builder(
 #       task_template_canary_percentage {
 #         value: 90
 #       }
+#       experiments {
+#         key: "def-exp-1"
+#         value: 10
+#       }
+#       experiments {
+#         key: "def-exp-2"
+#         value: 20
+#       }
+#       experiments {
+#         key: "def-exp-3"
+#         value: 30
+#       }
 #     }
 #     builders {
 #       name: "b2"
@@ -142,6 +164,22 @@ luci.builder(
 #       task_template_canary_percentage {
 #         value: 90
 #       }
+#       experiments {
+#         key: "builder-exp"
+#         value: 100
+#       }
+#       experiments {
+#         key: "def-exp-1"
+#         value: 10
+#       }
+#       experiments {
+#         key: "def-exp-2"
+#         value: 0
+#       }
+#       experiments {
+#         key: "def-exp-3"
+#         value: 30
+#       }
 #     }
 #     builders {
 #       name: "b3"
@@ -169,6 +207,18 @@ luci.builder(
 #       service_account: "new@example.com"
 #       experimental: NO
 #       task_template_canary_percentage {}
+#       experiments {
+#         key: "def-exp-1"
+#         value: 10
+#       }
+#       experiments {
+#         key: "def-exp-2"
+#         value: 20
+#       }
+#       experiments {
+#         key: "def-exp-3"
+#         value: 30
+#       }
 #     }
 #   }
 # }
