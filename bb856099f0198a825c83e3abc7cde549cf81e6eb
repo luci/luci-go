@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b4c983e4_c42a1d97",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T08:27:46Z",
+      "side": 1,
+      "message": "I don\u0027t know the exact context here, but why not just stick with the Python\u0027s logic?",
+      "parentUuid": "9e0a7dff_10f21e72",
+      "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1a316876_90ddd101",
         "filename": "client/cmd/swarming/lib/trigger_test.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65f02de7_55771a5e",
+        "filename": "client/cmd/swarming/lib/trigger_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T08:27:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a316876_90ddd101",
+      "range": {
+        "startLine": 103,
+        "startChar": 35,
+        "endLine": 103,
+        "endChar": 36
+      },
+      "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
