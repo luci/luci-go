@@ -19,6 +19,10 @@ luci.bucket(
             roles = "role/a",
             groups = "bucket",
         ),
+        luci.binding(
+            roles = "role/empty-binding-is-skipped",
+            groups = [],
+        ),
     ],
 )
 
