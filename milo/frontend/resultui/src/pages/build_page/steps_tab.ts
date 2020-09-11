@@ -85,7 +85,6 @@ export class StepsTabElement extends MobxLitElement {
         ${this.buildState.buildPageData?.steps.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': step.status !== BuildStatus.Success || this.showPassed ? '' : 'none'})}
-          class="list-entry"
           .expanded=${true}
           .number=${i + 1}
           .step=${step}
@@ -133,8 +132,12 @@ export class StepsTabElement extends MobxLitElement {
     }
 
     #main {
+      padding-top: 5px;
       padding-left: 10px;
       border-top: 1px solid #DDDDDD;
+    }
+    milo-build-step-entry {
+      margin-bottom: 2px;
     }
 
     .list-entry {
