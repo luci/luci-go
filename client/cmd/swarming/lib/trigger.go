@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -149,6 +150,7 @@ type triggerRun struct {
 	ioTimeout                 int64
 	cipdPackage               stringmapflag.Value
 	outputs                   common.Strings
+	optionalDimension         string
 	serviceAccount            string
 	relativeCwd               string
 
@@ -193,6 +195,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
 	c.Flags.Var(&c.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
 	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
+	c.Flags.StringVar(&c.optionalDimension, "optional-dimension", "", "Format: <key>=<value>:<expiration>. See -expiration for the requirement.")
 	c.Flags.StringVar(&c.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'; requires -raw-cmd.")
 	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
 		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
@@ -305,6 +308,52 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	return nil
 }
 
+func parseOptionalDimensionFlag(f string) (*swarming.SwarmingRpcsStringPair, int64, error) {
+	colon := strings.IndexByte(f, '=')
+
+	if colon == -1 {
+		return nil, 0, errors.Reason("cannot find key in -optional-dimension: %q", f).Err()
+	}
+	k := f[:colon]
+	valExp := f[(colon + 1):]
+	colon = strings.LastIndexByte(valExp, ':')
+	if colon == -1 {
+		return nil, 0, errors.Reason("cannot find sep between value and expiration in -optional-dimension: %q", valExp).Err()
+	}
+	exp, err := strconv.ParseInt(valExp[(colon+1):], 10, 64)
+	if err != nil {
+		return nil, 0, errors.Reason("cannot parse the expiration in -optional-dimension: %q", valExp).Err()
+	}
+	return &swarming.SwarmingRpcsStringPair{Key: k, Value: valExp[:colon]}, exp, nil
+
+}
+
+func (c *triggerRun) createTaskSlicesForOptionalDimensions(properties *swarming.SwarmingRpcsTaskProperties) ([]*swarming.SwarmingRpcsTaskSlice, int64, error) {
+	if c.optionalDimension == "" {
+		return nil, 0, nil
+	}
+	optDim, exp, err := parseOptionalDimensionFlag(c.optionalDimension)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Deep copy properties
+	pj, err := properties.MarshalJSON()
+	if err != nil {
+		return nil, 0, errors.Annotate(err, "failed to marshall properties").Err()
+	}
+	propsCpy := &swarming.SwarmingRpcsTaskProperties{}
+	if err = json.Unmarshal(pj, propsCpy); err != nil {
+		return nil, 0, errors.Annotate(err, "failed to unmarshall properties").Err()
+	}
+	propsCpy.Dimensions = append(propsCpy.Dimensions, optDim)
+
+	return []*swarming.SwarmingRpcsTaskSlice{&swarming.SwarmingRpcsTaskSlice{
+		ExpirationSecs: exp,
+		Properties:     propsCpy,
+	}}, exp, nil
+}
+
 func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
@@ -410,10 +459,18 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		return nil, errors.Annotate(err, "failed to get random UUID").Err()
 	}
 
-	taskSlice := &swarming.SwarmingRpcsTaskSlice{
-		ExpirationSecs: c.expiration,
-		Properties:     &properties,
+	taskSlices, optDimExp, err := c.createTaskSlicesForOptionalDimensions(&properties)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to createTaskSlicesForOptionalDimensions").Err()
 	}
+	baseSliceExp := c.expiration - optDimExp
+	if baseSliceExp < 60 {
+		baseSliceExp = 60
+	}
+	taskSlices = append(taskSlices, &swarming.SwarmingRpcsTaskSlice{
+		ExpirationSecs: baseSliceExp,
+		Properties:     &properties,
+	})
 
 	return &swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.expiration,
@@ -422,7 +479,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Priority:       c.priority,
 		ServiceAccount: c.serviceAccount,
 		Tags:           c.tags,
-		TaskSlices:     []*swarming.SwarmingRpcsTaskSlice{taskSlice},
+		TaskSlices:     taskSlices,
 		User:           c.user,
 		RequestUuid:    randomUUID.String(),
 		Resultdb: &swarming.SwarmingRpcsResultDBCfg{
