@@ -292,7 +292,7 @@ func (q *FinalizedQuery) GQL() string {
 			}
 		}
 	}
-	if anc.PropType() != PTNull {
+	if anc.propType != PTNull {
 		filts = append(filts, fmt.Sprintf("__key__ HAS ANCESTOR %s", anc.GQL()))
 	}
 	if len(filts) > 0 {
