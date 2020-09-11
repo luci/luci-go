@@ -91,6 +91,24 @@
     },
     {
       "key": {
+        "uuid": "9d0016d7_b5fb9d0a",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-11T09:00:12Z",
+      "side": 1,
+      "message": "I mean the way how python creates these task slices to handle the optional dimensions, i.e. this part: https://source.chromium.org/chromium/infra/infra/+/master:luci/client/swarming.py;l\u003d1237-1279;drc\u003d8bac3377922a34a76b975123aa37561dc4710c12. \n\n\u003e I think more than supporting trigger script usage is not necessary now.\n\nWhat I\u0027m doing is to support trigger script. I created this CL because the logic of how these dimensions get merged is a bit messy, so I want it tested first.",
+      "parentUuid": "c0dcfe1d_f185f681",
+      "revId": "bb856099f0198a825c83e3abc7cde549cf81e6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1a316876_90ddd101",
         "filename": "client/cmd/swarming/lib/trigger_test.go",
         "patchSetId": 4
