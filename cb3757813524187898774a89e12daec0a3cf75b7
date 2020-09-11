@@ -70,6 +70,24 @@
       "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac9f0f81_27109a18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-11T22:01:25Z",
+      "side": 1,
+      "message": "i don\u0027t think UI will start using it because TFS team is waiting on a UI-specific oneoff method: crbug.com/1112127\nwhich means the test result count will be included in that response",
+      "parentUuid": "eae7a506_b7787b7b",
+      "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
