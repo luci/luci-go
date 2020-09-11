@@ -144,7 +144,7 @@ func MakeMemcacheKey(shard int, k *datastore.Key) string {
 
 // HashKey generates just the hashed portion of the MemcacheKey.
 func HashKey(k *datastore.Key) string {
-	dgst := sha1.Sum(serialize.ToBytes(k))
+	dgst := sha1.Sum(serialize.Serialize.ToBytes(k))
 	buf := bytes.Buffer{}
 	enc := base64.NewEncoder(base64.StdEncoding, &buf)
 	_, _ = enc.Write(dgst[:])

@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 
@@ -174,7 +173,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 		for j, n := range nms {
 			numbs[j] = mkNum(n)
 		}
-		valBytes[i] = serialize.Join(numbs...)
+		valBytes[i] = cmpbin.ConcatBytes(numbs...)
 	}
 
 	otherVals := [][]int64{
@@ -194,7 +193,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 		for i, n := range nms {
 			numbs[i] = mkNum(n)
 		}
-		otherValBytes[i] = serialize.Join(numbs...)
+		otherValBytes[i] = cmpbin.ConcatBytes(numbs...)
 	}
 
 	Convey("Test MultiIterator", t, func() {

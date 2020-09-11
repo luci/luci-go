@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"sort"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -268,22 +269,22 @@ func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 func toComparableString(start, end []byte, order []ds.IndexColumn, k *ds.Key, pm ds.PropertyMap) (row, key []byte) {
 	doCmp := true
 	soFar := []byte{}
-	ps := serialize.PropertyMapPartially(k, nil)
+	ps := serialize.Serialize.PropertyMapPartially(k, nil)
 	for _, ord := range order {
 		row, ok := ps[ord.Property]
 		if !ok {
 			if pslice := pm.Slice(ord.Property); len(pslice) > 0 {
-				row = serialize.PropertySlice(pslice)
+				row = serialize.Serialize.PropertySlicePartially(pslice)
 			}
 		}
 		sort.Sort(row)
 		foundOne := false
 		for _, serialized := range row {
 			if ord.Descending {
-				serialized = serialize.Invert(serialized)
+				serialized = cmpbin.InvertBytes(serialized)
 			}
 			if doCmp {
-				maybe := serialize.Join(soFar, serialized)
+				maybe := cmpbin.ConcatBytes(soFar, serialized)
 				cmp := bytes.Compare(maybe, start)
 				if cmp >= 0 {
 					foundOne = true
@@ -293,7 +294,7 @@ func toComparableString(start, end []byte, order []ds.IndexColumn, k *ds.Key, pm
 				}
 			} else {
 				foundOne = true
-				soFar = serialize.Join(soFar, serialized)
+				soFar = cmpbin.ConcatBytes(soFar, serialized)
 				break
 			}
 		}

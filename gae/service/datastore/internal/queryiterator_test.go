@@ -70,7 +70,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 				itemKey := qi.CurrentItemKey()
 				expectedKey := ds.MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
-				e := string(serialize.ToBytes(expectedKey))
+				e := string(serialize.Serialize.ToBytes(expectedKey))
 				So(itemKey, ShouldEqual, e)
 			})
 
@@ -80,10 +80,10 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 				invBuf := serialize.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
-				err = serialize.WriteProperty(invBuf, false, ds.MkProperty(strconv.Itoa(11)))
+				err = serialize.Serialize.Property(invBuf, ds.MkProperty(strconv.Itoa(11)))
 				invBuf.SetInvert(false)
-				err = serialize.WriteProperty(invBuf, false, ds.MkProperty("aa1"))
-				err = serialize.WriteKey(invBuf, false, key)
+				err = serialize.Serialize.Property(invBuf, ds.MkProperty("aa1"))
+				err = serialize.Serialize.Key(invBuf, key)
 				So(err, ShouldBeNil)
 				So(itemOrder, ShouldEqual, invBuf.String())
 			})

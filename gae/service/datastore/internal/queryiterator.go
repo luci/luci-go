@@ -73,7 +73,7 @@ func (qi *QueryIterator) CurrentItemKey() string {
 	if qi.currentQueryResult == nil || qi.currentQueryResult.key == nil {
 		return ""
 	}
-	return string(serialize.ToBytes(qi.currentQueryResult.key))
+	return string(serialize.Serialize.ToBytes(qi.currentQueryResult.key))
 }
 
 // CurrentItemOrder returns serialized propertied which fields are used in sorting orders.
@@ -86,7 +86,7 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 	for _, column := range qi.order {
 		invBuf.SetInvert(column.Descending)
 		if column.Property == "__key__" {
-			if err = serialize.WriteKey(invBuf, false, qi.currentQueryResult.key); err != nil {
+			if err = serialize.Serialize.Key(invBuf, qi.currentQueryResult.key); err != nil {
 				return
 			}
 			continue
@@ -94,9 +94,9 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 		columnData := qi.currentQueryResult.data[column.Property].Slice()
 		sort.Sort(columnData)
 		if column.Descending {
-			err = serialize.WriteProperty(invBuf, false, columnData[columnData.Len()-1])
+			err = serialize.Serialize.Property(invBuf, columnData[columnData.Len()-1])
 		} else {
-			err = serialize.WriteProperty(invBuf, false, columnData[0])
+			err = serialize.Serialize.Property(invBuf, columnData[0])
 		}
 		if err != nil {
 			return

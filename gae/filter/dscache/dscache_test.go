@@ -108,7 +108,7 @@ func TestDSCache(t *testing.T) {
 					"BigData": ds.MkProperty([]byte("")),
 					"Value":   ds.MkProperty("hi"),
 				}
-				encoded := append([]byte{0}, serialize.ToBytes(pm)...)
+				encoded := append([]byte{0}, serialize.Serialize.ToBytes(pm)...)
 
 				o := object{ID: 1, Value: "hi"}
 				So(ds.Put(c, &o), ShouldBeNil)

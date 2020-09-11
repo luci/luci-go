@@ -714,7 +714,7 @@ func TestCompoundIndexes(t *testing.T) {
 
 	idxKey := func(def ds.IndexDefinition) string {
 		So(def, ShouldNotBeNil)
-		return "idx::" + string(serialize.ToBytes(*def.PrepForIdxTable()))
+		return "idx::" + string(serialize.Serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
 	Convey("Test Compound indexes", t, func() {

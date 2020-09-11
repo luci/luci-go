@@ -199,7 +199,7 @@ type item struct {
 
 func (i *item) getEncKey() string {
 	if i.encKey == "" {
-		i.encKey = string(serialize.ToBytes(i.key))
+		i.encKey = string(serialize.Serialize.ToBytes(i.key))
 	}
 	return i.encKey
 }
@@ -483,7 +483,7 @@ func (t *txnBufState) effect() (toPut []datastore.PropertyMap, toPutKeys, toDel 
 
 	for keyStr, size := range t.entState.keyToSize {
 		if size == 0 {
-			k, err := serialize.ReadKey(bytes.NewBufferString(keyStr), serialize.WithoutContext, t.kc)
+			k, err := serialize.Deserializer{KeyContext: t.kc}.Key(bytes.NewBufferString(keyStr))
 			memoryCorruption(err)
 			toDel = append(toDel, k)
 		}
@@ -538,8 +538,8 @@ func toEncoded(keys []*datastore.Key) (full []string, roots stringset.Set) {
 	roots = stringset.New(len(keys))
 	full = make([]string, len(keys))
 	for i, k := range keys {
-		roots.Add(string(serialize.ToBytes(k.Root())))
-		full[i] = string(serialize.ToBytes(k))
+		roots.Add(string(serialize.Serialize.ToBytes(k.Root())))
+		full[i] = string(serialize.Serialize.ToBytes(k))
 	}
 	return
 }
