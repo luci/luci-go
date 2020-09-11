@@ -51,6 +51,24 @@
       "revId": "1c9f36fac64c15316eacabebfd1b77555fd2ad85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a9723c3_3adc7f96",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-11T22:18:57Z",
+      "side": 1,
+      "message": "Don\u0027t recall specifically, but there\u0027s an empty @root realm in one of the generated configs.",
+      "parentUuid": "3faf3c49_86efa5a3",
+      "revId": "1c9f36fac64c15316eacabebfd1b77555fd2ad85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
