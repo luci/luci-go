@@ -410,14 +410,19 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		return nil, errors.Annotate(err, "failed to get random UUID").Err()
 	}
 
+	taskSlice := &swarming.SwarmingRpcsTaskSlice{
+		ExpirationSecs: c.expiration,
+		Properties:     &properties,
+	}
+
 	return &swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.expiration,
 		Name:           c.taskName,
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
 		Priority:       c.priority,
-		Properties:     &properties,
 		ServiceAccount: c.serviceAccount,
 		Tags:           c.tags,
+		TaskSlices:     []*swarming.SwarmingRpcsTaskSlice{taskSlice},
 		User:           c.user,
 		RequestUuid:    randomUUID.String(),
 		Resultdb: &swarming.SwarmingRpcsResultDBCfg{
