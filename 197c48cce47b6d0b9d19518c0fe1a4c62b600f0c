@@ -46,6 +46,30 @@
       "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c143f25_b69c3c54",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2020-09-11T16:58:31Z",
+      "side": 1,
+      "message": "I\u0027m not sure that\u0027s possible without some changes to the go binary. ie:\n$ ./tools/luci-go/swarming trigger -h 2\u003e\u00261 | grep -i slice\n\n^ That doesn\u0027t show anything, which makes me think the current go binary doesn\u0027t support any type of task slice creation/customization? But I may have missed something.",
+      "parentUuid": "645d7eb9_b83cee37",
+      "range": {
+        "startLine": 9,
+        "startChar": 207,
+        "endLine": 9,
+        "endChar": 239
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
