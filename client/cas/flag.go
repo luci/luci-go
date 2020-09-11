@@ -19,19 +19,14 @@ import (
 	"regexp"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 type Flags struct {
 	Instance string
-
-	TokenServerHost string
 }
 
 func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
-
-	f.StringVar(&c.TokenServerHost, "token-server-host", chromeinfra.TokenServerHost, "LUCI token server used to get access token for CAS instance")
 }
 
 func (c *Flags) Parse() error {
