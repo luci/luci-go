@@ -1,0 +1,143 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26c10dab_7215373c",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "(here I come again with my micro-optimizations! Do we really need it to be an interface? IIUC, it forces Go to do dynamic dispatch instead of linking statically. We do a LOT of Write calls).",
+      "range": {
+        "startLine": 21,
+        "startChar": 24,
+        "endLine": 21,
+        "endChar": 40
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29f68fe7_dd183cf3",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "\u003e \"requried\" is a possible misspelling of \"required\".\n\nPlease fix.",
+      "parentUuid": "b0651964_826a9d45",
+      "range": {
+        "startLine": 22,
+        "startChar": 17,
+        "endLine": 22,
+        "endChar": 25
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43b8b7a7_155fbf2f",
+        "filename": "gae/service/datastore/types/serialize/invertible.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "I guess its the only reason we have it as an interface? :(",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3469fbd_c404275b",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "SerializeKC?",
+      "range": {
+        "startLine": 57,
+        "startChar": 16,
+        "endLine": 57,
+        "endChar": 25
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce4fb86e_fb801526",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "nit: SerializeWithContext maybe? KC is cryptic... Feel free to ignore.",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 12
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53303399_ff48649e",
+        "filename": "gae/service/datastore/types/serialize/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T22:52:49Z",
+      "side": 1,
+      "message": "(unrelated, but I wonder what\u0027s the runtime overhead of this trick on happy path? is it as fast as just returning errors as usual? IIUC, KeyTok is a very hot functions and it might be better to copy-paste 20 lines of error checking code to speed it up even a bit)",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "07fe927115f6076d8f4a70174529e93cb3afc49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
