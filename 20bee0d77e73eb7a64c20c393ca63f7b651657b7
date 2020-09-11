@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ea7aaf5_dbb872a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-11T00:30:26Z",
+      "side": 1,
+      "message": "Yeah. Maybe we need to add a module that exposes something like http.DefaultTransport, but with user agent populated based on some string + CIPD version.\n\nAnd then remove all custom user agent manipulations from all other places (pRPC client, CIPD client, server.Server, logdog servers).\n\nWill need to be careful to propagate this new transport everywhere :(",
+      "parentUuid": "ebe58764_cc6055ef",
+      "revId": "20bee0d77e73eb7a64c20c393ca63f7b651657b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3c4b8177_ea1816c1",
         "filename": "led/ledcli/util.go",
         "patchSetId": 1
