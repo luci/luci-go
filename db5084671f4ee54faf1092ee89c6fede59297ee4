@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c343b24_b927e132",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-11T21:59:40Z",
+      "side": 1,
+      "message": "this might happen when we increase nShards after this code is deployed, which we might need to do for deal with scale",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b61ca1d6_ac5d910a",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-11T21:59:40Z",
+      "side": 1,
+      "message": "readability: please move } to the next line",
+      "range": {
+        "startLine": 320,
+        "startChar": 40,
+        "endLine": 320,
+        "endChar": 41
+      },
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec95318b_548ee943",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-11T21:59:40Z",
+      "side": 1,
+      "message": "why is this needed? we are populating the database with zeros.\n\nthe rest of the code must tolerate absence of rows anyway because we need the ability to increase the shard number at any point in the future",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
