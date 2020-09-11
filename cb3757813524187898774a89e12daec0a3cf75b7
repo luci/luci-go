@@ -52,6 +52,24 @@
       "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eae7a506_b7787b7b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-11T21:56:44Z",
+      "side": 1,
+      "message": "Oh, I thought result page is using it, since it was the purpose of adding the RPC. \n\nSo I guess we\u0027re OK.\n\nBut if result UI starts to use it (crbug.com/1034881#c1), and if the UI is displaying some old build invocation, it will not getting the count or only a partial count.",
+      "parentUuid": "ccef7fbd_726467e1",
+      "revId": "cb3757813524187898774a89e12daec0a3cf75b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
