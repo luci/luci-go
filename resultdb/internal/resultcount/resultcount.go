@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -29,6 +30,8 @@ import (
 
 // Total number of shards for each invocation in TestResultCount table.
 const nShards = 10
+
+var NoCounter = errors.BoolTag{Key: errors.NewTagKey("no counter")}
 
 // InitializeCounters inserts shard rows with 0 counts for the invocation into TestResultCounts table.
 func InitializeCounters(id invocations.ID) []*spanner.Mutation {
@@ -88,5 +91,9 @@ func ReadTestResultCount(ctx context.Context, ids invocations.IDSet) (int64, err
 	})
 	var count spanner.NullInt64
 	err := spanutil.QueryFirstRow(ctx, st, &count)
+	if err == nil && !count.Valid {
+		// No counters for the requested invocations.
+		return 0, errors.Reason("no counters found").Tag(NoCounter).Err()
+	}
 	return count.Int64, err
 }

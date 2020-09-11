@@ -149,7 +149,7 @@ func TestCreateTestResult(t *testing.T) {
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				trNum, err := invocations.ReadTestResultCount(ctx, invocations.NewIDSet("u-build-1"))
+				trNum, err := resultcount.ReadTestResultCount(ctx, invocations.NewIDSet("u-build-1"))
 				So(err, ShouldBeNil)
 				So(trNum, ShouldEqual, 1)
 			})
