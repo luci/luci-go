@@ -306,6 +306,30 @@
     },
     {
       "key": {
+        "uuid": "41986a47_3c11cead",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-12T05:36:16Z",
+      "side": 1,
+      "message": "I got confused by the timeline of purging uninteresting results (2 months) with purging all results (2 years). And now I think we shouldn\u0027t even allow querying history for older than 2 months, otherwise we\u0027ll return partial history with interesting results only.",
+      "parentUuid": "1c016896_0087e3de",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95a3cdd1_7ecf3296",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
