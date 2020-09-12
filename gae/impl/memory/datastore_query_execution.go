@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 type queryStrategy interface {
@@ -131,7 +130,7 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, 
 		// entity doesn't exist at head
 		return nil
 	}
-	pm, err := serialize.Deserializer{KeyContext: s.kc}.PropertyMap(bytes.NewBuffer(rawEnt))
+	pm, err := ds.Deserializer{KeyContext: s.kc}.PropertyMap(bytes.NewBuffer(rawEnt))
 	memoryCorruption(err)
 
 	return s.cb(key, pm, gc)
@@ -161,7 +160,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 		needInvert := suffixFormat[i].Descending
 
 		buf.SetInvert(needInvert)
-		decoded[i], err = serialize.Deserializer{KeyContext: kc}.Property(buf)
+		decoded[i], err = ds.Deserializer{KeyContext: kc}.Property(buf)
 		memoryCorruption(err)
 
 		offset := len(suffix) - buf.Len()
@@ -275,7 +274,7 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 				memoryCorruption(err)
 
 				for _, col := range rq.suffixFormat {
-					err := serialize.Serialize.IndexColumn(buf, col)
+					err := ds.Serialize.IndexColumn(buf, col)
 					memoryCorruption(err)
 				}
 				cursorPrefix = buf.Bytes()

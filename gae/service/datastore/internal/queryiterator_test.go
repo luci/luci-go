@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -71,7 +70,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 				itemKey := qi.CurrentItemKey()
 				expectedKey := ds.MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
-				e := string(serialize.Serialize.ToBytes(expectedKey))
+				e := string(ds.Serialize.ToBytes(expectedKey))
 				So(itemKey, ShouldEqual, e)
 			})
 
@@ -81,10 +80,10 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 				invBuf := cmpbin.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
-				err = serialize.Serialize.Property(invBuf, ds.MkProperty(strconv.Itoa(11)))
+				err = ds.Serialize.Property(invBuf, ds.MkProperty(strconv.Itoa(11)))
 				invBuf.SetInvert(false)
-				err = serialize.Serialize.Property(invBuf, ds.MkProperty("aa1"))
-				err = serialize.Serialize.Key(invBuf, key)
+				err = ds.Serialize.Property(invBuf, ds.MkProperty("aa1"))
+				err = ds.Serialize.Key(invBuf, key)
 				So(err, ShouldBeNil)
 				So(itemOrder, ShouldEqual, invBuf.String())
 			})

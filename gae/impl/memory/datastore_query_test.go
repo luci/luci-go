@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	dstore "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
@@ -50,10 +49,10 @@ func curs(pairs ...interface{}) queryCursor {
 		}
 
 		post.SetInvert(col.Descending)
-		if err := serialize.Serialize.IndexColumn(pre, col); err != nil {
+		if err := dstore.Serialize.IndexColumn(pre, col); err != nil {
 			panic(err)
 		}
-		if err := serialize.Serialize.Property(post, prop(v)); err != nil {
+		if err := dstore.Serialize.Property(post, prop(v)); err != nil {
 			panic(err)
 		}
 	}
@@ -133,8 +132,8 @@ var queryTests = []queryTest{
 				{Property: "Foo"},
 				{Property: "__key__"},
 			},
-			increment(serialize.Serialize.ToBytes(dstore.MkProperty(3))),
-			serialize.Serialize.ToBytes(dstore.MkProperty(10)),
+			increment(dstore.Serialize.ToBytes(dstore.MkProperty(3))),
+			dstore.Serialize.ToBytes(dstore.MkProperty(10)),
 			2,
 		}},
 

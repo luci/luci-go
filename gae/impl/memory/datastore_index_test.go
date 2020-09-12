@@ -20,7 +20,6 @@ import (
 	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,7 +40,7 @@ var rowGenTestCases = []struct {
 	idxs        []*ds.IndexDefinition
 
 	// These are checked in TestIndexRowGen. nil to skip test case.
-	expected []serialize.SerializedPslice
+	expected []ds.SerializedPslice
 
 	// just the collections you want to assert. These are checked in
 	// TestIndexEntries. nil to skip test case.
@@ -59,7 +58,7 @@ var rowGenTestCases = []struct {
 		idxs: []*ds.IndexDefinition{
 			indx("knd", "-wat", "nerd"),
 		},
-		expected: []serialize.SerializedPslice{
+		expected: []ds.SerializedPslice{
 			{cat(prop(fakeKey))},              // B:knd
 			{cat(prop(103.7), prop(fakeKey))}, // B:knd/nerd
 			{ // B:knd/wat
@@ -116,7 +115,7 @@ var rowGenTestCases = []struct {
 			indx("knd", "-wat", "nerd", "spaz"), // doesn't match, so empty
 			indx("knd", "yerp", "-wat", "spaz"),
 		},
-		expected: []serialize.SerializedPslice{
+		expected: []ds.SerializedPslice{
 			{}, // C:knd/-wat/nerd/spaz, no match
 			{ // C:knd/yerp/-wat/spaz
 				// thank goodness the binary serialization only happens 1/val in the
@@ -172,7 +171,7 @@ func TestIndexRowGen(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				mvals := serialize.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
+				mvals := ds.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
 					idxs = append(defaultIndexes("coolKind", tc.pmap), tc.idxs...)
@@ -186,7 +185,7 @@ func TestIndexRowGen(t *testing.T) {
 						iGen, ok := m.match(idx.GetFullSortOrder(), mvals)
 						if len(tc.expected[i]) > 0 {
 							So(ok, ShouldBeTrue)
-							actual := make(serialize.SerializedPslice, 0, len(tc.expected[i]))
+							actual := make(ds.SerializedPslice, 0, len(tc.expected[i]))
 							iGen.permute(func(row, _ []byte) {
 								actual = append(actual, row)
 							})
@@ -213,7 +212,7 @@ func TestIndexRowGen(t *testing.T) {
 			})
 
 			Convey("indexEntries", func() {
-				sip := serialize.Serialize.PropertyMapPartially(fakeKey, nil)
+				sip := ds.Serialize.PropertyMapPartially(fakeKey, nil)
 				s := indexEntries(fakeKey, sip, defaultIndexes("knd", ds.PropertyMap(nil)))
 				So(countItems(s.Snapshot().GetCollection("idx")), ShouldEqual, 1)
 				itm := s.GetCollection("idx").MinItem()
@@ -255,7 +254,7 @@ func TestIndexEntries(t *testing.T) {
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
-					sip := serialize.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
+					sip := ds.Serialize.PropertyMapPartially(fakeKey, tc.pmap)
 					store = indexEntries(fakeKey, sip, tc.idxs)
 				}
 				for colName, vals := range tc.collections {

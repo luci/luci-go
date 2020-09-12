@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // ErrMissingIndex is returned when the current indexes are not sufficient
@@ -207,7 +206,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	// a builtin and it doesn't exist, it still needs to be one of the 'possible'
 	// indexes... it just means that the user's query will end up with no results.
 	coll := s.GetCollection(
-		fmt.Sprintf("idx:%s:%s", q.kc.Namespace, serialize.Serialize.ToBytes(*id.PrepForIdxTable())))
+		fmt.Sprintf("idx:%s:%s", q.kc.Namespace, ds.Serialize.ToBytes(*id.PrepForIdxTable())))
 
 	// First, see if it's a perfect match. If it is, then our search is over.
 	//

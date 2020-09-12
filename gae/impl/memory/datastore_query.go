@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // MaxQueryComponents was lifted from a hard-coded constant in dev_appserver.
@@ -74,7 +73,7 @@ func (q queryCursor) decode() ([]ds.IndexColumn, []byte, error) {
 
 	cols := make([]ds.IndexColumn, count)
 	for i := range cols {
-		if cols[i], err = serialize.Deserialize.IndexColumn(buf); err != nil {
+		if cols[i], err = ds.Deserialize.IndexColumn(buf); err != nil {
 			return nil, nil, fmt.Errorf("invalid cursor: unable to decode IndexColumn %d: %s", i, err)
 		}
 	}
@@ -127,7 +126,7 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 	if ineqProp := fq.IneqFilterProp(); ineqProp != "" {
 		_, startOp, startV := fq.IneqFilterLow()
 		if startOp != "" {
-			lower = serialize.Serialize.ToBytes(startV)
+			lower = ds.Serialize.ToBytes(startV)
 			if startOp == ">" {
 				lower = increment(lower)
 			}
@@ -135,7 +134,7 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 
 		_, endOp, endV := fq.IneqFilterHigh()
 		if endOp != "" {
-			upper = serialize.Serialize.ToBytes(endV)
+			upper = ds.Serialize.ToBytes(endV)
 			if endOp == "<=" {
 				upper = increment(upper)
 			}
@@ -189,7 +188,7 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 	for prop, vals := range eqFilts {
 		sVals := stringset.New(len(vals))
 		for _, v := range vals {
-			sVals.Add(string(serialize.Serialize.ToBytes(v)))
+			sVals.Add(string(ds.Serialize.ToBytes(v)))
 		}
 		ret.eqFilters[prop] = sVals
 	}

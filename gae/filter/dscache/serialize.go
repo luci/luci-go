@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 func encodeItemValue(pm ds.PropertyMap) []byte {
@@ -29,7 +28,7 @@ func encodeItemValue(pm ds.PropertyMap) []byte {
 	buf := bytes.Buffer{}
 	// errs can't happen, since we're using a byte buffer.
 	_ = buf.WriteByte(byte(NoCompression))
-	_ = serialize.Serialize.PropertyMap(&buf, pm)
+	_ = ds.Serialize.PropertyMap(&buf, pm)
 
 	data := buf.Bytes()
 	if buf.Len() > CompressionThreshold {
@@ -66,5 +65,5 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		}
 		buf = bytes.NewBuffer(data)
 	}
-	return serialize.Deserializer{KeyContext: kc}.PropertyMap(buf)
+	return ds.Deserializer{KeyContext: kc}.PropertyMap(buf)
 }

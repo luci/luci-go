@@ -34,7 +34,6 @@ import (
 
 	"go.chromium.org/luci/gae/filter/txnBuf"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	"go.chromium.org/luci/gae/service/info"
 	mc "go.chromium.org/luci/gae/service/memcache"
 )
@@ -171,7 +170,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		}
 	} else {
 		val := lastItm.Value()
-		last, err := serialize.Deserialize.Time(bytes.NewBuffer(val))
+		last, err := ds.Deserialize.Time(bytes.NewBuffer(val))
 		if err != nil {
 			logging.Warningf(c, "could not decode timestamp %v: %s", val, err)
 		} else {
@@ -269,7 +268,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		didWork := numProcessed > 0
 		if didWork {
 			// Set our last key value for next round.
-			err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(serialize.Serialize.ToBytes(now.UTC())))
+			err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(ds.Serialize.ToBytes(now.UTC())))
 			if err != nil {
 				logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
 			}

@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
@@ -72,7 +71,7 @@ func noCacheObjFn(k *ds.Key) (amt int, ok bool) {
 }
 
 func init() {
-	serialize.WritePropertyMapDeterministic = true
+	ds.WritePropertyMapDeterministic = true
 
 	internalValueSizeLimit = 2048
 }
@@ -108,7 +107,7 @@ func TestDSCache(t *testing.T) {
 					"BigData": ds.MkProperty([]byte("")),
 					"Value":   ds.MkProperty("hi"),
 				}
-				encoded := append([]byte{0}, serialize.Serialize.ToBytes(pm)...)
+				encoded := append([]byte{0}, ds.Serialize.ToBytes(pm)...)
 
 				o := object{ID: 1, Value: "hi"}
 				So(ds.Put(c, &o), ShouldBeNil)

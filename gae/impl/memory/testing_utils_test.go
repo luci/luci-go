@@ -22,12 +22,11 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 func init() {
 	serializationDeterministic = true
-	serialize.WritePropertyMapDeterministic = true
+	ds.WritePropertyMapDeterministic = true
 }
 
 var nextMarker = "NEXT MARKER"
@@ -161,13 +160,13 @@ func cat(bytethings ...interface{}) []byte {
 		case []byte:
 			_, err = buf.Write(x)
 		case time.Time:
-			err = serialize.Serialize.Time(buf, x)
+			err = ds.Serialize.Time(buf, x)
 		case *ds.Key:
-			err = serialize.Serialize.Key(buf, x)
+			err = ds.Serialize.Key(buf, x)
 		case *ds.IndexDefinition:
-			err = serialize.Serialize.IndexDefinition(buf, *x)
+			err = ds.Serialize.IndexDefinition(buf, *x)
 		case ds.Property:
-			err = serialize.Serialize.Property(buf, x)
+			err = ds.Serialize.Property(buf, x)
 		default:
 			panic(fmt.Errorf("I don't know how to deal with %T: %#v", thing, thing))
 		}

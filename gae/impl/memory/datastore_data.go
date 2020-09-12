@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	prodConstraints "go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	"golang.org/x/net/context"
 )
@@ -282,7 +281,7 @@ func incrementLocked(ents memCollection, key []byte, amt int) int64 {
 		panic(fmt.Errorf("incrementLocked called with bad `amt`: %d", amt))
 	}
 	ret := curVersion(ents, key) + 1
-	ents.Set(key, serialize.Serialize.ToBytes(ds.PropertyMap{
+	ents.Set(key, ds.Serialize.ToBytes(ds.PropertyMap{
 		"__version__": ds.MkPropertyNI(ret + int64(amt-1)),
 	}))
 	return ret
@@ -406,7 +405,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 					return
 				}
 			}
-			ents.Set(keyBlob, serialize.SerializeKC.ToBytes(newPM))
+			ents.Set(keyBlob, ds.SerializeKC.ToBytes(newPM))
 			updateIndexes(d.head, key, oldPM, newPM)
 			return
 		}()
@@ -681,11 +680,11 @@ func (td *txnDataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error 
 }
 
 func keyBytes(key *ds.Key) []byte {
-	return serialize.Serialize.ToBytes(ds.MkProperty(key))
+	return ds.Serialize.ToBytes(ds.MkProperty(key))
 }
 
 func readPropMap(data []byte) (ds.PropertyMap, error) {
-	return serialize.Deserialize.PropertyMap(bytes.NewBuffer(data))
+	return ds.Deserialize.PropertyMap(bytes.NewBuffer(data))
 }
 
 func namespaces(store memStore) []string {
