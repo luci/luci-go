@@ -19,9 +19,11 @@ import '@material/mwc-textarea';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
 import '../../components/ace_editor';
+import '../../components/build_step_entry';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -191,6 +193,27 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderSteps() {
+    const bpd = this.buildState.buildPageData!;
+    const noNonSuccessSteps = !bpd.steps?.find((s) => s.status !== BuildStatus.Success);
+
+    return html`
+      <div>
+        <h3>Steps & Logs</h3>
+        ${!noNonSuccessSteps && bpd.steps.map((step, i) => html`
+        <milo-build-step-entry
+          style=${styleMap({'display': step.status === BuildStatus.Success ? 'none' : ''})}
+          .expanded=${true}
+          .number=${i + 1}
+          .step=${step}
+          .showDebugLogs=${false}
+        ></milo-build-step-entry>
+        `) || ''}
+        <div class="list-entry" style=${styleMap({display: noNonSuccessSteps ? '' : 'none'})}>All steps passed.</div>
+      </div>
+    `;
+  }
+
   private renderTiming() {
     const bpd = this.buildState.buildPageData!;
     const displayDurationOpt = (start?: Timestamp, end?: Timestamp) => {
@@ -291,12 +314,11 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       ${this.renderStatusTime()}
-      <!-- TODO(crbug/1116824): render action buttons -->
       ${this.renderSummary()}
       ${this.renderInput()}
       ${this.renderInfra()}
       <!-- TODO(crbug/1116824): render failed tests -->
-      <!-- TODO(crbug/1116824): render failed steps -->
+      ${this.renderSteps()}
       ${this.renderTiming()}
       ${this.renderTags()}
       ${this.renderProperties('Input Properties', bpd.input.properties)}
