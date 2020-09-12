@@ -42,9 +42,9 @@ export class StepsTabElement extends MobxLitElement {
 
   @computed private get noDisplayedStep() {
     if (this.showPassed) {
-      return !this.buildState.buildPageData?.steps.length;
+      return !this.buildState.buildPageData?.steps?.length;
     }
-    return !this.buildState.buildPageData?.steps.find((s) => s.status !== BuildStatus.Success);
+    return !this.buildState.buildPageData?.steps?.find((s) => s.status !== BuildStatus.Success);
   }
 
   protected render() {
@@ -82,7 +82,7 @@ export class StepsTabElement extends MobxLitElement {
         </div>
       </div>
       <div id="main">
-        ${this.buildState.buildPageData?.steps.map((step, i) => html`
+        ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': step.status !== BuildStatus.Success || this.showPassed ? '' : 'none'})}
           .expanded=${true}

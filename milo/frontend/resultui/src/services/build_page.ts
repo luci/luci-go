@@ -43,7 +43,7 @@ export interface BuildPageData extends Build {
   buildbucket_link: Link;
   build_sets: string[];
   buildset_links: string[];
-  steps: StepExt[];
+  steps?: StepExt[];
   human_status: string;
   should_show_canary_warming: boolean;
   input_properties: Property[];
@@ -62,12 +62,12 @@ export interface Property {
 export interface StepExt extends Step {
   children?: StepExt[];
   collapsed: boolean;
-  interval?: Interval;
+  interval: Interval;
 }
 
 export interface Interval {
-  start?: string;
-  end?: string;
+  start: string;
+  end: string;
   now: string;
 }
 
