@@ -134,6 +134,24 @@
       "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17a4a025_9cf4bb0e",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T07:07:55Z",
+      "side": 1,
+      "message": "\u003e For the special case, if the insert fails, it will fail the whole transaction, then we have to retry the whole transaction\n\nnot sure I understood your point. Aren\u0027t we retrying the whole transaction in both approaches?",
+      "parentUuid": "187e1990_53c4d020",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
