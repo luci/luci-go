@@ -1,0 +1,463 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37744bbc_aeee1cf8",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "of Historical? it isn\u0027t a proto",
+      "range": {
+        "startLine": 38,
+        "startChar": 61,
+        "endLine": 38,
+        "endChar": 66
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3a9eefc_e35762f6",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "nit: i think it would be more readable if ret was declared much closer to the usage",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1deb02_f7448adc",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "please make a const. it will be reused when the expiration will be used.\n\nor at least add a TODO(crbug/...)\nbtw it seems we are missing a bug to implement complete purging after 2 years (it was never implemented)",
+      "range": {
+        "startLine": 45,
+        "startChar": 32,
+        "endLine": 45,
+        "endChar": 33
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "509bc9a6_d15a1043",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "clock.Now\n\nsame below",
+      "range": {
+        "startLine": 45,
+        "startChar": 12,
+        "endLine": 45,
+        "endChar": 22
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c44e4fae_562afcb1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "nit: combine into one sentence?\n\nsame below",
+      "range": {
+        "startLine": 47,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 4
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19f88c5d_790350d2",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "annotate, otherwise unclear which side of the range is wrong\n\nsame below",
+      "range": {
+        "startLine": 49,
+        "startChar": 15,
+        "endLine": 49,
+        "endChar": 18
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efd68242_973d7405",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "088963b7_6e93a128",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "nit: indent",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 6
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0815484_239ed16f",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "i.HistoryTime BETWEEN @minTime AND @maxTime",
+      "range": {
+        "startLine": 68,
+        "startChar": 29,
+        "endLine": 68,
+        "endChar": 83
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54c49e50_a7788d51",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "is this supposed to the same as cap(ret)? should we use that here instead the literal?",
+      "range": {
+        "startLine": 74,
+        "startChar": 14,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62251f9d_169c19ec",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/grpc/appstatus#Errorf",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62a5d326_9075b329",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "all errors returned by this func are BadRequest. Normally BadRequest() call is done in the callsite, like in other RPCs.",
+      "range": {
+        "startLine": 113,
+        "startChar": 19,
+        "endLine": 113,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc4581e9_f1f6d86c",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "non-negative\n\n0 is not positive",
+      "range": {
+        "startLine": 124,
+        "startChar": 80,
+        "endLine": 124,
+        "endChar": 88
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c016896_0087e3de",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "left some comments in this func, but stepping back, why is it wrong to ask for history before 2y ago or in the future? what\u0027s the problem in returning empty results in such case?",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95a3cdd1_7ecf3296",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "here is another place where the const is copy-pasted",
+      "range": {
+        "startLine": 136,
+        "startChar": 24,
+        "endLine": 136,
+        "endChar": 25
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "539afada_d169c380",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "nit: maybe \"min\"? \n\"cutoff\" doesn\u0027t tell whether it is cutoff on the left side or the right",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 7
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3118fb0_af750699",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "this is vulnerable to clock drift. can we allow +5min in the future?",
+      "range": {
+        "startLine": 139,
+        "startChar": 51,
+        "endLine": 139,
+        "endChar": 63
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2223a9d_175ea661",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "simpler:\n\n  t, err :\u003d ptypes.Timestamp(ts)\n  return err \u003d\u003d nil \u0026\u0026 t.After(cutoff) \u0026\u0026 t.Before(now)",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 142,
+        "endChar": 13
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bda7a90d_bc9d177f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "the single purpose of this loop is to convert from TestResult to GetTestResultHistoryRespones_Entry? if yes, would it be simpler to produce GetTestResultHistoryRespones_Entry inside matchingResultsInInv?",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 193,
+        "endChar": 5
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34dc7c1e_cf00172f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "isn\u0027t this just replacing `invID invocations.ID` with `invIDs invocations.IDSet`?",
+      "range": {
+        "startLine": 247,
+        "startChar": 28,
+        "endLine": 247,
+        "endChar": 55
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d25f59c3_abf8753a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-12T02:56:00Z",
+      "side": 1,
+      "message": "this indicates a bug in the code. we should fix the bug instead.\n\nit is also rather unusual for a Go function to only do `go func() ... {}`. Normally it is the caller\u0027s responsibility to start a new goroutine.\n\noverall, i think this and resultInvocationsForRequest functions would be simpler if they returned error, like Go functions normally do, e.g.\n\n  matchingResultsInInv(ctx context.Context, invIDs invocations.IDSet, in *pb.GetTestResultHistoryRequest, res \u003c-chan *pb.TestResult) error {\n   query :\u003d ...\n\n   return err\n  }\n\n ...\n\n results :\u003d make(chan ...)\n errC :\u003d make(chan error)\n go func() {\n    defer close(results)\n    defer close(errC)\n    errC \u003c- matchingResultsInInv(...)\n }()\n \n\nbut i am also not sure about having two separate channels between same pairs of goroutines. Consider a single channel for oth\n\n  type result struct {\n    tr TestResult\n    err error\n  }\n  ch :\u003d make(chan result)\n\n------------\n\nthen you don\u0027t need L275-282 or stopQuery",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
