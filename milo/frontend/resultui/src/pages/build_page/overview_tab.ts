@@ -20,6 +20,7 @@ import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
+import { STATUS_CLASS_MAP, STATUS_DISPLAY_MAP } from '.';
 
 import '../../components/ace_editor';
 import '../../components/link';
@@ -30,24 +31,6 @@ import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { router } from '../../routes';
 import { BuildStatus, Timestamp } from '../../services/buildbucket';
-
-const STATUS_DISPLAY_MAP = new Map([
-  [BuildStatus.Scheduled, 'scheduled'],
-  [BuildStatus.Started, 'started'],
-  [BuildStatus.Success, 'succeeded'],
-  [BuildStatus.Failure, 'failed'],
-  [BuildStatus.InfraFailure, 'infra failed'],
-  [BuildStatus.Canceled, 'canceled'],
-]);
-
-const STATUS_CLASS_MAP = new Map([
-  [BuildStatus.Scheduled, 'scheduled'],
-  [BuildStatus.Started, 'started'],
-  [BuildStatus.Success, 'success'],
-  [BuildStatus.Failure, 'failure'],
-  [BuildStatus.InfraFailure, 'infra-failure'],
-  [BuildStatus.Canceled, 'canceled'],
-]);
 
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -67,8 +50,8 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <div id="status">
         Build
-        <i class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
-          ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
+        <i class="status ${STATUS_CLASS_MAP[bpd.status]}">
+          ${STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
         </i>
         ${(() => { switch (bpd.status) {
         case BuildStatus.Scheduled:

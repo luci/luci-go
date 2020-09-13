@@ -24,8 +24,27 @@ import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
-import { BuilderID } from '../../services/buildbucket';
+import { BuilderID, BuildStatus } from '../../services/buildbucket';
+
+export const STATUS_DISPLAY_MAP = {
+  [BuildStatus.Scheduled]: 'scheduled',
+  [BuildStatus.Started]: 'started',
+  [BuildStatus.Success]: 'succeeded',
+  [BuildStatus.Failure]: 'failed',
+  [BuildStatus.InfraFailure]: 'infra failed',
+  [BuildStatus.Canceled]: 'canceled',
+};
+
+export const STATUS_CLASS_MAP = {
+  [BuildStatus.Scheduled]: 'scheduled',
+  [BuildStatus.Started]: 'started',
+  [BuildStatus.Success]: 'success',
+  [BuildStatus.Failure]: 'failure',
+  [BuildStatus.InfraFailure]: 'infra-failure',
+  [BuildStatus.Canceled]: 'canceled',
+};
 
 /**
  * Main build page.
@@ -120,6 +139,32 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     ];
   }
 
+  private renderBuildStatus() {
+    const bpd = this.buildState.buildPageData;
+    if (!bpd) {
+      return html``;
+    }
+    return html`
+      <i class="status ${STATUS_CLASS_MAP[bpd.status]}">
+        ${STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
+      </i>
+      ${(() => { switch (bpd.status) {
+      case BuildStatus.Scheduled:
+        return `since ${displayTimestamp(bpd.create_time)}`;
+      case BuildStatus.Started:
+        return `since ${displayTimestamp(bpd.start_time!)}`;
+      case BuildStatus.Canceled:
+        return `after ${displayTimeDiff(bpd.create_time, bpd.end_time!)}`;
+      case BuildStatus.Failure:
+      case BuildStatus.InfraFailure:
+      case BuildStatus.Success:
+        return `after ${displayTimeDiff(bpd.start_time || bpd.create_time, bpd.end_time!)}`;
+      default:
+        return '';
+      }})()}
+    `;
+  }
+
   protected render() {
     return html`
       <div id="build-summary">
@@ -127,6 +172,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <span id="build-id-label">Build</span>
           <span>${this.builder.builder} / ${this.buildNumOrId}</span>
         </div>
+        <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
@@ -163,9 +209,30 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       color: rgb(95, 99, 104);
     }
 
-    #build-state {
+    #build-status {
       margin-left: auto;
       flex: 0 auto;
+    }
+    #status {
+      font-weight: 500;
+    }
+    .status.scheduled {
+      color: #6c757d;
+    }
+    .status.started {
+      color: #ffc107;
+    }
+    .status.success {
+      color: #28a745;
+    }
+    .status.failure {
+      color: #dc3545;
+    }
+    .status.infra-failure {
+      color: #6f42c1;
+    }
+    .status.canceled {
+      color: #6c757d;
     }
 
     milo-tab-bar {
