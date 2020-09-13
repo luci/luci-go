@@ -16,6 +16,24 @@
       "revId": "10d9d092c159722fa31f4242ee8b75baf2be4508",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5ed17eb_8f3d908b",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-13T23:34:28Z",
+      "side": 1,
+      "message": "It\u0027s not needed. JS/TS supports shorthand when the variable name matches the property name.",
+      "parentUuid": "4b254a16_9469cfc7",
+      "revId": "10d9d092c159722fa31f4242ee8b75baf2be4508",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
