@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f1d072e7_d50b8009",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-13T04:53:27Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7590/steps\n",
+      "revId": "fc8e686d0aa5080c4a1a09a5288f6dcc4d916da7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
