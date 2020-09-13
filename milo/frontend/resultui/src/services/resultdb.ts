@@ -207,14 +207,16 @@ export class ResultDb {
  * Parses the artifact name and get the individual components.
  */
 export function parseArtifactName(artifactName: string): ArtifactIdentifier {
-  const groups = artifactName
-    .match(/invocations\/(?<invocationId>.*?)\/(tests\/(?<testId>.*?)\/results\/(?<resultId>.*?)\/)?artifacts\/(?<artifactId>.*)/)!
-    .groups!;
+  const match = artifactName
+    .match(/invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)/)!;
+
+  const [, invocationId, testId, resultId, artifactId] = match;
+
   return {
-    invocationId: groups['invocationId'],
-    testId: groups['testId'] ? decodeURIComponent(groups['testId']) : undefined,
-    resultId: groups['resultId'] ? groups['resultId'] : undefined,
-    artifactId: groups['artifactId'],
+    invocationId,
+    testId: testId ? decodeURIComponent(testId) : undefined,
+    resultId: resultId ? resultId : undefined,
+    artifactId,
   };
 }
 
