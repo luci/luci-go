@@ -70,6 +70,103 @@
       "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e57ff361_440b9556",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T00:30:39Z",
+      "side": 1,
+      "message": "I think it is better to drop Flag suffix.",
+      "range": {
+        "startLine": 133,
+        "startChar": 22,
+        "endLine": 133,
+        "endChar": 26
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5fe66af_654a517e",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T00:30:39Z",
+      "side": 1,
+      "message": "`var _ flag.Value \u003d (*optionalDimensionFlag)(nil)` ?",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c3548bd_c417f0d4",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T00:30:39Z",
+      "side": 1,
+      "message": "add test?",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f770e55_d8591cbe",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T00:30:39Z",
+      "side": 1,
+      "message": "use https://golang.org/pkg/strings/#SplitN ?",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9097de68_d70d8a2b",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T00:30:39Z",
+      "side": 1,
+      "message": "I think this struct doesn\u0027t know whether -optional-dimension is used or not for flag name.",
+      "range": {
+        "startLine": 156,
+        "startChar": 42,
+        "endLine": 156,
+        "endChar": 62
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
