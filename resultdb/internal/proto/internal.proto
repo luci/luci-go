@@ -16,7 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.internal;
 
-option go_package = "internalpb";
+option go_package = "go.chromium.org/luci/resultdb/internal/proto;internalpb";
+
 
 // A message for storing all the information attached to a page token.
 message PageToken {
