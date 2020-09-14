@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ddf842f_daa9dd01",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-14T00:37:10Z",
+      "side": 1,
+      "message": "I think this includes \"Started\" step, which we may not want to show in overview page?",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
