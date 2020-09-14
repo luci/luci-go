@@ -58,6 +58,11 @@ service Gerrit {
   rpc ChangeEditPublish(ChangeEditPublishRequest)
       returns (google.protobuf.Empty);
 
+  // Add a reviewer to a change
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
+  rpc AddReviewer(AddReviewerRequest) returns (AddReviewerResult);
+  
   // Set various review bits on a change.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
@@ -521,6 +526,94 @@ message AbandonChangeRequest {
   string project = 2;
 
   string message = 3;
+}
+
+// Information for adding a reviewer
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer 
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#reviewer-input
+message AddReviewerRequest{
+  // The ID of a single account or group to review the change
+  // 
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+  string reviewer = 1;
+
+  // The state to add reviewer in, defaults to REVEWER
+  enum State {
+    REVIEWER = 0;
+    CC = 1;
+  }
+  State state = 2;
+
+  // Whether adding the reviewer is confirmed
+  bool confirmed = 3;
+  
+  // Defines who should be notified after reviewer is added
+  // Defaults to ALL
+  enum Notify {
+    NONE = 0;
+    OWNER = 1;
+    OWNER_REVIEWERS = 2;
+    ALL = 3;
+  }
+  Notify notify = 4;
+}
+
+// Information about a reviewer. A superset of information from AccountInfo
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#reviewer-info
+message ReviewerInfo {
+  // The full name of the user.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and option DETAILS for account queries.
+  string name = 1;
+
+  // The email address the user prefers to be contacted through.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and options DETAILS and ALL_EMAILS for account queries.
+  string email = 2;
+
+  // A list of the secondary email addresses of the user.
+  // Only set for account queries when the ALL_EMAILS option or the suggest
+  // parameter is set. Secondary emails are only included if the calling user
+  // has the Modify Account, and hence is allowed to see secondary emails of
+  // other users.
+  repeated string secondary_emails = 3;
+
+  // The username of the user.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and option DETAILS for account queries.
+  string username = 4;
+
+  // The approvals as a map of label names to approval values
+  map<string, int32> approvals = 5;
+}
+
+// The result of adding a reviewer to a change
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer 
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer-result
+message AddReviewerResult {
+
+  // The Account ID from the AddReviewerRequest.reviewer field
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id  
+  string input = 1;
+
+  // The newly added reviewers
+  repeated ReviewerInfo reviewers = 2;
+
+  // The newly cc'd accounts
+  repeated ReviewerInfo ccs = 3;
+
+  // The error message
+  string error = 4;
+
+  // Whether adding the reviewer requires confirmation
+  bool confirm = 5;
+
 }
 
 // Information to set various review bits on a change
