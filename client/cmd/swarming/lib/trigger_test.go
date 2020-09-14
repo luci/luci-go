@@ -84,6 +84,61 @@ func TestMapToArray(t *testing.T) {
 	})
 }
 
+func TestOptionalDimension(t *testing.T) {
+	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
+		type item struct {
+			s string
+			d *optionalDimension
+		}
+
+		data := []item{
+			{
+				s: "foo",
+			},
+			{
+				s: "foo=123",
+			},
+			{
+				s: "foo=123:abc",
+			},
+			{
+				s: "foo=123=abc",
+			},
+			{
+				s: "foo=123:321",
+				d: &optionalDimension{
+					kv: &swarming.SwarmingRpcsStringPair{
+						Key:   "foo",
+						Value: "123",
+					},
+					expiration: 321,
+				},
+			},
+			{
+				s: "foo=123:abc:321",
+				d: &optionalDimension{
+					kv: &swarming.SwarmingRpcsStringPair{
+						Key:   "foo",
+						Value: "123:abc",
+					},
+					expiration: 321,
+				},
+			},
+		}
+
+		for _, item := range data {
+			f := optionalDimension{}
+			err := f.Set(item.s)
+			if item.d == nil {
+				So(err, ShouldNotBeNil)
+			} else {
+				So(err, ShouldBeNil)
+				So(f, ShouldResemble, *item.d)
+			}
+		}
+	})
+}
+
 func TestListToStringListPairArray(t *testing.T) {
 	Convey(`TestListToStringListPairArray`, t, func() {
 		input := stringlistflag.Flag{
@@ -299,5 +354,48 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 					SizeBytes: 10430,
 				},
 			})
+	})
+}
+
+func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
+	t.Parallel()
+	Convey(`Basic`, t, func() {
+		c := triggerRun{}
+		c.Init(auth.Options{})
+		c.dimensions.Set("foo=abc")
+		c.optionalDimension.Set("bar=def:60")
+
+		optDimExp := int64(60)
+		totalExp := int64(660)
+		c.expiration = totalExp
+
+		result, err := c.processTriggerOptions([]string(nil), nil)
+		So(err, ShouldBeNil)
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 2)
+
+		slice := result.TaskSlices[0]
+		So(slice.Properties.Dimensions, ShouldResemble,
+			[]*swarming.SwarmingRpcsStringPair{
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "foo",
+					Value: "abc",
+				},
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "bar",
+					Value: "def",
+				},
+			})
+		So(slice.ExpirationSecs, ShouldResemble, optDimExp)
+
+		slice = result.TaskSlices[1]
+		So(slice.Properties.Dimensions, ShouldResemble,
+			[]*swarming.SwarmingRpcsStringPair{
+				&swarming.SwarmingRpcsStringPair{
+					Key:   "foo",
+					Value: "abc",
+				},
+			})
+		So(slice.ExpirationSecs, ShouldResemble, totalExp-optDimExp)
 	})
 }
