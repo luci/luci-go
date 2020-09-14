@@ -51,7 +51,7 @@ export class ErrorPageElement extends MobxLitElement implements BeforeEnterObser
     }
 
     #reason {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
     }
   `;

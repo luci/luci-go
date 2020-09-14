@@ -102,7 +102,7 @@ export class CommitEntryElement extends MobxLitElement {
     }
 
     #summary {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
     }
     #summary > p:first-child {

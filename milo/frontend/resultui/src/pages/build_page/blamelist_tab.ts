@@ -127,14 +127,10 @@ export class BlamelistTabElement extends MobxLitElement {
       padding: 5px 10px 3px 10px;
     }
 
-    .action-button {
-      --mdc-theme-primary: rgb(0, 123, 255);
-    }
-
     #main {
       padding-top: 5px;
       padding-left: 10px;
-      border-top: 1px solid #DDDDDD;
+      border-top: 1px solid var(--divider-color);
     }
     milo-commit-entry {
       margin-bottom: 2px;
@@ -145,13 +141,13 @@ export class BlamelistTabElement extends MobxLitElement {
 
     .divider {
       border: none;
-      border-top: 1px solid rgb(235, 235, 235);
+      border-top: 1px solid var(--divider-color);
     }
     #load {
-      color: blue;
+      color: var(--active-text-color);
     }
     #load-more {
-      color: blue;
+      color: var(--active-text-color);
       cursor: pointer;
     }
   `;

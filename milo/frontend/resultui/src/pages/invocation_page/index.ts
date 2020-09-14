@@ -23,16 +23,9 @@ import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { NOT_FOUND_URL, router } from '../../routes';
-import { InvocationState as InvState } from '../../services/resultdb';
 import './invocation_details_tab';
-
-const INVOCATION_STATE_DISPLAY_MAP = {
-  [InvState.Unspecified]: 'unspecified',
-  [InvState.Active]: 'active',
-  [InvState.Finalizing]: 'finalizing',
-  [InvState.Finalized]: 'finalized',
-};
 
 /**
  * Main test results page.
@@ -112,7 +105,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <milo-status-bar
-        .components=${[{color: '#007bff', weight: 1}]}
+        .components=${[{color: 'var(--active-color)', weight: 1}]}
         .loading=${this.invocationState.invocationReq.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
@@ -131,7 +124,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     }
 
     #test-invocation-summary {
-      background-color: rgb(248, 249, 250);
+      background-color: var(--block-background-color));
       padding: 6px 16px;
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 14px;
@@ -148,7 +141,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     }
 
     #test-invocation-id-label {
-      color: rgb(95, 99, 104);
+      color: var(--light-text-color);
     }
 
     #test-invocation-state {

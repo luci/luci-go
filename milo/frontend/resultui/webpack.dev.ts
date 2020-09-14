@@ -45,7 +45,7 @@ const config: webpack.Configuration = merge(common, {
       });
 
       const localDevConfigs = require('./dev-configs/local-dev-configs.json');
-      app.use(/^(?!\/(ui|static\/(dist|style))\/).*/, createProxyMiddleware({
+      app.use(/^(?!\/(ui|static\/(dist|styles))\/).*/, createProxyMiddleware({
         target: localDevConfigs.milo.url,
         changeOrigin: true,
       }));
