@@ -70,6 +70,24 @@
       "revId": "98157a0de033a758812d968431a8283fbd390f52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdeaa118_4e9d43a8",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T04:53:08Z",
+      "side": 1,
+      "message": "Redeployed demo after rebasing.\n\nhttps://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7590/overview",
+      "parentUuid": "b7159225_92f47436",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
