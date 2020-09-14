@@ -16,6 +16,24 @@
       "revId": "6838d15df6a8aedd3caa27134e171698b874f9ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20a972dc_24fbae96",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T00:52:58Z",
+      "side": 1,
+      "message": "InfraFailure may not have a start time.",
+      "parentUuid": "56bc032c_8eb593ea",
+      "revId": "6838d15df6a8aedd3caa27134e171698b874f9ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
