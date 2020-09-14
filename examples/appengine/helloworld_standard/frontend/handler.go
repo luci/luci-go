@@ -66,7 +66,7 @@ var templateBundle = &templates.Bundle{
 func pageBase() router.MiddlewareChain {
 	return standard.Base().Extend(
 		templates.WithTemplates(templateBundle),
-		auth.Authenticate(server.UsersAPIAuthMethod{}),
+		auth.Authenticate(server.DevServerAuthMethod{}),
 	)
 }
 

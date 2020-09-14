@@ -53,7 +53,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 	})
 	m = m.Extend(
 		templates.WithTemplates(tmpl),
-		auth.Authenticate(server.UsersAPIAuthMethod{}),
+		auth.Authenticate(server.DevServerAuthMethod{}),
 	)
 
 	r.GET("/", m, indexPage)
