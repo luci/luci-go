@@ -119,7 +119,7 @@ export class TestNavNodeElement extends MobxLitElement {
       text-overflow: ellipsis;
     }
     .expandable-header.selected {
-      background-color: #66ccff;
+      background-color: var(--light-active-color);
     }
 
     .name-label {
@@ -136,7 +136,7 @@ export class TestNavNodeElement extends MobxLitElement {
     #content-ruler {
       position: relative;
       border-left: 1px solid;
-      border-color: #DDDDDD;
+      border-color: var(--divider-color);
       width: 1px;
       height: 100%;
       margin-left: 11.5px;
@@ -146,10 +146,6 @@ export class TestNavNodeElement extends MobxLitElement {
     #content {
       grid-column: 1/3;
       grid-row: 1;
-    }
-
-    .expandable-header.selected {
-        background-color: #66ccff;
     }
   `;
 }
