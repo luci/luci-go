@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56bc032c_8eb593ea",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-14T00:40:31Z",
+      "side": 1,
+      "message": "Why do you need the \"|| bpd.create_time\" part? Should a successful build always have start_time?",
+      "revId": "6838d15df6a8aedd3caa27134e171698b874f9ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
