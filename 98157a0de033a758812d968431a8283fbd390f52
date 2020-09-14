@@ -88,6 +88,24 @@
       "revId": "98157a0de033a758812d968431a8283fbd390f52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f23de708_5500f879",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-14T05:14:18Z",
+      "side": 1,
+      "message": "I still think the color coded is not clear enough (e.g. I do not immediately know the blue \"X\" icon represents a canceled step, until I hover it). However, I guess we can always make improvements for this down the road.",
+      "parentUuid": "cdeaa118_4e9d43a8",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
