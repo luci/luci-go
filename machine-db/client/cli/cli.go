@@ -99,11 +99,20 @@ func (c *commandBase) ModifyContext(ctx context.Context) context.Context {
 	return withClient(cfg.Use(ctx), createClient(ctx, c.p))
 }
 
+var shivasNotice = `
+####################################################
+#                                                  #
+# crimson service is deprecated, please use shivas #
+# (go/shivas) for managing browser HW fleets.      #
+#                                                  #
+####################################################
+`
+
 // New returns the Machine Database command-line application.
 func New(params *Parameters) *cli.Application {
 	return &cli.Application{
 		Name:  "crimson",
-		Title: "Machine Database client",
+		Title: "Machine Database client" + "\n" + shivasNotice,
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 			{}, // Create an empty command to separate groups of similar commands.

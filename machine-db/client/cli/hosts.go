@@ -47,7 +47,7 @@ func deleteHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-host -name name",
 		ShortDesc: "deletes a host",
-		LongDesc:  "Deletes a physical or virtual host from the database.\n\nExample:\ncrimson del-host -name vm100-y1",
+		LongDesc:  shivasNotice + "\n" + "Deletes a physical or virtual host from the database.\n\nExample:\ncrimson del-host -name vm100-y1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteHostCmd{}
 			cmd.Initialize(params)
