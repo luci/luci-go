@@ -20,6 +20,10 @@ import (
 
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -56,7 +60,12 @@ func TestValidateGetTestResultRequest(t *testing.T) {
 
 func TestGetTestResult(t *testing.T) {
 	Convey(`GetTestResult`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permGetTestResult},
+			},
+		})
 
 		srv := newTestResultDBService()
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
@@ -69,7 +78,7 @@ func TestGetTestResult(t *testing.T) {
 		invID := invocations.ID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
-			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
+			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
 			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
@@ -95,6 +104,15 @@ func TestGetTestResult(t *testing.T) {
 				Duration:    &durpb.Duration{Seconds: 1, Nanos: 234567000},
 			},
 		)
+
+		Convey(`permission denied`, func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("inv_s", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}))
+			req := &pb.GetTestResultRequest{Name: "invocations/inv_s/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_s"}
+			tr, err := srv.GetTestResult(ctx, req)
+			So(tr, ShouldBeNil)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
 
 		Convey(`works with expected result`, func() {
 			testutil.MustApply(ctx, spanutil.InsertMap("TestResults", map[string]interface{}{

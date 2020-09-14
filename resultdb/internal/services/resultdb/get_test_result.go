@@ -21,10 +21,21 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
+	invID, _, _, err := pbutil.ParseTestResultName(resultName)
+	if err != nil {
+		return appstatus.BadRequest(errors.Annotate(err, "name").Err())
+	}
+
+	return permissions.VerifyInvocation(ctx, permGetTestResult, invocations.ID(invID))
+}
 
 func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 	if err := pbutil.ValidateTestResultName(req.Name); err != nil {
@@ -35,6 +46,9 @@ func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 }
 
 func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
+	if err := verifyGetTestResultPermission(ctx, in.GetName()); err != nil {
+		return nil, err
+	}
 	if err := validateGetTestResultRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
