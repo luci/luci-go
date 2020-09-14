@@ -124,7 +124,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
         </table>
       </div>
       <milo-status-bar
-        .components=${[{color: '#007bff', weight: 1}]}
+        .components=${[{color: 'var(--active-color)', weight: 1}]}
         .loading=${this.isLoading}
       ></milo-status-bar>
       ${this.isLoading ? '' : html`
@@ -144,13 +144,13 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     }
 
     #artifact-header {
-      background-color: rgb(248, 249, 250);
+      background-color: var(--block-background-color);
       padding: 6px 16px;
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 14px;
     }
     .id-component-label {
-      color: rgb(95, 99, 104);
+      color: var(--light-text-color);
     }
   `;
 }
