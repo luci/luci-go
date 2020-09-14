@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5c7cc937_35aa2aae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T08:02:15Z",
+      "side": 1,
+      "message": "The step could be \"Started\". Does that fell in to the unsuccessful category?\n",
+      "revId": "7bab065ee0c4c4f484869fa38bb9c89208fa829b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
