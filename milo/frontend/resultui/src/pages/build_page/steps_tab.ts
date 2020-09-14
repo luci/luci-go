@@ -113,7 +113,7 @@ export class StepsTabElement extends MobxLitElement {
           class="list-entry"
           style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
         >
-          No ${this.showPassed ? '' : 'failed'} steps.
+          ${this.showPassed ? 'No steps.' : 'All steps passed.'}
         </div>
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
