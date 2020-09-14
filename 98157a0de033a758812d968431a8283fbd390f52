@@ -52,6 +52,24 @@
       "revId": "98157a0de033a758812d968431a8283fbd390f52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7159225_92f47436",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T02:45:54Z",
+      "side": 1,
+      "message": "\u003e or make it clear that the step is running, not failed.\n\nIt will be clearer after the following CL lands.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2407413",
+      "parentUuid": "25ba8d3f_88cfbd2c",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
