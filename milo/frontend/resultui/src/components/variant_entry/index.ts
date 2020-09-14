@@ -20,35 +20,12 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ID_SEG_REGEX, ReadonlyVariant, VariantStatus } from '../../models/test_node';
+import { ID_SEG_REGEX, ReadonlyVariant } from '../../models/test_node';
 import '../copy_to_clipboard';
 import './result_entry';
-
-
-const STATUS_DISPLAY_MAP = {
-  [VariantStatus.Exonerated]: 'exonerated',
-  [VariantStatus.Expected]: 'expected',
-  [VariantStatus.Unexpected]: 'unexpected',
-  [VariantStatus.Flaky]: 'flaky',
-};
-
-// Just so happens to be the same as STATUS_DISPLAY_MAP.
-const STATUS_CLASS_MAP = {
-  [VariantStatus.Exonerated]: 'exonerated',
-  [VariantStatus.Expected]: 'expected',
-  [VariantStatus.Unexpected]: 'unexpected',
-  [VariantStatus.Flaky]: 'flaky',
-};
-
-const STATUS_ICON_MAP = Object.freeze({
-  // TODO(weiweilin): find an appropriate icon for exonerated
-  [VariantStatus.Exonerated]: 'check',
-  [VariantStatus.Expected]: 'check',
-  [VariantStatus.Flaky]: 'warning',
-  [VariantStatus.Unexpected]: 'error',
-});
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -126,12 +103,12 @@ export class VariantEntryElement extends MobxLitElement {
           <div id="header" class="one-line-content">
             <mwc-icon
               id="status-indicator"
-              class=${classMap({[STATUS_CLASS_MAP[this.variant.status]]: true})}
-            >${STATUS_ICON_MAP[this.variant.status]}</mwc-icon>
+              class=${classMap({[VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true})}
+            >${VARIANT_STATUS_ICON_MAP[this.variant.status]}</mwc-icon>
             <div id="identifier">
               <div id="test-identifier">
                 <span>
-                  <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                  <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
                 </span>
                 <milo-copy-to-clipboard
                   .textToCopy=${this.variant.testId}
@@ -142,7 +119,7 @@ export class VariantEntryElement extends MobxLitElement {
               <div id="variant-identifier">
                 <span>
                   ${this.variantDef.map(([k, v]) => html`
-                  <span class=${classMap({'light': !this.prevVariant || v === this.prevVariant.variant.def?.[k], 'kv': true})}>
+                  <span class=${classMap({'greyed-out': !this.prevVariant || v === this.prevVariant.variant.def?.[k], 'kv': true})}>
                     <span class="kv-key">${k}</span>
                     <span class="kv-value">${v}</span>
                   </span>
@@ -157,10 +134,10 @@ export class VariantEntryElement extends MobxLitElement {
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             <span id="variant-def">
               <span
-                class=${STATUS_CLASS_MAP[this.variant.status]}
-              >${STATUS_DISPLAY_MAP[this.variant.status]} result</span>
+                class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}
+              >${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result</span>
               ${this.variantDef.length === 0 ? '' : '|'}
-              <span class="light">
+              <span class="greyed-out">
                 ${this.variantDef.map(([k, v]) => html`
                 <span class="kv">
                   <span class="kv-key">${k}</span>
@@ -187,7 +164,6 @@ export class VariantEntryElement extends MobxLitElement {
     `;
   }
 
-  // TODO(weiweilin): extract the color scheme to a separate stylesheet.
   static styles = css`
     :host {
       display: block;
@@ -229,16 +205,16 @@ export class VariantEntryElement extends MobxLitElement {
       grid-column: 1;
     }
     .exonerated {
-      color: #ff33d2;
+      color: var(--exonerated-color);
     }
     .expected {
-      color: #33ac71;
+      color: var(--success-color);
     }
     .unexpected {
-      color: #d23f31;
+      color: var(--failure-color);
     }
     .flaky {
-      color: #f5a309;
+      color: var(--warning-color);
     }
     #identifier {
       overflow: hidden;
@@ -276,7 +252,7 @@ export class VariantEntryElement extends MobxLitElement {
       overflow: hidden;
     }
     #content-ruler {
-      border-left: 1px solid #DDDDDD;
+      border-left: 1px solid var(--divider-color);
       width: 0px;
       margin-left: 11.5px;
     }
@@ -299,12 +275,12 @@ export class VariantEntryElement extends MobxLitElement {
       margin-left: 29px;
     }
 
-    .light {
-      color: grey;
+    .greyed-out {
+      color: var(--greyed-out-text-color);
     }
 
     .explanation-html {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
     }
 
