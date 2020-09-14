@@ -43,7 +43,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, srv crimson.
 	})
 	m = m.Extend(
 		templates.WithTemplates(prepareTemplates(tmplPath)),
-		auth.Authenticate(gaeserver.UsersAPIAuthMethod{}),
+		auth.Authenticate(gaeserver.DevServerAuthMethod{}),
 	)
 	r.GET("/", m, indexPage)
 	r.GET("/datacenters", m, datacentersPage)

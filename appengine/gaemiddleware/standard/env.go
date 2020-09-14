@@ -114,7 +114,7 @@ var classicEnv = gaemiddleware.Environment{
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		gaeauth.InstallHandlers(r, base)
 		gaetsmon.InstallHandlers(r, base)
-		portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
+		portal.InstallHandlers(r, base, &gaeauth.DevServerAuthMethod{})
 		gaeconfig.InstallValidationHandlers(r, base, &validation.Rules)
 		pprof.InstallHandlers(r, base)
 	},
