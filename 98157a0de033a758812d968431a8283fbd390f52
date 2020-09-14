@@ -34,6 +34,24 @@
       "revId": "98157a0de033a758812d968431a8283fbd390f52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25ba8d3f_88cfbd2c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-14T01:09:57Z",
+      "side": 1,
+      "message": "In that case, I think we should make it clear in the title \"Steps \u0026 Logs\" which steps and logs we are showing here, or make it clear that the step is running, not failed.",
+      "parentUuid": "147816f1_3aa9dfe9",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
