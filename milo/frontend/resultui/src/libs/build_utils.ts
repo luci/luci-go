@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { router } from '../routes';
-import { Build, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
+import { Build, BuilderID, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
 import { Link } from '../services/build_page';
 
 export function getURLForBuild(build: Build): string {
@@ -28,8 +28,12 @@ export function getURLForBuild(build: Build): string {
   );
 }
 
-export function getURLForBuilder(build: Build): string {
-  return `/p/${build.builder.project}/builders/${build.builder.bucket}/${build.builder.builder}`;
+export function getURLForBuilder(builder: BuilderID): string {
+  return `/p/${builder.project}/builders/${builder.bucket}/${builder.builder}`;
+}
+
+export function getURLForProject(proj: string): string {
+  return `/p/${proj}`;
 }
 
 export function getDisplayNameForStatus(s: BuildStatus): string {
