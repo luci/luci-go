@@ -24,6 +24,7 @@ import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
@@ -170,7 +171,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build</span>
-          <span>${this.builder.builder} / ${this.buildNumOrId}</span>
+          <a href=${getURLForProject(this.builder.project)}>${this.builder.project}</a> /
+          <span>${this.builder.bucket}</span> /
+          <a href=${getURLForBuilder(this.builder)}>${this.builder.builder}</a> /
+          <span>${this.buildNumOrId}</span>
         </div>
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>

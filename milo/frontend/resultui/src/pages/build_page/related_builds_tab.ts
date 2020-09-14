@@ -85,7 +85,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       <tr>
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
-        <td><a href=${getURLForBuilder(build)} router-ignore>${build.builder.builder}</a></td>
+        <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
         <td>${displayTimestamp(build.create_time)}</td>
