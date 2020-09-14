@@ -305,7 +305,7 @@ export class OverviewTabElement extends MobxLitElement {
       color: #6f42c1;
     }
     .status.canceled {
-      color: #6c757d;
+      color: #0082fc;
     }
 
     :host > mwc-dialog {

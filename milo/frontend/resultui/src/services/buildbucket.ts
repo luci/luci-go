@@ -58,7 +58,7 @@ export interface Build {
   readonly summary_markdown?: string;
   readonly input: BuildInput;
   readonly output: BuildOutput;
-  readonly steps: Step[];
+  readonly steps?: Step[];
   readonly infra?: BuildInfra;
   readonly tags: StringPair[];
   readonly exe: Executable;
@@ -111,7 +111,7 @@ export interface Log {
 export interface Step {
   readonly name: string;
   readonly start_time: Timestamp;
-  readonly end_time: Timestamp;
+  readonly end_time?: Timestamp;
   readonly status: BuildStatus;
   readonly logs?: Log[];
   readonly summary_markdown?: string;

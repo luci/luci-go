@@ -27,7 +27,8 @@ import { StepExt } from '../services/build_page';
 import './expandable_entry';
 
 const STATUS_CLASS_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'scheduled',
+  // Step status can not be scheduled.
+  [BuildStatus.Scheduled]: '',
   [BuildStatus.Started]: 'started',
   [BuildStatus.Success]: 'success',
   [BuildStatus.Failure]: 'failure',
@@ -35,13 +36,24 @@ const STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.Canceled]: 'canceled',
 });
 
+const STATUS_TITLE_MAP = Object.freeze({
+  // Step status can not be scheduled.
+  [BuildStatus.Scheduled]: '',
+  [BuildStatus.Started]: 'Started',
+  [BuildStatus.Success]: 'Success',
+  [BuildStatus.Failure]: 'Failure',
+  [BuildStatus.InfraFailure]: 'Infra Failure',
+  [BuildStatus.Canceled]: 'Canceled',
+});
+
 const STATUS_ICON_MAP = Object.freeze({
-  [BuildStatus.Scheduled]: 'check',
-  [BuildStatus.Started]: 'check',
+  // Step status can not be scheduled.
+  [BuildStatus.Scheduled]: '',
+  [BuildStatus.Started]: 'pending',
   [BuildStatus.Success]: 'check',
   [BuildStatus.Failure]: 'error',
-  [BuildStatus.InfraFailure]: 'error',
-  [BuildStatus.Canceled]: 'error',
+  [BuildStatus.InfraFailure]: 'report',
+  [BuildStatus.Canceled]: 'cancel',
 });
 
 /**
@@ -63,12 +75,10 @@ export class BuildStepEntryElement extends MobxLitElement {
   @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
 
   @computed private get duration() {
-    if (!this.step.interval?.end) {
-      return null;
-    }
-
-    return DateTime.fromISO(this.step.interval.end)
-      .diff(DateTime.fromISO(this.step.interval.start!));
+    const start = DateTime.fromISO(this.step.interval.start);
+    const end = DateTime.fromISO(this.step.interval.end);
+    const now = DateTime.fromISO(this.step.interval.now);
+    return this.step.status === BuildStatus.Started ? now.diff(start) : end.diff(start);
   }
 
   @computed private get header() {
@@ -90,11 +100,12 @@ export class BuildStepEntryElement extends MobxLitElement {
         <span slot="header">
           <mwc-icon
             id="status-indicator"
-            class=${[STATUS_CLASS_MAP[this.step.status]]}
+            class=${STATUS_CLASS_MAP[this.step.status]}
+            title=${STATUS_TITLE_MAP[this.step.status]}
           >${STATUS_ICON_MAP[this.step.status]}</mwc-icon>
           <b>${this.number}. ${this.shortName}</b>
           <span id="header-markdown">${renderMarkdown(this.header)}</span>
-          ${this.duration ? html`<span id="duration">${displayDuration(this.duration)}</span>` : ''}
+          <span id="duration">${displayDuration(this.duration)}</span>
         </span>
         <div slot="content">
           <div id="summary" style=${styleMap({display: this.summary ? '' : 'none'})}>
@@ -133,6 +144,21 @@ export class BuildStepEntryElement extends MobxLitElement {
     #status-indicator {
       vertical-align: bottom;
     }
+    #status-indicator.started {
+      color: #ffc107;
+    }
+    #status-indicator.success {
+      color: #28a745;
+    }
+    #status-indicator.failure {
+      color: #dc3545;
+    }
+    #status-indicator.infra-failure {
+      color: #6f42c1;
+    }
+    #status-indicator.canceled {
+      color: #0082fc;
+    }
 
     #header-markdown > p {
       display: inline;
@@ -150,19 +176,6 @@ export class BuildStepEntryElement extends MobxLitElement {
       white-space: nowrap;
       vertical-align: baseline;
       border-radius: .25rem;
-    }
-
-    .exonerated {
-      color: #ff33d2;
-    }
-    .success {
-      color: #33ac71;
-    }
-    .failure {
-      color: #d23f31;
-    }
-    .flaky {
-      color: #f5a309;
     }
 
     #summary {
