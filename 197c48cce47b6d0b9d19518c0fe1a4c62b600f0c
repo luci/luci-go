@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "4a3fcac5_23e35ea1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Hmm, unfortunately I don\u0027t believe the current swarming Go binary allows for slice customization, either. As a matter of fact, we just started using task slice in https://crrev.com/c/2405024 ..",
+      "parentUuid": "1c143f25_b69c3c54",
+      "range": {
+        "startLine": 9,
+        "startChar": 207,
+        "endLine": 9,
+        "endChar": 239
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e57ff361_440b9556",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 3
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "a9fbd835_2bfba586",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e57ff361_440b9556",
+      "range": {
+        "startLine": 133,
+        "startChar": 22,
+        "endLine": 133,
+        "endChar": 26
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5fe66af_654a517e",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 3
@@ -110,6 +158,24 @@
       "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92e63895_0bffa4f7",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5fe66af_654a517e",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -130,6 +196,24 @@
     },
     {
       "key": {
+        "uuid": "5c915e3f_f391db32",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c3548bd_c417f0d4",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f770e55_d8591cbe",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 3
@@ -144,6 +228,24 @@
       "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4be6efb5_46e001cb",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7f770e55_d8591cbe",
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -167,6 +269,30 @@
       "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65a1344e_bd9d1ae8",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T02:32:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9097de68_d70d8a2b",
+      "range": {
+        "startLine": 156,
+        "startChar": 42,
+        "endLine": 156,
+        "endChar": 62
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
