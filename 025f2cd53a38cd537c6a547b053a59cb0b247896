@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7ae2c69_e46df678",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T06:50:04Z",
+      "side": 1,
+      "message": "I think it is better to do deep copy this dimensions.",
+      "revId": "025f2cd53a38cd537c6a547b053a59cb0b247896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
