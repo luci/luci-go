@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "196e7a56_7a0a8aea",
+        "filename": "milo/frontend/resultui/src/services/build_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-14T04:04:30Z",
+      "side": 1,
+      "message": "\u003e In practise it will be set to `Thu Jan 01 1970 00:00:00`.\n\u003e So it\u0027s not an empty string.\nOh, I see. I think that\u0027s not ideal. But if we only display it based on the status, it should be fine.",
+      "parentUuid": "028daa2b_bfb8d625",
+      "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a9d6ea8_d129d95d",
         "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
         "patchSetId": 4
