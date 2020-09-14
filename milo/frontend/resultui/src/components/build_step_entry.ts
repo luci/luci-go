@@ -54,6 +54,12 @@ export class BuildStepEntryElement extends MobxLitElement {
   @observable.ref step!: StepExt;
   @observable.ref showDebugLogs = false;
 
+  toggleAllSteps(expand: boolean) {
+    this.expanded = expand;
+    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
+      .forEach((e) => e.toggleAllSteps(expand));
+  }
+
   @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
 
   @computed private get duration() {
