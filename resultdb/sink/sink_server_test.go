@@ -69,6 +69,7 @@ func TestReportTestResults(t *testing.T) {
 			TestId:      tr.TestId,
 			ResultId:    tr.ResultId,
 			Expected:    tr.Expected,
+			Status:      tr.Status,
 			SummaryHtml: tr.SummaryHtml,
 			StartTime:   tr.StartTime,
 			Duration:    tr.Duration,

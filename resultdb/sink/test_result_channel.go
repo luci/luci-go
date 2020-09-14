@@ -103,6 +103,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 					ResultId:     tr.GetResultId(),
 					Variant:      c.cfg.BaseVariant,
 					Expected:     tr.GetExpected(),
+					Status:       tr.GetStatus(),
 					SummaryHtml:  tr.GetSummaryHtml(),
 					StartTime:    tr.GetStartTime(),
 					Duration:     tr.GetDuration(),
