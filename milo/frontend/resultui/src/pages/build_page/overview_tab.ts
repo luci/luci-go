@@ -296,22 +296,35 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="primaryAction" dialogAction="cancel" dense unelevated>Cancel</mwc-button>
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
-      ${this.renderStatusTime()}
-      ${this.renderSummary()}
-      ${this.renderInput()}
-      ${this.renderInfra()}
-      <!-- TODO(crbug/1116824): render failed tests -->
-      ${this.renderSteps()}
-      ${this.renderTiming()}
-      ${this.renderTags()}
-      ${this.renderProperties('Input Properties', bpd.input.properties)}
-      ${this.renderProperties('Output Properties', bpd.input.properties)}
+      <div id="main">
+        <div>
+          ${this.renderStatusTime()}
+          ${this.renderSummary()}
+          ${this.renderInput()}
+          ${this.renderInfra()}
+          <!-- TODO(crbug/1116824): render failed tests -->
+          ${this.renderSteps()}
+          ${this.renderTiming()}
+        </div>
+        <div>
+          ${this.renderTags()}
+          ${this.renderProperties('Input Properties', bpd.input.properties)}
+          ${this.renderProperties('Output Properties', bpd.input.properties)}
+        </div>
+      </div>
     `;
   }
 
   static styles = css`
-    :host > * {
+    #main > div > * {
       margin: 5px 24px;
+    }
+    @media screen and (min-width: 1800px) {
+      #main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-gap: 5px;
+      }
     }
 
     #status {
