@@ -106,6 +106,24 @@
       "revId": "98157a0de033a758812d968431a8283fbd390f52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c6efa45_40ef4c5e",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T05:20:26Z",
+      "side": 1,
+      "message": "I think overtime, user will learn what each color/icon stands for.\nWe can always address this if someone complains about it.",
+      "parentUuid": "f23de708_5500f879",
+      "revId": "98157a0de033a758812d968431a8283fbd390f52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
