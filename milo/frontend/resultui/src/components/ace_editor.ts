@@ -45,7 +45,7 @@ export class AceEditorEntryElement extends LitElement {
     :host {
       display: block;
       border-radius: 4px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--divider-color);
     }
     #editor {
       position: relative;
