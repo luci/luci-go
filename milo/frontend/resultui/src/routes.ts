@@ -91,7 +91,7 @@ router.setRoutes({
               ],
             },
             {
-              path: '/p/:project/:bucket/:builder/:build_num_or_id',
+              path: '/p/:project/buckets/:bucket/builders/:builder/builds/:build_num_or_id',
               component: 'milo-build-state-provider',
               children: [
                 {
@@ -104,7 +104,7 @@ router.setRoutes({
                   children: [
                     {
                       path: '/',
-                      redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/overview',
+                      action: (ctx, cmd) => cmd.redirect(router.urlForName('build-overview', ctx.params)),
                     },
                     {
                       path: '/overview',
