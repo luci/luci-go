@@ -22,6 +22,29 @@
       "revId": "d61873f8080544a6cb0da3120953879ac1c70751",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efc437ef_fcd3c1a0",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 485,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-14T04:54:49Z",
+      "side": 1,
+      "message": "Check this in createTaskSliceForOptionalDimension() and return nil if optionalDimension is empty.\nIt looks bit simpler.\n\n  taskSlice, err :\u003d c.createTaskSliceForOptionalDimension(\u0026properties)\n  ...\n  if taskSlice {\n    taskSlices \u003d append(taskSlices, taskSlice)\n    baseExpiration ...\n  }",
+      "range": {
+        "startLine": 485,
+        "startChar": 0,
+        "endLine": 485,
+        "endChar": 36
+      },
+      "revId": "d61873f8080544a6cb0da3120953879ac1c70751",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
