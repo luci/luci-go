@@ -172,8 +172,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
 		invID := invocations.ID("u-build-1")
-		mut := insert.Invocation(invID, pb.Invocation_ACTIVE, nil)
-		testutil.MustApply(ctx, mut)
+		testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
