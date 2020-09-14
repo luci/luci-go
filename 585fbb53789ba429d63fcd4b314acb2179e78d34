@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2be8e44_297e46fb",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T07:06:42Z",
+      "side": 1,
+      "message": "sorry, I meant to only avoid shallow copy of slice\n```\nproperties.Dimensions \u003d append(append([]*swarming.SwarmingRpcsStringPair(nil), properties.Dimensions...), c.optionalDimension.kv)\n\n```",
+      "revId": "585fbb53789ba429d63fcd4b314acb2179e78d34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
