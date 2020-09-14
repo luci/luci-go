@@ -122,13 +122,14 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 // inserting a row for each invocation creation requested.
 func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) []*spanner.Mutation {
 
-	ms := make([]*spanner.Mutation, len(reqs))
+	ms := make([]*spanner.Mutation, 0, len(reqs)*2)
 	// Compute mutations
-	for i, req := range reqs {
+	for _, req := range reqs {
 
+		invID := invocations.ID(req.InvocationId)
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
-			Name:             invocations.ID(req.InvocationId).Name(),
+			Name:             invID.Name(),
 			State:            pb.Invocation_ACTIVE,
 			Deadline:         req.Invocation.GetDeadline(),
 			Tags:             req.Invocation.GetTags(),
@@ -145,8 +146,9 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		pbutil.NormalizeInvocation(inv)
 		// Create a mutation to create the invocation.
-		ms[i] = spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
+		ms = append(ms, spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID)))
 	}
+
 	return ms
 }
 
