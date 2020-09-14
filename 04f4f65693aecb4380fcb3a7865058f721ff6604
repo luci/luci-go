@@ -46,6 +46,30 @@
       "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f48f9557_baf2b3ab",
+        "filename": "client/cas/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-14T03:02:56Z",
+      "side": 1,
+      "message": "\u003e treating staging as dev may be confusing/problematic in some case.\n\nHow about having different functions \"IsDevProject()\" \"IsStagingProject()\"?",
+      "parentUuid": "a0d33781_46b37c35",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 0
+      },
+      "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
