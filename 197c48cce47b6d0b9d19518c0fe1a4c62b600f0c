@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "569bee3f_80c4b0bf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-14T02:55:21Z",
+      "side": 1,
+      "message": "I see. I thought slice customizations are supported in Swarming clients. \nSorry for the noise.",
+      "parentUuid": "4a3fcac5_23e35ea1",
+      "range": {
+        "startLine": 9,
+        "startChar": 207,
+        "endLine": 9,
+        "endChar": 239
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e57ff361_440b9556",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 3
