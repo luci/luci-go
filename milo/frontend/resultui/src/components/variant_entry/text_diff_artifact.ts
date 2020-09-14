@@ -61,6 +61,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
   static styles = css`
     #content {
       padding-top: 5px;
+      position: relative;
     }
     .d2h-code-linenumber {
       cursor: default;
