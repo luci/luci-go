@@ -84,6 +84,59 @@ func TestMapToArray(t *testing.T) {
 	})
 }
 
+func TestOptionalDimension(t *testing.T) {
+	Convey(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func() {
+		type item struct {
+			s   string
+			kv  *swarming.SwarmingRpcsStringPair
+			exp int64
+		}
+
+		data := []item{
+			{
+				s: "foo",
+			},
+			{
+				s: "foo=123",
+			},
+			{
+				s: "foo=123:abc",
+			},
+			{
+				s: "foo=123=abc",
+			},
+			{
+				s: "foo=123:321",
+				kv: &swarming.SwarmingRpcsStringPair{
+					Key:   "foo",
+					Value: "123",
+				},
+				exp: 321,
+			},
+			{
+				s: "foo=123:abc:321",
+				kv: &swarming.SwarmingRpcsStringPair{
+					Key:   "foo",
+					Value: "123:abc",
+				},
+				exp: 321,
+			},
+		}
+
+		for _, item := range data {
+			f := optionalDimension{}
+			err := f.Set(item.s)
+			if item.kv == nil {
+				So(err, ShouldNotBeNil)
+			} else {
+				So(err, ShouldBeNil)
+				So(*f.kv, ShouldResemble, *item.kv)
+				So(f.expiration, ShouldResemble, item.exp)
+			}
+		}
+	})
+}
+
 func TestListToStringListPairArray(t *testing.T) {
 	Convey(`TestListToStringListPairArray`, t, func() {
 		input := stringlistflag.Flag{
