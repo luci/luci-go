@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "4e0b7b16_60bbcfaa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "No worries.. I agree that we should have a way to support task slice customizations. But this CL is really about making custom trigger script work, so it\u0027s kind of ad-hoc.",
+      "parentUuid": "569bee3f_80c4b0bf",
+      "range": {
+        "startLine": 9,
+        "startChar": 207,
+        "endLine": 9,
+        "endChar": 239
+      },
+      "revId": "197c48cce47b6d0b9d19518c0fe1a4c62b600f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e57ff361_440b9556",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 3

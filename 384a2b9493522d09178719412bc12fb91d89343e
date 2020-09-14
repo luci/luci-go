@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9afaeaaf_1f92269c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51774671_0b228d36",
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ebc61dc_83a168ef",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "384a2b9493522d09178719412bc12fb91d89343e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a6563ce_9c9f82f9",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ebc61dc_83a168ef",
+      "range": {
+        "startLine": 162,
+        "startChar": 36,
+        "endLine": 162,
+        "endChar": 39
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "e3a7d8a2_1925ccae",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0aabf5cc_e0768a05",
+      "range": {
+        "startLine": 356,
+        "startChar": 109,
+        "endLine": 356,
+        "endChar": 111
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2994dfbd_b92a3242",
         "filename": "client/cmd/swarming/lib/trigger.go",
         "patchSetId": 5
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "a6d0bf63_ca6dce83",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2994dfbd_b92a3242",
+      "range": {
+        "startLine": 377,
+        "startChar": 5,
+        "endLine": 377,
+        "endChar": 8
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22360306_8a3c2d8b",
         "filename": "client/cmd/swarming/lib/trigger_test.go",
         "patchSetId": 5
@@ -108,6 +198,30 @@
       "revId": "384a2b9493522d09178719412bc12fb91d89343e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b3e5a35_f1e6614a",
+        "filename": "client/cmd/swarming/lib/trigger_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-14T04:40:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22360306_8a3c2d8b",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 12
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
