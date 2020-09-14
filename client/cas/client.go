@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
@@ -40,7 +41,7 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 
 	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
 		// use dev token server for dev/staging projects.
-		opts.TokenServerHost = "luci-token-server-dev.appspot.com"
+		opts.TokenServerHost = chromeinfra.TokenServerDevHost
 	}
 
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)

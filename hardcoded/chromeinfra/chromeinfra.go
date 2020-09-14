@@ -56,6 +56,9 @@ const (
 	// TokenServerHost is the default host to use in auth.Options.TokenServerHost.
 	TokenServerHost = "luci-token-server.appspot.com"
 
+	// TokenServerDevHost is the host of the LUCI Token Server dev instance.
+	TokenServerDevHost = "luci-token-server-dev.appspot.com"
+
 	// MachineDatabaseHost is the URL of the Machine Database.
 	MachineDatabaseHost = "machine-db.appspot.com"
 
