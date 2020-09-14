@@ -23,10 +23,24 @@ export function displayTimestamp(t: Timestamp): string {
   return d.toFormat(DEFAULT_TIME_FORMAT);
 }
 
+export function displayTimestampOpt(t?: Timestamp): string | null {
+  if (!t) {
+    return null;
+  }
+  return displayTimestamp(t);
+}
+
 export function displayTimeDiff(beginTime: Timestamp, endTime: Timestamp): string {
   const bd = datetimeFromTimestamp(beginTime);
   const ed = datetimeFromTimestamp(endTime);
   return displayDuration(ed.diff(bd));
+}
+
+export function displayTimeDiffOpt(beginTime?: Timestamp, endTime?: Timestamp): string | null {
+  if (!beginTime || !endTime) {
+    return null;
+  }
+  return displayTimeDiff(beginTime, endTime);
 }
 
 export function displayDuration(duration: Duration) {

@@ -20,7 +20,7 @@ import { observable } from 'mobx';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
-import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { displayTimeDiffOpt, displayTimestamp } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { Build, BuildStatus } from '../../services/buildbucket';
 
@@ -48,7 +48,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`
       <ul>
       ${repeat(
-        this.buildState.buildPageData!.build_sets,
+        this.buildState.buildPageData.build_sets,
         (item, _) => html`<li>${item}</li>`,
       )}
       </ul>
@@ -86,19 +86,19 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
         <td><a href=${getURLForBuilder(build)} router-ignore>${build.builder.builder}</a></td>
-        <td>${this.generateBuildLink(build)}</td>
+        <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
         <td>${displayTimestamp(build.create_time)}</td>
-        <td>${displayTimeDiff(build.create_time, build.start_time!)}</td>
-        <td>${displayTimeDiff(build.start_time!, build.end_time!)}</td>
+        <td>${displayTimeDiffOpt(build.create_time, build.start_time) || 'N/A'}</td>
+        <td>${displayTimeDiffOpt(build.start_time, build.end_time) || 'N/A'}</td>
         <td>${renderMarkdown(build.summary_markdown || '')}</td>
+      </tr>
     `;
   }
 
-  private generateBuildLink(build: Build) {
-    const href = getURLForBuild(build);
+  private renderBuildLink(build: Build) {
     const display = build.number ? build.number : build.id;
-    return html`<a href="${href}">${display}</a>`;
+    return html`<a href=${getURLForBuild(build)}>${display}</a>`;
   }
 
   static styles = css`
