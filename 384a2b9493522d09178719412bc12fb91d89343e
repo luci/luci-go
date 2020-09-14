@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "51774671_0b228d36",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:49:33Z",
+      "side": 1,
+      "message": "could you fix https://crbug.com/1127540 first?",
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ebc61dc_83a168ef",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:49:33Z",
+      "side": 1,
+      "message": "\u0027:\u0027?",
+      "range": {
+        "startLine": 162,
+        "startChar": 36,
+        "endLine": 162,
+        "endChar": 39
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aabf5cc_e0768a05",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:49:33Z",
+      "side": 1,
+      "message": "I think it is better to return single value here.",
+      "range": {
+        "startLine": 356,
+        "startChar": 109,
+        "endLine": 356,
+        "endChar": 111
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2994dfbd_b92a3242",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:49:33Z",
+      "side": 1,
+      "message": "no need to return this?",
+      "range": {
+        "startLine": 377,
+        "startChar": 5,
+        "endLine": 377,
+        "endChar": 8
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22360306_8a3c2d8b",
+        "filename": "client/cmd/swarming/lib/trigger_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:49:33Z",
+      "side": 1,
+      "message": "why not optionalDimension ?",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 12
+      },
+      "revId": "384a2b9493522d09178719412bc12fb91d89343e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
