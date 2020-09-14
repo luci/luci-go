@@ -19,14 +19,16 @@ import '@material/mwc-textarea';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
-import { STATUS_CLASS_MAP, STATUS_DISPLAY_MAP } from '.';
 
 import '../../components/ace_editor';
+import '../../components/build_step_entry';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayTimeDiff, displayTimeDiffOpt, displayTimestamp, displayTimestampOpt } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { router } from '../../routes';
@@ -50,8 +52,8 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <div id="status">
         Build
-        <i class="status ${STATUS_CLASS_MAP[bpd.status]}">
-          ${STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
+        <i class="status ${BUILD_STATUS_CLASS_MAP[bpd.status]}">
+          ${BUILD_STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
         </i>
         ${(() => { switch (bpd.status) {
         case BuildStatus.Scheduled:
@@ -174,6 +176,33 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderSteps() {
+    const bpd = this.buildState.buildPageData!;
+    const nonSuccessStepCount = bpd.steps?.filter((s) => s.status !== BuildStatus.Success).length || 0;
+
+    return html`
+      <div>
+        <h3>Steps & Logs</h3>
+        ${nonSuccessStepCount && bpd.steps!.map((step, i) => html`
+        <milo-build-step-entry
+          style=${styleMap({'display': step.status === BuildStatus.Success ? 'none' : ''})}
+          .expanded=${true}
+          .number=${i + 1}
+          .step=${step}
+          .showDebugLogs=${false}
+        ></milo-build-step-entry>
+        `) || ''}
+        <div class="list-entry">
+          ${nonSuccessStepCount} non-successful step(s).
+          <a href=${router.urlForName('build-steps', {
+            ...this.buildState.builder,
+            build_num_or_id: this.buildState.buildNumOrId!,
+          })}>View All</a>
+        </div>
+      </div>
+    `;
+  }
+
   private renderTiming() {
     const bpd = this.buildState.buildPageData!;
 
@@ -268,12 +297,11 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       ${this.renderStatusTime()}
-      <!-- TODO(crbug/1116824): render action buttons -->
       ${this.renderSummary()}
       ${this.renderInput()}
       ${this.renderInfra()}
       <!-- TODO(crbug/1116824): render failed tests -->
-      <!-- TODO(crbug/1116824): render failed steps -->
+      ${this.renderSteps()}
       ${this.renderTiming()}
       ${this.renderTags()}
       ${this.renderProperties('Input Properties', bpd.input.properties)}
@@ -290,22 +318,22 @@ export class OverviewTabElement extends MobxLitElement {
       font-weight: 500;
     }
     .status.scheduled {
-      color: #6c757d;
+      color: var(--scheduled-color);
     }
     .status.started {
-      color: #ffc107;
+      color: var(--started-color);
     }
     .status.success {
-      color: #28a745;
+      color: var(--success-color);
     }
     .status.failure {
-      color: #dc3545;
+      color: var(--failure-color);
     }
     .status.infra-failure {
-      color: #6f42c1;
+      color: var(--critical-failure-color);
     }
     .status.canceled {
-      color: #0082fc;
+      color: var(--canceled-color);
     }
 
     :host > mwc-dialog {
@@ -316,14 +344,17 @@ export class OverviewTabElement extends MobxLitElement {
       height: 200px;
     }
     mwc-button {
-      --mdc-theme-primary: rgb(0, 123, 255);
       transform: scale(0.8);
       vertical-align: middle;
     }
 
     #summary-html {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
+    }
+
+    .list-entry {
+      margin-top: 5px;
     }
 
     milo-ace-editor {
