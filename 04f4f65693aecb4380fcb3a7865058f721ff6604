@@ -22,6 +22,30 @@
       "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0d33781_46b37c35",
+        "filename": "client/cas/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-14T02:39:25Z",
+      "side": 1,
+      "message": "\u003e While I agree to hardcode token server, it would be better to define constants for the dev host and suffixes.\n\u003e \n\u003e For the dev token server, this is good place?\n\u003e https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/hardcoded/chromeinfra/chromeinfra.go;l\u003d57?q\u003dchromeinfra.go\u0026ss\u003dchromium\n\u003e \n\nmade https://crrev.com/c/2407422\n\n\u003e It also may make sense to define the suffixes in the hardcoded/chromeinfra package, or a helper like `IsDevProject()`.\n\u003e This way, the code would look like,\n\u003e \n\u003e   if chromeinfra.IsDevProject(project) {\n\u003e     opts.TokenServerHost \u003d chromeinfra.TokenServerDevHost\n\u003e   }\n\nI feel this is too much, and treating staging as dev may be confusing/problematic in some case.",
+      "parentUuid": "58fde930_14fae30a",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 0
+      },
+      "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
