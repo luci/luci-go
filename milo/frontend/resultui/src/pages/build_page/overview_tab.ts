@@ -193,7 +193,7 @@ export class OverviewTabElement extends MobxLitElement {
         ></milo-build-step-entry>
         `) || ''}
         <div class="list-entry">
-          ${nonSuccessStepCount} non-successful step(s).
+          ${nonSuccessStepCount} unsuccessful step(s).
           <a href=${router.urlForName('build-steps', {
             ...this.buildState.builder,
             build_num_or_id: this.buildState.buildNumOrId!,
