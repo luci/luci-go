@@ -48,21 +48,30 @@ const (
 
 	// contentTypeText is the http header content-type value for plain text body.
 	contentTypeText = "application/x-www-form-urlencoded; charset=UTF-8"
+
+	// gerritTimestampLayout is the timestamp format used in Gerrit.
+	// See: https://gerrit-review.googlesource.com/Documentation/rest-api.html#timestamp
+	gerritTimestampLayout = "2006-01-02 15:04:05.000000000"
+
+	// defaultQueryLimit is the default limit for ListChanges, and
+	// maxQueryLimit is the maximum allowed limit. If either of these are
+	// changed, the proto comments should also be updated.
+	defaultQueryLimit = 25
+	maxQueryLimit     = 1000
 )
 
-// This file implements Gerrit proto service client
-// on top of Gerrit REST API.
-// WARNING: The returned client is incomplete, so if you want access to
-// a particular field from this API, you may need to update rest.go to add
-// unmarshalling of that field.
+// This file implements Gerrit proto service client on top of Gerrit REST API.
+// WARNING: The returned client is incomplete, so if you want access to a
+// particular field from this API, you may need to update the relevant struct
+// and add an unmarshalling of that field.
 
 // NewRESTClient creates a new Gerrit client based on Gerrit's REST API.
 //
 // The host must be a full Gerrit host, e.g. "chromium-review.googlesource.com".
 //
-// If auth is true, indicates that the given HTTP client sends authenticated
-// requests. If so, the requests to Gerrit will include "/a/" URL path
-// prefix.
+// If `auth` is true,  this indicates that the given HTTP client sends
+// authenticated requests. If so, the requests to Gerrit will include "/a/" URL
+// path prefix.
 //
 // RPC methods of the returned client return an error if a grpc.CallOption is
 // passed.
@@ -79,6 +88,7 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.Ge
 
 // Implementation.
 
+// jsonPrefix is expected in all JSON responses from the Gerrit REST API.
 var jsonPrefix = []byte(")]}'")
 
 // client implements gerritpb.GerritClient.
@@ -89,108 +99,41 @@ type client struct {
 	BaseURL string
 }
 
-// changeInfo is JSON representation of gerritpb.ChangeInfo on the wire.
-type changeInfo struct {
-	Number   int64                 `json:"_number"`
-	Owner    *gerritpb.AccountInfo `json:"owner"`
-	Project  string                `json:"project"`
-	Branch   string                `json:"branch"`
-	ChangeID string                `json:"change_id"`
-	// json.Unmarshal cannot convert enum string to value
-	Status string `json:"status"`
-
-	CurrentRevision string                         `json:"current_revision"`
-	Revisions       map[string]*revisionInfo       `json:"revisions"`
-	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
-}
-
-type fileInfo struct {
-	LinesInserted int32 `json:"lines_inserted"`
-	LinesDeleted  int32 `json:"lines_deleted"`
-	SizeDelta     int64 `json:"size_delta"`
-	Size          int64 `json:"size"`
-}
-
-type revisionInfo struct {
-	Number int                  `json:"_number"`
-	Ref    string               `json:"ref"`
-	Files  map[string]*fileInfo `json:"files"`
-}
-
-type mergeableInfo struct {
-	SubmitType    string   `json:"submit_type"`
-	Strategy      string   `json:"strategy"`
-	Mergeable     bool     `json:"mergeable"`
-	CommitMerged  bool     `json:"commit_merged"`
-	ContentMerged bool     `json:"content_merged"`
-	Conflicts     []string `json:"conflicts"`
-	MergeableInto []string `json:"mergeable_into"'`
-}
-
-func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
-	// Convert something like 'simple-two-way-in-core' to 'SIMPLE_TWO_WAY_IN_CORE'.
-	strategyEnumName := strings.Replace(strings.ToUpper(mi.Strategy), "-", "_", -1)
-	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
-	if !found {
-		return nil, fmt.Errorf("no MergeableStrategy enum value for %q", strategyEnumName)
+func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
+	limit := req.Limit
+	if req.Limit < 0 {
+		return nil, errors.Reason("field Limit %d must be nonnegative", req.Limit).Err()
+	} else if req.Limit == 0 {
+		limit = defaultQueryLimit
+	} else if req.Limit > maxQueryLimit {
+		return nil, errors.Reason("field Limit %d should be at most %d", req.Limit, maxQueryLimit).Err()
 	}
-	submitTypeEnumNum, found := gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]
-	if !found {
-		return nil, fmt.Errorf("no SubmitType enum value for %q", mi.SubmitType)
+	if req.Offset < 0 {
+		return nil, fmt.Errorf("field Offset %d must be nonnegative", req.Offset)
 	}
-	return &gerritpb.MergeableInfo{
-		SubmitType:    gerritpb.MergeableInfo_SubmitType(submitTypeEnumNum),
-		Strategy:      gerritpb.MergeableStrategy(strategyEnumNum),
-		Mergeable:     mi.Mergeable,
-		CommitMerged:  mi.CommitMerged,
-		ContentMerged: mi.ContentMerged,
-		Conflicts:     mi.Conflicts,
-		MergeableInto: mi.MergeableInto,
-	}, nil
-}
 
-func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
-	ret := &gerritpb.ChangeInfo{
-		Number:          ci.Number,
-		Owner:           ci.Owner,
-		Project:         ci.Project,
-		Ref:             branchToRef(ci.Branch),
-		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
-		CurrentRevision: ci.CurrentRevision,
+	params := url.Values{}
+	params.Add("q", req.Query)
+	for _, o := range req.Options {
+		params.Add("o", o.String())
 	}
-	if ci.Revisions != nil {
-		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
-		for rev, info := range ci.Revisions {
-			ret.Revisions[rev] = info.ToProto()
-		}
-	}
-	if ci.Labels != nil {
-		ret.Labels = make(map[string]*gerritpb.LabelInfo, len(ci.Labels))
-		for label, info := range ci.Labels {
-			ret.Labels[label] = info
-		}
-	}
-	return ret
-}
+	params.Add("n", strconv.FormatInt(limit, 10))
+	params.Add("S", strconv.FormatInt(req.Offset, 10))
 
-func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
-	ret := &gerritpb.RevisionInfo{Number: int32(ri.Number), Ref: ri.Ref}
-	if ri.Files != nil {
-		ret.Files = make(map[string]*gerritpb.FileInfo, len(ri.Files))
-		for i, fi := range ri.Files {
-			ret.Files[i] = fi.ToProto()
-		}
+	var changes []*changeInfo
+	if _, err := c.call(ctx, "GET", "/changes/", params, nil, &changes); err != nil {
+		return nil, err
 	}
-	return ret
-}
 
-func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
-	return &gerritpb.FileInfo{
-		LinesInserted: fi.LinesInserted,
-		LinesDeleted:  fi.LinesDeleted,
-		SizeDelta:     fi.SizeDelta,
-		Size:          fi.Size,
+	resp := &gerritpb.ListChangesResponse{}
+	for _, c := range changes {
+		resp.Changes = append(resp.Changes, c.ToProto())
 	}
+	if len(changes) > 0 {
+		resp.MoreChanges = changes[len(changes)-1].MoreChanges
+	}
+
+	return resp, nil
 }
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
@@ -252,7 +195,7 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
-	// The response cannot be json-desirealized.
+	// The response cannot be JSON-deserialized.
 	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
@@ -265,6 +208,10 @@ func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEdit
 		return nil, errors.Annotate(err, "change edit publish").Err()
 	}
 	return &empty.Empty{}, nil
+}
+
+func (c *client) AddReviewer(ctx context.Context, in *gerritpb.AddReviewerRequest, opts ...grpc.CallOption) (*gerritpb.AddReviewerResult, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
@@ -369,7 +316,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
-			return ret, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
+			return ret, status.Errorf(codes.Internal, "failed to deserialize response: %s", err)
 		}
 	}
 	return ret, err

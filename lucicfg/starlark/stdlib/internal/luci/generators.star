@@ -302,6 +302,7 @@ def _buildbucket_builders(bucket):
             wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
+            experiments = node.props.experiments,
             task_template_canary_percentage = optional_UInt32Value(
                 node.props.task_template_canary_percentage,
             ),
