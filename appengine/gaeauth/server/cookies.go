@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// UsersAPIAuthMethod implements auth.Method and auth.UsersAPI interfaces on top
+// DevServerAuthMethod implements auth.Method and auth.UsersAPI interfaces on top
 // of GAE Users API (that uses HTTP cookies internally to track user sessions).
-type UsersAPIAuthMethod struct{}
+type DevServerAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m DevServerAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
 	u := user.Current(ctx)
 	if u == nil {
 		return nil, nil
@@ -56,7 +56,7 @@ const (
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
-func (m UsersAPIAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
+func (m DevServerAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
 	url, err := user.LoginURL(ctx, dest)
 	if err != nil {
 		return "", err
@@ -75,6 +75,6 @@ func (m UsersAPIAuthMethod) LoginURL(ctx context.Context, dest string) (string, 
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
-func (m UsersAPIAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
+func (m DevServerAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
 	return user.LogoutURL(ctx, dest)
 }

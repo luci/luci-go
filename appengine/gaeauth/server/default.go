@@ -30,7 +30,7 @@ import (
 // CookieAuth is default cookie-based auth method to use on GAE.
 //
 // By default on the dev server it is based on dev server cookies (implemented
-// by UsersAPIAuthMethod), in prod it is based on OpenID (implemented by
+// by DevServerAuthMethod), in prod it is based on OpenID (implemented by
 // *openid.CookieAuthMethod).
 //
 // Works only if appropriate handlers have been installed into the router. See
@@ -65,7 +65,7 @@ func init() {
 	const useOIDOnDevServer = false
 
 	if appengine.IsDevAppServer() && !useOIDOnDevServer {
-		CookieAuth = UsersAPIAuthMethod{}
+		CookieAuth = DevServerAuthMethod{}
 	} else {
 		CookieAuth = &openid.CookieAuthMethod{
 			SessionStore:        &SessionStore{Prefix: "openid"},
