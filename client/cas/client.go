@@ -22,10 +22,9 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-func NewClient(ctx context.Context, instance string, tokenServerHost string, readOnly bool) (*client.Client, error) {
+func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 	project := strings.Split(instance, "/")[1]
 	var role string
 	if readOnly {
@@ -35,11 +34,14 @@ func NewClient(ctx context.Context, instance string, tokenServerHost string, rea
 	}
 
 	// Construct auth.Options.
-	opts := chromeinfra.DefaultAuthOptions()
-	opts.TokenServerHost = tokenServerHost
 	opts.ActAsServiceAccount = role + "@" + project + ".iam.gserviceaccount.com"
 	opts.ActViaLUCIRealm = "@internal:" + project + "/" + role
 	opts.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
+
+	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
+		// use dev token server for dev/staging projects.
+		opts.TokenServerHost = "luci-token-server-dev.appspot.com"
+	}
 
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	creds, err := a.PerRPCCredentials()

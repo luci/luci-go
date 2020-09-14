@@ -19,8 +19,8 @@ import (
 	"context"
 	"sort"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 // QueryIterator is an iterator for datastore query results.
@@ -73,7 +73,7 @@ func (qi *QueryIterator) CurrentItemKey() string {
 	if qi.currentQueryResult == nil || qi.currentQueryResult.key == nil {
 		return ""
 	}
-	return string(serialize.ToBytes(qi.currentQueryResult.key))
+	return string(ds.Serialize.ToBytes(qi.currentQueryResult.key))
 }
 
 // CurrentItemOrder returns serialized propertied which fields are used in sorting orders.
@@ -82,11 +82,11 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 		return
 	}
 
-	invBuf := serialize.Invertible(&bytes.Buffer{})
+	invBuf := cmpbin.Invertible(&bytes.Buffer{})
 	for _, column := range qi.order {
 		invBuf.SetInvert(column.Descending)
 		if column.Property == "__key__" {
-			if err = serialize.WriteKey(invBuf, false, qi.currentQueryResult.key); err != nil {
+			if err = ds.Serialize.Key(invBuf, qi.currentQueryResult.key); err != nil {
 				return
 			}
 			continue
@@ -94,9 +94,9 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 		columnData := qi.currentQueryResult.data[column.Property].Slice()
 		sort.Sort(columnData)
 		if column.Descending {
-			err = serialize.WriteProperty(invBuf, false, columnData[columnData.Len()-1])
+			err = ds.Serialize.Property(invBuf, columnData[columnData.Len()-1])
 		} else {
-			err = serialize.WriteProperty(invBuf, false, columnData[0])
+			err = ds.Serialize.Property(invBuf, columnData[0])
 		}
 		if err != nil {
 			return

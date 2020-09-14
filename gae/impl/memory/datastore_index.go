@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"sort"
 
+	"go.chromium.org/luci/common/data/cmpbin"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 )
 
 type qIndexSlice []*ds.IndexDefinition
@@ -59,18 +59,18 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 // If "pm" is nil, this indicates an absence of a value. This is used
 // specifically for deletion.
 func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) memStore {
-	var sip serialize.SerializedPmap
+	var sip ds.SerializedPmap
 	if pm == nil {
 		return newMemStore()
 	}
-	sip = serialize.PropertyMapPartially(k, pm)
+	sip = ds.Serialize.PropertyMapPartially(k, pm)
 	return indexEntries(k, sip, append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
 // indexRowGen contains enough information to generate all of the index rows which
 // correspond with a propertyList and a ds.IndexDefinition.
 type indexRowGen struct {
-	propVec   []serialize.SerializedPslice
+	propVec   []ds.SerializedPslice
 	decending []bool
 }
 
@@ -117,7 +117,7 @@ func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 		for pvalSliceIdx, pvalIdx := range iVec {
 			bufsiz += len(s.propVec[pvalSliceIdx][pvalIdx])
 		}
-		buf := serialize.Invertible(bytes.NewBuffer(make([]byte, 0, bufsiz)))
+		buf := cmpbin.Invertible(bytes.NewBuffer(make([]byte, 0, bufsiz)))
 		for pvalSliceIdx, pvalIdx := range iVec {
 			data := s.propVec[pvalSliceIdx][pvalIdx]
 			buf.SetInvert(s.decending[pvalSliceIdx])
@@ -137,7 +137,7 @@ type matcher struct {
 // matcher.match checks to see if the mapped, serialized property values
 // match the index. If they do, it returns a indexRowGen. Do not write or modify
 // the data in the indexRowGen.
-func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (indexRowGen, bool) {
+func (m *matcher) match(sortBy []ds.IndexColumn, sip ds.SerializedPmap) (indexRowGen, bool) {
 	m.buf.propVec = m.buf.propVec[:0]
 	m.buf.decending = m.buf.decending[:0]
 	for _, sb := range sortBy {
@@ -153,7 +153,7 @@ func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (
 
 // indexEntries generates a new memStore containing index entries for sip for
 // the supplied index definitions.
-func indexEntries(key *ds.Key, sip serialize.SerializedPmap, idxs []*ds.IndexDefinition) memStore {
+func indexEntries(key *ds.Key, sip ds.SerializedPmap, idxs []*ds.IndexDefinition) memStore {
 	ret := newMemStore()
 	idxColl := ret.GetOrCreateCollection("idx")
 
@@ -164,7 +164,7 @@ func indexEntries(key *ds.Key, sip serialize.SerializedPmap, idxs []*ds.IndexDef
 			continue
 		}
 		if irg, ok := mtch.match(idx.GetFullSortOrder(), sip); ok {
-			idxBin := serialize.ToBytes(*idx.PrepForIdxTable())
+			idxBin := ds.Serialize.ToBytes(*idx.PrepForIdxTable())
 			idxColl.Set(idxBin, []byte{})
 			coll := ret.GetOrCreateCollection(
 				fmt.Sprintf("idx:%s:%s", key.Namespace(), idxBin))
@@ -186,14 +186,14 @@ func walkCompIdxs(store memStore, endsWith *ds.IndexDefinition, cb func(*ds.Inde
 	itrDef := iterDefinition{c: idxColl}
 
 	if endsWith != nil {
-		full := serialize.ToBytes(*endsWith.Flip())
+		full := ds.Serialize.ToBytes(*endsWith.Flip())
 		// chop off the null terminating byte
 		itrDef.prefix = full[:len(full)-1]
 	}
 
 	it := itrDef.mkIter()
 	for ent := it.next(); ent != nil; ent = it.next() {
-		qi, err := serialize.ReadIndexDefinition(bytes.NewReader(ent.key))
+		qi, err := ds.Deserialize.IndexDefinition(bytes.NewReader(ent.key))
 		memoryCorruption(err)
 		if !cb(qi.Flip()) {
 			break
@@ -249,7 +249,7 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 	idxColl := store.GetOrCreateCollection("idx")
 	for i, idx := range compIdx {
 		normalized[i] = idx.Normalize()
-		idxColl.Set(serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
+		idxColl.Set(ds.Serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
 	}
 
 	for _, ns := range namespaces(store) {
@@ -259,12 +259,12 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 				pm, err := readPropMap(iv)
 				memoryCorruption(err)
 
-				prop, err := serialize.ReadProperty(bytes.NewBuffer(ik), serialize.WithoutContext, kctx)
+				prop, err := ds.Deserializer{KeyContext: kctx}.Property(bytes.NewBuffer(ik))
 				memoryCorruption(err)
 
 				k := prop.Value().(*ds.Key)
 
-				sip := serialize.PropertyMapPartially(k, pm)
+				sip := ds.Serialize.PropertyMapPartially(k, pm)
 
 				mergeIndexes(ns, store,
 					newMemStore(),

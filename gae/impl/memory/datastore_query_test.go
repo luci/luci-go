@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	dstore "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
@@ -40,7 +39,7 @@ func curs(pairs ...interface{}) queryCursor {
 	if _, err := cmpbin.WriteUint(pre, uint64(len(pairs)/2)); err != nil {
 		panic(err)
 	}
-	post := serialize.Invertible(&bytes.Buffer{})
+	post := cmpbin.Invertible(&bytes.Buffer{})
 	for i := 0; i < len(pairs); i += 2 {
 		k, v := pairs[i].(string), pairs[i+1]
 
@@ -50,14 +49,14 @@ func curs(pairs ...interface{}) queryCursor {
 		}
 
 		post.SetInvert(col.Descending)
-		if err := serialize.WriteIndexColumn(pre, col); err != nil {
+		if err := dstore.Serialize.IndexColumn(pre, col); err != nil {
 			panic(err)
 		}
-		if err := serialize.WriteProperty(post, serialize.WithoutContext, prop(v)); err != nil {
+		if err := dstore.Serialize.Property(post, prop(v)); err != nil {
 			panic(err)
 		}
 	}
-	return queryCursor(serialize.Join(pre.Bytes(), post.Bytes()))
+	return queryCursor(cmpbin.ConcatBytes(pre.Bytes(), post.Bytes()))
 }
 
 type queryTest struct {
@@ -133,8 +132,8 @@ var queryTests = []queryTest{
 				{Property: "Foo"},
 				{Property: "__key__"},
 			},
-			increment(serialize.ToBytes(dstore.MkProperty(3))),
-			serialize.ToBytes(dstore.MkProperty(10)),
+			increment(dstore.Serialize.ToBytes(dstore.MkProperty(3))),
+			dstore.Serialize.ToBytes(dstore.MkProperty(10)),
 			2,
 		}},
 

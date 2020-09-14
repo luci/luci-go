@@ -13,23 +13,22 @@
 // limitations under the License.
 
 import MarkdownIt from 'markdown-it';
+import Token from 'markdown-it/lib/token';
 
-const RE_CRBUG = /\bcrbug(\.com)?(([:/]\w+)?[:/]\d+)\b/i;
-const RE_CRBUG_TAIL = /^(\.com)?([:/]\w+)?[:/]\d+\b/i;
+import { specialLine } from './special_line';
+
+const dividerToken = new Token('reviewer_line', '', 0);
+dividerToken.hidden = true;
 
 /**
- * Support converting crbug link texts (e.g. 'crbug/123', 'crbug.com/234',
- * 'crbug.com:proj:123') to links.
+ * Support reviewer line (e.g. 'R=user@google.com',
+ * 'r=user2@google.com,user2@google.com').
  *
- * You MUST enable linkify for this to work.
+ * This prevents the 'r=' prefix being treated as a part of the email address.
  */
-export function crbugLink(md: MarkdownIt) {
-  md.linkify.add('crbug', {
-    validate: RE_CRBUG_TAIL,
-    normalize: (match) => {
-      const reMatch = RE_CRBUG.exec(match.raw)!;
-      const path = reMatch[2].replace(':', '/');
-      match.url = 'https://crbug.com' + path;
-    },
-  });
+export function reviewerLine(md: MarkdownIt) {
+  // specialLine will extract R= to a separate text node, which prevents R=
+  // being treated as part of an email address.
+  // We don't need to do any transformation.
+  md.use(specialLine, /^r=/i, (token: Token) => [token]);
 }

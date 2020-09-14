@@ -26,6 +26,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -34,7 +35,7 @@ import (
 )
 
 // CmdArchive returns an object for the `archive` subcommand.
-func CmdArchive() *subcommands.Command {
+func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>...",
 		ShortDesc: "archive dirs/files to CAS",
@@ -53,7 +54,7 @@ Note that '.' may be omitted in general, so to upload 'foo' from the current
 working directory, '-paths :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
 			c := archiveRun{}
-			c.Init()
+			c.Init(defaultAuthOpts)
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest to file in the format of '<Hash>/<Size>'")
 			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump upload stats to json file.")
@@ -123,7 +124,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
-	client, err := newCasClient(ctx, c.casFlags.Instance, c.casFlags.TokenServerHost, false)
+	client, err := newCasClient(ctx, c.casFlags.Instance, c.parsedAuthOpts, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}

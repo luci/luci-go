@@ -35,7 +35,7 @@ const config: webpack.Configuration = merge(common, {
     before: (app) => {
       const appConfigs = require('./dev-configs/configs.json');
       app.get('/configs.js', async (_req, res) => {
-        res.set('context-type', 'application/javascript');
+        res.set('content-type', 'application/javascript');
         const configsTemplate = fs.readFileSync('./configs.template.js', 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)

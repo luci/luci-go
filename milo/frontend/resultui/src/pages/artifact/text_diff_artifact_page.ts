@@ -124,6 +124,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
       margin: 20px;
     }
     #content {
+      position: relative;
       margin: 20px;
     }
 

@@ -17,7 +17,7 @@ package memory
 import (
 	"bytes"
 
-	"go.chromium.org/luci/gae/service/datastore/types/serialize"
+	"go.chromium.org/luci/common/data/cmpbin"
 )
 
 type iterDefinition struct {
@@ -70,7 +70,7 @@ MainLoop:
 			}
 
 			pfxLen := prefixLens[idx]
-			it.skip(serialize.Join(it.def.prefix[:pfxLen], suffix))
+			it.skip(cmpbin.ConcatBytes(it.def.prefix[:pfxLen], suffix))
 			ent := it.next()
 			if ent == nil {
 				// we hit the end of an iterator, we're now done with the whole
@@ -119,9 +119,9 @@ func (def *iterDefinition) mkIter() *iterator {
 
 	// convert the suffixes from the iterDefinition into full rows for the
 	// underlying storage.
-	it.start = serialize.Join(def.prefix, def.start)
+	it.start = cmpbin.ConcatBytes(def.prefix, def.start)
 	if def.end != nil {
-		it.end = serialize.Join(def.prefix, def.end)
+		it.end = cmpbin.ConcatBytes(def.prefix, def.end)
 	}
 	return &it
 }

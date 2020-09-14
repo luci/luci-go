@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import '../../components/build_step_entry';
+import { BuildStepEntryElement } from '../../components/build_step_entry';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -45,6 +47,11 @@ export class StepsTabElement extends MobxLitElement {
       return !this.buildState.buildPageData?.steps.length;
     }
     return !this.buildState.buildPageData?.steps.find((s) => s.status !== BuildStatus.Success);
+  }
+
+  private toggleAllSteps(expand: boolean) {
+    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
+      .forEach((e) => e.toggleAllSteps(expand));
   }
 
   protected render() {
@@ -80,6 +87,17 @@ export class StepsTabElement extends MobxLitElement {
             <label for="debug-logs-filter">Debug</label>
           </div class="filter">
         </div>
+        <span></span>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllSteps(true)}
+        >Expand All</mwc-button>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllSteps(false)}
+        >Collapse All</mwc-button>
       </div>
       <div id="main">
         ${this.buildState.buildPageData?.steps.map((step, i) => html`
@@ -107,7 +125,7 @@ export class StepsTabElement extends MobxLitElement {
   static styles = css`
     #header {
       display: grid;
-      grid-template-columns: auto auto 1fr;
+      grid-template-columns: auto auto auto 1fr auto auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;
@@ -129,6 +147,10 @@ export class StepsTabElement extends MobxLitElement {
       border-left: 1px solid #DDDDDD;
       width: 0px;
       height: 100%;
+    }
+
+    .action-button {
+      --mdc-theme-primary: rgb(0, 123, 255);
     }
 
     #main {

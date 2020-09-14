@@ -20,34 +20,17 @@ import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
+import { STATUS_CLASS_MAP, STATUS_DISPLAY_MAP } from '.';
 
 import '../../components/ace_editor';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
-import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { displayTimeDiff, displayTimeDiffOpt, displayTimestamp, displayTimestampOpt } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { router } from '../../routes';
-import { BuildStatus, Timestamp } from '../../services/buildbucket';
-
-const STATUS_DISPLAY_MAP = new Map([
-  [BuildStatus.Scheduled, 'scheduled'],
-  [BuildStatus.Started, 'started'],
-  [BuildStatus.Success, 'succeeded'],
-  [BuildStatus.Failure, 'failed'],
-  [BuildStatus.InfraFailure, 'infra failed'],
-  [BuildStatus.Canceled, 'canceled'],
-]);
-
-const STATUS_CLASS_MAP = new Map([
-  [BuildStatus.Scheduled, 'scheduled'],
-  [BuildStatus.Started, 'started'],
-  [BuildStatus.Success, 'success'],
-  [BuildStatus.Failure, 'failure'],
-  [BuildStatus.InfraFailure, 'infra-failure'],
-  [BuildStatus.Canceled, 'canceled'],
-]);
+import { BuildStatus } from '../../services/buildbucket';
 
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -67,8 +50,8 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <div id="status">
         Build
-        <i class="status ${STATUS_CLASS_MAP.get(bpd.status)}">
-          ${STATUS_DISPLAY_MAP.get(bpd.status) || 'unknown status'}
+        <i class="status ${STATUS_CLASS_MAP[bpd.status]}">
+          ${STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
         </i>
         ${(() => { switch (bpd.status) {
         case BuildStatus.Scheduled:
@@ -193,22 +176,16 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderTiming() {
     const bpd = this.buildState.buildPageData!;
-    const displayDurationOpt = (start?: Timestamp, end?: Timestamp) => {
-      if (start && end) {
-        return displayTimeDiff(start, end);
-      }
-      return 'N/A';
-    };
 
     return html`
       <div>
         <h3>Timing</h3>
         <table>
           <tr><td>Create:</td><td>${displayTimestamp(bpd.create_time)}</td></tr>
-          <tr><td>Start:</td><td>${bpd.start_time ? displayTimestamp(bpd.start_time) : 'N/A'}</td></tr>
-          <tr><td>End:</td><td>${bpd.end_time ? displayTimestamp(bpd.end_time) : 'N/A'}</td></tr>
-          <tr><td>Pending:</td><td>${displayDurationOpt(bpd.create_time, bpd.start_time)}</td></tr>
-          <tr><td>Execution:</td><td>${displayDurationOpt(bpd.start_time, bpd.end_time)}</td></tr>
+          <tr><td>Start:</td><td>${displayTimestampOpt(bpd.start_time) || 'N/A'}</td></tr>
+          <tr><td>End:</td><td>${displayTimestampOpt(bpd.end_time) || 'N/A'}</td></tr>
+          <tr><td>Pending:</td><td>${displayTimeDiffOpt(bpd.create_time, bpd.start_time) || 'N/A'}</td></tr>
+          <tr><td>Execution:</td><td>${displayTimeDiffOpt(bpd.start_time, bpd.end_time) || 'N/A'}</td></tr>
         </table>
       </div>
     `;
