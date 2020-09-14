@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9c7bd16e_d7eb5cfa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T02:44:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac462ce5_0c495ade",
+      "range": {
+        "startLine": 10,
+        "startChar": 7,
+        "endLine": 10,
+        "endChar": 14
+      },
+      "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db7c4f55_4328c7c0",
         "filename": "milo/frontend/resultui/src/services/build_page.ts",
         "patchSetId": 4
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "028daa2b_bfb8d625",
+        "filename": "milo/frontend/resultui/src/services/build_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T02:44:07Z",
+      "side": 1,
+      "message": "In practise it will be set to `Thu Jan 01 1970 00:00:00`.\nSo it\u0027s not an empty string.",
+      "parentUuid": "db7c4f55_4328c7c0",
+      "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a9d6ea8_d129d95d",
         "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
         "patchSetId": 4
@@ -56,6 +98,24 @@
       "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1dd1fb1_5f0b4423",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T02:44:07Z",
+      "side": 1,
+      "message": "Yes. If a build canceled before it started, it may not have steps.",
+      "parentUuid": "5a9d6ea8_d129d95d",
+      "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
