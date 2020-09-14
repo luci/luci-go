@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "f1721a79_1b57c7f2",
+        "filename": "milo/frontend/resultui/src/services/build_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-14T04:24:21Z",
+      "side": 1,
+      "message": "We will be able to get rid of eventually when we start querying BB and other services directly.",
+      "parentUuid": "196e7a56_7a0a8aea",
+      "revId": "25bd1c5f451a87e1f9536378c87312fe82844312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a9d6ea8_d129d95d",
         "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
         "patchSetId": 4
