@@ -67,7 +67,7 @@ export class StepsTabElement extends MobxLitElement {
               ?checked=${this.showPassed}
               @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
             >
-            <label for="passed" style="color: #33ac71;">Passed</label>
+            <label for="passed" style="color: var(--success-color);">Passed</label>
           </div class="filter">
           <div class="filter">
             <input id="others" type="checkbox" disabled checked>
@@ -144,19 +144,15 @@ export class StepsTabElement extends MobxLitElement {
       margin-right: 0px;
     }
     .filters-container-delimiter {
-      border-left: 1px solid #DDDDDD;
+      border-left: 1px solid var(--divider-color);
       width: 0px;
       height: 100%;
-    }
-
-    .action-button {
-      --mdc-theme-primary: rgb(0, 123, 255);
     }
 
     #main {
       padding-top: 5px;
       padding-left: 10px;
-      border-top: 1px solid #DDDDDD;
+      border-top: 1px solid var(--divider-color);
     }
     milo-build-step-entry {
       margin-bottom: 2px;
@@ -167,7 +163,7 @@ export class StepsTabElement extends MobxLitElement {
     }
 
     #load {
-      color: blue;
+      color: var(--active-text-color);
     }
   `;
 }
