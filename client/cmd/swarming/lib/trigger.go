@@ -353,30 +353,21 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	return nil
 }
 
-func (c *triggerRun) createTaskSliceForOptionalDimension(properties *swarming.SwarmingRpcsTaskProperties) (*swarming.SwarmingRpcsTaskSlice, error) {
+func (c *triggerRun) createTaskSliceForOptionalDimension(properties swarming.SwarmingRpcsTaskProperties) (*swarming.SwarmingRpcsTaskSlice, error) {
 	if c.optionalDimension.isEmpty() {
 		return nil, nil
 	}
 	optDim := c.optionalDimension.kv
 	exp := c.optionalDimension.expiration
-
-	// Deep copy properties
-	pj, err := properties.MarshalJSON()
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshall properties").Err()
-	}
-	propsCpy := &swarming.SwarmingRpcsTaskProperties{}
-	if err = json.Unmarshal(pj, propsCpy); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshall properties").Err()
-	}
-	propsCpy.Dimensions = append(propsCpy.Dimensions, optDim)
+	// TODO: In case we support multiple optional dimensions (and hence multiple task slices),
+	// make sure the make a deep copy of the properties for each task slice.
+	properties.Dimensions = append(properties.Dimensions, optDim)
 
 	return &swarming.SwarmingRpcsTaskSlice{
 		ExpirationSecs: exp,
-		Properties:     propsCpy,
+		Properties:     &properties,
 	}, nil
 }
-
 func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
@@ -483,7 +474,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 	}
 
 	var taskSlices []*swarming.SwarmingRpcsTaskSlice
-	taskSlice, err := c.createTaskSliceForOptionalDimension(&properties)
+	taskSlice, err := c.createTaskSliceForOptionalDimension(properties)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to createTaskSliceForOptionalDimension").Err()
 	}
