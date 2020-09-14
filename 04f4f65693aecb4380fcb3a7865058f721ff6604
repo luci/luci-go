@@ -70,6 +70,30 @@
       "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24bad683_28fb773c",
+        "filename": "client/cas/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-09-14T03:08:17Z",
+      "side": 1,
+      "message": "I rethought that While other LUCI project consistently use \"-dev\" suffix, \"-staging\" isn\u0027t that common. \nSo having IsStagingProject() in a common package isn\u0027t good.",
+      "parentUuid": "f48f9557_baf2b3ab",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 0
+      },
+      "revId": "04f4f65693aecb4380fcb3a7865058f721ff6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
