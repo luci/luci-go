@@ -30,9 +30,9 @@ const notFoundRoute: Route = {
 export const NOT_FOUND_URL = '/ui/not-found';
 
 const appRoot = document.getElementById('app-root');
-export const router = new Router(appRoot);
+export const router = new Router(appRoot, {baseUrl: '/ui/'});
 router.setRoutes({
-  path: '/ui',
+  path: '/',
   component: 'milo-page-layout',
   children: [
     {
