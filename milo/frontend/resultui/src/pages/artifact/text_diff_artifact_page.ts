@@ -96,7 +96,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
         </table>
       </div>
       <milo-status-bar
-        .components=${[{color: '#007bff', weight: 1}]}
+        .components=${[{color: 'var(--active-color)', weight: 1}]}
         .loading=${this.artifactRes.state === 'pending'}
       ></milo-status-bar>
       <div id="details">
@@ -111,13 +111,13 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
 
   static styles = css`
     #artifact-header {
-      background-color: rgb(248, 249, 250);
+      background-color: var(--block-background-color);
       padding: 6px 16px;
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 14px;
     }
     .id-component-label {
-      color: rgb(95, 99, 104);
+      color: var(--light-text-color);
     }
 
     #details {

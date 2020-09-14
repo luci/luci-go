@@ -56,19 +56,19 @@ export class TestFilterElement extends MobxLitElement {
       Show:
       <div class="filter">
         <input type="checkbox" id="unexpected" disabled checked>
-        <label for="unexpected" style="color: #d23f31;">Unexpected</label>
+        <label for="unexpected" style="color: var(--failure-color);">Unexpected</label>
       </div class="filter">
       <div class="filter">
         <input type="checkbox" id="expected" @change=${(v: MouseEvent) => this.showExpected = (v.target as HTMLInputElement).checked} ?checked=${this.showExpected}>
-      <label for="expected" style="color: #33ac71;">Expected</label>
+      <label for="expected" style="color: var(--success-color);">Expected</label>
       </div class="filter">
       <div class="filter">
         <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked} ?checked=${this.showExonerated}>
-        <label for="exonerated" style="color: #ff33d2;">Exonerated</label>
+        <label for="exonerated" style="color: var(--exonerated-color);">Exonerated</label>
       </div class="filter">
       <div class="filter">
         <input type="checkbox" id="flaky" @change=${(v: MouseEvent) => this.showFlaky = (v.target as HTMLInputElement).checked} ?checked=${this.showFlaky}>
-        <label for="flaky" style="color: #f5a309;">Flaky</label>
+        <label for="flaky" style="color: var(--warning-color);">Flaky</label>
       </div class="filter">
     `;
   }
@@ -83,9 +83,6 @@ export class TestFilterElement extends MobxLitElement {
     .filter {
       display: inline-block;
       padding: 0 5px;
-    }
-    #unexpected {
-      color: red;
     }
   `;
 }

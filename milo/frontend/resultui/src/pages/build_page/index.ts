@@ -25,27 +25,10 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { getURLForBuilder, getURLForProject } from '../../libs/build_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
-
-export const STATUS_DISPLAY_MAP = {
-  [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'started',
-  [BuildStatus.Success]: 'succeeded',
-  [BuildStatus.Failure]: 'failed',
-  [BuildStatus.InfraFailure]: 'infra failed',
-  [BuildStatus.Canceled]: 'canceled',
-};
-
-export const STATUS_CLASS_MAP = {
-  [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'started',
-  [BuildStatus.Success]: 'success',
-  [BuildStatus.Failure]: 'failure',
-  [BuildStatus.InfraFailure]: 'infra-failure',
-  [BuildStatus.Canceled]: 'canceled',
-};
 
 /**
  * Main build page.
@@ -146,8 +129,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       return html``;
     }
     return html`
-      <i class="status ${STATUS_CLASS_MAP[bpd.status]}">
-        ${STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
+      <i class="status ${BUILD_STATUS_CLASS_MAP[bpd.status]}">
+        ${BUILD_STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
       </i>
       ${(() => { switch (bpd.status) {
       case BuildStatus.Scheduled:
@@ -179,7 +162,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
-        .components=${[{color: '#007bff', weight: 1}]}
+        .components=${[{color: 'var(--active-color)', weight: 1}]}
         .loading=${this.buildState.buildPageDataReq.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
@@ -198,7 +181,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     }
 
     #build-summary {
-      background-color: rgb(248, 249, 250);
+      background-color: var(--block-background-color);
       padding: 6px 16px;
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 14px;
@@ -210,7 +193,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     }
 
     #build-id-label {
-      color: rgb(95, 99, 104);
+      color: var(--light-text-color);
     }
 
     #build-status {
@@ -221,22 +204,22 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       font-weight: 500;
     }
     .status.scheduled {
-      color: #6c757d;
+      color: var(--scheduled-color);
     }
     .status.started {
-      color: #ffc107;
+      color: var(--started-color);
     }
     .status.success {
-      color: #28a745;
+      color: var(--success-color);
     }
     .status.failure {
-      color: #dc3545;
+      color: var(--failure-color);
     }
     .status.infra-failure {
-      color: #6f42c1;
+      color: var(--critical-failure-color);
     }
     .status.canceled {
-      color: #6c757d;
+      color: var(--canceled-color);
     }
 
     milo-tab-bar {

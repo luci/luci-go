@@ -91,7 +91,7 @@ export class ExpandableEntry extends LitElement {
     #content-ruler {
       grid-row: 1;
       grid-column: 1;
-      border-left: 1px solid #DDDDDD;
+      border-left: 1px solid var(--divider-color);
       width: 0px;
       margin-left: 11.5px;
     }

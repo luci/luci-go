@@ -19,42 +19,13 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 
 import { displayDuration } from '../libs/time_utils';
 import { ChainableURL, renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
 import './expandable_entry';
-
-const STATUS_CLASS_MAP = Object.freeze({
-  // Step status can not be scheduled.
-  [BuildStatus.Scheduled]: '',
-  [BuildStatus.Started]: 'started',
-  [BuildStatus.Success]: 'success',
-  [BuildStatus.Failure]: 'failure',
-  [BuildStatus.InfraFailure]: 'infra-failure',
-  [BuildStatus.Canceled]: 'canceled',
-});
-
-const STATUS_TITLE_MAP = Object.freeze({
-  // Step status can not be scheduled.
-  [BuildStatus.Scheduled]: '',
-  [BuildStatus.Started]: 'Started',
-  [BuildStatus.Success]: 'Success',
-  [BuildStatus.Failure]: 'Failure',
-  [BuildStatus.InfraFailure]: 'Infra Failure',
-  [BuildStatus.Canceled]: 'Canceled',
-});
-
-const STATUS_ICON_MAP = Object.freeze({
-  // Step status can not be scheduled.
-  [BuildStatus.Scheduled]: '',
-  [BuildStatus.Started]: 'pending',
-  [BuildStatus.Success]: 'check',
-  [BuildStatus.Failure]: 'error',
-  [BuildStatus.InfraFailure]: 'report',
-  [BuildStatus.Canceled]: 'cancel',
-});
 
 /**
  * Renders a step.
@@ -100,9 +71,9 @@ export class BuildStepEntryElement extends MobxLitElement {
         <span slot="header">
           <mwc-icon
             id="status-indicator"
-            class=${STATUS_CLASS_MAP[this.step.status]}
-            title=${STATUS_TITLE_MAP[this.step.status]}
-          >${STATUS_ICON_MAP[this.step.status]}</mwc-icon>
+            class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
+            title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
+          >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
           <b>${this.number}. ${this.shortName}</b>
           <span id="header-markdown">${renderMarkdown(this.header)}</span>
           <span id="duration">${displayDuration(this.duration)}</span>
@@ -145,19 +116,19 @@ export class BuildStepEntryElement extends MobxLitElement {
       vertical-align: bottom;
     }
     #status-indicator.started {
-      color: #ffc107;
+      color: var(--started-color);
     }
     #status-indicator.success {
-      color: #28a745;
+      color: var(--success-color);
     }
     #status-indicator.failure {
-      color: #dc3545;
+      color: var(--failure-color);
     }
     #status-indicator.infra-failure {
-      color: #6f42c1;
+      color: var(--critical-failure-color);
     }
     #status-indicator.canceled {
-      color: #0082fc;
+      color: var(--canceled-color);
     }
 
     #header-markdown > p {
@@ -165,8 +136,8 @@ export class BuildStepEntryElement extends MobxLitElement {
     }
 
     #duration {
-      color: #fff;
-      background-color: #007bff;
+      color: white;
+      background-color: var(--active-color);
       display: inline-block;
       padding: .25em .4em;
       font-size: 75%;
@@ -179,7 +150,7 @@ export class BuildStepEntryElement extends MobxLitElement {
     }
 
     #summary {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
     }
 
@@ -197,17 +168,16 @@ export class BuildStepEntryElement extends MobxLitElement {
     }
 
     #log-links>li:nth-child(odd) {
-      background-color: #eee;
+      background-color: var(--block-background-color);
       list-style-type: circle;
     }
 
     #log-links>li {
-      color: #333;
       list-style-type: circle;
       padding: 0.1em 1em 0.1em 1em;
     }
     #log-links>li>a {
-      color: #333;
+      color: var(--default-text-color);
     }
 
     milo-build-step-entry {

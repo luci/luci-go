@@ -218,13 +218,10 @@ export class TestResultsTabElement extends MobxLitElement {
       margin: 5px;
       margin-bottom: 0px;
     }
-    .action-button {
-      --mdc-theme-primary: rgb(0, 123, 255);
-    }
 
     #main {
       display: flex;
-      border-top: 1px solid #DDDDDD;
+      border-top: 1px solid var(--divider-color);
       overflow-y: hidden;
     }
     #test-result-view {
@@ -238,7 +235,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
     .divider {
       border: none;
-      border-top: 1px solid #DDDDDD;
+      border-top: 1px solid var(--divider-color);
     }
 
     milo-test-nav-tree {
@@ -250,14 +247,14 @@ export class TestResultsTabElement extends MobxLitElement {
       margin-top: 5px;
     }
     #load {
-      color: blue;
+      color: var(--active-text-color);
     }
     #load-more {
-      color: blue;
+      color: var(--active-text-color);
       cursor: pointer;
     }
     #load-info {
-      color: #212121;
+      color: var(--default-text-color);
       --mdc-icon-size: 1.2em;
       vertical-align: bottom;
     }

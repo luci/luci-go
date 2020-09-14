@@ -87,7 +87,7 @@ Please enter a description of the problem, with repro steps if applicable.
       margin-right: 8px;
     }
     #headline {
-      color: rgb(95, 99, 104);
+      color: var(--light-text-color);
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 18px;
       font-weight: 300;

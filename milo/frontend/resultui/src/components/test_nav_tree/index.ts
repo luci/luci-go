@@ -104,7 +104,7 @@ export class TestNavTreeElement extends MobxLitElement {
     }
 
     #header {
-      background-color: #DDDDDD;
+      background-color: var(--divider-color);
       padding: 2px 5px;
       overflow: hidden;
       white-space: nowrap;
@@ -116,7 +116,6 @@ export class TestNavTreeElement extends MobxLitElement {
     }
 
     #load-more-btn {
-      --mdc-theme-primary: rgb(0, 123, 255);
       width: calc(100% - 10px);
       margin: 0 5px;
     }

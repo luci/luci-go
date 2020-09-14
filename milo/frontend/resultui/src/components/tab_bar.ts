@@ -57,11 +57,11 @@ export class TabBarElement extends LitElement {
     :host {
       display: block;
       height: 25px;
-      border-bottom: 1px solid #EBEBEB;
+      border-bottom: 1px solid var(--divider-color);
     }
 
     .tab {
-      color: #212121;
+      color: var(--default-text-color);
       padding: 7px 14px 7px 14px;
       font-size: 110%;
       text-align: center;

@@ -94,14 +94,14 @@ export class LeftPanelElement extends MobxLitElement {
       height: 100%;
       min-width: var(--min-width, 400px);
       width: var(--width, 400px);
-      border-right: 1px solid #DDDDDD;
+      border-right: 1px solid var(--divider-color);
     }
     #handle {
       user-select: none;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      border-left: 13px solid #DDDDDD;
+      border-left: 13px solid var(--divider-color);
       border-top: 10px solid transparent;
       border-bottom: 10px solid transparent;
       height: 80px;

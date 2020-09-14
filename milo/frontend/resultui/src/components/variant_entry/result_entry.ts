@@ -20,21 +20,12 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
+import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import '../expandable_entry';
 import './image_diff_artifact';
 import './text_diff_artifact';
-
-const STATUS_DISPLAY_MAP = {
-  [TestStatus.Unspecified]: 'unspecified',
-  [TestStatus.Pass]: 'passed',
-  [TestStatus.Fail]: 'failed',
-  [TestStatus.Skip]: 'skipped',
-  [TestStatus.Crash]: 'crashed',
-  [TestStatus.Abort]: 'aborted',
-};
-
 
 /**
  * Renders an expandable entry of the given test result.
@@ -106,7 +97,7 @@ export class ResultEntryElement extends MobxLitElement {
       >
         <span slot="header" class="one-line-content">
           Tags:
-          <span class="light" style=${styleMap({display: this.tagExpanded ? 'none': ''})}>
+          <span class="greyed-out" style=${styleMap({display: this.tagExpanded ? 'none': ''})}>
             ${this.testResult.tags?.map((tag) => html`
             <span class="kv-key">${tag.key}</span>
             <span class="kv-value">${tag.value}</span>
@@ -133,7 +124,7 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <milo-expandable-entry .hideContentRuler=${true}>
         <span slot="header">
-          Artifacts: <span class="light">${this.artifacts.length}</span>
+          Artifacts: <span class="greyed-out">${this.artifacts.length}</span>
         </span>
         <ul id="artifact-list" slot="content">
           ${this.artifacts.map((artifact) => html`
@@ -155,7 +146,7 @@ export class ResultEntryElement extends MobxLitElement {
           run #${this.id}
           <span class="${this.testResult.expected ? 'expected' : 'unexpected'}-result">
             ${this.testResult.expected ? '' : html`unexpectedly`}
-            ${STATUS_DISPLAY_MAP[this.testResult.status]}
+            ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
           ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
         </span>
@@ -192,14 +183,14 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     .expected-result {
-      color: rgb(51, 172, 113);
+      color: var(--success-color);
     }
     .unexpected-result {
-      color: rgb(210, 63, 49);
+      color: var(--failure-color);
     }
 
     #summary-html {
-      background-color: rgb(245, 245, 245);
+      background-color: var(--block-background-color);
       padding: 5px;
     }
     #summary-html pre {
@@ -216,8 +207,8 @@ export class ResultEntryElement extends MobxLitElement {
     .kv-value:last-child::after {
       content: '';
     }
-    .light {
-      color: grey;
+    .greyed-out {
+      color: var(--greyed-out-text-color);
     }
 
     ul {
