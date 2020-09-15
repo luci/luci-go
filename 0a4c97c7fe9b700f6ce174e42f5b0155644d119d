@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16c4899e_e1300f98",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T12:59:50Z",
+      "side": 1,
+      "message": "note: this will block rolls to infra/infra because tests for SkyLab mock the proto defined interface upstream instead of defining their own interface with just the methods they need. So, you\u0027ll need to go and create a manual roll, which bumps DEPS + fixes their code.\n\n+pprabhu@ can you find someone to actually fix that to avoid busy work in the future?",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
