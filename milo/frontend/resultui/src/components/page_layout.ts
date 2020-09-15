@@ -16,6 +16,13 @@ import '@chopsui/chops-signin';
 import '@material/mwc-icon';
 import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
 
+function genFeedbackComment() {
+  return encodeURIComponent(
+`From Link: ${document.location.href}
+Please enter a description of the problem, with repro steps if applicable.
+`);
+}
+
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
  * top of the child nodes.
@@ -39,10 +46,6 @@ export class PageLayoutElement extends LitElement {
   }
 
   protected render() {
-    const feedbackComment = encodeURIComponent(
-`From Link: ${document.location.href}
-Please enter a description of the problem, with repro steps if applicable.
-`);
     return html`
       <div id="container">
         <div id="title-container">
@@ -53,7 +56,7 @@ Please enter a description of the problem, with repro steps if applicable.
           id="feedback"
           title="Send Feedback"
           target="_blank"
-          href="https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${feedbackComment}"
+          href="https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${genFeedbackComment()}"
         >
           <mwc-icon>feedback</mwc-icon>
         </a>
