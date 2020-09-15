@@ -145,6 +145,14 @@ message ConfigGroup {
       // that every typical Git branch to be CQ-able, including
       // "refs/heads/experimental/foobar".
       repeated string ref_regexp = 2;
+
+      // Exclude matching refs in this repo. Optional.
+      //
+      // If a ref is matches at least one of the ref_regexp_exclude,
+      // then it is ignored by this config group regardless of ref_regexp.
+      //
+      // The syntax is the same as for ref_regexp.
+      repeated string ref_regexp_exclude = 3;
     }
   }
 
