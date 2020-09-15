@@ -19,8 +19,9 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 
+import '../components/copy_to_clipboard';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration } from '../libs/time_utils';
 import { ChainableURL, renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
@@ -75,6 +76,11 @@ export class BuildStepEntryElement extends MobxLitElement {
             title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
           >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
           <b>${this.number}. ${this.shortName}</b>
+          <milo-copy-to-clipboard
+            .textToCopy=${this.shortName}
+            title="Copy the step name."
+            @click=${(e: Event) => e.stopPropagation()}
+          ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.header)}</span>
           <span id="duration">${displayDuration(this.duration)}</span>
         </span>
@@ -146,7 +152,7 @@ export class BuildStepEntryElement extends MobxLitElement {
       line-height: 1;
       text-align: center;
       white-space: nowrap;
-      vertical-align: baseline;
+      vertical-align: text-bottom;
       border-radius: .25rem;
     }
 
