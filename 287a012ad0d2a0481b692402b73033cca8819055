@@ -109,6 +109,24 @@
     },
     {
       "key": {
+        "uuid": "a8128dcd_20e8f086",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T06:05:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b26cd32_91682f19",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04882589_a6c5bfce",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 7
