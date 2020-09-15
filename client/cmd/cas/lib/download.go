@@ -195,19 +195,6 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
 
-	start = time.Now()
-	// DownloadFiles does not set desired file permission.
-	for _, output := range to {
-		mode := 0o600
-		if output.IsExecutable {
-			mode = 0o700
-		}
-		if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
-			return errors.Annotate(err, "failed to change mode").Err()
-		}
-	}
-	logger.Infof("finished permission update, took %s", time.Since(start))
-
 	if diskcache != nil {
 		start = time.Now()
 		outputs := make([]*tree.Output, 0, len(to))
