@@ -47,7 +47,7 @@ Please enter a description of the problem, with repro steps if applicable.
       <div id="container">
         <div id="title-container">
           <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
-          <span id="headline">LUCI Test Results (BETA)</span>
+          <span id="headline">LUCI</span>
         </div>
         <a
           id="feedback"
