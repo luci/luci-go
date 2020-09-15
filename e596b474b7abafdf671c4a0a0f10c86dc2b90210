@@ -50,6 +50,24 @@
       "revId": "e596b474b7abafdf671c4a0a0f10c86dc2b90210",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fad9fac9_db38c56e",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-15T22:35:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba04eaee_7b789e96",
+      "revId": "e596b474b7abafdf671c4a0a0f10c86dc2b90210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
