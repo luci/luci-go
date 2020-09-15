@@ -155,6 +155,26 @@ func (mr *MockGerritClientMockRecorder) ChangeEditPublish(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritClient)(nil).ChangeEditPublish), varargs...)
 }
 
+// AddReviewer mocks base method.
+func (m *MockGerritClient) AddReviewer(ctx context.Context, in *AddReviewerRequest, opts ...grpc.CallOption) (*AddReviewerResult, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddReviewer", varargs...)
+	ret0, _ := ret[0].(*AddReviewerResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddReviewer indicates an expected call of AddReviewer.
+func (mr *MockGerritClientMockRecorder) AddReviewer(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritClient)(nil).AddReviewer), varargs...)
+}
+
 // SetReview mocks base method.
 func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, opts ...grpc.CallOption) (*ReviewResult, error) {
 	m.ctrl.T.Helper()
@@ -366,6 +386,21 @@ func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeE
 func (mr *MockGerritServerMockRecorder) ChangeEditPublish(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritServer)(nil).ChangeEditPublish), arg0, arg1)
+}
+
+// AddReviewer mocks base method.
+func (m *MockGerritServer) AddReviewer(arg0 context.Context, arg1 *AddReviewerRequest) (*AddReviewerResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddReviewer", arg0, arg1)
+	ret0, _ := ret[0].(*AddReviewerResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddReviewer indicates an expected call of AddReviewer.
+func (mr *MockGerritServerMockRecorder) AddReviewer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritServer)(nil).AddReviewer), arg0, arg1)
 }
 
 // SetReview mocks base method.
