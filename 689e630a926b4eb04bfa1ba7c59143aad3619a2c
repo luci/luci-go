@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "441e0081_c837c597",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Removed the comment. I used to return pb.Invocation partially filled, but Chan pointed out it may be better to return an explicit struct.",
+      "parentUuid": "37744bbc_aeee1cf8",
+      "range": {
+        "startLine": 38,
+        "startChar": 61,
+        "endLine": 38,
+        "endChar": 66
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3a9eefc_e35762f6",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 14
@@ -39,6 +63,24 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "660a5a6c_d6562fa1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3a9eefc_e35762f6",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "48013873_f2edc675",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done\n\nAlso, filed crbug.com/1128052",
+      "parentUuid": "3f1deb02_f7448adc",
+      "range": {
+        "startLine": 45,
+        "startChar": 32,
+        "endLine": 45,
+        "endChar": 33
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34f74d4a_da9cd296",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "509bc9a6_d15a1043",
+      "range": {
+        "startLine": 45,
+        "startChar": 12,
+        "endLine": 45,
+        "endChar": 22
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c44e4fae_562afcb1",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 14
@@ -108,6 +198,30 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5df2cb2_ef6887ee",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c44e4fae_562afcb1",
+      "range": {
+        "startLine": 47,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 4
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "78aa4aa0_1818ee0f",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19f88c5d_790350d2",
+      "range": {
+        "startLine": 49,
+        "startChar": 15,
+        "endLine": 49,
+        "endChar": 18
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "efd68242_973d7405",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 14
@@ -148,6 +286,24 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77bb5dc4_237bfca1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "efd68242_973d7405",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -174,6 +330,30 @@
     },
     {
       "key": {
+        "uuid": "4d9b4bd3_ac54293a",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "088963b7_6e93a128",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 6
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0815484_239ed16f",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 14
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "f7963a46_22027f96",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done. Though BETWEEN is (\u003e\u003d, \u003c\u003d) whereas I intended (\u003e\u003d, \u003c) Which doesn\u0027t matter for timestamps, but does for other ordinals, I\u0027ll just remember to explicit about it then.",
+      "parentUuid": "a0815484_239ed16f",
+      "range": {
+        "startLine": 68,
+        "startChar": 29,
+        "endLine": 68,
+        "endChar": 83
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54c49e50_a7788d51",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 14
@@ -217,6 +421,30 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5f3667b_66e8e6a1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "54c49e50_a7788d51",
+      "range": {
+        "startLine": 74,
+        "startChar": 14,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +488,30 @@
     },
     {
       "key": {
+        "uuid": "35e645be_174aedea",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62a5d326_9075b329",
+      "range": {
+        "startLine": 113,
+        "startChar": 19,
+        "endLine": 113,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc4581e9_f1f6d86c",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
@@ -271,6 +523,30 @@
       "writtenOn": "2020-09-12T02:56:00Z",
       "side": 1,
       "message": "non-negative\n\n0 is not positive",
+      "range": {
+        "startLine": 124,
+        "startChar": 80,
+        "endLine": 124,
+        "endChar": 88
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76152bc1_b0f405d2",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "I thought that 0 counts as unspecified. (Being an int field in a proto)",
+      "parentUuid": "dc4581e9_f1f6d86c",
       "range": {
         "startLine": 124,
         "startChar": 80,
@@ -330,6 +606,30 @@
     },
     {
       "key": {
+        "uuid": "1b68c2d1_7a35df6c",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "I don\u0027t see why that\u0027s a problem as long as the UI shows that only unexpected results are kept after a certain time.\n\nI am thinking that maybe we don\u0027t restrict queries into the past or into the future. This could be used to check that we are purging results correctly, and we also shouldn\u0027t have results in the future, so we should be able to query both and ensure that they have 0 results. WDYT?",
+      "parentUuid": "41986a47_3c11cead",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95a3cdd1_7ecf3296",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
@@ -376,6 +676,54 @@
     },
     {
       "key": {
+        "uuid": "9dcfdbf0_f9cff1c4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "539afada_d169c380",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 7
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7dc50d0_ceea35ff",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "95a3cdd1_7ecf3296",
+      "range": {
+        "startLine": 136,
+        "startChar": 24,
+        "endLine": 136,
+        "endChar": 25
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3118fb0_af750699",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
@@ -396,6 +744,30 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cd5ec4f_7325518b",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e3118fb0_af750699",
+      "range": {
+        "startLine": 139,
+        "startChar": 51,
+        "endLine": 139,
+        "endChar": 63
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -422,6 +794,30 @@
     },
     {
       "key": {
+        "uuid": "86335cdc_aa454a10",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e2223a9d_175ea661",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 142,
+        "endChar": 13
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bda7a90d_bc9d177f",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
@@ -442,6 +838,30 @@
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44430f9b_0bbe4919",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Good point. Done.",
+      "parentUuid": "bda7a90d_bc9d177f",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 193,
+        "endChar": 5
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -468,6 +888,30 @@
     },
     {
       "key": {
+        "uuid": "a9c06572_b95be125",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "Since we are going to make this return the history entries instead of bare results, we need both the set of invocation ids as well as the ordinal fields. I\u0027ve added a struct that pairs an IDSet with ordinal fields (invocationCohort) PTAL",
+      "parentUuid": "34dc7c1e_cf00172f",
+      "range": {
+        "startLine": 247,
+        "startChar": 28,
+        "endLine": 247,
+        "endChar": 55
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d25f59c3_abf8753a",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
@@ -479,6 +923,24 @@
       "writtenOn": "2020-09-12T02:56:00Z",
       "side": 1,
       "message": "this indicates a bug in the code. we should fix the bug instead.\n\nit is also rather unusual for a Go function to only do `go func() ... {}`. Normally it is the caller\u0027s responsibility to start a new goroutine.\n\noverall, i think this and resultInvocationsForRequest functions would be simpler if they returned error, like Go functions normally do, e.g.\n\n  matchingResultsInInv(ctx context.Context, invIDs invocations.IDSet, in *pb.GetTestResultHistoryRequest, res \u003c-chan *pb.TestResult) error {\n   query :\u003d ...\n\n   return err\n  }\n\n ...\n\n results :\u003d make(chan ...)\n errC :\u003d make(chan error)\n go func() {\n    defer close(results)\n    defer close(errC)\n    errC \u003c- matchingResultsInInv(...)\n }()\n \n\nbut i am also not sure about having two separate channels between same pairs of goroutines. Consider a single channel for oth\n\n  type result struct {\n    tr TestResult\n    err error\n  }\n  ch :\u003d make(chan result)\n\n------------\n\nthen you don\u0027t need L275-282 or stopQuery",
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3bf4289_969499b9",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-15T02:08:26Z",
+      "side": 1,
+      "message": "I\u0027ve refactored to use single channels, start goroutines at the callsite, and simplify what I can. PTAL\n\nI still don\u0027t see how to get rid of stopQuery.",
+      "parentUuid": "d25f59c3_abf8753a",
       "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
