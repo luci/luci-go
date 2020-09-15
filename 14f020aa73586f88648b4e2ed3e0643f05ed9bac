@@ -34,6 +34,29 @@
       "revId": "14f020aa73586f88648b4e2ed3e0643f05ed9bac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "49b39e7e_757002b8",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 573,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T18:24:15Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 555,
+        "startChar": 1,
+        "endLine": 573,
+        "endChar": 3
+      },
+      "revId": "14f020aa73586f88648b4e2ed3e0643f05ed9bac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
