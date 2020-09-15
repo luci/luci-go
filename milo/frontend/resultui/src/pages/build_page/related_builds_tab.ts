@@ -103,7 +103,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   static styles = css`
     tr:nth-child(even) {
-      background-color: #ddd;
+      background-color: var(--block-background-color);
     }
     #related-builds-table {
       vertical-align: middle;
