@@ -33,6 +33,24 @@
       "revId": "a55b263a260471c02c3041e72098fdde70a773b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc57f697_b5a06f57",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1142534
+      },
+      "writtenOn": "2020-09-15T17:44:44Z",
+      "side": 1,
+      "message": "the logging means these logs (https://screenshot.googleplex.com/4BNYESdpByTisDN)?\n\nI see the point, thanks. We already contacted all internal chops users about using shivas, just want to warn them when they open latest crimson tool as they may forget about it. As this also involves potential external users, makes sense to not include it then.",
+      "parentUuid": "6324eaaf_d066db5a",
+      "revId": "a55b263a260471c02c3041e72098fdde70a773b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
