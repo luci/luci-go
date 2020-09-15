@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba896bd9_ea51673b",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "why not just https://godoc.org/go.chromium.org/luci/server/span#BufferWrite and https://godoc.org/go.chromium.org/luci/resultdb/internal/spanutil#InsertMap",
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66c563df_974353ca",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "did you consider reading the value from spanner with https://godoc.org/go.chromium.org/luci/resultdb/internal/spanutil#ReadRow, and then inserting/updating it with https://godoc.org/go.chromium.org/luci/resultdb/internal/spanutil#InsertOrUpdateMap ?\nit might be less code",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 1
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e949c3b9_c6edb95c",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 321,
+        "startChar": 5,
+        "endLine": 322,
+        "endChar": 3
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "238cb2ae_4553a412",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 10
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37f431ad_8727dd5a",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "simpler to use InsertOrUpdate instead",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 1
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

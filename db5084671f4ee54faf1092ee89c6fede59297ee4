@@ -170,6 +170,24 @@
       "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b92e1196_4b0537de",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:34:14Z",
+      "side": 1,
+      "message": "\u003e I was thinking that it seems to be bad to retry inserting all the test results when incrementing result count/inserting a new counter fails.\n\njust to be clear: this is happening now. And yes, it is better than failing the RPC because the RPC caller would have no choice but to retry, which would be worse because the test results will be re-sent bot-\u003erdb-\u003espanner (as opposed to rdb-\u003espanner)",
+      "parentUuid": "30f88cb6_90522785",
+      "revId": "db5084671f4ee54faf1092ee89c6fede59297ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
