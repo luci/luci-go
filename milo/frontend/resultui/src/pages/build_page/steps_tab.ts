@@ -14,6 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
+import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
@@ -30,8 +31,9 @@ export class StepsTabElement extends MobxLitElement {
   @observable.ref buildState!: BuildState;
 
   // TODO(crbug/1123362): save the setting.
-  @observable.ref showPassed = true;
+  @observable.ref showSucceeded = true;
   @observable.ref showDebugLogs = false;
+  @observable.ref expandNonLeaf = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -43,7 +45,7 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   @computed private get noDisplayedStep() {
-    if (this.showPassed) {
+    if (this.showSucceeded) {
       return !this.buildState.buildPageData?.steps?.length;
     }
     return !this.buildState.buildPageData?.steps?.find((s) => s.status !== BuildStatus.Success);
@@ -58,34 +60,45 @@ export class StepsTabElement extends MobxLitElement {
     // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
       <div id="header">
-        <div class="filters-container">
+        <div class="header-section">
           Steps:
-          <div class="filter">
+          <div class="header-section-item">
             <input
-              id="passed"
+              id="succeeded"
               type="checkbox"
-              ?checked=${this.showPassed}
-              @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
+              ?checked=${this.showSucceeded}
+              @change=${(e: MouseEvent) => this.showSucceeded = (e.target as HTMLInputElement).checked}
             >
-            <label for="passed" style="color: var(--success-color);">Passed</label>
-          </div class="filter">
-          <div class="filter">
+            <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
+          </div>
+          <div class="header-section-item">
             <input id="others" type="checkbox" disabled checked>
             <label for="others">Others</label>
           </div>
         </div>
-        <div class="filters-container-delimiter"></div>
-        <div class="filters-container">
-          Logs:
-          <div class="filter">
+        <div class="header-section-delimiter"></div>
+        <div class="header-section">
+          <div class="header-section-item">
+            <input
+              id="expand-non-leaf"
+              type="checkbox"
+              ?checked=${this.expandNonLeaf}
+              @change=${(e: MouseEvent) => this.expandNonLeaf = (e.target as HTMLInputElement).checked}
+            >
+            <label for="expand-non-leaf">
+              Expand Non-Leaf
+              <mwc-icon id="expand-non-leaf-info" title="Expand steps with sub-steps by default.">info</mwc-icon>
+            </label>
+          </div>
+          <div class="header-section-item">
             <input
               id="debug-logs-filter"
               type="checkbox"
               ?checked=${this.showDebugLogs}
               @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
             >
-            <label for="debug-logs-filter">Debug</label>
-          </div class="filter">
+            <label for="debug-logs-filter">Debug Logs</label>
+          </div>
         </div>
         <span></span>
         <mwc-button
@@ -102,8 +115,8 @@ export class StepsTabElement extends MobxLitElement {
       <div id="main">
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showPassed ? '' : 'none'})}
-          .expanded=${true}
+          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
+          .expanded=${(this.expandNonLeaf || !step.children?.length)}
           .number=${i + 1}
           .step=${step}
           .showDebugLogs=${this.showDebugLogs}
@@ -113,7 +126,7 @@ export class StepsTabElement extends MobxLitElement {
           class="list-entry"
           style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
         >
-          ${this.showPassed ? 'No steps.' : 'All steps passed.'}
+          ${this.showSucceeded ? 'No steps.' : 'All steps succeeded.'}
         </div>
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
@@ -131,22 +144,32 @@ export class StepsTabElement extends MobxLitElement {
       padding: 5px 10px 3px 10px;
     }
 
-    .filters-container {
+    .header-section {
       display: inline-block;
       padding: 0 5px;
       padding-top: 5px;
     }
-    .filter {
+    .header-section-item {
       display: inline-block;
       margin: 0 5px;
     }
-    .filter:last-child {
+    .header-section-item:last-child {
       margin-right: 0px;
     }
-    .filters-container-delimiter {
+    .header-section-delimiter {
       border-left: 1px solid var(--divider-color);
       width: 0px;
       height: 100%;
+    }
+
+    #expand-non-leaf-info {
+      color: #212121;
+      --mdc-icon-size: 1.2em;
+      vertical-align: bottom;
+    }
+
+    .action-button {
+      --mdc-theme-primary: rgb(0, 123, 255);
     }
 
     #main {
