@@ -141,9 +141,54 @@ export class TestResultsTabElement extends MobxLitElement {
     `;
   }
 
-  protected render() {
+  private renderMain() {
     const state = this.invocationState;
 
+    if (!state.invocation) {
+      return html`
+        <div id="no-invocation">
+          No associated invocation.<br>
+          You need to integrate with ResultDB to see the test results.<br>
+          <a href="http://go/resultdb" target="_blank">go/resultdb</a>
+        </div>
+      `;
+    }
+
+    return html`
+      <milo-left-panel>
+        <milo-test-nav-tree
+          .testLoader=${state.testLoader}
+          .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
+        ></milo-test-nav-tree>
+      </milo-left-panel>
+      <div id="test-result-view">
+        ${this.renderAllVariants()}
+        <div class="list-entry">
+          <span>Showing ${state.selectedNode.testCount} tests.</span>
+          <span
+            id="load"
+            style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
+          >
+            <span
+              id="load-more"
+              style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
+              @click=${this.loadNextPage}
+            >
+              Load More
+            </span>
+            <span
+              style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
+            >
+              Loading <milo-dot-spinner></milo-dot-spinner>
+            </span>
+            <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  protected render() {
     return html`
       <div id="header">
         <milo-test-filter
@@ -165,38 +210,7 @@ export class TestResultsTabElement extends MobxLitElement {
           @click=${() => this.toggleAllVariants(false)}
         >Collapse All</mwc-button>
       </div>
-      <div id="main">
-        <milo-left-panel>
-          <milo-test-nav-tree
-            .testLoader=${state.testLoader}
-            .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
-          ></milo-test-nav-tree>
-        </milo-left-panel>
-        <div id="test-result-view">
-          ${this.renderAllVariants()}
-          <div class="list-entry">
-            <span>Showing ${state.selectedNode.testCount} tests.</span>
-            <span
-              id="load"
-              style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
-            >
-              <span
-                id="load-more"
-                style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
-                @click=${this.loadNextPage}
-              >
-                Load More
-              </span>
-              <span
-                style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
-              >
-                Loading <milo-dot-spinner></milo-dot-spinner>
-              </span>
-              <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
-            </span>
-          </div>
-        </div>
-      </div>
+      <div id="main">${this.renderMain()}</div>
     `;
   }
 
@@ -223,6 +237,9 @@ export class TestResultsTabElement extends MobxLitElement {
       display: flex;
       border-top: 1px solid var(--divider-color);
       overflow-y: hidden;
+    }
+    #no-invocation {
+      padding: 10px;
     }
     #test-result-view {
       flex: 1;
