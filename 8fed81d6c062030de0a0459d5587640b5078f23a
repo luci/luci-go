@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f414ff41_dc4e4db0",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T06:08:53Z",
+      "side": 1,
+      "message": "Unfortunately this element is shared between all the pages.\nIt wouldn\u0027t make sense to have this link on other pages.",
+      "range": {
+        "startLine": 71,
+        "startChar": 8,
+        "endLine": 71,
+        "endChar": 78
+      },
+      "revId": "8fed81d6c062030de0a0459d5587640b5078f23a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
