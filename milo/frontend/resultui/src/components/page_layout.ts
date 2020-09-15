@@ -16,6 +16,14 @@ import '@chopsui/chops-signin';
 import '@material/mwc-icon';
 import { css, customElement, html, LitElement } from 'lit-element';
 
+function genFeedbackUrl() {
+  const feedbackComment = encodeURIComponent(
+`From Link: ${document.location.href}
+Please enter a description of the problem, with repro steps if applicable.
+`);
+  return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${feedbackComment}`;
+}
+
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
  * top of the child nodes.
@@ -24,24 +32,19 @@ import { css, customElement, html, LitElement } from 'lit-element';
 @customElement('milo-page-layout')
 export class PageLayoutElement extends LitElement {
   protected render() {
-    const feedbackComment = encodeURIComponent(
-`From Link: ${document.location.href}
-Please enter a description of the problem, with repro steps if applicable.
-`);
     return html`
       <div id="container">
         <div id="title-container">
           <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
           <span id="headline">LUCI</span>
         </div>
-        <a
+        <div
           id="feedback"
           title="Send Feedback"
-          target="_blank"
-          href="https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${feedbackComment}"
+          @click=${() => window.open(genFeedbackUrl())}
         >
           <mwc-icon>feedback</mwc-icon>
-        </a>
+        </div>
         <chops-signin id="signin" client-id=${CONFIGS.OAUTH2.CLIENT_ID}></chops-signin>
       </div>
       <slot></slot>
@@ -82,6 +85,7 @@ Please enter a description of the problem, with repro steps if applicable.
       margin-right: 14px;
     }
     #feedback {
+      cursor: pointer;
       height: 32px;
       width: 32px;
       --mdc-icon-size: 28px;
