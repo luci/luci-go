@@ -37,6 +37,23 @@
     },
     {
       "key": {
+        "uuid": "97801ce6_0c34a0d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T20:56:08Z",
+      "side": 1,
+      "message": "FYI: https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1128498 is now closed. Please let me know if you still face autoroll issues.\n\nftr, autoroll builder: https://autoroll.skia.org/r/luci-go-infra-autoroll?tab\u003dstatus",
+      "revId": "14f020aa73586f88648b4e2ed3e0643f05ed9bac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49b39e7e_757002b8",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 7
