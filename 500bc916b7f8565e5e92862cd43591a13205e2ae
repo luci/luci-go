@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4112bf5c_0cb2933f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T06:36:56Z",
+      "side": 1,
+      "message": "Previously, it\u0027s adding another \u0027/ui/\u0027 prefix thus breaking the redirection.\n\nDemo: https://weiweilin-3-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7589\n",
+      "revId": "500bc916b7f8565e5e92862cd43591a13205e2ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
