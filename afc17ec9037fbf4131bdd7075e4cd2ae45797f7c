@@ -251,6 +251,30 @@
       "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88a84cb9_fad5b124",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T18:22:52Z",
+      "side": 1,
+      "message": "actually hold off on taking another look - adding some more hardcode-asserting to the tests.",
+      "parentUuid": "c28d05ce_f7ae0859",
+      "range": {
+        "startLine": 412,
+        "startChar": 2,
+        "endLine": 412,
+        "endChar": 26
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
