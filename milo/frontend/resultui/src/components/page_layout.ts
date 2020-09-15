@@ -14,7 +14,11 @@
 
 import '@chopsui/chops-signin';
 import '@material/mwc-icon';
+import { BeforeEnterObserver, RouterLocation } from '@vaadin/router';
 import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
+
+
+import { getLegacyURLForBuild } from '../libs/build_utils';
 
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
@@ -22,10 +26,25 @@ import { css, customElement, html, LitElement, PropertyValues } from 'lit-elemen
  * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
-export class PageLayoutElement extends LitElement {
+export class PageLayoutElement extends LitElement implements BeforeEnterObserver {
   private rendered = false;
+  private legacyPageURL = "";
+
   protected firstUpdated() {
     this.rendered = true;
+  }
+
+  onBeforeEnter(location: RouterLocation) {
+    const project = location.params['project'];
+    const bucket = location.params['bucket'];
+    const builder = location.params['builder'];
+    const buildNumOrId = location.params['build_num_or_id'];
+    this.legacyPageURL = getLegacyURLForBuild(
+      project as string,
+      bucket as string,
+      builder as string,
+      buildNumOrId as string,
+    );
   }
 
   protected shouldUpdate(changedProperties: PropertyValues) {
@@ -49,6 +68,8 @@ Please enter a description of the problem, with repro steps if applicable.
           <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
           <span id="headline">LUCI Test Results (BETA)</span>
         </div>
+        <a href=${this.legacyPageURL} target="_blank">To legacy build page</a>
+
         <a
           id="feedback"
           title="Send Feedback"
