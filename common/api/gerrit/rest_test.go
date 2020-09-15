@@ -383,6 +383,89 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	})
 }
 
+func TestAddReviewer(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Add reviewer to cc basic", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"input": "reviewer@test.com",
+				"ccs": [
+					{
+						"_account_id": 10001,
+						"name": "Reviewer Review",
+						"approvals": {
+							"Code-Review": " 0"
+						}
+					}
+				]
+			}`)
+		})
+		defer srv.Close()
+
+		req := &gerritpb.AddReviewerRequest{
+			Number:    42,
+			Project:   "someproject",
+			Reviewer:  "reviewer@test.com",
+			State:     gerritpb.AddReviewerRequest_REVIEWER,
+			Confirmed: true,
+			Notify:    gerritpb.AddReviewerRequest_OWNER,
+		}
+		_, err := c.AddReviewer(ctx, req)
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers")
+	})
+	Convey("Add reviewer group", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"input": "reviewer-group@test.com",
+				"reviewers": [
+					{
+						"_account_id": 10001,
+						"name": "Reviewer #1",
+						"approvals": {
+							"Code-Review": " 0"
+						}
+					},
+					{
+						"_account_id": 10002,
+						"name": "Reviewer #2",
+						"approvals": {
+							"Code-Review": " 0",
+							"Verified": "+1"
+						}
+					}
+				]
+			}`)
+		})
+		defer srv.Close()
+
+		req := &gerritpb.AddReviewerRequest{
+			Number:    42,
+			Project:   "someproject",
+			Reviewer:  "reviewer-group@test.com",
+			State:     gerritpb.AddReviewerRequest_REVIEWER,
+			Confirmed: true,
+			Notify:    gerritpb.AddReviewerRequest_OWNER,
+		}
+		resp, err := c.AddReviewer(ctx, req)
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers")
+		So(len(resp.Reviewers), ShouldEqual, 2)
+	})
+}
+
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

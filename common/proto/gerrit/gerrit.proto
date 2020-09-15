@@ -554,8 +554,8 @@ message AddReviewerRequest {
 
   enum State {
     ADD_REVIEWER_STATE_UNSPECIFIED = 0;
-    ADD_REVIEWER_STATE_REVIEWER = 1;
-    ADD_REVIEWER_STATE_CC = 2;
+    REVIEWER = 1;
+    CC = 2;
   }
 
   // The state to add reviewer in, defaults to REVIEWER.
@@ -566,10 +566,10 @@ message AddReviewerRequest {
 
   enum Notify {
     ADD_REVIEWER_NOTIFY_UNSPECIFIED = 0;
-    ADD_REVIEWER_NOTIFY_NONE = 1;
-    ADD_REVIEWER_NOTIFY_OWNER = 2;
-    ADD_REVIEWER_NOTIFY_OWNER_REVIEWERS = 3;
-    ADD_REVIEWER_NOTIFY_ALL = 4;
+    NONE = 1;
+    OWNER = 2;
+    OWNER_REVIEWERS = 3;
+    ALL = 4;
   }
 
   // Defines who should be notified after reviewer is added, defaults to ALL.
@@ -586,7 +586,7 @@ message ReviewerInfo {
   AccountInfo account = 1;
 
   // The approvals as a map of label names to approval values.
-  map<string, int32> approvals = 2;
+  map<string, string> approvals = 2;
 
 }
 
