@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd570f47_64c58d67",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T19:32:10Z",
+      "side": 1,
+      "message": "i\u0027m curious, do we need ,omitempty here OR will GoB happily accept empty string?",
+      "range": {
+        "startLine": 201,
+        "startChar": 31,
+        "endLine": 201,
+        "endChar": 33
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e176fbd5_f2d51c6c",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T19:32:10Z",
+      "side": 1,
+      "message": "1. you can assert URL looks right right here (this is just my preference to avoid declaring actualURL)\n2. definitely assert that request body looks as expected.",
+      "range": {
+        "startLine": 393,
+        "startChar": 3,
+        "endLine": 393,
+        "endChar": 20
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63652bdc_431e45c4",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T19:32:10Z",
+      "side": 1,
+      "message": "nit: ccer is more appropriate 😊",
+      "range": {
+        "startLine": 398,
+        "startChar": 14,
+        "endLine": 398,
+        "endChar": 22
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac7b8a87_cf728e61",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T19:32:10Z",
+      "side": 1,
+      "message": "assert individual details. I bet account id \u0026 name aren\u0027t parsed",
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ef2c35d_57942b9b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 589,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T19:32:10Z",
+      "side": 1,
+      "message": "actually, why? wouldn\u0027t it be nicer if we returned these as ints? +1 is as good as 1.",
+      "range": {
+        "startLine": 589,
+        "startChar": 14,
+        "endLine": 589,
+        "endChar": 20
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
