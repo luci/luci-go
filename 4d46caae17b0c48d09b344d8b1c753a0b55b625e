@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "31187f07_051a81fb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T04:59:32Z",
+      "side": 1,
+      "message": "I see. I don\u0027t have a strong opinion. Personally I like shorter URLs and I think EngProd folks might be typing them by hand. Maybe worth asking, but otherwise I am fine with both.",
+      "parentUuid": "cfec7de6_761faecf",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b1e9e671_7f1ad3d0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
