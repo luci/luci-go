@@ -96,6 +96,7 @@ export class BlamelistTabElement extends MobxLitElement {
           .number=${i + 1}
           .repoUrl=${this.repoUrl}
           .commit=${commit}
+          .expanded=${true}
         ></milo-commit-entry>
         `)}
         <hr class="divider" style=${styleMap({'display': this.commits.length === 0 ? 'none' : ''})}>
