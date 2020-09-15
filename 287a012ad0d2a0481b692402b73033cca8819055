@@ -91,6 +91,24 @@
     },
     {
       "key": {
+        "uuid": "0b26cd32_91682f19",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T05:39:17Z",
+      "side": 1,
+      "message": "\u003e Actually, in that case, why do we need a button at all?\n\nI agree. Let\u0027s start without it.\n\n\u003e 1. Collapse all non-leaves steps, or\n\u003e 2. collapse all successful steps.\n\n(2) is better. Users do want to see what happened in non-succcessful steps, so in the option (1), they would have to expand them manually",
+      "parentUuid": "24ebb2df_ea70bac3",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04882589_a6c5bfce",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 7
