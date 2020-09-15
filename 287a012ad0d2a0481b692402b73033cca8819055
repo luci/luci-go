@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "8816a08b_5d3b5b3c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T04:30:19Z",
+      "side": 1,
+      "message": "sorry, I didn\u0027t read your earlier message thoughtfully enough.\n\nI am not sure this is worth persisting. Let me step back: what is being persisted now is one of *3* states (Expanded, Default, Non-Green). The important part to persist is the difference between Default and Non-Green because the difference is drastic. Difference between Default and Expanded is small, and it is not important to persist.\n\nWe already have a checkbox for \"Succeeded\" which we will persist. This is the important part. Persisting whether to collapse or not collapse successful steps isn\u0027t that important, so not sure it is worth persisting -\u003e we can get away with a button which is easier to understand in this case.\n\n------\n\n\u003e All settings in the bar would change the state of the list, what\u0027s confusing you?\n\nbuttons also change the state of the list. I was confused why it is a checkbox (with state) vs a button (which doesn\u0027t have its own state)",
+      "parentUuid": "8ef5ea2a_33c90cd0",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04882589_a6c5bfce",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 7
