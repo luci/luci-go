@@ -191,3 +191,12 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 		MergeableInto: mi.MergeableInto,
 	}, nil
 }
+
+type addReviewerRequest struct {
+	Number    int64  `json:"number"`
+	Project   string `json:"string"`
+	Reviewer  string `json:"reviewer"`
+	State     string `json:"state"`
+	Confirmed bool   `json:"confirmed"`
+	Notify    string `json:"notify"`
+}
