@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "138e0348_fd57092a",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-15T19:14:46Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 37,
+        "startChar": 72,
+        "endLine": 37,
+        "endChar": 76
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a4256fdb_46e9fa0a",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 15

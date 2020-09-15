@@ -654,6 +654,30 @@
     },
     {
       "key": {
+        "uuid": "6dc6fe0d_da545ead",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-15T19:14:46Z",
+      "side": 1,
+      "message": "Yeah I think maybe we don\u0027t need to add the restriction now. But if so should we update the proto to clearly mention that history older than 2 months are only interesting results?",
+      "parentUuid": "1b68c2d1_7a35df6c",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95a3cdd1_7ecf3296",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
