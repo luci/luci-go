@@ -24,6 +24,7 @@ load("@stdlib//internal/validate.star", "validate")
 # Fields (all private to discourage snooping):
 #   __repo: original 'repo' string as is.
 #   __refs: a list of regexps for refs in the repo, as is.
+#   __refs_exclude: a list of regexps for refs to exclude, as is.
 #   __kind: currently always 'gob'.
 #   __repo_key: a tuple with the key to use to represent the repo in dicts.
 #   __gob_host: name of a gob host (e.g. 'chromium').
@@ -33,7 +34,7 @@ _refset_ctor = __native__.genstruct("cq.refset")
 # A struct returned by cq.retry_config(...).
 _retry_config_ctor = __native__.genstruct("cq.retry_config")
 
-def _refset(repo = None, *, refs = None):
+def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
     Used in `watch` field of luci.cq_group(...) to specify what refs the CQ
@@ -52,6 +53,8 @@ def _refset(repo = None, *, refs = None):
       refs: a list of regular expressions that define the set of refs to watch
         for CLs, e.g. `refs/heads/.+`. If not set, defaults to
         `refs/heads/master`.
+      refs_exclude: a list of regular expressions that define the set of refs
+        to exclude from watching. Empty by default.
 
     Returns:
       An opaque struct to be passed to `watch` field of luci.cq_group(...).
@@ -77,13 +80,13 @@ def _refset(repo = None, *, refs = None):
     if not proj:
         fail('bad "repo": not a valid repository URL')
 
-    refs = validate.list("refs", refs)
-    for r in refs:
-        validate.string("refs", r)
+    refs = validate.str_list("refs", refs)
+    refs_exclude = validate.str_list("refs_exclude", refs_exclude)
 
     return _refset_ctor(
         __repo = repo,
         __refs = refs or ["refs/heads/master"],
+        __refs_exclude = refs_exclude,
         __kind = "gob",
         __repo_key = ("gob", gob, proj),
         __gob_host = gob,
