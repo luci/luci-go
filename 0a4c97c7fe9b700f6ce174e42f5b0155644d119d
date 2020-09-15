@@ -552,6 +552,30 @@
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b6cab919_5753f355",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T17:23:46Z",
+      "side": 1,
+      "message": "This is accurate: See the description of what happens on errors: If an error is returned, none of the members of the group are added as reviewers.\n\nhttps://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer-result",
+      "parentUuid": "f64c5aec_2f2a7ca9",
+      "range": {
+        "startLine": 618,
+        "startChar": 0,
+        "endLine": 623,
+        "endChar": 32
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
