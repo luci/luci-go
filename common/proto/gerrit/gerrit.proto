@@ -586,7 +586,7 @@ message ReviewerInfo {
   AccountInfo account = 1;
 
   // The approvals as a map of label names to approval values.
-  map<string, int32> approvals = 2;
+  map<string, string> approvals = 2;
 
 }
 
