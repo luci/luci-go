@@ -16,6 +16,121 @@
       "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "23e14d72_361844ea",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:58:14Z",
+      "side": 1,
+      "message": "I don\u0027t think this is necessary. Request already comes as a proto.",
+      "range": {
+        "startLine": 204,
+        "startChar": 30,
+        "endLine": 204,
+        "endChar": 37
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c747748_dcdc2b8d",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:58:14Z",
+      "side": 1,
+      "message": "better: errors.Reason(\"...\", ...).Err()\nsuch that stack is captured.",
+      "range": {
+        "startLine": 208,
+        "startChar": 14,
+        "endLine": 208,
+        "endChar": 24
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a7561c6_163e05ba",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:58:14Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 391,
+        "startChar": 3,
+        "endLine": 391,
+        "endChar": 18
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e727a604_d7a08aa8",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:58:14Z",
+      "side": 1,
+      "message": "not a useful test: you are just testing that proto library can en/decode to/from JSON.\nBetter: provide actual JSON string itself, and specify the tricky repeated fields, too.",
+      "range": {
+        "startLine": 398,
+        "startChar": 3,
+        "endLine": 400,
+        "endChar": 5
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e47eba72_7425e5b3",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:58:14Z",
+      "side": 1,
+      "message": "Don\u0027t add toProto just for tests. instead, pass proto request directly and then hardcode-assert that actually sent JSON data is what you\u0027d expect.",
+      "range": {
+        "startLine": 412,
+        "startChar": 2,
+        "endLine": 412,
+        "endChar": 26
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
