@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f5159c6b_a02e6dc8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T07:17:02Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 7,
+        "startChar": 59,
+        "endLine": 7,
+        "endChar": 68
+      },
+      "revId": "30ac46c5f252b649ef9e13b5bcb7f707bd7f1c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e73404f3_09bf28f8",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -13,6 +36,69 @@
       "writtenOn": "2020-09-15T07:09:43Z",
       "side": 1,
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/infra/ci/infra-continuous-xenial-64/8438/test-results",
+      "revId": "30ac46c5f252b649ef9e13b5bcb7f707bd7f1c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd6bcb91_1f908917",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T07:17:02Z",
+      "side": 1,
+      "message": "integrate",
+      "range": {
+        "startLine": 151,
+        "startChar": 22,
+        "endLine": 151,
+        "endChar": 33
+      },
+      "revId": "30ac46c5f252b649ef9e13b5bcb7f707bd7f1c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a81e009e_ce9e7647",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T07:17:02Z",
+      "side": 1,
+      "message": "very nice",
+      "range": {
+        "startLine": 151,
+        "startChar": 10,
+        "endLine": 152,
+        "endChar": 70
+      },
+      "revId": "30ac46c5f252b649ef9e13b5bcb7f707bd7f1c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d63cd2ec_3f5cb983",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T07:17:02Z",
+      "side": 1,
+      "message": "in the preview each sentence appears on a separate line, including go/resultdb. Is this intentional?",
       "revId": "30ac46c5f252b649ef9e13b5bcb7f707bd7f1c94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
