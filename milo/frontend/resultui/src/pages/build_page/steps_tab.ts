@@ -55,7 +55,6 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   protected render() {
-    // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
       <div id="header">
         <div class="filters-container">
@@ -68,7 +67,7 @@ export class StepsTabElement extends MobxLitElement {
               @change=${(e: MouseEvent) => this.showSucceeded = (e.target as HTMLInputElement).checked}
             >
             <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
-          </div class="filter">
+          </div>
           <div class="filter">
             <input id="others" type="checkbox" disabled checked>
             <label for="others">Others</label>
@@ -85,7 +84,7 @@ export class StepsTabElement extends MobxLitElement {
               @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
             >
             <label for="debug-logs-filter">Debug</label>
-          </div class="filter">
+          </div>
         </div>
         <span></span>
         <mwc-button
@@ -103,7 +102,7 @@ export class StepsTabElement extends MobxLitElement {
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
-          .expanded=${true}
+          .expanded=${step.status !== BuildStatus.Success}
           .number=${i + 1}
           .step=${step}
           .showDebugLogs=${this.showDebugLogs}
