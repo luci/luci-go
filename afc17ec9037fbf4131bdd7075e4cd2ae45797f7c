@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "33f540e7_508522eb",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T18:18:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23e14d72_361844ea",
+      "range": {
+        "startLine": 204,
+        "startChar": 30,
+        "endLine": 204,
+        "endChar": 37
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c747748_dcdc2b8d",
         "filename": "common/api/gerrit/json.go",
         "patchSetId": 1
@@ -62,6 +86,30 @@
       "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d3f2aa4_5177c383",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T18:18:33Z",
+      "side": 1,
+      "message": "deleting the method.",
+      "parentUuid": "4c747748_dcdc2b8d",
+      "range": {
+        "startLine": 208,
+        "startChar": 14,
+        "endLine": 208,
+        "endChar": 24
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -131,6 +179,30 @@
       "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c28d05ce_f7ae0859",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T18:18:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e47eba72_7425e5b3",
+      "range": {
+        "startLine": 412,
+        "startChar": 2,
+        "endLine": 412,
+        "endChar": 26
+      },
+      "revId": "afc17ec9037fbf4131bdd7075e4cd2ae45797f7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
