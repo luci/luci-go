@@ -39,6 +39,93 @@
       "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5b24d5f_c2089f85",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T16:35:22Z",
+      "side": 1,
+      "message": "Here, and in State:\n\nAIP recommends setting 0 value to \u003cenum_name\u003e_UNKNOWN. The exception to this rule is if you have a value that is semantically equivalent to \"Unknown\". In particular, using 0 value for defaults is not recommended.\n\nhttps://google.aip.dev/126",
+      "parentUuid": "1759fa86_d828dd31",
+      "range": {
+        "startLine": 567,
+        "startChar": 2,
+        "endLine": 567,
+        "endChar": 20
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9825d63_078155ba",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 578,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T16:35:22Z",
+      "side": 1,
+      "message": "nit: trailing space",
+      "range": {
+        "startLine": 578,
+        "startChar": 2,
+        "endLine": 578,
+        "endChar": 3
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb2c78e9_485e6381",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T16:35:22Z",
+      "side": 1,
+      "message": "nit: trailing space",
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8762ca9_94907069",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 605,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T16:35:22Z",
+      "side": 1,
+      "message": "I know you\u0027re being faithful to the gerrit API itself, but unfortunate naming. The number of times I\u0027ll read this as css...",
+      "range": {
+        "startLine": 605,
+        "startChar": 24,
+        "endLine": 605,
+        "endChar": 27
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
