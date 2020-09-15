@@ -77,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "e019a30d_97ad3cde",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 568,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T22:27:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d530062d_3c17d135",
+      "range": {
+        "startLine": 568,
+        "startChar": 4,
+        "endLine": 568,
+        "endChar": 31
+      },
+      "revId": "14f020aa73586f88648b4e2ed3e0643f05ed9bac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49b39e7e_757002b8",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 7
