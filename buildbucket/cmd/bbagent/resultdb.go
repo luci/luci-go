@@ -34,3 +34,12 @@ func setResultDBContext(ctx context.Context, buildProto *bbpb.Build) (context.Co
 		},
 	}), nil
 }
+
+func setResultDBFromContext(ctx context.Context, buildProto *bbpb.Build) {
+	if resultDBCtx := lucictx.GetResultDB(ctx); resultDBCtx != nil {
+		buildProto.Infra.Resultdb = &bbpb.BuildInfra_ResultDB{
+			Hostname: resultDBCtx.Hostname,
+			Invocation: resultDBCtx.CurrentInvocation.Name,
+		}
+	}
+}
