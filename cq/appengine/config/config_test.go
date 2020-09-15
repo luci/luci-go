@@ -62,6 +62,8 @@ const validConfigTextPB = `
 			url: "https://chromium-review.googlesource.com"
 			projects {
 				name: "chromium/src"
+				ref_regexp: "refs/heads/.+"
+				ref_regexp_exclude: "refs/heads/excluded"
 			}
 		}
 		verifiers {
@@ -191,48 +193,6 @@ func TestValidation(t *testing.T) {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
 				})
-
-				Convey("no obviously overlapping config_groups", func() {
-					cfg.ConfigGroups = nil
-					add("refs/heads/.+")
-					add("refs/heads/.+")
-					Convey("without fallback", func() {
-						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, "aliases config_group #1")
-					})
-					Convey("with fallback", func() {
-						// TODO(tandrii): strictly speaking, for exact same watched
-						// gerrit/project/refs fallback=YES is effectively noop.
-						cfg.ConfigGroups[1].Fallback = v2.Toggle_YES
-						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldBeNil)
-					})
-				})
-
-				Convey("2nd heuristic against overlapping config_groups", func() {
-					// Store original valid first and only ConfigGroup.
-					cfg.ConfigGroups = nil
-					Convey("infra/config", func() {
-						add("refs/heads/infra/config")
-						add("refs/.+")
-						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/infra/config" matches config_groups [0 1]`)
-					})
-					Convey("master", func() {
-						add() // default, meaning refs/heads/master.
-						add("refs/branch-heads/.+")
-						add("refs/heads/.+")
-						Convey("without fallback", func() {
-							validateProjectConfig(vctx, &cfg)
-							So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/master" matches config_groups [0 2]`)
-						})
-						Convey("with fallback", func() {
-							cfg.ConfigGroups[2].Fallback = v2.Toggle_YES
-							validateProjectConfig(vctx, &cfg)
-							So(vctx.Finalize(), ShouldBeNil)
-						})
-					})
-				})
 			})
 		})
 
@@ -351,10 +311,21 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): error parsing regexp:")
 			})
+			Convey("bad regexp_exclude", func() {
+				p.RefRegexpExclude = []string{"*is-bad-regexp"}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "ref_regexp_exclude #1): error parsing regexp:")
+			})
 			Convey("duplicate regexp", func() {
 				p.RefRegexp = []string{"refs/heads/master", "refs/heads/master"}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): duplicate regexp:")
+			})
+			Convey("duplicate regexp include/exclude", func() {
+				p.RefRegexp = []string{"refs/heads/.+"}
+				p.RefRegexpExclude = []string{"refs/heads/.+"}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "ref_regexp_exclude #1): duplicate regexp:")
 			})
 		})
 
