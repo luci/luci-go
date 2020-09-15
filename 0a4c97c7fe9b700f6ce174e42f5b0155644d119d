@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "6a578f90_7f75a812",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-09-15T17:20:55Z",
+      "side": 1,
+      "message": "Filed crbug.com/1128498",
+      "parentUuid": "189b2616_e7b95d8f",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "326b672d_2894cdf7",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
