@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "cfec7de6_761faecf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T04:31:31Z",
+      "side": 1,
+      "message": "What you described was option 1.\n\nOption 2 is\n1. The url to the new build page will be: \n/ui/p/\u003cproject\u003e/buckets/\u003cbucket\u003e/builders/\u003cbuilder\u003e/builds/\u003cbuild_id\u003e.\n2. In the lagacy handler, check \"?forceLegacy\u003d1\" (or smth like this). if not present, redirect to the new page.\n\nWe will keep the /ui/ prefix.\n3. Later, when we ready to turn down old page, unconditionally redirects the old URL to /ui/p/\u003cproject\u003e/buckets/\u003cbucket\u003e/builders/\u003cbuilder\u003e/builds/\u003cbuild_id\u003e.\n\nPro:\nEasy to add new handlers at any point.\nCon:\nURL is longer.",
+      "parentUuid": "475e56bb_0c9fe39f",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b1e9e671_7f1ad3d0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
