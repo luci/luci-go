@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3f5081e5_1438938c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T04:10:10Z",
+      "side": 1,
+      "message": "I see.\nI don\u0027t have anything planed but I think it would be better to keep the options open unless we know we won\u0027t need it.\n\nWe can either\n1. Change the URL scheme to be exactly the same as the existing milo URLs (with temporary /ui/).\n2. Add prefix to every routes, when user visits a URL without the /ui/ prefix, redirect them to the one with the /ui/ prefix. WDYT?",
+      "parentUuid": "b126ede6_3b614d05",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b1e9e671_7f1ad3d0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
