@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "475e56bb_0c9fe39f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T04:23:10Z",
+      "side": 1,
+      "message": "sorry, I didn\u0027t understand the options.\nPrefix\"/ui/\" makes sense, at least for consistency with invocations page. Option (2) doesn\u0027t seem to be mutually exclusive with (1)? The way I thought of this:\n\n1) use same URL as current, but with \"/ui\" prefix\n2) in the legacy handler, check \"?forceLegacy\u003d1\" (or smth like this). if not present, redirect to the new page.\n2.1) For fishfood, there is also group membership check\n\nThen, assuming we don\u0027t want \"iu\" prefix eventually:\n3) Later, when we ready to turn down old page, host new page at the build page URL without \"ui/\" prefix.\n4) redirect from with-ui-prefix build page to without-ui-prefix build page.",
+      "parentUuid": "3f5081e5_1438938c",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b1e9e671_7f1ad3d0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
