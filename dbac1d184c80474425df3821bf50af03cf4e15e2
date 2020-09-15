@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb90d69d_9a816c07",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-15T07:05:59Z",
+      "side": 1,
+      "message": "I think \"Copy the step name\" is enough. Putting \"short name\" means we have a long name somewhere and the user need to care about?",
+      "revId": "dbac1d184c80474425df3821bf50af03cf4e15e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
