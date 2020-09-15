@@ -14,7 +14,7 @@
 
 import '@chopsui/chops-signin';
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
+import { css, customElement, html, LitElement } from 'lit-element';
 
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
@@ -23,21 +23,6 @@ import { css, customElement, html, LitElement, PropertyValues } from 'lit-elemen
  */
 @customElement('milo-page-layout')
 export class PageLayoutElement extends LitElement {
-  private rendered = false;
-  protected firstUpdated() {
-    this.rendered = true;
-  }
-
-  protected shouldUpdate(changedProperties: PropertyValues) {
-    if (this.rendered && changedProperties.has('clientId')) {
-      // <chops-signin> (gapi.auth2) can not be initialized with a different
-      // client-id. Refresh the page when a new clientId is provided.
-      window.location.reload();
-      return false;
-    }
-    return true;
-  }
-
   protected render() {
     const feedbackComment = encodeURIComponent(
 `From Link: ${document.location.href}
