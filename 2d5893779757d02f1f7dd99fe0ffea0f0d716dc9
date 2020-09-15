@@ -1,0 +1,625 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4256fdb_46e9fa0a",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "why not more type-safe\n\n  ClockDriftBuffer \u003d 10 * time.Minute",
+      "range": {
+        "startLine": 39,
+        "startChar": 17,
+        "endLine": 39,
+        "endChar": 30
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9779afd_bf077c88",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "is this a reference to something? I didn\u0027t understand",
+      "range": {
+        "startLine": 42,
+        "startChar": 55,
+        "endLine": 42,
+        "endChar": 58
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9dcc245_0b3a4a6d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "nit: maybe \"Simultaneous\"? to be consistent with above.\nalso \"Concurrent\" might make the reader think about Go concurrency\n\nstepping back: will this name still be good when we add commit position? i feel like \"Concurrent\" and \"Simultaneous\" refer to time. How about more direct \"IndexedWith\"?",
+      "range": {
+        "startLine": 54,
+        "startChar": 21,
+        "endLine": 54,
+        "endChar": 31
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37ffeee8_b7c8404a",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this compares timestamp protobufs by reference.\n\ni think it is better to compare its fields than https://godoc.org/github.com/golang/protobuf/proto#Equal because comparing fields would be faster",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 38
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7285335b_bea05dd1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "nit: the func should explain what it is doing for the caller, not how it is doing it",
+      "range": {
+        "startLine": 58,
+        "startChar": 35,
+        "endLine": 58,
+        "endChar": 74
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b13e4c40_8eff5355",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "nit: consider placing it before timeRange, so that when we add \"ByCommitPosition\", the first two params are same in the two funcs",
+      "range": {
+        "startLine": 59,
+        "startChar": 63,
+        "endLine": 59,
+        "endChar": 68
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c87eaded_8955c159",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "maybe timeRange.earliest? since that\u0027s what the caller passes. min_time is impl detail of this func",
+      "range": {
+        "startLine": 67,
+        "startChar": 37,
+        "endLine": 67,
+        "endChar": 45
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "867f9786_48b5a23c",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "\u003e \"acount\" is a possible misspelling of \"account\".\n\nPlease fix.",
+      "parentUuid": "f033791c_28b08d15",
+      "range": {
+        "startLine": 72,
+        "startChar": 21,
+        "endLine": 72,
+        "endChar": 27
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d65813d8_c83cafda",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "nit: please compute Now() only once in this func",
+      "range": {
+        "startLine": 73,
+        "startChar": 12,
+        "endLine": 73,
+        "endChar": 26
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "005fb7f5_057f681d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "the docstring of this func should mention that it returns up to 50 invocations.",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 17
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e27c186_4c39240e",
+        "filename": "resultdb/internal/invocations/history_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "is this 5 independent tests? if yes, they should be in a separate sub-Conveys",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 30
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0035ba3_a83384d5",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "in Go the namespace for global is entire package, not file like in Python.\nplease choose a name more appropriate for the package level, e.g. defaultHistoryPageSize",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 16
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffb4591d_91f529b4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this leaks a goroutine. GetTestResultHistory should not exit until all its sub-goroutines exit. See how `go` keyword is used in resultdb codebase, also WaitGroup and errgroup\n\nthis applies to multiple places",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 39
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54ff297f_246b6127",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this is the only usage. inline?",
+      "range": {
+        "startLine": 72,
+        "startChar": 29,
+        "endLine": 72,
+        "endChar": 34
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f81c41d4_913a5baf",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this might be a timeout. We shouldn\u0027t return OK response in such case",
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf8e11ca_04f1a9ac",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "same here: the namespace is entire package, not just this file. Consider historyEntryOrError or just historyItem, or something like that\n\nbut stepping back, i start to regret that I mentioned this approach. I think it has complicated the code and introduced problems like deadlocks (see below: we aren\u0027t selecting on sending and receiving ctx.Done()). The alternative is something like https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/query.go;l\u003d76-81",
+      "range": {
+        "startLine": 125,
+        "startChar": 5,
+        "endLine": 125,
+        "endChar": 17
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "080088f4_283f46a9",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "same here (about the namespace), but stepping back, there are 4 functions that receive GetTestResultHistoryRequest as a param. WDYT about creating a struct, e.g. testResultHistory that has the request as fields, and has these functions as methods? then we can keep shorter func names and not pass request each time",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 22
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed0543bc_a1cb7aad",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "it is generally safer to close a channel in the same piece of code which created it. It prevents situations where we close a closed channel. Given that you will end up expanding `go resultsForRequest()` into `go func() { ... }`, you recommend putting the defer there\n\nthen comments like L137-138 aren\u0027t needed\n\nsame below",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 17
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2882140_8cd50ce7",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "50 build-level invocations may expand in 5k invocations. Please add a TODO to parallelize this loop",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 23
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2650113b_3a2cafa9",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this may hang forever if the context was canceled and nothing is receiving from ret \u003d\u003e memoryleak.\nthis should select on this sending and receiving from ctx.Done\n\napplies to all sends",
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e36fa6_d7cda37f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "do you mean to return or break here? otherwise we proceed to L148 where we use a nil msg.inv",
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ada06e5e_edeb0b1d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "here we aren\u0027t stopping if matchingResultsInInv failed, but we should",
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "770440e3_b44daea0",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "nit: after writing some resultdb code, I learned that \"transitive closure\" means something else. A more correct term is \"streams reachable invocations\"",
+      "range": {
+        "startLine": 161,
+        "startChar": 15,
+        "endLine": 161,
+        "endChar": 39
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc0bb8e2_6ec432ae",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this loop makes 50 RPCs-batches sequentially. Please add a TODO to parallelize this",
+      "range": {
+        "startLine": 169,
+        "startChar": 28,
+        "endLine": 169,
+        "endChar": 35
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58047924_86b95db7",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "why this isn\u0027t \n\n  case ret \u003c- entry\n\n? it still may hang if Done() was closed when `select` ran, but then got closed and nothing is listening to ret",
+      "range": {
+        "startLine": 180,
+        "startChar": 3,
+        "endLine": 181,
+        "endChar": 4
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6685daf_fffdf66f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "this could be the receiver of this func, i.e. \n\n  func (c *invocationCohort) matchingResults(...)\n\nwould be more object oriented",
+      "range": {
+        "startLine": 223,
+        "startChar": 47,
+        "endLine": 223,
+        "endChar": 71
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "44779e5c_26327c55",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "why not ctx.Err() ?\ncontext might get canceled during query.Run execution (as opposed to the callback) and ctx.Err() would be returned (as opposed to stopQuery)",
+      "range": {
+        "startLine": 240,
+        "startChar": 10,
+        "endLine": 240,
+        "endChar": 19
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf68a57a_77bad51b",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:21:29Z",
+      "side": 1,
+      "message": "why is this important?",
+      "range": {
+        "startLine": 251,
+        "startChar": 14,
+        "endLine": 251,
+        "endChar": 35
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
