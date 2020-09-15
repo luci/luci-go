@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b126ede6_3b614d05",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T04:02:50Z",
+      "side": 1,
+      "message": "what paths do you have in mind? Are there entities you are thinking of adding under a builder? or bucket?\n\nI am not sure this CL achieves the goal: I think there is a lot of code that generates Milo build URLs, so either we\u0027d need to find and update them all (which is not good use of our time) or we will have to keep a backward compatibility redirect from /p/:project/builders/:bucket/:builder/:number to the new URL, but this means we still cannot add new URLs.",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1e9e671_7f1ad3d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T04:02:50Z",
+      "side": 1,
+      "message": "if the intention is to change ",
+      "revId": "4d46caae17b0c48d09b344d8b1c753a0b55b625e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
