@@ -43,7 +43,7 @@ export class InvocationState {
   get invocationReq(): IPromiseBasedObservable<Invocation> {
     if (!this.appState.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getInvocation({name: this.invocationName}));
   }
@@ -63,7 +63,7 @@ export class InvocationState {
 
   @computed private get testResultBatchIterFn() {
     if (!this.appState?.resultDb || !this.invocationName) {
-      return async function*() {};
+      return async function*() { yield Promise.race([]); };
     }
     return iter.teeAsync(streamTestResultBatches(
       {
