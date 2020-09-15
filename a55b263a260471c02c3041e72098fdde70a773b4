@@ -51,6 +51,24 @@
       "revId": "a55b263a260471c02c3041e72098fdde70a773b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "953c226a_bc530533",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-15T17:49:50Z",
+      "side": 1,
+      "message": "Yep, those logs.",
+      "parentUuid": "bc57f697_b5a06f57",
+      "revId": "a55b263a260471c02c3041e72098fdde70a773b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
