@@ -15,12 +15,11 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import copy from 'copy-to-clipboard';
 import { css, customElement, html } from 'lit-element';
+import { classMap } from 'lit-html/directives/class-map';
 import { observable } from 'mobx';
-
 
 /**
  * A simple icon that copies textToCopy to clipboard onclick.
- * Size can be configured via --size, defaults to 16px;
  */
 @customElement('milo-copy-to-clipboard')
 export class CopyToClipboard extends MobxLitElement {
@@ -28,42 +27,49 @@ export class CopyToClipboard extends MobxLitElement {
   textToCopy = '';
 
   onclick = () => {
+    if (this.copied) {
+      return;
+    }
     copy(this.textToCopy);
     this.copied = true;
-  }
-
-  onmouseleave = () => {
-    this.copied = false;
+    setTimeout(() => this.copied = false, 1000);
   }
 
   protected render() {
     return html`
       <svg
-        class="inline-icon"
+        class=${classMap({'copied': this.copied})}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
       >
-        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        <path id="tick-icon" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        <path id="copy-icon" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
       </svg>
-      <span ?hidden=${!this.copied}>copied</span>
     `;
   }
 
   static styles = css`
     :host {
       cursor: pointer;
+      display: inline-block;
+      vertical-align: text-bottom;
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      padding: 2px;
     }
-    svg {
-      width: var(--size, 16px);
-      height: var(--size, 16px);
+    :host(:hover) {
+      background-color: silver;
     }
-    svg:hover {
-      filter: drop-shadow(3px 3px 4px gray);
+
+    #tick-icon {
+      visibility: hidden;
     }
-    span {
-      background-color: black;
-      color: white;
-      padding: 3px;
+    .copied>#tick-icon {
+      visibility: visible;
+    }
+    .copied>#copy-icon {
+      visibility: hidden;
     }
   `;
 }
