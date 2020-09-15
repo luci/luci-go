@@ -383,6 +383,39 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	})
 }
 
+func TestAddReviewer(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Add reviewer basic", t, func() {
+		// large enough?
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'`)
+			json.NewEncoder(w).Encode(&gerritpb.AddReviewerResult{
+				Input: "reviewer@test.com",
+			})
+		})
+		defer srv.Close()
+
+		rr := &addReviewerRequest{
+			Number:    42,
+			Project:   "someproject",
+			Reviewer:  "reviewer@test.com",
+			State:     "REVIEWER",
+			Confirmed: true,
+			Notify:    "ALL",
+		}
+		req, err := rr.ToProto()
+		_, err = c.AddReviewer(ctx, req)
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers")
+	})
+}
+
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

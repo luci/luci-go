@@ -211,7 +211,18 @@ func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEdit
 }
 
 func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerRequest, opts ...grpc.CallOption) (*gerritpb.AddReviewerResult, error) {
-	return nil, errors.New("not implemented")
+	var resp gerritpb.AddReviewerResult
+	data := &addReviewerRequest{
+		Reviewer:  req.Reviewer,
+		State:     string(req.State),
+		Confirmed: req.Confirmed,
+		Notify:    string(req.Notify),
+	}
+	path := fmt.Sprintf("/changes/%s/reviewers", gerritChangeIDForRouting(req.Number, req.Project))
+	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
+		return nil, errors.Annotate(err, "add reviewers").Err()
+	}
+	return &resp, nil
 }
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {

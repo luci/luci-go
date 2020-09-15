@@ -191,3 +191,33 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 		MergeableInto: mi.MergeableInto,
 	}, nil
 }
+
+type addReviewerRequest struct {
+	Number    int64  `json:"number"`
+	Project   string `json:"string"`
+	Reviewer  string `json:"reviewer"`
+	State     string `json:"state"`
+	Confirmed bool   `json:"confirmed"`
+	Notify    string `json:"notify"`
+}
+
+func (rr *addReviewerRequest) ToProto() (*gerritpb.AddReviewerRequest, error) {
+	stateEnumName := strings.ToUpper(rr.State)
+	stateEnumNum, found := gerritpb.AddReviewerRequest_State_value[stateEnumName]
+	if !found {
+		return nil, fmt.Errorf("no State enum value for %q", stateEnumName)
+	}
+	notifyEnumName := strings.ToUpper(rr.Notify)
+	notifyEnumNum, found := gerritpb.AddReviewerRequest_Notify_value[notifyEnumName]
+	if !found {
+		return nil, fmt.Errorf("no Notify enum value for %q", notifyEnumName)
+	}
+	return &gerritpb.AddReviewerRequest{
+		Number:    rr.Number,
+		Project:   rr.Project,
+		Reviewer:  rr.Reviewer,
+		State:     gerritpb.AddReviewerRequest_State(stateEnumNum),
+		Confirmed: rr.Confirmed,
+		Notify:    gerritpb.AddReviewerRequest_Notify(notifyEnumNum),
+	}, nil
+}
