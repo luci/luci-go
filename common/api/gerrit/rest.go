@@ -210,6 +210,10 @@ func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEdit
 	return &empty.Empty{}, nil
 }
 
+func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerRequest, opts ...grpc.CallOption) (*gerritpb.AddReviewerResult, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
 	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
 	var data struct {
