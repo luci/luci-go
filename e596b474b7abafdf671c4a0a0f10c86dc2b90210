@@ -16,6 +16,40 @@
       "revId": "e596b474b7abafdf671c4a0a0f10c86dc2b90210",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2aee2abd_5224977e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-15T21:13:18Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "e596b474b7abafdf671c4a0a0f10c86dc2b90210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba04eaee_7b789e96",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-15T21:13:18Z",
+      "side": 1,
+      "message": "Maybe\n\n \"On creation of a build (e.g. via `led` and via `CreateBuild` (tbd, crbug.com/1114804), the existence of this message indicates that resultdb will be enabled for the build.\"",
+      "revId": "e596b474b7abafdf671c4a0a0f10c86dc2b90210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
