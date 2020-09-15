@@ -14,6 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
+import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
@@ -32,6 +33,7 @@ export class StepsTabElement extends MobxLitElement {
   // TODO(crbug/1123362): save the setting.
   @observable.ref showSucceeded = true;
   @observable.ref showDebugLogs = false;
+  @observable.ref collapseSucceeded = true;
 
   connectedCallback() {
     super.connectedCallback();
@@ -58,9 +60,9 @@ export class StepsTabElement extends MobxLitElement {
     // TODO(crbug/1123362): add expand/collapse all buttons.
     return html`
       <div id="header">
-        <div class="filters-container">
+        <div class="header-section">
           Steps:
-          <div class="filter">
+          <div class="header-section-item">
             <input
               id="succeeded"
               type="checkbox"
@@ -68,24 +70,35 @@ export class StepsTabElement extends MobxLitElement {
               @change=${(e: MouseEvent) => this.showSucceeded = (e.target as HTMLInputElement).checked}
             >
             <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
-          </div class="filter">
-          <div class="filter">
+          </div>
+          <div class="header-section-item">
             <input id="others" type="checkbox" disabled checked>
             <label for="others">Others</label>
           </div>
         </div>
-        <div class="filters-container-delimiter"></div>
-        <div class="filters-container">
-          Logs:
-          <div class="filter">
+        <div class="header-section-delimiter"></div>
+        <div class="header-section">
+          <div class="header-section-item">
+            <input
+              id="collapse-succeeded"
+              type="checkbox"
+              ?checked=${this.collapseSucceeded}
+              @change=${(e: MouseEvent) => this.collapseSucceeded = (e.target as HTMLInputElement).checked}
+            >
+            <label for="collapse-succeeded">
+              Collapse Succeeded
+              <mwc-icon id="collapse-succeeded-info" title="Collapse succeeded steps by default.">info</mwc-icon>
+            </label>
+          </div>
+          <div class="header-section-item">
             <input
               id="debug-logs-filter"
               type="checkbox"
               ?checked=${this.showDebugLogs}
               @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
             >
-            <label for="debug-logs-filter">Debug</label>
-          </div class="filter">
+            <label for="debug-logs-filter">Debug Logs</label>
+          </div>
         </div>
         <span></span>
         <mwc-button
@@ -103,7 +116,7 @@ export class StepsTabElement extends MobxLitElement {
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
-          .expanded=${true}
+          .expanded=${(!this.collapseSucceeded || step.status !== BuildStatus.Success)}
           .number=${i + 1}
           .step=${step}
           .showDebugLogs=${this.showDebugLogs}
@@ -131,22 +144,28 @@ export class StepsTabElement extends MobxLitElement {
       padding: 5px 10px 3px 10px;
     }
 
-    .filters-container {
+    .header-section {
       display: inline-block;
       padding: 0 5px;
       padding-top: 5px;
     }
-    .filter {
+    .header-section-item {
       display: inline-block;
       margin: 0 5px;
     }
-    .filter:last-child {
+    .header-section-item:last-child {
       margin-right: 0px;
     }
-    .filters-container-delimiter {
+    .header-section-delimiter {
       border-left: 1px solid var(--divider-color);
       width: 0px;
       height: 100%;
+    }
+
+    #collapse-succeeded-info {
+      color: var(--default-text-color);
+      --mdc-icon-size: 1.2em;
+      vertical-align: bottom;
     }
 
     #main {

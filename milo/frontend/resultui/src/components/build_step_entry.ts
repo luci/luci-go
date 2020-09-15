@@ -94,9 +94,12 @@ export class BuildStepEntryElement extends MobxLitElement {
             </li>
             `)}
           </ul>
-          ${this.step.children?.map((child, i) => html`
+          ${// TODO(crbug/1127769): collapse succeeded children
+          // once the user settings is moved to a shared state.
+          this.step.children?.map((child, i) => html`
           <milo-build-step-entry
             class="list-entry"
+            .expanded=${true}
             .number=${i + 1}
             .step=${child}
             .showDebugLogs=${this.showDebugLogs}
