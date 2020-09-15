@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8ff5c7d5_ed9c7dae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T04:24:51Z",
+      "side": 1,
+      "message": "If we want to persist the option, it\u0027s a bit weird to make it a button though.\n\nAll settings in the bar would change the state of the list, what\u0027s confusing you?",
+      "parentUuid": "8ef5ea2a_33c90cd0",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04882589_a6c5bfce",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 7
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d1f2d84b_e7fc35e6",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T04:24:51Z",
+      "side": 1,
+      "message": "It would work.\nThis only sets the initial value.\nThe sub-step can still be toggled.",
+      "parentUuid": "04882589_a6c5bfce",
+      "range": {
+        "startLine": 102,
+        "startChar": 22,
+        "endLine": 102,
+        "endChar": 29
+      },
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "836dc811_83be9aa5",
         "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
         "patchSetId": 7
@@ -62,6 +104,30 @@
       "revId": "287a012ad0d2a0481b692402b73033cca8819055",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74d1a6fa_b64404db",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T04:24:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "836dc811_83be9aa5",
+      "range": {
+        "startLine": 60,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 60
+      },
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
