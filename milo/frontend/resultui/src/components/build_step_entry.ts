@@ -97,6 +97,7 @@ export class BuildStepEntryElement extends MobxLitElement {
           ${this.step.children?.map((child, i) => html`
           <milo-build-step-entry
             class="list-entry"
+            .expanded=${true}
             .number=${i + 1}
             .step=${child}
             .showDebugLogs=${this.showDebugLogs}
