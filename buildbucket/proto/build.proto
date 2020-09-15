@@ -428,5 +428,7 @@ message BuildInfra {
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
+  // When a build message is used as input to create a build and if resultdb
+  // is set, then resultdb integration in that build should be enabled.
   ResultDB resultdb = 5;
 }

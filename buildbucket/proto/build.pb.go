@@ -376,7 +376,9 @@ type BuildInfra struct {
 	Swarming    *BuildInfra_Swarming    `protobuf:"bytes,2,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	Logdog      *BuildInfra_LogDog      `protobuf:"bytes,3,opt,name=logdog,proto3" json:"logdog,omitempty"`
 	Recipe      *BuildInfra_Recipe      `protobuf:"bytes,4,opt,name=recipe,proto3" json:"recipe,omitempty"`
-	Resultdb    *BuildInfra_ResultDB    `protobuf:"bytes,5,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
+	// When a build message is used as input to create a build and if resultdb
+	// is set, then resultdb integration in that build should be enabled.
+	Resultdb *BuildInfra_ResultDB `protobuf:"bytes,5,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
 }
 
 func (x *BuildInfra) Reset() {
