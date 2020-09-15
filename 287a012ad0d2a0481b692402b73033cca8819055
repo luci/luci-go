@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "24ebb2df_ea70bac3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T05:00:50Z",
+      "side": 1,
+      "message": "Actually, in that case, why do we need a button at all?\n\nThe new page supports all the use case of the old one.\nNon-green -\u003e untick successful steps\nDefault -\u003e tick successful steps\nExpanded -\u003e tick successful steps and tick expand all.\n\nHaving lots of substeps (e.g. https://ci.chromium.org/ui/p/chromium/try/linux-rel/487543/steps) wouldn\u0027t be a problem if we have filters and expand/collapse all buttons (which are not deployed yet).\n\nWe can may be tweak the default settings a bit to\n1. Collapse all non-leaves steps, or\n2. collapse all successful steps.\n\nWDYT?",
+      "parentUuid": "20cc648e_be4b0eeb",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04882589_a6c5bfce",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 7
