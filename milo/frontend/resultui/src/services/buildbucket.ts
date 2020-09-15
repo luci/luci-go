@@ -179,7 +179,7 @@ export interface BuildInfraRecipe {
 
 export interface BuildInfraResultdb {
   readonly hostname: string;
-  readonly invocation: string;
+  readonly invocation?: string;
 }
 
 export interface Executable {
