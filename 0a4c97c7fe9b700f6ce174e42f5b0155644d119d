@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "5eaf3a0b_9466da57",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "LGTM % nits + question.",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16c4899e_e1300f98",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -22,6 +39,201 @@
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "326b672d_2894cdf7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "this and below auto editor fixes are great, but in the future consider creating separate CL with just them s.t. this CL diff is focused on actual changes you meant to make.",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1baff7c_8a6d0b36",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 555,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "nit: I think it\u0027s more useful to document `state` field itself, not the enum, since field is where semantic doc will be loaded from.",
+      "range": {
+        "startLine": 555,
+        "startChar": 47,
+        "endLine": 555,
+        "endChar": 54
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02c695da_00ccc64e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 559,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "ptal https://google.aip.dev/126\n\nplease name values with longish names which won\u0027t overlap with other enums.\nADD_REVIEWER_STATE_REVIEWER \u003d 0\nADD_REVIEWER_STATE_CC \u003d 1\n\n(admittedly, this is longish to type in Go, but most of us have autocomplete😞)",
+      "range": {
+        "startLine": 556,
+        "startChar": 2,
+        "endLine": 559,
+        "endChar": 3
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db7152d9_4563b006",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 565,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "nit: add . at the end (also a few doc lines above and below)",
+      "range": {
+        "startLine": 565,
+        "startChar": 57,
+        "endLine": 565,
+        "endChar": 59
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43eb0a0c_f9557678",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 568,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "this is especially common name, so prefixing it is a must.",
+      "range": {
+        "startLine": 568,
+        "startChar": 4,
+        "endLine": 568,
+        "endChar": 13
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b71c7d5_ccff810b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 576,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "nit-nit/imo: for faster visual scanning, I recommend to add an empty line after first short description.\nHowever, this isn\u0027t always followed by everyone.",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c0cdb20_eb828840",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 583,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "This is copy-pasta which doesn\u0027t seem to be relevant to add_reviwer RPC.\n\nWDYT about embedding AccountInfo inside ReviewerInfo? I think it\u0027d remove the boilerplate, though at the cost of a bit more typing (info.account.email instead of just info.email)\n\nmessage ReviewerInfo{\n  AccountInfo account \u003d 1;\n  approvals ...\n}",
+      "range": {
+        "startLine": 582,
+        "startChar": 2,
+        "endLine": 583,
+        "endChar": 44
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a93edb64_8a0e2717",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 606,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "😢 \u003crant\u003e this field in GoB is really confusing, since I read \"approval\" as LGTM-like, but it\u0027s actually storing negative votes too. \u003c/rant\u003e",
+      "range": {
+        "startLine": 605,
+        "startChar": 2,
+        "endLine": 606,
+        "endChar": 35
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "afef1734_8921345e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T14:49:30Z",
+      "side": 1,
+      "message": "curious: do you have any idea how adding 1 reviewer (or CC) can result in a *list* of newly added reviewers?",
+      "range": {
+        "startLine": 618,
+        "startChar": 0,
+        "endLine": 623,
+        "endChar": 32
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
