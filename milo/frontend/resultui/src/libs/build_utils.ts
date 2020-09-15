@@ -36,6 +36,10 @@ export function getURLForProject(proj: string): string {
   return `/p/${proj}`;
 }
 
+export function getLegacyURLForBuild(builder: BuilderID , buildNumOrId: string) {
+  return `${getURLForBuilder(builder)}/${buildNumOrId}`;
+}
+
 export function getDisplayNameForStatus(s: BuildStatus): string {
   const statusMap = new Map([
     [BuildStatus.Scheduled, 'Scheduled'],

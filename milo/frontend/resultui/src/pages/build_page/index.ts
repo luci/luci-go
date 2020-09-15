@@ -24,7 +24,7 @@ import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
-import { getURLForBuilder, getURLForProject } from '../../libs/build_utils';
+import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -159,6 +159,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <a href=${getURLForBuilder(this.builder)}>${this.builder.builder}</a> /
           <span>${this.buildNumOrId}</span>
         </div>
+        <div class="delimiter"></div>
+        <a href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)} target="_blank">To legacy build page</a>
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
@@ -200,6 +202,14 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       margin-left: auto;
       flex: 0 auto;
     }
+
+    .delimiter {
+      border-left: 1px solid var(--divider-color);
+      width: 1px;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
     #status {
       font-weight: 500;
     }
