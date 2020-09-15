@@ -434,6 +434,30 @@
     },
     {
       "key": {
+        "uuid": "f8266d0a_f5bc91d4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T08:03:13Z",
+      "side": 1,
+      "message": "but stepping back, why are we iterating overall flattened list of invocations, as opposed to calling invocations.Reachable right before using testresults.Query?",
+      "parentUuid": "a2882140_8cd50ce7",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 23
+      },
+      "revId": "2d5893779757d02f1f7dd99fe0ffea0f0d716dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2650113b_3a2cafa9",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 15
