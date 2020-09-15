@@ -14,30 +14,14 @@
 
 import '@chopsui/chops-signin';
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
+import { css, customElement, html, LitElement } from 'lit-element';
 
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
  * top of the child nodes.
- * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
 export class PageLayoutElement extends LitElement {
-  private rendered = false;
-  protected firstUpdated() {
-    this.rendered = true;
-  }
-
-  protected shouldUpdate(changedProperties: PropertyValues) {
-    if (this.rendered && changedProperties.has('clientId')) {
-      // <chops-signin> (gapi.auth2) can not be initialized with a different
-      // client-id. Refresh the page when a new clientId is provided.
-      window.location.reload();
-      return false;
-    }
-    return true;
-  }
-
   protected render() {
     const feedbackComment = encodeURIComponent(
 `From Link: ${document.location.href}
@@ -47,7 +31,7 @@ Please enter a description of the problem, with repro steps if applicable.
       <div id="container">
         <div id="title-container">
           <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
-          <span id="headline">LUCI Test Results (BETA)</span>
+          <span id="headline">LUCI</span>
         </div>
         <a
           id="feedback"
