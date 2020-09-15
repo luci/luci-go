@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "014b38d6_b1e609f7",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-15T04:10:18Z",
+      "side": 1,
+      "message": "I would change this to \"Collapse Succeeded Steps\" to be clearer.",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "308d509d_1d125b41",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-15T04:10:18Z",
+      "side": 1,
+      "message": "I don\u0027t think we need the icon here, the info showed doesn\u0027t make it any clearer to me.",
+      "revId": "287a012ad0d2a0481b692402b73033cca8819055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
