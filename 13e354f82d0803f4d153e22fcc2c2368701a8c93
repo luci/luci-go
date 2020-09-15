@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f232d789_e0824fa5",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:43:41Z",
+      "side": 1,
+      "message": "it is checked anywhere. Why is it needed?",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 13
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df821be7_6cefbe4e",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:43:41Z",
+      "side": 1,
+      "message": "what motivated this change? I didn\u0027t understand it\n\nit can be a perfectly fine, just-created invocations which doesn\u0027t have TestResultCounts rows yet",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 97,
+        "endChar": 2
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40abdb02_87943949",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-15T06:43:41Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 321,
+        "startChar": 5,
+        "endLine": 322,
+        "endChar": 3
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
