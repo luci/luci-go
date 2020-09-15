@@ -59,5 +59,10 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
 
+	// Set restricted permission for written files.
+	client.DirMode = 0700
+	client.ExecutableMode = 0700
+	client.RegularMode = 0600
+
 	return client, nil
 }
