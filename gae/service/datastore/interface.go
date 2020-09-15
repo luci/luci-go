@@ -15,9 +15,11 @@
 package datastore
 
 import (
+	"container/heap"
 	"fmt"
 	"reflect"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"golang.org/x/net/context"
 )
@@ -377,6 +379,89 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 		})
 	}
 	return filterStop(err)
+}
+
+// RunMulti execute multiple queries and calls `cb` if it successfully retrieves items.
+// Please refer to the `Run` function comments for formats and restrictions for `cb` in this file.
+//
+// Note: projection queries and cursors in callback function are not supported,
+// as they are trivial the complexities and no use cases yet.
+func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
+	c, cancel := context.WithCancel(c)
+	defer cancel()
+
+	// TODO(yuanjunh): validate queries.
+	rcb, isKey, mat := parseRunCallback(cb)
+
+	iHeap := &iteratorHeap{}
+	heap.Init(iHeap)
+
+	// Move the iterator to next item and push to heap.
+	advance := func(qi *queryIterator) error {
+		if err := qi.Next(); err != nil {
+			return filterStop(err)
+		}
+		order, err := qi.CurrentItemOrder()
+		if err != nil {
+			return err
+		}
+		heap.Push(iHeap, &iteratorEntry{
+			order:    order,
+			iterator: qi,
+		})
+		return nil
+	}
+
+	// Put all queryIterators into heap.
+	for _, q := range queries {
+		if isKey {
+			q = q.KeysOnly(true)
+		}
+		fq, err := q.Finalize()
+		if err != nil {
+			return err
+		}
+		qi := StartQueryIterator(c, fq)
+		if err := advance(qi); err != nil {
+			return err
+		}
+	}
+
+	// Merge query results.
+	seenKeys := stringset.New(128)
+	dummyCursorCB := func() (Cursor, error) {
+		return nil, errors.New("datastore: RunMulti doesn't supported Cursor.")
+	}
+	var err error
+	for iHeap.Len() > 0 {
+		qi := heap.Pop(iHeap).(*iteratorEntry).iterator
+		keyStr := qi.CurrentItemKey()
+		if seenKeys.Has(keyStr) {
+			if err := advance(qi); err != nil {
+				return err
+			}
+			continue
+		}
+		seenKeys.Add(keyStr)
+		key, pm := qi.CurrentItem()
+		if isKey {
+			err = rcb(reflect.ValueOf(key), dummyCursorCB)
+		} else {
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, key)
+			err = rcb(itm, dummyCursorCB)
+		}
+		if err != nil {
+			return filterStop(err)
+		}
+		if err = advance(qi); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Count executes the given query and returns the number of entries which
@@ -744,4 +829,31 @@ func filterStop(err error) error {
 		err = nil
 	}
 	return err
+}
+
+type iteratorEntry struct {
+	order    string
+	iterator *queryIterator
+}
+
+type iteratorHeap []*iteratorEntry
+
+var _ heap.Interface = &iteratorHeap{}
+
+func (h iteratorHeap) Len() int { return len(h) }
+
+func (h iteratorHeap) Less(i, j int) bool { return h[i].order < h[j].order }
+
+func (h iteratorHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+func (h *iteratorHeap) Push(x interface{}) {
+	*h = append(*h, x.(*iteratorEntry))
+}
+
+func (h *iteratorHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	item := old[n-1]
+	*h = old[0 : n-1]
+	return item
 }
