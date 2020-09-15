@@ -28,9 +28,10 @@ const notFoundRoute: Route = {
 };
 
 export const NOT_FOUND_URL = '/ui/not-found';
+const BASE_URL = '/ui/';
 
 const appRoot = document.getElementById('app-root');
-export const router = new Router(appRoot, {baseUrl: '/ui/'});
+export const router = new Router(appRoot, {baseUrl: BASE_URL});
 router.setRoutes({
   path: '/',
   component: 'milo-page-layout',
@@ -69,7 +70,7 @@ router.setRoutes({
               children: [
                 {
                   path: '/',
-                  redirect: '/ui/inv/:invocation_id/test-results',
+                  action: (ctx, cmd) => cmd.redirect(router.urlForName('invocation-test-results', ctx.params).slice(BASE_URL.length)),
                 },
                 {
                   path: '/test-results',
@@ -104,7 +105,7 @@ router.setRoutes({
                   children: [
                     {
                       path: '/',
-                      redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/overview',
+                      action: (ctx, cmd) => cmd.redirect(router.urlForName('build-overview', ctx.params).slice(BASE_URL.length)),
                     },
                     {
                       path: '/overview',
