@@ -90,6 +90,30 @@
     },
     {
       "key": {
+        "uuid": "bf6c3620_53ca3884",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T17:17:51Z",
+      "side": 1,
+      "message": "Added an _UNKNOWN as enum value 0.\n\nMoved doc to before notify (after enum)",
+      "parentUuid": "0eb8e022_3f5c4b71",
+      "range": {
+        "startLine": 567,
+        "startChar": 2,
+        "endLine": 567,
+        "endChar": 20
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9825d63_078155ba",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -113,6 +137,30 @@
     },
     {
       "key": {
+        "uuid": "0e0ee104_7daedcd9",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 578,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T17:17:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9825d63_078155ba",
+      "range": {
+        "startLine": 578,
+        "startChar": 2,
+        "endLine": 578,
+        "endChar": 3
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb2c78e9_485e6381",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -130,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "548d04b7_701572bd",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T17:17:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb2c78e9_485e6381",
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8762ca9_94907069",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -141,6 +207,30 @@
       "writtenOn": "2020-09-15T16:35:22Z",
       "side": 1,
       "message": "I know you\u0027re being faithful to the gerrit API itself, but unfortunate naming. The number of times I\u0027ll read this as css...",
+      "range": {
+        "startLine": 605,
+        "startChar": 24,
+        "endLine": 605,
+        "endChar": 27
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "900115db_f9b2871e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 605,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T17:17:51Z",
+      "side": 1,
+      "message": "😞 yeah.",
+      "parentUuid": "f8762ca9_94907069",
       "range": {
         "startLine": 605,
         "startChar": 24,
