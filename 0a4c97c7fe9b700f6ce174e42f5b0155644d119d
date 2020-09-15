@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "189b2616_e7b95d8f",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:43:58Z",
+      "side": 1,
+      "message": "pprabhu@ PTAL ^",
+      "parentUuid": "16c4899e_e1300f98",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "326b672d_2894cdf7",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4

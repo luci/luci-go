@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "0eb8e022_3f5c4b71",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:43:58Z",
+      "side": 1,
+      "message": "Oh, yeah, good point -- if we are mapping enum value into specific GOB string anyway, we should follow AIP fully.\n\nI somehow assumed we actually must pass numeric values to GoB directly, but you are right -- we don\u0027t. Thanks, Pratthmesh!",
+      "parentUuid": "b5b24d5f_c2089f85",
+      "range": {
+        "startLine": 567,
+        "startChar": 2,
+        "endLine": 567,
+        "endChar": 20
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a9825d63_078155ba",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
