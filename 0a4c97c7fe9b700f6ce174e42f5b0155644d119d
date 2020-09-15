@@ -77,6 +77,24 @@
     },
     {
       "key": {
+        "uuid": "2e046214_8a341769",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:09:22Z",
+      "side": 1,
+      "message": "Not sure you are aware of it: you don\u0027t need to plan in advance the separation -- you can do so when even after you\u0027ve done both things in the same branch:\n$ git add -i -p",
+      "parentUuid": "17d6b4e7_ff26225a",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1baff7c_8a6d0b36",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -347,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "670af0bc_2d2b911e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 583,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:09:22Z",
+      "side": 1,
+      "message": "FWIW, protos don\u0027t allow inheritance, which would in *this* case be ideal.",
+      "parentUuid": "41647140_6724583a",
+      "range": {
+        "startLine": 582,
+        "startChar": 2,
+        "endLine": 583,
+        "endChar": 44
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a93edb64_8a0e2717",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -405,6 +447,30 @@
       "side": 1,
       "message": "My guess is expansion of the group: if a group is added as reviewer, all group members become reviewer of the change",
       "parentUuid": "afef1734_8921345e",
+      "range": {
+        "startLine": 618,
+        "startChar": 0,
+        "endLine": 623,
+        "endChar": 32
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9baec772_d8e32ab0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:09:22Z",
+      "side": 1,
+      "message": "Oh, great guess!!! Makes sense. FWIW, I\u0027d add this as a comment.",
+      "parentUuid": "c58ef94d_33f88f78",
       "range": {
         "startLine": 618,
         "startChar": 0,

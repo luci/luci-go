@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "891cf7e8_f149cc8e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:09:22Z",
+      "side": 1,
+      "message": "LGTM % NOTIFY ALL must be default enum value.",
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1759fa86_d828dd31",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-15T16:09:22Z",
+      "side": 1,
+      "message": "First, please move doc to L572.\nSecond, if ALL is default, then make its enum value 0.",
+      "range": {
+        "startLine": 567,
+        "startChar": 2,
+        "endLine": 567,
+        "endChar": 20
+      },
+      "revId": "46e367a9679f937ed9bb79bf5d8a9f8ad259c002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
