@@ -30,7 +30,7 @@ export class StepsTabElement extends MobxLitElement {
   @observable.ref buildState!: BuildState;
 
   // TODO(crbug/1123362): save the setting.
-  @observable.ref showPassed = true;
+  @observable.ref showSucceeded = true;
   @observable.ref showDebugLogs = false;
 
   connectedCallback() {
@@ -43,7 +43,7 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   @computed private get noDisplayedStep() {
-    if (this.showPassed) {
+    if (this.showSucceeded) {
       return !this.buildState.buildPageData?.steps?.length;
     }
     return !this.buildState.buildPageData?.steps?.find((s) => s.status !== BuildStatus.Success);
@@ -62,12 +62,12 @@ export class StepsTabElement extends MobxLitElement {
           Steps:
           <div class="filter">
             <input
-              id="passed"
+              id="succeeded"
               type="checkbox"
-              ?checked=${this.showPassed}
-              @change=${(e: MouseEvent) => this.showPassed = (e.target as HTMLInputElement).checked}
+              ?checked=${this.showSucceeded}
+              @change=${(e: MouseEvent) => this.showSucceeded = (e.target as HTMLInputElement).checked}
             >
-            <label for="passed" style="color: var(--success-color);">Passed</label>
+            <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
           </div class="filter">
           <div class="filter">
             <input id="others" type="checkbox" disabled checked>
@@ -102,7 +102,7 @@ export class StepsTabElement extends MobxLitElement {
       <div id="main">
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showPassed ? '' : 'none'})}
+          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
           .expanded=${true}
           .number=${i + 1}
           .step=${step}
@@ -113,7 +113,7 @@ export class StepsTabElement extends MobxLitElement {
           class="list-entry"
           style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
         >
-          ${this.showPassed ? 'No steps.' : 'All steps passed.'}
+          ${this.showSucceeded ? 'No steps.' : 'All steps succeeded.'}
         </div>
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
