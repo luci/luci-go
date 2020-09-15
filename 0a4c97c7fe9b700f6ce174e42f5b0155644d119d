@@ -59,6 +59,24 @@
     },
     {
       "key": {
+        "uuid": "17d6b4e7_ff26225a",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Ack. Ran it initially thinking I *just* wanted to clean up my own changes and then I didn\u0027t want to patchwork revert, but I\u0027ll separate the two next time.",
+      "parentUuid": "326b672d_2894cdf7",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1baff7c_8a6d0b36",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -79,6 +97,30 @@
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f639e158_d996c10b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 555,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c1baff7c_8a6d0b36",
+      "range": {
+        "startLine": 555,
+        "startChar": 47,
+        "endLine": 555,
+        "endChar": 54
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +147,30 @@
     },
     {
       "key": {
+        "uuid": "4f32ec98_47dc6b58",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 559,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02c695da_00ccc64e",
+      "range": {
+        "startLine": 556,
+        "startChar": 2,
+        "endLine": 559,
+        "endChar": 3
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db7152d9_4563b006",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -125,6 +191,30 @@
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4234139_253dd21a",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 565,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db7152d9_4563b006",
+      "range": {
+        "startLine": 565,
+        "startChar": 57,
+        "endLine": 565,
+        "endChar": 59
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +241,30 @@
     },
     {
       "key": {
+        "uuid": "1ec5239f_087df420",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 568,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43eb0a0c_f9557678",
+      "range": {
+        "startLine": 568,
+        "startChar": 4,
+        "endLine": 568,
+        "endChar": 13
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b71c7d5_ccff810b",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -162,6 +276,24 @@
       "writtenOn": "2020-09-15T14:49:30Z",
       "side": 1,
       "message": "nit-nit/imo: for faster visual scanning, I recommend to add an empty line after first short description.\nHowever, this isn\u0027t always followed by everyone.",
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "540ac5fa_b0cfc6af",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 576,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "4b71c7d5_ccff810b",
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -188,6 +320,30 @@
       "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41647140_6724583a",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 583,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "Yeah, I think that\u0027d work better. Mostly, I wasn\u0027t sure of best practices around proto \"inheritance\"",
+      "parentUuid": "6c0cdb20_eb828840",
+      "range": {
+        "startLine": 582,
+        "startChar": 2,
+        "endLine": 583,
+        "endChar": 44
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +381,30 @@
       "writtenOn": "2020-09-15T14:49:30Z",
       "side": 1,
       "message": "curious: do you have any idea how adding 1 reviewer (or CC) can result in a *list* of newly added reviewers?",
+      "range": {
+        "startLine": 618,
+        "startChar": 0,
+        "endLine": 623,
+        "endChar": 32
+      },
+      "revId": "0a4c97c7fe9b700f6ce174e42f5b0155644d119d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c58ef94d_33f88f78",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-15T15:59:52Z",
+      "side": 1,
+      "message": "My guess is expansion of the group: if a group is added as reviewer, all group members become reviewer of the change",
+      "parentUuid": "afef1734_8921345e",
       "range": {
         "startLine": 618,
         "startChar": 0,
