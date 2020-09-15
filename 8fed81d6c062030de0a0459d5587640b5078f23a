@@ -22,6 +22,30 @@
       "revId": "8fed81d6c062030de0a0459d5587640b5078f23a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fc90a0c_0601c330",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-15T06:17:07Z",
+      "side": 1,
+      "message": "Do you mean that this is used elsewhere besides the build page? Could you give an example of a page that should not have this link?",
+      "parentUuid": "f414ff41_dc4e4db0",
+      "range": {
+        "startLine": 71,
+        "startChar": 8,
+        "endLine": 71,
+        "endChar": 78
+      },
+      "revId": "8fed81d6c062030de0a0459d5587640b5078f23a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
