@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "79f6dfac_8cc779a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-15T01:16:53Z",
+      "side": 1,
+      "message": "This is added as a toggle rather than a button because the setting will be persisted in the future.\n\nDemo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7590/steps\n",
+      "revId": "942c603d9c8202e25899bbc47f38858c3ad253dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
