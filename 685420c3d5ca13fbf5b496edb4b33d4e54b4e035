@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27dab10b_8c313819",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 702,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-09-16T17:59:35Z",
+      "side": 1,
+      "message": "Why the leading underscore?",
+      "range": {
+        "startLine": 702,
+        "startChar": 8,
+        "endLine": 702,
+        "endChar": 9
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
