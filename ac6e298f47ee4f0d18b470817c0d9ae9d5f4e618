@@ -19,6 +19,69 @@
     },
     {
       "key": {
+        "uuid": "86f913e9_d88a2fe4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T01:08:12Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94cf2789_f72631ab",
+        "filename": "gae/service/datastore/queryiterator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T01:08:12Z",
+      "side": 1,
+      "message": "if queryIterator is private, then this should be, too.",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 32,
+        "endChar": 21
+      },
+      "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc1c6dfa_eb2ca8ee",
+        "filename": "gae/service/datastore/queryiterator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T01:08:12Z",
+      "side": 1,
+      "message": "imo, make this a closure\n\n   go func() {\n     // use fq, qi here\n   }()",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 49
+      },
+      "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4ade45a_ac7814d7",
         "filename": "gae/service/datastore/queryiterator.go",
         "patchSetId": 4
@@ -33,6 +96,29 @@
       "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7e0aa1c2_a99a91ff",
+        "filename": "gae/service/datastore/queryiterator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T01:08:12Z",
+      "side": 1,
+      "message": "imo make a new top-level test function for this (e.g. TestStartQueryIterator)",
+      "range": {
+        "startLine": 133,
+        "startChar": 9,
+        "endLine": 133,
+        "endChar": 14
+      },
+      "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -68,6 +154,24 @@
       "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5578c3f_987df3a9",
+        "filename": "gae/service/datastore/queryiterator_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T01:08:12Z",
+      "side": 1,
+      "message": "However, in that test they are explicitly testing the context cancel propagation itself. Here you should just do:\n\n   \u003c-ctx.Done()\n\nwhich will pause this test for exactly as long as it takes to propagate.",
+      "parentUuid": "3f1f9014_1312dc13",
+      "revId": "ac6e298f47ee4f0d18b470817c0d9ae9d5f4e618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
