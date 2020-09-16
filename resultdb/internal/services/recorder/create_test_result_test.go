@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -138,8 +139,8 @@ func TestCreateTestResult(t *testing.T) {
 		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := insert.Invocation(invocations.ID("u-build-1"), pb.Invocation_ACTIVE, nil)
-		testutil.MustApply(ctx, mut)
+		invID := invocations.ID("u-build-1")
+		testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
@@ -147,7 +148,7 @@ func TestCreateTestResult(t *testing.T) {
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				trNum, err := invocations.ReadTestResultCount(ctx, invocations.NewIDSet("u-build-1"))
+				trNum, err := resultcount.ReadTestResultCount(ctx, invocations.NewIDSet("u-build-1"))
 				So(err, ShouldBeNil)
 				So(trNum, ShouldEqual, 1)
 			})

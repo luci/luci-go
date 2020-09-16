@@ -18,6 +18,7 @@ import (
 	"flag"
 	"time"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -26,6 +27,7 @@ import (
 )
 
 func main() {
+	mathrand.SeedRandomly()
 	opts := recorder.Options{}
 	expectedTestResultsExpirationDays := flag.Int(
 		"expected-results-expiration",
