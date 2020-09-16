@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d73ab8f9_0b1dca93",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T16:27:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd8bdf42_7b1b3612",
+      "range": {
+        "startLine": 435,
+        "startChar": 14,
+        "endLine": 435,
+        "endChar": 134
+      },
+      "revId": "da18e85c811bbb3fa746703cff307dbb0d52e2f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "789f6237_c248e799",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "da18e85c811bbb3fa746703cff307dbb0d52e2f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fca8bd6_71608721",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T16:27:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "789f6237_c248e799",
+      "range": {
+        "startLine": 437,
+        "startChar": 14,
+        "endLine": 437,
+        "endChar": 138
+      },
+      "revId": "da18e85c811bbb3fa746703cff307dbb0d52e2f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
