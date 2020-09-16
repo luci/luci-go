@@ -36,11 +36,6 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 		Tags:                 task.Tags,
 		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}
-	if rdbEnabled := task.GetResultdb().GetEnable(); rdbEnabled {
-		ret.Resultdb = &swarming.SwarmingRpcsResultDBCfg{
-			Enable: true,
-		}
-	}
 
 	upDigest := userPayload.GetDigest()
 

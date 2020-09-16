@@ -428,8 +428,5 @@ message BuildInfra {
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
-  // On creation of a build (e.g. via `led` and
-  // via `CreateBuild` (tbd, crbug.com/1114804), the existence of this message
-  // indicates that resultdb will be enabled for the build.
   ResultDB resultdb = 5;
 }
