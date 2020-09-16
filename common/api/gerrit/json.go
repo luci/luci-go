@@ -16,6 +16,7 @@ package gerrit
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -190,4 +191,83 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 		Conflicts:     mi.Conflicts,
 		MergeableInto: mi.MergeableInto,
 	}, nil
+}
+
+type addReviewerRequest struct {
+	Reviewer  string `json:"reviewer"`
+	State     string `json:"state,omitempty"`
+	Confirmed bool   `json:"confirmed,omitempty"`
+	Notify    string `json:"notify,omitempty"`
+}
+
+type reviewerInfo struct {
+	Name            string            `json"name,omitempty"`
+	Email           string            `json"email,omitempty"`
+	SecondaryEmails []string          `json"email,omitempty"`
+	Username        string            `json"username,omitempty"`
+	Approvals       map[string]string `json:"approvals,omitempty"`
+	AccountID       int64             `json:"_account_id,omitempty"`
+}
+
+func (ri *reviewerInfo) ToProtoReviewerInfo() (*gerritpb.ReviewerInfo, error) {
+	approvals := make(map[string]int32, 0)
+	for label, score := range ri.Approvals {
+		scoreInt, err := strconv.ParseInt(score, 10, 32)
+		if err != nil {
+			return nil, errors.Annotate(err, "parsing approvals").Err()
+		}
+		approvals[label] = int32(scoreInt)
+	}
+	return &gerritpb.ReviewerInfo{
+		Account: &gerritpb.AccountInfo{
+			Name:            ri.Name,
+			Email:           ri.Email,
+			SecondaryEmails: ri.SecondaryEmails,
+			Username:        ri.Username,
+			AccountId:       ri.AccountID,
+		},
+		Approvals: approvals,
+	}, nil
+}
+
+type addReviewerResult struct {
+	Input     string         `json:"input"`
+	Reviewers []reviewerInfo `json:"reviewers,omitempty"`
+	Ccs       []reviewerInfo `json:"ccs,omitempty"`
+	Error     string         `json:"error,omitempty"`
+	Confirm   bool           `json"confirm,omitempty"`
+}
+
+func (rr *addReviewerResult) ToProto() (*gerritpb.AddReviewerResult, error) {
+	reviewers := make([]*gerritpb.ReviewerInfo, 0)
+	for _, r := range rr.Reviewers {
+		rInfo, err := r.ToProtoReviewerInfo()
+		if err != nil {
+			return nil, errors.Annotate(err, "converting reviewerInfo").Err()
+		}
+		reviewers = append(reviewers, rInfo)
+	}
+	ccs := make([]*gerritpb.ReviewerInfo, 0)
+	for _, r := range rr.Ccs {
+		rInfo, err := r.ToProtoReviewerInfo()
+		if err != nil {
+			return nil, errors.Annotate(err, "converting reviewerInfo").Err()
+		}
+		ccs = append(ccs, rInfo)
+	}
+	return &gerritpb.AddReviewerResult{
+		Input:     rr.Input,
+		Reviewers: reviewers,
+		Ccs:       ccs,
+		Error:     rr.Error,
+		Confirm:   rr.Confirm,
+	}, nil
+}
+
+func enumToString(v int32, m map[int32]string) string {
+	if v == 0 {
+		return ""
+	}
+	prefixLen := strings.LastIndex(m[0], "UNSPECIFIED")
+	return m[v][prefixLen:]
 }

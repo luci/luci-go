@@ -211,7 +211,22 @@ func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEdit
 }
 
 func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerRequest, opts ...grpc.CallOption) (*gerritpb.AddReviewerResult, error) {
-	return nil, errors.New("not implemented")
+	var resp addReviewerResult
+	data := &addReviewerRequest{
+		Reviewer:  req.Reviewer,
+		State:     enumToString(int32(req.State.Number()), gerritpb.AddReviewerRequest_State_name),
+		Confirmed: req.Confirmed,
+		Notify:    enumToString(int32(req.Notify.Number()), gerritpb.AddReviewerRequest_Notify_name),
+	}
+	path := fmt.Sprintf("/changes/%s/reviewers", gerritChangeIDForRouting(req.Number, req.Project))
+	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
+		return nil, errors.Annotate(err, "add reviewers").Err()
+	}
+	rr, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "decoding response").Err()
+	}
+	return rr, nil
 }
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
