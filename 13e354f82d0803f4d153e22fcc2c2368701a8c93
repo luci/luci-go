@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3201435_83fdfe97",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-16T18:21:32Z",
+      "side": 1,
+      "message": "Done. It was prepared for the existing invocations. But then we decided it\u0027s not needed.",
+      "parentUuid": "f232d789_e0824fa5",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 13
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df821be7_6cefbe4e",
         "filename": "resultdb/internal/resultcount/resultcount.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "034f3868_2ed6fdf4",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-16T18:21:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df821be7_6cefbe4e",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 97,
+        "endChar": 2
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40abdb02_87943949",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8703608a_b57baa60",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-16T18:21:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40abdb02_87943949",
+      "range": {
+        "startLine": 321,
+        "startChar": 5,
+        "endLine": 322,
+        "endChar": 3
+      },
+      "revId": "13e354f82d0803f4d153e22fcc2c2368701a8c93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
