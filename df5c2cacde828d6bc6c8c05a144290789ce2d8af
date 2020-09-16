@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2713a6f9_12566c16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T15:44:40Z",
+      "side": 1,
+      "message": "I ran `go test ./...` in a local infra checkout and it all seems to work.",
+      "revId": "df5c2cacde828d6bc6c8c05a144290789ce2d8af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
