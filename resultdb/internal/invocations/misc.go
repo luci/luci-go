@@ -16,7 +16,6 @@ package invocations
 
 import (
 	"context"
-	"fmt"
 
 	"cloud.google.com/go/spanner"
 
@@ -62,31 +61,6 @@ func ReadTestResultCount(ctx context.Context, ids IDSet) (int64, error) {
 	var count spanner.NullInt64
 	err := spanutil.QueryFirstRow(ctx, st, &count)
 	return count.Int64, err
-}
-
-// IncrementTestResultCount increases the TestResultCount of the invocation.
-func IncrementTestResultCount(ctx context.Context, id ID, delta int64) error {
-	if delta == 0 {
-		return nil
-	}
-
-	st := spanner.NewStatement(`
-		UPDATE Invocations
-		SET TestResultCount = TestResultCount + @delta
-		WHERE InvocationId = @invID
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"invID": id,
-		"delta": delta,
-	})
-	switch rowCount, err := span.Update(ctx, st); {
-	case err != nil:
-		return err
-	case rowCount != 1:
-		return fmt.Errorf("expected to update 1 row, updated %d row instead", rowCount)
-	default:
-		return nil
-	}
 }
 
 // TokenToMap parses a page token to a map.
