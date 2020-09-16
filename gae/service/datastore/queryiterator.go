@@ -20,29 +20,28 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/data/cmpbin"
-	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
-// QueryIterator is an iterator for datastore query results.
-type QueryIterator struct {
-	order              []ds.IndexColumn
+// queryIterator is an iterator for datastore query results.
+type queryIterator struct {
+	order              []IndexColumn
 	currentQueryResult *rawQueryResult
 	itemCh             chan *rawQueryResult
 }
 
-// StartQueryIterator starts to run the given query and return the iterator for query results.
-func StartQueryIterator(ctx context.Context, fq *ds.FinalizedQuery) *QueryIterator {
-	qi := &QueryIterator{
+// startQueryIterator starts to run the given query and return the iterator for query results.
+func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator {
+	qi := &queryIterator{
 		order:  fq.Orders(),
 		itemCh: make(chan *rawQueryResult),
 	}
 
-	go func(fq *ds.FinalizedQuery, qi *QueryIterator) {
+	go func() {
 		defer close(qi.itemCh)
-		err := ds.Raw(ctx).Run(fq, func(k *ds.Key, pm ds.PropertyMap, _ ds.CursorCB) error {
+		err := Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
 			select {
 			case <-ctx.Done():
-				return ds.Stop
+				return Stop
 			case qi.itemCh <- &rawQueryResult{
 				key:  k,
 				data: pm,
@@ -50,34 +49,37 @@ func StartQueryIterator(ctx context.Context, fq *ds.FinalizedQuery) *QueryIterat
 				return nil
 			}
 		})
+		if err == Stop {
+			return
+		}
 		if err != nil {
 			qi.itemCh <- &rawQueryResult{
 				err: err,
 			}
 		}
-	}(fq, qi)
+	}()
 
 	return qi
 }
 
 // CurrentItem returns the current query result.
-func (qi *QueryIterator) CurrentItem() (*ds.Key, ds.PropertyMap) {
+func (qi *queryIterator) CurrentItem() (*Key, PropertyMap) {
 	if qi.currentQueryResult == nil {
-		return nil, ds.PropertyMap{}
+		return nil, PropertyMap{}
 	}
 	return qi.currentQueryResult.key, qi.currentQueryResult.data
 }
 
 // CurrentItemKey returns a serialized current item key.
-func (qi *QueryIterator) CurrentItemKey() string {
+func (qi *queryIterator) CurrentItemKey() string {
 	if qi.currentQueryResult == nil || qi.currentQueryResult.key == nil {
 		return ""
 	}
-	return string(ds.Serialize.ToBytes(qi.currentQueryResult.key))
+	return string(Serialize.ToBytes(qi.currentQueryResult.key))
 }
 
 // CurrentItemOrder returns serialized propertied which fields are used in sorting orders.
-func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
+func (qi *queryIterator) CurrentItemOrder() (s string, err error) {
 	if qi.currentQueryResult == nil {
 		return
 	}
@@ -86,7 +88,7 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 	for _, column := range qi.order {
 		invBuf.SetInvert(column.Descending)
 		if column.Property == "__key__" {
-			if err = ds.Serialize.Key(invBuf, qi.currentQueryResult.key); err != nil {
+			if err = Serialize.Key(invBuf, qi.currentQueryResult.key); err != nil {
 				return
 			}
 			continue
@@ -94,9 +96,9 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 		columnData := qi.currentQueryResult.data[column.Property].Slice()
 		sort.Sort(columnData)
 		if column.Descending {
-			err = ds.Serialize.Property(invBuf, columnData[columnData.Len()-1])
+			err = Serialize.Property(invBuf, columnData[columnData.Len()-1])
 		} else {
-			err = ds.Serialize.Property(invBuf, columnData[0])
+			err = Serialize.Property(invBuf, columnData[0])
 		}
 		if err != nil {
 			return
@@ -107,21 +109,21 @@ func (qi *QueryIterator) CurrentItemOrder() (s string, err error) {
 
 // Next iterate the next item and put it into currentQueryResult.
 // Note: call Next() before calling to any CurrentItemXXX functions to get the right results.
-func (qi *QueryIterator) Next() error {
+func (qi *queryIterator) Next() error {
 	if qi.itemCh == nil {
-		panic("item channel for QueryIterator is not properly initiated")
+		panic("item channel for queryIterator is not properly initiated")
 	}
 	var ok bool
 	qi.currentQueryResult, ok = <-qi.itemCh
 	if !ok {
-		return ds.Stop
+		return Stop
 	}
 	return qi.currentQueryResult.err
 }
 
 // rawQueryResult captures the result from raw datastore query snapshot.
 type rawQueryResult struct {
-	key  *ds.Key
-	data ds.PropertyMap
+	key  *Key
+	data PropertyMap
 	err  error
 }
