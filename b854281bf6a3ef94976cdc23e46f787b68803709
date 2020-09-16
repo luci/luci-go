@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ffd25dcb_d3eb55fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T15:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df33b56a_9413f968",
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6e9f816_7fab1584",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 6
@@ -74,6 +92,30 @@
       "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4ee05b9_2805df7e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T15:39:01Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "a231c2bc_0c0c7b58",
+      "range": {
+        "startLine": 591,
+        "startChar": 2,
+        "endLine": 592,
+        "endChar": 22
+      },
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
