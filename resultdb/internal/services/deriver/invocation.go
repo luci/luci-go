@@ -42,7 +42,7 @@ var defaultRealm = realms.Join("chromium", "public")
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
-func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string, trCount int64) map[string]interface{} {
+func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
 	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
 		"InvocationId": invocations.MustParseName(inv.Name),
@@ -58,7 +58,6 @@ func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation,
 
 		"Tags":             inv.Tags,
 		"ProducerResource": inv.ProducerResource,
-		"TestResultCount":  trCount,
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {
