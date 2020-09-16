@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "e8702af5_542d9648",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-16T06:01:28Z",
+      "side": 1,
+      "message": "Got it. Done.",
+      "parentUuid": "cc8fec72_4c780aab",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 1
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e949c3b9_c6edb95c",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 6
