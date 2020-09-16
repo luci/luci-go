@@ -302,9 +302,9 @@ export class OverviewTabElement extends MobxLitElement {
           ${this.renderSummary()}
           ${this.renderInput()}
           ${this.renderInfra()}
+          ${this.renderTiming()}
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
-          ${this.renderTiming()}
         </div>
         <div>
           ${this.renderTags()}
@@ -319,12 +319,9 @@ export class OverviewTabElement extends MobxLitElement {
     #main > div > * {
       margin: 5px 24px;
     }
-    @media screen and (min-width: 1800px) {
-      #main {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-gap: 5px;
-      }
+    #main > div {
+      float: left;
+      min-width: 600px;
     }
 
     #status {
