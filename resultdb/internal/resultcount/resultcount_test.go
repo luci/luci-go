@@ -26,6 +26,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTestResultCount(t *testing.T) {
@@ -50,5 +51,16 @@ func TestTestResultCount(t *testing.T) {
 		count, err := ReadTestResultCount(span.Single(ctx), invocations.NewIDSet(invID))
 		So(count, ShouldEqual, 30)
 		So(err, ShouldBeNil)
+	})
+
+	Convey(`No counters`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+
+		invID := invocations.ID("inv")
+
+		count, err := ReadTestResultCount(span.Single(ctx), invocations.NewIDSet(invID))
+		So(count, ShouldEqual, 0)
+		So(err, ShouldErrLike, "no counters found")
 	})
 }
