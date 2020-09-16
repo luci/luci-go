@@ -216,7 +216,7 @@ func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerReque
 		Reviewer:  req.Reviewer,
 		State:     enumToString(int32(req.State.Number()), gerritpb.AddReviewerRequest_State_name),
 		Confirmed: req.Confirmed,
-		Notify:    enumToString(int32(req.Notify.Number()), gerritpb.AddReviewerRequest_Notify_name),
+		Notify:    enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
 	}
 	path := fmt.Sprintf("/changes/%s/reviewers", gerritChangeIDForRouting(req.Number, req.Project))
 	if _, err := c.call(ctx, "POST", path, url.Values{}, data, &resp); err != nil {
@@ -247,6 +247,20 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 		return nil, errors.Annotate(err, "set review").Err()
 	}
 	return &resp, nil
+}
+
+func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AccountInfo, error) {
+	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
+	data := attentionSetRequest{
+		User:   req.User,
+		Reason: req.Reason,
+		Notify: enumToString(int32(req.Notify.Number()), gerritpb.Notify_name),
+	}
+	var resp accountInfo
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "add to attention set").Err()
+	}
+	return resp.ToProto(), nil
 }
 
 func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
