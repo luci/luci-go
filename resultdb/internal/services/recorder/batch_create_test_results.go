@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -99,15 +100,20 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
+
 	var realm string
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
+		if err := resultcount.IncrementTestResultCount(ctx, invID, int64(len(in.Requests))); err != nil {
+			return err
+		}
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
 			realm, err = invocations.ReadRealm(ctx, invID)
 			return
 		})
 		eg.Go(func() error {
+			// TODO(crbug.com/1123807) Remove after QueryTestResultCount uses sharded count.
 			return invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
 		})
 		return eg.Wait()
