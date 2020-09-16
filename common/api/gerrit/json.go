@@ -201,10 +201,10 @@ type addReviewerRequest struct {
 }
 
 type reviewerInfo struct {
-	Name            string            `json"name,omitempty"`
-	Email           string            `json"email,omitempty"`
-	SecondaryEmails []string          `json"email,omitempty"`
-	Username        string            `json"username,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Email           string            `json:"email,omitempty"`
+	SecondaryEmails []string          `json:"secondary_emails,omitempty"`
+	Username        string            `json:"username,omitempty"`
 	Approvals       map[string]string `json:"approvals,omitempty"`
 	AccountID       int64             `json:"_account_id,omitempty"`
 }
@@ -235,7 +235,7 @@ type addReviewerResult struct {
 	Reviewers []reviewerInfo `json:"reviewers,omitempty"`
 	Ccs       []reviewerInfo `json:"ccs,omitempty"`
 	Error     string         `json:"error,omitempty"`
-	Confirm   bool           `json"confirm,omitempty"`
+	Confirm   bool           `json:"confirm,omitempty"`
 }
 
 func (rr *addReviewerResult) ToProto() (*gerritpb.AddReviewerResult, error) {
