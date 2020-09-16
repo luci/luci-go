@@ -21,25 +21,18 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/cmpbin"
-	"go.chromium.org/luci/gae/impl/memory"
-	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-type Foo struct {
-	_kind string `gae:"$kind,Foo"`
-	ID    int64  `gae:"$id"`
-
-	Val []string `gae:"val"`
-}
 
 func TestDatastoreQueryIterator(t *testing.T) {
 	t.Parallel()
-	Convey("QueryIterator", t, func() {
+	Convey("queryIterator", t, func() {
 		Convey("normal", func() {
-			qi := QueryIterator{
-				order: []ds.IndexColumn{
+			qi := queryIterator{
+				order: []IndexColumn{
 					{Property: "field1", Descending: true},
 					{Property: "field2"},
 					{Property: "__key__"},
@@ -47,18 +40,18 @@ func TestDatastoreQueryIterator(t *testing.T) {
 				itemCh: make(chan *rawQueryResult),
 			}
 
-			key := ds.MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
+			key := MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
 			// populating results to the pipeline
 			go func() {
 				defer close(qi.itemCh)
 				qi.itemCh <- &rawQueryResult{
 					key: key,
-					data: ds.PropertyMap{
-						"field1": ds.PropertySlice{
-							ds.MkProperty("1"),
-							ds.MkProperty("11"),
+					data: PropertyMap{
+						"field1": PropertySlice{
+							MkProperty("1"),
+							MkProperty("11"),
 						},
-						"field2": ds.MkProperty("aa1"),
+						"field2": MkProperty("aa1"),
 					},
 				}
 			}()
@@ -69,8 +62,8 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			Convey("CurrentItemKey", func() {
 
 				itemKey := qi.CurrentItemKey()
-				expectedKey := ds.MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
-				e := string(ds.Serialize.ToBytes(expectedKey))
+				expectedKey := MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
+				e := string(Serialize.ToBytes(expectedKey))
 				So(itemKey, ShouldEqual, e)
 			})
 
@@ -80,22 +73,22 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 				invBuf := cmpbin.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
-				err = ds.Serialize.Property(invBuf, ds.MkProperty(strconv.Itoa(11)))
+				err = Serialize.Property(invBuf, MkProperty(strconv.Itoa(11)))
 				invBuf.SetInvert(false)
-				err = ds.Serialize.Property(invBuf, ds.MkProperty("aa1"))
-				err = ds.Serialize.Key(invBuf, key)
+				err = Serialize.Property(invBuf, MkProperty("aa1"))
+				err = Serialize.Key(invBuf, key)
 				So(err, ShouldBeNil)
 				So(itemOrder, ShouldEqual, invBuf.String())
 			})
 
 			Convey("CurrentItem", func() {
 				key, data := qi.CurrentItem()
-				expectedPM := ds.PropertyMap{
-					"field1": ds.PropertySlice{
-						ds.MkProperty("1"),
-						ds.MkProperty("11"),
+				expectedPM := PropertyMap{
+					"field1": PropertySlice{
+						MkProperty("1"),
+						MkProperty("11"),
 					},
-					"field2": ds.MkProperty("aa1"),
+					"field2": MkProperty("aa1"),
 				}
 				So(key, ShouldResemble, key)
 				So(data, ShouldResemble, expectedPM)
@@ -103,24 +96,24 @@ func TestDatastoreQueryIterator(t *testing.T) {
 
 			// end of results
 			err = qi.Next()
-			So(err, ShouldResemble, ds.Stop)
+			So(err, ShouldResemble, Stop)
 		})
 
-		Convey("invalid QueryIterator", func() {
-			qi := QueryIterator{}
+		Convey("invalid queryIterator", func() {
+			qi := queryIterator{}
 			So(func() { qi.Next() }, ShouldPanicWith,
-				"item channel for QueryIterator is not properly initiated")
+				"item channel for queryIterator is not properly initiated")
 		})
 
 		Convey("empty query results", func() {
-			qi := &QueryIterator{
-				order:  []ds.IndexColumn{},
+			qi := &queryIterator{
+				order:  []IndexColumn{},
 				itemCh: make(chan *rawQueryResult),
 			}
 			go func() {
 				qi.itemCh <- &rawQueryResult{
 					key:  nil,
-					data: ds.PropertyMap{},
+					data: PropertyMap{},
 				}
 				close(qi.itemCh)
 			}()
@@ -132,87 +125,92 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			So(itemOrder, ShouldEqual, "")
 			key, data := qi.CurrentItem()
 			So(key, ShouldBeNil)
-			So(data, ShouldResemble, ds.PropertyMap{})
+			So(data, ShouldResemble, PropertyMap{})
 		})
 	})
 
-	Convey("start QueryIterator", t, func() {
-		ctx := memory.Use(context.Background())
+}
+
+func TestStartQueryIterator(t *testing.T) {
+	t.Parallel()
+	Convey("start queryIterator", t, func() {
+		ctx := info.Set(context.Background(), fakeInfo{})
+		fds := fakeDatastore{}
+		ctx = SetRawFactory(ctx, fds.factory())
 		ctx, cancel := context.WithCancel(ctx)
-		ds.GetTestable(ctx).AutoIndex(true)
-		ds.GetTestable(ctx).Consistent(true)
-		So(ds.Put(ctx, &Foo{ID: 1, Val: []string{"aa", "bb"}}), ShouldBeNil)
-		So(ds.Put(ctx, &Foo{ID: 2, Val: []string{"aa", "cc"}}), ShouldBeNil)
+
+		fds.entities = 2
+		dq := NewQuery("Kind").Order("Value")
 
 		Convey("found", func() {
-			dq := ds.NewQuery("Foo").Order("val")
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := StartQueryIterator(ctx, fq)
+			qi := startQueryIterator(ctx, fq)
 
 			err = qi.Next()
 			So(err, ShouldBeNil)
-			So(qi.currentQueryResult.key, ShouldResemble, ds.MakeKey(ctx, "Foo", 1))
+			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 1))
 			So(qi.currentQueryResult.data, ShouldResemble,
-				ds.PropertyMap{
-					"val": ds.PropertySlice{
-						ds.MkProperty("aa"),
-						ds.MkProperty("bb"),
-					},
+				PropertyMap{
+					"Value": MkProperty(0),
 				})
 
 			err = qi.Next()
 			So(err, ShouldBeNil)
-			So(qi.currentQueryResult.key, ShouldResemble, ds.MakeKey(ctx, "Foo", 2))
+			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 2))
 			So(qi.currentQueryResult.data, ShouldResemble,
-				ds.PropertyMap{
-					"val": ds.PropertySlice{
-						ds.MkProperty("aa"),
-						ds.MkProperty("cc"),
-					},
+				PropertyMap{
+					"Value": MkProperty(1),
 				})
 
 			err = qi.Next()
-			So(err, ShouldResemble, ds.Stop)
+			So(err, ShouldResemble, Stop)
 		})
 
 		Convey("cancel", func() {
-			dq := ds.NewQuery("Foo").Order("val")
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := StartQueryIterator(ctx, fq)
+			qi := startQueryIterator(ctx, fq)
 
 			cancel()
+			<-ctx.Done() // wait till the cancellation propagates
+
 			// When calling `cancel()`, one rawQueryResult may already be put into the itemCh.
 			// So it asserts the two possible scenarios: 1) one rawQueryResult with a followed Stop signal.
 			// 2) qi.Next() directly returns a Stop signal.
 			err = qi.Next()
 			if err == nil {
 				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
-					key: ds.MakeKey(ctx, "Foo", 1),
-					data: ds.PropertyMap{
-						"val": ds.PropertySlice{
-							ds.MkProperty("aa"),
-							ds.MkProperty("bb"),
-						},
+					key: MakeKey(ctx, "Kind", 1),
+					data: PropertyMap{
+						"Value": MkProperty(0),
 					},
 				})
 				err = qi.Next()
-				So(err, ShouldResemble, ds.Stop)
+				So(err, ShouldResemble, Stop)
 			} else {
-				So(err, ShouldResemble, ds.Stop)
+				So(err, ShouldResemble, Stop)
 			}
 		})
 
 		Convey("not found", func() {
-			dq := ds.NewQuery("Foo").Order("val")
-			dq = dq.Eq("val", "no match")
+			fds.entities = 0
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := StartQueryIterator(ctx, fq)
+			qi := startQueryIterator(ctx, fq)
 
 			err = qi.Next()
-			So(err, ShouldResemble, ds.Stop)
+			So(err, ShouldResemble, Stop)
+		})
+
+		Convey("errors from raw datastore", func() {
+			dq = dq.Eq("$err_single", "Query fail").Eq("$err_single_idx", 0)
+			fq, err := dq.Finalize()
+			So(err, ShouldBeNil)
+			qi := startQueryIterator(ctx, fq)
+
+			err = qi.Next()
+			So(err, ShouldErrLike, "Query fail")
 		})
 	})
 }
