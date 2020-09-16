@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "29b24ce4_87154f33",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "adding omitempty",
+      "parentUuid": "fd570f47_64c58d67",
+      "range": {
+        "startLine": 201,
+        "startChar": 31,
+        "endLine": 201,
+        "endChar": 33
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e176fbd5_f2d51c6c",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e459b2fa_92b488eb",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "1. I wasn\u0027t able to use a So() statement inside of the mock client... \n2. Done",
+      "parentUuid": "e176fbd5_f2d51c6c",
+      "range": {
+        "startLine": 393,
+        "startChar": 3,
+        "endLine": 393,
+        "endChar": 20
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b8c1af19_0e2ac3be",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63652bdc_431e45c4",
+      "range": {
+        "startLine": 398,
+        "startChar": 14,
+        "endLine": 398,
+        "endChar": 22
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac7b8a87_cf728e61",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e7008de_e7e53a2e",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac7b8a87_cf728e61",
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -108,6 +198,30 @@
       "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "beb3befe_54482636",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 589,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ef2c35d_57942b9b",
+      "range": {
+        "startLine": 589,
+        "startChar": 14,
+        "endLine": 589,
+        "endChar": 20
+      },
+      "revId": "052c01994e856d8db0599d87df45d04b392f19a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

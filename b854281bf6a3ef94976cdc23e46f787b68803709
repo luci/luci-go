@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "530a4bb7_446fa019",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T01:22:35Z",
+      "side": 1,
+      "message": "Reverted the ENUM changes in proto because I wanted the String() method to work properly.\n\nSince the generated code namespaces the enum to the message, I\u0027m not sure there\u0027s a collision concern \u003d\u003e happy to consider alternatives.\n\nIt just seemed silly to have to add an entirely new function to essentially to the String() method properly from proto \u003d\u003e request.",
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
