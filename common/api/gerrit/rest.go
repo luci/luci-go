@@ -249,6 +249,20 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 	return &resp, nil
 }
 
+func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AddToAttentionSetResult, error) {
+	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
+	data := attentionSetRequest{
+		User:   req.User,
+		Reason: req.Reason,
+		Notify: enumToString(int32(req.Notify.Number()), gerritpb.AttentionSetRequest_Notify_name),
+	}
+	var resp gerritpb.AddToAttentionSetResult
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "add to attention set").Err()
+	}
+	return &resp, nil
+}
+
 func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%s/submit", gerritChangeIDForRouting(req.Number, req.Project))
