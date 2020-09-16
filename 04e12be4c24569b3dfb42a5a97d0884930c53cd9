@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14af2c74_c6c0c805",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T00:59:21Z",
+      "side": 1,
+      "message": "leftover?",
+      "range": {
+        "startLine": 64,
+        "startChar": 7,
+        "endLine": 64,
+        "endChar": 28
+      },
+      "revId": "04e12be4c24569b3dfb42a5a97d0884930c53cd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccf828f8_390f235a",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-16T00:59:21Z",
+      "side": 1,
+      "message": "this looks like it\u0027s still only inserting one mutation per loop, which is len(reqs)?",
+      "revId": "04e12be4c24569b3dfb42a5a97d0884930c53cd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
