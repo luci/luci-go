@@ -383,6 +383,79 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	})
 }
 
+func TestAddReviewer(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Add reviewer to cc basic", t, func() {
+		var actualURL *url.URL
+		var actualBody []byte
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			// ignore the error because body contents will be checked
+			actualBody, _ = ioutil.ReadAll(r.Body)
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"input": "ccer@test.com",
+				"ccs": [
+					{
+						"_account_id": 10001,
+						"name": "Reviewer Review",
+						"approvals": {
+							"Code-Review": "-1"
+						}
+					}
+				]
+			}`)
+		})
+		defer srv.Close()
+
+		req := &gerritpb.AddReviewerRequest{
+			Number:    42,
+			Project:   "someproject",
+			Reviewer:  "ccer@test.com",
+			State:     gerritpb.AddReviewerRequest_ADD_REVIEWER_STATE_CC,
+			Confirmed: true,
+			Notify:    gerritpb.AddReviewerRequest_ADD_REVIEWER_NOTIFY_OWNER,
+		}
+		res, err := c.AddReviewer(ctx, req)
+		So(err, ShouldBeNil)
+
+		// assert the request was as expected
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers")
+		var body addReviewerRequest
+		err = json.Unmarshal(actualBody, &body)
+		if err != nil {
+			t.Logf("something failed %v\n", err)
+		}
+		So(body, ShouldResemble, addReviewerRequest{
+			Reviewer:  "ccer@test.com",
+			State:     "CC",
+			Confirmed: true,
+			Notify:    "OWNER",
+		})
+
+		// assert the result was as expected
+		So(res, ShouldResemble, &gerritpb.AddReviewerResult{
+			Input:     "ccer@test.com",
+			Reviewers: []*gerritpb.ReviewerInfo{},
+			Ccs: []*gerritpb.ReviewerInfo{
+				&gerritpb.ReviewerInfo{
+					Account: &gerritpb.AccountInfo{
+						Name:      "Reviewer Review",
+						AccountId: 10001,
+					},
+					Approvals: map[string]int32{
+						"Code-Review": -1,
+					},
+				},
+			},
+		})
+	})
+}
+
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

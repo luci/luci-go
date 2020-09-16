@@ -259,6 +259,9 @@ message AccountInfo {
   // See option DETAILED_ACCOUNTS for change queries
   // and option DETAILS for account queries.
   string username = 4;
+
+  // The numeric ID of the account
+  int64 account_id = 5;
 }
 
 // Information about a change.
