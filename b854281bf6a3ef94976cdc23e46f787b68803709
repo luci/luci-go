@@ -16,6 +16,64 @@
       "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df33b56a_9413f968",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T08:57:43Z",
+      "side": 1,
+      "message": "Yes, Go doesn\u0027t have such namespace issues, but other languages (e.g. C++) do.\nI think ~10 lines of boilerplate is low cost to be compliant:\n\nfunc enumToString(v int32, m map[int32]string) string {\n  if v \u003d\u003d 0 {\n    return \"\"\n  }\n  prefixLen :\u003d strings.LastIndex(m[0], \"UNSPECIFIED\")\n  return m[v][prefixLen:]\n}\n\n...\ndata :\u003d \u0026addReviewerRequest{\n  Notify: enumToString(req.Notify, gerritpb.AddReviewerRequest_Notify_name)\n  State: enumToString(req.Stae, gerritpb.AddReviewerRequest_State_name)\n}",
+      "parentUuid": "530a4bb7_446fa019",
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6e9f816_7fab1584",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T08:57:43Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a231c2bc_0c0c7b58",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T08:57:43Z",
+      "side": 1,
+      "message": "please, add it AccountInfo then",
+      "range": {
+        "startLine": 591,
+        "startChar": 2,
+        "endLine": 592,
+        "endChar": 22
+      },
+      "revId": "b854281bf6a3ef94976cdc23e46f787b68803709",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
