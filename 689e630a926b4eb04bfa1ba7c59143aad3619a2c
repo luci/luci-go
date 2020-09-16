@@ -678,6 +678,30 @@
     },
     {
       "key": {
+        "uuid": "50a03bae_de3f3428",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-16T01:44:37Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "6dc6fe0d_da545ead",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 29
+      },
+      "revId": "689e630a926b4eb04bfa1ba7c59143aad3619a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95a3cdd1_7ecf3296",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 14
