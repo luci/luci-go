@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/resultcount"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -52,9 +53,16 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 		return nil, err
 	}
 
-	totalNum, err := invocations.ReadTestResultCount(ctx, invs)
+	totalNum, err := resultcount.ReadTestResultCount(ctx, invs)
 	if err != nil {
 		return nil, err
+	}
+
+	if totalNum == 0 {
+		totalNum, err = invocations.ReadTestResultCount(ctx, invs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &pb.QueryTestResultStatisticsResponse{
