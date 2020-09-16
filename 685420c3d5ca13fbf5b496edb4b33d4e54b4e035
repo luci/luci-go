@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1cb827fc_d1ff8fc0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T18:51:10Z",
+      "side": 1,
+      "message": "yep :facepalm:",
+      "parentUuid": "d86337b7_180b6254",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 90
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5f43bb18_16a1ebe8",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "61278583_1e73b266",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 692,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T18:51:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f43bb18_16a1ebe8",
+      "range": {
+        "startLine": 686,
+        "startChar": 2,
+        "endLine": 692,
+        "endChar": 3
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33594a0a_0d165a62",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -62,6 +110,24 @@
       "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a72a0b95_0c425080",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 700,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T18:51:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33594a0a_0d165a62",
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -100,6 +166,30 @@
       "side": 1,
       "message": "so that the JSON unmarshalling of the response works properly.\n\nAlternative is to create a internal struct (the way I do with the request) whose only only purpose is to translate from _account_id to AccountID or something like it.",
       "parentUuid": "27dab10b_8c313819",
+      "range": {
+        "startLine": 702,
+        "startChar": 8,
+        "endLine": 702,
+        "endChar": 9
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc2e9740_8ef7f357",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 702,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-16T18:51:10Z",
+      "side": 1,
+      "message": "Actually - after discussion with tandrii@ I\u0027m making a new json-compatible struct for AccountInfo and deleting this in favor of reusing AccountInfo",
+      "parentUuid": "3ba715bb_c81d83da",
       "range": {
         "startLine": 702,
         "startChar": 8,
