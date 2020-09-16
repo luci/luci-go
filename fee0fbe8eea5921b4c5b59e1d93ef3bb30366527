@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f895ace_638f11cd",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-16T17:40:20Z",
+      "side": 1,
+      "message": "The case where there\u0027s no Swarming task was previously incorrectly not enqueuing any tasks. Now it enqueues Pub/Sub and BQ.",
+      "revId": "fee0fbe8eea5921b4c5b59e1d93ef3bb30366527",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
