@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0141809_0d124c2d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "this is much better, thank you!",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "02102136_2efd83b2",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 9
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "749a6ca8_82f4a335",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "earlier I wasn\u0027t clear (sorry!): I didn\u0027t mean same functions literally, but \"close\" to the place in code where we create the channel.\n\nI think this should be inside the goroutine that sends data? that way the receiver will stop when the sender is done, e.g. somewhere in L60\n\n--\n\nthen we don\u0027t need workerDone whatsoever",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c60b755_c32b7b4d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "maybe added a comment why we are doing this.",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 6
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebd7593b_7f86c930",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "here we return nil, as if we are trying hard not to return ctx.Err(), but mathcingResultsInInTree may return ctx.Err()\n\nthis is inconsistent",
+      "range": {
+        "startLine": 75,
+        "startChar": 11,
+        "endLine": 75,
+        "endChar": 14
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23feea12_829087ec",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "I\u0027d also add to this comment that results in the channel are already ordered by indexed timestamp, so we don\u0027t have order them here",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5da9f5a_34add8c6",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "please add a TODO to implement paging",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "078e7b4e_2cb5ae18",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "i think the intention here is to stop the goroutine above, but we cancel ctx of this goroutine and the txn? i think it would be cleaner if the goroutine above had its own context and cancelation (e.g. ctxWorker, cancelWorker), and we used it here.\n\notherwise it is confusing why we are canceling txn twice.\nthis also would cause confusion if someone else writes more code after this that tries to use txn",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 11
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4ff7c6d_d4526d66",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "here we might be returning nil even though [the context passed to this function] was canceled (because we ignore ctx.Err() in L104).",
+      "range": {
+        "startLine": 113,
+        "startChar": 13,
+        "endLine": 113,
+        "endChar": 16
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "508df7db_bb6042d3",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69db0469_9842d440",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "TODO... ?",
+      "range": {
+        "startLine": 162,
+        "startChar": 3,
+        "endLine": 162,
+        "endChar": 4
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d47357f0_89e8ffeb",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T05:18:58Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 164,
+        "startChar": 37,
+        "endLine": 164,
+        "endChar": 44
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
