@@ -314,6 +314,12 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				"Invocations", s.rowOfInvocation(ctx, batchInv, "", int64(len(batch)))),
 			)
 
+			ms = append(ms, spanutil.InsertMap("TestResultCounts", map[string]interface{}{
+				"InvocationId":    batchID,
+				"ShardId":         0,
+				"TestResultCount": int64(len(batch)),
+			}))
+
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {
 				tr.ResultId = strconv.Itoa(k)
