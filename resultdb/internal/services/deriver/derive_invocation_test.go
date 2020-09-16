@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/formats"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -251,7 +252,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
 			So(err, ShouldBeNil)
 
-			trNum, err := invocations.ReadTestResultCount(ctx, invIDs)
+			trNum, err := resultcount.ReadTestResultCount(ctx, invIDs)
 			So(err, ShouldBeNil)
 			So(trNum, ShouldEqual, 3)
 

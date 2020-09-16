@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"context"
 	"testing"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -22,7 +23,10 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 
@@ -38,6 +42,13 @@ func TestQueryTestResultStatistics(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permListTestResults},
 			},
 		})
+
+		incCount := func(invID invocations.ID, count int64) {
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				return resultcount.IncrementTestResultCount(ctx, invID, count)
+			})
+			So(err, ShouldBeNil)
+		}
 
 		testutil.MustApply(ctx,
 			insert.Invocation(
@@ -70,6 +81,10 @@ func TestQueryTestResultStatistics(t *testing.T) {
 			insert.Inclusion("b", "d"),
 			insert.Inclusion("c", "d"),
 		)
+
+		incCount(invocations.ID("b"), 5)
+		incCount(invocations.ID("c"), 10)
+		incCount(invocations.ID("d"), 20)
 
 		srv := newTestResultDBService()
 

@@ -110,10 +110,6 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 			return
 		})
 		eg.Go(func() error {
-			// TODO(crbug.com/1123807) Remove after QueryTestResultCount uses sharded count.
-			if err := invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests))); err != nil {
-				return err
-			}
 			return resultcount.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
 		})
 		return eg.Wait()
