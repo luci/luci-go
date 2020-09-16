@@ -15,7 +15,6 @@
 import { Route, Router } from '@vaadin/router';
 
 import './components/page_layout';
-import './context/app_state/app_state_provider';
 import './context/build_state/build_state_provider';
 import './context/invocation_state/invocation_state_provider';
 
@@ -54,134 +53,125 @@ router.setRoutes({
     },
     {
       path: '/',
-      component: 'milo-app-state-provider',
+      component: 'milo-invocation-state-provider',
       children: [
         {
-          path: '/',
-          component: 'milo-invocation-state-provider',
+          path: '/inv/:invocation_id',
+          name: 'invocation',
+          action: async (_ctx, cmd) => {
+            await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+            return cmd.component('milo-invocation-page');
+          },
           children: [
             {
-              path: '/inv/:invocation_id',
-              name: 'invocation',
+              path: '/',
+              action: (ctx, cmd) => cmd.redirect(router.urlForName('invocation-test-results', ctx.params).slice(BASE_URL.length)),
+            },
+            {
+              path: '/test-results',
+              name: 'invocation-test-results',
               action: async (_ctx, cmd) => {
-                await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
-                return cmd.component('milo-invocation-page');
+                await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
+                return cmd.component('milo-test-results-tab');
+              },
+            },
+            {
+              path: '/invocation-details',
+              name: 'invocation-details',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
+                return cmd.component('milo-invocation-details-tab');
+              },
+            },
+          ],
+        },
+        {
+          path: '/p/:project/:bucket/:builder/:build_num_or_id',
+          component: 'milo-build-state-provider',
+          children: [
+            {
+              path: '/',
+              name: 'build',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "build_page" */ './pages/build_page');
+                return cmd.component('milo-build-page');
               },
               children: [
                 {
                   path: '/',
-                  action: (ctx, cmd) => cmd.redirect(router.urlForName('invocation-test-results', ctx.params).slice(BASE_URL.length)),
+                  action: (ctx, cmd) => cmd.redirect(router.urlForName('build-overview', ctx.params).slice(BASE_URL.length)),
+                },
+                {
+                  path: '/overview',
+                  name: 'build-overview',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "test_overview_tab" */ './pages/build_page/overview_tab');
+                    return cmd.component('milo-overview-tab');
+                  },
                 },
                 {
                   path: '/test-results',
-                  name: 'invocation-test-results',
+                  name: 'build-test-results',
                   action: async (_ctx, cmd) => {
                     await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
                     return cmd.component('milo-test-results-tab');
                   },
                 },
                 {
-                  path: '/invocation-details',
-                  name: 'invocation-details',
+                  path: '/steps',
+                  name: 'build-steps',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
-                    return cmd.component('milo-invocation-details-tab');
+                    await import(/* webpackChunkName: "steps_tab" */ './pages/build_page/steps_tab');
+                    return cmd.component('milo-steps-tab');
                   },
                 },
-                notFoundRoute,
+                {
+                  path: '/related-builds',
+                  name: 'build-related-builds',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "related_builds_tab" */ './pages/build_page/related_builds_tab');
+                    return cmd.component('milo-related-builds-tab');
+                  },
+                },
+                {
+                  path: '/timeline',
+                  name: 'build-timeline',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "timeline_tab" */ './pages/build_page/timeline_tab');
+                    return cmd.component('milo-timeline-tab');
+                  },
+                },
+                {
+                  path: '/blamelist',
+                  name: 'build-blamelist',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "blamelist_tab" */ './pages/build_page/blamelist_tab');
+                    return cmd.component('milo-blamelist-tab');
+                  },
+                },
               ],
+            },
+          ],
+        },
+        {
+          path: '/artifact',
+          children: [
+            {
+              path: '/text-diff/:artifact_name',
+              name: 'text-diff-artifact',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
+                return cmd.component('milo-text-diff-artifact-page');
+              },
             },
             {
-              path: '/p/:project/:bucket/:builder/:build_num_or_id',
-              component: 'milo-build-state-provider',
-              children: [
-                {
-                  path: '/',
-                  name: 'build',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "build_page" */ './pages/build_page');
-                    return cmd.component('milo-build-page');
-                  },
-                  children: [
-                    {
-                      path: '/',
-                      action: (ctx, cmd) => cmd.redirect(router.urlForName('build-overview', ctx.params).slice(BASE_URL.length)),
-                    },
-                    {
-                      path: '/overview',
-                      name: 'build-overview',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "test_overview_tab" */ './pages/build_page/overview_tab');
-                        return cmd.component('milo-overview-tab');
-                      },
-                    },
-                    {
-                      path: '/test-results',
-                      name: 'build-test-results',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
-                        return cmd.component('milo-test-results-tab');
-                      },
-                    },
-                    {
-                      path: '/steps',
-                      name: 'build-steps',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "steps_tab" */ './pages/build_page/steps_tab');
-                        return cmd.component('milo-steps-tab');
-                      },
-                    },
-                    {
-                      path: '/related-builds',
-                      name: 'build-related-builds',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "related_builds_tab" */ './pages/build_page/related_builds_tab');
-                        return cmd.component('milo-related-builds-tab');
-                      },
-                    },
-                    {
-                      path: '/timeline',
-                      name: 'build-timeline',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "timeline_tab" */ './pages/build_page/timeline_tab');
-                        return cmd.component('milo-timeline-tab');
-                      },
-                    },
-                    {
-                      path: '/blamelist',
-                      name: 'build-blamelist',
-                      action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "blamelist_tab" */ './pages/build_page/blamelist_tab');
-                        return cmd.component('milo-blamelist-tab');
-                      },
-                    },
-                  ],
-                },
-              ],
+              path: '/image-diff/:artifact_name',
+              name: 'image-diff-artifact',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
+                return cmd.component('milo-image-diff-artifact-page');
+              },
             },
-            {
-              path: '/artifact',
-              children: [
-                {
-                  path: '/text-diff/:artifact_name',
-                  name: 'text-diff-artifact',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
-                    return cmd.component('milo-text-diff-artifact-page');
-                  },
-                },
-                {
-                  path: '/image-diff/:artifact_name',
-                  name: 'image-diff-artifact',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
-                    return cmd.component('milo-image-diff-artifact-page');
-                  },
-                },
-                notFoundRoute,
-              ],
-            },
-            notFoundRoute,
           ],
         },
       ],
