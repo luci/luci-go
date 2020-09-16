@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "d86337b7_180b6254",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T18:03:49Z",
+      "side": 1,
+      "message": "https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-to-attention-set ?",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 90
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f43bb18_16a1ebe8",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 692,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T18:03:49Z",
+      "side": 1,
+      "message": "oh, since this is re-used, please move it out to top level. Then each field can be just NOTIFY_",
+      "range": {
+        "startLine": 686,
+        "startChar": 2,
+        "endLine": 692,
+        "endChar": 3
+      },
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33594a0a_0d165a62",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 700,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T18:03:49Z",
+      "side": 1,
+      "message": "looks like AccountInfo. Can we re-use it?",
+      "revId": "685420c3d5ca13fbf5b496edb4b33d4e54b4e035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "27dab10b_8c313819",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
