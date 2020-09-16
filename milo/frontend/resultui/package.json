@@ -1,7 +1,7 @@
 {
   "name": "resultui",
   "version": "0.1.0",
-  "description": "LUCI Test Results",
+  "description": "LUCI",
   "author": "weiweilin@google.com",
   "license": "Apache-2.0",
   "dependencies": {
