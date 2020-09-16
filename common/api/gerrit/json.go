@@ -271,3 +271,9 @@ func enumToString(v int32, m map[int32]string) string {
 	prefixLen := strings.LastIndex(m[0], "UNSPECIFIED")
 	return m[v][prefixLen:]
 }
+
+type attentionSetRequest struct {
+	User   string `json:"user"`
+	Reason string `json:"reason"`
+	Notify string `json:"string,omitempty"`
+}
