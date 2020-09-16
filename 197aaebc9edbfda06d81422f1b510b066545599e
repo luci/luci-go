@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "cc8fec72_4c780aab",
+        "filename": "resultdb/internal/resultcount/resultcount.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-16T04:14:55Z",
+      "side": 1,
+      "message": "see https://cloud.google.com/spanner/docs/transactions#rw_transaction_semantics\n\nif done the way it is proposed above (first read it, then use UpdateOrInsert) then\n  given that we read the cell before updating it,\n  when the txn is being committed,\n  if another txn committed that also mutates that cell,\n  then out txn is restarted,\n\nso it won\u0027t overwrite it.",
+      "parentUuid": "f6e2147f_3b3a02cd",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 1
+      },
+      "revId": "197aaebc9edbfda06d81422f1b510b066545599e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e949c3b9_c6edb95c",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 6
