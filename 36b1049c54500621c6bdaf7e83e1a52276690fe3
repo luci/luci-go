@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a92d1a3_15bbb709",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-16T23:27:16Z",
+      "side": 1,
+      "message": "basically remove milo-app-state-provider and update indentation correspondingly",
+      "revId": "36b1049c54500621c6bdaf7e83e1a52276690fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
