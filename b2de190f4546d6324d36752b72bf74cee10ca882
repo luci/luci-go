@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dec3c57c_1840f631",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-09-16T19:56:22Z",
+      "side": 1,
+      "message": "PTAL\n\nI was trying to understand how the retry quota works, and got a bit confused. Hopefully this is helpful documentation for other folks. If you have feedback or corrections feel free to let me know!",
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
