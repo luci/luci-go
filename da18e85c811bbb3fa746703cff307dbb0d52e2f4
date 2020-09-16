@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd8bdf42_7b1b3612",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T15:59:15Z",
+      "side": 1,
+      "message": "just \"CC\", which is a better test than repeating exact same code as in code-under-test.",
+      "range": {
+        "startLine": 435,
+        "startChar": 14,
+        "endLine": 435,
+        "endChar": 134
+      },
+      "revId": "da18e85c811bbb3fa746703cff307dbb0d52e2f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "789f6237_c248e799",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-16T15:59:15Z",
+      "side": 1,
+      "message": "\"OWNER\"",
+      "range": {
+        "startLine": 437,
+        "startChar": 14,
+        "endLine": 437,
+        "endChar": 138
+      },
+      "revId": "da18e85c811bbb3fa746703cff307dbb0d52e2f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
