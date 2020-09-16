@@ -12,9 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@chopsui/chops-signin';
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement } from 'lit-element';
+import { Router } from '@vaadin/router';
+import { css, customElement, html, LitElement, property } from 'lit-element';
+
+import '../components/signin';
+import { UserUpdateEvent } from '../components/signin';
+import { AppState, provideAppState } from '../context/app_state/app_state';
+import { router } from '../routes';
+
+const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
+  gapi.load('auth2', () => {
+    gapi.auth2
+      .init({client_id: CONFIGS.OAUTH2.CLIENT_ID, scope: 'email'})
+      .then(resolve, reject);
+  });
+});
 
 function genFeedbackUrl() {
   const feedbackComment = encodeURIComponent(
@@ -29,8 +42,18 @@ Please enter a description of the problem, with repro steps if applicable.
  * top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
+
 @customElement('milo-page-layout')
+@provideAppState
 export class PageLayoutElement extends LitElement {
+  @property() private gAuth: gapi.auth2.GoogleAuth | null = null;
+  readonly appState = new AppState();
+
+  constructor() {
+    super();
+    gAuthPromise.then((gAuth) => this.gAuth = gAuth);
+  }
+
   protected render() {
     return html`
       <div id="container">
@@ -45,7 +68,20 @@ export class PageLayoutElement extends LitElement {
         >
           <mwc-icon>feedback</mwc-icon>
         </div>
-        <chops-signin id="signin" client-id=${CONFIGS.OAUTH2.CLIENT_ID}></chops-signin>
+        <div id="signin">
+          ${this.gAuth ? html`
+          <milo-signin
+            .gAuth=${this.gAuth}
+            @user-update=${(e: UserUpdateEvent) => {
+              this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
+              if (!this.appState.accessToken) {
+                const searchParams = new URLSearchParams();
+                searchParams.set('redirect', window.location.href);
+                Router.go(`${router.urlForName('login')}?${searchParams}`);
+              }
+            }}
+          ></milo-signin>` : ''}
+        </div>
       </div>
       <slot></slot>
     `;
