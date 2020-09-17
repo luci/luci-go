@@ -1,0 +1,268 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9db00232_8b363d61",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "it is possible that the first 50 invocations don\u0027t have enough matching test results, so we would return an incomplete page without a page token, or even empty page.\nplease add a TODO to fix this problem.\n\nFWIU this could be solved by accepting a callback in ByTimestamp and removing the LIMIT, but it would need to be performance-tested.",
+      "range": {
+        "startLine": 62,
+        "startChar": 30,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "892f5d8e_554ee13d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "nit: it is unusual for a validation function to accept a context, because the caller might think that the result depends on some *external* state (e.g. if the context is used to make an RPC).\n\nConsider passing `now time.Time` instead. It would simplify the test too",
+      "range": {
+        "startLine": 135,
+        "startChar": 41,
+        "endLine": 135,
+        "endChar": 60
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f25b8cb6_a5554c3e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "testutil.TestingContext() ?",
+      "range": {
+        "startLine": 49,
+        "startChar": 19,
+        "endLine": 49,
+        "endChar": 39
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "427a8d65_b5431eba",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "pbutil.Variant(\"os\", \"Mac-10.15\")\n\nsame below",
+      "range": {
+        "startLine": 64,
+        "startChar": 16,
+        "endLine": 66,
+        "endChar": 7
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd36f5fa_80f1cead",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "unnecessary?\n\nsame below",
+      "range": {
+        "startLine": 81,
+        "startChar": 4,
+        "endLine": 89,
+        "endChar": 6
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbda366b_e81886ed",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "nit: this sets up clock inside auth-related code. This is a bit hard to notice.\nconsider separating:\n\n  ctx :\u003d testutil.SpannerTestContext(t)\n  ctx \u003d clock.Set(...)\n  ctx \u003d auth.WithState(...)",
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c7acec2_4db43799",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "see below. Consider having a single MustApply for a bunch of mutations.\nsee also https://godoc.org/go.chromium.org/luci/resultdb/internal/testutil#CombineMutations",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 92
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4af1c923_4c9f72a2",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "just `2`",
+      "range": {
+        "startLine": 160,
+        "startChar": 69,
+        "endLine": 160,
+        "endChar": 85
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb4cf4de_b9a6d7d5",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "should we assert the error message too? otherwise the error might be a different invalidArgument than we expect",
+      "range": {
+        "startLine": 180,
+        "startChar": 53,
+        "endLine": 180,
+        "endChar": 54
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bbd7756_b0a81e4e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "does this take test long? it runs `subInvs` transactions instead of just one.\nconsider adding these mutations to a slice and return it",
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "306ba292_b7fd6b91",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "same here. consider returning a slice of mutations to the caller instead",
+      "range": {
+        "startLine": 239,
+        "startChar": 11,
+        "endLine": 239,
+        "endChar": 20
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1431e495_aff981a0",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T05:59:50Z",
+      "side": 1,
+      "message": "ha! you use it here",
+      "range": {
+        "startLine": 243,
+        "startChar": 29,
+        "endLine": 243,
+        "endChar": 36
+      },
+      "revId": "0b87a6586d8c54c5471c69a04c50a9ae3474e693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
