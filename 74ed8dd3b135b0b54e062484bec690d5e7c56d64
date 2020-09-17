@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "d0104079_7edf3ae2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-17T01:02:55Z",
+      "side": 1,
+      "message": "Overall, the flow LGTM. Just wonder the main purpose of this CL. If it is trying to solve https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1114935, then how much time it saves when we convert the sign-in component?",
+      "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "15ce2ab4_f47586a7",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -16,6 +33,23 @@
       "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2440c738_6a43b8b8",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-17T01:02:55Z",
+      "side": 1,
+      "message": "Actually I found it unexpected that when I click on the icon, it logs me out straight away (although there is a hover title). Putting an explicit \"Log out\" here may be more user-friendly.",
+      "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
