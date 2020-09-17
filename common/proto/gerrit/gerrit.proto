@@ -69,6 +69,11 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
   rpc SetReview(SetReviewRequest) returns (ReviewResult);
 
+  // Adds a single user to the attention set of a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-to-attention-set
+  rpc AddToAttentionSet(AttentionSetRequest) returns (AccountInfo);
+
   // Submit a change.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
@@ -166,6 +171,25 @@ enum QueryOption {
   // Include the commands field in the FetchInfo for revisions. Only valid when
   // the CURRENT_REVISION or ALL_REVISIONS option is selected.
   DOWNLOAD_COMMANDS = 2097152;
+}
+
+// Specify the notification options for an action.
+// Different endpoints support different subsets of this enum.
+enum Notify {
+
+  NOTIFY_UNSPECIFIED = 0;
+
+  // Do not send email notifications.
+  NOTIFY_NONE = 1;
+
+  // Notify all OWNERS.
+  NOTIFY_OWNER = 2;
+
+  // Notify OWNERS who are also reviewers
+  NOTIFY_OWNER_REVIEWERS = 3;
+
+  // Notify all OWNERS and reviewers
+  NOTIFY_ALL = 4;
 }
 
 // Request to list changes based on a query.
@@ -567,14 +591,6 @@ message AddReviewerRequest {
   // Whether adding the reviewer is confirmed.
   bool confirmed = 5;
 
-  enum Notify {
-    ADD_REVIEWER_NOTIFY_UNSPECIFIED = 0;
-    ADD_REVIEWER_NOTIFY_NONE = 1;
-    ADD_REVIEWER_NOTIFY_OWNER = 2;
-    ADD_REVIEWER_NOTIFY_OWNER_REVIEWERS = 3;
-    ADD_REVIEWER_NOTIFY_ALL = 4;
-  }
-
   // Defines who should be notified after reviewer is added, defaults to ALL.
   Notify notify = 6;
 }
@@ -656,6 +672,31 @@ message ReviewResult {
   // Map of labels to values after the review was posted. Null if any reviewer
   // additions were rejected.
   map<string, int32> labels = 1;
+}
+
+// Information to add/remove a user from the attention set of a change.
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#attention-set-input
+message AttentionSetRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // A unique identifier for an account.
+  // See
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+  string user = 3;
+
+  // The justification for adding/removing the user.
+  string reason = 4;
+
+  // Defines who should be notified after change is created, defaults to OWNER.
+  Notify notify = 5;
+
 }
 
 enum MergeableStrategy {

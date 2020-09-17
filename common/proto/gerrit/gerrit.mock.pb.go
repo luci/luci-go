@@ -195,6 +195,26 @@ func (mr *MockGerritClientMockRecorder) SetReview(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritClient)(nil).SetReview), varargs...)
 }
 
+// AddToAttentionSet mocks base method.
+func (m *MockGerritClient) AddToAttentionSet(ctx context.Context, in *AttentionSetRequest, opts ...grpc.CallOption) (*AccountInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddToAttentionSet", varargs...)
+	ret0, _ := ret[0].(*AccountInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddToAttentionSet indicates an expected call of AddToAttentionSet.
+func (mr *MockGerritClientMockRecorder) AddToAttentionSet(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToAttentionSet", reflect.TypeOf((*MockGerritClient)(nil).AddToAttentionSet), varargs...)
+}
+
 // SubmitChange mocks base method.
 func (m *MockGerritClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -416,6 +436,21 @@ func (m *MockGerritServer) SetReview(arg0 context.Context, arg1 *SetReviewReques
 func (mr *MockGerritServerMockRecorder) SetReview(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritServer)(nil).SetReview), arg0, arg1)
+}
+
+// AddToAttentionSet mocks base method.
+func (m *MockGerritServer) AddToAttentionSet(arg0 context.Context, arg1 *AttentionSetRequest) (*AccountInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddToAttentionSet", arg0, arg1)
+	ret0, _ := ret[0].(*AccountInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddToAttentionSet indicates an expected call of AddToAttentionSet.
+func (mr *MockGerritServerMockRecorder) AddToAttentionSet(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToAttentionSet", reflect.TypeOf((*MockGerritServer)(nil).AddToAttentionSet), arg0, arg1)
 }
 
 // SubmitChange mocks base method.

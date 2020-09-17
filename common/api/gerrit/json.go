@@ -37,6 +37,27 @@ import (
 
 // timestamp implements customized JSON marshal/unmarshal behavior that matches
 // the timestamp format used in Gerrit.
+
+// TODO (throughout) use this to correctly parse AccountInfo response
+// instead of gerritpb.AccountInfo
+type accountInfo struct {
+	Name            string   `json:"name,omitempty"`
+	Email           string   `json:"email,omitempty"`
+	SecondaryEmails []string `json:"secondary_emails,omitempty"`
+	Username        string   `json:"username,omitempty"`
+	AccountID       int64    `json:"_account_id,omitempty"`
+}
+
+func (a *accountInfo) ToProto() *gerritpb.AccountInfo {
+	return &gerritpb.AccountInfo{
+		Name:            a.Name,
+		Email:           a.Email,
+		SecondaryEmails: a.SecondaryEmails,
+		Username:        a.Username,
+		AccountId:       a.AccountID,
+	}
+}
+
 type timestamp struct {
 	time.Time
 }
@@ -270,4 +291,10 @@ func enumToString(v int32, m map[int32]string) string {
 	}
 	prefixLen := strings.LastIndex(m[0], "UNSPECIFIED")
 	return m[v][prefixLen:]
+}
+
+type attentionSetRequest struct {
+	User   string `json:"user"`
+	Reason string `json:"reason"`
+	Notify string `json:"string,omitempty"`
 }
