@@ -16,6 +16,29 @@
       "revId": "c596aac8e2dfb484975d2c23fd9f8c77b13a37b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a2b57200_3a46e382",
+        "filename": "lucictx/sections.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-17T23:17:48Z",
+      "side": 1,
+      "message": "Working with JSON-serialization of this thing is PITA, since it is RFC3339 and there\u0027s no builtin parsers for RFC3339 in python stdlib. I\u0027d very much prefer regular int64 unix timestamps...",
+      "range": {
+        "startLine": 114,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 27
+      },
+      "revId": "c596aac8e2dfb484975d2c23fd9f8c77b13a37b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
