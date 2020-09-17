@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9278fab9_e54f97ee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "thank you!",
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1748faf4_45a939ac",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "nit\" in this case, i\u0027d use \"Branches\" since this is strictly Gerrit-influenced struct.",
+      "range": {
+        "startLine": 308,
+        "startChar": 1,
+        "endLine": 308,
+        "endChar": 5
+      },
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ec721de_0b1910d3",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "this shouldn\u0027t be necessary, it\u0027s already fully qualified ref.",
+      "range": {
+        "startLine": 323,
+        "startChar": 18,
+        "endLine": 323,
+        "endChar": 29
+      },
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ba9d447_24111c29",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 621,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "are you sure there is no special \"HEAD\": ... in the output? I recommend to try on infra/infra repo.",
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7d8fc4e_92dbc5d0",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 636,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "this must be \"refs/heads/master\"",
+      "range": {
+        "startLine": 636,
+        "startChar": 9,
+        "endLine": 636,
+        "endChar": 15
+      },
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71465a33_a7b9b7b0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 815,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T20:21:09Z",
+      "side": 1,
+      "message": "nit: refs/heads/main\n(our guidelines for inclusive language recommend to avoid using this term if possible)",
+      "range": {
+        "startLine": 815,
+        "startChar": 72,
+        "endLine": 815,
+        "endChar": 78
+      },
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
