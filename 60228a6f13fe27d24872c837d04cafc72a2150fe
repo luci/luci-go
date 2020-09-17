@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb75330f_8787d0d3",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "map[string]*projectInfo{}",
+      "range": {
+        "startLine": 320,
+        "startChar": 9,
+        "endLine": 320,
+        "endChar": 41
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bc8708f_b8cf7830",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "just \"/projects/\" then and you don\u0027t need \"path\" var either.",
+      "range": {
+        "startLine": 326,
+        "startChar": 9,
+        "endLine": 326,
+        "endChar": 20
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1aeb22f7_73824022",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "len(resp)",
+      "range": {
+        "startLine": 330,
+        "startChar": 57,
+        "endLine": 330,
+        "endChar": 58
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca9b17dc_549cc465",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 812,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "why is this important to the user of the ListProjectRequest?",
+      "range": {
+        "startLine": 812,
+        "startChar": 24,
+        "endLine": 812,
+        "endChar": 35
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ab7912_7a494f8f",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 818,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "please use `ref` instead of branch. See examples of `ref` docs in the same file.",
+      "range": {
+        "startLine": 817,
+        "startChar": 2,
+        "endLine": 818,
+        "endChar": 20
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdd21f12_00cedb91",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 824,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "do you really need this? It\u0027s OK to not list things we don\u0027t need -- JSON/JSONPB unmarshaling will silently ignore it",
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3bdc31a_2753451e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 841,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "URL encoding is impl. detail.\nThe advantage of proto is that you don\u0027t need to take care of transport layer.\nSo, please keep it normal string here and deserialize from URL-encoding in rest.go before returning this ProjectInfo.",
+      "range": {
+        "startLine": 840,
+        "startChar": 2,
+        "endLine": 841,
+        "endChar": 16
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29202bf5_be78e189",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "can we ensure it\u0027s always set in rest.go and avoid these caveats?",
+      "range": {
+        "startLine": 843,
+        "startChar": 11,
+        "endLine": 843,
+        "endChar": 80
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09e9ed18_5698bfc5",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 863,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T16:10:07Z",
+      "side": 1,
+      "message": "same as above, please use ref and ensure ref names are absolute, ie not \"master\" but \"refs/heads/master\".",
+      "range": {
+        "startLine": 862,
+        "startChar": 3,
+        "endLine": 863,
+        "endChar": 35
+      },
+      "revId": "60228a6f13fe27d24872c837d04cafc72a2150fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
