@@ -93,6 +93,11 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+
+  // Lists the projects on a Gerrit host
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
 }
 
 // Specifies what extra information to include in the response.
@@ -801,4 +806,67 @@ message ListFilesRequest {
 message ListFilesResponse {
   // A map of file paths to FileInfos.
   map<string, FileInfo> files = 1;
+}
+
+// Information for requesting the projects on a host.
+// See
+// https://gerrit-review.googlesource.com/Documentation/cmd-ls-projects.html
+message ListProjectsRequest {
+  // Limit results to projects with the specified ref, e.g.: refs/heads/main.
+  // Ref SHA1 will be included in the results.
+  string ref = 1;
+
+}
+
+// Describes a link to an external site
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#web-link-info
+message WebLinkInfo {
+  // The link name
+  string name = 1;
+
+  // Link URL
+  string url = 2;
+
+  // URL to link icon
+  string image_url = 3;
+}
+
+// Information about individual projects.
+//
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
+message ProjectInfo {
+  // The project name
+  string name = 1;
+
+  // The name of the parent project
+  string parent = 2;
+
+  // The description of the project
+  string description = 3;
+
+  enum State {
+    PROJECT_STATE_UNSPECIFIED = 0;
+    PROJECT_STATE_ACTIVE = 1;
+    PROJECT_STATE_READ_ONLY = 2;
+    PROJECT_STATE_HIDDEN = 3;
+  }
+
+  // The state of the project
+  State state = 4;
+
+  // Map of ref names to HEAD revisions
+  map<string, string> refs = 5;
+
+  // List of links to the project in external sites
+  repeated WebLinkInfo web_links = 6;
+}
+
+// Information about the projects on a host.
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
+message ListProjectsResponse {
+  // A map of project names to ProjectInfo entries, sorted by project name.
+  map<string, ProjectInfo> Projects = 1;
 }
