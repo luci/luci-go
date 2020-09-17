@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7030470_d1b3ea93",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-17T07:03:22Z",
+      "side": 1,
+      "message": "This reduces the time to render the steps (not including fetching steps) by ~60%.\nThis is not very noticeable in dev because dev builds don\u0027t have a lot of steps.\nBut can make a big difference in some prod builds.\n\nDemo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/android-lollipop-arm-rel-swarming/4195/steps",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
