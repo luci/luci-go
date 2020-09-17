@@ -17,6 +17,7 @@ import { customElement, html, property } from 'lit-element';
 import { autorun, observable, when } from 'mobx';
 
 import { AppState, consumeAppState } from '../app_state/app_state';
+import { consumeUserConfigs, UserConfigs } from '../app_state/user_configs';
 import { InvocationState, provideInvocationState } from './invocation_state';
 
 /**
@@ -24,13 +25,14 @@ import { InvocationState, provideInvocationState } from './invocation_state';
  */
 export class InvocationStateProviderElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref userConfigs!: UserConfigs;
   @property() invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
   connectedCallback() {
     super.connectedCallback();
     this.disposers.push(autorun(
-      () => this.invocationState = new InvocationState(this.appState),
+      () => this.invocationState = new InvocationState(this.appState, this.userConfigs),
     ));
     this.disposers.push(when(
       () => this.invocationState.invocationReq.state === 'rejected',
@@ -57,6 +59,8 @@ export class InvocationStateProviderElement extends MobxLitElement {
 
 customElement('milo-invocation-state-provider')(
   provideInvocationState(
-    consumeAppState(InvocationStateProviderElement),
+    consumeUserConfigs(
+      consumeAppState(InvocationStateProviderElement),
+    ),
   ),
 );
