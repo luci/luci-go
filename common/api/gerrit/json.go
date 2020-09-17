@@ -298,3 +298,30 @@ type attentionSetRequest struct {
 	Reason string `json:"reason"`
 	Notify string `json:"string,omitempty"`
 }
+
+type projectInfo struct {
+	ID          string                  `json:"id,omitempty"`
+	Name        string                  `json:"name,omitempty"`
+	Parent      string                  `json:"parent,omitempty"`
+	Description string                  `json:"description,omitempty"`
+	State       string                  `json:"state,omitempty"`
+	Branches    map[string]string       `json:"branches,omitempty"`
+	WebLinks    []*gerritpb.WebLinkInfo `json:"web_links,omitempty"`
+}
+
+func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
+	stateEnumVal := "PROJECT_STATE_" + pi.State
+	stateEnumNum, found := gerritpb.ProjectInfo_State_value[stateEnumVal]
+	if !found {
+		return nil, fmt.Errorf("no State enum value for %q", pi.State)
+	}
+	return &gerritpb.ProjectInfo{
+		Id:          pi.ID,
+		Name:        pi.Name,
+		Parent:      pi.Parent,
+		Description: pi.Description,
+		State:       gerritpb.ProjectInfo_State(stateEnumNum),
+		Branches:    pi.Branches,
+		WebLinks:    pi.WebLinks,
+	}, nil
+}
