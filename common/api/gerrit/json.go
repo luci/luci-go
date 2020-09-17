@@ -16,6 +16,7 @@ package gerrit
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -297,4 +298,37 @@ type attentionSetRequest struct {
 	User   string `json:"user"`
 	Reason string `json:"reason"`
 	Notify string `json:"string,omitempty"`
+}
+
+type projectInfo struct {
+	ID          string                  `json:"id,omitempty"`
+	Parent      string                  `json:"parent,omitempty"`
+	Description string                  `json:"description,omitempty"`
+	State       string                  `json:"state,omitempty"`
+	Branches    map[string]string       `json:"branches,omitempty"`
+	WebLinks    []*gerritpb.WebLinkInfo `json:"web_links,omitempty"`
+}
+
+func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
+	stateEnumVal := "PROJECT_STATE_" + pi.State
+	stateEnumNum, found := gerritpb.ProjectInfo_State_value[stateEnumVal]
+	if !found {
+		return nil, fmt.Errorf("no State enum value for %q", pi.State)
+	}
+	projectName, err := url.QueryUnescape(pi.ID)
+	if err != nil {
+		return nil, errors.Annotate(err, "decoding name").Err()
+	}
+	absoluteRefs := make(map[string]string, len(pi.Branches))
+	for ref, sha1 := range pi.Branches {
+		absoluteRefs[branchToRef(ref)] = sha1
+	}
+	return &gerritpb.ProjectInfo{
+		Name:        projectName,
+		Parent:      pi.Parent,
+		Description: pi.Description,
+		State:       gerritpb.ProjectInfo_State(stateEnumNum),
+		Refs:        absoluteRefs,
+		WebLinks:    pi.WebLinks,
+	}, nil
 }
