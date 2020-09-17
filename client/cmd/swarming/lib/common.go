@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/maruel/subcommands"
 
 	"google.golang.org/api/googleapi"
@@ -30,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -68,14 +71,15 @@ type swarmingService interface {
 	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
 type swarmingServiceImpl struct {
-	client  *http.Client
-	service *swarming.Service
-	worker  int
+	client   *http.Client
+	service  *swarming.Service
+	worker   int
+	authOpts auth.Options
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
@@ -161,7 +165,7 @@ func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) 
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
 
@@ -176,16 +180,43 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 		return nil, err
 	}
 
+	if isolateRef != nil && casRef != nil {
+		return nil, errors.Reason("both isolateRef and casRef is specified").Err()
+	}
+
 	// If there is no file reference, then we short-circuit, as there are no
 	// outputs to return. We do as after having created the directory for
 	// uniform behavior, so that there is an ID-namespaced directory for each
 	// task's outputs, with an empty directory signifying there having been no
 	// outputs.
-	if ref == nil {
+	if isolateRef == nil && casRef == nil {
 		return nil, nil
 	}
 
-	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(SwarmingUserAgent))
+	if casRef != nil {
+		c, err := cas.NewClient(ctx, casRef.CasInstance, s.authOpts, true)
+		if err != nil {
+			return nil, err
+		}
+		defer c.Close()
+
+		d := digest.Digest{
+			Hash: casRef.Digest.Hash,
+			Size: casRef.Digest.SizeBytes,
+		}
+
+		outputs, err := c.DownloadDirectory(ctx, d, outputDir, filemetadata.NewNoopCache())
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to download directory").Err()
+		}
+		files := make([]string, 0, len(outputs))
+		for path := range outputs {
+			files = append(files, path)
+		}
+		return files, nil
+	}
+
+	isolatedClient := isolatedclient.NewClient(isolateRef.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(isolateRef.Namespace), isolatedclient.WithUserAgent(SwarmingUserAgent))
 
 	var filesMu sync.Mutex
 	var files []string
@@ -205,7 +236,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 				taskID)
 		},
 	}
-	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
+	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(isolateRef.Isolated), dir, opts)
 	return files, dl.Wait()
 }
 
@@ -342,7 +373,7 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	}
 	s.BasePath = c.serverURL + swarmingAPISuffix
 	s.UserAgent = SwarmingUserAgent
-	return &swarmingServiceImpl{client, s, c.worker}, nil
+	return &swarmingServiceImpl{client, s, c.worker, c.parsedAuthOpts}, nil
 }
 
 func tagTransientGoogleAPIError(err error) error {
