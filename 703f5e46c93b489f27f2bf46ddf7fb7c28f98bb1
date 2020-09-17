@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a5c5949_c29a8d6c",
+        "filename": "common/isolated/algo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-17T01:56:02Z",
+      "side": 1,
+      "message": "could you leave TODO to remove this later?",
+      "revId": "703f5e46c93b489f27f2bf46ddf7fb7c28f98bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
