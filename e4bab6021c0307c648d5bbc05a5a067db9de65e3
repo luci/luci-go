@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d94e6d5b_c920bc5b",
+        "filename": "common/isolated/algo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-17T02:15:06Z",
+      "side": 1,
+      "message": "\u0027TODO(golang.org/issues/41420)\u0027 ?",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 8
+      },
+      "revId": "e4bab6021c0307c648d5bbc05a5a067db9de65e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
