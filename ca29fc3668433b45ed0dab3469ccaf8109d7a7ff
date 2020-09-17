@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57e9925b_f5b40a15",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-17T10:45:06Z",
+      "side": 1,
+      "message": "here and below: casRef?",
+      "range": {
+        "startLine": 168,
+        "startChar": 135,
+        "endLine": 168,
+        "endChar": 141
+      },
+      "revId": "ca29fc3668433b45ed0dab3469ccaf8109d7a7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cea95f57_f098e868",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-09-17T10:45:06Z",
+      "side": 1,
+      "message": "make([]string, 0, len(outputs))",
+      "range": {
+        "startLine": 212,
+        "startChar": 11,
+        "endLine": 212,
+        "endChar": 39
+      },
+      "revId": "ca29fc3668433b45ed0dab3469ccaf8109d7a7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
