@@ -82,6 +82,9 @@ func (g *GitilesFake) Log(ctx context.Context, in *LogRequest, opts ...grpc.Call
 		}
 
 		for _, commitID := range commit.GetParents() {
+			if in.GetExcludeAncestorsOf() == commitID {
+				break
+			}
 			c, ok := repository.commits[commitID]
 			if !ok {
 				panic(fmt.Sprintf(
