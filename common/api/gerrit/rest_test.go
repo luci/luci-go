@@ -383,6 +383,7 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	})
 }
 
+// TODO (yulanlin): Assert body verbatim without decoding
 func TestAddReviewer(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -418,7 +419,7 @@ func TestAddReviewer(t *testing.T) {
 			Reviewer:  "ccer@test.com",
 			State:     gerritpb.AddReviewerRequest_ADD_REVIEWER_STATE_CC,
 			Confirmed: true,
-			Notify:    gerritpb.AddReviewerRequest_ADD_REVIEWER_NOTIFY_OWNER,
+			Notify:    gerritpb.Notify_NOTIFY_OWNER,
 		}
 		res, err := c.AddReviewer(ctx, req)
 		So(err, ShouldBeNil)
@@ -428,7 +429,7 @@ func TestAddReviewer(t *testing.T) {
 		var body addReviewerRequest
 		err = json.Unmarshal(actualBody, &body)
 		if err != nil {
-			t.Logf("something failed %v\n", err)
+			t.Logf("failed to decode req body: %v\n", err)
 		}
 		So(body, ShouldResemble, addReviewerRequest{
 			Reviewer:  "ccer@test.com",
@@ -456,6 +457,60 @@ func TestAddReviewer(t *testing.T) {
 	})
 }
 
+func TestAddToAttentionSet(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Add to attention set", t, func() {
+		var actualURL *url.URL
+		var actualBody []byte
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			// ignore the error because body contents will be checked
+			actualBody, _ = ioutil.ReadAll(r.Body)
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+				{
+					"_account_id": 10001,
+					"name": "FYI reviewer",
+					"email": "fyi@test.com",
+					"username": "fyi"
+				}`)
+		})
+		defer srv.Close()
+
+		req := &gerritpb.AttentionSetRequest{
+			Project: "someproject",
+			Number:  42,
+			User:    "fyi@test.com",
+			Reason:  "For awareness",
+			Notify:  gerritpb.Notify_NOTIFY_ALL,
+		}
+		res, err := c.AddToAttentionSet(ctx, req)
+		So(err, ShouldBeNil)
+
+		// assert the request was as expected
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/attention")
+		expectedBody, err := json.Marshal(attentionSetRequest{
+			User:   "fyi@test.com",
+			Reason: "For awareness",
+			Notify: "ALL",
+		})
+		if err != nil {
+			t.Logf("failed to encode expected body: %v\n", err)
+		}
+		So(actualBody, ShouldResemble, expectedBody)
+
+		// assert the result was as expected
+		So(res, ShouldResemble, &gerritpb.AccountInfo{
+			AccountId: 10001,
+			Name:      "FYI reviewer",
+			Email:     "fyi@test.com",
+			Username:  "fyi",
+		})
+	})
+}
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
