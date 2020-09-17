@@ -2989,7 +2989,7 @@ field of [luci.cq_group(...)](#luci.cq_group):
 ### cq.refset {#cq.refset}
 
 ```python
-cq.refset(repo, refs = None)
+cq.refset(repo, refs = None, refs_exclude = None)
 ```
 
 
@@ -3009,6 +3009,7 @@ forever.
 
 * **repo**: URL of a git repository to watch, starting with `https://`. Only repositories hosted on `*.googlesource.com` are supported currently. Required.
 * **refs**: a list of regular expressions that define the set of refs to watch for CLs, e.g. `refs/heads/.+`. If not set, defaults to `refs/heads/master`.
+* **refs_exclude**: a list of regular expressions that define the set of refs to exclude from watching. Empty by default.
 
 
 #### Returns  {#cq.refset-returns}

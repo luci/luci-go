@@ -790,24 +790,6 @@ def gen_cq_cfg(ctx):
             ),
         )
 
-    # Detect when a repo:ref is covered by multiple cq_group nodes. Not allowed.
-    # This is a best effort check since it is still possible to have multiple
-    # different regexps that represent intersecting sets. CQ barks at runtime
-    # when a ref is matching more than one regexp.
-    seen = {}
-    for g in cq_groups:
-        for w in g.props.watch:
-            for ref in w.__refs:
-                key = (w.__repo_key, ref)
-                if key in seen:
-                    error("ref regexp %r of %r is already covered by a cq_group, previous declaration:\n%s" % (
-                        ref,
-                        w.__repo,
-                        seen[key].trace,
-                    ), trace = g.trace)
-                else:
-                    seen[key] = g
-
     # Each luci.cq_group(...) results in a separate cq_pb.ConfigGroup.
     project = get_project()
     triggering_map = _cq_triggering_map(project)
@@ -891,6 +873,7 @@ def _cq_config_group(cq_group, project, triggering_map):
                     cq_pb.ConfigGroup.Gerrit.Project(
                         name = w.__gob_proj,
                         ref_regexp = w.__refs,
+                        ref_regexp_exclude = w.__refs_exclude,
                     )
                     for w in watches
                 ],

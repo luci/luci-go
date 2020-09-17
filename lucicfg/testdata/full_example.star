@@ -383,7 +383,8 @@ luci.cq_group(
     name = "main-cq",
     watch = [
         cq.refset("https://example.googlesource.com/repo"),
-        cq.refset("https://example.googlesource.com/another/repo"),
+        cq.refset("https://example.googlesource.com/another/repo",
+        refs_exclude=["refs/heads/infra/config"]),
     ],
     acls = [
         acl.entry(acl.CQ_COMMITTER, groups = ["committers"]),
@@ -473,6 +474,7 @@ lucicfg.emit(
 #     projects {
 #       name: "another/repo"
 #       ref_regexp: "refs/heads/master"
+#       ref_regexp_exclude: "refs/heads/infra/config"
 #     }
 #   }
 #   verifiers {
