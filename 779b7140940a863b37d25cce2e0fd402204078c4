@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56686681_82db541f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 18
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fffe755_d791ecf4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 74,
+        "endChar": 25
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bfb56b8_6d16a82f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 86,
+        "startChar": 6,
+        "endLine": 87,
+        "endChar": 25
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0df5a2d9_60f07769",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 96,
+        "endChar": 6
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1644e3fa_13980a3e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 106,
+        "startChar": 6,
+        "endLine": 107,
+        "endChar": 25
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d12c015_7e7795fb",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 111,
+        "endChar": 53
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b667fe78_869a89e8",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-17T21:03:42Z",
+      "side": 1,
+      "message": "nit: codebase and spanner lib use \"ms\"",
+      "range": {
+        "startLine": 216,
+        "startChar": 25,
+        "endLine": 216,
+        "endChar": 29
+      },
+      "revId": "779b7140940a863b37d25cce2e0fd402204078c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
