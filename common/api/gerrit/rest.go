@@ -316,6 +316,30 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 	return lfr, nil
 }
 
+func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsRequest, opts ...grpc.CallOption) (*gerritpb.ListProjectsResponse, error) {
+	resp := make(map[string]*projectInfo, 0)
+	params := url.Values{}
+	if req.Branch != "" {
+		params.Add("b", req.Branch)
+	}
+
+	path := fmt.Sprintf("/projects/")
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "list projects").Err()
+	}
+	projectProtos := make(map[string]*gerritpb.ProjectInfo, 0)
+	for id, p := range resp {
+		projectInfo, err := p.ToProto()
+		if err != nil {
+			return nil, errors.Annotate(err, "decoding response").Err()
+		}
+		projectProtos[id] = projectInfo
+	}
+	return &gerritpb.ListProjectsResponse{
+		Projects: projectProtos,
+	}, nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 // If data is nil, request will be made without a body.
 //
