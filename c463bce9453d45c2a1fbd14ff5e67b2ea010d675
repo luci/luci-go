@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "4137ca0c_a1c9c743",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Removed whole method. Not needed anymore.",
+      "parentUuid": "02102136_2efd83b2",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 9
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "749a6ca8_82f4a335",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -56,6 +80,24 @@
       "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5440cdd9_f93f4ab0",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "749a6ca8_82f4a335",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "1b98388f_cc4ebe82",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c60b755_c32b7b4d",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 6
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ebd7593b_7f86c930",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -105,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "2bf401f9_5dad738f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Added a separate worker context, now we only swallow a cancellation when we explicitly cancel that context (i.e. when the page of results is full)",
+      "parentUuid": "ebd7593b_7f86c930",
+      "range": {
+        "startLine": 75,
+        "startChar": 11,
+        "endLine": 75,
+        "endChar": 14
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "23feea12_829087ec",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -122,6 +212,24 @@
     },
     {
       "key": {
+        "uuid": "2bbe5ab7_bac501ee",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23feea12_829087ec",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5da9f5a_34add8c6",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -136,6 +244,24 @@
       "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7c10918_20a521a8",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5da9f5a_34add8c6",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -162,6 +288,30 @@
     },
     {
       "key": {
+        "uuid": "d89738b6_bcfde095",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "078e7b4e_2cb5ae18",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 11
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4ff7c6d_d4526d66",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -185,6 +335,30 @@
     },
     {
       "key": {
+        "uuid": "12b30d52_c174845d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4ff7c6d_d4526d66",
+      "range": {
+        "startLine": 113,
+        "startChar": 13,
+        "endLine": 113,
+        "endChar": 16
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "508df7db_bb6042d3",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 16
@@ -199,6 +373,24 @@
       "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de9a1f8d_87fb6044",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "508df7db_bb6042d3",
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -222,6 +414,30 @@
       "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94d953b7_5adc25e2",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-17T00:12:51Z",
+      "side": 1,
+      "message": "This part is done (thread per batch) removed comment.\nParallelizing getting results from multiple indexed invocations simultaneously, still remains open.",
+      "parentUuid": "69db0469_9842d440",
+      "range": {
+        "startLine": 162,
+        "startChar": 3,
+        "endLine": 162,
+        "endChar": 4
+      },
+      "revId": "c463bce9453d45c2a1fbd14ff5e67b2ea010d675",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
