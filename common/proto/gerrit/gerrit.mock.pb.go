@@ -315,6 +315,26 @@ func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
 }
 
+// GetBranchInfo mocks base method.
+func (m *MockGerritClient) GetBranchInfo(ctx context.Context, in *BranchInfoRequest, opts ...grpc.CallOption) (*BranchInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetBranchInfo", varargs...)
+	ret0, _ := ret[0].(*BranchInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBranchInfo indicates an expected call of GetBranchInfo.
+func (mr *MockGerritClientMockRecorder) GetBranchInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranchInfo", reflect.TypeOf((*MockGerritClient)(nil).GetBranchInfo), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface.
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -546,4 +566,19 @@ func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjects
 func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
+}
+
+// GetBranchInfo mocks base method.
+func (m *MockGerritServer) GetBranchInfo(arg0 context.Context, arg1 *BranchInfoRequest) (*BranchInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBranchInfo", arg0, arg1)
+	ret0, _ := ret[0].(*BranchInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBranchInfo indicates an expected call of GetBranchInfo.
+func (mr *MockGerritServerMockRecorder) GetBranchInfo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranchInfo", reflect.TypeOf((*MockGerritServer)(nil).GetBranchInfo), arg0, arg1)
 }
