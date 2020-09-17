@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68516756_c5565298",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T15:56:21Z",
+      "side": 1,
+      "message": "Excellent, thank you very much!",
+      "revId": "59f138725b2ff05fa066a40c11d488c8068997a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "289a98a1_697111e7",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 495,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T15:56:21Z",
+      "side": 1,
+      "message": "nit: ideally, test would assert the body sent verbatim instead of first decoding it. This would ensure that, for instance, there are no extra fields sent. The only downside is that this would also check formatting of serialized JSON, but it shouldn\u0027t change frequently.",
+      "range": {
+        "startLine": 494,
+        "startChar": 2,
+        "endLine": 495,
+        "endChar": 41
+      },
+      "revId": "59f138725b2ff05fa066a40c11d488c8068997a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
