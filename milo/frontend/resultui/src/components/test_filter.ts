@@ -31,7 +31,7 @@ export interface TestFilter {
 export class TestFilterElement extends MobxLitElement {
   onFilterChanged: (filter: TestFilter) => void = () => {};
 
-  @observable.ref showExpected = false;
+  @observable.ref showExpected = true;
   @observable.ref showExonerated = true;
   @observable.ref showFlaky = true;
 

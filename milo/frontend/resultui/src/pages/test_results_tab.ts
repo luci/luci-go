@@ -20,6 +20,7 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
+import '../components/lazy_list';
 import '../components/left_panel';
 import '../components/test_filter';
 import { TestFilter } from '../components/test_filter';
@@ -36,6 +37,10 @@ import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
 export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref invocationState!: InvocationState;
+
+  @observable.ref updateCycle = 0;
+  private renderedVariantPivot = 0;
+  private variantEntries: VariantEntryElement[] = [];
 
   private disposers: Array<() => void> = [];
   private async loadNextPage() {
@@ -59,8 +64,28 @@ export class TestResultsTabElement extends MobxLitElement {
   }
 
   private toggleAllVariants(expand: boolean) {
-    this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry')
-      .forEach((e) => e.expanded = expand);
+    this.variantEntries.forEach((e) => e.expanded = expand);
+  }
+
+  private ticking = false;
+  private showEntries = () => {
+    for (; this.renderedVariantPivot < this.variantEntries.length; this.renderedVariantPivot++) {
+      const entry = this.variantEntries[this.renderedVariantPivot];
+      if (entry.getBoundingClientRect().top <= this.scrollY) {
+        entry.prerender = false;
+      } else {
+        break;
+      }
+    }
+    this.ticking = false;
+  }
+  private scrollY = 0;
+  onWindowScroll = (e: Element) => {
+    this.scrollY = e.getBoundingClientRect().bottom;
+    if (!this.ticking) {
+      this.ticking = true;
+      window.requestAnimationFrame(() => this.showEntries());
+    }
   }
 
   connectedCallback() {
@@ -161,7 +186,7 @@ export class TestResultsTabElement extends MobxLitElement {
           .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
         ></milo-test-nav-tree>
       </milo-left-panel>
-      <div id="test-result-view">
+      <milo-lazy-list id="test-result-list">
         ${this.renderAllVariants()}
         <div class="list-entry">
           <span>Showing ${state.selectedNode.testCount} tests.</span>
@@ -184,7 +209,7 @@ export class TestResultsTabElement extends MobxLitElement {
             <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
           </span>
         </div>
-      </div>
+      </milo-lazy-list>
     `;
   }
 
@@ -241,12 +266,12 @@ export class TestResultsTabElement extends MobxLitElement {
     #no-invocation {
       padding: 10px;
     }
-    #test-result-view {
+    #test-result-list {
       flex: 1;
       overflow-y: auto;
       padding-top: 5px;
     }
-    #test-result-view>* {
+    #test-result-list>* {
       margin-bottom: 2px;
     }
 

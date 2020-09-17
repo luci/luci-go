@@ -37,3 +37,7 @@ export class ChainableURL extends URL {
     return this;
   }
 }
+
+export async function waitUntilNextFrame() {
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
+}
