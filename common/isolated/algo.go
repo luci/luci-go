@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	// TODO(golang.org/issues/41420): switch back to "compress/zlib" once the issue is fixed.
 	"github.com/klauspost/compress/zlib"
 )
 
