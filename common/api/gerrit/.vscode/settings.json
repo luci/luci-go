@@ -1,0 +1,7 @@
+{
+    "go.alternateTools": {
+    
+    },
+    "go.goroot": "/usr/local/google/home/yulanlin/cr-infra-go-area/golang/go",
+    "go.gopath": "/usr/local/google/home/yulanlin/cr-infra-go-area/infra/go/.vendor:/usr/local/google/home/yulanlin/cr-infra-go-area/infra/go",
+}

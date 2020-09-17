@@ -295,6 +295,26 @@ func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
 }
 
+// ListProjects mocks base method.
+func (m *MockGerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListProjects", varargs...)
+	ret0, _ := ret[0].(*ListProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface.
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -511,4 +531,19 @@ func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesReques
 func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
+}
+
+// ListProjects mocks base method.
+func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjectsRequest) (*ListProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjects", arg0, arg1)
+	ret0, _ := ret[0].(*ListProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
 }
