@@ -6,7 +6,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@adobe/lit-mobx": "0.0.4",
-    "@chopsui/chops-signin": "^0.3.2",
     "@chopsui/prpc-client": "^1.1.0",
     "@material/mwc-button": "^0.17.2",
     "@material/mwc-dialog": "^0.18.0",

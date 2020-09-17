@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-
+import { observable, when } from 'mobx';
+import { AppState, consumeAppState } from '../context/app_state/app_state';
 
 /**
  * Prompts the user to login.
@@ -27,9 +27,10 @@ import { css, customElement, html } from 'lit-element';
  * in that order.
  */
 @customElement('milo-login-page')
-export class LoginPageElement extends MobxLitElement implements
-    BeforeEnterObserver {
-  redirectUri = '';
+@consumeAppState
+export class LoginPageElement extends MobxLitElement implements BeforeEnterObserver {
+  @observable.ref appState!: AppState;
+  private redirectUri = '';
 
   onBeforeEnter(location: RouterLocation) {
     const redirect = new URLSearchParams(location.search).get('redirect');
@@ -38,17 +39,10 @@ export class LoginPageElement extends MobxLitElement implements
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener('user-update', this.onUserUpdate);
-    this.onUserUpdate();
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    window.removeEventListener('user-update', this.onUserUpdate);
-  }
-  private onUserUpdate = () => {
-    if (signin.getAuthorizationHeadersSync()?.Authorization) {
-      Router.go(this.redirectUri);
-    }
+    when(
+      () => this.appState.accessToken !== '',
+      () => Router.go(this.redirectUri),
+    );
   }
 
   protected render() {
