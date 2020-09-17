@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "232d7bed_ed0ed96f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T14:18:34Z",
+      "side": 1,
+      "message": "what about go/lucicfg -- does that help in any way? I tried to do better there with named constants.",
+      "range": {
+        "startLine": 9,
+        "startChar": 1,
+        "endLine": 9,
+        "endChar": 71
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dec3c57c_1840f631",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +39,52 @@
       "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "91c39567_4e968d4e",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T14:18:34Z",
+      "side": 1,
+      "message": "to be accurate, only those triggered within the lifetime of the current attempt.",
+      "range": {
+        "startLine": 564,
+        "startChar": 7,
+        "endLine": 564,
+        "endChar": 17
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eca6ba4a_6be9524e",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 590,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-17T14:18:34Z",
+      "side": 1,
+      "message": "i think this is technically correct, however I suspect this never happens in practice since we migrated off Buildbot. Do you by any chance have examples of such builds?",
+      "range": {
+        "startLine": 587,
+        "startChar": 0,
+        "endLine": 590,
+        "endChar": 31
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
