@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "10cb748d_472ac98c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-17T02:00:54Z",
+      "side": 1,
+      "message": "It directly reduce the first paint time by ~50ms when api.js is cached, and up to ~400ms when api.js is not cached (which has a max-age of 30 mins).\n\n* \"up to\" because rendering time will not be greatly improved when api.js is still the only blocking resource (e.g. when all other resources are cached).\n\nIt also indirectly helps a following CL to persist user settings.\nBecause it simplifies the state management a bit.",
+      "parentUuid": "d0104079_7edf3ae2",
+      "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "15ce2ab4_f47586a7",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -47,6 +65,24 @@
       "writtenOn": "2020-09-17T01:02:55Z",
       "side": 1,
       "message": "Actually I found it unexpected that when I click on the icon, it logs me out straight away (although there is a hover title). Putting an explicit \"Log out\" here may be more user-friendly.",
+      "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e94adcf3_377f1704",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-17T02:00:54Z",
+      "side": 1,
+      "message": "This is the behavior of the chops-signin.\nI\u0027ll send another CL to show logout on hover.",
+      "parentUuid": "2440c738_6a43b8b8",
       "revId": "74ed8dd3b135b0b54e062484bec690d5e7c56d64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
