@@ -22,7 +22,10 @@ import './context/invocation_state/invocation_state_provider';
 const notFoundRoute: Route = {
   path: '/:path*',
   action: async (_ctx, cmd) => {
-    await import(/* webpackChunkName: "not_found_page" */ './pages/not_found_page');
+    await import(
+      /* webpackChunkName: "not_found_page" */
+      /* webpackPrefetch: true */
+      './pages/not_found_page');
     return cmd.component('milo-not-found-page');
   },
 };
@@ -40,7 +43,10 @@ router.setRoutes({
       path: '/login',
       name: 'login',
       action: async (_ctx, cmd) => {
-        await import(/* webpackChunkName: "login_page" */ './pages/login_page');
+        await import(
+          /* webpackChunkName: "login_page" */
+          /* webpackPrefetch: true */
+          './pages/login_page');
         return cmd.component('milo-login-page');
       },
     },
@@ -48,7 +54,10 @@ router.setRoutes({
       path: '/error',
       name: 'error',
       action: async (_ctx, cmd) => {
-        await import(/* webpackChunkName: "error_page" */ './pages/error_page');
+        await import(
+          /* webpackChunkName: "error_page" */
+          /* webpackPrefetch: true */
+          './pages/error_page');
         return cmd.component('milo-error-page');
       },
     },
@@ -64,7 +73,10 @@ router.setRoutes({
               path: '/inv/:invocation_id',
               name: 'invocation',
               action: async (_ctx, cmd) => {
-                await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+                await import(
+                  /* webpackChunkName: "invocation_page" */
+                  /* webpackPrefetch: true */
+                  './pages/invocation_page');
                 return cmd.component('milo-invocation-page');
               },
               children: [
@@ -76,7 +88,10 @@ router.setRoutes({
                   path: '/test-results',
                   name: 'invocation-test-results',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
+                    await import(
+                      /* webpackChunkName: "test_results_tab" */
+                      /* webpackPrefetch: true */
+                      './pages/test_results_tab');
                     return cmd.component('milo-test-results-tab');
                   },
                 },
@@ -84,7 +99,10 @@ router.setRoutes({
                   path: '/invocation-details',
                   name: 'invocation-details',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
+                    await import(
+                      /* webpackChunkName: "invocation_details_tab" */
+                      /* webpackPrefetch: true */
+                      './pages/invocation_page/invocation_details_tab');
                     return cmd.component('milo-invocation-details-tab');
                   },
                 },
@@ -99,7 +117,10 @@ router.setRoutes({
                   path: '/',
                   name: 'build',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "build_page" */ './pages/build_page');
+                    await import(
+                      /* webpackChunkName: "build_page" */
+                      /* webpackPrefetch: true */
+                      './pages/build_page');
                     return cmd.component('milo-build-page');
                   },
                   children: [
@@ -111,7 +132,10 @@ router.setRoutes({
                       path: '/overview',
                       name: 'build-overview',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "test_overview_tab" */ './pages/build_page/overview_tab');
+                        await import(
+                          /* webpackChunkName: "test_overview_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/build_page/overview_tab');
                         return cmd.component('milo-overview-tab');
                       },
                     },
@@ -119,7 +143,10 @@ router.setRoutes({
                       path: '/test-results',
                       name: 'build-test-results',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
+                        await import(
+                          /* webpackChunkName: "test_results_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/test_results_tab');
                         return cmd.component('milo-test-results-tab');
                       },
                     },
@@ -127,7 +154,10 @@ router.setRoutes({
                       path: '/steps',
                       name: 'build-steps',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "steps_tab" */ './pages/build_page/steps_tab');
+                        await import(
+                          /* webpackChunkName: "steps_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/build_page/steps_tab');
                         return cmd.component('milo-steps-tab');
                       },
                     },
@@ -135,7 +165,10 @@ router.setRoutes({
                       path: '/related-builds',
                       name: 'build-related-builds',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "related_builds_tab" */ './pages/build_page/related_builds_tab');
+                        await import(
+                          /* webpackChunkName: "related_builds_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/build_page/related_builds_tab');
                         return cmd.component('milo-related-builds-tab');
                       },
                     },
@@ -143,7 +176,10 @@ router.setRoutes({
                       path: '/timeline',
                       name: 'build-timeline',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "timeline_tab" */ './pages/build_page/timeline_tab');
+                        await import(
+                          /* webpackChunkName: "timeline_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/build_page/timeline_tab');
                         return cmd.component('milo-timeline-tab');
                       },
                     },
@@ -151,7 +187,10 @@ router.setRoutes({
                       path: '/blamelist',
                       name: 'build-blamelist',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "blamelist_tab" */ './pages/build_page/blamelist_tab');
+                        await import(
+                          /* webpackChunkName: "blamelist_tab" */
+                          /* webpackPrefetch: true */
+                          './pages/build_page/blamelist_tab');
                         return cmd.component('milo-blamelist-tab');
                       },
                     },
@@ -166,7 +205,10 @@ router.setRoutes({
                   path: '/text-diff/:artifact_name',
                   name: 'text-diff-artifact',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
+                    await import(
+                      /* webpackChunkName: "text_diff_artifact_page" */
+                      /* webpackPrefetch: true */
+                      './pages/artifact/text_diff_artifact_page');
                     return cmd.component('milo-text-diff-artifact-page');
                   },
                 },
@@ -174,7 +216,10 @@ router.setRoutes({
                   path: '/image-diff/:artifact_name',
                   name: 'image-diff-artifact',
                   action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
+                    await import(
+                      /* webpackChunkName: "image_diff_artifact_page" */
+                      /* webpackPrefetch: true */
+                      './pages/artifact/image_diff_artifact_page');
                     return cmd.component('milo-image-diff-artifact-page');
                   },
                 },
