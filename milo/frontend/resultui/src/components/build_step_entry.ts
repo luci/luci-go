@@ -21,6 +21,7 @@ import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
+import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration } from '../libs/time_utils';
 import { ChainableURL, renderMarkdown } from '../libs/utils';
@@ -32,10 +33,12 @@ import './expandable_entry';
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
+@consumeUserConfigs
 export class BuildStepEntryElement extends MobxLitElement {
+  @observable.ref userConfigs!: UserConfigs;
+
   @observable.ref number = 0;
   @observable.ref step!: StepExt;
-  @observable.ref showDebugLogs = false;
 
   @observable.ref private _expanded = false;
   get expanded() { return this._expanded; }
@@ -73,7 +76,7 @@ export class BuildStepEntryElement extends MobxLitElement {
 
   @computed private get logs() {
     const logs = this.step.logs || [];
-    return this.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
+    return this.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   private renderContent() {
@@ -102,7 +105,6 @@ export class BuildStepEntryElement extends MobxLitElement {
         .expanded=${child.status !== BuildStatus.Success}
         .number=${i + 1}
         .step=${child}
-        .showDebugLogs=${this.showDebugLogs}
       ></milo-build-step-entry>
       `) || ''}
     `;
