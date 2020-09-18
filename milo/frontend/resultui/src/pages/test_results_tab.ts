@@ -145,7 +145,7 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderMain() {
     const state = this.invocationState;
 
-    if (!state.invocation) {
+    if (!state.invocationId) {
       return html`
         <div id="no-invocation">
           No associated invocation.<br>
