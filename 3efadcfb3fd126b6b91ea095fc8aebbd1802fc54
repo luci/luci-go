@@ -2,6 +2,63 @@
   "comments": [
     {
       "key": {
+        "uuid": "fa5fe8a3_e04df265",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T20:36:38Z",
+      "side": 1,
+      "message": "LGTM with nits :-)",
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fab2dab3_c26d6829",
+        "filename": "cv/internal/gerrit/gobmap/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T20:36:38Z",
+      "side": 1,
+      "message": "As it\u0027s a package that contains more than one function, it does multiple things I suppose -- It contains Lookup, which is used to lookup the relevant project config group ID; it also contains a function used to update the state. And will the GobMap datastore model be here too?\n\nWDYT about something like: \"Package gobmap contains logic related to the mapping between GoB (Git/Gerrit-on-Borg) {host, repo, ref} combinations and project config groups.\n\nA mapping is stored in datastore and updated when project configs are updated. It is used to determine which project config group to use for a given Gerrit CL.\"",
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f18b65c_01c43f12",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T20:36:38Z",
+      "side": 1,
+      "message": "Nit: \"a new\", or \"the newest\"",
+      "range": {
+        "startLine": 22,
+        "startChar": 25,
+        "endLine": 22,
+        "endChar": 29
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7d9abbbe_f39b2254",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 1
@@ -13,6 +70,30 @@
       "writtenOn": "2020-09-18T18:20:10Z",
       "side": 1,
       "message": "readability nit: maybe rename this to `OnNewConfigVersion` or `OnNewConfigEvent`? I will expect `NewConfigVersion` returning a ConfigVesion-ish object simply by looking at the function name.",
+      "range": {
+        "startLine": 23,
+        "startChar": 5,
+        "endLine": 23,
+        "endChar": 21
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "065cacf4_4a09db61",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T20:36:38Z",
+      "side": 1,
+      "message": "The names suggested by Yiwei sound good to me. Other possibilities may include:\n\n   UpdateConfigVersion,\n   UpdateProjectConfig,\n\nOr if this is the main function used to update the state of the GobMap in datastore, perhaps even\n\n   UpdateGobMap ?",
+      "parentUuid": "7d9abbbe_f39b2254",
       "range": {
         "startLine": 23,
         "startChar": 5,
@@ -69,6 +150,29 @@
       "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6438cdb2_7a737647",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T20:36:38Z",
+      "side": 1,
+      "message": "Maybe: the given {GoB host, repo, ref} combination.\n\nIs this host a Gitiles or Gerrit host?",
+      "range": {
+        "startLine": 33,
+        "startChar": 60,
+        "endLine": 34,
+        "endChar": 6
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
