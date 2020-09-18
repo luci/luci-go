@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "38209d24_477c8488",
+        "filename": "cv/internal/gerrit/gobmap/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T22:27:22Z",
+      "side": 1,
+      "message": "\u003e GobMap datastore model be here too?\n\nYes, it\u0027s implementation detail and should be encapsulated by the package. Users of the package shouldn\u0027t care how it\u0027s stored.\n\nFrankly, I think we are spending too much time on find a perfect docstring. The small \u0026 documented API is more important than package docstring. So, my priority was and remains the clear first sentence.",
+      "parentUuid": "fab2dab3_c26d6829",
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6f18b65c_01c43f12",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 1
@@ -56,6 +74,30 @@
       "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27950fbe_760bd319",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T22:27:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f18b65c_01c43f12",
+      "range": {
+        "startLine": 22,
+        "startChar": 25,
+        "endLine": 22,
+        "endChar": 29
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +148,30 @@
     },
     {
       "key": {
+        "uuid": "b2f58bb9_1ef24502",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T22:27:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "065cacf4_4a09db61",
+      "range": {
+        "startLine": 23,
+        "startChar": 5,
+        "endLine": 23,
+        "endChar": 21
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03013899_fbf84090",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 1
@@ -153,6 +219,30 @@
     },
     {
       "key": {
+        "uuid": "e4dd9021_6d56a40d",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T22:27:22Z",
+      "side": 1,
+      "message": "i\u0027m keeping it here, but once you define it config/ package, we can de-duplicate.",
+      "parentUuid": "7f7a9862_eaa859f4",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 32
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6438cdb2_7a737647",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 1
@@ -173,6 +263,30 @@
       "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a4276b8_6b134907",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T22:27:22Z",
+      "side": 1,
+      "message": "good question! Gerrit host. Fixed.",
+      "parentUuid": "6438cdb2_7a737647",
+      "range": {
+        "startLine": 33,
+        "startChar": 60,
+        "endLine": 34,
+        "endChar": 6
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
