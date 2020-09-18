@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "102933f4_6d7655fc",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T02:03:18Z",
+      "side": 1,
+      "message": "moved them under \"steps\"",
+      "parentUuid": "9d67dcea_3cf7e323",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "87ccbccf_32e50d77",
         "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
         "patchSetId": 5
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "5f9b8e06_cc6b8715",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T02:03:18Z",
+      "side": 1,
+      "message": "Since the configs are store on user\u0027s machine, when we make backward incompatible changes, we will need to make a V2 store that reads from the V1 store and run the migration on first load.",
+      "parentUuid": "87ccbccf_32e50d77",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 31
+      },
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "befa8fbb_c2f93dcb",
         "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
         "patchSetId": 5
@@ -53,6 +95,24 @@
       "writtenOn": "2020-09-18T01:38:36Z",
       "side": 1,
       "message": "I am not sure if this is the intended behavior, but the settings is persistent across all builds. So if the user go to another build, the settings still persist.",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c768b3_5aedddf8",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T02:03:18Z",
+      "side": 1,
+      "message": "That\u0027s the behaviour on the current build page though.\nI think it\u0027s pointless have a per build setting since most users will only look at a build one or maybe just a few times.",
+      "parentUuid": "befa8fbb_c2f93dcb",
       "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
