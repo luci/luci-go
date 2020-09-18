@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13e79f35_7c8fb589",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T04:20:35Z",
+      "side": 1,
+      "message": "Actually I am not sure about changing from wasExpanded to neverExpanded is a good thing. My main concern is that negative boolean names are usually bad. They make the code less clear and harder to reason.\n\nI found some guideline in Java, https://engdoc.corp.google.com/eng/doc/devguide/java/practices/naming.md?cl\u003dhead#positive-booleans, and I imagine the same is applied to all languages.",
+      "revId": "988e257c18a9f1e297b6fe4546dce43cd46af6b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
