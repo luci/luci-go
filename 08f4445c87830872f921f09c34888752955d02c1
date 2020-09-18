@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca38d92b_817b5bf1",
+        "filename": "lucictx/sections.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T00:49:59Z",
+      "side": 1,
+      "message": "IIRC that this thing also serializes to e.g \"1203.5s\" which will require a bit more of parsing.\n\nMaybe just abandon protobuf types and millisecond precision and make it using Unix timestamps and seconds?\n\n  message Deadline {\n    int64 deadline \u003d 1; // unix timestamp \n    int64 grace_period_sec \u003d 2; // how many seconds to wait\n  }\n\n?",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "08f4445c87830872f921f09c34888752955d02c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
