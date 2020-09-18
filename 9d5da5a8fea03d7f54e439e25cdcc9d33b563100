@@ -105,6 +105,24 @@
       "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dea816bb_2778180d",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-09-18T02:06:34Z",
+      "side": 1,
+      "message": "No worries :D\n\nYour usage of \"I\u0027ve been to XYZ\" sounds completely fine, that\u0027s how I\u0027d understand it. I think the \"have\" in \"I\u0027ve been to\" actually has the opposite implication to the \"has\" in \"has expanded\". Maybe because the past tense \"been\" emphasises that you\u0027re talking about the past. I don\u0027t really know of any hard and fast rule though, I\u0027m just going off what the black box language machine in my head spits out :)",
+      "parentUuid": "a928712b_5903f3e1",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
