@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "7b39245e_b86553e0",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "Thanks. Changing to this comment.",
+      "parentUuid": "861b250d_27fc35f5",
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3aa15864_6f9efda1",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -47,6 +65,30 @@
       "writtenOn": "2020-09-17T20:17:41Z",
       "side": 1,
       "message": "imo I would put this as a method on *iteratorHeap\n\n  func (*iteratorHeap) nextData() (PropertyMap, *Key, keyStr, error)\n\nwhich returns the next queryIterator, advances it and puts it back (dropping any queryIterators which have no data). This would have the advantage of advancing the queries in the background while the user\u0027s callback is running, too. The current loop waits until after the user\u0027s code runs (which could be slow!) to advance the query.",
+      "range": {
+        "startLine": 400,
+        "startChar": 1,
+        "endLine": 400,
+        "endChar": 8
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30170ed9_9cae863b",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "Having a `nextData()` sounds good. But why would it lead to the advancing queries in background when running user\u0027s callback ? It\u0027s still sequentially as the code will look like : \n```\nfor iHeap.Len() \u003e 0 {\n  iHeap.nextData()\n\n  userCallbackFunc(pm, key,...)\n}\n```",
+      "parentUuid": "3aa15864_6f9efda1",
       "range": {
         "startLine": 400,
         "startChar": 1,
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "8a013e44_d121ef5d",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "Returning `qi`iterator without pointing to the first element seems be more reasonable. It\u0027s more consistent operations for users. They could always follow the pattern `qi.next(); qi.currentItem()`. Otherwise, users need to call `qi.currentItem()` for first item and use `qi.next(); qi.currentItem()` for the rest items. \n\nThe raw db seems to use the same pattern by calling `next()` to get the first element and check if it\u0027s Stop. - https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/impl/prod/raw_datastore.go;l\u003d272-275",
+      "parentUuid": "ca70114b_99a2574a",
+      "range": {
+        "startLine": 424,
+        "startChar": 8,
+        "endLine": 424,
+        "endChar": 26
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d76c4079_8f2793bf",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -93,6 +159,30 @@
       "writtenOn": "2020-09-17T20:17:41Z",
       "side": 1,
       "message": "support*\n\nThough we should reject callbacks which ask for cursor; I _think_ parseCallback should be able to easily return a boolean for this like it returns isKey.",
+      "range": {
+        "startLine": 433,
+        "startChar": 54,
+        "endLine": 433,
+        "endChar": 63
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d02f4163_dd92a82a",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "Do you mean change the `parsecallback()` return values to return a `hasCursorCB` in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/service/datastore/interface.go;l\u003d27 ?",
+      "parentUuid": "d76c4079_8f2793bf",
       "range": {
         "startLine": 433,
         "startChar": 54,
@@ -128,6 +218,30 @@
     },
     {
       "key": {
+        "uuid": "edc82555_1b400d9b",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "Working on it.",
+      "parentUuid": "81ddd983_b55e1dc2",
+      "range": {
+        "startLine": 439,
+        "startChar": 14,
+        "endLine": 439,
+        "endChar": 17
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21748023_4f2c1efd",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -139,6 +253,30 @@
       "writtenOn": "2020-09-17T20:17:41Z",
       "side": 1,
       "message": "isn\u0027t the the same as CurrentItemOrder? Can iteratorHeap just be []*queryIterator?\n\nWhy does CurrentItemOrder return an error?",
+      "range": {
+        "startLine": 847,
+        "startChar": 56,
+        "endLine": 847,
+        "endChar": 61
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4b6007e_258dbd56",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 847,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-18T00:24:23Z",
+      "side": 1,
+      "message": "`CurrentItemOrder()` need to return an error because there may be errors when serializing a key or property.. \n\nCapturing the static itemOrder and using []*iteratorEntry instead of []*queryIterator is for time saving. Otherwise, it needs to dynamically serializing to item order each time for `heap.pop` and `heap.push`.",
+      "parentUuid": "21748023_4f2c1efd",
       "range": {
         "startLine": 847,
         "startChar": 56,
