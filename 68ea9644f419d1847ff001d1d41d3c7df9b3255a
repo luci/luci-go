@@ -148,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "47761ac1_c1ea19bd",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 621,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T07:17:58Z",
+      "side": 1,
+      "message": "thank you for checking! I guess only Gitiles does this then.",
+      "parentUuid": "39aa0b7a_2d592613",
+      "revId": "68ea9644f419d1847ff001d1d41d3c7df9b3255a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7d8fc4e_92dbc5d0",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 6
