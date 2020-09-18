@@ -30,7 +30,7 @@ type testService struct {
 	getTaskRequest func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
-	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef, *swarming.SwarmingRpcsCASReference) ([]string, error)
 	listBots       func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
@@ -66,8 +66,8 @@ func (s testService) GetTaskOutput(ctx context.Context, taskID string) (*swarmin
 	return s.getTaskOutput(ctx, taskID)
 }
 
-func (s testService) GetTaskOutputs(ctx context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-	return s.getTaskOutputs(ctx, taskID, output, ref)
+func (s testService) GetTaskOutputs(ctx context.Context, taskID, output string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+	return s.getTaskOutputs(ctx, taskID, output, isolateRef, casRef)
 }
 
 func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
