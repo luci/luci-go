@@ -35,6 +35,10 @@ import (
 
 const (
 	historyDefaultPageSize = 100
+
+	// ConcurrentInvocationTrees is how many indexed invocations to get
+	// reachable results for, concurrently.
+	ConcurrentInvocationTrees = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
@@ -54,61 +58,81 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	workerCtx, cancelWorker := context.WithCancel(ctx)
 	defer cancelWorker()
 	// Ignore the derived context as we have a single worker.
-	// The closure of the results channel is sufficient to know that the work
-	// is done.
+	// The closure of the resultChans channel is sufficient to know that the
+	// work is done.
 	eg, _ := errgroup.WithContext(workerCtx)
-	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
+	idxInvChans := make(chan chan *pb.GetTestResultHistoryResponse_Entry, ConcurrentInvocationTrees)
 	eg.Go(func() error {
-		defer close(results)
+		defer close(idxInvChans)
+		innerEg, innerWorkerCtx := errgroup.WithContext(workerCtx)
 		var b spanutil.Buffer
-		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(r *spanner.Row) error {
+		err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(r *spanner.Row) error {
 			inv := &invocations.Historical{}
 			if err := b.FromSpanner(r, &inv.ID, &inv.IndexTimestamp); err != nil {
 				return err
 			}
+			results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 			select {
+			case idxInvChans <- results:
+				innerEg.Go(func() error {
+					defer close(results)
+					return matchingResultsInInvTree(innerWorkerCtx, in, inv, results)
+				})
 			case <-workerCtx.Done():
 				return workerCtx.Err()
-			default:
-				// TODO(crbug.com/1107678): Do not block here, use a worker instead.
-				if err := matchingResultsInInvTree(workerCtx, in, inv, results); err != nil {
-					return err
-				}
 			}
 			return nil
 		})
-
+		if err != nil {
+			innerEg.Wait()
+			return err
+		}
+		return innerEg.Wait()
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
 		Entries: make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize),
 	}
-	// Collect results sent over the results channel until either:
+	// Collect entries for each indexed invocation.
+	// these are received from a separate 'results' channel each,
+	// and these channels are themselves received from the 'idxInvChans' channel.
+	// Continue until either:
 	//  - The page of results is full,
 	//  - The context is Done,
-	//  - Or the worker is done with its work (and closes the resutls channel).
+	//  - There are no more indexed invocations to get results for.
 	//
-	// TODO(crbug.com/1074407): Implement ordering of the results indexed
-	// together by (TestID, VariantHash) .
-	//
-	// NB: The results in the channel are already ordered by indexed timestamp.
+	// NB: The indexed invocations are already ordered by indexed timestamp.
 	//
 	// TODO(crbug.com/1074407): Implement paging support.
 ResultsLoop:
 	for {
 		select {
-		case entry, ok := <-results:
+		case results, ok := <-idxInvChans:
 			if !ok {
+				// No more indexed invocations.
 				break ResultsLoop
 			}
-			ret.Entries = append(ret.Entries, entry)
-			if len(ret.Entries) == int(in.PageSize) {
-				cancelWorker()
-				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled {
-					return ret, err
+		NextIndexedInvocation:
+			for {
+				select {
+				case entry, ok := <-results:
+					if !ok {
+						// TODO(crbug.com/1074407): Implement ordering of the
+						// results indexed together by (TestID, VariantHash).
+						break NextIndexedInvocation
+					}
+					ret.Entries = append(ret.Entries, entry)
+					if len(ret.Entries) == int(in.PageSize) {
+						cancelWorker()
+						// Ignore the cancellation returned by the worker.
+						if err := eg.Wait(); err != nil && err != context.Canceled {
+							return ret, err
+						}
+						return ret, nil
+					}
+				case <-ctx.Done():
+					break ResultsLoop
 				}
-				return ret, nil
 			}
 		case <-ctx.Done():
 			break ResultsLoop
