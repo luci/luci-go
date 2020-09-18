@@ -35,6 +35,10 @@ import (
 
 const (
 	historyDefaultPageSize = 100
+
+	// ConcurrentInvocationTrees is how many indexed invocations to get
+	// reachable results for, concurrently.
+	ConcurrentInvocationTrees = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
@@ -57,27 +61,32 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	// The closure of the results channel is sufficient to know that the work
 	// is done.
 	eg, _ := errgroup.WithContext(workerCtx)
-	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
+	resultChans := make(chan chan *pb.GetTestResultHistoryResponse_Entry, ConcurrentInvocationTrees)
 	eg.Go(func() error {
-		defer close(results)
+		defer close(resultChans)
+		innerEg, innerWorkerCtx := errgroup.WithContext(workerCtx)
 		var b spanutil.Buffer
-		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(r *spanner.Row) error {
+		err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(r *spanner.Row) error {
 			inv := &invocations.Historical{}
 			if err := b.FromSpanner(r, &inv.ID, &inv.IndexTimestamp); err != nil {
 				return err
 			}
+			results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 			select {
+			case resultChans <- results:
+				innerEg.Go(func() error {
+					defer close(results)
+					return matchingResultsInInvTree(innerWorkerCtx, in, inv, results)
+				})
 			case <-workerCtx.Done():
 				return workerCtx.Err()
-			default:
-				// TODO(crbug.com/1107678): Do not block here, use a worker instead.
-				if err := matchingResultsInInvTree(workerCtx, in, inv, results); err != nil {
-					return err
-				}
 			}
 			return nil
 		})
-
+		if err != nil {
+			return err
+		}
+		return innerEg.Wait()
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
@@ -97,18 +106,30 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 ResultsLoop:
 	for {
 		select {
-		case entry, ok := <-results:
+		case results, ok := <-resultChans:
 			if !ok {
+				// No more indexed invocations.
 				break ResultsLoop
 			}
-			ret.Entries = append(ret.Entries, entry)
-			if len(ret.Entries) == int(in.PageSize) {
-				cancelWorker()
-				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled {
-					return ret, err
+		NextIndexedInvocation:
+			for {
+				select {
+				case entry, ok := <-results:
+					if !ok {
+						break NextIndexedInvocation
+					}
+					ret.Entries = append(ret.Entries, entry)
+					if len(ret.Entries) == int(in.PageSize) {
+						cancelWorker()
+						// Ignore the cancellation returned by the worker.
+						if err := eg.Wait(); err != nil && err != context.Canceled {
+							return ret, err
+						}
+						return ret, nil
+					}
+				case <-ctx.Done():
+					break ResultsLoop
 				}
-				return ret, nil
 			}
 		case <-ctx.Done():
 			break ResultsLoop
