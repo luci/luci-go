@@ -173,6 +173,10 @@ def _cq_tryjob_verifier(
       cancel_stale: Controls whether not yet finished builds previously
         triggered by CQ will be cancelled as soon as a substantially different
         patchset is uploaded to a CL. Default is True, meaning CQ will cancel.
+        For LUCI Change Verifier (aka CV, successor of CQ), changing this
+        option will only take effect on newly-created Runs. Ongoing Runs will
+        retain the old behavior. (TODO(crbug/1127991): as of 09/2020, CV
+        implementation is WIP)
       includable_only: if True, this builder will only be triggered by CQ if it
         is also specified via `CQ-Include-Trybots:` on CL description. Default
         is False. See the explanation above for all details. For builders with
