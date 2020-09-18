@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "06c6e159_683600e5",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-18T16:46:05Z",
+      "side": 1,
+      "message": "more robust would be `defer innerEg.Wait()` after innerEg creation",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 17
+      },
+      "revId": "38345b50ed7ba2b9aafa37ba2cbe7cabba982960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c96dea14_2a98b043",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-18T16:46:05Z",
+      "side": 1,
+      "message": "L60-91 is getting complicated and long. WDYT about extracting L67-90 to a separate func, so that GetTestResultHistory is not that long? I\u0027d expect the func to accept `chan *pb.GetTestResultHistoryResponse_Entry` param and inside conduct the `chan chan *pb.GetTestResultHistoryResponse_Entry` business",
+      "revId": "38345b50ed7ba2b9aafa37ba2cbe7cabba982960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d72073e_4a0ebce6",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-18T16:46:05Z",
+      "side": 1,
+      "message": "i think code should not have changed. It seems the complexity of the code above proliferated here, instead of being contained in the code above.\n\nplease consider encapsulating the complexity in the code above, i.e. change the code above in a way that the type of `results` variable stays the same",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 141,
+        "endChar": 22
+      },
+      "revId": "38345b50ed7ba2b9aafa37ba2cbe7cabba982960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
