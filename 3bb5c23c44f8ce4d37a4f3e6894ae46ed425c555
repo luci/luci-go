@@ -46,6 +46,30 @@
       "revId": "3bb5c23c44f8ce4d37a4f3e6894ae46ed425c555",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dc39ca3_c65a563c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T00:55:53Z",
+      "side": 1,
+      "message": "And I think the css file can be hijacked as well, e.g. https://jakearchibald.com/2018/third-party-css-is-not-safe/",
+      "parentUuid": "7f3f5d9b_f0d255e8",
+      "range": {
+        "startLine": 9,
+        "startChar": 48,
+        "endLine": 9,
+        "endChar": 130
+      },
+      "revId": "3bb5c23c44f8ce4d37a4f3e6894ae46ed425c555",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
