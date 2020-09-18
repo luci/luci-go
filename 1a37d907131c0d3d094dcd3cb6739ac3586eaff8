@@ -39,6 +39,30 @@
       "revId": "1a37d907131c0d3d094dcd3cb6739ac3586eaff8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cfef6afa_42c0dff2",
+        "filename": "cv/api/config/v2/proto_gae.gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-18T17:12:39Z",
+      "side": 1,
+      "message": "Good Catch, I think it is hardcoded in the generation logic[1]. I think we should use the license header in the original proto file if that is present.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/tools/proto-gae/proto_gae.go;l\u003d54;drc\u003d85629364b999c3b1a5ded8c9f264dd82c0a6f5ef",
+      "parentUuid": "fd1461ec_5a479c70",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a37d907131c0d3d094dcd3cb6739ac3586eaff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
