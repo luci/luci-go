@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "84ff3a2a_b9b1ea21",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T16:37:34Z",
+      "side": 1,
+      "message": "Creating extra client is negligible, you\u0027d use exact same auth for both Gerrit \u0026 Gitiles, so I\u0027d default to Gitiles unless Gerrit branch info API has some advantage for you. Now, I don\u0027t actually know what you are trying to achieve.\n\nBut let me warn you of one caveat with Gitiles: it will easily return you *all* refs, even though you don\u0027t care about (e.g. refs/changes/... and refs/meta/config) so long as you have permissions, and it doesn\u0027t have paging support nor effective exclusion filter. In LUCI, we work around this by always querying for 2nd level namespace, ie refs/smth/* is OK, but refs/* is not.\nSo, if your goal is to get all actual refs to which humans/bots submit changes, Gerrit API might be better (that said, I don\u0027t know how Gerrit computes these and if it can accidentally/intentionally miss some. For instance, does it support refs/branch-heads/ namespace?)",
+      "parentUuid": "5290c9b7_34691373",
+      "revId": "8578a23c6883511110547c9875d888d39e9316da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07b76746_1b6a4942",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
