@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30aff149_c629fa29",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-18T16:37:16Z",
+      "side": 1,
+      "message": "unused?",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "d2fff87c0db254cdb9211fdac3f7a7adc28461aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc52b39a_000d428b",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-18T16:37:16Z",
+      "side": 1,
+      "message": "as someone who read the func doc, I have no idea what columns exist in this row.\n\nwhy not call the callback with Historical?\nif the intention is to remove Historical struct, then consider changing the signature to\n\n  callback func(id ID, ts time.Time)\n\nor something like that",
+      "range": {
+        "startLine": 54,
+        "startChar": 91,
+        "endLine": 54,
+        "endChar": 107
+      },
+      "revId": "d2fff87c0db254cdb9211fdac3f7a7adc28461aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
