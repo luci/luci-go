@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ae47e4f_fb763be2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T16:56:11Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "1a37d907131c0d3d094dcd3cb6739ac3586eaff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd1461ec_5a479c70",
+        "filename": "cv/api/config/v2/proto_gae.gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T16:56:11Z",
+      "side": 1,
+      "message": "I wonder why it used 2017? Anyway, probably not important.",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a37d907131c0d3d094dcd3cb6739ac3586eaff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
