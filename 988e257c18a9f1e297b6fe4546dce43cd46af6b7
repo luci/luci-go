@@ -16,6 +16,24 @@
       "revId": "988e257c18a9f1e297b6fe4546dce43cd46af6b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e2004c7a_266ad821",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T05:04:19Z",
+      "side": 1,
+      "message": "Good point.\nHow about changing to shouldRenderArtifacts and shouldRenderContent respectively?",
+      "parentUuid": "13e79f35_7c8fb589",
+      "revId": "988e257c18a9f1e297b6fe4546dce43cd46af6b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
