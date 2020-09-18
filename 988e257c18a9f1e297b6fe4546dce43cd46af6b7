@@ -34,6 +34,24 @@
       "revId": "988e257c18a9f1e297b6fe4546dce43cd46af6b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2822dbca_c19ba502",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T05:12:17Z",
+      "side": 1,
+      "message": "I think that\u0027s good. Or if we want to track the expanded status, we can just use Owen\u0027s suggestion previously: wasEverExpanded. I think that will have no confusion.",
+      "parentUuid": "e2004c7a_266ad821",
+      "revId": "988e257c18a9f1e297b6fe4546dce43cd46af6b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
