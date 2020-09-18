@@ -42,10 +42,12 @@ export class BuildStepEntryElement extends MobxLitElement {
   get expanded() { return this._expanded; }
   set expanded(newVal) {
     this._expanded = newVal;
-    this.wasExpanded = this.wasExpanded || newVal;
+    this.neverExpanded = this.neverExpanded && !newVal;
   }
 
-  @observable.ref private wasExpanded = false;
+  // Always render the children once it was expanded so the children's state
+  // don't get reset after the node is collapsed.
+  @observable.ref private neverExpanded = true;
 
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
@@ -76,7 +78,7 @@ export class BuildStepEntryElement extends MobxLitElement {
   }
 
   private renderContent() {
-    if (!this.wasExpanded) {
+    if (this.neverExpanded) {
       return html``;
     }
     return html`
