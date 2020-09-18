@@ -70,7 +70,7 @@ export class BlamelistTabElement extends MobxLitElement {
     this.isLoading = false;
   }
 
-  private toggleAllVariants(expand: boolean) {
+  private toggleAllEntries(expand: boolean) {
     this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry')
       .forEach((e) => e.expanded = expand);
   }
@@ -82,12 +82,12 @@ export class BlamelistTabElement extends MobxLitElement {
         <mwc-button
           class="action-button"
           dense unelevated
-          @click=${() => this.toggleAllVariants(true)}
+          @click=${() => this.toggleAllEntries(true)}
         >Expand All</mwc-button>
         <mwc-button
           class="action-button"
           dense unelevated
-          @click=${() => this.toggleAllVariants(false)}
+          @click=${() => this.toggleAllEntries(false)}
         >Collapse All</mwc-button>
       </div>
       <div id="main">
@@ -99,7 +99,13 @@ export class BlamelistTabElement extends MobxLitElement {
           .expanded=${true}
         ></milo-commit-entry>
         `)}
-        <hr class="divider" style=${styleMap({'display': this.commits.length === 0 ? 'none' : ''})}>
+        <div
+          class="list-entry"
+          style=${styleMap({'display': this.endOfPage && this.commits.length === 0 ? '' : 'none'})}
+        >
+          No blamelist.
+        </div>
+        <hr class="divider" style=${styleMap({'display': !this.endOfPage && this.commits.length === 0 ? 'none' : ''})}>
         <div class="list-entry">
           <span>Showing ${this.commits.length} commits.</span>
           <span id="load" style=${styleMap({'display': this.endOfPage ? 'none' : ''})}>
