@@ -658,6 +658,46 @@ func TestListProjects(t *testing.T) {
 	})
 }
 
+func TestGetBranchInfo(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Get Branch Info", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"web_links": [
+				  {
+					"name": "gitiles",
+					"url": "https://chromium.googlesource.com/infra/experimental/+/refs/heads/main",
+					"target": "_blank"
+				  }
+				],
+				"ref": "refs/heads/main",
+				"revision": "10e5c33f63a843440cbe6c9c6cbc1bf513c598eb",
+				"can_delete": true
+			  }`)
+		})
+		defer srv.Close()
+
+		bi, err := c.GetRefInfo(ctx, &gerritpb.RefInfoRequest{
+			Project: "infra/experimental",
+			Branch:  "refs/heads/main",
+		})
+		So(err, ShouldBeNil)
+
+		So(actualURL.Path, ShouldEqual, "/projects/infra/experimental/branches/refs/heads/main")
+		So(bi, ShouldResemble, &gerritpb.RefInfo{
+			Ref:      "refs/heads/main",
+			Revision: "10e5c33f63a843440cbe6c9c6cbc1bf513c598eb",
+		})
+	})
+}
+
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
