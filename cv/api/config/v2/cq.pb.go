@@ -1200,14 +1200,14 @@ type Verifiers_Tryjob_Builder struct {
 	// builder previously triggered by CQ will be cancelled as soon as
 	// a substantially different patchset is uploaded to a CL.
 	//
-	// Following comment is only applicable to LUCI Change Verifier (The
-	// successor of legacy CQ). As of 09/2020, the implementation is still
-	// WIP. TODO(yiwzhang): Remove after migration is done.
+	// The following paragraph is only applicable to LUCI Change Verifier (
+	// The successor of legacy CQ). As of 09/2020, the implementation is
+	// still WIP. TODO(crbug/1127991): Remove after migration is done.
 	//
 	// CV will snapshot the value of this option when a Run is created
 	// and use it throughout the lifecycle of this Run. Therefore,
-	// modification on this option only takes effect on newly-created
-	// Runs after config change is read by CV.
+	// modification on this option will only take effect on newly-created
+	// Runs after config change is propagated to CV.
 	CancelStale Toggle `protobuf:"varint,11,opt,name=cancel_stale,json=cancelStale,proto3,enum=cq.config.Toggle" json:"cancel_stale,omitempty"`
 	// Optional name of a builder (aka parent) which will trigger this builder
 	// (aka child).
