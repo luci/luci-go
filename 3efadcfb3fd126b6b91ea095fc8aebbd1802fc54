@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03013899_fbf84090",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:40:31Z",
+      "side": 1,
+      "message": "@yiwzhang WDYT? This can then be used as type inside Run entity, too. And config package can provide LoadProjectConfigGroup(ProjectConfigGroupID)",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 32
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
