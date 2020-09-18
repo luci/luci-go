@@ -94,7 +94,7 @@ export class TimelineTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css">
+      <link rel="stylesheet" type="text/css" href="/static/styles/thirdparty/vis-timeline-graph2d.min.css">
       <div id="timeline"></div>
     `;
   }
