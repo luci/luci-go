@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a5ab311c_609e192e",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-18T22:17:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30aff149_c629fa29",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "d2fff87c0db254cdb9211fdac3f7a7adc28461aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc52b39a_000d428b",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "d2fff87c0db254cdb9211fdac3f7a7adc28461aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d3d032f_841dfa0d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-18T22:17:46Z",
+      "side": 1,
+      "message": "Thanks for the suggestion! it\u0027s more readable now. It also keeps spanner-related code in invocations module.",
+      "parentUuid": "dc52b39a_000d428b",
+      "range": {
+        "startLine": 54,
+        "startChar": 91,
+        "endLine": 54,
+        "endChar": 107
+      },
+      "revId": "d2fff87c0db254cdb9211fdac3f7a7adc28461aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
