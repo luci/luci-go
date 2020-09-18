@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb2ec6ca_aa447e84",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "grace_period_secs",
+      "range": {
+        "startLine": 31,
+        "startChar": 24,
+        "endLine": 31,
+        "endChar": 36
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67c7f4a3_4033aa34",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "do we need to `defer cancel()` to avoid leaking goroutines if MainFunc exits prematurely?",
+      "range": {
+        "startLine": 44,
+        "startChar": 8,
+        "endLine": 44,
+        "endChar": 75
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc37e6e4_42948432",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "Consider adding a test. This function is pretty complicated...",
+      "range": {
+        "startLine": 66,
+        "startChar": 5,
+        "endLine": 66,
+        "endChar": 19
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a4a37b1_a1b29b74",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "int64(newGrace.Seconds())",
+      "range": {
+        "startLine": 86,
+        "startChar": 21,
+        "endLine": 86,
+        "endChar": 36
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59658deb_2001ed8d",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "I don\u0027t understand this line. Based on https://godoc.org/go.chromium.org/luci/common/clock#Timer Stop() returns false if the timer is inactive. For inactive timers \u003c-GetC() blocks forever. Either way not doing a select with \u003c-ctx.Done() looks fishy. Note also that you are mixing luci/clock context-aware timers with regular timers (used inside context.WithDeadline). Consider either switching to time.NewTimer() or switching to clock.WithDeadline.",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 145,
+        "endChar": 3
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ae50df8_ef5f2020",
+        "filename": "lucictx/sections.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T01:58:45Z",
+      "side": 1,
+      "message": "to?",
+      "range": {
+        "startLine": 109,
+        "startChar": 23,
+        "endLine": 109,
+        "endChar": 25
+      },
+      "revId": "afe78ac6c0ad22506012dbda5786990f2d6a5d9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
