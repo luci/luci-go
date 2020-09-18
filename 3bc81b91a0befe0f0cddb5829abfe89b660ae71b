@@ -101,6 +101,30 @@
     },
     {
       "key": {
+        "uuid": "9541361b_e49aade1",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T21:58:00Z",
+      "side": 1,
+      "message": "ah, you\u0027re right, I\u0027m not sure what I was thinking; The query already will advance in the background, AND we must advance the query before we know how to re-insert it into the heap again.\n\nStill I think having this method on the heap object would be good for encapsulation (then this function won\u0027t have to handle CurrentItemOrder). I would also have heap.addQuery(fq) be another method for the same reason.",
+      "parentUuid": "30170ed9_9cae863b",
+      "range": {
+        "startLine": 400,
+        "startChar": 1,
+        "endLine": 400,
+        "endChar": 8
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ca70114b_99a2574a",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -148,6 +172,30 @@
     },
     {
       "key": {
+        "uuid": "e53dfdc4_ce05c394",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T21:58:00Z",
+      "side": 1,
+      "message": "I think having the heap manage insertion of the iterators would clear this",
+      "parentUuid": "8a013e44_d121ef5d",
+      "range": {
+        "startLine": 424,
+        "startChar": 8,
+        "endLine": 424,
+        "endChar": 26
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d76c4079_8f2793bf",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -183,6 +231,30 @@
       "side": 1,
       "message": "Do you mean change the `parsecallback()` return values to return a `hasCursorCB` in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/service/datastore/interface.go;l\u003d27 ?",
       "parentUuid": "d76c4079_8f2793bf",
+      "range": {
+        "startLine": 433,
+        "startChar": 54,
+        "endLine": 433,
+        "endChar": 63
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17a71239_c89ab3ae",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T21:58:00Z",
+      "side": 1,
+      "message": "yep, exactly",
+      "parentUuid": "d02f4163_dd92a82a",
       "range": {
         "startLine": 433,
         "startChar": 54,
@@ -277,6 +349,30 @@
       "side": 1,
       "message": "`CurrentItemOrder()` need to return an error because there may be errors when serializing a key or property.. \n\nCapturing the static itemOrder and using []*iteratorEntry instead of []*queryIterator is for time saving. Otherwise, it needs to dynamically serializing to item order each time for `heap.pop` and `heap.push`.",
       "parentUuid": "21748023_4f2c1efd",
+      "range": {
+        "startLine": 847,
+        "startChar": 56,
+        "endLine": 847,
+        "endChar": 61
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d89e14c2_00a2358e",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 847,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T21:58:00Z",
+      "side": 1,
+      "message": "\u003e need to return an error because there may be errors when serializing a key or property\n\nYes... however I think panic\u0027ing would be appropriate. There\u0027s no way that a user would be able to handle the returned error anyway.\n\nMaybe queryIterator should cache this internally instead of requiring another iteratorEntry?",
+      "parentUuid": "f4b6007e_258dbd56",
       "range": {
         "startLine": 847,
         "startChar": 56,
