@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "ea6c0bd2_a3edb7ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-18T16:47:49Z",
+      "side": 1,
+      "message": "Ah fair.\n\nYeah, I\u0027m looking for the latest commit on a \"specific\" ref in order to serve as the base commit for changes, and it\u0027ll be \"refs on a list\" rather than \"all to which humans/bots can submit changes\"\n\nI\u0027ll submit this for now but keep this in mind.",
+      "parentUuid": "84ff3a2a_b9b1ea21",
+      "revId": "8578a23c6883511110547c9875d888d39e9316da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07b76746_1b6a4942",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
