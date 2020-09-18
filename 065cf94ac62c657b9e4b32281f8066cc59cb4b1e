@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d492034c_091954f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-18T05:22:19Z",
+      "side": 1,
+      "message": "I feel ashamed that I forget to regenerate the proto before uploading the final patchset of https://crrev.com/c/2407518",
+      "revId": "065cf94ac62c657b9e4b32281f8066cc59cb4b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
