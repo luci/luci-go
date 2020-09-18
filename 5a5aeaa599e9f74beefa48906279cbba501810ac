@@ -16,6 +16,23 @@
       "revId": "5a5aeaa599e9f74beefa48906279cbba501810ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "efe27371_264100d1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:50:04Z",
+      "side": 1,
+      "message": "I think for step, we use \"Succeeded\" instead of \"Successful\"",
+      "revId": "5a5aeaa599e9f74beefa48906279cbba501810ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
