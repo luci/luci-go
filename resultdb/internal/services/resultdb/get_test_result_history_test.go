@@ -117,24 +117,15 @@ func TestGetTestResultHistory(t *testing.T) {
 			})
 		srv := newTestResultDBService()
 
-		// Insert 3 indexed invocations one minute apart,
-		// with 3 unindexed child invocations each,
-		// and with 3 test results in each child invocation.
-		// 12 invocations + 9 inclusions + 27 results = 48 mutations
-		ms := make([]*spanner.Mutation, 0, 48)
-		ms = insertResultHistoryData(ms, "some-invocation", time.Duration(0), 3, 3)
-		ms = insertResultHistoryData(ms, "some-other-invocation", 2*time.Minute, 3, 3)
-		ms = insertResultHistoryData(ms, "yet-another-invocation", 2*time.Minute, 3, 3)
-		testutil.MustApply(ctx, ms...)
-
 		earliest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
 		latest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(2 * time.Minute))
+		afterLatest, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.Add(3 * time.Minute))
 
 		req := &pb.GetTestResultHistoryRequest{
 			Range: &pb.GetTestResultHistoryRequest_TimeRange{
 				TimeRange: &pb.TimeRange{
 					Earliest: earliest,
-					Latest:   latest,
+					Latest:   afterLatest,
 				},
 			},
 			VariantPredicate: &pb.VariantPredicate{
@@ -143,41 +134,60 @@ func TestGetTestResultHistory(t *testing.T) {
 				},
 			},
 		}
+		Convey(`unsuccessful`, func() {
+			Convey(`no realm`, func() {
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
+				So(err, ShouldErrLike, "realm is required")
+				So(res, ShouldBeNil)
+			})
 
-		Convey(`no realm`, func() {
-			res, err := srv.GetTestResultHistory(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "realm is required")
-			So(res, ShouldBeNil)
+			Convey(`unauthorized`, func() {
+				req.Realm = "testproject:secretrealm"
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
 		})
-
-		Convey(`unauthorized`, func() {
-			req.Realm = "testproject:secretrealm"
-			res, err := srv.GetTestResultHistory(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(res, ShouldBeNil)
-		})
-
-		Convey(`truncated`, func() {
-			req.Realm = "testproject:testrealm"
-			req.PageSize = 5
-			res, err := srv.GetTestResultHistory(ctx, req)
-			So(err, ShouldBeNil)
-			So(res.Entries, ShouldHaveLength, 5)
-		})
-
-		Convey(`all results`, func() {
-			req.Realm = "testproject:testrealm"
-			res, err := srv.GetTestResultHistory(ctx, req)
-			So(err, ShouldBeNil)
-			So(res.Entries, ShouldHaveLength, 27)
-			for i := 0; i < 9; i++ {
-				So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, latest)
+		Convey(`successful`, func() {
+			// Insert 3 indexed invocations one minute apart,
+			// with 3 unindexed child invocations each,
+			// and with 3 test results in each child invocation.
+			// Plus 10 invocations that are indexed but contain no results.
+			// 22 invocations + 9 inclusions + 27 results = 58 mutations
+			ms := make([]*spanner.Mutation, 0, 58)
+			ms = insertResultHistoryData(ms, "some-invocation", 0, 3, 3)
+			ms = insertResultHistoryData(ms, "some-other-invocation", time.Minute, 3, 3)
+			ms = insertResultHistoryData(ms, "yet-another-invocation", 2*time.Minute, 3, 3)
+			// Insert 20 indexed invocations with no results after the last
+			// invocation that does contain results.
+			for i := 0; i < 10; i++ {
+				ms = insertOneResultsInv(ms, fmt.Sprintf("empty-%d", i), testclock.TestRecentTimeUTC.Add(2*time.Minute).Add(time.Duration(i)*time.Second), true, 0)
 			}
-			for i := 19; i < 27; i++ {
-				So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, earliest)
-			}
+			testutil.MustApply(ctx, ms...)
+
+			Convey(`truncated`, func() {
+				req.Realm = "testproject:testrealm"
+				req.PageSize = 5
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 5)
+			})
+
+			Convey(`all results`, func() {
+				req.Realm = "testproject:testrealm"
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 27)
+				for i := 0; i < 9; i++ {
+					So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, latest)
+				}
+				for i := 19; i < 27; i++ {
+					So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, earliest)
+				}
+			})
 		})
+
 	})
 }
 
