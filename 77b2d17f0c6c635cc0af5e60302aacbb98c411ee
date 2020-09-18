@@ -1,0 +1,492 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e8b8328_d264ad27",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "Good stuff. PTAL my responses \u0026\u0026 WDYT?",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6145569e_f5330b7a",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "not necessary (see ConfigGroup)",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 37
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dfc2b00_df1c99cc",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "let\u0027s consistently use \"CV\" through code.",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 33,
+        "endChar": 19
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90250a9f_f0b4a6cc",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "y",
+      "range": {
+        "startLine": 39,
+        "startChar": 34,
+        "endLine": 39,
+        "endChar": 37
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c390da3_e4ce381b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "shouldn\u0027t this also contain # of ConfigGroups?",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6041c96_21dbdd49",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "it no longer has CV config file.",
+      "range": {
+        "startLine": 46,
+        "startChar": 65,
+        "endLine": 47,
+        "endChar": 35
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f8b5cc8_0c8a7783",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "I\u0027m the kind of person who prefers not to add any indexes unless really necessary. I don\u0027t think we need it here, do you?\nupdate: i see you use in query. OK.",
+      "range": {
+        "startLine": 48,
+        "startChar": 27,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ca54352a_ded2a2a5",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "LUCI Config uses \"revision\" to mean GIt hash, i think.\nHence, how about calling it \"ContentHash\"?",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 15
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13a3583a_4dd7ce8e",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "you are establishing a style for DS fields: CamelCase for kinds + snake_case for fields. Intentionally? Or is this the style LUCI follows but i never paid attention?\n\nI don\u0027t mind, but FYI: each field will get default attribute name, so code I reviewed often omitted these: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/scheduler/appengine/engine/invocation.go;l\u003d131",
+      "range": {
+        "startLine": 53,
+        "startChar": 29,
+        "endLine": 53,
+        "endChar": 41
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f2034eb_f4538025",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "i\u0027d call this ConfigRevision (which corresponds to LUCI Config\u0027s revision)",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6adc0c09_15051324",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "Why do you think it is necessary to version it?\n\nPredicting future is hard, but my guess is that it\u0027s unlikely to change. But if we do need to change it, we can always add version number (whereby lack of version would imply version\u003d1). Am I missing a use-case?",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03be77ce_3cf9eac8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "agree, but I think it\u0027d be cleaner to just duplicate it into each ConfigGroup alongside SubmitOptions.",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 17
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "266282f6_bae88f5e",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "is this actually necessary? It\u0027d be unfortunate to have to do this every time.",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1170986b_6f5a0938",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "ah, I see why you wanted index enabled. Fine, let\u0027s leave as is.\n\n(Personally, i\u0027d just filter them if necessary by hand (total number is still highly unlike to go above O(1000)))",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 2
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53eedca7_990af7ab",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "minor: I think (but not sure) you could use Projection Query to select *only* project IDs into []*ProjectConfig, which you can then return as is.",
+      "range": {
+        "startLine": 80,
+        "startChar": 33,
+        "endLine": 80,
+        "endChar": 38
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4eb42135_e074d244",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "TBH, i don\u0027t see why this is useful. 3 string parameters especially are harder to get right than naming fields like L91..L99.\n\nAlso, writes should always be in a transacton:\n read existing (if any)\n validate the write is still necessary\n write",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3dc2df3_f47e1d10",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "you don\u0027t need intermediate Kind (\"Revision\"). Just make the ID of this ConfigGroup be\n   content_hash/index\nand then it\u0027s easier trivial to load.\n\nBut there is one thing to worry: when \u0026 how do we delete old entities from datastore?\n\nThe easiest way I can think of is to add `Version int` to the ProjectConfig. Every time new config (by hash(its content)) is fetched, then Version is incremented. Then, newly inserted ConfigGroup would store .Version at which it was created alongside a .CreatedTime.\nGarbage collection then deletes all ConfigGroups with *both*:\n  .Version + Y \u003c current ProjectConfig.Version   (keep at least Y latest configs)\n  .CreatedTime + X days \u003c now ago (keep config for at least X days)\n\nX is crucial s.t. new versions have time to propagate to respective RunManagers before old configs are deleted.\nI think Y\u003d5 and X\u003d30 would be good for debugging (for instance, logs are stored for 30 days).",
+      "range": {
+        "startLine": 107,
+        "startChar": 63,
+        "endLine": 109,
+        "endChar": 68
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91c1a032_62612f22",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "suggestion: ProjectConfigGroup.\n\na bit longer, but less likely to overlap with some other config group (LUCI config also supports service-wide configs, which CV will probably use, too)",
+      "range": {
+        "startLine": 111,
+        "startChar": 37,
+        "endLine": 111,
+        "endChar": 48
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daeaa7aa_6e23755b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "*\n(to avoid accidental copies, and same below)",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 9
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "782bfafb_34f45a20",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "to a lesser extent than putProjectConfig, i\u0027m stil not convinced it is needed.\n\nif you think you need it, please remove from this CL and add to the one where you use it.",
+      "range": {
+        "startLine": 122,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 1
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a58d99f2_d60d1ba3",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "This creates doubles RAM usage. For \u003c1 MiB, doesn\u0027t matter, but then splitting into Groups isn\u0027t useful anyhow.\nFor large configs, however, we should be careful. I think ideal approach would avoid copying proto and copy pb.ConfigGroup by reference just ahead of ds.Put(),\nand because of DS limits, we should .Put() them sequentially.\n\nhence, i\u0027d instead do `writeConfigGroups`",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86bce41c_2b1bd54b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-18T17:22:45Z",
+      "side": 1,
+      "message": "qq: is this actually needed? Does .Merge segfault on 2nd arg being nil?",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 62
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
