@@ -18,16 +18,38 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// historyAccumulator has a method that can be passed as a callback to ByTimestamp.
+type historyAccumulator struct {
+	invs []*Historical
+	b    spanutil.Buffer
+}
+
+func (ia *historyAccumulator) accumulate(r *spanner.Row) error {
+	inv := &Historical{}
+	err := ia.b.FromSpanner(r, &inv.ID, &inv.IndexTimestamp)
+	if err != nil {
+		return err
+	}
+	ia.invs = append(ia.invs, inv)
+	return nil
+}
+
+func newHistoryAccumulator(capacity int) historyAccumulator {
+	return historyAccumulator{invs: make([]*Historical, 0, capacity)}
+}
 
 func TestByTimestamp(t *testing.T) {
 	Convey(`ByTimestamp`, t, func() {
@@ -77,40 +99,45 @@ func TestByTimestamp(t *testing.T) {
 		muchLaterPB, _ := ptypes.TimestampProto(end.Add(24 * time.Hour))
 
 		Convey(`all but the most recent`, func() {
-			res, err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: middlePB})
+			ac := newHistoryAccumulator(2)
+			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: middlePB}, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(res, ShouldHaveLength, 2)
-			So(string(res[0].ID), ShouldEndWith, "second")
-			So(string(res[1].ID), ShouldEndWith, "first")
+			So(ac.invs, ShouldHaveLength, 2)
+			So(string(ac.invs[0].ID), ShouldEndWith, "second")
+			So(string(ac.invs[1].ID), ShouldEndWith, "first")
 		})
 
 		Convey(`all but the oldest`, func() {
-			res, err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: middlePB, Latest: afterPB})
+			ac := newHistoryAccumulator(2)
+			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: middlePB, Latest: afterPB}, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(res, ShouldHaveLength, 2)
-			So(string(res[0].ID), ShouldEndWith, "third")
-			So(string(res[1].ID), ShouldEndWith, "second")
+			So(ac.invs, ShouldHaveLength, 2)
+			So(string(ac.invs[0].ID), ShouldEndWith, "third")
+			So(string(ac.invs[1].ID), ShouldEndWith, "second")
 		})
 
 		Convey(`all results`, func() {
-			res, err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: afterPB})
+			ac := newHistoryAccumulator(2)
+			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: afterPB}, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(res, ShouldHaveLength, 3)
-			So(string(res[0].ID), ShouldEndWith, "third")
-			So(string(res[1].ID), ShouldEndWith, "second")
-			So(string(res[2].ID), ShouldEndWith, "first")
+			So(ac.invs, ShouldHaveLength, 3)
+			So(string(ac.invs[0].ID), ShouldEndWith, "third")
+			So(string(ac.invs[1].ID), ShouldEndWith, "second")
+			So(string(ac.invs[2].ID), ShouldEndWith, "first")
 		})
 
 		Convey(`before first result`, func() {
-			res, err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: beforePB, Latest: justBeforePB})
+			ac := newHistoryAccumulator(1)
+			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: beforePB, Latest: justBeforePB}, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(res, ShouldHaveLength, 0)
+			So(ac.invs, ShouldHaveLength, 0)
 		})
 
 		Convey(`after last result`, func() {
-			res, err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: afterPB, Latest: muchLaterPB})
+			ac := newHistoryAccumulator(1)
+			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: afterPB, Latest: muchLaterPB}, ac.accumulate)
 			So(err, ShouldBeNil)
-			So(res, ShouldHaveLength, 0)
+			So(ac.invs, ShouldHaveLength, 0)
 		})
 	})
 }

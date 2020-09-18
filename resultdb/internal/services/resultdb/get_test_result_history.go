@@ -17,6 +17,7 @@ package resultdb
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -58,25 +60,24 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 	eg.Go(func() error {
 		defer close(results)
-		// TODO(crbug.com/1074407): Instead of getting a single fixed-length
-		// page of results here, pass a callback to get as many results as needed.
-		idxInvs, err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange())
-		if err != nil {
-			return err
-		}
-
-		// TODO(crbug.com/1107678): Parallelize the following loop.
-		for _, idxInv := range idxInvs {
+		var b spanutil.Buffer
+		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(r *spanner.Row) error {
+			inv := &invocations.Historical{}
+			if err := b.FromSpanner(r, &inv.ID, &inv.IndexTimestamp); err != nil {
+				return err
+			}
 			select {
 			case <-workerCtx.Done():
 				return workerCtx.Err()
 			default:
-				if err := matchingResultsInInvTree(workerCtx, in, idxInv, results); err != nil {
+				// TODO(crbug.com/1107678): Do not block here, use a worker instead.
+				if err := matchingResultsInInvTree(workerCtx, in, inv, results); err != nil {
 					return err
 				}
 			}
-		}
-		return nil
+			return nil
+		})
+
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
