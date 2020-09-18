@@ -19,7 +19,6 @@ import '@material/mwc-textarea';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
 import '../../components/ace_editor';
@@ -33,6 +32,7 @@ import { displayTimeDiff, displayTimeDiffOpt, displayTimestamp, displayTimestamp
 import { renderMarkdown } from '../../libs/utils';
 import { router } from '../../routes';
 import { BuildStatus } from '../../services/buildbucket';
+import { StepExt } from '../../services/build_page';
 
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -178,22 +178,23 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderSteps() {
     const bpd = this.buildState.buildPageData!;
-    const nonSuccessStepCount = bpd.steps?.filter((s) => s.status !== BuildStatus.Success).length || 0;
+    const nonSucceededSteps = (bpd.steps || [])
+      .map((step, i) => [step, i + 1] as [StepExt, number])
+      .filter(([step, _stepNum]) => step.status !== BuildStatus.Success);
 
     return html`
       <div>
         <h3>Steps & Logs</h3>
-        ${nonSuccessStepCount && bpd.steps!.map((step, i) => html`
+        ${nonSucceededSteps.map(([step, stepNum]) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status === BuildStatus.Success ? 'none' : ''})}
           .expanded=${true}
-          .number=${i + 1}
+          .number=${stepNum}
           .step=${step}
           .showDebugLogs=${false}
         ></milo-build-step-entry>
         `) || ''}
         <div class="list-entry">
-          ${nonSuccessStepCount} non-successful step(s).
+          ${nonSucceededSteps.length} non-succeeded step(s).
           <a href=${router.urlForName('build-steps', {
             ...this.buildState.builder,
             build_num_or_id: this.buildState.buildNumOrId!,
