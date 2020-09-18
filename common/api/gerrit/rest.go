@@ -338,6 +338,16 @@ func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsReq
 	}, nil
 }
 
+func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, opts ...grpc.CallOption) (*gerritpb.RefInfo, error) {
+	var resp gerritpb.RefInfo
+	path := fmt.Sprintf("/projects/%s/branches/%s", url.QueryEscape(req.Project), url.QueryEscape(req.Branch))
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "get branch info").Err()
+	}
+	resp.Ref = branchToRef(resp.Ref)
+	return &resp, nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 // If data is nil, request will be made without a body.
 //

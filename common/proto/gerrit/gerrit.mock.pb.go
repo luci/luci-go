@@ -315,6 +315,26 @@ func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
 }
 
+// GetRefInfo mocks base method.
+func (m *MockGerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRefInfo", varargs...)
+	ret0, _ := ret[0].(*RefInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefInfo indicates an expected call of GetRefInfo.
+func (mr *MockGerritClientMockRecorder) GetRefInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritClient)(nil).GetRefInfo), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface.
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -546,4 +566,19 @@ func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjects
 func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
+}
+
+// GetRefInfo mocks base method.
+func (m *MockGerritServer) GetRefInfo(arg0 context.Context, arg1 *RefInfoRequest) (*RefInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefInfo", arg0, arg1)
+	ret0, _ := ret[0].(*RefInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefInfo indicates an expected call of GetRefInfo.
+func (mr *MockGerritServerMockRecorder) GetRefInfo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritServer)(nil).GetRefInfo), arg0, arg1)
 }
