@@ -35,24 +35,23 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref testResult!: TestResult;
   @observable.ref appState!: AppState;
 
-  @observable.ref private neverExpanded = true;
   @observable.ref private _expanded = false;
-  @computed get expanded() {
-    return this._expanded;
-  }
+  @computed get expanded() { return this._expanded; }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.neverExpanded = this.neverExpanded && !newVal;
+    // Always render the content once it was expanded so the descendants' states
+    // don't get reset after the node is collapsed.
+    this.shouldRenderContent = this.shouldRenderContent || newVal;
   }
+
+  @observable.ref private shouldRenderContent = false;
 
   @observable.ref private tagExpanded = false;
 
   @computed
   private get artifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
-    if (this.neverExpanded || !this.appState.resultDb) {
-      // Returns a promise that never resolves when
-      //  - resultDb isn't ready.
-      //  - or the entry was never expanded.
+    if (!this.appState.resultDb) {
+      // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(new Promise(() => {}));
     }
     // TODO(weiweilin): handle pagination.
@@ -136,6 +135,29 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
+  private renderContent() {
+    if (!this.shouldRenderContent) {
+      return html``;
+    }
+    return html`
+      ${this.renderSummaryHtml()}
+      ${this.textDiffArtifact && html`
+      <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
+      </milo-text-diff-artifact>
+      `}
+      ${this.imageDiffArtifactGroup.diff && html`
+      <milo-image-diff-artifact
+        .expected=${this.imageDiffArtifactGroup.expected}
+        .actual=${this.imageDiffArtifactGroup.actual}
+        .diff=${this.imageDiffArtifactGroup.diff}
+      >
+      </milo-image-diff-artifact>
+      `}
+      ${this.renderArtifacts()}
+      ${this.renderTags()}
+    `;
+  }
+
   protected render() {
     return html`
       <milo-expandable-entry
@@ -150,23 +172,7 @@ export class ResultEntryElement extends MobxLitElement {
           </span>
           ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
         </span>
-        <div slot="content">
-          ${this.renderSummaryHtml()}
-          ${this.textDiffArtifact && html`
-          <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
-          </milo-text-diff-artifact>
-          `}
-          ${this.imageDiffArtifactGroup.diff && html`
-          <milo-image-diff-artifact
-            .expected=${this.imageDiffArtifactGroup.expected}
-            .actual=${this.imageDiffArtifactGroup.actual}
-            .diff=${this.imageDiffArtifactGroup.diff}
-          >
-          </milo-image-diff-artifact>
-          `}
-          ${this.renderArtifacts()}
-          ${this.renderTags()}
-        </div>
+        <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
     `;
   }

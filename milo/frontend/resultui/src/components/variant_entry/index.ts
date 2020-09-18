@@ -51,12 +51,12 @@ export class VariantEntryElement extends MobxLitElement {
   }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.neverExpanded = this.neverExpanded && !newVal;
+    // Always render the content once it was expanded so the descendants' states
+    // don't get reset after the node is collapsed.
+    this.shouldRenderContent = this.shouldRenderContent || newVal;
   }
 
-  // Always render the content once it was expanded so the descendants' states
-  // don't get reset after the node is collapsed.
-  @observable.ref private neverExpanded = true;
+  @observable.ref private shouldRenderContent = false;
 
   /**
    * Common prefix between this.variant.testId and this.prevTestId.
@@ -93,7 +93,7 @@ export class VariantEntryElement extends MobxLitElement {
   }
 
   private renderBody() {
-    if (this.neverExpanded) {
+    if (!this.shouldRenderContent) {
       return html``;
     }
     return html`

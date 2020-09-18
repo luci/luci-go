@@ -38,17 +38,17 @@ export class TestNavNodeElement extends MobxLitElement {
   }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.neverExpanded = this.neverExpanded && !newVal;
+    // Always render the content once it was expanded so the descendants' states
+    // don't get reset after the node is collapsed.
+    this.shouldRenderContent = this.shouldRenderContent || newVal;
   }
 
-  // Always render the content once it was expanded so the descendants' states
-  // don't get reset after the node is collapsed.
-  @observable.ref private neverExpanded = true;
+  @observable.ref private shouldRenderContent = false;
 
   @computed private get isSelected() { return this.treeState.selectedChildNode === this.node; }
 
   private renderBody() {
-    if (this.neverExpanded) {
+    if (!this.shouldRenderContent) {
       return html``;
     }
     return html`
