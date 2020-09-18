@@ -16,6 +16,29 @@
       "revId": "1813974e5e81bd98cb6dab749edf0fa3eb16ab90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6ec53f48_19a7be7f",
+        "filename": "resultdb/cmd/taskwatcher/deploy.yaml",
+        "patchSetId": 12
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-18T21:21:48Z",
+      "side": 1,
+      "message": "this will inevitably be stale\n\nWhy not productionize it just a little bit by writing Starlark code to generate the deployment that use the correct image?",
+      "range": {
+        "startLine": 58,
+        "startChar": 17,
+        "endLine": 58,
+        "endChar": 142
+      },
+      "revId": "1813974e5e81bd98cb6dab749edf0fa3eb16ab90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
