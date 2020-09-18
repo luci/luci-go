@@ -51,6 +51,24 @@
       "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3561def4_c9042bb9",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-09-18T01:32:01Z",
+      "side": 1,
+      "message": "IMO \"was expanded\" carries the implication that it\u0027s no longer expanded, and \"has expanded\" carries a stronger implication that it\u0027s still expanded. \"was expanded\" seems like the better of the two to me, and is probably okay given the context in which it\u0027s used.\n\nIf you want to make it more explicit, perhaps \"wasEverExpanded\"? A bit wordier but less room for misinterpretation.",
+      "parentUuid": "8aa7c749_1e06fda0",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
