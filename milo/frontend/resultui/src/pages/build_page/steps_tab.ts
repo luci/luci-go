@@ -21,6 +21,7 @@ import { computed, observable } from 'mobx';
 import '../../components/build_step_entry';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
 import '../../components/dot_spinner';
+import '../../components/lazy_list';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { BuildStatus } from '../../services/buildbucket';
@@ -98,7 +99,7 @@ export class StepsTabElement extends MobxLitElement {
           @click=${() => this.toggleAllSteps(false)}
         >Collapse All</mwc-button>
       </div>
-      <div id="main">
+      <milo-lazy-list id="main" .growth=${300}>
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
@@ -106,6 +107,7 @@ export class StepsTabElement extends MobxLitElement {
           .number=${i + 1}
           .step=${step}
           .showDebugLogs=${this.showDebugLogs}
+          .prerender=${true}
         ></milo-build-step-entry>
         `) || ''}
         <div
@@ -117,11 +119,17 @@ export class StepsTabElement extends MobxLitElement {
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
         </div>
-      </div>
+      </milo-lazy-list>
     `;
   }
 
   static styles = css`
+    :host {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow-y: hidden;
+    }
+
     #header {
       display: grid;
       grid-template-columns: auto auto auto 1fr auto auto;
