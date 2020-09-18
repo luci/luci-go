@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d67dcea_3cf7e323",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:38:36Z",
+      "side": 1,
+      "message": "Perhaps we want to put all of these under a parent key (BuildPage)? I expect that in the future when we implements other pages (e.g. console), we still want to use this to store the settings?",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87ccbccf_32e50d77",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:38:36Z",
+      "side": 1,
+      "message": "Are you planning to have another version?",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 31
+      },
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "befa8fbb_c2f93dcb",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:38:36Z",
+      "side": 1,
+      "message": "I am not sure if this is the intended behavior, but the settings is persistent across all builds. So if the user go to another build, the settings still persist.",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
