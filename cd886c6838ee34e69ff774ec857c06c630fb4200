@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "1f559211_4879de02",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T04:09:42Z",
+      "side": 1,
+      "message": "Is this persistent in a user session (i.e. unless the user close the browser, the setting will be there)? Then theoretically we can have a very long user session, so let\u0027s say if we update to V3, do we need to worry about migrating both v2 -\u003e v3 and v1 -\u003e v3?\n\nI don\u0027t expect that we will have a lot of backward incompatible changes:\n1. Adding a new key: the old settings does not have this key, so we should use the default value\n2. Deleting a key: We can just ignore the key for the old settings\n3. Change the meaning of a key: I expect that we should not do this.\n\nSo I wonder whether it worths it to introduce versioning here.",
+      "parentUuid": "5f9b8e06_cc6b8715",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 31
+      },
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "befa8fbb_c2f93dcb",
         "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
         "patchSetId": 5
@@ -113,6 +137,24 @@
       "side": 1,
       "message": "That\u0027s the behaviour on the current build page though.\nI think it\u0027s pointless have a per build setting since most users will only look at a build one or maybe just a few times.",
       "parentUuid": "befa8fbb_c2f93dcb",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bd556d7_3044befc",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T04:09:42Z",
+      "side": 1,
+      "message": "If this is the current behavior, I am fine keeping it like it is. I remember I did open 2 tabs at the same time to compare 2 builds, so I think it definitely has some use cases there.",
+      "parentUuid": "58c768b3_5aedddf8",
       "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
