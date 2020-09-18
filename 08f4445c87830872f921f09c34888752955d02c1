@@ -22,6 +22,30 @@
       "revId": "08f4445c87830872f921f09c34888752955d02c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "406992be_60068726",
+        "filename": "lucictx/sections.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T01:33:28Z",
+      "side": 1,
+      "message": "meh.",
+      "parentUuid": "ca38d92b_817b5bf1",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "08f4445c87830872f921f09c34888752955d02c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
