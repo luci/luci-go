@@ -87,6 +87,24 @@
       "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a928712b_5903f3e1",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:44:01Z",
+      "side": 1,
+      "message": "Thanks, Owen for the grammar tip. :P\n\nI thought \"has expanded\" does not mean it is still expanded. I usually say \"I\u0027ve been to XYZ\", with the implication that \"I visited XYZ and currently I may not be in XYZ anymore\". I guess this is incorrect.",
+      "parentUuid": "a95ebf02_28660a9d",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
