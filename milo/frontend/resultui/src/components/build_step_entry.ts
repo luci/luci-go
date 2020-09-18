@@ -27,21 +27,36 @@ import { ChainableURL, renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
 import './expandable_entry';
+import { OnEnterList } from './lazy_list';
 
 /**
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
-export class BuildStepEntryElement extends MobxLitElement {
+export class BuildStepEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref number = 0;
-  @observable.ref expanded = false;
   @observable.ref step!: StepExt;
   @observable.ref showDebugLogs = false;
+  @observable.ref prerender = false;
+
+
+  @observable.ref private _expanded = false;
+  get expanded() { return this._expanded; }
+  set expanded(newVal) {
+    this._expanded = newVal;
+    this.wasExpanded = this.wasExpanded || newVal;
+  }
+
+  @observable.ref private wasExpanded = false;
 
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
       .forEach((e) => e.toggleAllSteps(expand));
+  }
+
+  onEnterList() {
+    this.prerender = false;
   }
 
   @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
@@ -66,9 +81,48 @@ export class BuildStepEntryElement extends MobxLitElement {
     return this.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
-  protected render() {
+  private renderContent() {
+    if (!this.wasExpanded) {
+      return html``;
+    }
     return html`
-      <milo-expandable-entry .expanded=${this.expanded}>
+      <div id="summary" style=${styleMap({display: this.summary ? '' : 'none'})}>
+        ${renderMarkdown(this.summary)}
+      </div>
+      <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
+        ${this.logs.map((log) => html`
+        <li>
+          <a href=${log.view_url} target="_blank">${log.name}</a>
+          <a
+            style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
+            href=${new ChainableURL(log.view_url).withSearchParam('format', 'raw', true).toString()}
+            target="_blank"
+          >[raw]</a>
+        </li>
+        `)}
+      </ul>
+      ${this.step.children?.map((child, i) => html`
+      <milo-build-step-entry
+        class="list-entry"
+        .expanded=${child.status !== BuildStatus.Success}
+        .number=${i + 1}
+        .step=${child}
+        .showDebugLogs=${this.showDebugLogs}
+      ></milo-build-step-entry>
+      `) || ''}
+    `;
+  }
+
+  protected render() {
+    if (this.prerender) {
+      return html`<div id="place-holder"></div>`;
+    }
+
+    return html`
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => this.expanded = expanded}
+      >
         <span slot="header">
           <mwc-icon
             id="status-indicator"
@@ -84,32 +138,7 @@ export class BuildStepEntryElement extends MobxLitElement {
           <span id="header-markdown">${renderMarkdown(this.header)}</span>
           <span id="duration">${displayDuration(this.duration)}</span>
         </span>
-        <div slot="content">
-          <div id="summary" style=${styleMap({display: this.summary ? '' : 'none'})}>
-            ${renderMarkdown(this.summary)}
-          </div>
-          <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
-            ${this.logs.map((log) => html`
-            <li>
-              <a href=${log.view_url} target="_blank">${log.name}</a>
-              <a
-                style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
-                href=${new ChainableURL(log.view_url).withSearchParam('format', 'raw', true).toString()}
-                target="_blank"
-              >[raw]</a>
-            </li>
-            `)}
-          </ul>
-          ${this.step.children?.map((child, i) => html`
-          <milo-build-step-entry
-            class="list-entry"
-            .expanded=${child.status !== BuildStatus.Success}
-            .number=${i + 1}
-            .step=${child}
-            .showDebugLogs=${this.showDebugLogs}
-          ></milo-build-step-entry>
-          `) || ''}
-        </div>
+        <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
     `;
   }
@@ -117,6 +146,10 @@ export class BuildStepEntryElement extends MobxLitElement {
   static styles = css`
     :host {
       display: block;
+    }
+
+    #place-holder {
+      height: 24px;
     }
 
     #status-indicator {
