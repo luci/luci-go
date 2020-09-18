@@ -22,11 +22,11 @@ import { computed, observable, reaction } from 'mobx';
 
 import '../components/left_panel';
 import '../components/test_filter';
-import { TestFilter } from '../components/test_filter';
 import '../components/test_nav_tree';
 import '../components/variant_entry';
 import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
+import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
 import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
 
@@ -35,6 +35,7 @@ import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
  */
 export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref userConfigs!: UserConfigs;
   @observable.ref invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
@@ -191,14 +192,7 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     return html`
       <div id="header">
-        <milo-test-filter
-          .onFilterChanged=${(filter: TestFilter) => {
-            this.invocationState.showExonerated = filter.showExonerated;
-            this.invocationState.showExpected = filter.showExpected;
-            this.invocationState.showFlaky = filter.showFlaky;
-          }}
-        >
-        </milo-test-filter>
+        <milo-test-filter></milo-test-filter>
         <mwc-button
           class="action-button"
           dense unelevated
@@ -280,6 +274,8 @@ export class TestResultsTabElement extends MobxLitElement {
 
 customElement('milo-test-results-tab')(
   consumeInvocationState(
+    consumeUserConfigs(
       consumeAppState(TestResultsTabElement),
+    ),
   ),
 );

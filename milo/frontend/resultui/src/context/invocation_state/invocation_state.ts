@@ -22,6 +22,7 @@ import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatche
 import { TestNode, VariantStatus } from '../../models/test_node';
 import { Expectancy, Invocation } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
+import { UserConfigs } from '../app_state/user_configs';
 
 /**
  * Records state of an invocation.
@@ -29,7 +30,7 @@ import { AppState } from '../app_state/app_state';
 export class InvocationState {
   @observable.ref invocationId = '';
 
-  constructor(private appState: AppState) {}
+  constructor(private appState: AppState, private userConfigs: UserConfigs) {}
 
   @computed
   get invocationName(): string | null {
@@ -57,9 +58,6 @@ export class InvocationState {
   }
 
   @observable.ref selectedNode!: TestNode;
-  @observable.ref showExpected = false;
-  @observable.ref showExonerated = true;
-  @observable.ref showFlaky = true;
 
   @computed private get testResultBatchIterFn() {
     if (!this.appState?.resultDb || !this.invocationName) {
@@ -69,7 +67,7 @@ export class InvocationState {
       {
         invocations: [this.invocationName],
         predicate: {
-          expectancy: this.showExpected ? Expectancy.All : Expectancy.VariantsWithUnexpectedResults,
+          expectancy: this.userConfigs.tests.showExpectedVariant ? Expectancy.All : Expectancy.VariantsWithUnexpectedResults,
         },
         readMask: '*',
       },
@@ -94,7 +92,7 @@ export class InvocationState {
       this.testExonerationBatchIterFn(),
     );
 
-    variantBatches = this.showExonerated ?
+    variantBatches = this.userConfigs.tests.showExoneratedVariant ?
       variantBatches :
       iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Exonerated));
 
@@ -104,7 +102,7 @@ export class InvocationState {
     // batch. In that case, some flaky variants are not filtered out.
     // This should be a rare occurrence. Since usually, results of the same test
     // variant should be in the same batch.
-    variantBatches = this.showFlaky ?
+    variantBatches = this.userConfigs.tests.showFlakyVariant ?
       variantBatches :
       iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Flaky));
 

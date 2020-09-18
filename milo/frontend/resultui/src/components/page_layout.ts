@@ -19,6 +19,7 @@ import { css, customElement, html, LitElement, property } from 'lit-element';
 import '../components/signin';
 import { UserUpdateEvent } from '../components/signin';
 import { AppState, provideAppState } from '../context/app_state/app_state';
+import { provideUserConfigs, UserConfigsStore } from '../context/app_state/user_configs';
 import { router } from '../routes';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
@@ -43,14 +44,28 @@ Please enter a description of the problem, with repro steps if applicable.
  * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
+@provideUserConfigs
 @provideAppState
 export class PageLayoutElement extends LitElement {
   @property() private gAuth: gapi.auth2.GoogleAuth | null = null;
   readonly appState = new AppState();
 
+  readonly configStore = new UserConfigsStore();
+  get userConfigs() { return this.configStore.userConfigs; }
+
   constructor() {
     super();
     gAuthPromise.then((gAuth) => this.gAuth = gAuth);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.configStore.init();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.configStore.dispose();
   }
 
   protected render() {

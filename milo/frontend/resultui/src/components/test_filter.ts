@@ -14,7 +14,9 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { autorun, observable } from 'mobx';
+import { computed, observable } from 'mobx';
+
+import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
 
 export interface TestFilter {
   showExpected: boolean;
@@ -28,28 +30,11 @@ export interface TestFilter {
  * changed.
  */
 @customElement('milo-test-filter')
+@consumeUserConfigs
 export class TestFilterElement extends MobxLitElement {
-  onFilterChanged: (filter: TestFilter) => void = () => {};
+  @observable.ref userConfigs!: UserConfigs;
 
-  @observable.ref showExpected = false;
-  @observable.ref showExonerated = true;
-  @observable.ref showFlaky = true;
-
-  private disposer = () => {};
-  connectedCallback() {
-    super.connectedCallback();
-    this.disposer = autorun(
-      () => this.onFilterChanged({
-        showExpected: this.showExpected,
-        showExonerated: this.showExonerated,
-        showFlaky: this.showFlaky,
-      }),
-    );
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.disposer();
-  }
+  @computed private get testFilters() { return this.userConfigs.tests; }
 
   protected render() {
     return html`
@@ -59,15 +44,30 @@ export class TestFilterElement extends MobxLitElement {
         <label for="unexpected" style="color: var(--failure-color);">Unexpected</label>
       </div class="filter">
       <div class="filter">
-        <input type="checkbox" id="expected" @change=${(v: MouseEvent) => this.showExpected = (v.target as HTMLInputElement).checked} ?checked=${this.showExpected}>
+        <input
+          type="checkbox"
+          id="expected"
+          @change=${(v: MouseEvent) => this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked}
+          ?checked=${this.testFilters.showExpectedVariant}
+        >
       <label for="expected" style="color: var(--success-color);">Expected</label>
       </div class="filter">
       <div class="filter">
-        <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked} ?checked=${this.showExonerated}>
+        <input
+          type="checkbox"
+          id="exonerated"
+          @change=${(v: MouseEvent) => this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked}
+          ?checked=${this.testFilters.showExoneratedVariant}
+        >
         <label for="exonerated" style="color: var(--exonerated-color);">Exonerated</label>
       </div class="filter">
       <div class="filter">
-        <input type="checkbox" id="flaky" @change=${(v: MouseEvent) => this.showFlaky = (v.target as HTMLInputElement).checked} ?checked=${this.showFlaky}>
+        <input
+          type="checkbox"
+          id="flaky"
+          @change=${(v: MouseEvent) => this.testFilters.showFlakyVariant = (v.target as HTMLInputElement).checked}
+          ?checked=${this.testFilters.showFlakyVariant}
+        >
         <label for="flaky" style="color: var(--warning-color);">Flaky</label>
       </div class="filter">
     `;
