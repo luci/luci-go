@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "e2a43be7_230f4206",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T04:48:43Z",
+      "side": 1,
+      "message": "Removed the version number on the class.\nKept the user configs version number in the key just in case we need it.",
+      "parentUuid": "1f559211_4879de02",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 31
+      },
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "befa8fbb_c2f93dcb",
         "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
         "patchSetId": 5
@@ -155,6 +179,24 @@
       "side": 1,
       "message": "If this is the current behavior, I am fine keeping it like it is. I remember I did open 2 tabs at the same time to compare 2 builds, so I think it definitely has some use cases there.",
       "parentUuid": "58c768b3_5aedddf8",
+      "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95b218fe_cdc1e81d",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T04:48:43Z",
+      "side": 1,
+      "message": "You can still open two builds and apply different settings to them, but only the most recently updated settings will be saved.",
+      "parentUuid": "6bd556d7_3044befc",
       "revId": "cd886c6838ee34e69ff774ec857c06c630fb4200",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
