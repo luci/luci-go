@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "c636e960_390b19e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "Either in doc.go or at the start of store.go, we could potentially add a diagram or explanation noting that some metadata about config is stored in ProjectConfig, but actual values are stored in the ConfigGroups (or ProjectConfigGroups); what do you think?",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6145569e_f5330b7a",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -53,6 +70,30 @@
       "writtenOn": "2020-09-18T17:22:45Z",
       "side": 1,
       "message": "let\u0027s consistently use \"CV\" through code.",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 33,
+        "endChar": 19
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cca3725_afed1cf0",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "This sounds good to me too.",
+      "parentUuid": "1dfc2b00_df1c99cc",
       "range": {
         "startLine": 33,
         "startChar": 4,
@@ -174,6 +215,53 @@
     },
     {
       "key": {
+        "uuid": "76ceb162_28b83c86",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "Sounds clearer to me given the comment about GitSHA/ConfigRevision below.",
+      "parentUuid": "ca54352a_ded2a2a5",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 15
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4c7d7d0_77f442ef",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "Optionally you could specify: \"imported to CV\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 62,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "13a3583a_4dd7ce8e",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -220,6 +308,30 @@
     },
     {
       "key": {
+        "uuid": "2d7ae8c9_5fb19668",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "I was going to say something similar but with more words (the fact that it\u0027s a sha1 for a commit in a repo seems like an implementation detail, the imporant thing is that this corresponds to luci-config\u0027s revision I think?)",
+      "parentUuid": "6f2034eb_f4538025",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6adc0c09_15051324",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -231,6 +343,29 @@
       "writtenOn": "2020-09-18T17:22:45Z",
       "side": 1,
       "message": "Why do you think it is necessary to version it?\n\nPredicting future is hard, but my guess is that it\u0027s unlikely to change. But if we do need to change it, we can always add version number (whereby lack of version would imply version\u003d1). Am I missing a use-case?",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5818e147_f91e7ecc",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-18T17:31:14Z",
+      "side": 1,
+      "message": "Would it be clearer to rephrase it as something like this?:\n\nDrainingStartTime is the cutoff for processing older CLs watched by this LUCI project. Any CLs with updated timestamps before this time will not be considered.",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 52
+      },
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
