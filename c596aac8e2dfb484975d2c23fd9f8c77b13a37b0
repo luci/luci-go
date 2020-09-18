@@ -39,6 +39,30 @@
       "revId": "c596aac8e2dfb484975d2c23fd9f8c77b13a37b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54cc892f_8fec90b5",
+        "filename": "lucictx/sections.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-18T00:41:51Z",
+      "side": 1,
+      "message": "I hate python so much. Changed to int64.",
+      "parentUuid": "a2b57200_3a46e382",
+      "range": {
+        "startLine": 114,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 27
+      },
+      "revId": "c596aac8e2dfb484975d2c23fd9f8c77b13a37b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
