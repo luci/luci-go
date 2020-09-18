@@ -33,6 +33,24 @@
       "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8aa7c749_1e06fda0",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-18T01:15:42Z",
+      "side": 1,
+      "message": "I think \"was expanded\" means it used to be expanded, may or may not be expanded now.\n\"has expanded\" means it was expanded, and is still expanded.\nI\u0027ll ask owen to give some feedback on this.",
+      "parentUuid": "5684b360_76092cc5",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
