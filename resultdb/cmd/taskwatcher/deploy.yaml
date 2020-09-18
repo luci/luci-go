@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "10"
+  creationTimestamp: "2019-11-27T22:54:06Z"
+  generation: 11
+  labels:
+    app: taskwatcher
+  name: taskwatcher
+  namespace: staging
+  resourceVersion: "13213531"
+  selfLink: /apis/apps/v1/namespaces/staging/deployments/taskwatcher
+  uid: d0d467f2-1168-11ea-9020-42010aa8008f
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: taskwatcher
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: taskwatcher
+    spec:
+      containers:
+        - args:
+            - -prod
+            - -service-account-json
+            - :gce
+            - -http-addr
+            - :8800
+            - -admin-addr
+            - :8900
+            - -auth-service-host
+            - chrome-infra-auth-dev.appspot.com
+            - -cloud-project
+            - luci-resultdb-dev
+            - -ts-mon-account
+            - gke-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+            - -ts-mon-service-name
+            - luci-resultdb-dev
+            - -ts-mon-job-name
+            - staging/taskwatcher
+            - -resultdb-host
+            - staging.results.api.cr.dev
+            - -swarming-host
+            - chromium-swarm.appspot.com
+            - -tag
+            - pool:chromium.tests
+          image: gcr.io/chops-public-images-dev/luci/resultdb/recorder@sha256:a4cfca4689a4a28cc3fdb22261430715d1e575aae62cee0130e6122089ca60e3
+          imagePullPolicy: Always
+          name: taskwatcher
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: "2019-11-27T22:54:06Z"
+      lastUpdateTime: "2019-11-28T00:22:23Z"
+      message: ReplicaSet "taskwatcher-7f58cbbb44" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2019-12-04T02:29:34Z"
+      lastUpdateTime: "2019-12-04T02:29:34Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+  observedGeneration: 11
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
