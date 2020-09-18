@@ -22,16 +22,14 @@ import '../../components/build_step_entry';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { consumeUserConfigs, UserConfigs } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { BuildStatus } from '../../services/buildbucket';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref userConfigs!: UserConfigs;
   @observable.ref buildState!: BuildState;
-
-  // TODO(crbug/1123362): save the setting.
-  @observable.ref showSucceeded = true;
-  @observable.ref showDebugLogs = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -43,7 +41,7 @@ export class StepsTabElement extends MobxLitElement {
   }
 
   @computed private get noDisplayedStep() {
-    if (this.showSucceeded) {
+    if (this.userConfigs.steps.showSucceededSteps) {
       return !this.buildState.buildPageData?.steps?.length;
     }
     return !this.buildState.buildPageData?.steps?.find((s) => s.status !== BuildStatus.Success);
@@ -63,8 +61,8 @@ export class StepsTabElement extends MobxLitElement {
             <input
               id="succeeded"
               type="checkbox"
-              ?checked=${this.showSucceeded}
-              @change=${(e: MouseEvent) => this.showSucceeded = (e.target as HTMLInputElement).checked}
+              ?checked=${this.userConfigs.steps.showSucceededSteps}
+              @change=${(e: MouseEvent) => this.userConfigs.steps.showSucceededSteps = (e.target as HTMLInputElement).checked}
             >
             <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
           </div>
@@ -80,8 +78,8 @@ export class StepsTabElement extends MobxLitElement {
             <input
               id="debug-logs-filter"
               type="checkbox"
-              ?checked=${this.showDebugLogs}
-              @change=${(e: MouseEvent) => this.showDebugLogs = (e.target as HTMLInputElement).checked}
+              ?checked=${this.userConfigs.steps.showDebugLogs}
+              @change=${(e: MouseEvent) => this.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked}
             >
             <label for="debug-logs-filter">Debug</label>
           </div>
@@ -101,18 +99,17 @@ export class StepsTabElement extends MobxLitElement {
       <div id="main">
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status !== BuildStatus.Success || this.showSucceeded ? '' : 'none'})}
+          style=${styleMap({'display': step.status !== BuildStatus.Success || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
           .expanded=${step.status !== BuildStatus.Success}
           .number=${i + 1}
           .step=${step}
-          .showDebugLogs=${this.showDebugLogs}
         ></milo-build-step-entry>
         `) || ''}
         <div
           class="list-entry"
           style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
         >
-          ${this.showSucceeded ? 'No steps.' : 'All steps succeeded.'}
+          ${this.userConfigs.steps.showSucceededSteps ? 'No steps.' : 'All steps succeeded.'}
         </div>
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
@@ -169,6 +166,8 @@ export class StepsTabElement extends MobxLitElement {
 
 customElement('milo-steps-tab')(
   consumeBuildState(
-    consumeAppState(StepsTabElement),
+    consumeUserConfigs(
+      consumeAppState(StepsTabElement),
+    ),
   ),
 );
