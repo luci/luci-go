@@ -16,6 +16,23 @@
       "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5684b360_76092cc5",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-18T01:02:35Z",
+      "side": 1,
+      "message": "If I understand correctly, this variable is to check whether the step has ever been expanded before, if this is the case, then we render the content, if not, we don\u0027t?\n\nI think a comment here will help, especially when the variable name is not clear. I thought \"wasExpanded\" meant \"it used to be expanded, but it is not expanded anymore\". Perhaps \"hasExpanded\" is a more proper name?",
+      "revId": "9d5da5a8fea03d7f54e439e25cdcc9d33b563100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
