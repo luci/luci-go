@@ -35,21 +35,21 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref testResult!: TestResult;
   @observable.ref appState!: AppState;
 
-  @observable.ref private wasExpanded = false;
+  @observable.ref private neverExpanded = true;
   @observable.ref private _expanded = false;
   @computed get expanded() {
     return this._expanded;
   }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.wasExpanded = this.wasExpanded || newVal;
+    this.neverExpanded = this.neverExpanded && !newVal;
   }
 
   @observable.ref private tagExpanded = false;
 
   @computed
   private get artifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
-    if (!this.wasExpanded || !this.appState.resultDb) {
+    if (this.neverExpanded || !this.appState.resultDb) {
       // Returns a promise that never resolves when
       //  - resultDb isn't ready.
       //  - or the entry was never expanded.

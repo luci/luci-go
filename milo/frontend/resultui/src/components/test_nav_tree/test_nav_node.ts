@@ -38,14 +38,35 @@ export class TestNavNodeElement extends MobxLitElement {
   }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.wasExpanded = this.wasExpanded || newVal;
+    this.neverExpanded = this.neverExpanded && !newVal;
   }
 
-  // Always render the children once it was expanded so the children's state
+  // Always render the content once it was expanded so the descendants' states
   // don't get reset after the node is collapsed.
-  @observable.ref private wasExpanded = false;
+  @observable.ref private neverExpanded = true;
 
   @computed private get isSelected() { return this.treeState.selectedChildNode === this.node; }
+
+  private renderBody() {
+    if (this.neverExpanded) {
+      return html``;
+    }
+    return html`
+      <div id="content-ruler" style=${styleMap({left: `${this.depth * 10}px`})}></div>
+      <div
+        id="content"
+        style=${styleMap({ display: this.expanded ? '' : 'none' })}
+      >
+        ${repeat(this.node.children, (node) => node.name, (node) => html`
+        <milo-test-nav-node
+          .depth=${this.depth + 1}
+          .node=${node}
+        >
+        </milo-test-nav-node>
+        `)}
+      </div>
+    `;
+  }
 
   protected render() {
     return html`
@@ -75,21 +96,7 @@ export class TestNavNodeElement extends MobxLitElement {
           @click=${() => this.treeState.selectedChildNode = this.isSelected ? null : this.node}}
         >${this.node!.name}</span>
       </div>
-      <div id="body">
-        <div id="content-ruler" style=${styleMap({left: `${this.depth * 10}px`})}></div>
-        <div
-          id="content"
-          style=${styleMap({ display: this.expanded ? '' : 'none' })}
-        >
-          ${repeat(this.wasExpanded ? this.node.children : [], (node) => node.name, (node) => html`
-          <milo-test-nav-node
-            .depth=${this.depth + 1}
-            .node=${node}
-          >
-          </milo-test-nav-node>
-          `)}
-        </div>
-      </div>
+      <div id="body">${this.renderBody()}</div>
     `;
   }
 

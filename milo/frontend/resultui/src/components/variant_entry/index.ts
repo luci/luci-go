@@ -51,12 +51,12 @@ export class VariantEntryElement extends MobxLitElement {
   }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
-    this.wasExpanded = this.wasExpanded || newVal;
+    this.neverExpanded = this.neverExpanded && !newVal;
   }
 
-  // Always render the children once it was expanded so the children's state
+  // Always render the content once it was expanded so the descendants' states
   // don't get reset after the node is collapsed.
-  @observable.ref private wasExpanded = false;
+  @observable.ref private neverExpanded = true;
 
   /**
    * Common prefix between this.variant.testId and this.prevTestId.
@@ -90,6 +90,43 @@ export class VariantEntryElement extends MobxLitElement {
       }
     }
     return res;
+  }
+
+  private renderBody() {
+    if (this.neverExpanded) {
+      return html``;
+    }
+    return html`
+      <div id="content-ruler"></div>
+      <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
+        <span id="variant-def">
+          <span
+            class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}
+          >${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result</span>
+          ${this.variantDef.length === 0 ? '' : '|'}
+          <span class="greyed-out">
+            ${this.variantDef.map(([k, v]) => html`
+            <span class="kv">
+              <span class="kv-key">${k}</span>
+              <span class="kv-value">${v}</span>
+            </span>
+            `)}
+          </span>
+        </span>
+        ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e) => html`
+        <div class="explanation-html">
+          ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
+        </div>
+        `)}
+        ${repeat(this.variant!.results, (r) => r.resultId, (r, i) => html`
+        <milo-result-entry
+          .id=${i + 1}
+          .testResult=${r}
+          .expanded=${this.hasSingleChild || !r.expected}
+        ></milo-result-entry>
+        `)}
+      </div>
+    `;
   }
 
   protected render() {
@@ -129,37 +166,7 @@ export class VariantEntryElement extends MobxLitElement {
             </div>
           </div>
         </div>
-        <div id="body">
-          <div id="content-ruler"></div>
-          <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
-            <span id="variant-def">
-              <span
-                class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}
-              >${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result</span>
-              ${this.variantDef.length === 0 ? '' : '|'}
-              <span class="greyed-out">
-                ${this.variantDef.map(([k, v]) => html`
-                <span class="kv">
-                  <span class="kv-key">${k}</span>
-                  <span class="kv-value">${v}</span>
-                </span>
-                `)}
-              </span>
-            </span>
-            ${repeat(this.wasExpanded ? this.variant!.exonerations : [], (e) => e.exonerationId, (e) => html`
-            <div class="explanation-html">
-              ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
-            </div>
-            `)}
-            ${repeat(this.wasExpanded ? this.variant!.results : [], (r) => r.resultId, (r, i) => html`
-            <milo-result-entry
-              .id=${i + 1}
-              .testResult=${r}
-              .expanded=${this.hasSingleChild || !r.expected}
-            ></milo-result-entry>
-            `)}
-          </div>
-        </div>
+        <div id="body">${this.renderBody()}</div>
       </div>
     `;
   }
