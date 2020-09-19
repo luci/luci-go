@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "7234e8ba_ba472d8a",
+        "filename": "cv/internal/gerrit/gobmap/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-19T20:43:41Z",
+      "side": 1,
+      "message": "Yes, I agree that a small and documented API is more important than package docstring, and the important part is the first sentence :-)\n\nI was thinking that the the structure and even the name \"gobmap\" may be initially un-obvious to future readers (who haven\u0027t read the design doc etc), and the fact that there is a mapping between GoB host/repo/refs and config is central to the idea of the package; and many packages we add initially may sit here unchanged and be read by various people in the future without a lot of context.\n\nThe new description now LGTM.",
+      "parentUuid": "38209d24_477c8488",
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f18b65c_01c43f12",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 1
@@ -278,6 +296,30 @@
       "side": 1,
       "message": "good question! Gerrit host. Fixed.",
       "parentUuid": "6438cdb2_7a737647",
+      "range": {
+        "startLine": 33,
+        "startChar": 60,
+        "endLine": 34,
+        "endChar": 6
+      },
+      "revId": "3efadcfb3fd126b6b91ea095fc8aebbd1802fc54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c26e2af4_08e3dfd4",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-19T20:43:41Z",
+      "side": 1,
+      "message": "Thanks :-)",
+      "parentUuid": "4a4276b8_6b134907",
       "range": {
         "startLine": 33,
         "startChar": 60,
