@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4b409c7_4bb6f395",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-20T04:34:12Z",
+      "side": 1,
+      "message": "I don\u0027t know absence of LIMIT will affect the performance. Hopefully it is fine. We\u0027d need to try it with a lot of rows  while you fetch only top few.",
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45d3b81a_22ad0b17",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-20T04:34:12Z",
+      "side": 1,
+      "message": "What do you have in mind? I\u0027d expect the spanner client to pre-fetch the next page of results while we are processing the current one.",
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8acbc32f_1c7cd3c2",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-20T04:34:12Z",
+      "side": 1,
+      "message": "consider making it slightly more generic by accepting an IDSet. \n\nalso not sure about \"idx\" prefix. This func doesn\u0027t seem to care about that.",
+      "range": {
+        "startLine": 153,
+        "startChar": 87,
+        "endLine": 153,
+        "endChar": 110
+      },
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
