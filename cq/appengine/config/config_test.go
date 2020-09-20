@@ -156,7 +156,6 @@ func TestValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldNotBeNil)
 			})
 			Convey("config_groups", func() {
-
 				orig := cfg.ConfigGroups[0]
 				add := func(refRegexps ...string) {
 					// Add new regexps sequence with constant valid gerrit url and project and
@@ -192,6 +191,26 @@ func TestValidation(t *testing.T) {
 					cfg.ConfigGroups[1].Fallback = v2.Toggle_YES
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
+				})
+
+				Convey("with unqiue names", func() {
+					cfg.ConfigGroups = nil
+					add("refs/heads/.+")
+					add("refs/branch-heads/.+")
+					add("refs/other-heads/.+")
+					Convey("dups not allowed", func() {
+						cfg.ConfigGroups[0].Name = "aaa"
+						cfg.ConfigGroups[1].Name = "bbb"
+						cfg.ConfigGroups[2].Name = "bbb"
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "duplicate config_group `name` \"bbb\" not allowed")
+					})
+					Convey("empty dups for now allowed", func() {
+						cfg.ConfigGroups[1].Name = ""
+						cfg.ConfigGroups[2].Name = ""
+						validateProjectConfig(vctx, &cfg)
+						So(mustWarn(vctx.Finalize()), ShouldErrLike, "specify `name`")
+					})
 				})
 			})
 		})
