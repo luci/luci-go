@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package chromium
+package eval
 
 import (
 	"context"
@@ -21,14 +21,13 @@ import (
 	"os"
 
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
-// Main evaluates an RTS algorithm for Chromium, prints results and exits the
-// process.
-func Main(algo eval.Algorithm) {
-	ev := &eval.Eval{
+// Main evaluates an RTS algorithm, prints results and exits the process.
+func Main(backend Backend, algo Algorithm) {
+	ev := &Eval{
 		Algorithm: algo,
+		Backend:   backend,
 	}
 	ev.RegisterFlags(flag.CommandLine)
 	flag.Parse()

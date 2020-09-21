@@ -12,21 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package chromium
 
-import (
-	"math/rand"
-	"time"
+import "go.chromium.org/luci/rts/presubmit/eval"
 
-	"go.chromium.org/luci/rts/presubmit/eval"
-	"go.chromium.org/luci/rts/presubmit/eval/chromium"
-)
+// Backend implements eval.Backend for Chromium.
+type Backend struct{}
 
-func main() {
-	rand.Seed(time.Now().Unix())
-	eval.Main(&chromium.Backend{}, func(in eval.Input) (eval.Output, error) {
-		return eval.Output{
-			ShouldRun: rand.Intn(2) == 0,
-		}, nil
-	})
-}
+var _ eval.Backend = (*Backend)(nil)
