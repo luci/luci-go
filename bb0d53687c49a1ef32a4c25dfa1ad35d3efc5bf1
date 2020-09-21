@@ -1,0 +1,302 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c813a390_44416118",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "nit: accuracy?",
+      "range": {
+        "startLine": 19,
+        "startChar": 16,
+        "endLine": 19,
+        "endChar": 25
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ce52f51_8ac7f418",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "LGTM % algo error return possibility + minor nits",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95e42230_71dd29a8",
+        "filename": "rts/presubmit/eval/chromium/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "what about Ctrl+C handling?",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f988d79_ff7d5511",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "I wish this was rate.Limiter and similarly `WindowDays int` was just `Window time.Duration`. \nI see that using flags would require more juggling around.\n\nUpdate: I see you are actually using rate limiter. yay!",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 19
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d22986d_e3a586fc",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "oh, is this supposed to run on a *bot*? I thought this was dev\u0027s workstation.\n\nupdate: I see you are actually using os.UserCacheDir() by default. Maybe create a defualtCacheDir() func similar to constants above and use its returned value as default?",
+      "range": {
+        "startLine": 59,
+        "startChar": 80,
+        "endLine": 59,
+        "endChar": 91
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52a5476a_de416980",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "ah, cool!",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f0019882_122d095d",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "nit: I thought Gerrit GetChange is under Gerrit Rest API quota, isn\u0027t it?",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 24
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b59ef21f_63bbecad",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "I\u0027d just say \"Gerrit quota is shared across all Gerrit hosts\". \"per Borg Cell\" isn\u0027t very useful for an open source reader w/o understanding of Borg.",
+      "range": {
+        "startLine": 81,
+        "startChar": 31,
+        "endLine": 82,
+        "endChar": 49
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "549e377a_9fdda9e6",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "FWIW, you can cache these, too, and Gerrit would really appreciate since it\u0027s not a cheap call.",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20060a98_f3fa7240",
+        "filename": "rts/presubmit/eval/rejected.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "(for myself) will this cache CL details, too?",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b88e05e_412ab5e3",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "why are you trying to avoid writing after an error? L60 Seems highly unlikely to fail.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 2
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5d377ae_5955003d",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "redundant",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "403d57f1_a92778b8",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "I wonder, why would you want to allow algo to fail?\nAs it stands, any failure is basically just like a panic, but panic would conveniently print stack traces immediately.\nAlso, this mixes GoB failures to retrieve files with algo failures.\n\nHence, I think it\u0027d be cleaner if algo isn\u0027t allowed to fail (ie just panic) while failure to fetch change files is counted separately and reported as such instead of terminating the process and producing nothing.\n\nI\u0027m 100% open to doing this in the future CL above your formidable stack.",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 59
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8323ff57_d6439843",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T23:42:48Z",
+      "side": 1,
+      "message": "nit-nit: %5d/%5d would look nicer when printed several times.",
+      "range": {
+        "startLine": 155,
+        "startChar": 43,
+        "endLine": 155,
+        "endChar": 48
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
