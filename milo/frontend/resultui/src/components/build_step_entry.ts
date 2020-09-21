@@ -28,17 +28,23 @@ import { ChainableURL, renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
 import './expandable_entry';
+import { OnEnterList } from './lazy_list';
 
 /**
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
 @consumeUserConfigs
-export class BuildStepEntryElement extends MobxLitElement {
+export class BuildStepEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref userConfigs!: UserConfigs;
 
   @observable.ref number = 0;
   @observable.ref step!: StepExt;
+
+  /**
+   * If set to true, render a place holder until onEnterList is called.
+   */
+  @observable.ref prerender = false;
 
   @observable.ref private _expanded = false;
   get expanded() { return this._expanded; }
@@ -55,6 +61,10 @@ export class BuildStepEntryElement extends MobxLitElement {
     this.expanded = expand;
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
       .forEach((e) => e.toggleAllSteps(expand));
+  }
+
+  onEnterList() {
+    this.prerender = false;
   }
 
   @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
@@ -111,6 +121,10 @@ export class BuildStepEntryElement extends MobxLitElement {
   }
 
   protected render() {
+    if (this.prerender) {
+      return html`<div id="place-holder"></div>`;
+    }
+
     return html`
       <milo-expandable-entry
         .expanded=${this.expanded}
@@ -139,6 +153,10 @@ export class BuildStepEntryElement extends MobxLitElement {
   static styles = css`
     :host {
       display: block;
+    }
+
+    #place-holder {
+      height: 24px;
     }
 
     #status-indicator {
