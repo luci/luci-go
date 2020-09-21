@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1ce0461_4ada84a8",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T00:33:04Z",
+      "side": 1,
+      "message": "Shouldn\u0027t the default value of this be true?\n\nI think we can change the name to \"hasEnteredList\" to make it more clear (in this case, the default value should be false)",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "271a4bb4_54fd6133",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T00:33:04Z",
+      "side": 1,
+      "message": "I understand that in this case, we can have an estimation of the height. What happens if we do not have an exact estimate of the height?",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfb0ded3_f66a12da",
+        "filename": "milo/frontend/resultui/src/components/lazy_list.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T00:33:04Z",
+      "side": 1,
+      "message": "nits: OnEnterList",
+      "range": {
+        "startLine": 29,
+        "startChar": 36,
+        "endLine": 29,
+        "endChar": 47
+      },
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ff60bc_62ae619d",
+        "filename": "milo/frontend/resultui/src/components/lazy_list.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T00:33:04Z",
+      "side": 1,
+      "message": "Does this assume that the element is sorted by offsetTop? Will this always be the case?",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
