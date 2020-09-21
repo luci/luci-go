@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7fd9beb4_7be56e47",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-21T04:03:00Z",
+      "side": 1,
+      "message": "optimization nit: `stringset.New(len(cfg.ConfigGroups))`\n\nhttps://pkg.go.dev/go.chromium.org/luci/common/data/stringset#New",
+      "range": {
+        "startLine": 104,
+        "startChar": 15,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "3947beef2bc20fd16134c76471ac10b4e2798832",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a027af7_6946814d",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-21T04:03:00Z",
+      "side": 1,
+      "message": "Should this be `Errorf` as the commit msg says *require* config names to be unique?",
+      "range": {
+        "startLine": 136,
+        "startChar": 6,
+        "endLine": 136,
+        "endChar": 14
+      },
+      "revId": "3947beef2bc20fd16134c76471ac10b4e2798832",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
