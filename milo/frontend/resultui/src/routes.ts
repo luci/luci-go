@@ -104,7 +104,7 @@ router.setRoutes({
           ],
         },
         {
-          path: '/p/:project/:bucket/:builder/:build_num_or_id',
+          path: '/p/:project/builders/:bucket/:builder/:build_num_or_id',
           component: 'milo-build-state-provider',
           children: [
             {
