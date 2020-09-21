@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f1285338_c7d60ec4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-21T03:55:13Z",
+      "side": 1,
+      "message": "What\u0027s the context for this limitation?",
+      "range": {
+        "startLine": 7,
+        "startChar": 31,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "8b688c1b7bafb7ef0f23314868d0062d3b135dbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
