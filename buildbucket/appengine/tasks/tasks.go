@@ -68,6 +68,28 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
+		ID: "export-bigquery",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			task := m.(*taskdefs.ExportBigQuery)
+			body, err := json.Marshal(map[string]interface{}{
+				"id": task.BuildId,
+			})
+			if err != nil {
+				return nil, errors.Annotate(err, "error marshaling payload").Err()
+			}
+			return &tq.CustomPayload{
+				Body:        body,
+				Method:      "POST",
+				RelativeURI: fmt.Sprintf("/internal/task/bq/export/%d", task.BuildId),
+			}, nil
+		},
+		Handler:   rejectionHandler("export-bigquery"),
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.ExportBigQuery)(nil),
+		Queue:     "backend-default",
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "notify-pubsub",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.NotifyPubSub)
@@ -109,7 +131,18 @@ func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) 
 	})
 }
 
-// NotifyPubSub enqueues a task to publish a Pub/Sub notification for the given
+// ExportBigQuery enqueues a task queue task to export the given build to
+// BigQuery.
+func ExportBigQuery(ctx context.Context, task *taskdefs.ExportBigQuery) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: task,
+	})
+}
+
+// NotifyPubSub enqueues a task queue task to notify Pub/Sub about the given
 // build.
 func NotifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
 	if task.GetBuildId() == 0 {

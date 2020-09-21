@@ -164,7 +164,7 @@ func TestCancelBuild(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Status: pb.Status_CANCELED,
 				})
-				So(sch.Tasks(), ShouldBeEmpty)
+				So(sch.Tasks(), ShouldHaveLength, 2)
 			})
 
 			Convey("ended", func() {
@@ -273,7 +273,7 @@ func TestCancelBuild(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Status: pb.Status_CANCELED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 2)
+				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
 		})
 	})

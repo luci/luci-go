@@ -129,9 +129,14 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			}); err != nil {
 				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
 			}
-			if err := notifyPubSub(ctx, bld); err != nil {
-				return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
-			}
+		}
+		if err := tasks.ExportBigQuery(ctx, &taskdefs.ExportBigQuery{
+			BuildId: bld.ID,
+		}); err != nil {
+			return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
+		}
+		if err := notifyPubSub(ctx, bld); err != nil {
+			return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
 		}
 
 		bld.Leasee = nil

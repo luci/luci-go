@@ -95,6 +95,39 @@ func TestTasks(t *testing.T) {
 			})
 		})
 
+		Convey("ExportBigQuery", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					So(ExportBigQuery(ctx, nil), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty", func() {
+					task := &taskdef.ExportBigQuery{}
+					So(ExportBigQuery(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("zero", func() {
+					task := &taskdef.ExportBigQuery{
+						BuildId: 0,
+					}
+					So(ExportBigQuery(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				task := &taskdef.ExportBigQuery{
+					BuildId: 1,
+				}
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return ExportBigQuery(ctx, task)
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
+
 		Convey("NotifyPubSub", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
