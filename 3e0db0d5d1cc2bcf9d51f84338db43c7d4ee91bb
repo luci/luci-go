@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c36c504c_1ce814aa",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:28:06Z",
+      "side": 1,
+      "message": "It\u0027s an option to enable the \"prerender\" feature.\nIf the user choose to not enable it, it will just behave like a normal entry with no prerendering.\nAdded some comments.",
+      "parentUuid": "b1ce0461_4ada84a8",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "271a4bb4_54fd6133",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 10
@@ -30,6 +48,24 @@
       "writtenOn": "2020-09-21T00:33:04Z",
       "side": 1,
       "message": "I understand that in this case, we can have an estimation of the height. What happens if we do not have an exact estimate of the height?",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6dcb4c8_e95e6a7f",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:28:06Z",
+      "side": 1,
+      "message": "Added comments to lazy_list.ts\n\n * The placeholder element should be of equal height of the actual element.\n * 1. If it has a smaller height, some off-view elements might be rendered.\n * 2. If it has a greater height, some in-view elements might not be rendered.\n *\n * If the actual element height can\u0027t be determined before rendering, you should\n * set the placeholder height to the lower bound of the possible actual height.",
+      "parentUuid": "271a4bb4_54fd6133",
       "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "1258345d_ae5aff7a",
+        "filename": "milo/frontend/resultui/src/components/lazy_list.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:28:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfb0ded3_f66a12da",
+      "range": {
+        "startLine": 29,
+        "startChar": 36,
+        "endLine": 29,
+        "endChar": 47
+      },
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0ff60bc_62ae619d",
         "filename": "milo/frontend/resultui/src/components/lazy_list.ts",
         "patchSetId": 10
@@ -70,6 +130,24 @@
       "writtenOn": "2020-09-21T00:33:04Z",
       "side": 1,
       "message": "Does this assume that the element is sorted by offsetTop? Will this always be the case?",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb0f9ec6_1b8407d1",
+        "filename": "milo/frontend/resultui/src/components/lazy_list.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:28:06Z",
+      "side": 1,
+      "message": "Normally that would be the case.\nBut if styles like, transform:, position: fixed, and others are applied, this may not be true.\nAdded a comment to the top to document this.",
+      "parentUuid": "e0ff60bc_62ae619d",
       "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
