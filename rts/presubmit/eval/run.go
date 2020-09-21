@@ -104,7 +104,6 @@ func (r *evalRun) processPatchSet(ctx context.Context, rp *RejectedPatchSet) (el
 	case clNotFound.In(err):
 		// The CL is deleted  => not eligible.
 		eligible = false
-		err = nil
 		return
 
 	case err != nil:
