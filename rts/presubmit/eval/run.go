@@ -99,6 +99,10 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 }
 
 func (r *evalRun) processPatchSet(ctx context.Context, rp *RejectedPatchSet) (eligible, wouldReject bool, err error) {
+	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
+	// Most RTS algorithms would satisfy reject such patchset, so they represent
+	// noise.
+
 	files, err := r.gerrit.ChangedFiles(ctx, &rp.Patchset)
 	switch {
 	case clNotFound.In(err):
