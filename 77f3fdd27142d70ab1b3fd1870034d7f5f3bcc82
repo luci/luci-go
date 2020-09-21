@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "daf02d53_392a3576",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:36:51Z",
+      "side": 1,
+      "message": "Can\u0027t find a build without blamelist in dev.\nHere\u0027s a screenshot:\nhttps://screenshot.googleplex.com/7vaCwwZKXJUfsna",
+      "revId": "77f3fdd27142d70ab1b3fd1870034d7f5f3bcc82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
