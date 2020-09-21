@@ -22,6 +22,30 @@
       "revId": "8b688c1b7bafb7ef0f23314868d0062d3b135dbb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d1e55f54_7de6386f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T07:03:23Z",
+      "side": 1,
+      "message": "Lately, I think we should limit most user-specified things up front, even if there is no reason to *yet*. This is my #1 motivation.",
+      "parentUuid": "f1285338_c7d60ec4",
+      "range": {
+        "startLine": 7,
+        "startChar": 31,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "8b688c1b7bafb7ef0f23314868d0062d3b135dbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
