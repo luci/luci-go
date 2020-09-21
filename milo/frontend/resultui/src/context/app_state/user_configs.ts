@@ -19,6 +19,9 @@ import { consumeContext, provideContext } from '../../libs/context';
 
 // Backward incompatible changes are not allowed.
 export interface UserConfigs {
+  hints: {
+    showResultDbIntegrationHint: boolean;
+  };
   steps: {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
@@ -31,6 +34,9 @@ export interface UserConfigs {
 }
 
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
+  hints: {
+    showResultDbIntegrationHint: true,
+  },
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
