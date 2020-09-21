@@ -50,6 +50,10 @@ type Eval struct {
 	// Maximum QPS to send to Gerrit.
 	// If <=0, defaults to 10.
 	GerritQPSLimit int
+
+	// RejectedPatchSetProvider retrieves all patchsets rejected by CQ within the
+	// given date range, along with tests that caused the rejection.
+	RejectedPatchSetProvider RejectedPatchSetProvider
 }
 
 // RegisterFlags registers flags for the Eval fields.
