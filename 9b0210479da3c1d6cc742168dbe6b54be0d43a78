@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "acda468b_79c316b8",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T06:08:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cb6b660_9b545673",
+      "revId": "9b0210479da3c1d6cc742168dbe6b54be0d43a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5fb08371_eadb0650",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2020-09-21T05:58:25Z",
       "side": 1,
       "message": "I imagine if the user click \"Don\u0027t show again\", it should be \"permanently permanent\", if we put this in userConfig, if the user starts a new session, they will see it again?",
+      "revId": "9b0210479da3c1d6cc742168dbe6b54be0d43a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d9e20b6_42830450",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T06:08:52Z",
+      "side": 1,
+      "message": "They will not see it again.\nUnless they\n1. changed the browser/machine, or\n2. turned our incognito mode, or\n3. purged local storage.\nPerhaps userConfig should be named something like browserConfig.\nBecause it\u0027s not really per user setting.",
+      "parentUuid": "5fb08371_eadb0650",
       "revId": "9b0210479da3c1d6cc742168dbe6b54be0d43a78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
