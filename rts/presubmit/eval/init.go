@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -84,8 +85,16 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 		limit = 10
 	}
 
+	httpClient := &http.Client{Transport: transport}
+
 	return &gerritClient{
-		httpClient: &http.Client{Transport: transport},
-		limiter:    rate.NewLimiter(limit, 1),
+		gerritGetChangeRPC: func(ctx context.Context, host string, req *gerritpb.GetChangeRequest) (*gerritpb.ChangeInfo, error) {
+			client, err := gerrit.NewRESTClient(httpClient, host, true)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to create a Gerrit client").Err()
+			}
+			return client.GetChange(ctx, req)
+		},
+		limiter: rate.NewLimiter(limit, 1),
 	}, nil
 }
