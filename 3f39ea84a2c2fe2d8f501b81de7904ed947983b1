@@ -16,6 +16,24 @@
       "revId": "3f39ea84a2c2fe2d8f501b81de7904ed947983b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "76ec115f_d22e3bb2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T04:15:11Z",
+      "side": 1,
+      "message": "Can you deploy this to luci-milo-dev?",
+      "parentUuid": "346415e3_88c7204a",
+      "revId": "3f39ea84a2c2fe2d8f501b81de7904ed947983b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
