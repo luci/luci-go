@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "346415e3_88c7204a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T02:46:28Z",
+      "side": 1,
+      "message": "Demo:\nhttps://localhost:8080/ui/p/chromium/ci/linux-rel-swarming-staging/7520/test-results",
+      "revId": "3f39ea84a2c2fe2d8f501b81de7904ed947983b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
