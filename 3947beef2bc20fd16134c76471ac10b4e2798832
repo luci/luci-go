@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "1b7c5362_fc3e5266",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T22:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fd9beb4_7be56e47",
+      "range": {
+        "startLine": 104,
+        "startChar": 15,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "3947beef2bc20fd16134c76471ac10b4e2798832",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a027af7_6946814d",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -86,6 +110,30 @@
       "revId": "3947beef2bc20fd16134c76471ac10b4e2798832",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58bbc2da_8f2407f9",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-21T22:52:29Z",
+      "side": 1,
+      "message": "yes, I meant an error, fixed. The idea is that if someone specifies CQ name, it should be unique. This is to avoid migration twice.\n\n\u003e Do we need to go through existing configs to make sure there are no invalid config group names, or do we need to make a PSA about new requirements before making this an error?\n\nI don\u0027t send PSA about every minor config change. Config validation does its job. In the future, I hope we\u0027ll automated nagging via lucicfg.\n\nI didn\u0027t run this against all current configs, but I bet it won\u0027t affect anyone.",
+      "parentUuid": "73f8cbc8_0dba0603",
+      "range": {
+        "startLine": 136,
+        "startChar": 6,
+        "endLine": 136,
+        "endChar": 14
+      },
+      "revId": "3947beef2bc20fd16134c76471ac10b4e2798832",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
