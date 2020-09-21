@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1cb6b660_9b545673",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T05:58:25Z",
+      "side": 1,
+      "message": "May be \"please ask luci-eng for help\"?",
+      "revId": "9b0210479da3c1d6cc742168dbe6b54be0d43a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fb08371_eadb0650",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T05:58:25Z",
+      "side": 1,
+      "message": "I imagine if the user click \"Don\u0027t show again\", it should be \"permanently permanent\", if we put this in userConfig, if the user starts a new session, they will see it again?",
+      "revId": "9b0210479da3c1d6cc742168dbe6b54be0d43a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
