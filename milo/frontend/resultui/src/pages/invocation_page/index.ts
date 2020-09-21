@@ -50,6 +50,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   connectedCallback() {
     super.connectedCallback();
     this.invocationState.invocationId = this.invocationId;
+    this.invocationState.initialized = true;
   }
 
   private renderInvocationState() {

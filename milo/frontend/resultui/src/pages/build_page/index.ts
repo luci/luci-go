@@ -69,10 +69,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     this.buildState.builder = this.builder;
     this.buildState.buildNumOrId = this.buildNumOrId;
 
-    this.disposers.push(autorun(
-      () => this.invocationState.invocationId = this.buildState.buildPageData
-        ?.infra?.resultdb.invocation?.slice('invocations/'.length) || '',
-    ));
+    this.disposers.push(autorun(() => {
+      const bpd = this.buildState.buildPageData;
+      if (!bpd) {
+        return;
+      }
+      this.invocationState.invocationId = bpd.infra?.resultdb.invocation
+        ?.slice('invocations/'.length) || '';
+      this.invocationState.initialized = true;
+    }));
   }
 
   disconnectedCallback() {
