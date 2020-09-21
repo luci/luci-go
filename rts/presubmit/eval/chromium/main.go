@@ -28,7 +28,8 @@ import (
 // process.
 func Main(algo eval.Algorithm) {
 	ev := &eval.Eval{
-		Algorithm: algo,
+		Algorithm:                algo,
+		RejectedPatchSetProvider: RejectedPatchSets,
 	}
 	ev.RegisterFlags(flag.CommandLine)
 	flag.Parse()
