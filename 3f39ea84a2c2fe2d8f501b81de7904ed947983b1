@@ -34,6 +34,24 @@
       "revId": "3f39ea84a2c2fe2d8f501b81de7904ed947983b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "39be7e12_7d88fd50",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-21T05:01:31Z",
+      "side": 1,
+      "message": "Sorry. It was deployed. But I posted a wrong link.\nhttps://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/linux-rel-swarming-staging/7520/test-results",
+      "parentUuid": "76ec115f_d22e3bb2",
+      "revId": "3f39ea84a2c2fe2d8f501b81de7904ed947983b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
