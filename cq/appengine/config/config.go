@@ -123,14 +123,14 @@ type refKey struct {
 }
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
-	re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]*$")
+	re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	switch {
 	case group.Name == "":
 		// TODO(crbug/1063508): make this an error.
 		ctx.Warningf("please, specify `name` for monitoring and analytics")
 	case !re.MatchString(group.Name):
 		// TODO(crbug/1063508): make this an error.
-		ctx.Warningf("`name` must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$': %q", group.Name)
+		ctx.Warningf("`name` must match %q but %q given", re, group.Name)
 	}
 
 	if len(group.Gerrit) == 0 {
