@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "840b3870_9deb976e",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-21T04:07:52Z",
+      "side": 1,
+      "message": "I see. I missed the part when you set it in steps_tab.ts",
+      "parentUuid": "c36c504c_1ce814aa",
+      "revId": "3e0db0d5d1cc2bcf9d51f84338db43c7d4ee91bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "271a4bb4_54fd6133",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 10
