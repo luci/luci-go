@@ -153,10 +153,13 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     return html`
       <div id="build-summary">
         <div id="build-id">
-          <span id="build-id-label">Build</span>
-          <a href=${getURLForProject(this.builder.project)}>${this.builder.project}</a> /
-          <span>${this.builder.bucket}</span> /
-          <a href=${getURLForBuilder(this.builder)}>${this.builder.builder}</a> /
+          <span id="build-id-label">Build </span>
+          <a href=${getURLForProject(this.builder.project)}>${this.builder.project}</a>
+          <span>/</span>
+          <span>${this.builder.bucket}</span>
+          <span>/</span>
+          <a href=${getURLForBuilder(this.builder)}>${this.builder.builder}</a>
+          <span>/</span>
           <span>${this.buildNumOrId}</span>
         </div>
         <div class="delimiter"></div>
@@ -192,6 +195,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
     #build-id {
       flex: 0 auto;
+      font-size: 0px;
+    }
+    #build-id > * {
+      font-size: 14px;
     }
 
     #build-id-label {
