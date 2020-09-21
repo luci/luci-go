@@ -60,6 +60,7 @@ type gerritClient struct {
 	// Mockable.
 	getChangeRPC func(ctx context.Context, host string, req *gerritpb.GetChangeRequest) (*gerritpb.ChangeInfo, error)
 	limiter      *rate.Limiter
+	clCache      cache
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.
@@ -107,8 +108,24 @@ func (c *gerritClient) ChangedFiles(ctx context.Context, ps *GerritPatchset) ([]
 // If readCache is false, ignores the cache when reading, but still caches the
 // fetched change.
 func (c *gerritClient) ReadChange(ctx context.Context, cl *GerritChange, readCache bool) (*gerritpb.ChangeInfo, error) {
-	// TODO(crbug.com/1112125): implement caching.
-	return c.fetchChange(ctx, cl)
+	cacheKey := fmt.Sprintf("%s-%d", cl.Host, cl.Number)
+
+	if !readCache {
+		info, err := c.fetchChange(ctx, cl)
+		if err != nil {
+			return nil, err
+		}
+		c.clCache.Put(ctx, cacheKey, info)
+		return info, nil
+	}
+
+	info, err := c.clCache.GetOrCreate(ctx, cacheKey, func() (interface{}, error) {
+		return c.fetchChange(ctx, cl)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return info.(*gerritpb.ChangeInfo), nil
 }
 
 func (c *gerritClient) fetchChange(ctx context.Context, cl *GerritChange) (*gerritpb.ChangeInfo, error) {
