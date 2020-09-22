@@ -16,6 +16,57 @@
       "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "49d84b08_03fde0c5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-09-22T20:00:35Z",
+      "side": 1,
+      "message": "One small note about select use.",
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4172afc1_acd8f6bf",
+        "filename": "common/testing/assertions/context_tests.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-09-22T20:00:35Z",
+      "side": 1,
+      "message": "you can just use default:",
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2958aed2_ff361139",
+        "filename": "common/testing/assertions/context_tests.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-09-22T20:00:35Z",
+      "side": 1,
+      "message": "same",
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
