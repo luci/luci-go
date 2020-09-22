@@ -17,6 +17,7 @@ package resultdb
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
@@ -58,25 +59,19 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 	eg.Go(func() error {
 		defer close(results)
-		// TODO(crbug.com/1074407): Instead of getting a single fixed-length
-		// page of results here, pass a callback to get as many results as needed.
-		idxInvs, err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange())
-		if err != nil {
-			return err
-		}
-
-		// TODO(crbug.com/1107678): Parallelize the following loop.
-		for _, idxInv := range idxInvs {
+		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
 			select {
 			case <-workerCtx.Done():
 				return workerCtx.Err()
 			default:
-				if err := matchingResultsInInvTree(workerCtx, in, idxInv, results); err != nil {
+				// TODO(crbug.com/1107678): Do not block here, use a worker instead.
+				if err := matchingResultsInInvTree(workerCtx, in, inv, ts, results); err != nil {
 					return err
 				}
 			}
-		}
-		return nil
+			return nil
+		})
+
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
@@ -155,8 +150,8 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 
 // matchingResultsInInvTree gets the matching results reachable from a given
 // invocation, and streams them over the given channel.
-func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, idxInv *invocations.Historical, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
-	reachableInvs, err := invocations.Reachable(ctx, invocations.NewIDSet(idxInv.ID))
+func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, idxInvID invocations.ID, ts *timestamp.Timestamp, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
+	reachableInvs, err := invocations.Reachable(ctx, invocations.NewIDSet(idxInvID))
 	if err != nil {
 		return err
 	}
@@ -178,7 +173,7 @@ func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRe
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: idxInv.IndexTimestamp}:
+				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: ts}:
 					return nil
 				}
 			})
