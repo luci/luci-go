@@ -29,6 +29,7 @@ import { UserConfigs } from '../app_state/user_configs';
  */
 export class InvocationState {
   @observable.ref invocationId = '';
+  @observable.ref initialized = false;
 
   constructor(private appState: AppState, private userConfigs: UserConfigs) {}
 

@@ -145,12 +145,13 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderMain() {
     const state = this.invocationState;
 
-    if (!state.invocation) {
+    if (state.initialized && !state.invocationId) {
       return html`
         <div id="no-invocation">
           No associated invocation.<br>
           You need to integrate with ResultDB to see the test results.<br>
-          <a href="http://go/resultdb" target="_blank">go/resultdb</a>
+          See <a href="http://go/resultdb" target="_blank">go/resultdb</a>
+          or ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
         </div>
       `;
     }
@@ -182,9 +183,21 @@ export class TestResultsTabElement extends MobxLitElement {
             >
               Loading <milo-dot-spinner></milo-dot-spinner>
             </span>
-            <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
+            <mwc-icon class="inline-icon" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
           </span>
         </div>
+        <span
+          class="list-entry"
+          style=${styleMap({'display': this.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading ? '' : 'none'})}
+        >
+          Don't see results of your test framework here?
+          This might be because they are not integrated with ResultDB yet.
+          Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+          <span
+            id="hide-hint"
+            @click=${() => this.userConfigs.hints.showResultDbIntegrationHint = false}
+          >Don't show again</span>
+        </span>
       </div>
     `;
   }
@@ -194,12 +207,10 @@ export class TestResultsTabElement extends MobxLitElement {
       <div id="header">
         <milo-test-filter></milo-test-filter>
         <mwc-button
-          class="action-button"
           dense unelevated
           @click=${() => this.toggleAllVariants(true)}
         >Expand All</mwc-button>
         <mwc-button
-          class="action-button"
           dense unelevated
           @click=${() => this.toggleAllVariants(false)}
         >Collapse All</mwc-button>
@@ -264,10 +275,15 @@ export class TestResultsTabElement extends MobxLitElement {
       color: var(--active-text-color);
       cursor: pointer;
     }
-    #load-info {
+    .inline-icon {
       color: var(--default-text-color);
       --mdc-icon-size: 1.2em;
       vertical-align: bottom;
+    }
+    #hide-hint {
+      margin-left: 5px;
+      color: var(--active-text-color);
+      cursor: pointer;
     }
   `;
 }
