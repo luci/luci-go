@@ -125,6 +125,30 @@
     },
     {
       "key": {
+        "uuid": "96558833_13a846bd",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-22T01:20:42Z",
+      "side": 1,
+      "message": "Added `nextData()` and `addQuery()`.",
+      "parentUuid": "9541361b_e49aade1",
+      "range": {
+        "startLine": 400,
+        "startChar": 1,
+        "endLine": 400,
+        "endChar": 8
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca70114b_99a2574a",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -193,6 +217,30 @@
       "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e19e7c4c_301160fc",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-22T01:20:42Z",
+      "side": 1,
+      "message": "Yeah, added.",
+      "parentUuid": "e53dfdc4_ce05c394",
+      "range": {
+        "startLine": 424,
+        "startChar": 8,
+        "endLine": 424,
+        "endChar": 26
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -267,6 +315,30 @@
     },
     {
       "key": {
+        "uuid": "3f8bd59c_5832d416",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-22T01:20:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17a71239_c89ab3ae",
+      "range": {
+        "startLine": 433,
+        "startChar": 54,
+        "endLine": 433,
+        "endChar": 63
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81ddd983_b55e1dc2",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -302,6 +374,30 @@
       "side": 1,
       "message": "Working on it.",
       "parentUuid": "81ddd983_b55e1dc2",
+      "range": {
+        "startLine": 439,
+        "startChar": 14,
+        "endLine": 439,
+        "endChar": 17
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "220954f6_dfcc7c92",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-22T01:20:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "edc82555_1b400d9b",
       "range": {
         "startLine": 439,
         "startChar": 14,
@@ -382,6 +478,30 @@
       "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f9276db_124dd4ad",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 847,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-22T01:20:42Z",
+      "side": 1,
+      "message": "cached inside the queryIterator",
+      "parentUuid": "d89e14c2_00a2358e",
+      "range": {
+        "startLine": 847,
+        "startChar": 56,
+        "endLine": 847,
+        "endChar": 61
+      },
+      "revId": "3bc81b91a0befe0f0cddb5829abfe89b660ae71b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
