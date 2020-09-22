@@ -24,9 +24,10 @@ import (
 
 // queryIterator is an iterator for datastore query results.
 type queryIterator struct {
-	order              []IndexColumn
-	currentQueryResult *rawQueryResult
-	itemCh             chan *rawQueryResult
+	order                 []IndexColumn
+	currentQueryResult    *rawQueryResult
+	itemCh                chan *rawQueryResult
+	currentItemOrderCache string // lazy loading (loaded when `CurrentItemOrder()` is call).
 }
 
 // startQueryIterator starts to run the given query and return the iterator for query results.
@@ -79,32 +80,32 @@ func (qi *queryIterator) CurrentItemKey() string {
 }
 
 // CurrentItemOrder returns serialized propertied which fields are used in sorting orders.
-func (qi *queryIterator) CurrentItemOrder() (s string, err error) {
+func (qi *queryIterator) CurrentItemOrder() string {
+	if qi.currentItemOrderCache != "" {
+		return qi.currentItemOrderCache
+	}
+
 	if qi.currentQueryResult == nil {
-		return
+		return ""
 	}
 
 	invBuf := cmpbin.Invertible(&bytes.Buffer{})
 	for _, column := range qi.order {
 		invBuf.SetInvert(column.Descending)
 		if column.Property == "__key__" {
-			if err = Serialize.Key(invBuf, qi.currentQueryResult.key); err != nil {
-				return
-			}
+			panicIf(Serialize.Key(invBuf, qi.currentQueryResult.key))
 			continue
 		}
 		columnData := qi.currentQueryResult.data[column.Property].Slice()
 		sort.Sort(columnData)
 		if column.Descending {
-			err = Serialize.Property(invBuf, columnData[columnData.Len()-1])
+			panicIf(Serialize.Property(invBuf, columnData[columnData.Len()-1]))
 		} else {
-			err = Serialize.Property(invBuf, columnData[0])
-		}
-		if err != nil {
-			return
+			panicIf(Serialize.Property(invBuf, columnData[0]))
 		}
 	}
-	return invBuf.String(), err
+	qi.currentItemOrderCache = invBuf.String()
+	return qi.currentItemOrderCache
 }
 
 // Next iterate the next item and put it into currentQueryResult.
@@ -115,6 +116,7 @@ func (qi *queryIterator) Next() error {
 	}
 	var ok bool
 	qi.currentQueryResult, ok = <-qi.itemCh
+	qi.currentItemOrderCache = ""
 	if !ok {
 		return Stop
 	}
