@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "b3c7b5f0_5f9395b0",
+        "filename": "common/testing/assertions/context_tests.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-22T20:09:33Z",
+      "side": 1,
+      "message": "Ish... If the other goroutine is sleeping, but otherwise would be able to call cancel() to close the context, this won\u0027t work. Sleeping for 1ms allows the other goroutine to run and cancel.",
+      "parentUuid": "4172afc1_acd8f6bf",
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2958aed2_ff361139",
         "filename": "common/testing/assertions/context_tests.go",
         "patchSetId": 8
