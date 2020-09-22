@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8619fe3_7bb0e2c6",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "is this required for `func (*CerritPatchset) String()` to work? Go still surprises me.",
+      "range": {
+        "startLine": 70,
+        "startChar": 60,
+        "endLine": 70,
+        "endChar": 61
+      },
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51ece4ac_5b16e45e",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "caveat: stacked CLs.\nCQ/BQ data will reference only top-most CL on which was triggered, omitting all Cls it depended on and which were available to the `analyze` step. Hence, you\u0027ll feed incomplete info the algo.\n\nI think this will make algorithm appear less safe than it actually be in practice.\n\nI don\u0027t know how frequently CL stacks are CQed, so I don\u0027t know how big this effect would be.\n\nAnyhow, i think it\u0027s fine to start as is and fetch full list at a later time based on Output GitilesCommit (or got_revision) + gitiles DIFF (or maybe querying logdog for git diff step output?)).",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "485a26dc_beac2456",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "i don\u0027t follow why it\u0027s public -- i thought only file list is needed, am I wrong?",
+      "range": {
+        "startLine": 109,
+        "startChar": 23,
+        "endLine": 109,
+        "endChar": 33
+      },
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0244ce3_4099d652",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "suggestion: It\u0027d be nicer for GoB if you also specify Project: \"chromium/src\" here.\nSince filelist already assumes a specific project, perhaps host/project should just be a part of gerritClient and Eval?",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63df73ac_80b0f881",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "FYI: this is rather expensive when done for all revisions. For GoB, it\u0027s probably cheaper to to first find revision corresponding to a patchset, and then run dedicated ListFiles call just for the wanted revision:\n  https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files",
+      "range": {
+        "startLine": 121,
+        "startChar": 4,
+        "endLine": 121,
+        "endChar": 35
+      },
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0a55ed5_54e1f2d9",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "I don\u0027t get why you need separate retry loop for quota errors. To retry quota errors more than non-quota errors?\nIf so, I don\u0027t see why it\u0027s needed: What\u0027s wrong with just bumping all kind of retries to say 25?",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1b8e3cf_952d0dde",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "\u003e \"Exchausted\" is a possible misspelling of \"Exhausted\".\n\nPlease fix.",
+      "parentUuid": "e6c46b79_a16081d6",
+      "range": {
+        "startLine": 145,
+        "startChar": 18,
+        "endLine": 145,
+        "endChar": 28
+      },
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdc286f1_f63ce43e",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T14:54:36Z",
+      "side": 1,
+      "message": "there is only type now -- token bucket replenishing in 5 minutes.",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
