@@ -71,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "fbf1f8ca_69e9412e",
+        "filename": "common/testing/assertions/context_tests.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-22T20:11:11Z",
+      "side": 1,
+      "message": "This.. looks like a race then? What it the other goroutine won\u0027t be able to wake up fast enough to cancel it within 1 ms? This looks fishy. \"default\" should work here.",
+      "parentUuid": "b3c7b5f0_5f9395b0",
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2958aed2_ff361139",
         "filename": "common/testing/assertions/context_tests.go",
         "patchSetId": 8
