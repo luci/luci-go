@@ -101,10 +101,11 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		return
 	}
 
+	knownNames := make(stringset.Set, len(cfg.ConfigGroups))
 	fallbackGroupIdx := -1
 	for i, g := range cfg.ConfigGroups {
 		ctx.Enter("config_group #%d", i+1)
-		validateConfigGroup(ctx, g)
+		validateConfigGroup(ctx, g, knownNames)
 		switch {
 		case g.Fallback == v2.Toggle_YES && fallbackGroupIdx == -1:
 			fallbackGroupIdx = i
@@ -122,7 +123,7 @@ type refKey struct {
 	refStr  string
 }
 
-func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
+func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
 	re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	switch {
 	case group.Name == "":
@@ -131,6 +132,10 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
 	case !re.MatchString(group.Name):
 		// TODO(crbug/1063508): make this an error.
 		ctx.Warningf("`name` must match %q but %q given", re, group.Name)
+	case knownNames.Has(group.Name):
+		ctx.Errorf("duplicate config_group `name` %q not allowed", group.Name)
+	default:
+		knownNames.Add(group.Name)
 	}
 
 	if len(group.Gerrit) == 0 {
