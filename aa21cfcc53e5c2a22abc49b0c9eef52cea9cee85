@@ -16,6 +16,24 @@
       "revId": "aa21cfcc53e5c2a22abc49b0c9eef52cea9cee85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "19e154ac_7735c5d1",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T16:40:33Z",
+      "side": 1,
+      "message": "true, but then i\u0027d need to check for empty group names, too. this is why I adopted pass-a-dict approach for Builder names validation, too.",
+      "parentUuid": "a94294a0_5ec5bde8",
+      "revId": "aa21cfcc53e5c2a22abc49b0c9eef52cea9cee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
