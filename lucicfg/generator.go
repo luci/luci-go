@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
@@ -63,7 +64,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		"proto":      starlarkproto.ProtoLib()["proto"],
 		"stacktrace": builtins.Stacktrace,
 		"struct":     builtins.Struct,
-		"to_json":    builtins.ToJSON,
+		"json":       starlarkjson.Module,
+		"to_json":    toSortedJSON, // see json.go, deprecated
 
 		// '__native__' is NOT public API. It should be used only through public
 		// @stdlib functions.

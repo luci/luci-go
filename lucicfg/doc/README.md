@@ -31,6 +31,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -3222,10 +3223,108 @@ Serializes a value to a compact JSON string.
 Doesn't support integers that do not fit int64. Fails if the value has
 cycles.
 
+*** note
+**Deprecated.** Use [json.encode(...)](#json.encode) instead. Note that [json.encode(...)](#json.encode)
+will retain the order of dict keys, unlike [to_json(...)](#to_json) that always sorts
+them alphabetically.
+***
+
 #### Arguments {#to_json-args}
 
 * **value**: a primitive Starlark value: a scalar, or a list/tuple/dict containing only primitive Starlark values. Required.
 
+
+
+
+
+
+
+
+
+### json.encode {#json.encode}
+
+```python
+json.encode(value)
+```
+
+
+
+Encodes a value into a JSON string.
+
+Accepts one required positional argument, which it converts to JSON by
+cases:
+
+  - None, True, and False are converted to null, true, and false,
+    respectively.
+  - Starlark int values, no matter how large, are encoded as decimal
+    integers. Some decoders may not be able to decode very large integers.
+  - Starlark float values are encoded using decimal point notation, even if
+    the value is an integer. It is an error to encode a non-finite
+    floating-point value.
+  - Starlark strings are encoded as JSON strings, using UTF-16 escapes.
+  - a Starlark IterableMapping (e.g. dict) is encoded as a JSON object.
+    It is an error if any key is not a string. The order of keys is
+    retained.
+  - any other Starlark Iterable (e.g. list, tuple) is encoded as a JSON
+    array.
+  - a Starlark HasAttrs (e.g. struct) is encoded as a JSON object.
+
+Encoding any other value yields an error.
+
+#### Arguments {#json.encode-args}
+
+* **value**: a value to encode. Required.
+
+
+
+
+### json.decode {#json.decode}
+
+```python
+json.decode(str)
+```
+
+
+
+Decodes a JSON string.
+
+Accepts one positional parameter, a JSON string. It returns the Starlark
+value that the string denotes:
+
+  - Numbers are parsed as int or float, depending on whether they contain
+    a decimal point.
+  - JSON objects are parsed as new unfrozen Starlark dicts.
+  - JSON arrays are parsed as new unfrozen Starlark lists.
+
+Decoding fails if `str` is not a valid JSON string.
+
+#### Arguments {#json.decode-args}
+
+* **str**: a JSON string to decode. Required.
+
+
+
+
+### json.indent {#json.indent}
+
+```python
+json.indent(str, prefix = None, indent = None)
+```
+
+
+
+Pretty-prints a valid JSON encoding.
+
+#### Arguments {#json.indent-args}
+
+* **str**: the JSON string to pretty-print. Required.
+* **prefix**: a prefix of each new line.
+* **indent**: a unit of indentation.
+
+
+#### Returns  {#json.indent-returns}
+
+The indented form of `str`.
 
 
 
