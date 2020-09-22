@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8143cd82_842dce35",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T15:09:57Z",
+      "side": 1,
+      "message": "👍 % but 2 suggestions",
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "28fe23cc_81c573ba",
+        "filename": "rts/presubmit/eval/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T15:09:57Z",
+      "side": 1,
+      "message": "i think gzip is justified. Gerrit\u0027s ALL_FILES + ALL_REVISIONS responses will easily go above 4k (anything less prob takes 4K anyway on FS)",
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "873e3eb5_90f58f3a",
+        "filename": "rts/presubmit/eval/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T15:09:57Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 124,
+        "endChar": 93
+      },
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8cfcd32_0c77fd5d",
+        "filename": "rts/presubmit/eval/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-22T15:09:57Z",
+      "side": 1,
+      "message": "depending on key size, once a dir contains certain number of elements, FS performance degrades substantially, at least on ext4. I\u0027d use 3-level dir base on first 6 chars of hex(hash(key)): abcdef123123 \u003d\u003e c.dir/ab/cd/ef/123123",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 44
+      },
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
