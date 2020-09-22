@@ -376,7 +376,10 @@ type BuildInfra struct {
 	Swarming    *BuildInfra_Swarming    `protobuf:"bytes,2,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	Logdog      *BuildInfra_LogDog      `protobuf:"bytes,3,opt,name=logdog,proto3" json:"logdog,omitempty"`
 	Recipe      *BuildInfra_Recipe      `protobuf:"bytes,4,opt,name=recipe,proto3" json:"recipe,omitempty"`
-	Resultdb    *BuildInfra_ResultDB    `protobuf:"bytes,5,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
+	// On creation of a build (e.g. via `led` and
+	// via `CreateBuild` (tbd, crbug.com/1114804), the existence of this message
+	// indicates that resultdb will be enabled for the build.
+	Resultdb *BuildInfra_ResultDB `protobuf:"bytes,5,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
 }
 
 func (x *BuildInfra) Reset() {
