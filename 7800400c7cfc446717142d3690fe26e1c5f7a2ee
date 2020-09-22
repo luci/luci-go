@@ -16,6 +16,46 @@
       "revId": "7800400c7cfc446717142d3690fe26e1c5f7a2ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "590ac5d4_042ebc0e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-22T03:33:43Z",
+      "side": 1,
+      "message": "lgtm % misgivings about number encoding",
+      "revId": "7800400c7cfc446717142d3690fe26e1c5f7a2ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8f2fca46_581527de",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 3260,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-22T03:33:43Z",
+      "side": 1,
+      "message": "oof... what\u0027s the rationale for this? This has burned us with e.g. properties and buildbucket/the recipe engine before. Can we have an option for this? Or default to \u003e 2**54-1 (or whatever the threshold is) being encoded as string?",
+      "range": {
+        "startLine": 3259,
+        "startChar": 0,
+        "endLine": 3260,
+        "endChar": 74
+      },
+      "revId": "7800400c7cfc446717142d3690fe26e1c5f7a2ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
