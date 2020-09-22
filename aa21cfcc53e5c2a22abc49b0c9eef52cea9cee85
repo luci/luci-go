@@ -34,6 +34,24 @@
       "revId": "aa21cfcc53e5c2a22abc49b0c9eef52cea9cee85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83a58503_9a88c526",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-22T16:42:31Z",
+      "side": 1,
+      "message": "Makes sense :-)",
+      "parentUuid": "19e154ac_7735c5d1",
+      "revId": "aa21cfcc53e5c2a22abc49b0c9eef52cea9cee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
