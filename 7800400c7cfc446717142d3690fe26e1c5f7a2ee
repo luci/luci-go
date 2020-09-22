@@ -56,6 +56,30 @@
       "revId": "7800400c7cfc446717142d3690fe26e1c5f7a2ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6026709d_7255f11d",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 3260,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-22T03:48:26Z",
+      "side": 1,
+      "message": "This is copied from https://github.com/google/starlark-go/blob/master/starlarkjson/json.go. There\u0027s no way to control it. Also this module is attempting to be a standard, so forking it wouldn\u0027t be nice. If you think it\u0027s a fight worth fighting for, consider opening an issues in starlark-go tracker.",
+      "parentUuid": "8f2fca46_581527de",
+      "range": {
+        "startLine": 3259,
+        "startChar": 0,
+        "endLine": 3260,
+        "endChar": 74
+      },
+      "revId": "7800400c7cfc446717142d3690fe26e1c5f7a2ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
