@@ -68,16 +68,16 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			})
 
 			Convey("CurrentItemOrder", func() {
-				itemOrder, err := qi.CurrentItemOrder()
+				itemOrder := qi.CurrentItemOrder()
 				So(err, ShouldBeNil)
 
 				invBuf := cmpbin.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
-				err = Serialize.Property(invBuf, MkProperty(strconv.Itoa(11)))
+				Serialize.Property(invBuf, MkProperty(strconv.Itoa(11)))
 				invBuf.SetInvert(false)
-				err = Serialize.Property(invBuf, MkProperty("aa1"))
-				err = Serialize.Key(invBuf, key)
-				So(err, ShouldBeNil)
+				Serialize.Property(invBuf, MkProperty("aa1"))
+				Serialize.Key(invBuf, key)
+
 				So(itemOrder, ShouldEqual, invBuf.String())
 			})
 
@@ -121,7 +121,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			err := qi.Next()
 			So(err, ShouldBeNil)
 			So(qi.CurrentItemKey(), ShouldEqual, "")
-			itemOrder, err := qi.CurrentItemOrder()
+			itemOrder := qi.CurrentItemOrder()
 			So(itemOrder, ShouldEqual, "")
 			key, data := qi.CurrentItem()
 			So(key, ShouldBeNil)
@@ -162,6 +162,9 @@ func TestStartQueryIterator(t *testing.T) {
 				PropertyMap{
 					"Value": MkProperty(1),
 				})
+			So(qi.currentItemOrderCache, ShouldEqual, "")
+			order := qi.CurrentItemOrder()
+			So(qi.currentItemOrderCache, ShouldEqual, order)
 
 			err = qi.Next()
 			So(err, ShouldResemble, Stop)
