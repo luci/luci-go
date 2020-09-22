@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "386184f1_5344f4f6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-22T21:33:20Z",
+      "side": 1,
+      "message": "The latest patchset actually had worse performance than some earlier version, I\u0027ll look into it.",
+      "revId": "28405486d6a2e6db72d966ba98f6183706b3abe4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
