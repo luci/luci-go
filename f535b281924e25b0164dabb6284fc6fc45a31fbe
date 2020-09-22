@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b579df6a_ed18fadd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-22T02:25:34Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/infra/builders/ci/infra-continuous-xenial-64/8613/overview\n",
+      "revId": "f535b281924e25b0164dabb6284fc6fc45a31fbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
