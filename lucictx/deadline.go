@@ -1,0 +1,217 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package lucictx
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/signals"
+)
+
+// DefaultGracePeriodSecs is the value of Deadline.grace_period_secs to assume
+// if Deadline is entirely missing in LUCI_CONTEXT.
+const DefaultGracePeriodSecs = 30
+
+// AdjustDeadline returns a 'cleanup' channel and a new cancelable context based
+// on the combination of the input context's deadline, as well as the Deadline
+// information in LUCI_CONTEXT.
+//
+// First, if Deadline is missing from LUCI_CONTEXT, it is filled in with the
+// default:
+//
+//   {deadline: infinity, grace_period_secs: 30}
+//
+// Next, the earlier of the input ctx.Deadline and Deadline.deadline values is
+// computed. `reserveCleanupSecs` is subtracted from this and it becomes the new
+// `adjustedDeadline`.
+//
+// Next, `reserveCleanupSecs` is subtracted from Deadline.grace_period_secs.
+// This becomes the `adjustedGracePeriod`.
+//
+// The `cleanup` channel is set up with a goroutine which:
+//   * Closes `cleanup` on either `adjustedDeadline-adjustedGracePeriod` timeout
+//     or SIGTERM/os.Interrupt, whichever is earlier.
+//   * Closes the returned context `adjustedGracePeriod` after this.
+//
+// Finally, the returned context has its deadline set to `adjustedDeadline`, and
+// LUCI_CONTEXT['deadline'] is populated with the adjusted deadline/gracePeriod.
+//
+// Note, if Deadline.grace_period_secs is insufficient to cover reserveCleanup
+// (including if reserveCleanup>DefaultGracePeriodSecs and no Deadline was in
+// LUCI_CONTEXT at all), this function panics.
+//
+// Example:
+//
+//    func MainFunc(ctx context.Context) {
+//      // deadline          = unix(t0+5:00)
+//      // grace_period_secs = 40
+//      cleanup, cctx, cancel := lucictx.AdjustDeadline(ctx, 5*time.Second)
+//      defer cancel()
+//      ScopedFunction(cctx, cleanup)
+//
+//      // Assuming ScopedFunction exits in a timely fashion on ctx.Done, you
+//      // have ~5s to do stuff here. Alternately you could wait on `<-cleanup`
+//      // and have ~30s to do stuff, but ScopedFunction may not have finished
+//      // yet.
+//    }
+//
+//    func ScopedFunction(ctx context.Context, cleanup <-chan struct{}) {
+//      // deadline          = unix(t0+4:55)
+//      // grace_period_secs = 35
+//      // Otherwise Deadline is still not in LUCI_CONTEXT.
+//
+//      go func() {
+//        // cleanup is closed at SIGTERM or $deadline-$grace_period_secs,
+//        // whichever is first.
+//        <-cleanup
+//        // have grace_period_secs to do something (say, send SIGTERM to
+//        // a child) before ctx.Done().
+//      }()
+//    }
+//
+// NOTE: In the event that `ctx` is canceled, `cleanup` will not be closed.
+func AdjustDeadline(ctx context.Context, reserveCleanupSecs int) (cleanup <-chan struct{}, newCtx context.Context, cancel func()) {
+	if reserveCleanupSecs < 0 {
+		panic(errors.Reason("reserveCleanupsecs(%d) < 0", reserveCleanupSecs).Err())
+	}
+
+	d := GetDeadline(ctx)
+	if d == nil {
+		logging.Warningf(
+			ctx, "AdjustDeadline without Deadline in LUCI_CONTEXT. "+
+				"Assuming Deadline={grace_period_secs: %d}", DefaultGracePeriodSecs)
+		d = &Deadline{GracePeriodSecs: DefaultGracePeriodSecs}
+	}
+
+	// Adjust grace period.
+	adjustedGrace := d.GracePeriodSecs - int64(reserveCleanupSecs)
+	if adjustedGrace < 0 {
+		panic(errors.Reason(
+			"reserveCleanupSecs(%d) > gracePeriodSecs(%d)", reserveCleanupSecs, d.GracePeriodSecs).Err())
+	}
+	d.GracePeriodSecs = adjustedGrace
+
+	// note: 0 indicates an 'infinite' deadline.
+	ctxDeadline, _ := ctx.Deadline()
+	var lucictxDeadline time.Time
+	if d.Deadline != 0 {
+		lucictxDeadline = time.Unix(d.Deadline, 0).UTC()
+	}
+
+	var adjustedDeadline time.Time
+
+	switch {
+	case ctxDeadline.IsZero() && !lucictxDeadline.IsZero():
+		adjustedDeadline = lucictxDeadline
+	case !ctxDeadline.IsZero() && lucictxDeadline.IsZero():
+		adjustedDeadline = ctxDeadline
+	case !ctxDeadline.IsZero() && !lucictxDeadline.IsZero():
+		if ctxDeadline.Before(lucictxDeadline) {
+			adjustedDeadline = ctxDeadline
+		} else {
+			adjustedDeadline = lucictxDeadline
+		}
+	}
+	if !adjustedDeadline.IsZero() {
+		adjustedDeadline = adjustedDeadline.Add(-time.Duration(reserveCleanupSecs) * time.Second)
+		newCtx, cancel = clock.WithDeadline(ctx, adjustedDeadline)
+		d.Deadline = adjustedDeadline.Unix()
+	} else {
+		newCtx, cancel = context.WithCancel(ctx)
+	}
+
+	newCtx = SetDeadline(newCtx, d)
+
+	cleanup = runMonitor(newCtx, cancel, time.Duration(adjustedGrace)*time.Second)
+
+	return
+}
+
+func runMonitor(ctx context.Context, cancel func(), gracePeriod time.Duration) <-chan struct{} {
+	cleanupCh := make(chan struct{})
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh, signals.Interrupts()...)
+
+	var timeoutC <-chan clock.TimerResult
+	if deadline, ok := ctx.Deadline(); ok && gracePeriod > 0 {
+		sleepamt := clock.Until(ctx, deadline.Add(-gracePeriod))
+		timeoutC = clock.After(ctx, sleepamt)
+	}
+
+	go func() {
+		defer cancel()
+
+		doSleep := false
+
+		select {
+		case <-timeoutC:
+		case <-ctx.Done():
+		case <-sigCh:
+			doSleep = true
+		}
+		signal.Stop(sigCh)
+		close(cleanupCh)
+
+		if doSleep && gracePeriod > 0 {
+			timeoutC = clock.After(ctx, gracePeriod)
+		} else {
+			timeoutC = nil
+		}
+		select {
+		case <-timeoutC:
+		case <-ctx.Done():
+		}
+	}()
+	return cleanupCh
+}
+
+// GetDeadline retrieves the raw Deadline information from the context.
+//
+// You probably want to use AdjustDeadline instead.
+func GetDeadline(ctx context.Context) *Deadline {
+	t := Deadline{}
+	ok, err := Lookup(ctx, "deadline", &t)
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
+		return nil
+	}
+	return &t
+}
+
+// SetDeadline sets the raw Deadline information in the context.
+//
+// If d is nil, sets a default deadline of:
+//   {deadline: ctx.Deadline(), grace_period_secs: DefaultGracePeriodSecs}
+//
+// If d.deadline == 0, adjusts it to ctx.Deadline().
+//
+// You probably want to use AdjustDeadline instead.
+func SetDeadline(ctx context.Context, d *Deadline) context.Context {
+	if d == nil {
+		d = &Deadline{GracePeriodSecs: DefaultGracePeriodSecs}
+	}
+	if deadline, ok := ctx.Deadline(); ok && d.Deadline == 0 {
+		d.Deadline = deadline.Unix()
+	}
+	return Set(ctx, "deadline", d)
+}
