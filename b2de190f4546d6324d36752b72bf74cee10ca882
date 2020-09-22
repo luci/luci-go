@@ -42,6 +42,23 @@
     },
     {
       "key": {
+        "uuid": "a9abc1f3_5bba52b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-22T16:41:28Z",
+      "side": 1,
+      "message": "(I have nothing else to add beyond what Andrii said)",
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "91c39567_4e968d4e",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -62,6 +79,23 @@
       "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc9e1607_53753db9",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-22T16:41:28Z",
+      "side": 1,
+      "message": "Optional formatting nit: Usually there\u0027s a blank line (//) between paragraphs.",
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
