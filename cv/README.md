@@ -7,11 +7,11 @@ TODO(crbug.com/920494): Update this after migrating to the new service.
 
 ## What's here?
 
-As of Aug 2020:
+As of September 2020:
 
- - [api/]: Protobuf files specifying the config schema, BigQuery schema, etc.
- - [appengine/]: A GAE app, under construction.
- - [appengine/config/]: Config validation logic.
+ - [api](./api): Protobuf files specifying the config schema, BigQuery schema, etc.
+ - [appengine](./appengine): A GAE app, under construction.
+ - [internal](./internal): Implementation for the GAE app, under construction.
 
 ## Links
 
