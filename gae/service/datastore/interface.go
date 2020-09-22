@@ -15,16 +15,18 @@
 package datastore
 
 import (
+	"container/heap"
 	"fmt"
 	"reflect"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"golang.org/x/net/context"
 )
 
 type resolvedRunCallback func(reflect.Value, CursorCB) error
 
-func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool, mat *multiArgType) {
+func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool, mat *multiArgType, hasCursorCB bool) {
 	badSig := func() {
 		panic(fmt.Errorf(
 			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
@@ -59,7 +61,7 @@ func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool,
 		}
 	}
 
-	hasCursorCB := numIn == 2
+	hasCursorCB = numIn == 2
 	if hasCursorCB && cbTyp.In(1) != typeOfCursorCB {
 		badSig()
 	}
@@ -350,7 +352,7 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
 func Run(c context.Context, q *Query, cb interface{}) error {
-	rcb, isKey, mat := parseRunCallback(cb)
+	rcb, isKey, mat, _ := parseRunCallback(cb)
 
 	if isKey {
 		q = q.KeysOnly(true)
@@ -377,6 +379,72 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 		})
 	}
 	return filterStop(err)
+}
+
+// RunMulti executes the logical OR of multiple queries, calling `cb` for each
+// unique entity (by *Key) that it finds. Results will be returned in the order
+// of the provided queries; All queries must have matching Orders.
+//
+// cb is a callback function (please refer to the `Run` function comments for
+// formats and restrictions for `cb` in this file).
+//
+// Note: projection queries and cursors in callback function are not supported,
+// as they are trivial the complexities and no use cases yet.
+func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
+	c, cancel := context.WithCancel(c)
+	defer cancel()
+
+	// TODO(yuanjunh): validate queries.
+	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
+	if hasCursorCB {
+		return errors.New("datastore: RunMulti doesn't support CursorCB.")
+	}
+
+	iHeap := &iteratorHeap{}
+	heap.Init(iHeap)
+
+	// Add all queries into heap.
+	for _, q := range queries {
+		if isKey {
+			q = q.KeysOnly(true)
+		}
+		fq, err := q.Finalize()
+		if err != nil {
+			return err
+		}
+		if err := iHeap.addQuery(c, fq); err != nil {
+			return err
+		}
+	}
+
+	// Merge query results.
+	seenKeys := stringset.New(128)
+	dummyCursorCB := func() (Cursor, error) {
+		return nil, nil
+	}
+	for iHeap.Len() > 0 {
+		pm, key, keyStr, err := iHeap.nextData()
+		if err != nil {
+			return err
+		}
+		if added := seenKeys.Add(keyStr); !added {
+			continue
+		}
+		if isKey {
+			err = rcb(reflect.ValueOf(key), dummyCursorCB)
+		} else {
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, key)
+			err = rcb(itm, dummyCursorCB)
+		}
+		if err != nil {
+			return filterStop(err)
+		}
+	}
+	return nil
 }
 
 // Count executes the given query and returns the number of entries which
@@ -744,4 +812,54 @@ func filterStop(err error) error {
 		err = nil
 	}
 	return err
+}
+
+// a min heap for a slice of queryIterator.
+type iteratorHeap []*queryIterator
+
+var _ heap.Interface = &iteratorHeap{}
+
+func (h iteratorHeap) Len() int { return len(h) }
+
+func (h iteratorHeap) Less(i, j int) bool { return h[i].CurrentItemOrder() < h[j].CurrentItemOrder() }
+
+func (h iteratorHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+func (h *iteratorHeap) Push(x interface{}) {
+	*h = append(*h, x.(*queryIterator))
+}
+
+func (h *iteratorHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	item := old[n-1]
+	*h = old[0 : n-1]
+	return item
+}
+
+// nextData returns data of the peak queryIterator, advances the queryIterator and puts it back
+func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, err error) {
+	if h.Len() == 0 {
+		return
+	}
+	qi := heap.Pop(h).(*queryIterator)
+	key, pm = qi.CurrentItem()
+	keyStr = qi.CurrentItemKey()
+
+	if err = qi.Next(); err != nil {
+		err = filterStop(err)
+		return
+	}
+	heap.Push(h, qi)
+	return
+}
+
+// addQuery runs the query and puts its queryIterator into the heap.
+func (h *iteratorHeap) addQuery(ctx context.Context, fq *FinalizedQuery) error {
+	qi := startQueryIterator(ctx, fq)
+	if err := qi.Next(); err != nil {
+		return filterStop(err)
+	}
+	heap.Push(h, qi)
+	return nil
 }

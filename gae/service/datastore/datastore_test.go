@@ -18,6 +18,7 @@ package datastore
 
 import (
 	"bytes"
+	"container/heap"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -1991,6 +1992,200 @@ indexes:
 			ids, err := FindAndParseIndexYAML(abs)
 			So(err, ShouldBeNil)
 			So(ids[1].Kind, ShouldEqual, "Test Foo")
+		})
+	})
+}
+
+func TestIteratorHeap(t *testing.T) {
+	t.Parallel()
+
+	Convey("iteratorHeap", t, func() {
+		h := &iteratorHeap{}
+
+		heap.Init(h)
+		heap.Push(h, &queryIterator{currentItemOrderCache: "bb"})
+		heap.Push(h, &queryIterator{currentItemOrderCache: "aa"})
+		So(h.Len(), ShouldEqual, 2)
+
+		var res []*queryIterator
+		for h.Len() > 0 {
+			res = append(res, heap.Pop(h).(*queryIterator))
+		}
+		So(res, ShouldResemble, []*queryIterator{
+			{currentItemOrderCache: "aa"},
+			{currentItemOrderCache: "bb"},
+		})
+	})
+}
+
+// fakeDatastore2 extends the fakeDatastore but overrides the `raw.Run()` method for the `ds.RunMulti()` usage.
+type fakeDatastore2 struct {
+	fakeDatastore
+}
+
+func (f *fakeDatastore2) factory() RawFactory {
+	return func(ic context.Context) RawInterface {
+		fds := *f
+		fds.kctx = GetKeyContext(ic)
+		return &fds
+	}
+}
+
+type Foo struct {
+	_kind string `gae:"$kind,Foo"`
+	ID    int64  `gae:"$id"`
+
+	Values []string `gae:"values"`
+	Val    int      `gae:"val"`
+}
+
+// prepare db data for fakeDatastore2
+var (
+	foo1 = &Foo{ID: 1, Values: []string{"aa"}, Val: 111}
+	foo2 = &Foo{ID: 2, Values: []string{"bb", "cc"}, Val: 222}
+	foo3 = &Foo{ID: 3, Values: []string{"cc"}, Val: 333}
+
+	kc     = KeyContext{}
+	keyMap = map[string][]*Key{
+		"aa": {
+			kc.MakeKey("Foo", foo1.ID),
+		},
+		"bb": {
+			kc.MakeKey("Foo", foo2.ID),
+		},
+		"cc": {
+			kc.MakeKey("Foo", foo2.ID),
+			kc.MakeKey("Foo", foo3.ID),
+		},
+	}
+
+	pmMap = map[string][]PropertyMap{
+		"aa": {
+			{"values": PropertySlice{MkProperty(foo1.Values[0])}, "val": MkProperty(foo1.Val)},
+		},
+		"bb": {
+			{"values": PropertySlice{MkProperty(foo2.Values[0]), MkProperty(foo2.Values[1])}, "val": MkProperty(foo2.Val)},
+		},
+		"cc": {
+			{"values": PropertySlice{MkProperty(foo2.Values[0]), MkProperty(foo2.Values[1])}, "val": MkProperty(foo2.Val)},
+			{"values": PropertySlice{MkProperty(foo3.Values[0])}, "val": MkProperty(foo3.Val)},
+		},
+	}
+)
+
+func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
+	if _, ok := fq.eqFilts["$err_single"]; ok {
+		return errors.New("errors in fakeDatastore")
+	}
+
+	if _, ok := fq.eqFilts["values"]; !ok {
+		return nil
+	}
+
+	searchStr := fq.eqFilts["values"][0].Value().(string)
+	keys := make([]*Key, len(keyMap[searchStr]))
+	pms := make([]PropertyMap, len(pmMap[searchStr]))
+	copy(keys, keyMap[searchStr])
+	copy(pms, pmMap[searchStr])
+
+	if fq.orders[0].Property == "val" && fq.orders[0].Descending {
+		// reverse
+		for i, j := 0, len(keys)-1; i < j; i, j = i+1, j-1 {
+			keys[i], keys[j] = keys[j], keys[i]
+			pms[i], pms[j] = pms[j], pms[i]
+		}
+	}
+
+	dummyCursorCB := func() (Cursor, error) {
+		return nil, errors.New("dummy cursorCB.")
+	}
+	for i := range keys {
+		if err := cb(keys[i], pms[i], dummyCursorCB); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func TestRunMulti(t *testing.T) {
+	t.Parallel()
+	Convey("Test RunMulti", t, func() {
+		c := info.Set(context.Background(), fakeInfo{})
+		fds2 := fakeDatastore2{}
+		c = SetRawFactory(c, fds2.factory())
+
+		Convey("ok", func() {
+			Convey("default - key ascending", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo) error {
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+			})
+
+			Convey("values field descending", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa").Order("-val"),
+					NewQuery("Foo").Eq("values", "cc").Order("-val"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo) error {
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo3, foo2, foo1})
+			})
+
+			Convey("users send stop signal", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo) error {
+					if len(foos) >= 2 {
+						return Stop
+					}
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1, foo2})
+			})
+
+			Convey("not found", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("no_exist", "aa"),
+					NewQuery("Foo").Eq("no_exist", "bb"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo) error {
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldErrLike, nil)
+				So(foos, ShouldBeNil)
+			})
+		})
+
+		Convey("errors in one running query", func() {
+			queries := []*Query{
+				NewQuery("Foo").Eq("values", "aa"),
+				NewQuery("Foo").Eq("$err_single", "error"),
+			}
+			var foos []*Foo
+			err := RunMulti(c, queries, func(foo *Foo) error {
+				foos = append(foos, foo)
+				return nil
+			})
+			So(err, ShouldErrLike, "errors in fakeDatastore")
 		})
 	})
 }
