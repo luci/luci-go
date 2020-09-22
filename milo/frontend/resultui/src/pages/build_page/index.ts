@@ -87,6 +87,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     }
   }
 
+  @computed get hasInvocation() {
+    return this.invocationState.invocationId !== '';
+  }
+
   @computed get tabDefs(): TabDef[] {
     const params = {
       'project': this.builder.project,
@@ -100,11 +104,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         label: 'Overview',
         href: router.urlForName('build-overview', params),
       },
-      {
+      ...!this.hasInvocation ? [] : [{
         id: 'test-results',
         label: 'Test Results',
         href: router.urlForName('build-test-results', params),
-      },
+      }],
       {
         id: 'steps',
         label: 'Steps & Logs',
