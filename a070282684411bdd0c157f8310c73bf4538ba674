@@ -22,6 +22,30 @@
       "revId": "a070282684411bdd0c157f8310c73bf4538ba674",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4e1e67b_c531d122",
+        "filename": "led/job/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-22T19:41:16Z",
+      "side": 1,
+      "message": "Yes checking the existence of resultdb is not enough, since actually all builds now have it (with hostname inside it). We need to check that there\u0027s also an invocation for the original build.",
+      "parentUuid": "d6207d60_f8350c85",
+      "range": {
+        "startLine": 332,
+        "startChar": 4,
+        "endLine": 332,
+        "endChar": 40
+      },
+      "revId": "a070282684411bdd0c157f8310c73bf4538ba674",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
