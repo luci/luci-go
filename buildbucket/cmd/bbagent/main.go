@@ -81,7 +81,10 @@ func mainImpl() int {
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	check(errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err())
 
-	bbClient, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket)
+	cctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	bbClient, err := newBuildsClient(sctx, cancel, input.Build.Infra.Buildbucket)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	defer bbClient.CloseAndDrain(ctx)
 
@@ -99,21 +102,18 @@ func mainImpl() int {
 		}
 	}
 
-	cctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
 		// For buildbucket builds, buildbucket creates the invocations and saves the
 		// info in build proto.
 		// Then bbagent uses the info from build proto to set resultdb
 		// parameters in the luci context.
-		cctx, err = setResultDBContext(cctx, input.Build)
+		ctx, err = setResultDBContext(ctx, input.Build)
 		check(err)
 	} else {
 		// For led builds, swarming creates the invocations and sets resultdb
 		// parameters in luci context.
 		// Then bbagent gets the parameters from luci context and updates build proto.
-		setResultDBFromContext(cctx, input.Build)
+		setResultDBFromContext(ctx, input.Build)
 	}
 
 	opts := &host.Options{
@@ -189,8 +189,6 @@ func mainImpl() int {
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
 	for build := range builds {
-		// TODO(iannucci): add backchannel from buildbucket prpc client to shut
-		// down/cancel the build.
 		bbClient.C <- build
 		finalBuild = build
 	}

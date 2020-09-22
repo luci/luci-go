@@ -17,11 +17,16 @@ package invoke
 import (
 	"bytes"
 	"context"
+	"os"
 	"os/exec"
-	"sync"
+	"os/signal"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/luciexe"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -29,17 +34,70 @@ import (
 
 // Subprocess represents a running luciexe.
 type Subprocess struct {
-	Step        *bbpb.Step
-	collectPath string
+	Step *bbpb.Step
 
-	cmd *exec.Cmd
-
-	closeChannels chan<- struct{}
-	allClosed     <-chan error
-
-	waitOnce sync.Once
+	waitDone <-chan struct{}
 	build    *bbpb.Build
 	err      error
+}
+
+func launchTripleTapWatcher(ctx context.Context, cmd *exec.Cmd, cmdWaiter <-chan struct{}, gracePeriod time.Duration) {
+	interruptCh := make(chan os.Signal, 1)
+	signal.Notify(interruptCh, signals.Interrupts()...)
+
+	go func() {
+		defer func() {
+			signal.Stop(interruptCh)
+			close(interruptCh)
+			_, _ = <-interruptCh
+		}()
+
+		defer killGroup(cmd)
+
+		select {
+		case <-ctx.Done():
+			logging.Infof(ctx, "Got context cancelation.")
+		case signum := <-interruptCh:
+			logging.Infof(ctx, "Got interrupt: %s", signum)
+		case <-cmdWaiter:
+			return
+		}
+
+		t := time.NewTimer(gracePeriod)
+		timeout := t.C
+		if gracePeriod < 0 { // user asked us to wait forever
+			timeout = nil
+		}
+
+		// We specifically do NOT use the LUCI clock package here; if context is
+		// canceled, it will return immediately :(.
+		interruptGroup(cmd)
+		select {
+		case <-timeout:
+		case signum := <-interruptCh:
+			logging.Infof(ctx, "Got interrupt: %s", signum)
+		case <-cmdWaiter:
+			return
+		}
+		if !t.Stop() {
+			<-t.C
+		}
+		t.Reset(time.Duration(float64(gracePeriod) * 0.2))
+
+		interruptGroup(cmd)
+		select {
+		case <-timeout:
+		case signum := <-interruptCh:
+			logging.Infof(ctx, "Got interrupt: %s", signum)
+		case <-cmdWaiter:
+			return
+		}
+		if !t.Stop() {
+			<-t.C
+		}
+	}()
+
+	return
 }
 
 // Start launches a binary implementing the luciexe protocol and returns
@@ -60,7 +118,7 @@ type Subprocess struct {
 // The caller SHOULD immediately take Subprocess.Step, append it to the current
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
-func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
+func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (subp *Subprocess, err error) {
 	inputData, err := proto.Marshal(input)
 	if err != nil {
 		return nil, errors.Annotate(err, "marshalling input Build").Err()
@@ -71,44 +129,69 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		return nil, errors.Annotate(err, "normalizing options").Err()
 	}
 
-	closeChannels := make(chan struct{})
-	allClosed := make(chan error)
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-closeChannels:
-		}
-		err := errors.NewLazyMultiError(2)
-		err.Assign(0, errors.Annotate(launchOpts.stdout.Close(), "closing stdout").Err())
-		err.Assign(1, errors.Annotate(launchOpts.stderr.Close(), "closing stderr").Err())
-		allClosed <- err.Get()
-	}()
-
 	args := make([]string, 0, len(luciexeArgs)+len(launchOpts.args)-1)
 	args = append(args, luciexeArgs[1:]...)
 	args = append(args, launchOpts.args...)
 
-	cmd := exec.CommandContext(ctx, luciexeArgs[0], args...)
+	// Don't do ContextCommand here, as we want to pass through signals.
+	cmd := exec.Command(luciexeArgs[0], args...)
 	cmd.Env = launchOpts.env.Sorted()
 	cmd.Dir = launchOpts.workDir
 	cmd.Stdin = bytes.NewBuffer(inputData)
 	cmd.Stdout = launchOpts.stdout
 	cmd.Stderr = launchOpts.stderr
+	cmd.SysProcAttr = sysProcAttrs
+
+	waitDone := make(chan struct{})
+
+	if !opts.UnregisterSignalHandlers {
+		blackHole := make(chan os.Signal)
+		go func() {
+			for range blackHole {
+			}
+		}()
+		signal.Notify(blackHole, signals.Interrupts()...)
+	}
+	launchTripleTapWatcher(ctx, cmd, waitDone, launchOpts.gracePeriod)
+
+	closeHandles := func() error {
+		err := errors.NewLazyMultiError(2)
+		err.Assign(0, errors.Annotate(launchOpts.stdout.Close(), "closing stdout").Err())
+		err.Assign(1, errors.Annotate(launchOpts.stderr.Close(), "closing stderr").Err())
+		return err.Get()
+	}
+
 	if err := cmd.Start(); err != nil {
 		// clean up stdout/stderr
-		close(closeChannels)
-		<-allClosed
+		closeHandles()
 		return nil, errors.Annotate(err, "launching luciexe").Err()
 	}
 
-	return &Subprocess{
-		Step:        launchOpts.step,
-		collectPath: launchOpts.collectPath,
-		cmd:         cmd,
+	subp = &Subprocess{
+		Step:     launchOpts.step,
+		waitDone: waitDone,
+	}
 
-		closeChannels: closeChannels,
-		allClosed:     allClosed,
-	}, nil
+	// Waiter thread.
+	go func() {
+		// No matter what, we want to close stdout/stderr; if none of the other
+		// return values have set `err`, it will be set to the result of closing
+		// stdout/stderr.
+		defer func() {
+			if closeErr := closeHandles(); subp.err == nil {
+				subp.err = closeErr
+			}
+			close(waitDone)
+		}()
+
+		if subp.err = cmd.Wait(); subp.err != nil {
+			subp.err = errors.Annotate(subp.err, "waiting for luciexe").Err()
+			return
+		}
+		subp.build, subp.err = luciexe.ReadBuildFile(launchOpts.collectPath)
+	}()
+
+	return
 }
 
 // Wait waits for the subprocess to terminate.
@@ -121,22 +204,6 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 //
 // Calling this multiple times is OK; it will return the same values every time.
 func (s *Subprocess) Wait() (*bbpb.Build, error) {
-	s.waitOnce.Do(func() {
-		// No matter what, we want to close stdout/stderr; if none of the other
-		// return values have set `err`, it will be set to the result of closing
-		// stdout/stderr.
-		defer func() {
-			close(s.closeChannels)
-			if closeErr := <-s.allClosed; s.err == nil {
-				s.err = closeErr
-			}
-		}()
-
-		if s.err = s.cmd.Wait(); s.err != nil {
-			s.err = errors.Annotate(s.err, "waiting for luciexe").Err()
-			return
-		}
-		s.build, s.err = luciexe.ReadBuildFile(s.collectPath)
-	})
+	<-s.waitDone
 	return s.build, s.err
 }

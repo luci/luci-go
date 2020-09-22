@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -117,6 +118,36 @@ type Options struct {
 	//   * LOGDOG_NAMESPACE
 	//   * LUCI_CONTEXT
 	Env environ.Env
+
+	// The amount of time for the 'grace period' for the underlying process when
+	// the context to Start is canceled.
+	//
+	// Invoke implements a "3-tap" shutdown procedure for the launched process:
+	//   * SIGTERM (or C-BREAK on Windows) to the process group.
+	//   * wait up to GracePeriod for the process.
+	//   * if timeout (or another SIGTERM/C-BREAK):
+	//     * SIGTERM (or C-BREAK) to the process group again.
+	//     * wait up to 20% of GracePeriod
+	//   * Unconditional SIGKILL to the process group (or TerminateProcess to the
+	//     process).
+	//
+	// Note that some environments (like Swarming) implement the 3-tap procedure
+	// already. In this case, pass a negative GracePeriod to rely on the parent
+	// process sending the second SIGTERM.
+	//
+	// If GracePeriod is omitted, it defaults to 30 * time.Second.
+	GracePeriod time.Duration
+
+	// If unset (the default), once `invoke.Start` successfully runs its
+	// subprocess, it will never unregister the signal handler for
+	// SIGTERM/os.Interrupt. Because of the 3-tap procedure, a second SIGTERM
+	// could come in from the parent process after the Start'd process actually
+	// finishes; if the signal handler is not installed then this will kill the
+	// whole program.
+	//
+	// If this is set then after invoke.Start begins, Interrupt/SIGTERM will
+	// always have an installed handler which ignores the signal.
+	UnregisterSignalHandlers bool
 }
 
 // launchOptions is a 'digested' form of Options, used for starting
@@ -146,6 +177,9 @@ type launchOptions struct {
 
 	// env is an environment suitable to run the luciexe in.
 	env environ.Env
+
+	// see Options.GracePeriod
+	gracePeriod time.Duration
 }
 
 func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
@@ -325,6 +359,12 @@ func (o *Options) rationalize(ctx context.Context) (ret launchOptions, newCtx co
 		ret.env = o.Env.Clone()
 	} else {
 		ret.env = environ.System()
+	}
+
+	if o.GracePeriod <= 0 {
+		ret.gracePeriod = 30 * time.Second
+	} else {
+		ret.gracePeriod = o.GracePeriod
 	}
 
 	var d dirs

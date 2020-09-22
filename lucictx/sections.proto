@@ -19,6 +19,9 @@ package lucictx;
 option go_package = "go.chromium.org/luci/lucictx;lucictx";
 
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
 // LocalAuth is a struct that may be used with the "local_auth" section of
 // LUCI_CONTEXT.
 message LocalAuth {
@@ -96,4 +99,28 @@ message ResultSink {
   // secret string required in all ResultSink requests in HTTP header
   // `Authorization: ResultSink <auth-token>`
   string auth_token = 2 [json_name = "auth_token"];
+}
+
+message Deadline {
+  // The absolute deadline for execution for this context. Processes reading
+  // this value SHOULD choose to terminate and clean themselves up before this
+  // deadline.
+  //
+  // Parent processes MAY terminate/kill subprocesses which exceed this
+  // deadline.
+  //
+  // If a process decides it cannot successfully complete by the allotted
+  // deadline, it SHOULD complain and quit.
+  google.protobuf.Timestamp deadline = 1 [json_name = "deadline"];
+
+  // The amount of time processes in this context have time to react to
+  // a SIGTERM before being killed.
+  //
+  // If an intermediate process has a lot of cleanup work to do after its child
+  // quits (e.g. flushing stats/writing output files/etc.) it SHOULD reduce this
+  // value for the child process by an appropriate margin.
+  //
+  // If a process cannot reserve enough time (i.e. the reservation would bring
+  // the grace_period to 0 or below), the process SHOULD complain and quit.
+  google.protobuf.Duration grace_period = 2 [json_name = "grace_period"];
 }

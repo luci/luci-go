@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"golang.org/x/time/rate"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -59,7 +60,7 @@ func channelOpts(ctx context.Context) *dispatcher.Options {
 	}
 }
 
-func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket) (ret dispatcher.Channel, err error) {
+func newBuildsClient(ctx context.Context, shutdownBuild func(), infraOpts *bbpb.BuildInfra_Buildbucket) (ret dispatcher.Channel, err error) {
 	var sendFn dispatcher.SendFn
 	if hostname := infraOpts.GetHostname(); hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
@@ -96,13 +97,13 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 		//     double-booked.
 		//   * Auth is properly configured for buildbucket before we start running the
 		//     user code.
-		sendFn = mkSendFn(ctx, secrets, bbpb.NewBuildsPRPCClient(prpcClient))
+		sendFn = mkSendFn(ctx, secrets, shutdownBuild, bbpb.NewBuildsPRPCClient(prpcClient))
 	}
 
 	return dispatcher.NewChannel(ctx, channelOpts(ctx), sendFn)
 }
 
-func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.BuildsClient) dispatcher.SendFn {
+func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, shutdownBuild func(), client bbpb.BuildsClient) dispatcher.SendFn {
 	return func(b *buffer.Batch) error {
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 
@@ -156,8 +157,9 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.Build
 		defer cancel()
 
 		_, err := client.UpdateBuild(tctx, req)
-		// TODO(iannucci): Always tag errors as transient for the 'final' build
-		// update?
+		if !grpcutil.IsTransientCode(err) {
+			// shut
+		}
 		return err
 	}
 }
