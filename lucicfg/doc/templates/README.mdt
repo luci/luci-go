@@ -53,6 +53,7 @@
 {{ $scheduler := Symbol "@stdlib//builtins.star" "scheduler" }}
 {{ $cq := Symbol "@stdlib//builtins.star" "cq" }}
 {{ $native := Symbol "@stdlib//native_doc.star" "" }}
+{{ $json := Symbol "@stdlib//json_doc.star" "json" }}
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 
 {{/*
@@ -639,5 +640,6 @@ exposed in the global namespace by Starlark itself.
 In addition, `lucicfg` exposes the following functions.
 
 {{template "gen-funcs-doc" $native}}
+{{template "gen-funcs-doc" $json}}
 {{template "gen-funcs-doc" $proto}}
 {{template "gen-funcs-doc" $io}}

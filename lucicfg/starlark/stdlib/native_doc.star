@@ -118,6 +118,12 @@ def to_json(value):
     Doesn't support integers that do not fit int64. Fails if the value has
     cycles.
 
+    *** note
+    **Deprecated.** Use json.encode(...) instead. Note that json.encode(...)
+    will retain the order of dict keys, unlike to_json(...) that always sorts
+    them alphabetically.
+    ***
+
     Args:
       value: a primitive Starlark value: a scalar, or a list/tuple/dict
         containing only primitive Starlark values. Required.
