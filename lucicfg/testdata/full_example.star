@@ -54,6 +54,7 @@ luci.recipe(
 luci.executable(
     name = "main/executable",
     cipd_package = "executable/bundles/main",
+    cmd = ["cmd"],
 )
 
 # CI bucket.
@@ -106,8 +107,8 @@ luci.builder(
         "ci/generically named executable builder",
     ],
     properties = {
-        "prop1": "val1",
         "prop2": ["val2", 123],
+        "prop1": "val1",
     },
     service_account = "builder@example.com",
     caches = [
@@ -160,8 +161,8 @@ luci.builder(
     bucket = "ci",
     executable = "main/executable",
     properties = {
-        "prop1": "val1",
         "prop2": ["val2", 123],
+        "prop1": "val1",
     },
     triggered_by = ["master-poller"],
 )
@@ -383,8 +384,10 @@ luci.cq_group(
     name = "main-cq",
     watch = [
         cq.refset("https://example.googlesource.com/repo"),
-        cq.refset("https://example.googlesource.com/another/repo",
-        refs_exclude=["refs/heads/infra/config"]),
+        cq.refset(
+            "https://example.googlesource.com/another/repo",
+            refs_exclude = ["refs/heads/infra/config"],
+        ),
     ],
     acls = [
         acl.entry(acl.CQ_COMMITTER, groups = ["committers"]),
@@ -586,6 +589,7 @@ lucicfg.emit(
 #       exe {
 #         cipd_package: "executable/bundles/main"
 #         cipd_version: "refs/heads/master"
+#         cmd: "cmd"
 #       }
 #       properties: "{\"prop1\":\"val1\",\"prop2\":[\"val2\",123]}"
 #     }
@@ -729,6 +733,7 @@ lucicfg.emit(
 #       exe {
 #         cipd_package: "executable/bundles/main"
 #         cipd_version: "refs/heads/master"
+#         cmd: "cmd"
 #       }
 #       properties: "{}"
 #     }
@@ -738,6 +743,7 @@ lucicfg.emit(
 #       exe {
 #         cipd_package: "executable/bundles/main"
 #         cipd_version: "refs/heads/master"
+#         cmd: "cmd"
 #       }
 #       properties: "{}"
 #       experiments {

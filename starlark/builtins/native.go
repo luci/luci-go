@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,42 +15,18 @@
 package builtins
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"go.starlark.net/starlark"
 )
 
-// ToJSON is to_json(value) builtin.
+// ToGoNative takes a Starlark value and returns native Go value for it.
 //
-//  def to_json(value):
-//    """Serializes a value to compact JSON.
-//
-//    Doesn't support integers that do not fit int64. Fails if the value being
-//    converted has cycles.
-//
-//    Args:
-//      value: a starlark value: scalars, lists, tuples, dicts containing only
-//        starlark values.
-//
-//    Returns:
-//      A string with its compact JSON serialization.
-//    """
-var ToJSON = starlark.NewBuiltin("to_json", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var v starlark.Value
-	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 1, &v); err != nil {
-		return nil, err
-	}
-	obj, err := ToGoNative(v)
-	if err != nil {
-		return nil, err
-	}
-	blob, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	return starlark.String(blob), nil
-})
+// E.g. it takes *starlark.Dict and returns map[string]interface{}. Works
+// recursively. Supports only built-in Starlark types.
+func ToGoNative(v starlark.Value) (interface{}, error) {
+	return toGoNative(v, visitingSet{})
+}
 
 // visitingSet is a set of containers we currently have recursed into.
 //
@@ -61,7 +37,7 @@ type visitingSet map[interface{}]struct{}
 
 func (v visitingSet) add(container interface{}) error {
 	if _, haveIt := v[container]; haveIt {
-		return fmt.Errorf("to_json: detected recursion in the data structure")
+		return fmt.Errorf("detected recursion in the data structure")
 	}
 	v[container] = struct{}{}
 	return nil
@@ -69,14 +45,6 @@ func (v visitingSet) add(container interface{}) error {
 
 func (v visitingSet) remove(container interface{}) {
 	delete(v, container)
-}
-
-// ToGoNative takes a Starlark value and returns native Go value for it.
-//
-// E.g. it takes *starlark.Dict and returns map[string]interface{}. Works
-// recursively.
-func ToGoNative(v starlark.Value) (interface{}, error) {
-	return toGoNative(v, visitingSet{})
 }
 
 // toGoNative implements ToGoNative.
@@ -112,7 +80,7 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 	case starlark.Int:
 		i, ok := val.Int64()
 		if !ok {
-			return nil, fmt.Errorf("to_json: can't convert %q to int64", val.String())
+			return nil, fmt.Errorf("can't convert %q to int64", val.String())
 		}
 		return i, nil
 	case *starlark.Dict:
@@ -124,7 +92,7 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 			}
 			key, ok := pair[0].(starlark.String)
 			if !ok {
-				return nil, fmt.Errorf("to_json: dict keys should be strings, got %s", pair[0].Type())
+				return nil, fmt.Errorf("dict keys should be strings, got %s", pair[0].Type())
 			}
 			val, err := toGoNative(pair[1], visiting)
 			if err != nil {
@@ -151,5 +119,5 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 		return out, nil
 	}
 
-	return nil, fmt.Errorf("to_json: unsupported type %s", v.Type())
+	return nil, fmt.Errorf("unsupported type %s", v.Type())
 }

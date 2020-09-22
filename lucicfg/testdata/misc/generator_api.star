@@ -2,7 +2,7 @@ load("@stdlib//internal/luci/proto.star", "config_pb")
 
 def gen(ctx):
     ctx.output["text.txt"] = "Just text\n"
-    ctx.output["json.json"] = to_json({"hello": "world"}) + "\n"
+    ctx.output["json.json"] = json.encode({"hello": "world"}) + "\n"
     ctx.output["project.cfg"] = config_pb.ProjectCfg(
         name = "test",
         access = ["group:all"],

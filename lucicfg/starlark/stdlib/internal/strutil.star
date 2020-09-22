@@ -71,7 +71,7 @@ def _to_yaml(value):
     Returns:
       A pretty YAML string ending with `\n`.
     """
-    return _json_to_yaml(to_json(value))
+    return _json_to_yaml(json.encode(value))
 
 def _b64_encode(s):
     """Encodes a string using standard padded base64 encoding.
