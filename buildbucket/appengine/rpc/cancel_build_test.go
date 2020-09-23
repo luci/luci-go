@@ -275,6 +275,69 @@ func TestCancelBuild(t *testing.T) {
 				})
 				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
+
+			Convey("resultdb finalization", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:user",
+				})
+				now := testclock.TestRecentTimeLocal
+				ctx, _ = testclock.UseTime(ctx, now)
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_WRITER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInfra{
+					ID:    1,
+					Build: datastore.MakeKey(ctx, "Build", 1),
+					Proto: model.DSBuildInfra{
+						pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:   "example.com",
+								Invocation: "id",
+							},
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.CancelBuildRequest{
+					Id:              1,
+					SummaryMarkdown: "summary",
+				}
+				rsp, err := srv.CancelBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					EndTime: &timestamp.Timestamp{
+						Seconds: 1454501106,
+						Nanos:   7,
+					},
+					Input:  &pb.Build_Input{},
+					Status: pb.Status_CANCELED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 3)
+			})
 		})
 	})
 }

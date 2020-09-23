@@ -25,6 +25,12 @@ message ExportBigQuery {
   int64 build_id = 1;
 }
 
+// A task to finalize an invocation in ResultDB.
+message FinalizeResultDB {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+}
+
 // A task to send a build notification on Pub/Sub.
 message NotifyPubSub {
   // ID of a build in the datastore. See model.Build.
