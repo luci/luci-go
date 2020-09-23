@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -39,9 +40,15 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// UpdateBuildAllowedUsers is a group of users allowed to update builds.
-// They are expected to be robots.
-const UpdateBuildAllowedUsers = "buildbucket-update-build-users"
+const (
+	// UpdateBuildAllowedUsers is a group of users allowed to update builds.
+	// They are expected to be robots.
+	UpdateBuildAllowedUsers = "buildbucket-update-build-users"
+
+	// Administrators is a group of users that have all permissions in all
+	// buckets.
+	Administrators = "administrators"
+)
 
 var (
 	// BuildsGet allows to see all information about a build.
@@ -77,6 +84,85 @@ var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 // doesn't have it. Returns PermissionDenied if the caller has the read
 // permission, but not the requested `perm`.
 func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket string) error {
+	realm := realms.Join(project, bucket)
+
+	switch yes, err := auth.ShouldEnforceRealmACL(ctx, realm); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check realms DB").Err()
+
+	case yes:
+		logging.Infof(ctx, "crbug.com/1091604: enforcing realm ACLs for %q", realm)
+		return hasPermRealms(ctx, perm, project, bucket)
+
+	default:
+		// Make the legacy ACL check.
+		err := hasPermLegacy(ctx, perm, project, bucket)
+
+		// If got some internal error (not an appstatus one), return it as is.
+		// It means the check itself failed.
+		if _, ok := appstatus.Get(err); err != nil && !ok {
+			return err
+		}
+
+		// Compare the result of the legacy ACL check to the realm ACL check. Note
+		// that Execute doesn't return an error. It just does best effort logging.
+		(auth.HasPermissionDryRun{
+			ExpectedResult: err == nil,
+			TrackingBug:    "crbug.com/1091604",
+			AdminGroup:     Administrators,
+		}).Execute(ctx, perm, realm)
+
+		// But still use legacy ACLs.
+		return err
+	}
+}
+
+// hasPermRealms checks realms Buildbucket ACLs.
+//
+// Returns nil if the caller has the permission, an appstatus error if doesn't,
+// or some other error if the check itself failed.
+func hasPermRealms(ctx context.Context, perm realms.Permission, project, bucket string) error {
+	realm := realms.Join(project, bucket)
+	switch has, err := auth.HasPermission(ctx, perm, realm); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check realm %q ACLs", realm).Err()
+	case has:
+		return nil
+	}
+
+	// For compatibility with legacy ALCs, administrators have implicit access to
+	// everything. Log when this rule is invoked, since it's surprising and it
+	// something we might want to get rid of after everything is migrated to
+	// Realms.
+	switch is, err := auth.IsMember(ctx, Administrators); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check group membership in %q", Administrators).Err()
+	case is:
+		logging.Warningf(ctx, "ADMIN_ACCESS: %q does not have permission %q in bucket %q, but they are in %q group and are allowed to proceed",
+			auth.CurrentIdentity(ctx), perm, project+"/"+bucket, Administrators)
+		return nil
+	}
+
+	// Give a detailed error message only if the caller is allowed to see
+	// the builder. Otherwise return generic "Not found or no permission" error.
+	if perm != BuildersGet {
+		switch visible, err := auth.HasPermission(ctx, BuildersGet, realm); {
+		case err != nil:
+			return errors.Annotate(err, "failed to check realm %q ACLs", realm).Err()
+		case visible:
+			return appstatus.Errorf(codes.PermissionDenied, "%q does not have permission %q in bucket %q",
+				auth.CurrentIdentity(ctx), perm, project+"/"+bucket)
+		}
+	}
+
+	return NotFoundErr(ctx)
+}
+
+// hasPermLegacy checks legacy Buildbucket ACLs.
+//
+// Returns nil if the caller has the permission, an appstatus error if doesn't,
+// or some other error if the check itself failed.
+func hasPermLegacy(ctx context.Context, perm realms.Permission, project, bucket string) error {
 	bucketID := project + "/" + bucket // for error messages only
 
 	// Verify the permission is known at all.
@@ -106,9 +192,9 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	}
 
 	// Admins can do anything in all buckets regardless of ACLs.
-	switch is, err := auth.IsMember(ctx, "administrators"); {
+	switch is, err := auth.IsMember(ctx, Administrators); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check group membership in %q", "administrators").Err()
+		return errors.Annotate(err, "failed to check group membership in %q", Administrators).Err()
 	case is:
 		return nil
 	}
