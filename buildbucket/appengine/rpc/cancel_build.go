@@ -135,6 +135,11 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		}); err != nil {
 			return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
+		if err := tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
+			BuildId: bld.ID,
+		}); err != nil {
+			return errors.Annotate(err, "failed to enqueue resultdb finalization task: %d", bld.ID).Err()
+		}
 		if err := notifyPubSub(ctx, bld); err != nil {
 			return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
 		}
