@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8abeea93_e9273202",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-23T03:42:20Z",
+      "side": 1,
+      "message": "https://pantheon.corp.google.com/traces/traces?tid\u003d9cf0a46ae2264c8266bf000b7728cac4\u0026project\u003dluci-resultdb-dev\nThe trace above is for {\n    \"realm\": \"chromium:public\",\n    \"timeRange\": {\n        \"earliest\": \"2020-01-01T0:00:00Z\"\n    },\n    \"pageSize\": \"10\"\n}\nWhere 17k invocations are in the realm and range specified.",
+      "parentUuid": "d4b409c7_4bb6f395",
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45d3b81a_22ad0b17",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2020-09-20T04:34:12Z",
       "side": 1,
       "message": "What do you have in mind? I\u0027d expect the spanner client to pre-fetch the next page of results while we are processing the current one.",
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ddd6c46_4b1f5598",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-23T03:42:20Z",
+      "side": 1,
+      "message": "Yep. Makes sense. Removed.",
+      "parentUuid": "45d3b81a_22ad0b17",
       "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -56,6 +92,30 @@
       "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79f0296e_7fdce7b2",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-23T03:42:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8acbc32f_1c7cd3c2",
+      "range": {
+        "startLine": 153,
+        "startChar": 87,
+        "endLine": 153,
+        "endChar": 110
+      },
+      "revId": "fe0734d9b02d7c04e319061e2ed1b5c1003153a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
