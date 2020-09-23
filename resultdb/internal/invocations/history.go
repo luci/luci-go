@@ -41,18 +41,9 @@ const (
 	ClockDriftBuffer = 5 * time.Minute
 )
 
-// Historical is a reference to an invocation paired with the ordinal fields
-// that they are indexed under.
-type Historical struct {
-	ID             ID
-	IndexTimestamp *timestamp.Timestamp
-	// TODO(crbug.com/1107680): Add support for commit position.
-}
-
 // ByTimestamp queries indexed invocations in a given time range.
-//
-// Up to 50 invocations are returned, starting with the most recent.
-func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange) ([]*Historical, error) {
+// It executes the callback once for each row, starting with the most recent.
+func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange, callback func(inv ID, ts *timestamp.Timestamp) error) error {
 	var err error
 	now := clock.Now(ctx)
 
@@ -61,7 +52,7 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange) ([]
 	minTime := now.Add(-HistoryWindow)
 	if timeRange.GetEarliest() != nil {
 		if minTime, err = ptypes.Timestamp(timeRange.GetEarliest()); err != nil {
-			return nil, errors.Annotate(err, "timeRange.earliest").Err()
+			return errors.Annotate(err, "timeRange.earliest").Err()
 		}
 	}
 
@@ -70,7 +61,7 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange) ([]
 	maxTime := now.Add(ClockDriftBuffer)
 	if timeRange.GetLatest() != nil {
 		if maxTime, err = ptypes.Timestamp(timeRange.GetLatest()); err != nil {
-			return nil, errors.Annotate(err, "timeRange.latest").Err()
+			return errors.Annotate(err, "timeRange.latest").Err()
 		}
 	}
 
@@ -81,23 +72,20 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange) ([]
 		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp} i
 		WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
 		ORDER BY i.HistoryTime DESC
-		LIMIT @pageSize
 	`)
-	ret := make([]*Historical, 0, 50)
 	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"realm":    realm,
-		"pageSize": cap(ret),
-		"minTime":  minTime,
-		"maxTime":  maxTime,
+		"realm":   realm,
+		"minTime": minTime,
+		"maxTime": maxTime,
 	})
+
 	var b spanutil.Buffer
-	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		inv := &Historical{}
-		if err := b.FromSpanner(row, &inv.ID, &inv.IndexTimestamp); err != nil {
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var inv ID
+		var ts *timestamp.Timestamp
+		if err := b.FromSpanner(row, &inv, &ts); err != nil {
 			return err
 		}
-		ret = append(ret, inv)
-		return nil
+		return callback(inv, ts)
 	})
-	return ret, err
 }

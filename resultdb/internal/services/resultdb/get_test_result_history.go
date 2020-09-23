@@ -17,8 +17,10 @@ package resultdb
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -58,25 +60,9 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 	eg.Go(func() error {
 		defer close(results)
-		// TODO(crbug.com/1074407): Instead of getting a single fixed-length
-		// page of results here, pass a callback to get as many results as needed.
-		idxInvs, err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange())
-		if err != nil {
-			return err
-		}
-
-		// TODO(crbug.com/1107678): Parallelize the following loop.
-		for _, idxInv := range idxInvs {
-			select {
-			case <-workerCtx.Done():
-				return workerCtx.Err()
-			default:
-				if err := matchingResultsInInvTree(workerCtx, in, idxInv, results); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+			return matchingResultsInInvTree(workerCtx, in, invocations.NewIDSet(inv), ts, results)
+		})
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
@@ -85,7 +71,7 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	// Collect results sent over the results channel until either:
 	//  - The page of results is full,
 	//  - The context is Done,
-	//  - Or the worker is done with its work (and closes the resutls channel).
+	//  - Or the worker is done with its work (and closes the results channel).
 	//
 	// TODO(crbug.com/1074407): Implement ordering of the results indexed
 	// together by (TestID, VariantHash) .
@@ -104,7 +90,7 @@ ResultsLoop:
 			if len(ret.Entries) == int(in.PageSize) {
 				cancelWorker()
 				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled {
+				if err := eg.Wait(); err != nil && err != context.Canceled && status.Code(errors.Unwrap(err)) != codes.Canceled {
 					return ret, err
 				}
 				return ret, nil
@@ -155,13 +141,14 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 
 // matchingResultsInInvTree gets the matching results reachable from a given
 // invocation, and streams them over the given channel.
-func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, idxInv *invocations.Historical, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
-	reachableInvs, err := invocations.Reachable(ctx, invocations.NewIDSet(idxInv.ID))
+func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, invs invocations.IDSet, ts *timestamp.Timestamp, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
+	reachableInvs, err := invocations.Reachable(ctx, invs)
 	if err != nil {
 		return err
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
 	for _, batch := range reachableInvs.Batches() {
 		batch := batch
 		eg.Go(func() error {
@@ -178,7 +165,7 @@ func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRe
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: idxInv.IndexTimestamp}:
+				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: ts}:
 					return nil
 				}
 			})
