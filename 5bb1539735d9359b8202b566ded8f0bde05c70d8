@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "3164bb10_6592f1d1",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "eh.. added it back. Removed them right before upload this patchset, somehow my brain is telling me they need to be indexed for clean up.",
+      "parentUuid": "fb5088e8_da8ddbcd",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e560765_86f971b6",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -70,6 +88,24 @@
     },
     {
       "key": {
+        "uuid": "493b3e8f_1cefe5a4",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "I actually use the ContentHash returned from LUCI Config. I\u0027m digging into details to see how it is computed. I was actually debating between using the ContentHash from LUCI Config and hashing by ourselves before. I picked the former for simplicity, but the latter one will gave us more control and not coupling it from implementation in LUCI Config. WDYT?\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/interface.go;l\u003d36-37;drc\u003d1fac7eaf1ca957f249547201ce2819253e050a67",
+      "parentUuid": "8e560765_86f971b6",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e288ac4f_f24cab25",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -81,6 +117,30 @@
       "writtenOn": "2020-09-23T22:17:33Z",
       "side": 1,
       "message": "then also remove index on Enabled field.",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 32
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c0380b4_6d2c0be4",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "I think projection query only returns data from indices instead of going to the actual object? In the doc[1], it says\n\n\u003e Projection queries require the specified properties to be indexed.\n\n\n\n[1]: https://cloud.google.com/datastore/docs/concepts/queries#projection_queries",
+      "parentUuid": "e288ac4f_f24cab25",
       "range": {
         "startLine": 67,
         "startChar": 2,
@@ -116,6 +176,30 @@
     },
     {
       "key": {
+        "uuid": "12e2540a_24b229ad",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "Ooops",
+      "parentUuid": "761bf7d8_880ae2b0",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c7141b9_9f7cc707",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -136,6 +220,30 @@
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34b6e3d7_46bb30ea",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c7141b9_9f7cc707",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 7
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -185,6 +293,30 @@
     },
     {
       "key": {
+        "uuid": "9b20b124_df02a457",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "I prefer omit `Project` for brevity since `ConfigGroup` should be a well-known concept with in the context of a single LUCI Project.",
+      "parentUuid": "64dd5ea5_00e2fdf8",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 94,
+        "endChar": 16
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "07321a0e_e3a97009",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -199,6 +331,24 @@
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14b0efc7_de7110cd",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "Good point! Done.",
+      "parentUuid": "07321a0e_e3a97009",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +375,30 @@
     },
     {
       "key": {
+        "uuid": "4ec36470_f843b042",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "Make sense. Done.",
+      "parentUuid": "ce33b5a4_6a72e522",
+      "range": {
+        "startLine": 131,
+        "startChar": 22,
+        "endLine": 131,
+        "endChar": 37
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a65dfef_4ede9faf",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -245,6 +419,30 @@
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66d220f0_2a58319f",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T23:32:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a65dfef_4ede9faf",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 48
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
