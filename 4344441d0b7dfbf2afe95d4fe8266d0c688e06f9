@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8f890156_19554848",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T05:48:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74c14ffd_5f739b1d",
+      "range": {
+        "startLine": 72,
+        "startChar": 61,
+        "endLine": 72,
+        "endChar": 74
+      },
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d712d39_f0b7619f",
         "filename": "lucictx/deadline.go",
         "patchSetId": 10
@@ -36,6 +60,30 @@
       "writtenOn": "2020-09-23T04:12:18Z",
       "side": 1,
       "message": "better to use time.Duration?",
+      "range": {
+        "startLine": 97,
+        "startChar": 60,
+        "endLine": 97,
+        "endChar": 63
+      },
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "037737bf_fd313073",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T05:48:50Z",
+      "side": 1,
+      "message": "The granularity of this field is in seconds; I didn\u0027t want to let the user say `50*time.Millisecond` but have it truncate to 0.",
+      "parentUuid": "3d712d39_f0b7619f",
       "range": {
         "startLine": 97,
         "startChar": 60,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "bb95d3f5_a6773e2f",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T05:48:50Z",
+      "side": 1,
+      "message": "I think it\u0027s all the same, but done.",
+      "parentUuid": "910729a9_b1201d76",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 45
+      },
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "937025de_cf5622e4",
         "filename": "lucictx/deadline_test.go",
         "patchSetId": 10
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "4088b2e9_3a58558f",
+        "filename": "lucictx/deadline_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T05:48:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "937025de_cf5622e4",
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9396b08_06a54ef5",
         "filename": "lucictx/deadline_test.go",
         "patchSetId": 10
@@ -102,6 +192,24 @@
       "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8877581d_36fbe7bf",
+        "filename": "lucictx/deadline_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T05:48:50Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "a9396b08_06a54ef5",
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
