@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dd7933f_387bf016",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-23T07:54:54Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Mac10.13%20Tests%20(dbg)/20148\n\nNote that the demo doesn\u0027t work because this is a prod version and the domain isn\u0027t whitelisted for the OAuth client ID.\nBut the redirection should work.\nYou should be redirected to\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Mac10.13%20Tests%20(dbg)/20148/overview",
+      "revId": "db819a1cdc307a22a430bb894a901a3d2383306e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
