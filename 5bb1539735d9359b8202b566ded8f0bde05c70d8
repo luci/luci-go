@@ -93,6 +93,29 @@
     },
     {
       "key": {
+        "uuid": "761bf7d8_880ae2b0",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:30:38Z",
+      "side": 1,
+      "message": "why should it be public? Practically, these IDs are created only by this package.",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c7141b9_9f7cc707",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
