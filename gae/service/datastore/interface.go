@@ -389,7 +389,7 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 // formats and restrictions for `cb` in this file).
 //
 // Note: projection queries and cursors in callback function are not supported,
-// as they are trivial the complexities and no use cases yet.
+// as they are non-trivial in complexity and haven't been needed yet.
 func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
 	c, cancel := context.WithCancel(c)
 	defer cancel()
@@ -401,7 +401,6 @@ func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
 	}
 
 	iHeap := &iteratorHeap{}
-	heap.Init(iHeap)
 
 	// Add all queries into heap.
 	for _, q := range queries {
