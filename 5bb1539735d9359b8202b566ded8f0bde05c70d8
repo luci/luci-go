@@ -153,6 +153,30 @@
     },
     {
       "key": {
+        "uuid": "c2ee0aa8_095b0700",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T23:48:35Z",
+      "side": 1,
+      "message": "oh, right, i keep forgetting about this gotcha. It makes projection not very useful 😞\nRemove projection then.",
+      "parentUuid": "7c0380b4_6d2c0be4",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 32
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "761bf7d8_880ae2b0",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
