@@ -129,6 +129,30 @@
     },
     {
       "key": {
+        "uuid": "2ef73a6f_9b65918b",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef50f47d_a1af45fd",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 13
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e38d987_1d461d05",
         "filename": "lucictx/deadline.go",
         "patchSetId": 8
@@ -140,6 +164,30 @@
       "writtenOn": "2020-09-22T20:39:54Z",
       "side": 1,
       "message": "I\u0027m not sure it is a good idea to panic here since whether it panics or not depends on external environment. Since all this stuff is kind of best effort, maybe a better strategy would be to:\n1. Warn LOUDLY.\n2. Clamp reserveCleanup to the best possible value. It will leave less time for graceful cleanup, in extreme case 0.\n\nI just feels wrong to me when a program panics depending on a value of environment variable...",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 63,
+        "endChar": 46
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c533388_89c59b60",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "So I considered this but I believe the current behavior is better.\n\nIn the current CL the program would exit and folks would adjust the grace period, and everyone would continue on with their lives.\n\nIn your proposed solution, this would emit a warning (which would be ignored because the build \u0027works\u0027), and then the build would \u0027work\u0027. In a teardown scenario, however, the cleanup code would now not have the time it asked for, likely leading to a secondary error condition, making a bad (teardown) situation worse (now the teardown code is killed halfway).\n\nI\u0027d prefer to keep it as-is.",
+      "parentUuid": "4e38d987_1d461d05",
       "range": {
         "startLine": 61,
         "startChar": 3,
@@ -175,6 +223,30 @@
     },
     {
       "key": {
+        "uuid": "88eb9092_41dbfd53",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "I put it in to aid in debugging after-the-fact; I think it should be pretty much one extra line in the logs for e.g. bbagent.",
+      "parentUuid": "f888068f_8278cdea",
+      "range": {
+        "startLine": 102,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 72
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2552dee8_a273dff4",
         "filename": "lucictx/deadline.go",
         "patchSetId": 8
@@ -195,6 +267,30 @@
       "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "086f0e89_e8166f4e",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "see below",
+      "parentUuid": "2552dee8_a273dff4",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 17
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -221,6 +317,53 @@
     },
     {
       "key": {
+        "uuid": "dc188b69_fef32714",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "see below",
+      "parentUuid": "9b090cf8_7d0f0f85",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 18
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4a63376f_7fe4ddd0",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "Note: this _immediately_ sets newCtx as \u0027DeadlineExceeded\u0027 if adjustedDeadline is in the past (i.e. newCtx.Err() is set before WithDeadline even returns)",
+      "range": {
+        "startLine": 141,
+        "startChar": 31,
+        "endLine": 141,
+        "endChar": 43
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ff99732_65ba8f4a",
         "filename": "lucictx/deadline.go",
         "patchSetId": 8
@@ -232,6 +375,30 @@
       "writtenOn": "2020-09-22T20:39:54Z",
       "side": 1,
       "message": "what happens if they are not compatible? (i.e. deadline-now \u003c DefaultGracePeriodSecs)",
+      "range": {
+        "startLine": 219,
+        "startChar": 6,
+        "endLine": 219,
+        "endChar": 73
+      },
+      "revId": "b328c32e0b867d69d98073e4c22c684d96e8856d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "909a2295_37d2a535",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-23T03:07:57Z",
+      "side": 1,
+      "message": "Set and Get are just low-level interfaces to read/write Deadline... I think your question is \"what if someone puts bad stuff in LUCI_CONTEXT\" and the answer is \"don\u0027t do that\". I think?",
+      "parentUuid": "5ff99732_65ba8f4a",
       "range": {
         "startLine": 219,
         "startChar": 6,
