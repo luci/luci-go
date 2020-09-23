@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -70,6 +71,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
 		 i.ProducerResource,
 		 i.Realm,
+		 i.HistoryTime,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -86,6 +88,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var createdBy spanner.NullString
 		var producerResource spanner.NullString
 		var realm spanner.NullString
+		var historyTime *timestamppb.Timestamp
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -96,7 +99,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&bqExports,
 			&included,
 			&producerResource,
-			&realm)
+			&realm,
+			&historyTime)
 		if err != nil {
 			return err
 		}
@@ -114,6 +118,11 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 				if err := proto.Unmarshal(buf, inv.BigqueryExports[i]); err != nil {
 					return errors.Annotate(err, "%s: failed to unmarshal BigQuery export", inv.Name).Err()
 				}
+			}
+		}
+		if historyTime != nil {
+			inv.HistoryOptions = &pb.HistoryOptions{
+				UseInvocationTimestamp: true,
 			}
 		}
 

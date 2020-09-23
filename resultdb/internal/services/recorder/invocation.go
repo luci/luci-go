@@ -172,5 +172,9 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		row["BigQueryExports"] = bqExports
 	}
 
+	if inv.GetHistoryOptions().GetUseInvocationTimestamp() {
+		row["HistoryTime"] = spanner.CommitTimestamp
+	}
+
 	return row
 }
