@@ -175,7 +175,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <span>${this.buildNumOrId}</span>
         </div>
         <div class="delimiter"></div>
-        <a href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)} target="_blank">To legacy build page</a>
+        <a href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)}>To legacy build page</a>
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
