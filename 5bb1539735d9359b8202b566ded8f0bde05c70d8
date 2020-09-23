@@ -53,6 +53,23 @@
     },
     {
       "key": {
+        "uuid": "8e560765_86f971b6",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:29:00Z",
+      "side": 1,
+      "message": "i\u0027d document what hash it is here, since it\u0027s important, as changing hashing algo may lead to weird results.\nsha2?",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e288ac4f_f24cab25",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -92,6 +109,29 @@
         "startChar": 5,
         "endLine": 84,
         "endChar": 7
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9080e8d4_08872d2a",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:29:00Z",
+      "side": 1,
+      "message": "I don\u0027t like here is potential for conflict. Can we ensure resulting names would be unique?\nMaybe just temporarily prohibit `index_%d` pattern in config validation?\n\nanywhow, please hold, still discussing this on design doc.",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 61
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -155,6 +195,29 @@
         "startChar": 22,
         "endLine": 131,
         "endChar": 37
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a65dfef_4ede9faf",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:29:00Z",
+      "side": 1,
+      "message": "per above, i\u0027d just return error here.\nAlso, please apply transient tag.",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 48
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
