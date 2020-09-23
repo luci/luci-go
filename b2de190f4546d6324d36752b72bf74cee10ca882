@@ -82,6 +82,30 @@
     },
     {
       "key": {
+        "uuid": "796176cf_6daa33b6",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-09-23T01:08:31Z",
+      "side": 1,
+      "message": "Good point. Clarified.",
+      "parentUuid": "91c39567_4e968d4e",
+      "range": {
+        "startLine": 564,
+        "startChar": 7,
+        "endLine": 564,
+        "endChar": 17
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cc9e1607_53753db9",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -99,6 +123,24 @@
     },
     {
       "key": {
+        "uuid": "fdf0eddb_b99c7b02",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-09-23T01:08:31Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "cc9e1607_53753db9",
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eca6ba4a_6be9524e",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -110,6 +152,30 @@
       "writtenOn": "2020-09-17T14:18:34Z",
       "side": 1,
       "message": "i think this is technically correct, however I suspect this never happens in practice since we migrated off Buildbot. Do you by any chance have examples of such builds?",
+      "range": {
+        "startLine": 587,
+        "startChar": 0,
+        "endLine": 590,
+        "endChar": 31
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc7da008_fd4b2290",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 590,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-09-23T01:08:31Z",
+      "side": 1,
+      "message": "I don\u0027t know of any examples of this. I tried using bigquery to verify this but I couldn\u0027t find cancellation reason in there at all.\n\nI\u0027ll leave this in for now; I verified this is what the current code does. If this changes in the future we can get rid of it.",
+      "parentUuid": "eca6ba4a_6be9524e",
       "range": {
         "startLine": 587,
         "startChar": 0,
