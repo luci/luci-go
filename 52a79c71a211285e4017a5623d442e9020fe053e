@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "4a86cc1c_58693963",
+        "filename": "gae/service/datastore/datastore_integration_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-23T21:42:09Z",
+      "side": 1,
+      "message": "ah, copied from datastore_test.go. But it seems not necessary.",
+      "parentUuid": "335dd3e6_3db7f207",
+      "range": {
+        "startLine": 15,
+        "startChar": 16,
+        "endLine": 15,
+        "endChar": 47
+      },
+      "revId": "52a79c71a211285e4017a5623d442e9020fe053e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "612c4a53_196370bf",
         "filename": "gae/service/datastore/interface.go",
         "patchSetId": 2
@@ -62,6 +86,30 @@
       "revId": "52a79c71a211285e4017a5623d442e9020fe053e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea08f99e_9371ecc7",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-23T21:42:09Z",
+      "side": 1,
+      "message": "seems no need.\n\nI saw many examples use Init() to make sure it\u0027s valid. But in our case, we use `heap.Push()` to insert item which can guarantee its valid.",
+      "parentUuid": "612c4a53_196370bf",
+      "range": {
+        "startLine": 418,
+        "startChar": 6,
+        "endLine": 418,
+        "endChar": 10
+      },
+      "revId": "52a79c71a211285e4017a5623d442e9020fe053e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
