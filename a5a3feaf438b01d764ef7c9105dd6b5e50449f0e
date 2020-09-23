@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2ebb3c0_e29f1e13",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-23T19:50:37Z",
+      "side": 1,
+      "message": "Does every build need this? Should we skip it if the ResultDB is not enabled for the build?",
+      "range": {
+        "startLine": 138,
+        "startChar": 12,
+        "endLine": 138,
+        "endChar": 34
+      },
+      "revId": "a5a3feaf438b01d764ef7c9105dd6b5e50449f0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
