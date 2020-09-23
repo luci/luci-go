@@ -106,6 +106,30 @@
     },
     {
       "key": {
+        "uuid": "5f6a3d2a_6c3a5545",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T10:29:28Z",
+      "side": 1,
+      "message": "\u003e in a given CQ attempt \ni think this isn\u0027t helping, since it\u0027s reasonable to assume that a job triggered before the attempt start would still be counted.\n\nWDYT \"triggered during the lifetime of a given CQ attempt\"?",
+      "parentUuid": "796176cf_6daa33b6",
+      "range": {
+        "startLine": 564,
+        "startChar": 7,
+        "endLine": 564,
+        "endChar": 17
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cc9e1607_53753db9",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -176,6 +200,30 @@
       "side": 1,
       "message": "I don\u0027t know of any examples of this. I tried using bigquery to verify this but I couldn\u0027t find cancellation reason in there at all.\n\nI\u0027ll leave this in for now; I verified this is what the current code does. If this changes in the future we can get rid of it.",
       "parentUuid": "eca6ba4a_6be9524e",
+      "range": {
+        "startLine": 587,
+        "startChar": 0,
+        "endLine": 590,
+        "endChar": 31
+      },
+      "revId": "b2de190f4546d6324d36752b72bf74cee10ca882",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdf2c90a_e7ee0baf",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 590,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T10:29:28Z",
+      "side": 1,
+      "message": "Thanks for checking! I was and am 90% certain this is Buildbot relic (actually, it\u0027s Rietveld relic). I\u0027m with keeping it. I\u0027ll try to get rid of it later.",
+      "parentUuid": "dc7da008_fd4b2290",
       "range": {
         "startLine": 587,
         "startChar": 0,
