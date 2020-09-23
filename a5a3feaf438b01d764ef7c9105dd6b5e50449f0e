@@ -22,6 +22,30 @@
       "revId": "a5a3feaf438b01d764ef7c9105dd6b5e50449f0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "003cb1d4_b17fec04",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-23T20:29:52Z",
+      "side": 1,
+      "message": "I guess not, because the handler currently does nothing if ResultDB isn\u0027t enabled. I\u0027ve added a check based on what the handler is doing now.",
+      "parentUuid": "d2ebb3c0_e29f1e13",
+      "range": {
+        "startLine": 138,
+        "startChar": 12,
+        "endLine": 138,
+        "endChar": 34
+      },
+      "revId": "a5a3feaf438b01d764ef7c9105dd6b5e50449f0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
