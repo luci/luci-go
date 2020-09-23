@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "004b293e_86878591",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I clarify this point in the doc for ProjectConfig struct as generally it is where ppl start from?",
+      "parentUuid": "c636e960_390b19e2",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6145569e_f5330b7a",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -56,6 +74,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "339ad55b_9c302776",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6145569e_f5330b7a",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 37
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +148,30 @@
     },
     {
       "key": {
+        "uuid": "38ae0627_b400d972",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0cca3725_afed1cf0",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 33,
+        "endChar": 19
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90250a9f_f0b4a6cc",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -129,6 +195,30 @@
     },
     {
       "key": {
+        "uuid": "7c4fea89_1c964c40",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90250a9f_f0b4a6cc",
+      "range": {
+        "startLine": 39,
+        "startChar": 34,
+        "endLine": 39,
+        "endChar": 37
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c390da3_e4ce381b",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -143,6 +233,24 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34cd8078_142e4ea5",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I added it before and deleted it because I think to get all ConfigGroups, user can use query for ConfigGroups with `LatestRevision` as its parent. But now since intermediate kind is removed, I added it back.",
+      "parentUuid": "4c390da3_e4ce381b",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -166,6 +274,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9500d74_68c6d5f4",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6041c96_21dbdd49",
+      "range": {
+        "startLine": 46,
+        "startChar": 65,
+        "endLine": 47,
+        "endChar": 35
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -239,6 +371,30 @@
     },
     {
       "key": {
+        "uuid": "9e2f6627_3f43242c",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76ceb162_28b83c86",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 15
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4c7d7d0_77f442ef",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -262,6 +418,30 @@
     },
     {
       "key": {
+        "uuid": "8c8aa23a_1394e89a",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4c7d7d0_77f442ef",
+      "range": {
+        "startLine": 52,
+        "startChar": 62,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13a3583a_4dd7ce8e",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -282,6 +462,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "679aca55_90164326",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I saw Buildbucket is doing that[1] so I just blindly followed it. I guees BB is doing that because it is how python version works. I also don\u0027t have a strong preference so I omit it in the latest PS for simplicity.\n\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/build.go;l\u003d58",
+      "parentUuid": "13a3583a_4dd7ce8e",
+      "range": {
+        "startLine": 53,
+        "startChar": 29,
+        "endLine": 53,
+        "endChar": 41
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -332,6 +536,30 @@
     },
     {
       "key": {
+        "uuid": "89b418ac_f30e101f",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I removed it as of now since I don\u0027t have any usage for GitRevision. We can add it back any time we need it.",
+      "parentUuid": "2d7ae8c9_5fb19668",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6adc0c09_15051324",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -346,6 +574,24 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "242d9128_9cf199ad",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "You are not missing a use case. I took this idea from BB[1] and thought it might be useful in the future. But you are right, we can always add it if we need it.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/config.py;l\u003d32;drc\u003dfa8548a82371588add92d58cd2718cb4f7cf3a72",
+      "parentUuid": "6adc0c09_15051324",
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -372,6 +618,30 @@
     },
     {
       "key": {
+        "uuid": "0827db65_fb0ee2de",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5818e147_f91e7ecc",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 52
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03be77ce_3cf9eac8",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -395,6 +665,30 @@
     },
     {
       "key": {
+        "uuid": "48d818d9_388c68c5",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03be77ce_3cf9eac8",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 17
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "266282f6_bae88f5e",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -415,6 +709,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88f7af6b_fff55102",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I add it because I think it affect the in-memory gae implementation behavior before I finished testing. However, in the test, I am able to set the consistency to `true` so I no longer need it.",
+      "parentUuid": "266282f6_bae88f5e",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -464,6 +782,30 @@
     },
     {
       "key": {
+        "uuid": "9a2f4d27_18918b3c",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53eedca7_990af7ab",
+      "range": {
+        "startLine": 80,
+        "startChar": 33,
+        "endLine": 80,
+        "endChar": 38
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4eb42135_e074d244",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -484,6 +826,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "169d3da0_bd33c3b8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I\u0027ll remove it from this CL and add it to the CL where it is consumed.",
+      "parentUuid": "4eb42135_e074d244",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -510,6 +876,30 @@
     },
     {
       "key": {
+        "uuid": "24d7a325_ee65da0f",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "\u003e Getting rid of intermediate kind\n\nsgtm\n\n\u003e clean up strategy\n\nI like your idea better! My original thought is looking at the CreateTime only and delete if the ConfigGroup is created before (current time - X) and it is not currently used one.",
+      "parentUuid": "b3dc2df3_f47e1d10",
+      "range": {
+        "startLine": 107,
+        "startChar": 63,
+        "endLine": 109,
+        "endChar": 68
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "91c1a032_62612f22",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -533,6 +923,30 @@
     },
     {
       "key": {
+        "uuid": "9775a50b_5345ad06",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Good idea! Done.",
+      "parentUuid": "91c1a032_62612f22",
+      "range": {
+        "startLine": 111,
+        "startChar": 37,
+        "endLine": 111,
+        "endChar": 48
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "daeaa7aa_6e23755b",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -544,6 +958,30 @@
       "writtenOn": "2020-09-18T17:22:45Z",
       "side": 1,
       "message": "*\n(to avoid accidental copies, and same below)",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 9
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7036c34b_26d4cab5",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "I think this won\u0027t work? I intentionally omit \u0027*\u0027 because luci/gae only supports \n\n\u003e  Types which implement PropertyConverter on (*Type)\n\n\nhttps://pkg.go.dev/go.chromium.org/luci/gae/service/datastore#GetPLS",
+      "parentUuid": "daeaa7aa_6e23755b",
       "range": {
         "startLine": 118,
         "startChar": 8,
@@ -579,6 +1017,30 @@
     },
     {
       "key": {
+        "uuid": "9abf6a71_c8da215a",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Same as above. Remove it from this CL and add it to the one that need this function.",
+      "parentUuid": "782bfafb_34f45a20",
+      "range": {
+        "startLine": 122,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 1
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a58d99f2_d60d1ba3",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -602,6 +1064,30 @@
     },
     {
       "key": {
+        "uuid": "ea7f95be_1298d2f4",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "Agree with `.Put()` them sequentially.\n\n\u003e copy pb.ConfigGroup by reference\n\nI\u0027m not sure how to do that given the type is pb.Config instead of *pb.Config (See my reply about why \u0027*\u0027 can\u0027t be added above). Shallow copy (`ret[i].Content \u003d *cg`) is not an option because go vet will fail with message \"literal copies lock value from *cg\" (I guess protobuf team discourage such usage). I think I may probably avoid creating new object by using reflection to assign pointer directly. WDYT?",
+      "parentUuid": "a58d99f2_d60d1ba3",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "86bce41c_2b1bd54b",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -613,6 +1099,30 @@
       "writtenOn": "2020-09-18T17:22:45Z",
       "side": 1,
       "message": "qq: is this actually needed? Does .Merge segfault on 2nd arg being nil?",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 62
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "602b6869_79c991f1",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-23T21:16:00Z",
+      "side": 1,
+      "message": "The documentation didn\u0027t mention that. I traced down the implementation and it wasn\u0027t clear to me that nil is handled. So I did this just to be on the safe side.",
+      "parentUuid": "86bce41c_2b1bd54b",
       "range": {
         "startLine": 137,
         "startChar": 2,
