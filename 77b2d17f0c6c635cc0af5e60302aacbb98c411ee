@@ -560,6 +560,30 @@
     },
     {
       "key": {
+        "uuid": "7a7fcf85_348b2628",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "the use I had in mind was Debugging \u0026 potentially reporting to BQ (rev of config under which CL landed). We can add it later, it\u0027s not needed for now.",
+      "parentUuid": "89b418ac_f30e101f",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6adc0c09_15051324",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -994,6 +1018,30 @@
     },
     {
       "key": {
+        "uuid": "a0bd2ba8_7eafdf1c",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "this bugs me, so i started discussion in LUCI-team chat.",
+      "parentUuid": "7036c34b_26d4cab5",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 9
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "782bfafb_34f45a20",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -1132,6 +1180,30 @@
       "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55b13e49_20f43be9",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "makes sense. thanks for looking, but FYI: you didn\u0027t have to look into implementation -- if not documented, then we shouldn\u0027t rely on it, as it can break us any time (%some exceptions)",
+      "parentUuid": "602b6869_79c991f1",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 62
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

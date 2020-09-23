@@ -16,6 +16,86 @@
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fb5088e8_da8ddbcd",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "imo, no need to index. And same for Updated.",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e288ac4f_f24cab25",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "then also remove index on Enabled field.",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 32
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07321a0e_e3a97009",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "Vadim convinced me recently that multierrors are vary rarely useful, especially due to invalid tag search of transiency (can\u0027t find reference right now, it\u0027s somewhere in my or his server/tq CLs).\n\nAnyways, here there is no usefulness at all -- if it errored out, we\u0027d need to retry everything from scratch anyhow.",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce33b5a4_6a72e522",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-23T22:17:33Z",
+      "side": 1,
+      "message": "better do it once above s.t. each group gets the same in prod as well as in tests.",
+      "range": {
+        "startLine": 131,
+        "startChar": 22,
+        "endLine": 131,
+        "endChar": 37
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
