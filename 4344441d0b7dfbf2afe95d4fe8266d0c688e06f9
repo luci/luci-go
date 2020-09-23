@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "74c14ffd_5f739b1d",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-23T04:12:18Z",
+      "side": 1,
+      "message": "type mismatch?",
+      "range": {
+        "startLine": 72,
+        "startChar": 61,
+        "endLine": 72,
+        "endChar": 74
+      },
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d712d39_f0b7619f",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-23T04:12:18Z",
+      "side": 1,
+      "message": "better to use time.Duration?",
+      "range": {
+        "startLine": 97,
+        "startChar": 60,
+        "endLine": 97,
+        "endChar": 63
+      },
+      "revId": "4344441d0b7dfbf2afe95d4fe8266d0c688e06f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "910729a9_b1201d76",
         "filename": "lucictx/deadline.go",
         "patchSetId": 10
