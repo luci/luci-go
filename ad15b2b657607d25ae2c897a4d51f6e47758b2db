@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfbdc319_cf0190cf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-23T02:46:35Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-2-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4254\n\nYou need to login to see the build page banner.\n",
+      "revId": "ad15b2b657607d25ae2c897a4d51f6e47758b2db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
