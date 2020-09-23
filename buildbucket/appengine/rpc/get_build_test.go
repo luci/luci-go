@@ -39,6 +39,10 @@ func TestGetBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:caller@example.com",
+		})
+
 		Convey("id", func() {
 			Convey("not found", func() {
 				req := &pb.GetBuildRequest{
@@ -69,16 +73,13 @@ func TestGetBuild(t *testing.T) {
 			})
 
 			Convey("found", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:user",
-				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: pb.Bucket{
 						Acls: []*pb.Acl{
 							{
-								Identity: "user:user",
+								Identity: "user:caller@example.com",
 								Role:     pb.Acl_READER,
 							},
 						},
@@ -190,16 +191,13 @@ func TestGetBuild(t *testing.T) {
 			})
 
 			Convey("ok", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:user",
-				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: pb.Bucket{
 						Acls: []*pb.Acl{
 							{
-								Identity: "user:user",
+								Identity: "user:caller@example.com",
 							},
 						},
 					},
