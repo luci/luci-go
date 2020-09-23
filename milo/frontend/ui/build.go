@@ -634,9 +634,24 @@ var (
 					`{{ if gt $i 0 }} {{ end }}` +
 					`{{ $link.HTML }}` +
 					`{{ end }}`))
-	optInTemplate = template.Must(
+	resultsPageOptInTemplate = template.Must(
 		template.New("optIn").
-			Parse(`<div id="opt-in-banner">Try the new test results page <a href="/ui/inv/{{ . }}">here</a>!</div>`))
+			Parse(`
+				<div id="opt-in-banner">
+					Try the new test results page
+					<a href="/ui/inv/{{ . }}">here</a>!
+				</div>`))
+	newBuildPageOptInTemplate = template.Must(
+		template.New("optIn").
+			Parse(`
+				<div id="opt-in-banner">
+					Try the new build page
+					{{if .Number}}
+					<a href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/{{.Number}}">here</a>!
+					{{else}}
+					<a href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/b{{.Id}}">here</a>!
+					{{end}}
+				</div>`))
 )
 
 // HTML renders this Link as HTML.
@@ -678,7 +693,16 @@ func (b *Build) TestResultsOptInHTML() template.HTML {
 	}
 	invID := strings.TrimPrefix(b.Infra.Resultdb.Invocation, "invocations/")
 	buf := bytes.Buffer{}
-	if err := optInTemplate.Execute(&buf, invID); err != nil {
+	if err := resultsPageOptInTemplate.Execute(&buf, invID); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
+}
+
+// NewBuildPageOptInHTML returns a link to the new build page of the build.
+func (b *Build) NewBuildPageOptInHTML() template.HTML {
+	buf := bytes.Buffer{}
+	if err := newBuildPageOptInTemplate.Execute(&buf, b); err != nil {
 		panic(err)
 	}
 	return template.HTML(buf.Bytes())
