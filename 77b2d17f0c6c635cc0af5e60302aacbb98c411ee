@@ -489,6 +489,30 @@
     },
     {
       "key": {
+        "uuid": "979af8d4_468942eb",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:18:51Z",
+      "side": 1,
+      "message": "Just looking quickly, the snake case for fields is not used everywhere in luci-go, so I think it\u0027s unnecessary and I vote on omitting it like in the latest PS.\n\nExample: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/scheduler/appengine/acl/acl.go;l\u003d49",
+      "parentUuid": "679aca55_90164326",
+      "range": {
+        "startLine": 53,
+        "startChar": 29,
+        "endLine": 53,
+        "endChar": 41
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f2034eb_f4538025",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 4
@@ -571,6 +595,30 @@
       "writtenOn": "2020-09-23T22:17:33Z",
       "side": 1,
       "message": "the use I had in mind was Debugging \u0026 potentially reporting to BQ (rev of config under which CL landed). We can add it later, it\u0027s not needed for now.",
+      "parentUuid": "89b418ac_f30e101f",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "77b2d17f0c6c635cc0af5e60302aacbb98c411ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e4a76d78_d5dcbfef",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:18:51Z",
+      "side": 1,
+      "message": "SGTM",
       "parentUuid": "89b418ac_f30e101f",
       "range": {
         "startLine": 56,

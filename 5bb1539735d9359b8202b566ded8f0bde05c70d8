@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "8b867ed3_b7c6bd48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:18:51Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb5088e8_da8ddbcd",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
@@ -52,6 +69,52 @@
         "startChar": 2,
         "endLine": 67,
         "endChar": 32
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c7141b9_9f7cc707",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:18:51Z",
+      "side": 1,
+      "message": "Bikeshedding nit: I somewhat prefer spelling out \"Make\" rather than using \"Mk\", because it\u0027s clearer to me (and Make* is used in other function names in luci-go).",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 7
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64dd5ea5_00e2fdf8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:18:51Z",
+      "side": 1,
+      "message": "Do we want to rename this type to be ProjectConfigGroup as well, or is it kept like this for brevity?",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 94,
+        "endChar": 16
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
