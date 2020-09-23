@@ -559,6 +559,16 @@ message Verifiers {
     // Collection of parameters for deciding whether to retry a single build.
     // If parameter is not specified, its value defaults to 0 (per proto3).
     // Thus, omitting all parameters means no retries of any kind.
+    //
+    // CQ's retry logic is as follows:
+    // All builds triggered during the lifetime of a CQ attempt for a tryjob are
+    // weighted according to the failure type, as described below. The resulting
+    // weights are then added together. Call this number W. If W > single_quota,
+    // then no more builds are scheduled for that tryjob.
+    //
+    // W for every tryjob is then summed up. If that result is strictly greater
+    // than global_quota, then the CQ attempt fails, and no more builds are
+    // scheduled for the attempt.
     message RetryConfig {
       // Retry quota for a single tryjob.
       int32 single_quota = 1;
@@ -566,13 +576,18 @@ message Verifiers {
       // Retry quota for all tryjobs in a CL.
       int32 global_quota = 2;
 
-      // The weight assigned to each tryjob failure.
+      // The weight assigned to each tryjob failure. A failure is as a
+      // buildbucket build whose result == 'FAILURE'.
       int32 failure_weight = 3;
 
-      // The weight assigned to each transient failure.
+      // The weight assigned to each transient failure. A transient failure is a
+      // buildbucket build which has result == 'FAILURE' and 'failure_reason' in
+      // ('BUILDBUCKET_FAILURE', 'INFRA_FAILURE').
       int32 transient_failure_weight = 4;
 
-      // The weight assigned to tryjob timeouts.
+      // The weight assigned to tryjob timeouts. A tryjob timeout is as a
+      // buildbucket build with result == 'CANCELED' and cancelation_reason ==
+      // 'TIMEOUT'.
       int32 timeout_weight = 5;
     }
   }
