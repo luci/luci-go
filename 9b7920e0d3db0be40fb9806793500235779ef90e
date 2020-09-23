@@ -16,6 +16,121 @@
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "669f0616_f12653c7",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:31:04Z",
+      "side": 1,
+      "message": "I haven\u0027t seen the new tq library used yet -- could you explain it a bit to me, like when is init called and how is RefreshProjectConfigTask used?",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 9
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "297898ac_e8e55496",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:31:04Z",
+      "side": 1,
+      "message": "Possible ways of rephrasing this that may be a little shorter: \n\n\"All projects enabled in CV will be refreshed.\"\n\nOr:\n\n\"All projects that have current CV configs will be refreshed.\"\n\nAre both of those accurate?",
+      "range": {
+        "startLine": 52,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 36
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "469491e1_36206316",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:31:04Z",
+      "side": 1,
+      "message": "doesn\u0027t have a...",
+      "range": {
+        "startLine": 90,
+        "startChar": 57,
+        "endLine": 90,
+        "endChar": 70
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f52df4bf_2768bcaa",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:31:04Z",
+      "side": 1,
+      "message": "disabling\n\nOr rephrase as: \"Disabling a non-existing project is a no-op.\"",
+      "range": {
+        "startLine": 181,
+        "startChar": 27,
+        "endLine": 181,
+        "endChar": 34
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd0ebea9_defcf8d3",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-23T22:31:04Z",
+      "side": 1,
+      "message": "Optional nit: capitalize the first word and add period at the end of each full-sentence line comment.",
+      "range": {
+        "startLine": 52,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 13
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
