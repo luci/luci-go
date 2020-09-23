@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df8cffb5_b46f7c95",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-23T04:26:18Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "ed55820ae2862ffa97851747372ea784532c71d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "07be9684_defadf2e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-23T04:26:18Z",
+      "side": 1,
+      "message": "i think this whole thing is equivalent to\n\n  return matchingResultsInInvTree(...)\n\nwhich is a single statement, no?\n\nselect{} makes sense when we have multiple sends/receives, but here we have a single one. If the context is canceled, matchingResultsInInvTree will notice it inside.",
+      "range": {
+        "startLine": 64,
+        "startChar": 3,
+        "endLine": 72,
+        "endChar": 13
+      },
+      "revId": "ed55820ae2862ffa97851747372ea784532c71d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
