@@ -1,0 +1,280 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85fcbd0d_899cc900",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "task root, not cwd",
+      "range": {
+        "startLine": 282,
+        "startChar": 33,
+        "endLine": 282,
+        "endChar": 36
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "495a4e6e_1a5fdcae",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I think this comment is out of date (wherever you got it from); I believe that the Package.subdir is used to fill this out now: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/swarming.py;l\u003d279?q\u003dbuildbucket%20subdir\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 283,
+        "endChar": 72
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20037859_3df5ca8e",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "These need to be Package (or the relevant subset): https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/service_config.proto#51\n\nIn particular, \u0027subdir\u0027 is critical for representing these.",
+      "range": {
+        "startLine": 287,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 36
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b23ec18_ed47d163",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 444,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I think this is actually the swarming task root?",
+      "range": {
+        "startLine": 444,
+        "startChar": 42,
+        "endLine": 444,
+        "endChar": 59
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e11c42a_e650cfa9",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "relative the swarming task root; BBAgent.payload_path SHOULD be \"\" in this case (both buildbucket and led should adjust it as such when setting an isolated payload)",
+      "range": {
+        "startLine": 87,
+        "startChar": 34,
+        "endLine": 87,
+        "endChar": 57
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c67ffbeb_ce81c68a",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "this is stale",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 106,
+        "endChar": 58
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35d0f032_1c6c60d2",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "this is also led-specific",
+      "range": {
+        "startLine": 107,
+        "startChar": 3,
+        "endLine": 109,
+        "endChar": 48
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b39b683e_da6f1f69",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I would say something like \"NOTE: The isolate is installed at the root of the swarming task; this means that you may need to adjust cmd[0] to account for extra paths in the payload.\"",
+      "range": {
+        "startLine": 111,
+        "startChar": 14,
+        "endLine": 111,
+        "endChar": 23
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd409aa8_53b743d0",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I believe \u0027isolate\u0027 is dead/dying terminology; I\u0027m not sure what the replacement/generic term for it is (since I believe CASTree is meant to work for both isolate as well as RBE-CAS)",
+      "range": {
+        "startLine": 112,
+        "startChar": 22,
+        "endLine": 112,
+        "endChar": 37
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ce028f1_03808c04",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "probably should trim all mentions of led here",
+      "range": {
+        "startLine": 123,
+        "startChar": 17,
+        "endLine": 123,
+        "endChar": 20
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06b9ea8f_b5c3e1f6",
+        "filename": "led/job/job.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I would maybe say\n\n  env_prefixes can be derived from user_packages\n  env is purely a reflection of build.experimental",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 15
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef9b0ba8_26de82d9",
+        "filename": "led/job/job.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:10Z",
+      "side": 1,
+      "message": "I would maybe say \"derived from buildbucket.exe.cmd[0] value\"",
+      "range": {
+        "startLine": 56,
+        "startChar": 33,
+        "endLine": 56,
+        "endChar": 38
+      },
+      "revId": "ba55d6e88273ed726c094ca95896c1d274fe63f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
