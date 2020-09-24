@@ -21,6 +21,8 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
+
 // Status of a build or a step.
 enum Status {
   // Unspecified state. Meaning depends on the context.
@@ -75,10 +77,16 @@ message Executable {
   // The command to invoke within the package.
   //
   // The 0th argument is taken as relative to the cipd_package root (a.k.a.
-  // BBAgentArgs.payload_path), so "foo" would invoke the binary called "foo" in
-  // the root of the package. On Windows, this will automatically look
-  // first for ".exe" and ".bat" variants. Similarly, "subdir/foo" would
-  // look for "foo" in "subdir" of the CIPD package.
+  // BuildInfra.BBAgent.payload_path), if cipd_package is specified, so "foo"
+  // would invoke the binary called "foo" in the root of the package.
+  // On Windows, this will automatically look first for ".exe" and ".bat"
+  // variants. Similarly, "subdir/foo" would look for "foo" in "subdir" of
+  // the CIPD package.
+  //
+  // If cas_payload is specified instead of cipd_package and cipd_version,
+  // cmd[0] should be relative to swarming task root; BBAgent.payload_path
+  // SHOULD be "" in this case (both buildbucket and led should adjust it as
+  // such when setting an isolated payload).
   //
   // The other arguments are passed verbatim to the executable.
   //
@@ -93,6 +101,24 @@ message Executable {
   //
   // Optional. If omitted, defaults to `['luciexe']`.
   repeated string cmd = 3;
+
+  // If set, this holds the CASTree to use with the build, when launched.
+  //
+  // Mutually exclusive to cipd_package and cipd_version.
+  // NOTE: The isolate is installed at the root of the swarming task; this means
+  // that you may need to adjust cmd[0] to account for extra paths in the
+  // payload.
+  swarming.v1.CASTree cas_payload = 4;
+
+  // This field contains the path relative to ${ISOLATED_OUTDIR} for the final
+  // build.proto result. If blank, will cause the job not to emit any build
+  // proto to the output directory.
+  //
+  // For bbagent-based jobs this must have the file extension ".pb", ".textpb"
+  // or ".json", to get the respective encoding.
+  //
+  // For legacy kitchen jobs this must have the file extension ".json".
+  string final_build_proto_path = 5;
 }
 
 // Machine-readable details of a status.
