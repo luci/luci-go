@@ -28,13 +28,21 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // Where it makes sense, this additional data should be moved from this
 // Buildbucket message into BBAgentArgs, but for now we store it separately to
 // get led v2 up and running.
+//
+// Deprecated. Fields are copied to buildbucket.v2.Build, and will be removed
+// later.
 message Buildbucket {
   buildbucket.v2.BBAgentArgs bbagent_args = 1;
 
+  // Deprecated. Renamed to user_packages and moved to
+  // buildbucket.v2.BuildInfra.Buildbucket.
   repeated swarming.v1.CIPDPackage cipd_packages = 2;
 
+  // Deprecated. Will be removed later.
   repeated swarming.v1.StringPair env_vars = 3;
   repeated swarming.v1.StringListPair env_prefixes = 4;
+
+  // Deprecated. Moved to buildbucket.v2.BuildInfra.Swarming.
   repeated string extra_tags = 5;
 
   google.protobuf.Duration grace_period = 6;
@@ -44,9 +52,14 @@ message Buildbucket {
 
   // Indicates that this build should be generated as a legacy kitchen task when
   // launched.
+  //
+  // Deprecated. Will be removed later.
   bool legacy_kitchen = 9;
 
   // Eventually becomes the name of the launched swarming task.
+  //
+  // Deprecated. Renamed to task_name and moved to
+  // buildbucket.v2.BuildInfra.Swarming.
   string name = 10;
 
   // This field contains the path relative to ${ISOLATED_OUTDIR} for the final
@@ -59,6 +72,8 @@ message Buildbucket {
   // For legacy kitchen jobs this must have the file extension ".json".
   //
   // By default, led will populate this with "build.proto.json".
+  //
+  // Deprecated. Moved to buildbucket.v2.Executable.
   string final_build_proto_path = 11;
 }
 
