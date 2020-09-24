@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e02e157_f1a2ab2d",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "Based on the implementation, I think the cleanup channel will never receive a ClosureEvent. It\u0027ll keep sending InterruptEvent and close the channel when upon `ctx.Done()`. Same for the timeout scenario as well.",
+      "range": {
+        "startLine": 96,
+        "startChar": 47,
+        "endLine": 96,
+        "endChar": 80
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2e78c48_0a0bcd4d",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "I think we just close the channel since we bias on `ctx.Done`?",
+      "range": {
+        "startLine": 99,
+        "startChar": 20,
+        "endLine": 99,
+        "endChar": 51
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cafe944e_bfe9bf84",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "Based on the current implementation I think it should be\n  * Assuming ScopedFunction exits in a timely fashion on ctx.Done, you have at least *1 minute* to do stuff here\n  * Note that if `\u003c-cleanup` is TimeoutEvent, you could have *1 minute + 39.5 seconds*",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 124,
+        "endChar": 25
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e1dda1e_5072f17e",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "Isn\u0027t cleanup closed on \"$time_recieve_interrupt_signal + $grace_period\" or \"$deadline\", whichever comes first.",
+      "range": {
+        "startLine": 133,
+        "startChar": 13,
+        "endLine": 134,
+        "endChar": 32
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6de5634_1598c8f8",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "This is actually what confused me at the beginning. In my mind, grace period is a period immediately after deadline is exceeded. However, based on the current implementation, taking swarming as an example, I think swarming will set `deadline` to `$build_start_timestamp + $execution_timeout_value + $grace_period`. Is that correct?",
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e354057c_fcb00b50",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "how is it done? Or this is a TODO?",
+      "range": {
+        "startLine": 230,
+        "startChar": 25,
+        "endLine": 230,
+        "endChar": 55
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5b69a41_34428392",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-24T21:30:39Z",
+      "side": 1,
+      "message": "Should the same be done for timeoutC as well since it can also be starved?",
+      "range": {
+        "startLine": 252,
+        "startChar": 6,
+        "endLine": 252,
+        "endChar": 37
+      },
+      "revId": "7ae9523d4fa9bbf0d39da158eb60f26ca60d7e49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
