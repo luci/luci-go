@@ -16,6 +16,24 @@
       "revId": "c2cd82d6e3c0f50a1faeca15a9f68af542fb7889",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e5029f02_dc4e4931",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T02:44:44Z",
+      "side": 1,
+      "message": "Oof, yeah, the test may be flaky now; previously it just closed the channel, now it tries to send the event. I\u0027ll look at it.",
+      "parentUuid": "47b53996_3d5b85f3",
+      "revId": "c2cd82d6e3c0f50a1faeca15a9f68af542fb7889",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
