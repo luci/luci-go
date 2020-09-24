@@ -130,6 +130,13 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
 			}
 		}
+		if inf.Proto.Resultdb.GetHostname() != "" && inf.Proto.Resultdb.Invocation != "" {
+			if err := tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
+				BuildId: bld.ID,
+			}); err != nil {
+				return errors.Annotate(err, "failed to enqueue resultdb finalization task: %d", bld.ID).Err()
+			}
+		}
 		if err := tasks.ExportBigQuery(ctx, &taskdefs.ExportBigQuery{
 			BuildId: bld.ID,
 		}); err != nil {

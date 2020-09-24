@@ -90,6 +90,28 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
+		ID: "finalize-resultdb",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			task := m.(*taskdefs.FinalizeResultDB)
+			body, err := json.Marshal(map[string]interface{}{
+				"id": task.BuildId,
+			})
+			if err != nil {
+				return nil, errors.Annotate(err, "error marshaling payload").Err()
+			}
+			return &tq.CustomPayload{
+				Body:        body,
+				Method:      "POST",
+				RelativeURI: fmt.Sprintf("/internal/task/resultdb/finalize/%d", task.BuildId),
+			}, nil
+		},
+		Handler:   rejectionHandler("finalize-resultdb"),
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.FinalizeResultDB)(nil),
+		Queue:     "backend-default",
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "notify-pubsub",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.NotifyPubSub)
@@ -134,6 +156,17 @@ func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) 
 // ExportBigQuery enqueues a task queue task to export the given build to
 // BigQuery.
 func ExportBigQuery(ctx context.Context, task *taskdefs.ExportBigQuery) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: task,
+	})
+}
+
+// FinalizeResultDB enqueues a task queue task to finalize the invocation for
+// the given build in ResultDB.
+func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDB) error {
 	if task.GetBuildId() == 0 {
 		return errors.Reason("build_id is required").Err()
 	}
