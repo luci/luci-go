@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28da571c_4030f040",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-24T01:40:32Z",
+      "side": 1,
+      "message": "lgtm, I guess, but to be honest I don\u0027t really understand what is going on anymore. Perhaps a real usage example later will make it clearer.",
+      "revId": "51fb06b77c457adc51aa33d96a245febc24097f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5fdf94fe_f11cee40",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-24T01:40:32Z",
+      "side": 1,
+      "message": "The suspense is killing me!",
+      "range": {
+        "startLine": 122,
+        "startChar": 11,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "51fb06b77c457adc51aa33d96a245febc24097f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
