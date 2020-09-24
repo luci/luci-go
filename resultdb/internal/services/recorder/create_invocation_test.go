@@ -421,6 +421,9 @@ func TestCreateInvocation(t *testing.T) {
 					},
 					ProducerResource: "//builds.example.com/builds/1",
 					Realm:            "testproject:testrealm",
+					HistoryOptions: &pb.HistoryOptions{
+						UseInvocationTimestamp: true,
+					},
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
