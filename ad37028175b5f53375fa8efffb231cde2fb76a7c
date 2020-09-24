@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c396b0d_d4cd5730",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-24T04:19:21Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "ad37028175b5f53375fa8efffb231cde2fb76a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17ccbeb7_b3df06c4",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-24T04:19:21Z",
+      "side": 1,
+      "message": "There\u0027s already a containment field here, and I assume it\u0027s the same as job.Buildbucket.Containment.",
+      "revId": "ad37028175b5f53375fa8efffb231cde2fb76a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
