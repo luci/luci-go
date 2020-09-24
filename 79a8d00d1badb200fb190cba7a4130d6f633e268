@@ -22,6 +22,30 @@
       "revId": "79a8d00d1badb200fb190cba7a4130d6f633e268",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f485e95_6fd34739",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-24T18:12:14Z",
+      "side": 1,
+      "message": "Just to be consistent with other fields. Some tests fail if we don\u0027t do this.",
+      "parentUuid": "f19035a9_6e1e7d0b",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 3
+      },
+      "revId": "79a8d00d1badb200fb190cba7a4130d6f633e268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
