@@ -51,6 +51,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     super.connectedCallback();
     this.invocationState.invocationId = this.invocationId;
     this.invocationState.initialized = true;
+    document.title = `inv: ${this.invocationId}`;
   }
 
   private renderInvocationState() {
