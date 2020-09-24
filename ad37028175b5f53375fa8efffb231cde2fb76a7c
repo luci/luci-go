@@ -33,6 +33,24 @@
       "revId": "ad37028175b5f53375fa8efffb231cde2fb76a7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0ca76a2_e6d7cc7a",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T06:05:59Z",
+      "side": 1,
+      "message": "yep, great (that\u0027s new, or I didn\u0027t notice it before :D)",
+      "parentUuid": "17ccbeb7_b3df06c4",
+      "revId": "ad37028175b5f53375fa8efffb231cde2fb76a7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
