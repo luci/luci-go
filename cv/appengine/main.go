@@ -15,18 +15,46 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/logging"
+	"context"
+	"fmt"
+	"time"
+
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/cv/appengine/internal/config"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	mods := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+	}
 
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			logging.Debugf(c.Context, "Hello world")
-			c.Writer.Write([]byte("Hello, world. This is LUCI Change Verifier."))
-		})
+	server.Main(nil, mods, func(srv *server.Server) error {
+		srv.Routes.POST("/internal/cron/refresh-config",
+			router.NewMiddlewareChain(gaemiddleware.RequireCron),
+			func(rc *router.Context) {
+				// The cron job interval is 1 minute.
+				ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
+				defer cancel()
+				code := 200
+				body := "Successfully Submitted Refresh Tasks"
+				if err := config.SubmitRefreshTasks(ctx); err != nil {
+					// Use 202 for return code as there's no need to retry on error for
+					// cron job.
+					code = 202
+					body = err.Error()
+				}
+				rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				rc.Writer.WriteHeader(code)
+				fmt.Fprintln(rc.Writer, body)
+			})
 
 		return nil
 	})
