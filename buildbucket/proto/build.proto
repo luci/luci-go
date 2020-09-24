@@ -277,11 +277,19 @@ message BuildInfra {
 
     // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
     string hostname = 7;
+
+    // Directory where user-available packages are installed, such as git.
+    // Relative to swarming task cwd.
+    // user_package_dir and user_package_dir/bin are prepended to $PATH.
+    string user_package_dir = 8;
+
+    // User-available packages defined in settings.cfg.
+    repeated swarming.v1.CIPDPackage user_packages = 9;
   }
 
   // Swarming-specific information.
   //
-  // Next ID: 10.
+  // Next ID: 14.
   message Swarming {
     // Describes a cache directory persisted on a bot.
     //
@@ -381,6 +389,13 @@ message BuildInfra {
 
     // Swarming task containment for the task.
     swarming.v1.Containment containment = 8;
+
+    repeated string extra_tags = 10;
+    google.protobuf.Duration grace_period = 11;
+    google.protobuf.Duration bot_ping_tolerance = 12;
+
+    // Eventually becomes the name of the launched swarming task.
+    string task_name = 13;
   }
 
   // LogDog-specific information.
@@ -424,9 +439,33 @@ message BuildInfra {
     string invocation = 2;
   }
 
+  // Arguments for bbagent command.
+  //
+  // All paths are relateive to bbagent's working directory, and must be delimited
+  // with slashes ("/"), regardless of the host OS.
+  message BBAgent {
+    // Path to the base of the user executable package.
+    //
+    // Required.
+    string payload_path = 1;
+
+    // Path to a directory where each subdirectory is a cache dir.
+    //
+    // Required.
+    string cache_dir = 2;
+
+    // List of Gerrit hosts to force git authentication for.
+    //
+    // By default public hosts are accessed anonymously, and the anonymous access
+    // has very low quota. Context needs to know all such hostnames in advance to
+    // be able to force authenticated access to them.
+    repeated string known_public_gerrit_hosts = 3;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
   ResultDB resultdb = 5;
+  BBAgent bbagent = 6;
 }

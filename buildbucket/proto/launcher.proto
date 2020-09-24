@@ -35,6 +35,8 @@ message BuildSecrets {
 //
 // All paths are relateive to bbagent's working directory, and must be delimited
 // with slashes ("/"), regardless of the host OS.
+//
+// Deprecated. Fields are moved to BuildInfra.BBAgent.
 message BBAgentArgs {
   // Path to the user executable.
   //

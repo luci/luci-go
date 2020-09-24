@@ -101,6 +101,8 @@ func (x *BuildSecrets) GetResultdbInvocationUpdateToken() string {
 //
 // All paths are relateive to bbagent's working directory, and must be delimited
 // with slashes ("/"), regardless of the host OS.
+//
+// Deprecated. Fields are moved to BuildInfra.BBAgent.
 type BBAgentArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
