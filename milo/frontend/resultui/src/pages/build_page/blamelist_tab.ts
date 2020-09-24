@@ -60,7 +60,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   private loadNextPage = async () => {
     this.isLoading = true;
-    const iter = await this.queryBlamelistResIter.next();
+    const iter = await this.queryBlamelistResIter!.next();
     if (iter.done) {
       this.endOfPage = true;
     } else {
@@ -76,6 +76,14 @@ export class BlamelistTabElement extends MobxLitElement {
   }
 
   protected render() {
+    if (this.buildState.buildPageData && !this.buildState.buildPageData.input.gitiles_commit) {
+      return html`
+        <div id="no-blamelist">
+          Blamelist is not available because there's no associated gitiles commit.<br>
+        </div>
+      `;
+    }
+
     return html`
       <div id="header">
         <span></span>
@@ -126,6 +134,10 @@ export class BlamelistTabElement extends MobxLitElement {
   }
 
   static styles = css`
+    #no-blamelist {
+      padding: 10px;
+    }
+
     #header {
       display: grid;
       grid-template-columns: 1fr auto auto;
