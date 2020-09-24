@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a2c8e7e_edfd73b8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-24T15:54:49Z",
+      "side": 1,
+      "message": "Robbie, is this CL stack something we should be looking at, or should I hold off?",
+      "revId": "c4977ac1469d7a8926aadda17d0dab298e1609a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
