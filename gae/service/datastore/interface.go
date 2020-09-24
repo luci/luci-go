@@ -394,7 +394,10 @@ func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
 	c, cancel := context.WithCancel(c)
 	defer cancel()
 
-	// TODO(yuanjunh): validate queries.
+	if err := validateQueries(queries); err != nil {
+		return err
+	}
+
 	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
 	if hasCursorCB {
 		return errors.New("datastore: RunMulti doesn't support CursorCB.")
@@ -811,6 +814,31 @@ func filterStop(err error) error {
 		err = nil
 	}
 	return err
+}
+
+// validateQueries validates queries for RunMulti.
+func validateQueries(queries []*Query) error {
+	if len(queries) == 0 {
+		return nil
+	}
+	if queries[0].project != nil {
+		return errors.New("doesn't support projection query")
+	}
+	for _, q := range queries[1:] {
+		if q.kind != queries[0].kind {
+			return errors.New("queries must query on the same kind")
+		}
+		if q.keysOnly != queries[0].keysOnly {
+			return errors.New("keysOnly field must be the same in queries")
+		}
+		if q.project != nil {
+			return errors.New("doesn't support projection query")
+		}
+		if !reflect.DeepEqual(q.order, queries[0].order) {
+			return errors.New("queries must have the same 'order by' clauses")
+		}
+	}
+	return nil
 }
 
 // a min heap for a slice of queryIterator.
