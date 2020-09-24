@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { autorun, computed, observable } from 'mobx';
+import { autorun, computed, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -29,6 +29,15 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/con
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
+
+const STATUS_FAVICON_MAP = Object.freeze({
+  [BuildStatus.Scheduled]: 'gray',
+  [BuildStatus.Started]: 'yellow',
+  [BuildStatus.Success]: 'green',
+  [BuildStatus.Failure]: 'red',
+  [BuildStatus.InfraFailure]: 'purple',
+  [BuildStatus.Canceled]: 'teal',
+});
 
 /**
  * Main build page.
@@ -59,10 +68,19 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       builder: builder as string,
     };
     this.buildNumOrId = buildNumOrId as string;
+
+    document.title = `${builder} ${buildNumOrId}`;
     return;
   }
 
   private disposers: Array<() => void> = [];
+
+  @computed private get faviconUrl() {
+    if (this.buildState.buildPageData) {
+      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.buildPageData.status]}-32.png`;
+    }
+    return `/static/common/favicon/milo-32.png`;
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -78,6 +96,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         ?.slice('invocations/'.length) || '';
       this.invocationState.initialized = true;
     }));
+
+    this.disposers.push((reaction(
+      () => this.faviconUrl,
+      (faviconUrl) => document.getElementById('favicon')?.setAttribute('href', faviconUrl),
+      {fireImmediately: true},
+    )));
   }
 
   disconnectedCallback() {
