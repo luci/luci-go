@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b020719_00196f57",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-09-24T20:43:15Z",
+      "side": 1,
+      "message": "Two different timeouts... fuck is wrong with Mac try jobs...",
+      "revId": "c8852cddeb70b4c7291a0240bc8a765774d9f8fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
