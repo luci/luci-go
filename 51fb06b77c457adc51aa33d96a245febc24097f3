@@ -39,6 +39,30 @@
       "revId": "51fb06b77c457adc51aa33d96a245febc24097f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a014205_c956777e",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-24T02:22:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5fdf94fe_f11cee40",
+      "range": {
+        "startLine": 122,
+        "startChar": 11,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "51fb06b77c457adc51aa33d96a245febc24097f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
