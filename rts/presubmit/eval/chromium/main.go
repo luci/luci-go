@@ -34,7 +34,11 @@ func Main(ctx context.Context, algo eval.Algorithm) {
 	ev := &eval.Eval{
 		Algorithm: algo,
 	}
-	ev.RegisterFlags(flag.CommandLine)
+	if err := ev.RegisterFlags(flag.CommandLine); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	
 	flag.Parse()
 
 	var logCfg = gologger.LoggerConfig{

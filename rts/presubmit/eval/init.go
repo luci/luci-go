@@ -46,12 +46,11 @@ func (r *evalRun) Init(ctx context.Context) error {
 	}
 
 	// Ensure we have a cache dir.
+	var err error
 	if r.CacheDir == "" {
-		ucd, err := os.UserCacheDir()
-		if err != nil {
+		if r.CacheDir, err = defaultCacheDir(); err != nil {
 			return err
 		}
-		r.CacheDir = filepath.Join(ucd, "chrome-rts")
 	}
 
 	// Skip today because it is likely to be incomplete.
@@ -63,7 +62,6 @@ func (r *evalRun) Init(ctx context.Context) error {
 	authOpts.Scopes = []string{auth.OAuthScopeEmail, bigquery.Scope, gerrit.OAuthScope}
 	r.auth = auth.NewAuthenticator(ctx, auth.InteractiveLogin, authOpts)
 
-	var err error
 	if r.gerrit, err = r.newGerritClient(r.auth); err != nil {
 		return errors.Annotate(err, "failed to init Gerrit client").Err()
 	}
@@ -97,4 +95,12 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 		},
 		limiter: rate.NewLimiter(limit, 1),
 	}, nil
+}
+
+func defaultCacheDir() (string, error) {
+	ucd, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(ucd, "chrome-rts"), nil
 }
