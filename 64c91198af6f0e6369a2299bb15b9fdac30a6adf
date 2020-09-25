@@ -166,6 +166,24 @@
     },
     {
       "key": {
+        "uuid": "ac00386a_727c4ddf",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T09:54:54Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "7c021cee_56e719af",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63df73ac_80b0f881",
         "filename": "rts/presubmit/eval/gerrit.go",
         "patchSetId": 7
@@ -213,6 +231,30 @@
     },
     {
       "key": {
+        "uuid": "d2f7ff2b_fafb7373",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T09:54:54Z",
+      "side": 1,
+      "message": "👍 i keep forgetting that revision can also be a patchset number itself.",
+      "parentUuid": "07b3b72b_add4ebea",
+      "range": {
+        "startLine": 121,
+        "startChar": 4,
+        "endLine": 121,
+        "endChar": 35
+      },
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0a55ed5_54e1f2d9",
         "filename": "rts/presubmit/eval/gerrit.go",
         "patchSetId": 7
@@ -245,6 +287,24 @@
       "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06c0c5f3_6a90c966",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T09:54:54Z",
+      "side": 1,
+      "message": "Makes sense! I\u0027d like to re-use this code later in CV 😊",
+      "parentUuid": "063ceb72_86221817",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -325,6 +385,24 @@
       "side": 1,
       "message": "removed the comment.\n\ngo/gob-quotas says 5s, not 5m.",
       "parentUuid": "bdc286f1_f63ce43e",
+      "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "db792271_3f33ad71",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T09:54:54Z",
+      "side": 1,
+      "message": "oh, that\u0027s new, i didn\u0027t keep up.",
+      "parentUuid": "261ebe7b_51dc23f7",
       "revId": "64c91198af6f0e6369a2299bb15b9fdac30a6adf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
