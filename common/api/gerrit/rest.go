@@ -143,17 +143,17 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 		return nil, err
 	}
 
-	var resp changeInfo
-	path := fmt.Sprintf("/changes/%d", req.Number)
+	path := fmt.Sprintf("/changes/%s", gerritChangeIDForRouting(req.Number, req.Project))
 
 	params := url.Values{}
 	for _, o := range req.Options {
 		params.Add("o", o.String())
 	}
+
+	var resp changeInfo
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, err
 	}
-
 	return resp.ToProto(), nil
 }
 
