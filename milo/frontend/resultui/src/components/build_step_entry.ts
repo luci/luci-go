@@ -178,7 +178,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       color: var(--canceled-color);
     }
 
-    #header-markdown > p {
+    #header-markdown * {
       display: inline;
     }
 
