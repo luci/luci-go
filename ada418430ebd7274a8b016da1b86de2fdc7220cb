@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5c2b8c58_259244bd",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T10:17:06Z",
+      "side": 1,
+      "message": "this copy-pasta is common in this file.",
+      "range": {
+        "startLine": 505,
+        "startChar": 2,
+        "endLine": 508,
+        "endChar": 21
+      },
+      "revId": "ada418430ebd7274a8b016da1b86de2fdc7220cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
