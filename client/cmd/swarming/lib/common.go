@@ -176,7 +176,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 		return nil, errors.Annotate(err, "failed to remove directory: %s", dir).Err()
 	}
 
-	if err := os.Mkdir(dir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return nil, err
 	}
 
