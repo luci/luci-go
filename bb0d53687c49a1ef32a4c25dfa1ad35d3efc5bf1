@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4c798a44_26a5c336",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "i am just following an existing terminology as https://screenshot.googleplex.com/EUcRWiDt3gUGMNA",
+      "parentUuid": "c813a390_44416118",
+      "range": {
+        "startLine": 19,
+        "startChar": 16,
+        "endLine": 19,
+        "endChar": 25
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ce52f51_8ac7f418",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 9
@@ -56,6 +80,24 @@
       "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26a99235_95a4ca31",
+        "filename": "rts/presubmit/eval/chromium/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "Done\n\nthe framework does not create sub-processes, so it doesn\u0027t need ctrl+c handling, but the algorithm might (we don\u0027t restrict it), so I\u0027ve added ctrl+c handling and passed context to the algorithm",
+      "parentUuid": "95e42230_71dd29a8",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -93,6 +135,30 @@
       "writtenOn": "2020-09-21T23:42:48Z",
       "side": 1,
       "message": "oh, is this supposed to run on a *bot*? I thought this was dev\u0027s workstation.\n\nupdate: I see you are actually using os.UserCacheDir() by default. Maybe create a defualtCacheDir() func similar to constants above and use its returned value as default?",
+      "range": {
+        "startLine": 59,
+        "startChar": 80,
+        "endLine": 59,
+        "endChar": 91
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ad4f916_e5e284ff",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "yes, it is dev workstation.\n\nhow is [a function that returns a string] better than [a string]?",
+      "parentUuid": "8d22986d_e3a586fc",
       "range": {
         "startLine": 59,
         "startChar": 80,
@@ -145,6 +211,30 @@
     },
     {
       "key": {
+        "uuid": "26f7c2bf_a86bd916",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "removed these details",
+      "parentUuid": "f0019882_122d095d",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 24
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b59ef21f_63bbecad",
         "filename": "rts/presubmit/eval/init.go",
         "patchSetId": 9
@@ -165,6 +255,30 @@
       "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1160f0ba_628723ea",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b59ef21f_63bbecad",
+      "range": {
+        "startLine": 81,
+        "startChar": 31,
+        "endLine": 82,
+        "endChar": 49
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -191,6 +305,30 @@
     },
     {
       "key": {
+        "uuid": "6e1c22c9_424e6439",
+        "filename": "rts/presubmit/eval/init.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "it is cached in a subsequent CL",
+      "parentUuid": "549e377a_9fdda9e6",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20060a98_f3fa7240",
         "filename": "rts/presubmit/eval/rejected.go",
         "patchSetId": 9
@@ -208,6 +346,24 @@
     },
     {
       "key": {
+        "uuid": "8899ec03_1aa168fb",
+        "filename": "rts/presubmit/eval/rejected.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "it will cache the response.\nthe only CL detail it contains is patchset identification, not so much details",
+      "parentUuid": "20060a98_f3fa7240",
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b88e05e_412ab5e3",
         "filename": "rts/presubmit/eval/result.go",
         "patchSetId": 9
@@ -219,6 +375,30 @@
       "writtenOn": "2020-09-21T23:42:48Z",
       "side": 1,
       "message": "why are you trying to avoid writing after an error? L60 Seems highly unlikely to fail.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 2
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0930c29b_c4a375d1",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "simplified, PTAL\n\nthe alternative is to not check error at all",
+      "parentUuid": "0b88e05e_412ab5e3",
       "range": {
         "startLine": 44,
         "startChar": 1,
@@ -254,6 +434,30 @@
     },
     {
       "key": {
+        "uuid": "15e51b25_a502f528",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5d377ae_5955003d",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "403d57f1_a92778b8",
         "filename": "rts/presubmit/eval/run.go",
         "patchSetId": 9
@@ -265,6 +469,30 @@
       "writtenOn": "2020-09-21T23:42:48Z",
       "side": 1,
       "message": "I wonder, why would you want to allow algo to fail?\nAs it stands, any failure is basically just like a panic, but panic would conveniently print stack traces immediately.\nAlso, this mixes GoB failures to retrieve files with algo failures.\n\nHence, I think it\u0027d be cleaner if algo isn\u0027t allowed to fail (ie just panic) while failure to fetch change files is counted separately and reported as such instead of terminating the process and producing nothing.\n\nI\u0027m 100% open to doing this in the future CL above your formidable stack.",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 59
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4db3d953_0527111b",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "the algo might be making RPCs, or assuming presence of git checkout, etc.\ngo/file-graph-rts assumes git checkout for sure.\nalso I\u0027ve added context to make it more obvious\nMaybe \"Algorithm\" is a bad name? I could call it Fn or something\n\nfetching list of changed files rarely fails permanently. In the next CL you will see a bunch of retries inside r.gerrit.ChangedFiles(). If L111 happens, it means we really cannot fetch files and there is no point to continue in this function. Note that in the callsite, we can have \"continue on error\" though, probably in another CL.\n\nbut again, so far it hasn\u0027t been a problem. Note that CL details are cached on disk. Even if it fails permanently, the developer can re-run the program and continue from it broke off.",
+      "parentUuid": "403d57f1_a92778b8",
       "range": {
         "startLine": 121,
         "startChar": 3,
@@ -297,6 +525,30 @@
       "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02b82f81_60921b67",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T01:42:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8323ff57_d6439843",
+      "range": {
+        "startLine": 155,
+        "startChar": 43,
+        "endLine": 155,
+        "endChar": 48
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
