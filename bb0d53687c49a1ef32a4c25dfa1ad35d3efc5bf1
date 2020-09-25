@@ -195,6 +195,30 @@
     },
     {
       "key": {
+        "uuid": "59099d04_e8936a32",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T17:00:41Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2431774/",
+      "parentUuid": "bd1f6425_b88f2df7",
+      "range": {
+        "startLine": 59,
+        "startChar": 80,
+        "endLine": 59,
+        "endChar": 91
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52a5476a_de416980",
         "filename": "rts/presubmit/eval/gerrit.go",
         "patchSetId": 9
