@@ -347,6 +347,18 @@ message ChangeInfo {
   //
   // Only set if messages are requested.
   repeated ChangeMessageInfo messages = 9;
+
+  // Whether the change is approved
+  // by the project submit rules.
+  //
+  // Only set if submittable is requested.
+  bool submittable = 10;
+
+  // Timestamp of when the change was created
+  google.protobuf.Timestamp created = 11;
+
+  // Timestamp of when the change was last updated
+  google.protobuf.Timestamp updated = 12;
 }
 
 // Information about a patch set.
