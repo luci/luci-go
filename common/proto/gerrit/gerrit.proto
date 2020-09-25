@@ -262,6 +262,11 @@ message GetChangeRequest {
   // Change number.
   int64 number = 1;
 
+  // The Gerrit project.
+  // Specifying this field is optional, but encouraged because it requires less
+  // work on the Gerrit side.
+  string project = 3;
+
   // What to include in the response.
   repeated QueryOption options = 2;
 }

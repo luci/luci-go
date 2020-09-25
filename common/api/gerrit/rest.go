@@ -143,17 +143,22 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 		return nil, err
 	}
 
-	var resp changeInfo
-	path := fmt.Sprintf("/changes/%d", req.Number)
+	var path string
+	if req.Project == "" {
+		path = fmt.Sprintf("/changes/%d", req.Number)
+	} else {
+		path = fmt.Sprintf("/changes/%s~%d", url.PathEscape(req.Project), req.Number)
+	}
 
 	params := url.Values{}
 	for _, o := range req.Options {
 		params.Add("o", o.String())
 	}
+
+	var resp changeInfo
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, err
 	}
-
 	return resp.ToProto(), nil
 }
 
