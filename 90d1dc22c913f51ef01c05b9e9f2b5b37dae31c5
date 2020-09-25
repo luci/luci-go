@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b00e8434_584427a0",
+        "filename": "lucictx/deadline_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-25T09:29:50Z",
+      "side": 1,
+      "message": "Why not just Convey?",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 12
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
