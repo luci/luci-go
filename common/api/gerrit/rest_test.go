@@ -686,7 +686,7 @@ func TestGetBranchInfo(t *testing.T) {
 
 		bi, err := c.GetRefInfo(ctx, &gerritpb.RefInfoRequest{
 			Project: "infra/experimental",
-			Branch:  "refs/heads/main",
+			Ref:     "refs/heads/main",
 		})
 		So(err, ShouldBeNil)
 

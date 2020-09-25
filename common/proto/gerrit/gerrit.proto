@@ -99,7 +99,7 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
 
-  // Retrieve information about a branch of a project.
+  // Retrieve information about a ref of a project.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
   rpc GetRefInfo(RefInfoRequest) returns (RefInfo);
