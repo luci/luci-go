@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7852a500_a2a5b863",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "Yeah, it\u0027s the only mutable param.",
+      "parentUuid": "d55df711_2d476cf6",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40b90c61_1efca87e",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "212aded6_2786bee8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "Change to use the `experimental` index. \n\nTested in Dev, those two approaches take similar time.",
+      "parentUuid": "40b90c61_1efca87e",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8da556fb_3c3c7f76",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -47,6 +83,23 @@
       "writtenOn": "2020-08-14T00:57:05Z",
       "side": 1,
       "message": "Hi, can you help to review this CL? thanks.",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eda48640_31846b68",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "Abandoned this legacy CL (as RunMulti is supported in lib), and addressed all comments in the new CL - http://crrev.com/c/2432191",
       "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -70,6 +123,24 @@
     },
     {
       "key": {
+        "uuid": "4279122f_4807afcd",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "N/A as in new CL.",
+      "parentUuid": "45b986d4_b5e9299a",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4f06c70e_09e1dc9c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
@@ -84,6 +155,24 @@
       "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44cfa4e1_e6376dd0",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "^",
+      "parentUuid": "4f06c70e_09e1dc9c",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -104,6 +193,24 @@
     },
     {
       "key": {
+        "uuid": "fb021941_77195aed",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93178ee8_9a85304b",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcedaaab_917e1ff9",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
@@ -118,6 +225,24 @@
       "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c49724e_0e9938fe",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-09-25T23:37:10Z",
+      "side": 1,
+      "message": "Done\n\n`incomplete` index won\u0027t be outdated as it won\u0027t go from `false` to `true`.",
+      "parentUuid": "fcedaaab_917e1ff9",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
