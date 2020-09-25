@@ -60,27 +60,36 @@ func (p *GerritPatchset) String() string {
 type gerritClient struct {
 	// listFilesRPC makes a Gerrit RPC to fetch the list of changed files.
 	// Mockable.
-	listFilesRPC func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error)
-	limiter      *rate.Limiter
+	listFilesRPC  func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error)
+	limiter       *rate.Limiter
+	fileListCache cache
+}
+
+type changedFiles struct {
+	Names []string `json:"names"`
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.
 func (c *gerritClient) ChangedFiles(ctx context.Context, ps *GerritPatchset) ([]string, error) {
-	// TODO(crbug.com/1112125): implement caching.
+	cacheKey := fmt.Sprintf("%s-%d-%d", ps.Change.Host, ps.Change.Number, ps.Patchset)
 
-	res, err := c.fetchChangedFiles(ctx, ps)
+	value, err := c.fileListCache.GetOrCreate(ctx, cacheKey, func() (interface{}, error) {
+		res, err := c.fetchChangedFiles(ctx, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		names := make([]string, 0, len(res.Files))
+		for name := range res.Files {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		return &changedFiles{Names: names}, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	names := make([]string, 0, len(res.Files))
-	for name := range res.Files {
-		if name != "/COMMIT_MSG" {
-			names = append(names, name)
-		}
-	}
-	sort.Strings(names)
-	return names, nil
+	return value.(*changedFiles).Names, nil
 }
 
 func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *GerritPatchset) (*gerritpb.ListFilesResponse, error) {
