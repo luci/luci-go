@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"math/rand"
 	"time"
 
@@ -24,9 +23,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
 	rand.Seed(time.Now().Unix())
-	chromium.Main(ctx, func(ctx context.Context, in eval.Input) (eval.Output, error) {
+	chromium.Main(func(in eval.Input) (eval.Output, error) {
 		return eval.Output{
 			ShouldRun: rand.Intn(2) == 0,
 		}, nil

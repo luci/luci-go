@@ -41,20 +41,28 @@ type Safety struct {
 
 // Print prints the results to w.
 func (r *Result) Print(w io.Writer) (err error) {
+	printf := func(format string, args ...interface{}) {
+		if err == nil {
+			_, err = fmt.Fprintf(w, format, args...)
+		}
+	}
+
 	switch {
 	case r.AnalyzedPatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: patchsets not found\n")
+		printf("Evaluation failed: patchsets not found\n")
+		return
 
 	case r.Safety.EligiblePatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: all %d patchsets are ineligible.\n", r.AnalyzedPatchSets)
-
-	default:
-		fmt.Printf("Total analyzed patchsets: %d\n", r.AnalyzedPatchSets)
-		_, err = fmt.Printf("Safety score: %.2f (%d/%d)\n",
-			float64(r.Safety.Rejected)/float64(r.Safety.EligiblePatchSets),
-			r.Safety.Rejected,
-			r.Safety.EligiblePatchSets,
-		)
+		printf("Evaluation failed: all %d patchsets are ineligible.\n", r.AnalyzedPatchSets)
+		return
 	}
+
+	printf("Total analyzed patchsets: %d\n", r.AnalyzedPatchSets)
+	printf("Safety score: %.2f (%d/%d)\n",
+		float64(r.Safety.Rejected)/float64(r.Safety.EligiblePatchSets),
+		r.Safety.Rejected,
+		r.Safety.EligiblePatchSets,
+	)
+
 	return
 }

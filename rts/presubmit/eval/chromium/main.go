@@ -21,22 +21,19 @@ import (
 	"os"
 
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
 // Main evaluates an RTS algorithm for Chromium, prints results and exits the
 // process.
-func Main(ctx context.Context, algo eval.Algorithm) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer signals.HandleInterrupt(cancel)
-
+func Main(algo eval.Algorithm) {
 	ev := &eval.Eval{
 		Algorithm: algo,
 	}
 	ev.RegisterFlags(flag.CommandLine)
 	flag.Parse()
 
+	ctx := context.Background()
 	var logCfg = gologger.LoggerConfig{
 		Format: `%{message}`,
 		Out:    os.Stderr,
