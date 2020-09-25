@@ -47,11 +47,10 @@ func (r *evalRun) Init(ctx context.Context) error {
 
 	// Ensure we have a cache dir.
 	if r.CacheDir == "" {
-		ucd, err := os.UserCacheDir()
-		if err != nil {
+		var err error
+		if r.CacheDir, err = defaultCacheDir(); err != nil {
 			return err
 		}
-		r.CacheDir = filepath.Join(ucd, "chrome-rts")
 	}
 
 	// Skip today because it is likely to be incomplete.
@@ -97,4 +96,12 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 		},
 		limiter: rate.NewLimiter(limit, 1),
 	}, nil
+}
+
+func defaultCacheDir() (string, error) {
+	ucd, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(ucd, "chrome-rts"), nil
 }
