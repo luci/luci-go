@@ -205,7 +205,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 			Size: casRef.Digest.SizeBytes,
 		}
 
-		outputs, err := c.DownloadDirectory(ctx, d, outputDir, filemetadata.NewNoopCache())
+		outputs, err := c.DownloadDirectory(ctx, d, dir, filemetadata.NewNoopCache())
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to download directory").Err()
 		}
