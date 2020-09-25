@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "3a9025cb_9aa2bea2",
+        "filename": "rts/presubmit/eval/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T07:38:09Z",
+      "side": 1,
+      "message": "Done\n\nsince i trimmed cache contents to only file names, gzip no longer helps. But in the next CL, it reduces cached rejected_patchsets about 10x",
+      "parentUuid": "28fe23cc_81c573ba",
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "873e3eb5_90f58f3a",
         "filename": "rts/presubmit/eval/cache.go",
         "patchSetId": 5
@@ -79,6 +97,30 @@
       "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5308e62b_3be77fe6",
+        "filename": "rts/presubmit/eval/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T07:38:09Z",
+      "side": 1,
+      "message": "done, but differently, since I still would like to be able to identify a ps",
+      "parentUuid": "a8cfcd32_0c77fd5d",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 44
+      },
+      "revId": "b250199beaae7412f8636a315cf5800d4f4d81e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
