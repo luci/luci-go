@@ -30,10 +30,10 @@ type Result struct {
 // A safe algorithm does not let bad CLs pass CQ.
 type Safety struct {
 	// EligiblePatchSets is the number of patchsets eligible for safety
-	// evaluation. All of these patchsets were rejected by CQ.
+	// evaluation. All of these patchsets were rejected.
 	EligiblePatchSets int
 
-	// Rejected is the number of eligible patchsets that would be rejected by CQ
+	// Rejected is the number of eligible patchsets that would be rejected
 	// if the RTS algorithm in question was used.
 	// Ideally this equals EligiblePatchSets.
 	Rejected int
