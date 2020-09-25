@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "813a4a71_120e74fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-25T06:12:21Z",
+      "side": 1,
+      "message": "Did not realize there was a disconnect; thanks for catching it.",
+      "revId": "1db86cfa100afd6c46ad05a496289f788cdba833",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
