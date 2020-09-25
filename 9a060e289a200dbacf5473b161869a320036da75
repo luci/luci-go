@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "42ccb819_48b0d5ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T05:23:54Z",
+      "side": 1,
+      "message": "Landing this CL because I need to rebase the next CL on another stack of CLs.\n\nI will address unresolved comment threads in subsequent CLs, so let\u0027s continue the discussion.",
+      "revId": "9a060e289a200dbacf5473b161869a320036da75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
