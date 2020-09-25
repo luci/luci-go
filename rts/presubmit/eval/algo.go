@@ -14,11 +14,9 @@
 
 package eval
 
-import "context"
-
 // Algorithm accepts a list of changed files and a test description and
 // decides whether to run it.
-type Algorithm func(context.Context, Input) (Output, error)
+type Algorithm func(Input) (Output, error)
 
 // Input is input to an RTS Algorithm.
 type Input struct {

@@ -78,8 +78,8 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 		return nil, err
 	}
 
-	// Note: Gerrit quota is shared across all Gerrit hosts, so we should not use
-	// a rate limiter per host.
+	// Note: "gitiles view" quota is per Borg cell (not host),
+	// so we should not use a rate limiter per host.
 	limit := rate.Limit(float64(r.GerritQPSLimit))
 	if limit <= 0 {
 		limit = 10
@@ -88,12 +88,12 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 	httpClient := &http.Client{Transport: transport}
 
 	return &gerritClient{
-		getChangeRPC: func(ctx context.Context, host string, req *gerritpb.GetChangeRequest) (*gerritpb.ChangeInfo, error) {
+		listFilesRPC: func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error) {
 			client, err := gerrit.NewRESTClient(httpClient, host, true)
 			if err != nil {
 				return nil, errors.Annotate(err, "failed to create a Gerrit client").Err()
 			}
-			return client.GetChange(ctx, req)
+			return client.ListFiles(ctx, req)
 		},
 		limiter: rate.NewLimiter(limit, 1),
 	}, nil

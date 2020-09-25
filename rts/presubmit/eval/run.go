@@ -99,10 +99,14 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 }
 
 func (r *evalRun) processPatchSet(ctx context.Context, rp *RejectedPatchSet) (eligible, wouldReject bool, err error) {
+	// TODO(crbug.com/1112125): add support for CL stacks.
+	// This call returns only files modified in the particular patchset and
+	// ignores possible parent CLs that were also tested.
 	files, err := r.gerrit.ChangedFiles(ctx, &rp.Patchset)
 	switch {
-	case clNotFound.In(err):
+	case psNotFound.In(err):
 		// The CL is deleted  => not eligible.
+		eligible = false
 		err = nil
 		return
 
@@ -116,7 +120,7 @@ func (r *evalRun) processPatchSet(ctx context.Context, rp *RejectedPatchSet) (el
 	for _, t := range rp.FailedTests {
 		in.Test = t
 		var out Output
-		if out, err = r.Algorithm(ctx, in); err != nil {
+		if out, err = r.Algorithm(in); err != nil {
 			err = errors.Annotate(err, "RTS algorithm failed").Err()
 			return
 		}
@@ -151,7 +155,7 @@ func (p *progress) Done(ctx context.Context) {
 	}
 
 	if !p.lastReport.IsZero() {
-		logging.Infof(ctx, "Processing patchset: %5d/%5d\n", p.done, p.Total)
+		logging.Infof(ctx, "Processing patchset: %d/%d\n", p.done, p.Total)
 	}
 	p.lastReport = clock.Now(ctx)
 }
