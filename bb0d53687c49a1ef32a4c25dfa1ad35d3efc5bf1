@@ -171,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "bd1f6425_b88f2df7",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T10:04:20Z",
+      "side": 1,
+      "message": "I mean that when I do `rts help`, I\u0027d see a specific cache-dir which `rts` will use on my workstation, e.g. \"/home/tandrii/.cache\" instead of unclear to me [CACHE_DIR]",
+      "parentUuid": "8ad4f916_e5e284ff",
+      "range": {
+        "startLine": 59,
+        "startChar": 80,
+        "endLine": 59,
+        "endChar": 91
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "52a5476a_de416980",
         "filename": "rts/presubmit/eval/gerrit.go",
         "patchSetId": 9
@@ -411,6 +435,30 @@
     },
     {
       "key": {
+        "uuid": "832cb6cc_1f46c061",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T10:04:20Z",
+      "side": 1,
+      "message": "sgtm.",
+      "parentUuid": "0930c29b_c4a375d1",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 2
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5d377ae_5955003d",
         "filename": "rts/presubmit/eval/run.go",
         "patchSetId": 9
@@ -502,6 +550,30 @@
       "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95112ebc_2aef9e97",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-25T10:04:20Z",
+      "side": 1,
+      "message": "everything makes sense. Algo is a fine name.\n\n\u003e  Note that in the callsite, we can have \"continue on error\" though\nThis is my slight preference, but I see that once everything is cached, it\u0027s not very important",
+      "parentUuid": "4db3d953_0527111b",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 59
+      },
+      "revId": "bb0d53687c49a1ef32a4c25dfa1ad35d3efc5bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
