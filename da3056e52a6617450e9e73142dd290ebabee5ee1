@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd7c0317_4210e8ee",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T07:56:27Z",
+      "side": 1,
+      "message": "Chan, could please take a look at this query?",
+      "revId": "da3056e52a6617450e9e73142dd290ebabee5ee1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
