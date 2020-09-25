@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28a20754_a42f0288",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-25T21:30:05Z",
+      "side": 1,
+      "message": "Realized I wanted additional info from gerrit client.",
+      "revId": "381505b3526fe092519d7f0f4b7dd0f659784549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
