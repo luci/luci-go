@@ -291,6 +291,14 @@ func TestGetChange(t *testing.T) {
 				So(res, ShouldResemble, expectedChange)
 			})
 
+			Convey("With project", func() {
+				req.Project = "infra/luci"
+				res, err := c.GetChange(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResemble, expectedChange)
+				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/infra%2Fluci~1")
+			})
+
 			Convey("Options", func() {
 				req.Options = append(req.Options, gerritpb.QueryOption_DETAILED_ACCOUNTS, gerritpb.QueryOption_ALL_COMMITS)
 				_, err := c.GetChange(ctx, req)
