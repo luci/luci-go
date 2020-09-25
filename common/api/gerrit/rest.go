@@ -340,7 +340,7 @@ func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsReq
 
 func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, opts ...grpc.CallOption) (*gerritpb.RefInfo, error) {
 	var resp gerritpb.RefInfo
-	path := fmt.Sprintf("/projects/%s/branches/%s", url.QueryEscape(req.Project), url.QueryEscape(req.Branch))
+	path := fmt.Sprintf("/projects/%s/branches/%s", url.PathEscape(req.Project), url.PathEscape(req.Ref))
 	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "get branch info").Err()
 	}
