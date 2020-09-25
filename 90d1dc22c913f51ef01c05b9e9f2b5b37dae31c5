@@ -2,6 +2,178 @@
   "comments": [
     {
       "key": {
+        "uuid": "d4d2c3ba_ed8a4019",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "Awesome! I like this!",
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ce0c49f_f1343b06",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "WDYM? I don\u0027t think we ever send ClosureEvent after InterruptEvent. Same on L114",
+      "range": {
+        "startLine": 111,
+        "startChar": 61,
+        "endLine": 112,
+        "endChar": 22
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f48287_f868c4ca",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "I don\u0027t think we ever send it? We just return right away.",
+      "range": {
+        "startLine": 116,
+        "startChar": 20,
+        "endLine": 116,
+        "endChar": 51
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0c158f3_d9fdc257",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "I think you mean the `Done` of returned context. \n\nnit: I think we can rename it to `newCtx` or `adjustedCtx` in the entire comments where applicable to potentially prevent reader from mistaking it as the ctx in the input parameters. WDYT?",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 16
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18bcba8f_4497c8f2",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "I think you mean `cctx.Done`? and also as we reserve 1s for soft_deadline and 0.5s for grace_period, should it add up to 1.5s for main function to do stuff here?",
+      "range": {
+        "startLine": 140,
+        "startChar": 64,
+        "endLine": 141,
+        "endChar": 47
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8524d0f5_03235f2b",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "Is this a TODO? I don\u0027t think we ever send ClosureEvent.",
+      "range": {
+        "startLine": 240,
+        "startChar": 25,
+        "endLine": 240,
+        "endChar": 55
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4127a14f_3207c4d0",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "Should we bias towards timeoutC as well since it may also get starved.",
+      "range": {
+        "startLine": 262,
+        "startChar": 6,
+        "endLine": 262,
+        "endChar": 37
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3c34592_4566cc88",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-25T18:38:37Z",
+      "side": 1,
+      "message": "I think this could panic if unfortunately `shutdown` is executed after channel is closed? Should we recover from it?",
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b00e8434_584427a0",
         "filename": "lucictx/deadline_test.go",
         "patchSetId": 5
