@@ -53,11 +53,18 @@ type Eval struct {
 }
 
 // RegisterFlags registers flags for the Eval fields.
-func (e *Eval) RegisterFlags(fs *flag.FlagSet) {
+func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.IntVar(&e.WindowsDays, "window", defaultWindowDays, "The time window to analyze, in days")
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
-	fs.StringVar(&e.CacheDir, "cache-dir", "", "Path to the cache dir. Defaults to [CACHE_DIR]/chrome-rts")
+
+	cacheDir, err := defaultCacheDir()
+	if err != nil {
+		return err
+	}
+
+	fs.StringVar(&e.CacheDir, "cache-dir", cacheDir, "Path to the cache dir")
 	fs.IntVar(&e.GerritQPSLimit, "gerrit-qps-limit", defaultGerritQPSLimit, "Max Gerrit QPS")
+	return nil
 }
 
 // Run evaluates the algorithm.
