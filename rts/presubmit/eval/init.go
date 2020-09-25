@@ -1,0 +1,100 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package eval
+
+import (
+	"context"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
+	"cloud.google.com/go/bigquery"
+	"golang.org/x/time/rate"
+
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+)
+
+const day = 24 * time.Hour
+
+// Init initializes e.
+func (r *evalRun) Init(ctx context.Context) error {
+	if r.WindowsDays <= 0 {
+		r.WindowsDays = defaultWindowDays
+	}
+	if r.Concurrency <= 0 {
+		r.Concurrency = defaultConcurrency
+	}
+	if r.GerritQPSLimit <= 0 {
+		r.GerritQPSLimit = defaultGerritQPSLimit
+	}
+
+	// Ensure we have a cache dir.
+	if r.CacheDir == "" {
+		ucd, err := os.UserCacheDir()
+		if err != nil {
+			return err
+		}
+		r.CacheDir = filepath.Join(ucd, "chrome-rts")
+	}
+
+	// Skip today because it is likely to be incomplete.
+	r.endTime = time.Now().UTC().Add(-day).Truncate(day)
+	r.startTime = r.endTime.Add(-day * time.Duration(r.WindowsDays))
+
+	// Init auth.
+	authOpts := chromeinfra.DefaultAuthOptions()
+	authOpts.Scopes = []string{auth.OAuthScopeEmail, bigquery.Scope, gerrit.OAuthScope}
+	r.auth = auth.NewAuthenticator(ctx, auth.InteractiveLogin, authOpts)
+
+	var err error
+	if r.gerrit, err = r.newGerritClient(r.auth); err != nil {
+		return errors.Annotate(err, "failed to init Gerrit client").Err()
+	}
+
+	return nil
+}
+
+// newGerritClient creates a new gitiles client. Does not mutate r.
+func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritClient, error) {
+	transport, err := authenticator.Transport()
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: Gerrit quota is shared across all Gerrit hosts, so we should not use
+	// a rate limiter per host.
+	limit := rate.Limit(float64(r.GerritQPSLimit))
+	if limit <= 0 {
+		limit = 10
+	}
+
+	httpClient := &http.Client{Transport: transport}
+
+	return &gerritClient{
+		getChangeRPC: func(ctx context.Context, host string, req *gerritpb.GetChangeRequest) (*gerritpb.ChangeInfo, error) {
+			client, err := gerrit.NewRESTClient(httpClient, host, true)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to create a Gerrit client").Err()
+			}
+			return client.GetChange(ctx, req)
+		},
+		limiter: rate.NewLimiter(limit, 1),
+	}, nil
+}
