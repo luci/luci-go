@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "16d2840c_73a52d05",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-25T07:45:26Z",
+      "side": 1,
+      "message": "changed to a slightly better one: chrome-trooper-analytics, used by browser infra for any queries",
+      "parentUuid": "4a2a91ba_a951c5d9",
+      "range": {
+        "startLine": 35,
+        "startChar": 45,
+        "endLine": 35,
+        "endChar": 58
+      },
+      "revId": "900f95c124dc3cc55f6a32ae91c819d9e3bfe59a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8505d667_1eb7c617",
         "filename": "rts/presubmit/eval/chromium/rejected.go",
         "patchSetId": 9
