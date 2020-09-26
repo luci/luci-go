@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2bf2d3c_69f747dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-26T17:54:57Z",
+      "side": 1,
+      "message": "i don\u0027t think this CL caused the breakage -- most likely the test failed test is flaky, and since your code modified the same file, the test was re-run and you won the lottery.\nAlso, it\u0027s interesting that this failed in Go -- i suspect it has something to do with initialization of Gerrit HTTP server mock.",
+      "revId": "595d88bdfb795334e56467f0f7d6de62ed0b18e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
