@@ -108,6 +108,7 @@ message TestResult {
 
   // Metadata for this test result.
   // It might describe this particular execution or the test case.
+  // A key can be repeated.
   repeated StringPair tags = 10
       [ (google.api.field_behavior) = IMMUTABLE ];
 
