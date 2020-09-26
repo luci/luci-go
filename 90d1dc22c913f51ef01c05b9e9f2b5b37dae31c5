@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "a021a0cb_eb13cf36",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "So, as soon as a channel is closed, it immediately unblocks, and will always return the zero value immediately; In this case the zero value is ClosureEvent (which I picked on purpose to be zero for this reason :p)",
+      "parentUuid": "3ce0c49f_f1343b06",
+      "range": {
+        "startLine": 111,
+        "startChar": 61,
+        "endLine": 112,
+        "endChar": 22
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46f48287_f868c4ca",
         "filename": "lucictx/deadline.go",
         "patchSetId": 5
@@ -62,6 +86,30 @@
       "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0bc821b_d61344aa",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "see above :)",
+      "parentUuid": "46f48287_f868c4ca",
+      "range": {
+        "startLine": 116,
+        "startChar": 20,
+        "endLine": 116,
+        "endChar": 51
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "af2ac9a1_a93dc8e5",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "Yep, good catch, done.",
+      "parentUuid": "a0c158f3_d9fdc257",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 16
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18bcba8f_4497c8f2",
         "filename": "lucictx/deadline.go",
         "patchSetId": 5
@@ -108,6 +180,30 @@
       "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ab29733_273ef670",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "fixed all of this up",
+      "parentUuid": "18bcba8f_4497c8f2",
+      "range": {
+        "startLine": 140,
+        "startChar": 64,
+        "endLine": 141,
+        "endChar": 47
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "8fcd04fd_37dee236",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8524d0f5_03235f2b",
+      "range": {
+        "startLine": 240,
+        "startChar": 25,
+        "endLine": 240,
+        "endChar": 55
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4127a14f_3207c4d0",
         "filename": "lucictx/deadline.go",
         "patchSetId": 5
@@ -157,6 +277,30 @@
     },
     {
       "key": {
+        "uuid": "df1cf78d_786377e4",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "This is fixed; realized that switching \u003c-cleanup\u0027s value was a bad idea anyway.",
+      "parentUuid": "4127a14f_3207c4d0",
+      "range": {
+        "startLine": 262,
+        "startChar": 6,
+        "endLine": 262,
+        "endChar": 37
+      },
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3c34592_4566cc88",
         "filename": "lucictx/deadline.go",
         "patchSetId": 5
@@ -171,6 +315,24 @@
       "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "794cc9dd_66bfb109",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-26T00:38:20Z",
+      "side": 1,
+      "message": "We don\u0027t close sigCh for exactly this reason :) (signal.Stop doesn\u0027t close the channel, just de-registers it)",
+      "parentUuid": "a3c34592_4566cc88",
+      "revId": "90d1dc22c913f51ef01c05b9e9f2b5b37dae31c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
