@@ -92,9 +92,6 @@ type changeInfo struct {
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
 	Messages        []changeMessageInfo            `json:"messages"`
-	Created         timestamp                      `json:"created"`
-	Updated         timestamp                      `json:"updated"`
-	Submittable     bool                           `json:"submittable,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -110,9 +107,6 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 		Ref:             branchToRef(ci.Branch),
 		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
 		CurrentRevision: ci.CurrentRevision,
-		Submittable:     ci.Submittable,
-		Created:         timestamppb.New(ci.Created.Time),
-		Updated:         timestamppb.New(ci.Updated.Time),
 	}
 	if ci.Revisions != nil {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
