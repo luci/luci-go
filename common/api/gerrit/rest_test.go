@@ -85,8 +85,6 @@ func TestListChanges(t *testing.T) {
 						},
 						Project: "example/repo",
 						Ref:     "refs/heads/master",
-						Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-						Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 					},
 				},
 				MoreChanges: true,
@@ -106,8 +104,6 @@ func TestListChanges(t *testing.T) {
 						},
 						"project": "example/repo",
 						"branch":  "master",
-						"created":   "2014-05-05 07:15:44.639000000",
-						"updated":   "2014-05-05 07:15:44.639000000",
 						"_more_changes": true
 					}
 				]`)
@@ -198,8 +194,6 @@ func TestGetChange(t *testing.T) {
 						},
 					},
 				},
-				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 				Messages: []*gerritpb.ChangeMessageInfo{
 					{
 						Id: "YH-egE",
@@ -236,8 +230,6 @@ func TestGetChange(t *testing.T) {
 						"secondary_emails": ["johndoe@chromium.org"],
 						"username":         "jdoe"
 					},
-					"created":   "2014-05-05 07:15:44.639000000",
-					"updated":   "2014-05-05 07:15:44.639000000",
 					"project": "example/repo",
 					"branch":  "master",
 					"current_revision": "deadbeef",
@@ -331,8 +323,6 @@ func TestRestCreateChange(t *testing.T) {
 				"branch":    "master",
 				"change_id": "c1",
 				"status":    "NEW",
-				"created":   "2014-05-05 07:15:44.639000000",
-				"updated":   "2014-05-05 07:15:44.639000000",
 			})
 		})
 		defer srv.Close()
@@ -346,13 +336,10 @@ func TestRestCreateChange(t *testing.T) {
 		res, err := c.CreateChange(ctx, &req)
 		So(err, ShouldBeNil)
 		So(res, ShouldResemble, &gerritpb.ChangeInfo{
-			Number:      1,
-			Project:     "example/repo",
-			Ref:         "refs/heads/master",
-			Status:      gerritpb.ChangeInfo_NEW,
-			Submittable: false,
-			Created:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-			Updated:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+			Number:  1,
+			Project: "example/repo",
+			Ref:     "refs/heads/master",
+			Status:  gerritpb.ChangeInfo_NEW,
 		})
 
 		var ci changeInput
