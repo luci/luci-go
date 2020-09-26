@@ -15,6 +15,7 @@
 package eval
 
 import (
+	"reflect"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -22,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -47,8 +49,14 @@ func TestGerritClient(t *testing.T) {
 	t.Parallel()
 	Convey(`GerritClient`, t, func() {
 		ctx := context.Background()
+
 		client := &gerritClient{
 			limiter: rate.NewLimiter(100, 1),
+			fileListCache: cache{
+				dir:       t.TempDir(),
+				memory:    lru.New(256),
+				valueType: reflect.TypeOf(changedFiles{}),
+			},
 		}
 		gerritPS := &GerritPatchset{
 			Change: GerritChange{

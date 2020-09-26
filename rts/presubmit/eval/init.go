@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -26,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -92,6 +94,11 @@ func (r *evalRun) newGerritClient(authenticator *auth.Authenticator) (*gerritCli
 				return nil, errors.Annotate(err, "failed to create a Gerrit client").Err()
 			}
 			return client.ListFiles(ctx, req)
+		},
+		fileListCache: cache{
+			dir:       filepath.Join(r.CacheDir, "gerrit-changed-files"),
+			memory:    lru.New(1024),
+			valueType: reflect.TypeOf(changedFiles{}),
 		},
 		limiter: rate.NewLimiter(limit, 1),
 	}, nil
