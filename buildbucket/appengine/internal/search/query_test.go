@@ -566,6 +566,138 @@ func TestFetchOnBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(actualRsp, ShouldResembleProto, expectedRsp)
 		})
+		Convey("found by ENDED_MASK", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID: 300,
+				Proto: pb.Build{
+					Id: 300,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder3",
+					},
+					Status: pb.Status_STARTED,
+				},
+				Project:   "project",
+				BucketID:  "project/bucket",
+				BuilderID: "project/bucket/builder3",
+				Status:    pb.Status_STARTED,
+			}), ShouldBeNil)
+
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Status: pb.Status_ENDED_MASK,
+				},
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "k1", Value: "v1"},
+							{Key: "k2", Value: "v2"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("found by canary", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Canary: pb.Trinary_YES,
+				},
+			}
+			So(datastore.Put(ctx, &model.Build{
+				ID: 321,
+				Proto: pb.Build{
+					Id: 321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder321",
+					},
+					Canary: true,
+				},
+				Project:   "project",
+				BucketID:  "project/bucket",
+				BuilderID: "project/bucket/builder321",
+				Canary:    true,
+			}), ShouldBeNil)
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 321,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder321",
+						},
+						Canary: true,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("empty request", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{},
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "k1", Value: "v1"},
+							{Key: "k2", Value: "v2"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
 		Convey("pagination", func() {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 300,
@@ -632,7 +764,7 @@ func TestFetchOnBuild(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
-			So(actualRsp.NextPageToken, ShouldNotBeEmpty)
+			So(actualRsp.NextPageToken, ShouldEqual, "id>200")
 
 			// fetch the following page (response should have a build with the ID - 400).
 			req.PageToken = actualRsp.NextPageToken
@@ -808,6 +940,67 @@ func TestFetchOnTagIndex(t *testing.T) {
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 			expectedRsp := &pb.SearchBuildsResponse{
 				Builds: []*pb.Build{
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("filter by ENDED_MASK", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID: 999,
+				Proto: pb.Build{
+					Id:     999,
+					Status: pb.Status_STARTED,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder999",
+					},
+				},
+				Project:   "project",
+				BucketID:  "project/bucket",
+				BuilderID: "project/bucket/builder999",
+				Status:    pb.Status_STARTED,
+				Tags:      []string{"buildset:commit/git/abcd"},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.TagIndex{
+				ID: ":4:buildset:commit/git/abcd",
+				Entries: []model.TagIndexEntry{
+					{
+						BuildID:  999,
+						BucketID: "project/bucket",
+					},
+				},
+			}), ShouldBeNil)
+			req.Predicate.Status = pb.Status_ENDED_MASK
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
 					{
 						Id: 200,
 						Builder: &pb.BuilderID{
