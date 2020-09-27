@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c742201_43cf9ebf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-27T22:24:58Z",
+      "side": 1,
+      "message": "So there\u0027s another possible refinement here as well, which would be to embed \u0027cleanup\u0027 in the context, to be retrievable as `GetSoftDeadline() (\u003c-chan DeadlineEvent)`.\n\nCurrently if an \u0027inner layer\u0027 just wants to be notified on the softdeadline/interrupt event, they would have to call `AdjustDeadline(ctx, 0, 0)`.\n\nThe downside of embedding it in the context, of course, is that we have more stuff in the context.\n\nWDYT?",
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
