@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cc9efed_eb884f62",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:38:13Z",
+      "side": 1,
+      "message": "all callsites check for nil. Why not return boolean here? I think I had the same comment before.",
+      "range": {
+        "startLine": 120,
+        "startChar": 22,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "20a5625e55cb9294271d3176507501082a8367e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
