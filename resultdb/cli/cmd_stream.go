@@ -31,8 +31,10 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
@@ -42,7 +44,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
@@ -61,7 +62,10 @@ func cmdStream(p Params) *subcommands.Command {
 				rdb stream -new -realm chromium:public ./out/chrome/test/browser_tests
 		`),
 		CommandRun: func() subcommands.CommandRun {
-			r := &streamRun{vars: make(stringmapflag.Value)}
+			r := &streamRun{
+				vars: make(stringmapflag.Value),
+				tags: make(strpair.Map),
+			}
 			r.baseCommandRun.RegisterGlobalFlags(p)
 			r.Flags.BoolVar(&r.isNew, "new", false, text.Doc(`
 				If true, create and use a new invocation for the test command.
@@ -92,7 +96,10 @@ func cmdStream(p Params) *subcommands.Command {
 				File base to prepend to the test location file name, if the file name is a relative path.
 				It must start with "//".
 			`))
-
+			r.Flags.Var(flag.StringPairs(r.tags), "tag", text.Doc(`
+				Tag to add to every test result in "key:value" format.
+				A key can be repeated.
+			`))
 			return r
 		},
 	}
@@ -109,9 +116,9 @@ type streamRun struct {
 	vars                 stringmapflag.Value
 	artChannelMaxLeases  uint
 	trChannelMaxLeases   uint
-
+	tags                 strpair.Map
+	pbTags               []*pb.StringPair
 	// TODO(ddoman): add flags
-	// - tag (invocation-tag)
 	// - log-file
 
 	invocation lucictx.ResultDBInvocation
@@ -120,9 +127,6 @@ type streamRun struct {
 func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		return errors.Reason("missing a test command to run").Err()
-	}
-	if err := pbutil.ValidateVariant(&pb.Variant{Def: r.vars}); err != nil {
-		return errors.Annotate(err, "invalid variant").Err()
 	}
 	if r.realm != "" {
 		if err := realms.ValidateRealmName(r.realm, realms.GlobalScope); err != nil {
@@ -222,6 +226,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		ArtChannelMaxLeases:        r.artChannelMaxLeases,
 		TestResultChannelMaxLeases: r.trChannelMaxLeases,
 		TestLocationBase:           r.testTestLocationBase,
+		BaseTags:                   r.pbTags,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

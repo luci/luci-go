@@ -107,7 +107,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 					SummaryHtml:  tr.GetSummaryHtml(),
 					StartTime:    tr.GetStartTime(),
 					Duration:     tr.GetDuration(),
-					Tags:         tr.GetTags(),
+					Tags:         append(c.cfg.BaseTags, tr.GetTags()...),
 					TestLocation: tr.GetTestLocation(),
 				},
 			}
