@@ -17,6 +17,7 @@ import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
+import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
@@ -57,7 +58,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   private renderRelatedBuildsTable() {
     if (this.buildState.relatedBuildsData == null) {
-      return html ``;
+      return html`Loading <milo-dot-spinner></milo-dot-spinner>`;
     }
     return html`
       <table id="related-builds-table">
