@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7a43f435_1698e2d8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bfc9435_ecacf82e",
+      "range": {
+        "startLine": 17,
+        "startChar": 48,
+        "endLine": 17,
+        "endChar": 49
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2946e351_be184df2",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
@@ -106,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "49a9ff5e_10ab7dd4",
+        "filename": "rts/presubmit/eval/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa8e3cb7_365f6521",
+      "range": {
+        "startLine": 70,
+        "startChar": 23,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "344ceb0c_efc4f18d",
         "filename": "rts/presubmit/eval/chromium/durations.go",
         "patchSetId": 3
@@ -129,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "47034dae_675825ae",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "nice",
+      "parentUuid": "344ceb0c_efc4f18d",
+      "range": {
+        "startLine": 45,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 3
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a26dfe2b_4b622826",
         "filename": "rts/presubmit/eval/chromium/durations.go",
         "patchSetId": 3
@@ -146,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "e58e06ed_7ffba739",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "test id is probably longer, but host and project are same in all durations.\n\ni think most of the memory usage is coming during json serialization/deserialization.\ni also thought of interning. let me work on RAM in a separate CL. It might be not useful if we replace JSON with recordIO with protos.\n\nif we do want to intern, I am thinking of NOT fetching host and project from BQ at all, and assign constant strings in GerritChange before returning from this function. That would be even simpler than hashtable-based interning",
+      "parentUuid": "a26dfe2b_4b622826",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16d99c85_171634e1",
         "filename": "rts/presubmit/eval/chromium/durations.go",
         "patchSetId": 3
@@ -157,6 +247,24 @@
       "writtenOn": "2020-09-28T10:05:41Z",
       "side": 1,
       "message": "Are we certain *last* 24h will suffice esp. if CQ attempts for some reason are not finishing?\n\nAlso, isn\u0027t it better to work day data, ie the one with more test results, or does it not matter?",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b15b7dad_43da23c5",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "will address",
+      "parentUuid": "16d99c85_171634e1",
       "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -198,6 +306,24 @@
     },
     {
       "key": {
+        "uuid": "d6630632_afcb26cc",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "it is a great point. I have checked this query: it returns data from *2* patchsets (lol). I will ping you again when this query is re-worked.",
+      "parentUuid": "ef3e3da6_fd23129f",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c279c149_587d9b96",
         "filename": "rts/presubmit/eval/chromium/rejected.go",
         "patchSetId": 3
@@ -212,6 +338,24 @@
       "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6433b892_7ef47d90",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "err, removed",
+      "parentUuid": "c279c149_587d9b96",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -235,6 +379,30 @@
       "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2f65f93_872879f1",
+        "filename": "rts/presubmit/eval/precision.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:32:07Z",
+      "side": 1,
+      "message": "changed safety/precision evaluations to run sequentially",
+      "parentUuid": "6b381405_bc673e99",
+      "range": {
+        "startLine": 67,
+        "startChar": 19,
+        "endLine": 67,
+        "endChar": 30
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
