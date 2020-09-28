@@ -341,6 +341,30 @@
     },
     {
       "key": {
+        "uuid": "8ef8c206_705f9474",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-28T17:45:19Z",
+      "side": 1,
+      "message": "SGTM.",
+      "parentUuid": "9b20b124_df02a457",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 94,
+        "endChar": 16
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07321a0e_e3a97009",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 6
