@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f4b5f37_961be41a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T01:37:25Z",
+      "side": 1,
+      "message": "Andrii, in the prev patchsets you can see parts of the code that did not change.",
+      "revId": "b3b1e849faa46d5df6099588874352d772ec4d41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
