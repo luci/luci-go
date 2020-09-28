@@ -86,10 +86,9 @@ func TestReportTestResults(t *testing.T) {
 				check(ctx, cfg, tr, expected)
 			})
 
-			Convey("with ServerConfig.Variant", func() {
+			Convey("with ServerConfig.BaseVariant", func() {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
 				cfg.BaseVariant = pbutil.Variant(base...)
-
 				expected.Variant = pbutil.Variant(base...)
 				check(ctx, cfg, tr, expected)
 			})
