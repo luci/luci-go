@@ -116,38 +116,26 @@ type ServerConfig struct {
 
 // Validate validates all the config fields.
 func (c *ServerConfig) Validate() error {
-	if c.Recorder == nil {
-		return errors.Reason("Recorder: unspecified").Err()
+	var err error
+	isErr := func(e error) bool {
+		err = e
+		return e != nil
 	}
-	if c.ArtifactUploader == nil {
+
+	switch {
+	case c.ArtifactUploader == nil:
 		return errors.Reason("ArtifactUploader: unspecified").Err()
-	}
-	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
-		return errors.Annotate(err, "Invocation").Err()
-	}
-	if c.UpdateToken == "" {
-		return errors.Reason("UpdateToken: unspecified").Err()
-	}
-	if c.TestIDPrefix != "" {
-		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
-			return errors.Annotate(err, "TestIDPrefix").Err()
-		}
-	}
-	if err := pbutil.ValidateVariant(c.BaseVariant); err != nil {
+	case isErr(pbutil.ValidateVariant(c.BaseVariant)):
 		return errors.Annotate(err, "BaseVariant").Err()
-	}
-
-	if err := c.validateTestLocationBase(); err != nil {
-		return errors.Annotate(err, "TestLocationBase").Err()
-	}
-	return nil
-}
-
-func (c *ServerConfig) validateTestLocationBase() error {
-	if c.TestLocationBase == "" {
-		return nil
-	}
-	if err := pbutil.ValidateFilePath(c.TestLocationBase); err != nil {
+	case isErr(pbutil.ValidateInvocationName(c.Invocation)):
+		return errors.Annotate(err, "Invocation").Err()
+	case c.Recorder == nil:
+		return errors.Reason("Recorder: unspecified").Err()
+	case c.UpdateToken == "":
+		return errors.Reason("UpdateToken: unspecified").Err()
+	case c.TestIDPrefix != "" && isErr(pbutil.ValidateTestID(c.TestIDPrefix)):
+		return errors.Annotate(err, "TestIDPrefix").Err()
+	case c.TestLocationBase != "" && isErr(pbutil.ValidateFilePath(c.TestLocationBase)):
 		return errors.Annotate(err, "TestLocationBase").Err()
 	}
 	return nil

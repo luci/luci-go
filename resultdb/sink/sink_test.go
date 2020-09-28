@@ -72,6 +72,22 @@ func TestNewServer(t *testing.T) {
 			So(srv.cfg.TestResultChannelMaxLeases, ShouldEqual, 456)
 			testServerConfig(ctl, "", "my_token")
 		})
+		Convey("with TestLocationBase", func() {
+			// empty
+			cfg.TestLocationBase = ""
+			_, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// valid
+			cfg.TestLocationBase = "//base"
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// invalid - not starting with double slahes
+			cfg.TestLocationBase = "base"
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldErrLike, "TestLocationBase: doesn't start with //")
+		})
 	})
 }
 
@@ -225,33 +241,5 @@ func TestServerExport(t *testing.T) {
 		So(sink, ShouldNotBeNil)
 		So(sink.Address, ShouldEqual, ":42")
 		So(sink.AuthToken, ShouldEqual, "hello")
-	})
-}
-
-func TestValidateTestLocationBase(t *testing.T) {
-	t.Parallel()
-
-	Convey("empty", t, func() {
-		config := ServerConfig{
-			TestLocationBase: "",
-		}
-		err := config.validateTestLocationBase()
-		So(err, ShouldBeNil)
-	})
-
-	Convey("success", t, func() {
-		config := ServerConfig{
-			TestLocationBase: "//base/",
-		}
-		err := config.validateTestLocationBase()
-		So(err, ShouldBeNil)
-	})
-
-	Convey("missing leading double slashes", t, func() {
-		config := ServerConfig{
-			TestLocationBase: "base/",
-		}
-		err := config.validateTestLocationBase()
-		So(err, ShouldErrLike, "TestLocationBase: doesn't start with //")
 	})
 }
