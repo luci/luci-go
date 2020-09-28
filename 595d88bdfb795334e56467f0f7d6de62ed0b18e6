@@ -34,6 +34,24 @@
       "revId": "595d88bdfb795334e56467f0f7d6de62ed0b18e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fa5e7c9_ba9a95e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-09-28T15:50:43Z",
+      "side": 1,
+      "message": "Interesting; thanks for investigating!\n\nI\u0027m going to reland and treat as a flaky test for now, then.",
+      "parentUuid": "89a5b373_88368a7f",
+      "revId": "595d88bdfb795334e56467f0f7d6de62ed0b18e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
