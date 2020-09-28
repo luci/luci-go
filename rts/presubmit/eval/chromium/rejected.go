@@ -100,8 +100,8 @@ const rejectedPatchSetsSQL = `
 		flat AS (
 			SELECT
 				ps.host,
-				ANY_VALUE(ps.project) project,
 				ps.change,
+				ANY_VALUE(ps.project) project,
 				ps.patchset,
 				MIN(ps_approx_timestamp) ps_approx_timestamp,
 				test_id,
