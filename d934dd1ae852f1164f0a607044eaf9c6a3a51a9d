@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1abb3c7e_d5eac10a",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "this seems swarming-specific?\nideas:\n- move to swarming message\n- make it relative to CWD",
+      "range": {
+        "startLine": 282,
+        "startChar": 19,
+        "endLine": 282,
+        "endChar": 27
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfdfa47a_630f9c3d",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "who will set and who will consume this field?",
+      "range": {
+        "startLine": 284,
+        "startChar": 11,
+        "endLine": 284,
+        "endChar": 27
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d37cbbf2_d5ff603f",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "is this specific to swarming?",
+      "range": {
+        "startLine": 287,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 21
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82304a88_bf30234b",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "why this isn\u0027t a full commandline?\n\"extra\" relative to what?",
+      "range": {
+        "startLine": 393,
+        "startChar": 20,
+        "endLine": 393,
+        "endChar": 30
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2f5b1c8_6f4dbaea",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "please document every field",
+      "range": {
+        "startLine": 392,
+        "startChar": 0,
+        "endLine": 396,
+        "endChar": 0
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bf71788_083626ca",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "will we still want this field when led builds are true buildbucket builds? if this temporary?",
+      "range": {
+        "startLine": 398,
+        "startChar": 11,
+        "endLine": 398,
+        "endChar": 20
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e7485c9_bc6dd3db",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "what\u0027s the rationale of including BBAgent args into Buildbucke build message, vs including Buildbucket build message into BBagentArgs? build message is persisted permanently. It seems that we are going to persist transient arguments permanently for some reason.",
+      "range": {
+        "startLine": 446,
+        "startChar": 10,
+        "endLine": 446,
+        "endChar": 17
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "687e9e35_73fff8f7",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "a relative path? relative to what?\n\nsame for cache_dir",
+      "range": {
+        "startLine": 447,
+        "startChar": 7,
+        "endLine": 447,
+        "endChar": 11
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b071dd62_f76e967b",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T18:26:49Z",
+      "side": 1,
+      "message": "is this field temporary?",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 24
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
