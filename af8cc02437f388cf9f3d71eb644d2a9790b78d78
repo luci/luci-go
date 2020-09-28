@@ -22,6 +22,76 @@
       "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "079d8316_a8d9ec6f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:44:02Z",
+      "side": 1,
+      "message": "I agree. \nRestored previously abandoned https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1932589",
+      "parentUuid": "34469860_f27ae8eb",
+      "range": {
+        "startLine": 101,
+        "startChar": 40,
+        "endLine": 101,
+        "endChar": 49
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6996104e_8f5f1d85",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:44:02Z",
+      "side": 1,
+      "message": "it is nil\n\nstepping back, I don\u0027t understand why pbTags needs to be a struct field",
+      "range": {
+        "startLine": 234,
+        "startChar": 30,
+        "endLine": 234,
+        "endChar": 39
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3439beff_cd861347",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:44:02Z",
+      "side": 1,
+      "message": "this mutates BaseTags\u0027s underlying array, so the memory used by different TestResult structs might be shared.\nIt is much safer to append base tags to tr.GetTags() than vice versa",
+      "range": {
+        "startLine": 110,
+        "startChar": 19,
+        "endLine": 110,
+        "endChar": 41
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
