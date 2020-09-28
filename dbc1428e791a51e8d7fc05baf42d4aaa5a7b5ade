@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "6492ecb6_1f4ce014",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:06:50Z",
+      "side": 1,
+      "message": "err, L94.",
+      "parentUuid": "2946e351_be184df2",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff946c18_622b5d82",
         "filename": "rts/presubmit/eval/backend.go",
         "patchSetId": 3
@@ -156,6 +174,24 @@
       "writtenOn": "2020-09-28T10:05:41Z",
       "side": 1,
       "message": "I see why you want fewer patchsets.\nBut, are you sure that having fewer of them doesn\u0027t lead to very off-the-mark precision?\n\nIn other words, I wonder how stable is precision result is wrt varying LIMIT value here and w/ and w/o ORDER clause.\nAlso, what about the order of tests per GoB patchset? If there are few patchsets in the result, the order of tests in the last incomplete patchset may cause bias.\n\n\nPersonally: given GoB patchset files are cached on disk, I\u0027d rather opt for really sample of N tests out of all tests ran ~in 24h period.",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef3e3da6_fd23129f",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:06:50Z",
+      "side": 1,
+      "message": "*this #1 concern for me*",
+      "parentUuid": "e3c4392f_bce06375",
       "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
