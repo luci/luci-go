@@ -48,8 +48,8 @@ export class TextDiffArtifactElement extends MobxLitElement {
       <milo-expandable-entry .expanded=${true} .hideContentRuler=${true}>
         <span id="header" slot="header">
           Unexpected text output from
-          <a href=${router.urlForName('text-diff-artifact', {'artifact_name': this.artifact.name})} target="_blank">${this.artifact.artifactId}</a>
-          (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
+          <a href=${router.urlForName('text-diff-artifact', {'artifact_name': this.artifact.name})} target="_blank" rel="noopener">${this.artifact.artifactId}</a>
+          (<a href=${this.artifact.fetchUrl} target="_blank" rel="noopener">view raw</a>)
         </span>
         <div id="content" slot="content">
           ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false}))}

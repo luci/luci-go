@@ -67,6 +67,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
               {'invocation_id': invId},
             )}
             target="_blank"
+            rel="noopener"
           >${invId}</a></li>
         `)}
         </ul>

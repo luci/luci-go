@@ -150,8 +150,8 @@ export class TestResultsTabElement extends MobxLitElement {
         <div id="no-invocation">
           No associated invocation.<br>
           You need to integrate with ResultDB to see the test results.<br>
-          See <a href="http://go/resultdb" target="_blank">go/resultdb</a>
-          or ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+          See <a href="http://go/resultdb" target="_blank" rel="noopener">go/resultdb</a>
+          or ask <a href="mailto: luci-eng@google.com" target="_blank" rel="noopener">luci-eng@</a> for help.
         </div>
       `;
     }
@@ -192,7 +192,7 @@ export class TestResultsTabElement extends MobxLitElement {
         >
           Don't see results of your test framework here?
           This might be because they are not integrated with ResultDB yet.
-          Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+          Please ask <a href="mailto: luci-eng@google.com" target="_blank" rel="noopener">luci-eng@</a> for help.
           <span
             id="hide-hint"
             @click=${() => this.userConfigs.hints.showResultDbIntegrationHint = false}

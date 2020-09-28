@@ -93,15 +93,15 @@ export class ImageDiffViewerElement extends MobxLitElement {
       </div>
       <div id="content" class=${VIEW_OPTION_CLASS_MAP[this.viewOption]}>
         <div id="expected-image" class="image">
-          <div>Expected (<a href=${this.expected.fetchUrl} target="_blank">view raw</a>)</div>
+          <div>Expected (<a href=${this.expected.fetchUrl} target="_blank" rel="noopener">view raw</a>)</div>
           <img src=${this.expected.fetchUrl}>
         </div>
         <div id="actual-image" class="image">
-          <div>Actual (<a href=${this.actual.fetchUrl} target="_blank">view raw</a>)</div>
+          <div>Actual (<a href=${this.actual.fetchUrl} target="_blank" rel="noopener">view raw</a>)</div>
           <img src=${this.actual.fetchUrl}>
         </div>
         <div id="diff-image" class="image">
-          <div>Diff (<a href=${this.diff.fetchUrl} target="_blank">view raw</a>)</div>
+          <div>Diff (<a href=${this.diff.fetchUrl} target="_blank" rel="noopener">view raw</a>)</div>
           <img src=${this.diff.fetchUrl}>
         </div>
       </div>

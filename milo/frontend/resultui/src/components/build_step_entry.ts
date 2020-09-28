@@ -100,11 +100,12 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
         ${this.logs.map((log) => html`
         <li>
-          <a href=${log.view_url} target="_blank">${log.name}</a>
+          <a href=${log.view_url} target="_blank" rel="noopener">${log.name}</a>
           <a
             style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
             href=${new ChainableURL(log.view_url).withSearchParam('format', 'raw', true).toString()}
             target="_blank"
+            rel="noopener"
           >[raw]</a>
         </li>
         `)}

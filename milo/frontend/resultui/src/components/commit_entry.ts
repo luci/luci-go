@@ -88,7 +88,7 @@ export class CommitEntryElement extends MobxLitElement {
           <table slot="content" border="0">
             <tr><td>Changed by:</td><td>${this.commit.author.name} - ${this.commit.author.email}</td></tr>
             <tr><td>Changed at:</td><td>${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
-            <tr><td>Revision:</td><td><a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id}</a></td></tr>
+            <tr><td>Revision:</td><td><a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank" rel="noopener">${this.commit.id}</a></td></tr>
           </table>
           <div id="summary">${this.descriptionHTML}</div>
         </div>

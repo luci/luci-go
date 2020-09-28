@@ -132,7 +132,7 @@ export class OverviewTabElement extends MobxLitElement {
             <tr>
               <td>Revision:</td>
               <td>
-                <a href=${getURLForGitilesCommit(input.gitiles_commit)} target="_blank">${input.gitiles_commit.id}</a>
+                <a href=${getURLForGitilesCommit(input.gitiles_commit)} target="_blank" rel="noopener">${input.gitiles_commit.id}</a>
                 ${input.gitiles_commit.position ? `CP #${input.gitiles_commit.position}` : ''}
               </td>
             </tr>
@@ -159,7 +159,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Infra</h3>
         <table>
-          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucket_link} target="_blank"></td></tr>
+          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucket_link} target="_blank" rel="noopener"></td></tr>
           ${bpd.infra?.swarming ? html`
           <tr>
             <td>Swarming Task:</td>
@@ -167,10 +167,10 @@ export class OverviewTabElement extends MobxLitElement {
           </tr>
           <tr>
             <td>Bot:</td>
-            <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
+            <td>${botLink ? html`<milo-link .link=${botLink} target="_blank" rel="noopener"></milo-link>` : 'N/A'}</td>
           </tr>
           ` : ''}
-          <tr><td>Recipe:</td><td><milo-link .link=${bpd.recipe_link} target="_blank"></milo-link></td></tr>
+          <tr><td>Recipe:</td><td><milo-link .link=${bpd.recipe_link} target="_blank" rel="noopener"></milo-link></td></tr>
         </table>
       </div>
     `;
