@@ -22,6 +22,30 @@
       "revId": "20a5625e55cb9294271d3176507501082a8367e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dd01697_73259113",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-28T16:49:46Z",
+      "side": 1,
+      "message": "yes, we did. :) updated.",
+      "parentUuid": "5cc9efed_eb884f62",
+      "range": {
+        "startLine": 120,
+        "startChar": 22,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "20a5625e55cb9294271d3176507501082a8367e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
