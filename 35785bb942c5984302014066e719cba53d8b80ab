@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c48099ff_d0e93c0e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:06:55Z",
+      "side": 1,
+      "message": "Chan, I am marking as TBR, since there are next CLs to land.",
+      "revId": "35785bb942c5984302014066e719cba53d8b80ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
