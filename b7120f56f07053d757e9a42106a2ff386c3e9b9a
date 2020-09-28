@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e3ab058_c4731b03",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T06:06:28Z",
+      "side": 1,
+      "message": "PTAL.\n\nstdout of rts_random:\n\nSafety:\n\tScore: 0.73\n\t# of bad patchsets: 3055\n\t# of them rejected by this RTS: 2220\n\tTotal analyzed patchsets: 3063\nPrecision:\n\tScore: 0.50\n\t# of testing hours in the sample: 21h19m38.150694s\n\t# of testing hours with the RTS: 10h41m49.579013s\n\n",
+      "revId": "b7120f56f07053d757e9a42106a2ff386c3e9b9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
