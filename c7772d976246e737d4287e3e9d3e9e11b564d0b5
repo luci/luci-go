@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "879b6a2d_3d9babeb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-28T06:20:49Z",
+      "side": 1,
+      "message": "Demo https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/7291/related-builds",
+      "revId": "c7772d976246e737d4287e3e9d3e9e11b564d0b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
