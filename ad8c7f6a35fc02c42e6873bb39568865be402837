@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5d27388_ad49e350",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-28T23:43:43Z",
+      "side": 1,
+      "message": "Some data about the performance improvement due to this patch:\nIn my dev instance, this request times out without the patch: \nhttp://shortn/_TAJblYVU5e (Request the last 10,000 results in \"chromium:public\")\nhttps://screenshot.googleplex.com/3Fxz3YJrUvDv2ov (Without patch, times out after 60s)\n\nhttps://screenshot.googleplex.com/7y9ykeSk7sz5zrw (With patch, 11s)",
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
