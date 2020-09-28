@@ -16,6 +16,64 @@
       "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b617dfd_85a1f3de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-28T00:42:35Z",
+      "side": 1,
+      "message": "I don\u0027t have strong objection, but if this will be used only in a few places, I think it is fine to call `AdjustDeadline(ctx, 0, 0)` for cleanup.",
+      "parentUuid": "6c742201_43cf9ebf",
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3171ea53_c78e872f",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-28T00:42:35Z",
+      "side": 1,
+      "message": "DeadlineEvent?",
+      "range": {
+        "startLine": 149,
+        "startChar": 65,
+        "endLine": 149,
+        "endChar": 73
+      },
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d70d082d_018edfc6",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-09-28T00:42:35Z",
+      "side": 1,
+      "message": "I prefer to use defer in top in case we introduce return in this function",
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
