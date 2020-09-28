@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a646205_1b0b2bde",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T21:57:39Z",
+      "side": 1,
+      "message": "I have updated the query, but also going to mark it as WIP because the Backend interface is going to change. Will restore this CL after I refactor rejectedPatchsets to use the new interface.",
+      "revId": "2c2e760b921d4f6d277dc7a1952b97cf37409b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
