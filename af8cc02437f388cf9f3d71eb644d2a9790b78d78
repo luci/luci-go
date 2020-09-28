@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34469860_f27ae8eb",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-28T16:34:29Z",
+      "side": 1,
+      "message": "This doesn\u0027t seem ideal that -tag uses \"key:format\", whereas -var uses \"key\u003dformat\".\nShould we update stringPairsFlag or stringmapflag to use the same delimeter?\n\nWDYT?",
+      "range": {
+        "startLine": 101,
+        "startChar": 40,
+        "endLine": 101,
+        "endChar": 49
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
