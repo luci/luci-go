@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "888cbf9f_96c3bc19",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-28T17:26:23Z",
+      "side": 1,
+      "message": "This CL cannot simply replace stringmapflag with StringMap.\nIt will break https://source.chromium.org/chromium/infra/infra/+/master:recipes-py/recipe_modules/resultdb/api.py;l\u003d320.\n\nI believe Fuchsia recipe is using api.resultdb.wrap()\n\nFor `rdb-stream`, it\u0027s either\n(1) deprecate -var, and add another, like -var_with_colon,\n(2) update stringPairsFlag such that users can make a choice of the delimiter\n\nI guess (2) seems a better option for `rdb stream`?",
+      "parentUuid": "079d8316_a8d9ec6f",
+      "range": {
+        "startLine": 101,
+        "startChar": 40,
+        "endLine": 101,
+        "endChar": 49
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6996104e_8f5f1d85",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "4bd0063d_5e3e50f3",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-28T17:26:23Z",
+      "side": 1,
+      "message": "it was a bug. fixed.",
+      "parentUuid": "6996104e_8f5f1d85",
+      "range": {
+        "startLine": 234,
+        "startChar": 30,
+        "endLine": 234,
+        "endChar": 39
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3439beff_cd861347",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 2
@@ -83,6 +131,30 @@
       "writtenOn": "2020-09-28T16:44:02Z",
       "side": 1,
       "message": "this mutates BaseTags\u0027s underlying array, so the memory used by different TestResult structs might be shared.\nIt is much safer to append base tags to tr.GetTags() than vice versa",
+      "range": {
+        "startLine": 110,
+        "startChar": 19,
+        "endLine": 110,
+        "endChar": 41
+      },
+      "revId": "af8cc02437f388cf9f3d71eb644d2a9790b78d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f328847_dff5dcfd",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-09-28T17:26:23Z",
+      "side": 1,
+      "message": "oops. I misunderstood that append() returns a new slice without changing the original slice. Thanks for catching this.",
+      "parentUuid": "3439beff_cd861347",
       "range": {
         "startLine": 110,
         "startChar": 19,
