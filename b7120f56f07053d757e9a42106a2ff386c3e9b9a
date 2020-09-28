@@ -16,6 +16,24 @@
       "revId": "b7120f56f07053d757e9a42106a2ff386c3e9b9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "22a09c12_91dcca0d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T06:17:46Z",
+      "side": 1,
+      "message": "increased sample size to 1M.\n\nIt is not a lot:\n- 243MB in BQ\n- 38MB of gzipped-json on disk\n- 0.7% of the total number of results on CQ.",
+      "parentUuid": "2e3ab058_c4731b03",
+      "revId": "b7120f56f07053d757e9a42106a2ff386c3e9b9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
