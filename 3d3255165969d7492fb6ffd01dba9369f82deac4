@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "f3bf7ccc_a913ff9c",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-28T16:10:47Z",
+      "side": 1,
+      "message": "you are right. made it sequential and added a comment why",
+      "parentUuid": "d72cc504_d648d6ac",
+      "range": {
+        "startLine": 59,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 3
+      },
+      "revId": "3d3255165969d7492fb6ffd01dba9369f82deac4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "549b5e17_a1d9ceae",
         "filename": "rts/presubmit/eval/run.go",
         "patchSetId": 4
