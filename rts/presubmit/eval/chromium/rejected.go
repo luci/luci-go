@@ -17,8 +17,6 @@ package chromium
 import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/rts/presubmit/eval"
@@ -27,12 +25,7 @@ import (
 // RejectedPatchSets implements eval.Backend, based on Chromium's CQ and
 // ResultDB BigQuery tables.
 func (b *Backend) RejectedPatchSets(req eval.RejectedPatchSetsRequest) ([]*eval.RejectedPatchSet, error) {
-	// Create a BigQuery client.
-	creds, err := req.Authenticator.PerRPCCredentials()
-	if err != nil {
-		return nil, err
-	}
-	bq, err := bigquery.NewClient(req.Context, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	bq, err := b.bqClient(req.Context, req.Authenticator)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to init BigQuery client").Err()
 	}
@@ -75,6 +68,7 @@ const rejectedPatchSetsSQL = `
 			-- Read next-day attempts too in case the CQ attempt finished soon after 12am.
 			-- Note that for test results, the cutoff is still @endTime.
 			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			ORDER BY
 		),
 		failed_test_variants AS (
 			SELECT DISTINCT
