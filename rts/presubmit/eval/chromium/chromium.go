@@ -14,7 +14,16 @@
 
 package chromium
 
-import "go.chromium.org/luci/rts/presubmit/eval"
+import (
+	"context"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/rts/presubmit/eval"
+)
 
 // Backend implements eval.Backend for Chromium.
 //
@@ -28,3 +37,11 @@ func (*Backend) Name() string {
 }
 
 var _ eval.Backend = (*Backend)(nil)
+
+func (b *Backend) bqClient(ctx context.Context, auth *auth.Authenticator) (*bigquery.Client, error) {
+	creds, err := auth.PerRPCCredentials()
+	if err != nil {
+		return nil, err
+	}
+	return bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+}
