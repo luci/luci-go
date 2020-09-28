@@ -16,6 +16,24 @@
       "revId": "da3056e52a6617450e9e73142dd290ebabee5ee1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d868adfa_e4a8651f",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-28T18:50:53Z",
+      "side": 1,
+      "message": "Done.\n\nGeneral question: how accurate do you want this query to be? I think to make it more accurate, you may also need to join with bb table to make sure the builds are failed.",
+      "parentUuid": "fd7c0317_4210e8ee",
+      "revId": "da3056e52a6617450e9e73142dd290ebabee5ee1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

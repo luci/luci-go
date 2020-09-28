@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a090b1a2_273ff42d",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-28T18:50:53Z",
+      "side": 1,
+      "message": "Why failed_test_variants? The select list seems to be information for each test instead of test variant? The only indicator may be grouping by variant_hash, but again, I\u0027m not sure why is that needed.",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 22
+      },
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f77a0583_b26a671b",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-28T18:50:53Z",
+      "side": 1,
+      "message": "FYI, I just found a special case: https://ci.chromium.org/p/chromium/builders/try/linux-lacros-rel/32223\n\nProfileHelperTest.DeleteSoleProfile failed in the build, but it was not retried, because it\u0027s a known flake.\n\nYour query will include it when in reality the patchseet was not rejected.",
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
