@@ -112,6 +112,10 @@ type ServerConfig struct {
 
 	// TestResultChannelMaxLeases specifies that the max lease of the TestResult upload channel.
 	TestResultChannelMaxLeases uint
+
+	// BaseTags will be added to each TestResult in addition to the original tags that
+	// the tests were reported with.
+	BaseTags []*pb.StringPair
 }
 
 // Validate validates all the config fields.
@@ -125,6 +129,8 @@ func (c *ServerConfig) Validate() error {
 	switch {
 	case c.ArtifactUploader == nil:
 		return errors.Reason("ArtifactUploader: unspecified").Err()
+	case isErr(pbutil.ValidateStringPairs(c.BaseTags)):
+		return errors.Annotate(err, "BaseTags").Err()
 	case isErr(pbutil.ValidateVariant(c.BaseVariant)):
 		return errors.Annotate(err, "BaseVariant").Err()
 	case isErr(pbutil.ValidateInvocationName(c.Invocation)):
