@@ -16,6 +16,8 @@ package resultdb
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
@@ -23,6 +25,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
@@ -35,9 +39,16 @@ import (
 
 const (
 	historyDefaultPageSize = 100
+	historyPoolSize        = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
+//
+// If the given context contains a deadline, this func will try to return a
+// partial result rather than exceeding it.
+//
+// Note that this implementation may swallow errors such as context.Canceled or
+// context.DeadlineExceeded issued by the libs it calls. E.g. spanner.
 func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTestResultHistoryRequest) (*pb.GetTestResultHistoryResponse, error) {
 	if err := verifyGetTestResultHistoryPermission(ctx, in.GetRealm()); err != nil {
 		return nil, err
@@ -51,7 +62,17 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	ctx, cancelTx := span.ReadOnlyTransaction(ctx)
 	defer cancelTx()
 
-	workerCtx, cancelWorker := context.WithCancel(ctx)
+	// Expire the inner context 5 seconds before the deadline so that we can
+	// return a partial response rather than an error.
+	var workerCtx context.Context
+	var cancelWorker context.CancelFunc
+	dl, ok := ctx.Deadline()
+	if ok {
+		workerCtx, cancelWorker = context.WithDeadline(ctx, dl.Add(-5*time.Second))
+
+	} else {
+		workerCtx, cancelWorker = context.WithCancel(ctx)
+	}
 	defer cancelWorker()
 	// Ignore the derived context as we have a single worker.
 	// The closure of the results channel is sufficient to know that the work
@@ -60,9 +81,33 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
 	eg.Go(func() error {
 		defer close(results)
-		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
-			return matchingResultsInInvTree(workerCtx, in, invocations.NewIDSet(inv), ts, results)
+		err := parallel.WorkPool(historyPoolSize, func(workC chan<- func() error) {
+			// Make each task keep a pointer to the mutex of the task that
+			// needs to finish streaming results before it.
+			var prevResults *sync.Mutex
+
+			invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+				task := &resultStreamingTask{
+					ctx:         workerCtx,
+					in:          in,
+					invs:        invocations.NewIDSet(inv),
+					ts:          ts,
+					results:     results,
+					prevResults: prevResults,
+				}
+				// Each task's mutex should start locked s.t. subsequent tasks
+				// do not stream results before it.
+				task.resultsLock.Lock()
+				prevResults = &task.resultsLock
+				select {
+				case workC <- task.Run:
+				case <-workerCtx.Done():
+					return workerCtx.Err()
+				}
+				return nil
+			})
 		})
+		return errors.SingleError(err)
 	})
 
 	ret := &pb.GetTestResultHistoryResponse{
@@ -89,17 +134,24 @@ ResultsLoop:
 			ret.Entries = append(ret.Entries, entry)
 			if len(ret.Entries) == int(in.PageSize) {
 				cancelWorker()
-				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled && status.Code(errors.Unwrap(err)) != codes.Canceled {
-					return ret, err
-				}
-				return ret, nil
+				break ResultsLoop
 			}
 		case <-ctx.Done():
 			break ResultsLoop
 		}
 	}
-	return ret, eg.Wait()
+
+	err := eg.Wait()
+
+	if err != nil &&
+		err == context.Canceled ||
+		err == context.DeadlineExceeded ||
+		status.Code(errors.Unwrap(err)) == codes.Canceled ||
+		status.Code(errors.Unwrap(err)) == codes.DeadlineExceeded {
+		logging.Warningf(ctx, "Timed out (%s), returning partial response", err)
+		return ret, nil
+	}
+	return ret, err
 }
 
 // verifyGetTestResultHistoryPermission checks that the caller has permission to
@@ -139,15 +191,57 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 	return nil
 }
 
-// matchingResultsInInvTree gets the matching results reachable from a given
-// invocation, and streams them over the given channel.
-func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, invs invocations.IDSet, ts *timestamp.Timestamp, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
-	reachableInvs, err := invocations.Reachable(ctx, invs)
+// resultStreamingTask represents a task with two parts:
+//   - A traversal of the inclusion graph to find the set of reachable
+//     invocations indexed under the same timestamp/commit position,
+//     which can be done in parallel for several invocations in the index.
+//     (Though note that such traversal may itself involve multiple parallel
+//     requests to the database if the results are not yet cached.)
+//   - A query for the test results contained by the invocations in the set
+//     above.
+//     This query can be done in parallel with queries for other sets
+//     of invocations, but note that their results need to be streamed in order.
+type resultStreamingTask struct {
+	ctx         context.Context
+	in          *pb.GetTestResultHistoryRequest
+	invs        invocations.IDSet
+	ts          *timestamp.Timestamp
+	results     chan<- *pb.GetTestResultHistoryResponse_Entry
+	resultsLock sync.Mutex
+	prevResults *sync.Mutex
+}
+
+// Run gets the matching results reachable from the given invocation.
+// Then, it streams them over the results channel, but only after the previous
+// worker is done streaming its results.
+func (rst *resultStreamingTask) Run() error {
+	defer rst.resultsLock.Unlock()
+
+	reachableInvs, err := invocations.Reachable(rst.ctx, rst.invs)
 	if err != nil {
 		return err
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	// This flag will tell batch workers when to start streaming results.
+	readyToStream := false
+	rwm := &sync.RWMutex{}
+	// Batch workers will wait on this cond for `readyToStream` to be set.
+	resultsStreamCond := sync.NewCond(rwm.RLocker())
+
+	go func() {
+		// Unless we are the first worker, wait for the previous one to be done
+		// streaming results.
+		if rst.prevResults != nil {
+			rst.prevResults.Lock()
+		}
+		// Signal batch workers they can start streaming resutls.
+		rwm.Lock()
+		readyToStream = true
+		resultsStreamCond.Broadcast()
+		rwm.Unlock()
+	}()
+
+	eg, ctx := errgroup.WithContext(rst.ctx)
 	defer eg.Wait()
 	for _, batch := range reachableInvs.Batches() {
 		batch := batch
@@ -157,15 +251,21 @@ func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRe
 			query := testresults.Query{
 				InvocationIDs: batch,
 				Predicate: &pb.TestResultPredicate{
-					Variant:      in.VariantPredicate,
-					TestIdRegexp: in.TestIdRegexp,
+					Variant:      rst.in.VariantPredicate,
+					TestIdRegexp: rst.in.TestIdRegexp,
 				},
 			}
 			return query.Run(ctx, func(r *pb.TestResult) error {
+				resultsStreamCond.L.Lock()
+				for !readyToStream {
+					resultsStreamCond.Wait()
+				}
+				resultsStreamCond.L.Unlock()
+
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: ts}:
+				case rst.results <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}:
 					return nil
 				}
 			})
