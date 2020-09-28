@@ -30,6 +30,13 @@ type Backend interface {
 
 	// RejectedPatchSets retrieves patchsets rejected due to test failures.
 	RejectedPatchSets(RejectedPatchSetsRequest) ([]*RejectedPatchSet, error)
+
+	// TestDurationsSample retrieves a sample of test durations.
+	// See TestDurationsSampleRequest for more details.
+	//
+	// The size and freshness of the returned sample must be large/fresh enough to
+	// draw statistically significant conclusions.
+	TestDurationsSample(TestDurationsSampleRequest) (*TestDurationsSampleResponse, error)
 }
 
 // RejectedPatchSetsRequest is a request to retrieve all patchsets
@@ -49,4 +56,30 @@ type RejectedPatchSet struct {
 
 	// FailedTests are the tests that caused the rejection.
 	FailedTests []*Test `json:"failedTests"`
+}
+
+// TestDurationsSampleRequest is a request to retrieve a recent sample of test
+// durations.
+type TestDurationsSampleRequest struct {
+	Context       context.Context
+	Authenticator *auth.Authenticator
+}
+
+// TestDurationsSampleResponse is a response of Backend.TestDurationsSample().
+type TestDurationsSampleResponse struct {
+	// TestDurations is a representative sample of test durations.
+	//
+	// Ideally the number of unique Gerrit patchsets is smaller in order to
+	// minimize number of requests to Gerrit.
+	TestDurations []*TestDuration
+
+	// TTL is for how long to cache this response.
+	TTL time.Duration
+}
+
+// TestDuration describes how long a test took.
+type TestDuration struct {
+	Patchset GerritPatchset `json:"patchset"`
+	Test     Test           `json:"test"`
+	Duration time.Duration  `json:"duration"`
 }
