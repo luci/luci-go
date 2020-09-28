@@ -158,7 +158,7 @@ func (p *progress) Done(ctx context.Context) {
 	}
 
 	if !p.lastReport.IsZero() {
-		logging.Infof(ctx, "Processing patchset: %5d/%5d\n", p.done, p.Total)
+		logging.Infof(ctx, "Processing patchset: %5d/%d\n", p.done, p.Total)
 	}
 	p.lastReport = clock.Now(ctx)
 }
