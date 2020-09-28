@@ -68,38 +68,58 @@ const (
 	TimeoutEvent
 )
 
-// AdjustDeadline returns a 'cleanup' channel and a new cancelable context based
-// on the combination of the input context's deadline, as well as the Deadline
-// information in LUCI_CONTEXT.
+// earlier returns the earlier of a and b, treating "zero" as "infinity".
+func earlier(a, b time.Time) time.Time {
+	if a.IsZero() {
+		return b
+	}
+	if b.IsZero() {
+		return a
+	}
+	if a.Before(b) {
+		return a
+	}
+	return b
+}
+
+// AdjustDeadline returns a 'cleanup' channel and a new 'shutdown'-able context
+// based on the combination of the input context's deadline, as well as the
+// Deadline information in LUCI_CONTEXT.
 //
 // This function allows you to reserve a portion of the deadline and/or
-// grace_period with `reserve` and `reserveEmergency` respectively.
+// grace_period with `reserve` and `reserveCleanup` respectively.
 //
-// reserve and reserveEmergency must not be less than 0 or this panics.
-// If reserve < reserveEmergency, reserve is bumped up to match
-//   reserveEmergency.
+// reserve and reserveCleanup must not be less than 0 or this panics.
 //
 // First, if Deadline is missing from LUCI_CONTEXT, it is filled in with the
 // default:
 //
-//   {deadline: infinity, grace_period: 30}
+//   {soft_deadline: infinity, grace_period: 30}
 //
-// Next, the earlier of the input ctx.Deadline and Deadline.deadline values is
-// computed. `reserve` is subtracted from this and it becomes the new
-// `adjustedDeadline`.
+// We then calculate:
 //
-// Next, `reserveEmergency` is subtracted from Deadline.grace_period.
+//   adjustedSoftDeadline = earlier(
+//     ctx.Deadline() - gracePeriod,
+//     Deadline.soft_deadline,
+//   ) - reserve
+//
+// Next, `reserveCleanup` is subtracted from Deadline.grace_period.
 // This becomes the `adjustedGracePeriod`.
 //
 // The `cleanup` channel is set up with a goroutine which:
-//   * On SIGTERM/os.Interrupt, continuously sends InterruptEvent until it
-//     closes ctx.Done after adjustedDeadline, where it switches to ClosureEvent.
-//   * On `adjustedDeadline-adjustedGracePeriod`, continuously sends
-//     TimeoutEvent until ctx.Done, where it switches to ClosureEvent.
-//   * On ctx.Done, continuously sends ClosureEvent.
+//   * On shutdown()/SIGTERM/os.Interrupt, continuously sends InterruptEvent.
+//     After `adjustedGracePeriod` from the interrupt, newCtx will be canceled.
+//   * On `adjustedSoftDeadline`, continuously sends TimeoutEvent.
+//     The newCtx will meet its hard deadline after `adjustedGracePeriod`.
+//   * On newCtx.Done, closes (so reads will see ClosureEvent).
 //
-// Finally, the returned context has its deadline set to `adjustedDeadline`, and
-// LUCI_CONTEXT['deadline'] is populated with the adjusted deadline/gracePeriod.
+// Finally, the newCtx has its deadline set to
+// `adjustedSoftDeadline+adjustedGracePeriod`, and LUCI_CONTEXT['deadline'] is
+// populated with the adjusted soft_deadline and grace_period.
+//
+// The returned shutdown() function will begin the shutdown process (acts as if
+// an os.Interrupt signal was triggered). After calling shutdown, you may block
+// on ctx.Done() which will take up to adjustedGracePeriod to occur.
 //
 // Note, if Deadline.grace_period is insufficient to cover reserveCleanup
 // (including if reserveCleanup>DefaultGracePeriodSecs and no Deadline was in
@@ -108,46 +128,46 @@ const (
 // Example:
 //
 //    func MainFunc(ctx context.Context) {
-//      // deadline     = unix(t0+5:00)
-//      // grace_period = 40
-//      cleanup, cctx, cancel := lucictx.AdjustDeadline(ctx, time.Minute, 500*time.Millisecond)
-//      defer cancel()
-//      ScopedFunction(cctx, cleanup)
+//      // ctx.Deadline  = unix(t0+5:40)
+//      // soft_deadline = unix(t0+5:00)
+//      // grace_period  = 40
+//      cleanup, newCtx, shutdown := lucictx.AdjustDeadline(ctx, time.Minute, 500*time.Millisecond)
+//      defer shutdown()
+//      ScopedFunction(newCtx, cleanup)
 //
-//      // Assuming ScopedFunction exits in a timely fashion on ctx.Done, you
-//      // have at least 500ms to do stuff here. Alternately you could wait on
-//      // `<-cleanup` and have at least 40s to do stuff, but ScopedFunction may
-//      // not have finished yet.
+//      // When ScopedFunction returns (assuming it returns immediately on
+//      // newCtx.Done):
+//      //   If there was a signal, you have 500ms left.
+//      //   If newCtx timed out, you have 1m40s.
 //      //
-//      // Note that if `<-cleanup` is TimeoutEvent, you could have a whole
-//      // minute (i.e. we haven't been interrupted yet, just getting close to
-//      // the deadline).
+//      // If you had a goroutine waiting on <-cleanup, you would get the full
+//      // grace_period to do something. If <-cleanup returned TimeoutEvent, you
+//      // would also get the remainder of soft_deadline (i.e. 1 additional
+//      // minute)
 //    }
 //
-//    func ScopedFunction(ctx context.Context, cleanup <-chan struct{}) {
-//      // deadline     = unix(t0+4:00)
-//      // grace_period = 39.5
-//      // Otherwise Deadline is still not in LUCI_CONTEXT.
+//    func ScopedFunction(newCtx context.Context, cleanup <-chan DeadlineEvent) {
+//      // newCtx.Deadline  = unix(t0+4:39.5)
+//      // soft_deadline = unix(t0+4:00)
+//      // grace_period  = 39.5
 //
 //      go func() {
-//        // cleanup is closed at SIGTERM or $deadline-$grace_period,
+//        // cleanup is unblocked at SIGTERM, $soft_deadline or shutdown(),
 //        // whichever is first.
 //        <-cleanup
 //        // have grace_period to do something (say, send SIGTERM to a child)
-//        // before ctx.Done().
+//        // before newCtx.Done().
 //      }()
 //    }
 //
-// NOTE: In the event that `ctx` is canceled, `cleanup` will not be closed.
-func AdjustDeadline(ctx context.Context, reserve, reserveEmergency time.Duration) (cleanup <-chan DeadlineEvent, newCtx context.Context, cancel func()) {
+// NOTE: In the event that `ctx` is canceled, everything immediately moves to
+// the 'Kill' phase without providing any grace period.
+func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) (cleanup <-chan DeadlineEvent, newCtx context.Context, shutdown func()) {
 	if reserve < 0 {
 		panic(errors.Reason("reserve(%d) < 0", reserve).Err())
 	}
-	if reserveEmergency < 0 {
-		panic(errors.Reason("reserveEmergency(%d) < 0", reserveEmergency).Err())
-	}
-	if reserveEmergency > reserve {
-		reserve = reserveEmergency
+	if reserveCleanup < 0 {
+		panic(errors.Reason("reserveCleanup(%d) < 0", reserveCleanup).Err())
 	}
 
 	d := GetDeadline(ctx)
@@ -158,76 +178,74 @@ func AdjustDeadline(ctx context.Context, reserve, reserveEmergency time.Duration
 		d = &Deadline{GracePeriod: DefaultGracePeriod.Seconds()}
 	}
 
+	needSet := false
+
 	// Adjust grace period.
-	adjustedGrace := secsToDuration(d.GracePeriod) - reserveEmergency
+	origGracePeriod := secsToDuration(d.GracePeriod)
+	adjustedGrace := origGracePeriod - reserveCleanup
 	if adjustedGrace < 0 {
 		panic(errors.Reason(
-			"reserveEmergency(%f) > gracePeriod(%f)", reserveEmergency.Seconds(), d.GracePeriod).Err())
+			"reserveCleanup(%f) > gracePeriod(%f)", reserveCleanup.Seconds(), d.GracePeriod).Err())
 	}
-	d.GracePeriod = adjustedGrace.Seconds()
+	if reserveCleanup > 0 {
+		d.GracePeriod = adjustedGrace.Seconds()
+		needSet = true
+	}
 
-	// note: 0 indicates an 'infinite' deadline.
-	var ctxDeadline time.Time
+	// find adjustedSoftDeadline
+	var ctxSoftDeadline time.Time
 	if d, ok := ctx.Deadline(); ok {
-		ctxDeadline = d
+		ctxSoftDeadline = d.Add(-origGracePeriod)
 	}
-	var lucictxDeadline time.Time
-	if d.Deadline != 0 {
-		lucictxDeadline = unixFloatToTime(d.Deadline)
+	var lucictxSoftDeadline time.Time
+	if d.SoftDeadline != 0 {
+		lucictxSoftDeadline = unixFloatToTime(d.SoftDeadline)
 	}
-
-	var adjustedDeadline time.Time
+	adjustedSoftDeadline := earlier(ctxSoftDeadline, lucictxSoftDeadline)
 
 	var newCtxCancel func()
 
-	switch {
-	case ctxDeadline.IsZero() && !lucictxDeadline.IsZero():
-		adjustedDeadline = lucictxDeadline
-	case !ctxDeadline.IsZero() && lucictxDeadline.IsZero():
-		adjustedDeadline = ctxDeadline
-	case !ctxDeadline.IsZero() && !lucictxDeadline.IsZero():
-		if ctxDeadline.Before(lucictxDeadline) {
-			adjustedDeadline = ctxDeadline
-		} else {
-			adjustedDeadline = lucictxDeadline
-		}
-	}
-	if !adjustedDeadline.IsZero() {
-		adjustedDeadline = adjustedDeadline.Add(-reserve)
-		newCtx, newCtxCancel = clock.WithDeadline(ctx, adjustedDeadline)
-		d.Deadline = timeToUnixFloat(adjustedDeadline)
+	// Set up hard deadline in context, set Deadline.soft_deadline
+	if !adjustedSoftDeadline.IsZero() {
+		adjustedSoftDeadline = adjustedSoftDeadline.Add(-reserve)
+		d.SoftDeadline = timeToUnixFloat(adjustedSoftDeadline)
+		needSet = true
+		// we add adjustedGrace back because the ctx deadline is the HARD deadline;
+		// it must occur `adjustedGrace` after the SoftDeadline.
+		//
+		// note that if adjustedSoftDeadline+adjustedGrace is in the past, this
+		// returns newCtx as already Done.
+		newCtx, newCtxCancel = clock.WithDeadline(ctx, adjustedSoftDeadline.Add(adjustedGrace))
 	} else {
+		// need cancel func here so that newCtx can hit hard closure after
+		// a signal/shutdown, even though it won't have a deadline.
 		newCtx, newCtxCancel = context.WithCancel(ctx)
 	}
 
-	newCtx = SetDeadline(newCtx, d)
-
-	cleanup = runMonitor(newCtx, newCtxCancel, adjustedGrace)
-
-	cancel = func() {
-		newCtxCancel()
-		<-cleanup // ensures that signal handlers are cleaned up
+	if needSet {
+		newCtx = SetDeadline(newCtx, d)
 	}
+
+	cleanup, shutdown = runDeadlineMonitor(newCtx, newCtxCancel, adjustedSoftDeadline, adjustedGrace)
 
 	return
 }
 
-func runMonitor(ctx context.Context, cancel func(), gracePeriod time.Duration) <-chan DeadlineEvent {
+func runDeadlineMonitor(ctx context.Context, cancel func(), adjustedSoftDeadline time.Time, gracePeriod time.Duration) (<-chan DeadlineEvent, func()) {
 	cleanupCh := make(chan DeadlineEvent)
 	// buffer 1 is essential; otherwise signals will be missed if our goroutine
-	// isn't currently blocked on sigCh.
+	// isn't currently blocked on sigCh. With a buffer of 1, sigCh is always ready
+	// to send.
 	sigCh := make(chan os.Signal, 1)
 	signalNotify(sigCh, signals.Interrupts()...)
 
 	var timeoutC <-chan clock.TimerResult
-	if deadline, ok := ctx.Deadline(); ok && gracePeriod > 0 {
-		sleepamt := clock.Until(ctx, deadline.Add(-gracePeriod))
-		timeoutC = clock.After(ctx, sleepamt)
+	if !adjustedSoftDeadline.IsZero() {
+		timeoutC = clock.After(ctx, clock.Until(ctx, adjustedSoftDeadline))
 	}
 
 	go func() {
 		defer cancel()
-		defer close(cleanupCh) // will switch to ClosureEvent
 
 		evt := func() DeadlineEvent {
 			defer signalStop(sigCh)
@@ -242,31 +260,40 @@ func runMonitor(ctx context.Context, cancel func(), gracePeriod time.Duration) <
 			}
 		}()
 
-		if evt == InterruptEvent && gracePeriod > 0 {
+		// Note we do this before signaling cleanupCh so that tests can force
+		// `clock.After` to run before incrementing the test clock.
+		if evt == InterruptEvent {
 			timeoutC = clock.After(ctx, gracePeriod)
 		} else {
 			timeoutC = nil
 		}
 
-		for {
-			// bias towards context completion, otherwise cleanupCh<- and <-ctx.Done
-			// are equally "ready" cases and golang can starve the ctx done-ness.
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case <-timeoutC:
-				return
-			case cleanupCh <- evt:
-			}
+		if evt == ClosureEvent {
+			close(cleanupCh)
+		} else {
+			go func() {
+				for {
+					cleanupCh <- evt
+				}
+			}()
 		}
+
+		select {
+		case <-timeoutC:
+		case <-ctx.Done():
+		}
+		// note `defer cancel()` at the top; at this point ctx has either timed out
+		// from its internal deadline, or we're about to cancel it.
 	}()
-	return cleanupCh
+
+	return cleanupCh, func() {
+		// shutdown func just interrupts on sigCh; multiple calls will have no
+		// effect since we only listen to sigCh exactly once.
+		select {
+		case sigCh <- os.Interrupt:
+		default:
+		}
+	}
 }
 
 // GetDeadline retrieves the raw Deadline information from the context.
@@ -287,17 +314,17 @@ func GetDeadline(ctx context.Context) *Deadline {
 // SetDeadline sets the raw Deadline information in the context.
 //
 // If d is nil, sets a default deadline of:
-//   {deadline: ctx.Deadline(), grace_period_secs: DefaultGracePeriod}
+//   {grace_period: DefaultGracePeriod}
 //
-// If d.deadline == 0, adjusts it to ctx.Deadline().
+// If d.deadline == 0, adjusts it to ctx.Deadline() - d.grace_period.
 //
 // You probably want to use AdjustDeadline instead.
 func SetDeadline(ctx context.Context, d *Deadline) context.Context {
 	if d == nil {
 		d = &Deadline{GracePeriod: DefaultGracePeriod.Seconds()}
 	}
-	if deadline, ok := ctx.Deadline(); ok && d.Deadline == 0 {
-		d.Deadline = timeToUnixFloat(deadline)
+	if deadline, ok := ctx.Deadline(); ok && d.SoftDeadline == 0 {
+		d.SoftDeadline = timeToUnixFloat(deadline) - d.GracePeriod
 	}
 	return Set(ctx, "deadline", d)
 }
