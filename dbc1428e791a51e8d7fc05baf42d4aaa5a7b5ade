@@ -1,0 +1,204 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5bfc9435_ecacf82e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 17,
+        "startChar": 48,
+        "endLine": 17,
+        "endChar": 49
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2946e351_be184df2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "code lgtm, but approach -- see #L71 comment.",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff946c18_622b5d82",
+        "filename": "rts/presubmit/eval/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "nit: I did look, but there isn\u0027t much extra info in there that is request specific rather than the whole method, so i\u0027d move \"The size and freshness ...\" to this doc instead.",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 52
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa8e3cb7_365f6521",
+        "filename": "rts/presubmit/eval/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "repre",
+      "range": {
+        "startLine": 70,
+        "startChar": 23,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "344ceb0c_efc4f18d",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "consider: \nswitch\n+\nreturn res, nil instead of break",
+      "range": {
+        "startLine": 45,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 3
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a26dfe2b_4b622826",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "What\u0027s bigger td.Patchset.{Host,Project} or td.Test?\n\nIf td.Patchset.{..}, then you could probably reduce RAM by re-using strings (i forgot name for this technique):\n\nknownStrings :\u003d map[strings]string\nfunc reuse(s string) string {\n  v, ok :\u003d knownStrings[s]\n  if ok { return v }\n  knownStrings[s] \u003d s\n  return s\n}\ntd.Patchset.Host \u003d reuse(td.Patchset.Host)\n\n\nUpdate: ah, but sadly the same is required with JSON, unless you read it semi-manually.",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16d99c85_171634e1",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "Are we certain *last* 24h will suffice esp. if CQ attempts for some reason are not finishing?\n\nAlso, isn\u0027t it better to work day data, ie the one with more test results, or does it not matter?",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3c4392f_bce06375",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "I see why you want fewer patchsets.\nBut, are you sure that having fewer of them doesn\u0027t lead to very off-the-mark precision?\n\nIn other words, I wonder how stable is precision result is wrt varying LIMIT value here and w/ and w/o ORDER clause.\nAlso, what about the order of tests per GoB patchset? If there are few patchsets in the result, the order of tests in the last incomplete patchset may cause bias.\n\n\nPersonally: given GoB patchset files are cached on disk, I\u0027d rather opt for really sample of N tests out of all tests ran ~in 24h period.",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c279c149_587d9b96",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "what doesthis do?",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b381405_bc673e99",
+        "filename": "rts/presubmit/eval/precision.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-09-28T10:05:41Z",
+      "side": 1,
+      "message": "doc said this is # of Goroutines to spawn, which I read as # of concurrent algo invocations, but even so, we are actually running algo at 2xConcurrency",
+      "range": {
+        "startLine": 67,
+        "startChar": 19,
+        "endLine": 67,
+        "endChar": 30
+      },
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
