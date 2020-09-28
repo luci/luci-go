@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package chromium
 
-import (
-	"context"
-	"math/rand"
-	"time"
+import "go.chromium.org/luci/rts/presubmit/eval"
 
-	"go.chromium.org/luci/rts/presubmit/eval"
-	"go.chromium.org/luci/rts/presubmit/eval/chromium"
-)
+// Backend implements eval.Backend for Chromium.
+//
+// It requires the developer to have BigQuery User role in
+// "chrome-trooper-analytics" Cloud project.
+type Backend struct{}
 
-func main() {
-	ctx := context.Background()
-	rand.Seed(time.Now().Unix())
-	eval.Main(ctx, &chromium.Backend{}, func(ctx context.Context, in eval.Input) (eval.Output, error) {
-		return eval.Output{
-			ShouldRun: rand.Intn(2) == 0,
-		}, nil
-	})
+// Name implements eval.Backend.
+func (*Backend) Name() string {
+	return "chromium"
 }
+
+var _ eval.Backend = (*Backend)(nil)

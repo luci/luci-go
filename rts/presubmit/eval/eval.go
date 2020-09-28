@@ -50,6 +50,9 @@ type Eval struct {
 	// Maximum QPS to send to Gerrit.
 	// If <=0, defaults to 10.
 	GerritQPSLimit int
+
+	// The evaluation backend to use.
+	Backend Backend
 }
 
 // RegisterFlags registers flags for the Eval fields.

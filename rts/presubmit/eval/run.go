@@ -102,6 +102,10 @@ func (r *evalRun) processPatchSet(ctx context.Context, rp *RejectedPatchSet) (el
 	// TODO(crbug.com/1112125): add support for CL stacks.
 	// This call returns only files modified in the particular patchset and
 	// ignores possible parent CLs that were also tested.
+
+	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
+	// Most RTS algorithms would reject such a patchset, so it represents noise.
+
 	files, err := r.gerrit.ChangedFiles(ctx, &rp.Patchset)
 	switch {
 	case psNotFound.In(err):
