@@ -92,6 +92,25 @@ func TestReportTestResults(t *testing.T) {
 				expected.Variant = pbutil.Variant(base...)
 				check(ctx, cfg, tr, expected)
 			})
+
+			Convey("with ServerConfig.BaseTags", func() {
+				t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
+				// (nil, nil)
+				cfg.BaseTags, tr.Tags, expected.Tags = nil, nil, nil
+				check(ctx, cfg, tr, expected)
+
+				// (tag, nil)
+				cfg.BaseTags, tr.Tags, expected.Tags = t1, nil, t1
+				check(ctx, cfg, tr, expected)
+
+				// (nil, tag)
+				cfg.BaseTags, tr.Tags, expected.Tags = nil, t1, t1
+				check(ctx, cfg, tr, expected)
+
+				// (tag1, tag2)
+				cfg.BaseTags, tr.Tags, expected.Tags = t1, t2, append(t1, t2...)
+				check(ctx, cfg, tr, expected)
+			})
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {
