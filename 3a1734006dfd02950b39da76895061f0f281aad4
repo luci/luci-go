@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d239d987_7f26e84b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-28T17:44:13Z",
+      "side": 1,
+      "message": "Just an observation; some projects alias this as \"ds\". I personally prefer keeping this as \"datastore\", so I like this as-is.",
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
