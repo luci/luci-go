@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
@@ -97,6 +98,8 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
+			tags := append(tr.GetTags(), c.cfg.BaseTags...)
+			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
 					TestId:       tr.GetTestId(),
@@ -107,7 +110,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 					SummaryHtml:  tr.GetSummaryHtml(),
 					StartTime:    tr.GetStartTime(),
 					Duration:     tr.GetDuration(),
-					Tags:         tr.GetTags(),
+					Tags:         tags,
 					TestLocation: tr.GetTestLocation(),
 				},
 			}

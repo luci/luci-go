@@ -62,8 +62,8 @@ func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
 	return false
 }
 
-// sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
-func sortStringPairs(tags []*pb.StringPair) {
+// SortStringPairs sorts in-place the tags slice lexicographically by key, then value.
+func SortStringPairs(tags []*pb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
 			return tags[i].Key < tags[j].Key
@@ -128,6 +128,6 @@ func FromStrpairMap(m strpair.Map) []*pb.StringPair {
 			ret = append(ret, StringPair(k, v))
 		}
 	}
-	sortStringPairs(ret)
+	SortStringPairs(ret)
 	return ret
 }
