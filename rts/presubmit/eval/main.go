@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package chromium
+package eval
 
 import (
 	"context"
@@ -22,23 +22,23 @@ import (
 
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
-	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
 // Main evaluates an RTS algorithm for Chromium, prints results and exits the
 // process.
-func Main(ctx context.Context, algo eval.Algorithm) {
+func Main(ctx context.Context, backend Backend, algo Algorithm) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer signals.HandleInterrupt(cancel)
 
-	ev := &eval.Eval{
+	ev := &Eval{
 		Algorithm: algo,
+		Backend:   backend,
 	}
 	if err := ev.RegisterFlags(flag.CommandLine); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	
+
 	flag.Parse()
 
 	var logCfg = gologger.LoggerConfig{
