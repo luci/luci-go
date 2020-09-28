@@ -102,7 +102,7 @@ func (s *rejectedPatchSetSource) writeCache(ctx context.Context, patchSets []*Re
 }
 
 func (s *rejectedPatchSetSource) cacheFile(t time.Time) cacheFile {
-	return cacheFile(filepath.Join(s.CacheDir, "rejected-patch-sets", s.Backend.Name(), t.Format(dayLayout)))
+	return cacheFile(filepath.Join(s.CacheDir, s.Backend.Name(), "rejected-patch-sets", t.Format(dayLayout)))
 }
 
 const dayLayout = "2006-01-02"

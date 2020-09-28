@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -98,22 +99,40 @@ func (p *progress) Done(ctx context.Context) {
 
 // Print prints the results to w.
 func (r *Result) Print(w io.Writer) (err error) {
-	switch {
-	case r.Safety.AnalyzedPatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: patchsets not found\n")
-
-	case r.Safety.EligiblePatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: all %d patchsets are ineligible.\n", r.Safety.AnalyzedPatchSets)
-
-	default:
-		fmt.Printf("Total analyzed patchsets: %d\n", r.Safety.AnalyzedPatchSets)
-		_, err = fmt.Printf("Safety score: %.2f (%d/%d)\n",
-			float64(r.Safety.Rejected)/float64(r.Safety.EligiblePatchSets),
-			r.Safety.Rejected,
-			r.Safety.EligiblePatchSets,
-		)
+	ind := &indented.Writer{Writer: w}
+	p := func(format string, args ...interface{}) {
+		if err == nil {
+			_, err = fmt.Fprintf(ind, format, args...)
+		}
 	}
 
-	// TODO(crbug.com/1112125): print precision.
+	p("Safety:\n")
+	ind.Level++
+	switch {
+	case r.Safety.AnalyzedPatchSets == 0:
+		p("Evaluation failed: patchsets not found\n")
+
+	case r.Safety.EligiblePatchSets == 0:
+		p("Evaluation failed: all %d patchsets are ineligible.\n", r.Safety.AnalyzedPatchSets)
+
+	default:
+		p("Score: %.2f\n", float64(r.Safety.Rejected)/float64(r.Safety.EligiblePatchSets))
+		p("# of bad patchsets: %d\n", r.Safety.EligiblePatchSets)
+		p("# of them rejected by this RTS: %d\n", r.Safety.Rejected)
+		p("Total analyzed patchsets: %d\n", r.Safety.AnalyzedPatchSets)
+	}
+	ind.Level--
+
+	p("Precision:\n")
+	ind.Level++
+	if r.Precision.SampleDuration == 0 {
+		p("Evaluation failed: no test results with duration\n")
+	} else {
+		saved := r.Precision.SampleDuration - r.Precision.ForecastDuration
+		p("Score: %.2f\n", float64(saved)/float64(r.Precision.SampleDuration))
+		p("# of testing hours in the sample: %s\n", r.Precision.SampleDuration)
+		p("# of testing hours with the RTS: %s\n", r.Precision.ForecastDuration)
+	}
+	ind.Level--
 	return
 }
