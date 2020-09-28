@@ -191,6 +191,7 @@ type TestResult struct {
 	Duration *duration.Duration `protobuf:"bytes,9,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Metadata for this test result.
 	// It might describe this particular execution or the test case.
+	// A key can be repeated.
 	Tags []*StringPair `protobuf:"bytes,10,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Where the test is defined, e.g. the file name.
 	TestLocation *TestLocation `protobuf:"bytes,11,opt,name=test_location,json=testLocation,proto3" json:"test_location,omitempty"`
