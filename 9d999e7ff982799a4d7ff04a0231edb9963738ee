@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "e3f3c173_8d2d2af1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-28T06:18:05Z",
+      "side": 1,
+      "message": "Yes, this is where I\u0027m at as well. To make this lower-overhead I added a small optimization so that AdjustDeadline(ctx, 0, 0) won\u0027t write another LUCI_CONTEXT.",
+      "parentUuid": "6b617dfd_85a1f3de",
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3171ea53_c78e872f",
         "filename": "lucictx/deadline.go",
         "patchSetId": 7
@@ -60,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "fe1dd684_d28866ff",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-28T06:18:05Z",
+      "side": 1,
+      "message": "Fixed",
+      "parentUuid": "3171ea53_c78e872f",
+      "range": {
+        "startLine": 149,
+        "startChar": 65,
+        "endLine": 149,
+        "endChar": 73
+      },
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d70d082d_018edfc6",
         "filename": "lucictx/deadline.go",
         "patchSetId": 7
@@ -74,6 +116,24 @@
       "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98d79e12_3c73f3ec",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-09-28T06:18:05Z",
+      "side": 1,
+      "message": "Done; added a note to call attention to this (I moved it because I thought it would maybe be more obvious what was going on, but I think a comment is just as good for this).",
+      "parentUuid": "d70d082d_018edfc6",
+      "revId": "9d999e7ff982799a4d7ff04a0231edb9963738ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
