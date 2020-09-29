@@ -20,7 +20,12 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luciexe"
 
@@ -61,9 +66,9 @@ type Subprocess struct {
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
 func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
-	inputData, err := proto.Marshal(input)
+	initialBuildData, err := proto.Marshal(mkInitialBuild(ctx, input))
 	if err != nil {
-		return nil, errors.Annotate(err, "marshalling input Build").Err()
+		return nil, errors.Annotate(err, "marshalling initial Build").Err()
 	}
 
 	launchOpts, _, err := opts.rationalize(ctx)
@@ -91,7 +96,7 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 	cmd := exec.CommandContext(ctx, luciexeArgs[0], args...)
 	cmd.Env = launchOpts.env.Sorted()
 	cmd.Dir = launchOpts.workDir
-	cmd.Stdin = bytes.NewBuffer(inputData)
+	cmd.Stdin = bytes.NewBuffer(initialBuildData)
 	cmd.Stdout = launchOpts.stdout
 	cmd.Stderr = launchOpts.stderr
 	if err := cmd.Start(); err != nil {
@@ -139,4 +144,31 @@ func (s *Subprocess) Wait() (*bbpb.Build, error) {
 		s.build, s.err = luciexe.ReadBuildFile(s.collectPath)
 	})
 	return s.build, s.err
+}
+
+// fieldsToClear are a set of fields that MUST be cleared in the initial build
+// to luciexe.
+var fieldsToClear = stringset.NewFromSlice(
+	"end_time",
+	"status_details",
+	"summary_markdown",
+	"steps",
+	"tags",
+	"output",
+	"update_time",
+)
+
+func mkInitialBuild(ctx context.Context, input *bbpb.Build) *bbpb.Build {
+	ib := &bbpb.Build{}
+	ibr := ib.ProtoReflect()
+	input.ProtoReflect().Range(func(field protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		if !fieldsToClear.Has(string(field.Name())) {
+			ibr.Set(field, val)
+		}
+		return true
+	})
+	ib.CreateTime = timestamppb.New(clock.Now(ctx))
+	ib.StartTime = timestamppb.New(clock.Now(ctx))
+	ib.Status = bbpb.Status_STARTED
+	return ib
 }
