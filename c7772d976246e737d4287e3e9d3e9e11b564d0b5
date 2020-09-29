@@ -33,6 +33,24 @@
       "revId": "c7772d976246e737d4287e3e9d3e9e11b564d0b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ecdadc3f_592ff50b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T02:04:19Z",
+      "side": 1,
+      "message": "Done for the color. I also modify the code a bit because there seems to be 2 loading bar.\n\nI will do the padding in another CL.",
+      "parentUuid": "e365cb57_fe05e3f8",
+      "revId": "c7772d976246e737d4287e3e9d3e9e11b564d0b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
