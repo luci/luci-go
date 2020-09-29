@@ -190,7 +190,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
-          <a href=${getURLForProject(this.builder.project)}>${this.builder.project}</a>
+          <a href=${getURLForProject(this.builder.project)} target="a">${this.builder.project}</a>
           <span>/</span>
           <span>${this.builder.bucket}</span>
           <span>/</span>
