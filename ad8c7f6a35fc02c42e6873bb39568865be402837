@@ -34,6 +34,138 @@
       "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2707fa1b_d981cd6c",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "is this an impl detail? why does the caller care?",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 70
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "453a1870_ebbbeb03",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "do we still need it?",
+      "range": {
+        "startLine": 80,
+        "startChar": 10,
+        "endLine": 80,
+        "endChar": 18
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "199ff87b_6e6e0cb3",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "its comment says \"if you know that it could only ever contain one element\". \nWhat guarantees that err could only ever contain one element?",
+      "range": {
+        "startLine": 110,
+        "startChar": 16,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c25ef30_4d82ec8e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "this isn\u0027t needed if you use status.Code()\n\nhttps://github.com/grpc/grpc-go/blob/master/status/status.go#L120",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 36
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed5c7606_1565d1d3",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "i think it would be much simpler to use a `chan struct{}` instead.\na worker would close its own channel when it is done streaming results.\nthe next worker (and its sub-workers) can wait on the channel all together by doing `\u003c-prev`",
+      "range": {
+        "startLine": 225,
+        "startChar": 0,
+        "endLine": 242,
+        "endChar": 4
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ca8c7d6_135a9570",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-09-29T00:06:55Z",
+      "side": 1,
+      "message": "this construct is a bit fragile: it is easy to accidentally write rst.ctx below.\n\nplease consider passing ctx as a param in Run()",
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
