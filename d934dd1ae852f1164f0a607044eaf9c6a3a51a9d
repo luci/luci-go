@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "481f8a9e_a2b6e26a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-09-29T22:58:59Z",
+      "side": 1,
+      "message": "Copied the proto change into a doc https://docs.google.com/document/d/1RJzjsCB1S7F0Xj7ZV_QvIOf8BadKPPNTs3T8tfs6i7U/edit# for an easier discussion.",
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1abb3c7e_d5eac10a",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 4
