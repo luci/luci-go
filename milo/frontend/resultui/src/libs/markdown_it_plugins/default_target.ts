@@ -14,16 +14,49 @@
 
 import MarkdownIt from 'markdown-it';
 
+const CLOSING_ANCHOR_TAG = '</a>';
+
 /**
- * Set default target for link_open elements.
+ * Set default target for link elements.
  */
 export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
-  const existingRule = (md.renderer.rules['link_open'] ||
-    md.renderer.renderToken).bind(md.renderer);
+  const renderToken = md.renderer.renderToken.bind(md.renderer);
 
+  // Set default target for link_open tokens.
+  const existingLinkOpenRule = md.renderer.rules['link_open'] || renderToken;
   md.renderer.rules['link_open'] = (tokens, i, ...params) => {
     const target = tokens[i].attrGet('target') || defaultTarget;
     tokens[i].attrSet('target', target);
-    return existingRule(tokens, i, ...params);
+    return existingLinkOpenRule(tokens, i, ...params);
+  };
+
+  // Set default target for anchors in html_inline tokens.
+  const existingHTMLInlineRule = md.renderer.rules['html_inline'] || renderToken;
+  md.renderer.rules['html_inline'] = (tokens, i, ...params) => {
+    const token = tokens[i];
+    if (/^<a .*>$/i.test(token.content)) {
+      const template = document.createElement('template');
+      template.innerHTML = token.content + CLOSING_ANCHOR_TAG;
+      const anchor = template.content.firstElementChild!;
+      const target = anchor.getAttribute('target') || defaultTarget;
+      anchor.setAttribute('target', target);
+      token.content = anchor.outerHTML.substring(0, anchor.outerHTML.length - CLOSING_ANCHOR_TAG.length);
+    }
+    return existingHTMLInlineRule(tokens, i, ...params);
+  };
+
+  // Set default target for anchors in html_block tokens.
+  const existingHTMLBlockRule = md.renderer.rules['html_block'] || renderToken;
+  md.renderer.rules['html_block'] = (tokens, i, ...params) => {
+    const token = tokens[i];
+    const template = document.createElement('template');
+    template.innerHTML = token.content;
+    const anchors = template.content.querySelectorAll('a');
+    anchors.forEach((anchor) => {
+      const target = anchor.getAttribute('target') || defaultTarget;
+      anchor.setAttribute('target', target);
+    });
+    token.content = template.content.firstElementChild!.outerHTML;
+    return existingHTMLBlockRule(tokens, i, ...params);
   };
 }
