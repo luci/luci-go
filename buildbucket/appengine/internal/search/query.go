@@ -19,16 +19,13 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.chromium.org/luci/common/sync/parallel"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
@@ -169,27 +166,27 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 
 // fetchOnBuild fetches directly on Build entity.
 func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, error) {
-	dq := datastore.NewQuery(model.BuildKind).Order("__key__")
+	dq := datastore.NewQuery(model.BuildKind)
 
 	for _, tag := range q.Tags.Format() {
 		dq = dq.Eq("tags", tag)
 	}
 
-	if q.Status != pb.Status_STATUS_UNSPECIFIED {
+	switch {
+	case q.Status == pb.Status_ENDED_MASK:
+		dq = dq.Eq("incomplete", false)
+	case q.Status != pb.Status_STATUS_UNSPECIFIED:
 		dq = dq.Eq("status_v2", q.Status)
 	}
 
 	if q.CreatedBy != "" {
 		dq = dq.Eq("created_by", q.CreatedBy)
 	}
-
-	switch {
-	case q.Builder.GetBuilder() != "":
-		dq = dq.Eq("builder_id", protoutil.FormatBuilderID(q.Builder))
-	case q.Builder.GetBucket() != "":
-		dq = dq.Eq("bucket_id", protoutil.FormatBucketID(q.Builder.Project, q.Builder.Bucket))
-	case q.Builder.GetProject() != "":
-		dq = dq.Eq("project", q.Builder.Project)
+	if q.Canary != nil {
+		dq = dq.Eq("canary", *q.Canary)
+	}
+	if !q.IncludeExperimental {
+		dq = dq.Eq("experimental", false)
 	}
 
 	idLow, idHigh := q.idRange()
@@ -200,11 +197,15 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idHigh}))
 	}
 
+	var queries []*datastore.Query
 	var buckets []string
 	var err error
-	if q.Builder.GetBucket() != "" {
+	switch {
+	case q.Builder.GetBuilder() != "":
+		queries = append(queries, dq.Eq("builder_id", protoutil.FormatBuilderID(q.Builder)))
+	case q.Builder.GetBucket() != "":
 		buckets = []string{protoutil.FormatBucketID(q.Builder.Project, q.Builder.Bucket)}
-	} else {
+	default:
 		switch buckets, err = perm.BucketsByPerm(ctx, perm.BuildersList, q.Builder.GetProject()); {
 		case err != nil:
 			return nil, errors.Annotate(err, "error fetching accessible buckets").Err()
@@ -213,56 +214,28 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		}
 	}
 
-	// fetch the keys of builds which match the query conditions.
-	var bKeys []*datastore.Key
-	err = parallel.WorkPool(64, func(c chan<- func() error) {
-		var mu sync.Mutex
-		for _, bucket := range buckets {
-			dq := dq
-			bucket := bucket
-			c <- func() error {
-				var buildKeys []*datastore.Key
-				dq = dq.Eq("bucket_id", bucket)
-				logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
-				if err := datastore.GetAll(ctx, dq, &buildKeys); err != nil {
-					return err
-				}
-				mu.Lock()
-				bKeys = append(bKeys, buildKeys...)
-				mu.Unlock()
-				return nil
-			}
-		}
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "error fetching builds keys in parallel").Err()
-	}
-
-	// sort in ascending order by build id.
-	sort.Slice(bKeys, func(i, j int) bool {
-		return bKeys[i].IntID() < bKeys[j].IntID()
-	})
-
-	// only fetch the q.PageSize of build entities.
-	builds := make([]*model.Build, 0, q.PageSize)
-	i := 0
-	for i < len(bKeys) && i < int(q.PageSize) {
-		b := &model.Build{}
-		if !datastore.PopulateKey(b, bKeys[i]) {
-			return nil, errors.Annotate(err, "failed to populate build key %q", bKeys[i].StringID()).Err()
-		}
-		builds = append(builds, b)
-		i++
-	}
-	if err := datastore.Get(ctx, builds); err != nil {
-		return nil, errors.Annotate(err, "error fetching builds").Err()
+	for _, bucket := range buckets {
+		queries = append(queries, dq.Eq("bucket_id", bucket))
 	}
 
 	rsp := &pb.SearchBuildsResponse{}
-	for _, b := range builds {
-		// TODO(crbug/1090540): check if b.status == q.status.
+	logging.Debugf(ctx, "datastore query for FetchOnBuild: %v", queries)
+	err = datastore.RunMulti(ctx, queries, func(b *model.Build) error {
+		if len(rsp.Builds) >= int(q.PageSize) {
+			return datastore.Stop
+		}
+		if q.Status != pb.Status_STATUS_UNSPECIFIED &&
+			q.Status != pb.Status_ENDED_MASK &&
+			q.Status != b.Status {
+			return nil
+		}
 		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
+
 	if len(rsp.Builds) == int(q.PageSize) {
 		rsp.NextPageToken = fmt.Sprintf("id>%d", rsp.Builds[q.PageSize-1].Id)
 	}
@@ -339,7 +312,8 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 			}
 			// Check user-supplied filters.
 			if !buildTags.HasAll(tags...) ||
-				(q.Status != pb.Status_STATUS_UNSPECIFIED && q.Status != b.Status) ||
+				(q.Status == pb.Status_ENDED_MASK && b.Incomplete) ||
+				(q.Status != pb.Status_STATUS_UNSPECIFIED && q.Status != pb.Status_ENDED_MASK && q.Status != b.Status) ||
 				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
 				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
 				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
@@ -439,7 +413,7 @@ func fixCreatedBy(createdBy string) string {
 	if createdBy != "" && !strings.Contains(createdBy, ":") {
 		createdBy = fmt.Sprintf("user:%s", createdBy)
 	}
-		return createdBy
+	return createdBy
 }
 
 // mustTimestamp converts a protobuf timestamp to a time.Time and panics on failures.
