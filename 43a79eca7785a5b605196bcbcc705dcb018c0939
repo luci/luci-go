@@ -16,6 +16,24 @@
       "revId": "43a79eca7785a5b605196bcbcc705dcb018c0939",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90757118_a3bd6db8",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-29T05:32:33Z",
+      "side": 1,
+      "message": "I don\u0027t think there\u0027s a need for that.\nThe other CL is about sanitisation. If we enable the target attribute, then we will need to handle all cases.",
+      "parentUuid": "69582a9c_126b4f25",
+      "revId": "43a79eca7785a5b605196bcbcc705dcb018c0939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
