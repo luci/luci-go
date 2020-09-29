@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6abc505f_b4de0dd8",
+        "filename": "milo/frontend/resultui/src/libs/safe_href_html.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T01:37:04Z",
+      "side": 1,
+      "message": "I believe that both sanitise and sanitize are correct.",
+      "range": {
+        "startLine": 26,
+        "startChar": 28,
+        "endLine": 26,
+        "endChar": 36
+      },
+      "revId": "7b148dd5602e3e29db2a81bfbe651823f5ef1544",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
