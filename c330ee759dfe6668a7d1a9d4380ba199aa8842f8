@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d0ed08f_c3de0625",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-29T01:38:37Z",
+      "side": 1,
+      "message": "Actually the preferred method is to keep deployment-specific configuration in gae.git repo in `vars`, e.g. see https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/master/apps/luci-change-verifier/prod/app.star",
+      "revId": "c330ee759dfe6668a7d1a9d4380ba199aa8842f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
