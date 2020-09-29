@@ -34,6 +34,24 @@
       "revId": "197b4b7ba24f3662d330771441df64e16d7cd83b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14e6f127_2ec13dce",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-29T03:48:40Z",
+      "side": 0,
+      "message": "IIRC, Joey made the decision to use target\u003d\"_blank\" by default when commenting one of my CLs.\nI didn\u0027t ask his reasoning but those are the reasons I found online.",
+      "parentUuid": "3358ac5c_d7f0e5dc",
+      "revId": "197b4b7ba24f3662d330771441df64e16d7cd83b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
