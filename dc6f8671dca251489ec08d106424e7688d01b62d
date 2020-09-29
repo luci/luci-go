@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "276322cf_9b143961",
+        "filename": "milo/frontend/resultui/src/libs/sanitize_html.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-29T05:41:16Z",
+      "side": 1,
+      "message": "yes.\nhttps://developer.mozilla.org/en-US/docs/Web/API/Element/tagName",
+      "parentUuid": "9b40c083_a7ca6d97",
+      "revId": "dc6f8671dca251489ec08d106424e7688d01b62d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6deef0b4_fe6c7cdd",
         "filename": "milo/frontend/resultui/src/libs/sanitize_html_test.ts",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "dc6f8671dca251489ec08d106424e7688d01b62d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a750082_c74f337a",
+        "filename": "milo/frontend/resultui/src/libs/sanitize_html_test.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-29T05:41:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6deef0b4_fe6c7cdd",
+      "revId": "dc6f8671dca251489ec08d106424e7688d01b62d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
