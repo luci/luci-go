@@ -17,9 +17,20 @@ import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 
 const domPurify = createDomPurify(window);
 
+// Ensures rel="noopener" when target attribute is set.
+domPurify.addHook('uponSanitizeAttribute', (node, event) => {
+  if (!event.keepAttr || event.attrName !== 'target') {
+    return;
+  }
+  const existingRef = node.getAttribute('rel') || '';
+  if (!/\bnoopener\b/i.test(existingRef)) {
+    node.setAttribute('rel', (existingRef + ' noopener').trim());
+  }
+});
+
 /**
  * Sanitizes the input HTML string and renders it.
  */
 export function sanitizeHTML(html: string) {
-  return unsafeHTML(domPurify.sanitize(html));
+  return unsafeHTML(domPurify.sanitize(html, {ADD_ATTR: ['target']}));
 }
