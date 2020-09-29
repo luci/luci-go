@@ -16,6 +16,23 @@
       "revId": "c7772d976246e737d4287e3e9d3e9e11b564d0b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e365cb57_fe05e3f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-09-29T00:46:45Z",
+      "side": 1,
+      "message": "LGTM. But could you apply\ncolor: var(--active-text-color);\nto the spinner to make it consistent with other usage of the spinner in the page?\n\nAlso, maybe in another CL, could you add a bit of padding around the tab (like other tabs) as well?\n",
+      "revId": "c7772d976246e737d4287e3e9d3e9e11b564d0b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
