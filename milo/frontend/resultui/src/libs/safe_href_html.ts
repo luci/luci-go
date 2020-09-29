@@ -23,18 +23,17 @@ const domPurify = createDomPurify(window);
  */
 class SafeHrefAttributeCommitter extends AttributeCommitter {
   protected _getValue(): string {
-    // TODO(crbug/1122567): sanitise the URL directly.
+    // TODO(crbug/1122567): sanitize the URL directly.
     const value = super._getValue() as string;
     const anchorHtml = domPurify.sanitize(`<a href="${encodeURI(value)}"></a>`);
-    const div = document.createElement('div');
-    div.innerHTML = anchorHtml;
-    const sanitizedAnchor = div.getElementsByTagName('a').item(0)!;
-    return sanitizedAnchor.getAttribute('href') || '';
+    const template = document.createElement('template');
+    template.innerHTML = anchorHtml;
+    return template.content.firstElementChild!.getAttribute('href') || '';
   }
 }
 
 /**
- * A processor that sanitities href attributes.
+ * A processor that sanitizes href attributes.
  * Otherwise identical to DefaultTemplateProcessor.
  */
 class SafeHrefTemplateProcessor extends DefaultTemplateProcessor {
@@ -50,7 +49,7 @@ class SafeHrefTemplateProcessor extends DefaultTemplateProcessor {
 const safeHrefTemplateProcessor = new SafeHrefTemplateProcessor();
 
 /**
- * Similar to html from 'lit-html', but also sanitises href attribute.
+ * Similar to html from 'lit-html', but also sanitizes href attribute.
  */
 export const safeHrefHtml = (strings: TemplateStringsArray, ...values: unknown[]) =>
   new TemplateResult(strings, values, 'html', safeHrefTemplateProcessor);
