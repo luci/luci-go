@@ -3,6 +3,8 @@ runtime: go113
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
 luci_gae_vars:
+  cas-viewer:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
   cas-viewer-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
 
