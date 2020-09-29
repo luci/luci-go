@@ -16,6 +16,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -27,6 +28,15 @@ func main() {
 	p := cli.Params{
 		Auth:                chromeinfra.DefaultAuthOptions(),
 		DefaultResultDBHost: chromeinfra.ResultDBHost,
+	}
+	// TODO(ddoman): remove this hack after updating all recipes to use the new delimiter.
+	for i := 1; i < len(os.Args)-1; i++ {
+		if os.Args[i] == "-var" {
+			os.Args[i+1] = strings.Replace(os.Args[i+1], "=", ":", 1)
+			i += 1
+		} else if os.Args[i] == "--" {
+			break
+		}
 	}
 	os.Exit(cli.Main(p, os.Args[1:]))
 }

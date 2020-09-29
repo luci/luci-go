@@ -209,7 +209,7 @@ func TestResultName(invID, testID, resultID string) string {
 
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
-	sortStringPairs(tr.Tags)
+	SortStringPairs(tr.Tags)
 }
 
 // NormalizeTestResultSlice converts trs to the canonical form.

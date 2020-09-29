@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/lucictx"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -87,6 +88,32 @@ func TestNewServer(t *testing.T) {
 			cfg.TestLocationBase = "base"
 			_, err = NewServer(ctx, cfg)
 			So(err, ShouldErrLike, "TestLocationBase: doesn't start with //")
+		})
+		Convey("with BaseTags", func() {
+			// empty
+			cfg.BaseTags = nil
+			_, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// valid - unique keys
+			cfg.BaseTags = pbutil.StringPairs("k1", "v1", "k2", "v2")
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// valid - duplicate keys
+			cfg.BaseTags = pbutil.StringPairs("k1", "v1", "k1", "v2")
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// valid - empty value
+			cfg.BaseTags = pbutil.StringPairs("k1", "")
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			// invalid - empty key
+			cfg.BaseTags = pbutil.StringPairs("", "v1")
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldErrLike, "key: unspecified")
 		})
 	})
 }

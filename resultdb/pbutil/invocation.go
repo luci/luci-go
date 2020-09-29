@@ -55,5 +55,5 @@ func InvocationName(id string) string {
 
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
-	sortStringPairs(inv.Tags)
+	SortStringPairs(inv.Tags)
 }
