@@ -36,10 +36,12 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <h3> Other builds with the same buildset </h3>
-      ${this.renderBuildsetInfo()}
-      ${this.renderRelatedBuildsTable()}
-      ${this.renderLoadingBar()}
+      <div id = "main">
+        <h3> Other builds with the same buildset </h3>
+        ${this.renderBuildsetInfo()}
+        ${this.renderRelatedBuildsTable()}
+        ${this.renderLoadingBar()}
+      </div>
     `;
   }
 
@@ -149,6 +151,9 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     }
     #load {
       color: var(--active-text-color);
+    }
+    #main {
+      padding-left: 10px;
     }
   `;
 }
