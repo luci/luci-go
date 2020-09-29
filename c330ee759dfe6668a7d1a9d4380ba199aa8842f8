@@ -16,6 +16,24 @@
       "revId": "c330ee759dfe6668a7d1a9d4380ba199aa8842f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e149d240_526f8495",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-09-29T01:40:18Z",
+      "side": 1,
+      "message": "(Known variables and how they are transformed in CLI flags is still defined in app.yaml, e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/cq/appengine/frontend/app.yaml The deployer just does variable substitution based during deployment).",
+      "parentUuid": "7d0ed08f_c3de0625",
+      "revId": "c330ee759dfe6668a7d1a9d4380ba199aa8842f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
