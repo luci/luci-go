@@ -17,9 +17,27 @@ import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 
 const domPurify = createDomPurify(window);
 
+// Mitigate target="_blank" vulnerability.
+domPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (!['A', 'FORM', 'AREA'].includes(node.tagName)) {
+    return;
+  }
+
+  // Note: rel="noopener" is added when the target is not set because <base> can
+  // set the default target to _blank.
+  if (['_self', '_top', '_parent'].includes(node.getAttribute('target') || '')) {
+    return;
+  }
+
+  const existingRef = node.getAttribute('rel') || '';
+  if (!/\bnoopener\b/i.test(existingRef)) {
+    node.setAttribute('rel', (existingRef + ' noopener').trim());
+  }
+});
+
 /**
  * Sanitizes the input HTML string and renders it.
  */
 export function sanitizeHTML(html: string) {
-  return unsafeHTML(domPurify.sanitize(html));
+  return unsafeHTML(domPurify.sanitize(html, {ADD_ATTR: ['target']}));
 }
