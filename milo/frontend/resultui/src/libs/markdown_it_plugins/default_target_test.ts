@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, html } from '@open-wc/testing';
 import { assert } from 'chai';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import MarkdownIt from 'markdown-it';
 
 import { defaultTarget } from './default_target';
@@ -23,14 +24,24 @@ www.a.com
 [b](http://www.b.com)
 <www.c.com>
 <a href="http://www.d.com">www.d.com</a>
+<a href="http://www.e.com" target="_parent">www.e.com</a>
+
+<div>
+  <a href="http://www.f.com">
+    www.f.com
+  </a>
+  <a href="http://www.g.com" target="_self">
+    www.g.com
+  </a>
+</div>
 `;
 
 const md = MarkdownIt('zero', {linkify: true, html: true})
-  .enable(['linkify', 'autolink', 'link', 'html_inline'])
+  .enable(['linkify', 'autolink', 'link', 'html_inline', 'html_block'])
   .use(defaultTarget, '_blank');
 
 describe('default_target', async () => {
-  const ele = await fixture(md.render(links));
+  const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
   const anchors = ele.querySelectorAll('a');
 
   it('can set default target', () => {
@@ -45,11 +56,23 @@ describe('default_target', async () => {
     const anchor3 =  anchors.item(2);
     assert.equal(anchor3.target, '_blank');
     assert.equal(anchor3.href, 'http://www.c.com/');
+
+    const anchor4 =  anchors.item(3);
+    assert.equal(anchor4.target, '_blank');
+    assert.equal(anchor4.href, 'http://www.d.com/');
+
+    const anchor5 =  anchors.item(5);
+    assert.equal(anchor5.target, '_blank');
+    assert.equal(anchor5.href, 'http://www.f.com/');
   });
 
-  it('does not set target on HTML links', () => {
-    const anchor4 =  anchors.item(3);
-    assert.notEqual(anchor4.target, '_blank');
-    assert.equal(anchor4.href, 'http://www.d.com/');
+  it('does not override target', () => {
+    const anchor4 =  anchors.item(4);
+    assert.equal(anchor4.target, '_parent');
+    assert.equal(anchor4.href, 'http://www.e.com/');
+
+    const anchor5 =  anchors.item(6);
+    assert.equal(anchor5.target, '_self');
+    assert.equal(anchor5.href, 'http://www.g.com/');
   });
 });
