@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b40c083_a7ca6d97",
+        "filename": "milo/frontend/resultui/src/libs/sanitize_html.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T04:06:45Z",
+      "side": 1,
+      "message": "Is node.tagName always uppercase?",
+      "revId": "dc6f8671dca251489ec08d106424e7688d01b62d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6deef0b4_fe6c7cdd",
+        "filename": "milo/frontend/resultui/src/libs/sanitize_html_test.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T04:06:45Z",
+      "side": 1,
+      "message": "Perhaps we want to a test case where node.tagName is different?",
+      "revId": "dc6f8671dca251489ec08d106424e7688d01b62d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
