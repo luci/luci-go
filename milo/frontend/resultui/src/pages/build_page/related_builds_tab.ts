@@ -17,6 +17,7 @@ import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
+import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
@@ -38,12 +39,24 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       <h3> Other builds with the same buildset </h3>
       ${this.renderBuildsetInfo()}
       ${this.renderRelatedBuildsTable()}
+      ${this.renderLoadingBar()}
     `;
+  }
+
+  private renderLoadingBar() {
+    if (this.buildState.buildPageData == null || this.buildState.relatedBuildsData == null) {
+      return html`
+        <div id="load">
+          Loading <milo-dot-spinner></milo-dot-spinner>
+        </div>
+      `
+    }
+    return html ``;
   }
 
   private renderBuildsetInfo() {
     if (this.buildState.buildPageData == null) {
-      return html `Loading...`;
+      return html``
     }
     return html`
       <ul>
@@ -57,7 +70,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   private renderRelatedBuildsTable() {
     if (this.buildState.relatedBuildsData == null) {
-      return html ``;
+      return html``
     }
     return html`
       <table id="related-builds-table">
@@ -133,6 +146,9 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     .status.Canceled {
       background-color: #8ef;
       border-color: #00d8fc;
+    }
+    #load {
+      color: var(--active-text-color);
     }
   `;
 }
