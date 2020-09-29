@@ -35,7 +35,7 @@ function genFeedbackUrl() {
 `From Link: ${document.location.href}
 Please enter a description of the problem, with repro steps if applicable.
 `);
-  return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${feedbackComment}`;
+  return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
 }
 
 /**
