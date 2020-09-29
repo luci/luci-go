@@ -122,7 +122,7 @@ export interface BuildInfra {
   readonly swarming: BuildInfraSwarming;
   readonly log_dog: BuildInfraLogDog;
   readonly recipe: BuildInfraRecipe;
-  readonly resultdb: BuildInfraResultdb;
+  readonly resultdb?: BuildInfraResultdb;
 }
 
 export interface BuildInfraBuildbucket {

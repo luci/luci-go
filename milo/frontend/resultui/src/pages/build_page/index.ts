@@ -92,7 +92,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       if (!bpd) {
         return;
       }
-      this.invocationState.invocationId = bpd.infra?.resultdb.invocation
+      this.invocationState.invocationId = bpd.infra?.resultdb?.invocation
         ?.slice('invocations/'.length) || '';
       this.invocationState.initialized = true;
     }));
