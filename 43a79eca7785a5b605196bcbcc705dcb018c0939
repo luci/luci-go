@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69582a9c_126b4f25",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T04:16:31Z",
+      "side": 1,
+      "message": "Do we want to apply this to \u003carea\u003e and \u003cform\u003e as well, as in the other CL?",
+      "revId": "43a79eca7785a5b605196bcbcc705dcb018c0939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

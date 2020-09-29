@@ -52,6 +52,24 @@
       "revId": "197b4b7ba24f3662d330771441df64e16d7cd83b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aaffefc_7e23d1da",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T04:16:31Z",
+      "side": 0,
+      "message": "SGTM. I think it doesn\u0027t harm to open links in new tab.",
+      "parentUuid": "14e6f127_2ec13dce",
+      "revId": "197b4b7ba24f3662d330771441df64e16d7cd83b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
