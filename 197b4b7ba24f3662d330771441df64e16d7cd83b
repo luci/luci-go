@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e769be01_fcf9503c",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T01:27:47Z",
+      "side": 0,
+      "message": "It is not very clear to me. Could you explain more on the rationale behind setting the default \"_blank\" to target?",
+      "revId": "197b4b7ba24f3662d330771441df64e16d7cd83b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
