@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cc975ab_ab0309bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-09-29T04:24:37Z",
+      "side": 1,
+      "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/7542/related-builds",
+      "revId": "8e1d1874c2139dafc59c05d2fe5d68006ea07f96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
