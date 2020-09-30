@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f9995c16_b9b5304d",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-09-30T16:44:18Z",
+      "side": 1,
+      "message": "Not sure how it\u0027ll be implemented internally. As this rpc is like a batch operation, should we return the success/fail status for each run report so that we may retry the failed one on client side (i.e. CQDaemon)?",
+      "range": {
+        "startLine": 34,
+        "startChar": 44,
+        "endLine": 34,
+        "endChar": 67
+      },
+      "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
