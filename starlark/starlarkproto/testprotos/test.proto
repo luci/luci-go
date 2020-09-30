@@ -74,6 +74,8 @@ message Complex {
   oneof oneof_val {
     Simple simple = 6;
     AnotherSimple another_simple = 7;
+    int64 i64_oneof = 9;
+    int32 i32_oneof = 10;
   }
 
   map<string, Simple> mp = 8;
