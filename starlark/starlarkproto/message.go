@@ -97,6 +97,44 @@ func (m *Message) FromDict(d starlark.IterableMapping) error {
 	return nil
 }
 
+// HasProtoField returns true if the message has the given field initialized.
+func (m *Message) HasProtoField(name string) bool {
+	// If the field was set through Starlark already, it exists. This also covers
+	// "selected" oneof alternatives.
+	if _, ok := m.fields[name]; ok {
+		return true
+	}
+
+	// Check we have this field defined in the schema at all.
+	fd, err := m.fieldDesc(name)
+	if err != nil {
+		return false
+	}
+
+	// If this is a part of some oneof set, the field is assumed set only if it
+	// was explicitly initialized in Starlark (already checked above). So if we
+	// are here, then this particular oneof alternative wasn't used.
+	if fd.ContainingOneof() != nil {
+		return false
+	}
+
+	// Repeated and map fields are assumed to be always preset. They just may be
+	// empty.
+	if fd.IsList() || fd.IsMap() {
+		return true
+	}
+
+	// Singular message-typed fields are set only if they were explicitly
+	// initialized (and if we are here, they were not).
+	if kind := fd.Kind(); kind == protoreflect.MessageKind || kind == protoreflect.GroupKind {
+		return false
+	}
+
+	// Singular fields of primitive types are always set, since there's no way to
+	// distinguish fields initialized with a default value from unset fields.
+	return true
+}
+
 // Basic starlark.Value interface.
 
 // String returns compact text serialization of this message.
