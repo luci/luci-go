@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
@@ -23,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
@@ -35,9 +37,16 @@ import (
 
 const (
 	historyDefaultPageSize = 100
+	historyPoolSize        = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
+//
+// If the given context contains a deadline, this func will try to return a
+// partial result rather than exceeding it.
+//
+// Note that this implementation may swallow errors such as context.Canceled or
+// context.DeadlineExceeded issued by the libs it calls. E.g. spanner.
 func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTestResultHistoryRequest) (*pb.GetTestResultHistoryResponse, error) {
 	if err := verifyGetTestResultHistoryPermission(ctx, in.GetRealm()); err != nil {
 		return nil, err
@@ -51,19 +60,51 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	ctx, cancelTx := span.ReadOnlyTransaction(ctx)
 	defer cancelTx()
 
-	workerCtx, cancelWorker := context.WithCancel(ctx)
+	// Expire the inner context 5 seconds before the deadline so that we can
+	// return a partial response rather than an error.
+	var workerCtx context.Context
+	var cancelWorker context.CancelFunc
+	dl, ok := ctx.Deadline()
+	if ok {
+		workerCtx, cancelWorker = context.WithDeadline(ctx, dl.Add(-5*time.Second))
+
+	} else {
+		workerCtx, cancelWorker = context.WithCancel(ctx)
+	}
 	defer cancelWorker()
 	// Ignore the derived context as we have a single worker.
 	// The closure of the results channel is sufficient to know that the work
 	// is done.
-	eg, _ := errgroup.WithContext(workerCtx)
+	workerErr := make(chan error, 1)
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
-	eg.Go(func() error {
+	go func() {
 		defer close(results)
-		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
-			return matchingResultsInInvTree(workerCtx, in, invocations.NewIDSet(inv), ts, results)
+		defer close(workerErr)
+		workerErr <- parallel.WorkPool(historyPoolSize, func(workC chan<- func() error) {
+			// Make each task keep a pointer to the done channel of task that
+			// needs to finish streaming results before it.
+			prev := make(chan struct{})
+			close(prev)
+
+			invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+				task := &resultStreamingTask{
+					in:      in,
+					invs:    invocations.NewIDSet(inv),
+					ts:      ts,
+					results: results,
+					done:    make(chan struct{}),
+					prev:    prev,
+				}
+				prev = task.done
+				select {
+				case workC <- task.Run(workerCtx):
+				case <-workerCtx.Done():
+					return workerCtx.Err()
+				}
+				return nil
+			})
 		})
-	})
+	}()
 
 	ret := &pb.GetTestResultHistoryResponse{
 		Entries: make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize),
@@ -89,17 +130,27 @@ ResultsLoop:
 			ret.Entries = append(ret.Entries, entry)
 			if len(ret.Entries) == int(in.PageSize) {
 				cancelWorker()
-				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled && status.Code(errors.Unwrap(err)) != codes.Canceled {
-					return ret, err
-				}
-				return ret, nil
+				break ResultsLoop
 			}
 		case <-ctx.Done():
 			break ResultsLoop
 		}
 	}
-	return ret, eg.Wait()
+
+	var retErr error
+	wErr := <-workerErr
+	errors.WalkLeaves(wErr, func(err error) bool {
+		errCode := status.Code(err)
+		if err != context.Canceled && err != context.DeadlineExceeded &&
+			errCode != codes.Canceled && errCode != codes.DeadlineExceeded {
+			// Found an error unrelated to context cancellation return it to
+			// the RPC caller.
+			retErr = wErr
+			return false
+		}
+		return true
+	})
+	return ret, retErr
 }
 
 // verifyGetTestResultHistoryPermission checks that the caller has permission to
@@ -139,37 +190,67 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 	return nil
 }
 
-// matchingResultsInInvTree gets the matching results reachable from a given
-// invocation, and streams them over the given channel.
-func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, invs invocations.IDSet, ts *timestamp.Timestamp, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
-	reachableInvs, err := invocations.Reachable(ctx, invs)
-	if err != nil {
-		return err
-	}
+// resultStreamingTask represents a task with two parts:
+//   - A traversal of the inclusion graph to find the set of reachable
+//     invocations indexed under the same timestamp/commit position,
+//     which can be done in parallel for several invocations in the index.
+//     (Though note that such traversal may itself involve multiple parallel
+//     requests to the database if the results are not yet cached.)
+//   - A query for the test results contained by the invocations in the set
+//     above.
+//     This query can be done in parallel with queries for other sets
+//     of invocations, but note that their results need to be streamed in order.
+type resultStreamingTask struct {
+	ctx     context.Context
+	in      *pb.GetTestResultHistoryRequest
+	invs    invocations.IDSet
+	ts      *timestamp.Timestamp
+	results chan<- *pb.GetTestResultHistoryResponse_Entry
+	done    chan struct{}
+	prev    <-chan struct{}
+}
 
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-	for _, batch := range reachableInvs.Batches() {
-		batch := batch
-		eg.Go(func() error {
-			// TODO(crbug.com/1107678): Implement support for FieldMask to return
-			// only a subset of each result.
-			query := testresults.Query{
-				InvocationIDs: batch,
-				Predicate: &pb.TestResultPredicate{
-					Variant:      in.VariantPredicate,
-					TestIdRegexp: in.TestIdRegexp,
-				},
-			}
-			return query.Run(ctx, func(r *pb.TestResult) error {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: ts}:
-					return nil
+// Run's returned function gets the matching results reachable from the given
+// invocation.
+// Then, it streams them over the results channel, but only after the previous
+// worker is done streaming its results.
+func (rst *resultStreamingTask) Run(ctx context.Context) func() error {
+	return func() error {
+		defer close(rst.done)
+
+		reachableInvs, err := invocations.Reachable(ctx, rst.invs)
+		if err != nil {
+			return err
+		}
+
+		eg, ctx := errgroup.WithContext(ctx)
+		defer eg.Wait()
+		for _, batch := range reachableInvs.Batches() {
+			batch := batch
+			eg.Go(func() error {
+				// TODO(crbug.com/1107678): Implement support for FieldMask to return
+				// only a subset of each result.
+				query := testresults.Query{
+					InvocationIDs: batch,
+					Predicate: &pb.TestResultPredicate{
+						Variant:      rst.in.VariantPredicate,
+						TestIdRegexp: rst.in.TestIdRegexp,
+					},
 				}
+				return query.Run(ctx, func(r *pb.TestResult) error {
+					select {
+					case <-rst.prev:
+					}
+
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case rst.results <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}:
+						return nil
+					}
+				})
 			})
-		})
+		}
+		return eg.Wait()
 	}
-	return eg.Wait()
 }
