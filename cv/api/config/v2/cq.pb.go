@@ -1567,6 +1567,16 @@ func (x *Verifiers_Tryjob_IncludableBuilder) GetName() string {
 // Collection of parameters for deciding whether to retry a single build.
 // If parameter is not specified, its value defaults to 0 (per proto3).
 // Thus, omitting all parameters means no retries of any kind.
+//
+// CQ's retry logic is as follows:
+// All builds triggered during the lifetime of a CQ attempt for a tryjob are
+// weighted according to the failure type, as described below. The resulting
+// weights are then added together. Call this number W. If W > single_quota,
+// then no more builds are scheduled for that tryjob.
+//
+// W for every tryjob is then summed up. If that result is strictly greater
+// than global_quota, then the CQ attempt fails, and no more builds are
+// scheduled for the attempt.
 type Verifiers_Tryjob_RetryConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1576,11 +1586,16 @@ type Verifiers_Tryjob_RetryConfig struct {
 	SingleQuota int32 `protobuf:"varint,1,opt,name=single_quota,json=singleQuota,proto3" json:"single_quota,omitempty"`
 	// Retry quota for all tryjobs in a CL.
 	GlobalQuota int32 `protobuf:"varint,2,opt,name=global_quota,json=globalQuota,proto3" json:"global_quota,omitempty"`
-	// The weight assigned to each tryjob failure.
+	// The weight assigned to each tryjob failure. A failure is as a
+	// buildbucket build whose result == 'FAILURE'.
 	FailureWeight int32 `protobuf:"varint,3,opt,name=failure_weight,json=failureWeight,proto3" json:"failure_weight,omitempty"`
-	// The weight assigned to each transient failure.
+	// The weight assigned to each transient failure. A transient failure is a
+	// buildbucket build which has result == 'FAILURE' and 'failure_reason' in
+	// ('BUILDBUCKET_FAILURE', 'INFRA_FAILURE').
 	TransientFailureWeight int32 `protobuf:"varint,4,opt,name=transient_failure_weight,json=transientFailureWeight,proto3" json:"transient_failure_weight,omitempty"`
-	// The weight assigned to tryjob timeouts.
+	// The weight assigned to tryjob timeouts. A tryjob timeout is as a
+	// buildbucket build with result == 'CANCELED' and cancelation_reason ==
+	// 'TIMEOUT'.
 	TimeoutWeight int32 `protobuf:"varint,5,opt,name=timeout_weight,json=timeoutWeight,proto3" json:"timeout_weight,omitempty"`
 }
 
