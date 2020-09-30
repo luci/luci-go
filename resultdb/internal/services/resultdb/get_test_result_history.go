@@ -16,7 +16,12 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strconv"
 	"time"
+
+	"go.chromium.org/luci/resultdb/internal/pagination"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
@@ -69,11 +74,9 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 		workerCtx, cancelWorker = context.WithCancel(ctx)
 	}
 	defer cancelWorker()
-	// Ignore the derived context as we have a single worker.
-	// The closure of the results channel is sufficient to know that the work
-	// is done.
+
 	workerErr := make(chan error, 1)
-	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
+	results := make(chan historyItem)
 	go func() {
 		defer close(results)
 		defer close(workerErr)
@@ -81,16 +84,42 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 			// Make each task keep a pointer to the done channel of task that
 			// needs to finish streaming results before it.
 			prev := make(chan struct{})
+			// Unblock the first task.
 			close(prev)
 
+			var afterInv string
+			var offset int
+			if in.PageToken != "" {
+				parts, _ := pagination.ParseToken(in.PageToken)
+				// realm (parts[0]) is already validated by
+				// validateGetTestResultHistoryRequest
+				afterInv = parts[1]
+				offset, _ = strconv.Atoi(parts[2])
+			}
+
 			invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+				skipResults := 0
+				// Skip all invocations until afterInv is matched.
+				if afterInv != "" {
+					if afterInv == string(inv) {
+						afterInv = ""
+						skipResults = offset
+					} else {
+						return nil
+					}
+				}
 				task := &resultStreamingTask{
-					in:      in,
-					invs:    invocations.NewIDSet(inv),
-					ts:      ts,
-					results: results,
-					done:    make(chan struct{}),
-					prev:    prev,
+					in:          in,
+					inv:         inv,
+					ts:          ts,
+					results:     results,
+					done:        make(chan struct{}),
+					prev:        prev,
+					skipResults: skipResults,
+				}
+				if skipResults != 0 {
+					// only skip results once.
+					skipResults = 0
 				}
 				prev = task.done
 				select {
@@ -106,31 +135,34 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	ret := &pb.GetTestResultHistoryResponse{
 		Entries: make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize),
 	}
+	firstUnsortedEntry := 0
 	// Collect results sent over the results channel until either:
 	//  - The page of results is full,
 	//  - The context is Done,
 	//  - Or the worker is done with its work (and closes the results channel).
-	//
-	// TODO(crbug.com/1074407): Implement ordering of the results indexed
-	// together by (TestID, VariantHash) .
-	//
-	// NB: The results in the channel are already ordered by indexed timestamp.
-	//
-	// TODO(crbug.com/1074407): Implement paging support.
 ResultsLoop:
 	for {
 		select {
-		case entry, ok := <-results:
+		case <-ctx.Done():
+			break ResultsLoop
+		case item, ok := <-results:
 			if !ok {
 				break ResultsLoop
 			}
-			ret.Entries = append(ret.Entries, entry)
-			if len(ret.Entries) == int(in.PageSize) {
-				cancelWorker()
-				break ResultsLoop
+			if item.entry != nil {
+				ret.Entries = append(ret.Entries, item.entry)
 			}
-		case <-ctx.Done():
-			break ResultsLoop
+			if item.treeCompleted != invocations.ID("") {
+				sortEntries(ret.Entries[firstUnsortedEntry:])
+				ret.Entries = ret.Entries[item.skipResults:]
+				if len(ret.Entries) >= int(in.PageSize) {
+					cancelWorker()
+					ret.NextPageToken = makeHistoryPageToken(in.Realm, item.treeCompleted, int(in.PageSize)-firstUnsortedEntry)
+					ret.Entries = ret.Entries[:in.PageSize]
+					break ResultsLoop
+				}
+				firstUnsortedEntry = len(ret.Entries)
+			}
 		}
 	}
 
@@ -147,6 +179,7 @@ ResultsLoop:
 		}
 		return true
 	})
+
 	return ret, retErr
 }
 
@@ -184,6 +217,24 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 			return errors.Annotate(err, "variant_predicate").Err()
 		}
 	}
+	if in.GetPageToken() != "" {
+		parts, err := pagination.ParseToken(in.GetPageToken())
+		if err != nil {
+			return err
+		}
+		if len(parts) != 3 {
+			return errors.Reason("invalid page token - wrong number of fields").Err()
+		}
+		if parts[0] != in.GetRealm() {
+			return errors.Reason("invalid page token - realm mismatch").Err()
+		}
+		if pbutil.ValidateInvocationID(parts[1]) != nil {
+			return errors.Reason("invalid page token - bad invocation field").Err()
+		}
+		if _, err := strconv.Atoi(parts[2]); err != nil {
+			return errors.Reason("invalid page token - bad offset field").Err()
+		}
+	}
 	return nil
 }
 
@@ -198,13 +249,19 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 //     This query can be done in parallel with queries for other sets
 //     of invocations, but note that their results need to be streamed in order.
 type resultStreamingTask struct {
-	ctx     context.Context
-	in      *pb.GetTestResultHistoryRequest
-	invs    invocations.IDSet
-	ts      *timestamp.Timestamp
-	results chan<- *pb.GetTestResultHistoryResponse_Entry
-	done    chan struct{}
-	prev    <-chan struct{}
+	in          *pb.GetTestResultHistoryRequest
+	inv         invocations.ID
+	ts          *timestamp.Timestamp
+	results     chan<- historyItem
+	done        chan struct{}
+	prev        <-chan struct{}
+	skipResults int
+}
+
+type historyItem struct {
+	entry         *pb.GetTestResultHistoryResponse_Entry
+	treeCompleted invocations.ID
+	skipResults   int
 }
 
 // Run's returned function gets the matching results reachable from the given
@@ -215,7 +272,7 @@ func (rst *resultStreamingTask) Run(ctx context.Context) func() error {
 	return func() error {
 		defer close(rst.done)
 
-		reachableInvs, err := invocations.Reachable(ctx, rst.invs)
+		reachableInvs, err := invocations.Reachable(ctx, invocations.NewIDSet(rst.inv))
 		if err != nil {
 			return err
 		}
@@ -242,12 +299,36 @@ func (rst *resultStreamingTask) Run(ctx context.Context) func() error {
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
-					case rst.results <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}:
+					case rst.results <- historyItem{entry: &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}}:
 						return nil
 					}
 				})
 			})
 		}
-		return eg.Wait()
+
+		err = eg.Wait()
+		if err == nil {
+			// Signal the receiver that the results for this invocation tree are
+			// complete, s.t. it can sort the results streamed so far.
+			rst.results <- historyItem{treeCompleted: rst.inv, skipResults: rst.skipResults}
+		}
+		return err
 	}
+}
+
+func sortEntries(s []*pb.GetTestResultHistoryResponse_Entry) {
+	l := func(i, j int) bool {
+		if s[i].Result.TestId == s[j].Result.TestId {
+			if s[i].Result.VariantHash == s[j].Result.VariantHash {
+				return s[i].Result.ResultId < s[j].Result.ResultId
+			}
+			return s[i].Result.VariantHash < s[j].Result.VariantHash
+		}
+		return s[i].Result.TestId < s[j].Result.TestId
+	}
+	sort.Slice(s, l)
+}
+
+func makeHistoryPageToken(realm string, inv invocations.ID, offset int) string {
+	return pagination.Token(realm, string(inv), fmt.Sprint(offset))
 }
