@@ -228,6 +228,17 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //      Returns:
 //        A deep copy of the message
 //      """
+//
+//    def has(msg, field):
+//      """Checks if a proto message has the given optional field set.
+//
+//      Args:
+//        msg: a message to check.
+//        field: a string name of the field to check.
+//
+//      Returns:
+//        True if the message has the field set.
+//      """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
@@ -243,6 +254,7 @@ func ProtoLib() starlark.StringDict {
 			"from_wirepb":        unmarshallerBuiltin("from_wirepb", FromWirePB),
 			"struct_to_textpb":   starlark.NewBuiltin("struct_to_textpb", structToTextPb),
 			"clone":              starlark.NewBuiltin("clone", clone),
+			"has":                starlark.NewBuiltin("has", has),
 		}),
 	}
 }
@@ -386,6 +398,16 @@ func clone(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs
 		return nil, err
 	}
 	return msg.MessageType().MessageFromProto(proto.Clone(msg.ToProto())), nil
+}
+
+// has checks a presence of an optional field.
+func has(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg *Message
+	var field string
+	if err := starlark.UnpackArgs("has", args, kwargs, "msg", &msg, "field", &field); err != nil {
+		return nil, err
+	}
+	return starlark.Bool(msg.HasProtoField(field)), nil
 }
 
 // TODO(vadimsh): Remove once users switch to protos.

@@ -96,6 +96,29 @@ def _clone(msg):
       A deep copy of the message.
     """
 
+def _has(msg, field):
+    """Checks if a proto message has the given optional field set.
+
+    Following rules apply:
+
+      * Fields that are not defined in the `*.proto` file are always unset.
+      * Singular fields of primitive types (e.g. `int64`), repeated and map
+        fields (even empty ones) are always set. There's no way to distinguish
+        zero values of such fields from unset fields.
+      * Singular fields of message types are set only if they were explicitly
+        initialized (e.g. by writing to such field or reading a default value
+        from it).
+      * Alternatives of a `oneof` field (regardless of their type) are
+        initialized only when they are explicitly "picked".
+
+    Args:
+      msg: a message to check. Required.
+      field: a string name of the field to check. Required.
+
+    Returns:
+      True if the message has the field set.
+    """
+
 proto = struct(
     to_textpb = _to_textpb,
     to_jsonpb = _to_jsonpb,
@@ -105,4 +128,5 @@ proto = struct(
     from_wirepb = _from_wirepb,
     struct_to_textpb = _struct_to_textpb,
     clone = _clone,
+    has = _has,
 )
