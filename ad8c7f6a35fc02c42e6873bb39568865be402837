@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "153c7493_68209b01",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Good point. Removed.",
+      "parentUuid": "2707fa1b_d981cd6c",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 70
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "453a1870_ebbbeb03",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 1
@@ -80,6 +104,30 @@
       "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bacb0328_8e86a69f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Replaced it with a channel",
+      "parentUuid": "453a1870_ebbbeb03",
+      "range": {
+        "startLine": 80,
+        "startChar": 10,
+        "endLine": 80,
+        "endChar": 18
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "d6ffd579_2a5f0bc6",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Good point. I\u0027ve changed this to correctly walk multierrors.",
+      "parentUuid": "199ff87b_6e6e0cb3",
+      "range": {
+        "startLine": 110,
+        "startChar": 16,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c25ef30_4d82ec8e",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 1
@@ -126,6 +198,30 @@
       "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08bbaf8e_37eaaf92",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Tried it, didn\u0027t work: https://screenshot.googleplex.com/4K9XvJMK3yvmtG3.png",
+      "parentUuid": "8c25ef30_4d82ec8e",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 36
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -152,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "1ff30ea7_5bc8836d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed5c7606_1565d1d3",
+      "range": {
+        "startLine": 225,
+        "startChar": 0,
+        "endLine": 242,
+        "endChar": 4
+      },
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ca8c7d6_135a9570",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 1
@@ -163,6 +283,24 @@
       "writtenOn": "2020-09-29T00:06:55Z",
       "side": 1,
       "message": "this construct is a bit fragile: it is easy to accidentally write rst.ctx below.\n\nplease consider passing ctx as a param in Run()",
+      "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c334ca8c_93f8da2b",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-09-30T07:54:09Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "5ca8c7d6_135a9570",
       "revId": "ad8c7f6a35fc02c42e6873bb39568865be402837",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
