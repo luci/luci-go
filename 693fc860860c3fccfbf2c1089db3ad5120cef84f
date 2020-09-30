@@ -46,6 +46,30 @@
       "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d2adb91_1860324a",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-30T19:58:15Z",
+      "side": 1,
+      "message": "So CQDaemon will send run info to CV and CV will probably store it and we will inspect what is stored to validate? If CV fails to store or something then we\u0027ll have logs on the CV side.",
+      "parentUuid": "8ab6bd41_7ccdcc0c",
+      "range": {
+        "startLine": 34,
+        "startChar": 44,
+        "endLine": 34,
+        "endChar": 67
+      },
+      "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

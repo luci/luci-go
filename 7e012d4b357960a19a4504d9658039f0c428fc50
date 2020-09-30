@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "234763a4_33c53822",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-30T19:58:15Z",
+      "side": 1,
+      "message": "LGTM!",
+      "revId": "7e012d4b357960a19a4504d9658039f0c428fc50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2cb930af_6fe365e9",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-09-30T19:58:15Z",
+      "side": 1,
+      "message": "Optional: This comment could be removed/rephrased since (IIUC) it\u0027s just saying that we\u0027re reusing `bigquery.Attempt` to report a run, but it kind of makes it sound like it\u0027s related to BQ even though it\u0027s not.",
+      "revId": "7e012d4b357960a19a4504d9658039f0c428fc50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
