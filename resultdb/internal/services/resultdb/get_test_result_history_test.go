@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -166,18 +167,42 @@ func TestGetTestResultHistory(t *testing.T) {
 			}
 			testutil.MustApply(ctx, ms...)
 
-			Convey(`truncated`, func() {
+			Convey(`page token`, func() {
 				req.Realm = "testproject:testrealm"
 				req.PageSize = 5
 				res, err := srv.GetTestResultHistory(ctx, req)
 				So(err, ShouldBeNil)
-				So(res.Entries, ShouldHaveLength, 5)
+				parts, err := pagination.ParseToken(res.NextPageToken)
+				So(err, ShouldBeNil)
+				So(parts, ShouldResemble, []string{"testproject:testrealm", "yet-another-invocation", "5"})
+			})
+
+			Convey(`paging`, func() {
+				req.Realm = "testproject:testrealm"
+				req.PageSize = 10
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 10)
+
+				// Get next page.
+				req.PageToken = res.NextPageToken
+				res, err = srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 10)
+
+				// Get next page.
+				req.PageToken = res.NextPageToken
+				res, err = srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
+				So(res.Entries, ShouldHaveLength, 7)
 			})
 
 			Convey(`all results`, func() {
 				req.Realm = "testproject:testrealm"
 				res, err := srv.GetTestResultHistory(ctx, req)
 				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
 				So(res.Entries, ShouldHaveLength, 27)
 				for i := 0; i < 9; i++ {
 					So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, latest)
@@ -219,10 +244,10 @@ func insertOneResultsInv(ms []*spanner.Mutation, id string, ts time.Time, indexe
 		ms = append(ms,
 			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
-				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				"ResultId":        fmt.Sprintf("result_%d_within_inv_%s", i, id),
+				"TestId":          fmt.Sprintf("ninja://chrome/test:foo_tests/BarTest.DoBaz-%s", id),
+				"ResultId":        fmt.Sprintf("%d", i),
 				"Variant":         pbutil.Variant("result_index", fmt.Sprintf("%d", i), "dummy", "true"),
-				"VariantHash":     "deadbeef",
+				"VariantHash":     fmt.Sprintf("deadbeef%d", i),
 				"CommitTimestamp": spanner.CommitTimestamp,
 				"Status":          pb.TestStatus_PASS,
 				"RunDurationUsec": 1534567,
