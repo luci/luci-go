@@ -16,6 +16,12 @@
     <h1>CAS Viewer</h1>
     <p>AppVersion: {{ .AppVersion }}</p>
     <p>User: {{ .User.Email }}</p>
+    {{if .Instance}}
+      <p>CAS Insatnce: {{ .Instance }}</p>
+    {{end}}
+    {{if .Digest}}
+      <p>Digest: {{ .Digest }}</p>
+    {{end}}
   </header>
   <hr>
   <main>
