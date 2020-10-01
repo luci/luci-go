@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd6d6b2a_ad9749a4",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "no longer relevant",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 12
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75a91dc5_d891322e",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "unnecessary",
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ef3c89c_59884807",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "returned error is ignored",
+      "range": {
+        "startLine": 86,
+        "startChar": 15,
+        "endLine": 86,
+        "endChar": 26
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527ac315_8e8b229a",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "without a comment, it is challenging to understand why this code exists.\n\nwhy not https://godoc.org/go.chromium.org/luci/common/errors#Any\n\nbut also, see below",
+      "range": {
+        "startLine": 139,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 47
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c656edec_e3d6e0e8",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "sorry, how do we know it is not related? \nwhat if the RPC caller actually canceled the context?\n\ni am guessing you are trying to detect a situation where the outer context is not cancelled, but the inner context is cancelled intentionally-by-us (e.g. L129 deadline 5s before the end). Is this right? If yes, I wonder if the following works\n\n  if ctx.Err() \u003d\u003d nil \u0026\u0026 workerCtx.Err() !\u003d nil",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 144,
+        "endChar": 21
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "486df138_f7e7a086",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "nit: usually things like this are done at the callsite\n\n  workerC \u003c- func() { t.Run(workerCtx) }\n\notherwise this signature assumes callsites",
+      "range": {
+        "startLine": 214,
+        "startChar": 56,
+        "endLine": 214,
+        "endChar": 71
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef99697f_0a9b9f86",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:23:04Z",
+      "side": 1,
+      "message": "this is equivalent to just\n\n  \u003c-rst.prev\n\nbut expanding the select to also have `\u003c-ctx.Done()` would also make sense: in such case gourotines would shut down all at the same time, rather than sequentially",
+      "range": {
+        "startLine": 238,
+        "startChar": 5,
+        "endLine": 240,
+        "endChar": 6
+      },
+      "revId": "078d08c33116a1696adaed8db418ee49fb29dacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
