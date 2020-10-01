@@ -16,6 +16,24 @@
       "revId": "30c5c9d33cae7f6edf6dd162a81dbf0110f039b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9291e5cc_282d1af5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-01T07:08:42Z",
+      "side": 1,
+      "message": "Yes :( I guess you can commit values back into app.yaml if you rely on deploying using gae.py.",
+      "parentUuid": "22ef13dc_e13c9abd",
+      "revId": "30c5c9d33cae7f6edf6dd162a81dbf0110f039b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
