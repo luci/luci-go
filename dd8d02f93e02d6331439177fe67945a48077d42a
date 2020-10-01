@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "02578087_875f8578",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "high-level: it looks like the page token is not aligned with the order of results.\nThe results are ordered by ordinal, but the page token doesn\u0027t have it.\nThe consequence is that we fetch invocations and throw them away.\na more optimal approach would be to align order and page token: put the timestamp there, and use it instead of timeRange.start time\n\nstepping back, are we done with optimizations? it is more important to have acceptable performance than paging because we cannot launch without acceptable perf, but we can launch without paging.",
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acaff981_95bf217d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 55,
+        "startChar": 30,
+        "endLine": 55,
+        "endChar": 34
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29193fb0_c30523bb",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "parts[0] is not used",
+      "range": {
+        "startLine": 109,
+        "startChar": 3,
+        "endLine": 109,
+        "endChar": 4
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cea95d27_4be06efb",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "this function got quite big. Could you refactor it into smaller ideally-self-contained pieces?",
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1ca6a77_4e8d3c86",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "nit: for this if statement and below: switch would be more concise",
+      "range": {
+        "startLine": 237,
+        "startChar": 2,
+        "endLine": 237,
+        "endChar": 4
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6051fef6_e38c0292",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "internal structure of page tokens is impl details and is advised not to be exposed: https://google.aip.dev/158#opacity\nso let\u0027s omit these details\n\nsame below",
+      "range": {
+        "startLine": 241,
+        "startChar": 43,
+        "endLine": 241,
+        "endChar": 68
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb65b550_d51649ab",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-01T00:35:08Z",
+      "side": 1,
+      "message": "why do we ask for realm if we already know it? isn\u0027t realm same in all pages of the given request?",
+      "range": {
+        "startLine": 243,
+        "startChar": 0,
+        "endLine": 245,
+        "endChar": 3
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
