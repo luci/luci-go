@@ -104,18 +104,23 @@ message VM {
   // The network interfaces to configure for this VM.
   repeated NetworkInterface network_interface = 5;
 
+  // The node group this VM has an affinity to. Leave blank to allow VM to
+  // be provisioned on any node group.
+  // https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes#node_groups_and_vm_provisioning.
+  string node_group = 6;
+
   // The name of a GCP project to create this VM in.
-  string project = 6;
+  string project = 7;
 
   // The service accounts to make available to this VM.
-  repeated ServiceAccount service_account = 7;
+  repeated ServiceAccount service_account = 8;
 
   // The tags to attach to this VM.
-  repeated string tag = 8;
+  repeated string tag = 9;
 
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
-  string zone = 9;
+  string zone = 10;
 }
 
 // A length of time.
