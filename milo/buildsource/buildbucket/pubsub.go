@@ -46,7 +46,7 @@ var (
 		"The number of buildbucket builds received by Milo from PubSub",
 		nil,
 		field.String("bucket"),
-		// True for luci build, False for non-luci (ie buildbot) build.
+		// True for luci builds; should always be true.
 		field.Bool("luci"),
 		// Status can be "COMPLETED", "SCHEDULED", or "STARTED"
 		field.String("status"),
