@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "482cfeac_629cfb84",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1386944
+      },
+      "writtenOn": "2020-10-01T00:39:49Z",
+      "side": 1,
+      "message": "Ready for review.\n\nThis is one way of adding support for node groups. I am happy to refine the approach based on your feedback.",
+      "revId": "52a001dd3bdeac6ead7dec51c85710aee215f097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
