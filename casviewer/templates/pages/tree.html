@@ -15,14 +15,14 @@
     <tr>
       <td><a href="{{ treeURL $.Instance . }}">{{.Name}}/</a></td>
       <td></td>
-      <td>{{.Digest.Hash}}</td>
+      <td><pre class="no-margin">{{.Digest.Hash}}</pre></td>
     </tr>
   {{end}}
   {{range .Files}}
     <tr>
       <td><a href="{{ getURL $.Instance . }}" target="_blank">{{.Name}}</a></td>
       <td>{{.Digest.SizeBytes | readableBytes}}</td>
-      <td>{{.Digest.Hash}}</td>
+      <td><pre class="no-margin">{{.Digest.Hash}}</pre></td>
     </tr>
   {{end}}
   <tbody>
