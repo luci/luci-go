@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22ef13dc_e13c9abd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-01T07:04:46Z",
+      "side": 1,
+      "message": "Vadim,\n\nI just realized that gae.py doesn\u0027t work without definitions in `luci_gae_vars`.\nI wanted to deploy a tainted version.\n\nDo I need to edit app.yaml for tainted version deployment?\n\n```\n6e89fe ❯ gae.py upload -A cas-viewer-dev\nUpload new version, update indexes, queues and cron jobs?\n  Directory: casviewer\n  App ID:    cas-viewer-dev\n  Version:   7267-9a6aaa6-jwata-display-instance-digest\n  Services:  default\nContinue? [Y/n] y\nTraceback (most recent call last):\n  File \"/usr/local/google/home/jwata/chrome_infra_internal/infra/luci/appengine/components/tools/gae.py\", line 545, in \u003cmodule\u003e\n    sys.exit(main(sys.argv[1:]))\n  File \"/usr/local/google/home/jwata/chrome_infra_internal/infra/luci/appengine/components/tools/gae.py\", line 534, in main\n    return dispatcher.execute(OptionParser(default_app_dir), args)\n  File \"/usr/local/google/home/jwata/chrome_infra_internal/infra/luci/appengine/components/../../client/third_party/depot_tools/subcommand.py\", line 252, in execute\n    return command(parser, args[1:])\n  File \"/usr/local/google/home/jwata/chrome_infra_internal/infra/luci/appengine/components/tools/gae.py\", line 384, in CMDupload\n    app.update(version, services)\n  File \"/usr/local/google/home/jwata/chrome_infra_internal/infra/luci/appengine/components/tool_support/gae_sdk_utils.py\", line 555, in update\n    raise ValueError(\u0027Bad %s: %s\u0027 % (os.path.basename(m.path), exc))\nValueError: Bad app.yaml: no configuration for cas-viewer-dev, it is not not in luci_gae_vars\n```\n",
+      "revId": "30c5c9d33cae7f6edf6dd162a81dbf0110f039b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
