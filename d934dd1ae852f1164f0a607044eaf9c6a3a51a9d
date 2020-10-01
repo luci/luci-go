@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "3509434e_f5176ee0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-01T19:37:57Z",
+      "side": 1,
+      "message": "Robbie, could you help answer Nodir\u0027s questions in the comments? I copied most of them in the doc as well so we can have all discussions in the same place.\n\nAlso could you follow up the comments you had in an earlier patch on user_packages and user_package_dir? Let me know if I should also move the discussions in the doc.",
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1abb3c7e_d5eac10a",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 4
@@ -177,6 +194,30 @@
       "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "024fbd8d_9803653c",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-01T19:37:57Z",
+      "side": 1,
+      "message": "The rationale can be found in the doc https://docs.google.com/document/d/1RJzjsCB1S7F0Xj7ZV_QvIOf8BadKPPNTs3T8tfs6i7U/edit?ts\u003d5f762015",
+      "parentUuid": "0e7485c9_bc6dd3db",
+      "range": {
+        "startLine": 446,
+        "startChar": 10,
+        "endLine": 446,
+        "endChar": 17
+      },
+      "revId": "d934dd1ae852f1164f0a607044eaf9c6a3a51a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
