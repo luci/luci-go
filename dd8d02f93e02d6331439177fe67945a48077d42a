@@ -65,6 +65,29 @@
     },
     {
       "key": {
+        "uuid": "f802582f_adcd6fca",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-01T07:14:53Z",
+      "side": 1,
+      "message": "startInv?",
+      "range": {
+        "startLine": 115,
+        "startChar": 34,
+        "endLine": 115,
+        "endChar": 42
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cea95d27_4be06efb",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 2
@@ -139,6 +162,30 @@
       "writtenOn": "2020-10-01T00:35:08Z",
       "side": 1,
       "message": "why do we ask for realm if we already know it? isn\u0027t realm same in all pages of the given request?",
+      "range": {
+        "startLine": 243,
+        "startChar": 0,
+        "endLine": 245,
+        "endChar": 3
+      },
+      "revId": "dd8d02f93e02d6331439177fe67945a48077d42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c0d6b7c_9c76f30c",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-01T07:14:53Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "fb65b550_d51649ab",
       "range": {
         "startLine": 243,
         "startChar": 0,
