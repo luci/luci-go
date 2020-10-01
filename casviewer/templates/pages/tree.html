@@ -22,7 +22,7 @@
     <tr>
       <td><a href="{{ getURL $.Instance . }}" target="_blank">{{.Name}}</a></td>
       <td>{{.Digest.SizeBytes | readableBytes}}</td>
-      <td>{{.Digest.Hash}}</td>
+      <td><pre>{{.Digest.Hash}}</pre></td>
     </tr>
   {{end}}
   <tbody>

@@ -45,6 +45,7 @@ func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 
 	templates.MustRender(ctx, w, "pages/tree.html", templates.Args{
 		"Instance":    instance,
+		"Digest":      bd.String(),
 		"Directories": d.GetDirectories(),
 		"Files":       d.GetFiles(),
 		// There are no symlinks uploaded by `cas` client because `remote-apis-sdks` treats symlinks as normal files.

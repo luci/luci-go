@@ -14,9 +14,33 @@
 <body>
   <header>
     <h1>CAS Viewer</h1>
-    <p>AppVersion: {{ .AppVersion }}</p>
-    <p>User: {{ .User.Email }}</p>
   </header>
+  <section>
+    <table>
+      <tbody>
+        <tr>
+          <td>AppVersion:</td>
+          <td>{{ .AppVersion }}</td>
+        </tr>
+        <tr>
+          <td>User:</td>
+          <td>{{ .User.Email }}</td>
+        </tr>
+        {{if .Instance}}
+          <tr>
+            <td>Instance:</td>
+            <td>{{ .Instance }}</td>
+          </tr>
+        {{end}}
+        {{if .Digest}}
+          <tr>
+            <td>Digest:</td>
+            <td>{{ .Digest }}</td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
   <hr>
   <main>
     {{template "body" .}}
