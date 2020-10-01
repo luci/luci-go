@@ -63,8 +63,8 @@ type BuilderLegacy struct {
 	PendingBuildNum int
 	FinishedBuilds  []*BuildSummaryLegacy
 
-	// MachinePool is primarily used by buildbot builders to list the set of
-	// machines that can run in a builder.  It has no meaning in buildbucket or dm
+	// MachinePool was primarily used by buildbot builders to list the set of
+	// machines that can run in a builder. It has no meaning in buildbucket or dm
 	// and is expected to be nil.
 	MachinePool *MachinePool
 

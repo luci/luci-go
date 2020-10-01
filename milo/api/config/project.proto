@@ -282,7 +282,6 @@ message Console {
 message Builder {
   // Name is the BuilderID of the builders you wish to display for this column
   // in the console. e.g.
-  //   * "buildbot/chromium.linux/Linux Tests"
   //   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
   string name = 1;
 
