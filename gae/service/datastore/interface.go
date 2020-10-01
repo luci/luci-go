@@ -394,7 +394,6 @@ func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
 	c, cancel := context.WithCancel(c)
 	defer cancel()
 
-	// TODO(yuanjunh): validate queries.
 	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
 	if hasCursorCB {
 		return errors.New("datastore: RunMulti doesn't support CursorCB.")
@@ -411,6 +410,18 @@ func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
 		if err != nil {
 			return err
 		}
+
+		// validate each finalized query
+		if q.kind != queries[0].kind {
+			return errors.New("datastore: RunMulti queries must have the same kind")
+		}
+		if q.project != nil {
+			return errors.New("datastore: RunMulti doesn't support projection query")
+		}
+		if !reflect.DeepEqual(q.order, queries[0].order) {
+			return errors.New("datastore: RunMulti queries must have the same 'order by' clauses")
+		}
+
 		if err := iHeap.addQuery(c, fq); err != nil {
 			return err
 		}

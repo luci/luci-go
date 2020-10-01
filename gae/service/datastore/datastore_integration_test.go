@@ -163,6 +163,38 @@ func TestRunMulti(t *testing.T) {
 				})
 				So(err, ShouldErrLike, "datastore: RunMulti doesn't support CursorCB.")
 			})
+			Convey("queries with different kinds", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo"),
+					datastore.NewQuery("Foo2"),
+				}
+
+				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+					return nil
+				})
+				So(err, ShouldErrLike, "datastore: RunMulti queries must have the same kind")
+			})
+			Convey("queries with different orders", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Order("single_val"),
+					datastore.NewQuery("Foo").Order("status"),
+				}
+
+				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+					return nil
+				})
+				So(err, ShouldErrLike, "datastore: RunMulti queries must have the same 'order by' clauses")
+			})
+			Convey("projection queries", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Project("status"),
+				}
+
+				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+					return nil
+				})
+				So(err, ShouldErrLike, "datastore: RunMulti doesn't support projection query")
+			})
 		})
 	})
 }
