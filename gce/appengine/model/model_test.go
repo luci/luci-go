@@ -525,6 +525,32 @@ func TestVM(t *testing.T) {
 
 	})
 
+	Convey("getScheduling", t, func() {
+		Convey("empty", func() {
+			v := &VM{
+				Attributes: config.VM{
+					NodeGroup: "",
+				},
+			}
+			s := v.getScheduling()
+			So(s, ShouldBeNil)
+		})
+
+		Convey("non-empty", func() {
+			v := &VM{
+				Attributes: config.VM{
+					NodeGroup: "node-group",
+				},
+			}
+			s := v.getScheduling()
+			So(s.NodeAffinities, ShouldHaveLength, 1)
+			So(s.NodeAffinities[0].Key, ShouldEqual, "compute.googleapis.com/node-group-name")
+			So(s.NodeAffinities[0].Operator, ShouldEqual, "IN")
+			So(s.NodeAffinities[0].Values, ShouldHaveLength, 1)
+			So(s.NodeAffinities[0].Values[0], ShouldEqual, "node-group")
+		})
+	})
+
 	Convey("getTags", t, func() {
 		Convey("zero", func() {
 			Convey("nil", func() {
@@ -567,6 +593,7 @@ func TestVM(t *testing.T) {
 			So(i.Metadata, ShouldBeNil)
 			So(i.MinCpuPlatform, ShouldEqual, "")
 			So(i.NetworkInterfaces, ShouldHaveLength, 0)
+			So(i.Scheduling, ShouldBeNil)
 			So(i.ServiceAccounts, ShouldBeNil)
 			So(i.Tags, ShouldBeNil)
 		})
@@ -590,6 +617,7 @@ func TestVM(t *testing.T) {
 							Network: "network",
 						},
 					},
+					NodeGroup: "node-group",
 				},
 			}
 			i := v.GetInstance()
@@ -599,6 +627,7 @@ func TestVM(t *testing.T) {
 			So(i.MinCpuPlatform, ShouldEqual, "plat")
 			So(i.NetworkInterfaces, ShouldHaveLength, 1)
 			So(i.ServiceAccounts, ShouldBeNil)
+			So(i.Scheduling, ShouldNotBeNil)
 			So(i.Tags, ShouldBeNil)
 		})
 	})

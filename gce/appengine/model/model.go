@@ -248,6 +248,24 @@ func (vm *VM) getTags() *compute.Tags {
 	return tags
 }
 
+// getScheduling returns a *compute.Scheduling representation of this VM's
+// node affinity.
+func (vm *VM) getScheduling() *compute.Scheduling {
+	if vm.Attributes.GetNodeGroup() == "" {
+		return nil
+	}
+	scheduling := &compute.Scheduling{
+		NodeAffinities: []*compute.SchedulingNodeAffinity{
+			{
+				Key:      "compute.googleapis.com/node-group-name",
+				Operator: "IN",
+				Values:   []string{vm.Attributes.GetNodeGroup()},
+			},
+		},
+	}
+	return scheduling
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
@@ -258,6 +276,7 @@ func (vm *VM) GetInstance() *compute.Instance {
 		MinCpuPlatform:    vm.Attributes.GetMinCpuPlatform(),
 		NetworkInterfaces: vm.getNetworkInterfaces(),
 		ServiceAccounts:   vm.getServiceAccounts(),
+		Scheduling:        vm.getScheduling(),
 		Tags:              vm.getTags(),
 	}
 	return inst
