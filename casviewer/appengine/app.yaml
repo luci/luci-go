@@ -8,3 +8,7 @@ luci_gae_vars:
 
 entrypoint: >
   main -auth-service-host ${AUTH_SERVICE_HOST}
+
+handlers:
+  - url: /static
+    static_dir: static

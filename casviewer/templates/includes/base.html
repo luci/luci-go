@@ -9,14 +9,39 @@
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
 <title>CAS Viewer</title>
+<link type="text/css" rel="stylesheet" href="/static/css/app.css">
 
 <!-- TODO(crbug.com/1121471): apply style -->
 <body>
   <header>
     <h1>CAS Viewer</h1>
-    <p>AppVersion: {{ .AppVersion }}</p>
-    <p>User: {{ .User.Email }}</p>
   </header>
+  <section>
+    <table>
+      <tbody>
+        <tr>
+          <td>AppVersion:</td>
+          <td><pre class="no-margin">{{ .AppVersion }}</pre></td>
+        </tr>
+        <tr>
+          <td>User:</td>
+          <td><pre class="no-margin">{{ .User.Email }}</pre></td>
+        </tr>
+        {{if .Instance}}
+          <tr>
+            <td>Instance:</td>
+            <td><pre class="no-margin">{{ .Instance }}</pre></td>
+          </tr>
+        {{end}}
+        {{if .Digest}}
+          <tr>
+            <td>Digest:</td>
+            <td><pre class="no-margin">{{ .Digest }}</pre></td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
   <hr>
   <main>
     {{template "body" .}}
