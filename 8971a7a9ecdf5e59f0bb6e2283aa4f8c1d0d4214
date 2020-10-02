@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e88368c0_6446bc22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-02T21:43:50Z",
+      "side": 1,
+      "message": "PTAL.\n\nThe change is of the same logic as https://chromium-review.googlesource.com/c/infra/infra/+/2446625",
+      "revId": "8971a7a9ecdf5e59f0bb6e2283aa4f8c1d0d4214",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
