@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbe69184_4951d2ea",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 733,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "choose one 😊",
+      "range": {
+        "startLine": 733,
+        "startChar": 43,
+        "endLine": 733,
+        "endChar": 48
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c873c92c_05e1a7b9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 736,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": ",",
+      "range": {
+        "startLine": 736,
+        "startChar": 66,
+        "endLine": 736,
+        "endChar": 67
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55847047_428ffed0",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 736,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "otherwise",
+      "range": {
+        "startLine": 736,
+        "startChar": 79,
+        "endLine": 736,
+        "endChar": 80
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12ce2e0e_fce093cd",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 738,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "weird whitespace, forgot to run gofmt?",
+      "range": {
+        "startLine": 733,
+        "startChar": 0,
+        "endLine": 738,
+        "endChar": 1
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06b391c7_6849e90f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "be submitted",
+      "range": {
+        "startLine": 740,
+        "startChar": 51,
+        "endLine": 740,
+        "endChar": 57
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7576344_4d23f2d9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 742,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "what?!",
+      "range": {
+        "startLine": 742,
+        "startChar": 29,
+        "endLine": 742,
+        "endChar": 88
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e56a0768_46d8cc9f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 753,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "not applicable.",
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bf3fd4e_0e091619",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "If you want to test both cases, please don\u0027t add more copy-pasta. Just add two inner convey blocks:\n\nConvey(\"Mergeable\", t, func() { \n  var resp string\n  srv, c :\u003d newMockClient(func(w http.ResponseWriter, r *http.Request) {\n\t\t\tw.WriteHeader(200)\n\t\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\t\tfmt.Fprintf(w, \")]}\u0027\\n[%s]\\n\", resp)\n\t\t})\n\n   Convey(\"Yes\", func() { \n       resp \u003d \"...\"\n\t\t\tcls, err :\u003d c.GetMergeable(ctx, \"627036\", \"eb2388b592a9\")\n\t\t\t...\n\t\t})\n   Convey(\"No\", func() { \n       resp \u003d \"...\"...\n\t\t})\n})",
+      "range": {
+        "startLine": 187,
+        "startChar": 2,
+        "endLine": 191,
+        "endChar": 4
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efe52875_46682eaa",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 830,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T17:57:42Z",
+      "side": 1,
+      "message": "is this really GoB\u0027s response?",
+      "range": {
+        "startLine": 830,
+        "startChar": 1,
+        "endLine": 830,
+        "endChar": 11
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
