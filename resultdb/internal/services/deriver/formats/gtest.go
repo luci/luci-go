@@ -81,8 +81,9 @@ var (
 //
 // Fields not used by Test Results are omitted.
 type GTestResults struct {
-	AllTests   []string `json:"all_tests"`
-	GlobalTags []string `json:"global_tags"`
+	AllTests      []string `json:"all_tests"`
+	DisabledTests []string `json:"disabled_tests"`
+	GlobalTags    []string `json:"global_tags"`
 
 	// PerIterationData is a vector of run iterations, each mapping test names to a list of test data.
 	PerIterationData []map[string][]*GTestRunResult `json:"per_iteration_data"`
@@ -142,10 +143,33 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 	}
 
 	var ret []*TestResult
+	for _, name := range r.DisabledTests {
+		baseName, err := extractGTestParameters(name)
+		switch {
+		case syntheticTestTag.In(err):
+			continue
+		case err != nil:
+			return nil, errors.Annotate(err,
+				"failed to extract test id and parameters from %q", name).Err()
+		}
+
+		tr := &pb.TestResult{
+			TestId:   testIDPrefix + baseName,
+			Expected: true,
+			Status:   pb.TestStatus_SKIP,
+			Tags: pbutil.StringPairs(
+				// Store the original Gtest test name.
+				"test_name", name,
+			),
+		}
+
+		ret = append(ret, &TestResult{TestResult: tr})
+	}
+
 	var testNames []string
 	buf := &strings.Builder{}
 	for _, data := range r.PerIterationData {
-		// Sort the test name to make the output deterministic.
+		// Sort the test name to make theoutput deterministic.
 		testNames = testNames[:0]
 		for name := range data {
 			testNames = append(testNames, name)
