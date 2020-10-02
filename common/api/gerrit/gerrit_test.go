@@ -172,6 +172,48 @@ func TestChangesSubmittedTogether(t *testing.T) {
 	})
 }
 
+func TestMergeableSuccess(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Mergeable", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n[%s]\n", fakeCL1Str)
+		})
+		defer srv.Close()
+
+		Convey("GetMergeable", func() {
+			cls, err := c.GetMergeable(ctx, "627036", "eb2388b592a9")
+			So(err, ShouldBeNil)
+			So(cls.Mergeable, ShouldEqual, true)
+		})
+
+	})
+}
+
+func TestNotMergeable(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Mergeable", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n[%s]\n", fakeCL7Str)
+		})
+		defer srv.Close()
+
+		Convey("GetMergeable", func() {
+			cls, err := c.GetMergeable(ctx, "646267", "d6375c2ea5b0")
+			So(err, ShouldBeNil)
+			So(cls.Mergeable, ShouldEqual, false)
+		})
+
+	})
+}
+
 func TestChangeLabels(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -759,6 +801,45 @@ var (
 	    "updated": "2017-08-22 22:33:34.000000000",
 	    "submit_type": "REBASE_ALWAYS",
 	    "mergeable": true,
+	    "insertions": 6,
+	    "deletions": 0,
+	    "unresolved_comment_count": 0,
+	    "has_review_started": true,
+	    "_number": 646267,
+	    "owner": {
+		"_account_id": 1118104
+	    },
+	    "reviewers": {
+		    "CC": [
+			    {"_account_id": 1118110},
+			    {"_account_id": 1118111},
+			    {"_account_id": 1118112}
+		    ],
+		    "REVIEWER": [
+			    {"_account_id": 1118120},
+			    {"_account_id": 1118121},
+			    {"_account_id": 1118122}
+		    ],
+		    "REMOVED": [
+			    {"_account_id": 1118130},
+			    {"_account_id": 1118131},
+			    {"_account_id": 1118132}
+		    ]
+	    }
+	}`
+	fakeCL7Str = `{
+	    "id": "infra%2Fluci%2Fluci-go~master~Id37e51c3b84bfc41bc88fa237ddf722f934f4fa4",
+	    "project": "infra/luci/luci-go",
+	    "branch": "master",
+	    "hashtags": [],
+	    "change_id": "Id37e51c3b84bfc41bc88fa237ddf722f934f4fa4",
+	    "subject": "[vpython]: Re-add deprecated \"-spec\" flag.",
+	    "status": "NEW",
+	    "current_revision": "d6375c2ea5b0",
+	    "created": "2017-08-21 18:46:58.000000000",
+	    "updated": "2017-08-22 22:33:34.000000000",
+	    "submit_type": "REBASE_ALWAYS",
+	    "mergeable": false,
 	    "insertions": 6,
 	    "deletions": 0,
 	    "unresolved_comment_count": 0,
