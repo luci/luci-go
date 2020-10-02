@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "3732111a_a03b8d7d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-02T21:48:02Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "8971a7a9ecdf5e59f0bb6e2283aa4f8c1d0d4214",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de9058fc_20019124",
         "filename": "resultdb/internal/services/deriver/formats/gtest.go",
         "patchSetId": 2
