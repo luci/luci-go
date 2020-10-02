@@ -434,6 +434,30 @@
       "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b55533_e8a0b1fd",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 830,
+      "author": {
+        "id": 1407500
+      },
+      "writtenOn": "2020-10-02T23:58:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1d7ecf6b_ed5d47c7",
+      "range": {
+        "startLine": 830,
+        "startChar": 1,
+        "endLine": 830,
+        "endChar": 11
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

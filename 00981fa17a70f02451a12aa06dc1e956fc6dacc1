@@ -16,6 +16,24 @@
       "revId": "00981fa17a70f02451a12aa06dc1e956fc6dacc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a2b10c7b_615feeb3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1407500
+      },
+      "writtenOn": "2020-10-02T23:58:54Z",
+      "side": 1,
+      "message": "Sorry about that. I fixed the local testing issue and validated the change now.",
+      "parentUuid": "ce97d06f_5cad7931",
+      "revId": "00981fa17a70f02451a12aa06dc1e956fc6dacc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
