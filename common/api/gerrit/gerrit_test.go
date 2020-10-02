@@ -172,6 +172,36 @@ func TestChangesSubmittedTogether(t *testing.T) {
 	})
 }
 
+func TestMergeable(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("GetMergeable", t, func() {
+		var resp string
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", resp)
+		})
+		defer srv.Close()
+
+		Convey("yes", func() {
+			resp = fakeMergeableTrueStr
+			cls, err := c.GetMergeable(ctx, "627036", "eb2388b592a9")
+			So(err, ShouldBeNil)
+			So(cls.Mergeable, ShouldEqual, true)
+		})
+
+		Convey("no", func() {
+			resp = fakeMergeableFalseStr
+			cls, err := c.GetMergeable(ctx, "646267", "d6375c2ea5b0")
+			So(err, ShouldBeNil)
+			So(cls.Mergeable, ShouldEqual, false)
+		})
+
+	})
+}
+
 func TestChangeLabels(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -784,6 +814,20 @@ var (
 			    {"_account_id": 1118132}
 		    ]
 	    }
+	}`
+	fakeMergeableTrueStr = `{
+		"submit_type": "REBASE_ALWAYS",
+		"strategy": "recursive",
+		"mergeable": true,
+		"commit_merged": false,
+		"content_merged": false
+	}`
+	fakeMergeableFalseStr = `{
+		"submit_type": "REBASE_ALWAYS",
+		"strategy": "recursive",
+		"mergeable": false,
+		"commit_merged": false,
+		"content_merged": false
 	}`
 )
 
