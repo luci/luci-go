@@ -380,7 +380,6 @@ func (s *State) Append(annotation string) error {
 		// Annotee will stop short of sending an actual request to BuildBucket.
 		break
 
-	// This is ONLY supported by annotee, not by buildbot.
 	// @@@SOURCE_MANIFEST@<name>@<sha256>@<url>@@@
 	case "SOURCE_MANIFEST":
 		parts := strings.SplitN(params, "@", 3)
@@ -596,8 +595,9 @@ type Step struct {
 	// names.
 	logLineCount map[string]int
 
-	// linkMap is a map of link label to link struct. BuildBot only retains the
-	// latest link for a given label, so we use this to enforce that.
+	// linkMap is a map of link label to link struct.
+	// Historical note: BuildBot only retained the latest link for a given
+	// label, so this was used to enforce that.
 	linkMap map[string]*annopb.AnnotationLink
 
 	// logNameBase is the LogDog stream name root for this step.
