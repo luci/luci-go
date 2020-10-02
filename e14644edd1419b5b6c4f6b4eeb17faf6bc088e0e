@@ -410,6 +410,30 @@
       "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d7ecf6b_ed5d47c7",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 830,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T21:01:39Z",
+      "side": 1,
+      "message": "I mean does GET .../mergeable return anything resembling this dict?\n\nLooking at Gerrit docs your code references, I see a much smaller dict. So, your fake here is bad, and the same applies to \"yes\" case, too.",
+      "parentUuid": "66924c21_2ef82e0e",
+      "range": {
+        "startLine": 830,
+        "startChar": 1,
+        "endLine": 830,
+        "endChar": 11
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
