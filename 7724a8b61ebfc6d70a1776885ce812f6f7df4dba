@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce455330_832a2baa",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-02T23:09:13Z",
+      "side": 0,
+      "message": "can you instead validate parts[0] to be LUCI project? \nsee https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/project_name.go",
+      "range": {
+        "startLine": 475,
+        "startChar": 1,
+        "endLine": 478,
+        "endChar": 2
+      },
+      "revId": "7724a8b61ebfc6d70a1776885ce812f6f7df4dba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
