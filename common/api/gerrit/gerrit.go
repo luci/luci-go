@@ -730,6 +730,38 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 	return &resp, nil
 }
 
+// MergeableResult contains information if the a change and the revision can be merged or not.
+type MergeableResult struct {
+
+	// Mergeable marks if the change is ready to be submitted cleanly. false other wise
+        Mergeable bool `json:"mergeable"`
+}
+
+// GetMergeable API checks if a change is ready to submit cleanly.
+//
+// Returns a MergeableResult which describes the applied labels and any added reviewers.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+//
+// The revisionID parameter may be in any of the forms supported by Gerrit:
+//   - "current"
+//   - a commit ID
+//   - "0" or the literal "edit" for a change edit
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+func (c *Client) GetMergeable(ctx context.Context, changeID string, revisionID string) (*MergeableResult, error) {
+	var resp MergeableResult
+	path := fmt.Sprintf("a/changes/%s/revisions/%s/mergeable", url.PathEscape(changeID), url.PathEscape(revisionID))
+	if _, err := c.get(ctx, path, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Submit submits a change to the repository. It bypasses the Commit Queue.
 //
 // Returns a Change.
