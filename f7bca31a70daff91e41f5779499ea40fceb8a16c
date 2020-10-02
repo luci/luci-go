@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f8d3acc_640f4197",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-02T00:16:56Z",
+      "side": 1,
+      "message": "Hi Robbie, I\u0027ve addressed the feedback. Can you take a look again?",
+      "revId": "f7bca31a70daff91e41f5779499ea40fceb8a16c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

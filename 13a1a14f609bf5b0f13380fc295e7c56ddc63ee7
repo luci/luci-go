@@ -39,6 +39,30 @@
       "revId": "13a1a14f609bf5b0f13380fc295e7c56ddc63ee7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e7864b1_512b6566",
+        "filename": "gae/service/datastore/interface.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 820,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-02T00:16:56Z",
+      "side": 1,
+      "message": "Make sense, should validate on finalized queries.\n\nAlso inline this code in RunMulti as it only works in conjunction with RunMulti constraints.",
+      "parentUuid": "aad3c7bf_857f756d",
+      "range": {
+        "startLine": 820,
+        "startChar": 5,
+        "endLine": 820,
+        "endChar": 20
+      },
+      "revId": "13a1a14f609bf5b0f13380fc295e7c56ddc63ee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
