@@ -166,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "beaabfb9_533fc5b9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 738,
+      "author": {
+        "id": 1407500
+      },
+      "writtenOn": "2020-10-02T20:49:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12ce2e0e_fce093cd",
+      "range": {
+        "startLine": 733,
+        "startChar": 0,
+        "endLine": 738,
+        "endChar": 1
+      },
+      "revId": "e14644edd1419b5b6c4f6b4eeb17faf6bc088e0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "06b391c7_6849e90f",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 3
