@@ -39,6 +39,9 @@ func TestGTestConversions(t *testing.T) {
 					"FooTest.TestDoBar",
 					"FooTest.TestDoBaz"
 				],
+				"disabled_tests": [
+					"FooTest.TestDoBarDisabled"
+				],
 				"global_tags": ["CPU_64_BITS","MODE_RELEASE","OS_WIN"],
 				"per_iteration_data": [{
 					"FooTest.TestDoBar": [
@@ -91,6 +94,7 @@ func TestGTestConversions(t *testing.T) {
 		err := results.ConvertFromJSON(ctx, bytes.NewReader(buf))
 		So(err, ShouldBeNil)
 		So(results.AllTests, ShouldResemble, []string{"FooTest.TestDoBar", "FooTest.TestDoBaz"})
+		So(results.DisabledTests, ShouldResemble, []string{"FooTest.TestDoBarDisabled"})
 		So(results.GlobalTags, ShouldResemble, []string{"CPU_64_BITS", "MODE_RELEASE", "OS_WIN"})
 		So(results.PerIterationData, ShouldResemble, []map[string][]*GTestRunResult{
 			{
@@ -314,6 +318,7 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey("Works", func() {
 			results := &GTestResults{
+				DisabledTests: []string{"FooTest.TestDoBarDisabled"},
 				PerIterationData: []map[string][]*GTestRunResult{
 					{
 						"BazTest.DoesQux": {
@@ -363,6 +368,18 @@ func TestGTestConversions(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest)), ShouldBeTrue)
 			assertTestResultsResemble(testResults, []*TestResult{
+				// Disabled tests.
+				{
+					TestResult: &pb.TestResult{
+						TestId:   "ninja://tests/FooTest.TestDoBarDisabled",
+						Expected: true,
+						Status:   pb.TestStatus_SKIP,
+						Tags: pbutil.StringPairs(
+							"test_name", "FooTest.TestDoBarDisabled",
+							"disabled_test", "true",
+						),
+					},
+				},
 				// Iteration 1.
 				{
 					TestResult: &pb.TestResult{
