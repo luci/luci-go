@@ -104,11 +104,11 @@ func TestNewSearchQuery(t *testing.T) {
 				StartTime:           expectedStartTime,
 				EndTime:             expectedEndTime,
 				IncludeExperimental: false,
-				BuildIdHigh:         201,
-				BuildIdLow:          99,
+				BuildIDHigh:         201,
+				BuildIDLow:          99,
 				Canary:              proto.Bool(true),
 				PageSize:            100,
-				StartCursor:         "",
+				PageToken:         "",
 			})
 		})
 
@@ -125,7 +125,7 @@ func TestNewSearchQuery(t *testing.T) {
 
 			So(query, ShouldResemble, &Query{
 				PageSize:    2,
-				StartCursor: "aa",
+				PageToken: "aa",
 			})
 		})
 
