@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "899ee154_04e8d5c2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-03T04:24:35Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef8f3c72_1314809d",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-03T04:24:35Z",
+      "side": 1,
+      "message": "L75 will hang forever if this line executes.\nconsider\n\n  workC \u003c- func() error { return err }",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
