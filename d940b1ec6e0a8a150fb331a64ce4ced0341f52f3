@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "a52fbb13_46dd837f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:02:10Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 14,
+        "startChar": 29,
+        "endLine": 14,
+        "endChar": 32
+      },
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2485fe60_f8ab8a79",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +39,80 @@
       "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40aa7879_b0bd83e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:02:10Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "04c249f1_3925eac4",
+        "filename": "rts/presubmit/eval/history/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:02:10Z",
+      "side": 1,
+      "message": "food for thought: everything here is domain-agnostic except the proto itself. Maybe the proto-{Reader/Writer} specialized at runtime on specific Proto message should be in luci/data/common?\n\n(definitely doesn\u0027t have to be for this CL to avoid rebases)",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5442f0fe_a839c4d2",
+        "filename": "rts/presubmit/eval/history/reader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:02:10Z",
+      "side": 1,
+      "message": "maybe document\n// set if underlying source implements io.Closer\n\n(I guessed this from L40 though)",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cac26fb_c4346880",
+        "filename": "rts/presubmit/eval/proto/eval.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:02:10Z",
+      "side": 1,
+      "message": "tbh, I find the resulting code confusing:\n   var gp *pb.GerritPatchset\n   gp.number  // change or patchset?\neven though it\u0027s logical here.\nSo ,I\u0027d use \"patchset\" here.",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
