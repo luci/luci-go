@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "60cee31d_da7f7e97",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T21:13:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a52fbb13_46dd837f",
+      "range": {
+        "startLine": 14,
+        "startChar": 29,
+        "endLine": 14,
+        "endChar": 32
+      },
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2485fe60_f8ab8a79",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -123,6 +147,24 @@
       "side": 1,
       "message": "changed this to `src io.Reader` to bring these two aspects from 3 places (here, NewReader, and Close) to one.",
       "parentUuid": "5442f0fe_a839c4d2",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b8d871ad_3fcab2c5",
+        "filename": "rts/presubmit/eval/history/reader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T21:13:21Z",
+      "side": 1,
+      "message": "much better!",
+      "parentUuid": "58958931_5d43e98c",
       "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
