@@ -113,6 +113,30 @@
       "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8682c7bb_ef0185ca",
+        "filename": "rts/presubmit/eval/proto/eval.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T18:04:58Z",
+      "side": 1,
+      "message": "you\u0027ve actually used Patchset before: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2447903/4/rts/presubmit/eval/gerrit.go#56",
+      "parentUuid": "3cac26fb_c4346880",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
