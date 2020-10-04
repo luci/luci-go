@@ -39,6 +39,23 @@
       "revId": "0778c93a39b96b79a18b259575aa6f7992ec96b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f858088d_602b208a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T21:01:05Z",
+      "side": 1,
+      "message": "also, 👍 for efficient use of memory, I particularly enjoy writing/reading such CLs 😊",
+      "revId": "0778c93a39b96b79a18b259575aa6f7992ec96b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
