@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "57b47237_606d6bc8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T22:28:12Z",
+      "side": 1,
+      "message": "I also couldn\u0027t come up. I looked up assertions in BQ, but I cannot plug one into the query itself.\n\nadded a todo",
+      "parentUuid": "0599cd79_7d407abf",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 39
+      },
+      "revId": "0778c93a39b96b79a18b259575aa6f7992ec96b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "225dab18_55962b20",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 6
