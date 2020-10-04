@@ -55,10 +55,6 @@ func (r *evalRun) Init(ctx context.Context) error {
 		}
 	}
 
-	// Skip today because it is likely to be incomplete.
-	r.endTime = time.Now().UTC().Add(-day).Truncate(day)
-	r.startTime = r.endTime.Add(-day * time.Duration(r.WindowsDays))
-
 	// Init auth.
 	authOpts := chromeinfra.DefaultAuthOptions()
 	authOpts.Scopes = []string{auth.OAuthScopeEmail, bigquery.Scope, gerrit.OAuthScope}

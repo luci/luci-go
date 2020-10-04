@@ -17,6 +17,9 @@ package eval
 import (
 	"context"
 	"flag"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/rts/presubmit/eval/history"
 )
 
 // defaults
@@ -51,13 +54,12 @@ type Eval struct {
 	// If <=0, defaults to 10.
 	GerritQPSLimit int
 
-	// The evaluation backend to use.
-	Backend Backend
+	// Historical records to use for evaluation.
+	History *history.Reader
 }
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	fs.IntVar(&e.WindowsDays, "window", defaultWindowDays, "The time window to analyze, in days")
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 
 	cacheDir, err := defaultCacheDir()
@@ -70,6 +72,14 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	return nil
 }
 
+// ValidateFlags validates values of flags registered using RegisterFlags.
+func (e *Eval) ValidateFlags() error {
+	if e.History == nil {
+		return errors.New("-history is required")
+	}
+	return nil
+}
+
 // Run evaluates the algorithm.
 func (e *Eval) Run(ctx context.Context) (*Result, error) {
 	run := evalRun{
@@ -77,4 +87,24 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 		Eval: *e,
 	}
 	return run.run(ctx)
+}
+
+type historyFileInputFlag struct {
+	path string
+	ptr  **history.Reader
+}
+
+func (f *historyFileInputFlag) Set(val string) error {
+	rd, err := history.OpenFile(val)
+	if err != nil {
+		return err
+	}
+
+	f.path = val
+	*f.ptr = rd
+	return nil
+}
+
+func (f *historyFileInputFlag) String() string {
+	return f.path
 }
