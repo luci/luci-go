@@ -1,0 +1,75 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package chrome.rts.presubmit.eval;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/rts/presubmit/eval/proto;evalpb";
+
+// A rejection of a code change due to test failures.
+message Rejection {
+  // The rejected patchsets.
+  repeated GerritPatchset patchsets = 1;
+
+  // When the code change was rejected.
+  google.protobuf.Timestamp timestamp = 2;
+
+  // List of tests that caused the rejection.
+  repeated Test failed_tests = 3;
+}
+
+// A Gerrit CL.
+message GerritChange {
+  // Gerrit host, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+
+  // Gerrit project, e.g. "chromium/src".
+  // It is required.
+  string project = 2;
+
+  // Change number,
+  // e.g. 123 for https://chromium.googlesource.com/c/123
+  int64 number = 3;
+}
+
+// A Gerrit patchset.
+message GerritPatchset {
+  // The CL.
+  GerritChange change = 1;
+
+  // The patchset number.
+  int64 patchset = 2;
+}
+
+// A single test, typically a test case.
+message Test {
+  // Test identifier.
+  // For Chromium, a ResultDB TestID.
+  string id = 1;
+
+  // Path of the file where the test is defined.
+  string file_name = 2;
+}
+
+// One historical record.
+// Used for streaming messages above.
+message Record {
+  oneof data {
+    // A code change rejection due to test failures.
+    Rejection rejection = 1;
+  }
+}
