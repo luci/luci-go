@@ -16,10 +16,14 @@ package eval
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/auth"
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
+
+// TODO(nodir): delete this file.
 
 // Backend interface encapsulates specifics of a particular LUCI project.
 // See ./chromium for a Chromium backend.
@@ -48,5 +52,28 @@ type RejectedPatchSet struct {
 	Timestamp time.Time      `json:"timestamp"`
 
 	// FailedTests are the tests that caused the rejection.
-	FailedTests []*Test `json:"failedTests"`
+	FailedTests []*evalpb.Test `json:"failedTests"`
+}
+
+// GerritChange is a CL on Gerrit.
+type GerritChange struct {
+	Host    string `json:"host"`
+	Project string `json:"project"`
+	Number  int    `json:"change"`
+}
+
+// String returns the CL URL.
+func (cl *GerritChange) String() string {
+	return fmt.Sprintf("https://%s/c/%d", cl.Host, cl.Number)
+}
+
+// GerritPatchset is a revision of a Gerrit CL.
+type GerritPatchset struct {
+	Change   GerritChange `json:"cl"`
+	Patchset int          `json:"patchset"`
+}
+
+// String returns the patchset URL.
+func (p *GerritPatchset) String() string {
+	return fmt.Sprintf("https://%s/c/%d/%d", p.Change.Host, p.Change.Number, p.Patchset)
 }

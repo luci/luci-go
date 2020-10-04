@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/common/data/caching/lru"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -33,12 +35,12 @@ import (
 func TestURLs(t *testing.T) {
 	t.Parallel()
 	Convey(`URLs`, t, func() {
-		patchSet := GerritPatchset{
-			Change: GerritChange{
+		patchSet := &evalpb.GerritPatchset{
+			Change: &evalpb.GerritChange{
 				Host:   "example.googlesource.com",
 				Number: 123,
 			},
-			Patchset: 4,
+			Number: 4,
 		}
 		So(patchSet.Change.String(), ShouldEqual, "https://example.googlesource.com/c/123")
 		So(patchSet.String(), ShouldEqual, "https://example.googlesource.com/c/123/4")
@@ -58,13 +60,13 @@ func TestGerritClient(t *testing.T) {
 				valueType: reflect.TypeOf(changedFiles{}),
 			},
 		}
-		gerritPS := &GerritPatchset{
-			Change: GerritChange{
+		ps := &evalpb.GerritPatchset{
+			Change: &evalpb.GerritChange{
 				Host:    "example.googlesource.com",
 				Project: "repo",
 				Number:  123,
 			},
-			Patchset: 1,
+			Number: 1,
 		}
 
 		Convey(`Works`, func() {
@@ -81,7 +83,7 @@ func TestGerritClient(t *testing.T) {
 				}, nil
 			}
 
-			files, err := client.ChangedFiles(ctx, gerritPS)
+			files, err := client.ChangedFiles(ctx, ps)
 			So(err, ShouldBeNil)
 			So(files, ShouldResemble, []string{"a.go", "b.go"})
 			So(actualHost, ShouldEqual, "example.googlesource.com")
@@ -97,7 +99,7 @@ func TestGerritClient(t *testing.T) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			}
 
-			_, err := client.ChangedFiles(ctx, gerritPS)
+			_, err := client.ChangedFiles(ctx, ps)
 			So(err, ShouldNotBeNil)
 			So(psNotFound.In(err), ShouldBeTrue)
 		})
@@ -118,7 +120,7 @@ func TestGerritClient(t *testing.T) {
 				}, nil
 			}
 
-			files, err := client.ChangedFiles(ctx, gerritPS)
+			files, err := client.ChangedFiles(ctx, ps)
 			So(err, ShouldBeNil)
 			So(files, ShouldResemble, []string{"a.go", "b.go"})
 		})
