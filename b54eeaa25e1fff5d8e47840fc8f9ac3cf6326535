@@ -16,6 +16,64 @@
       "revId": "b54eeaa25e1fff5d8e47840fc8f9ac3cf6326535",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a4360be_3a2dda58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T20:52:08Z",
+      "side": 1,
+      "message": "I found it quite readable. LGTM!",
+      "parentUuid": "ee6617b7_98a8d3a9",
+      "revId": "b54eeaa25e1fff5d8e47840fc8f9ac3cf6326535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "126109c2_5ca0432a",
+        "filename": "rts/presubmit/eval/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T20:52:08Z",
+      "side": 1,
+      "message": "ha, you\u0027ve actually used patchset here.",
+      "revId": "b54eeaa25e1fff5d8e47840fc8f9ac3cf6326535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9ebcb82_9767ef31",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T20:52:08Z",
+      "side": 1,
+      "message": "👍i like new names.",
+      "range": {
+        "startLine": 110,
+        "startChar": 12,
+        "endLine": 110,
+        "endChar": 31
+      },
+      "revId": "b54eeaa25e1fff5d8e47840fc8f9ac3cf6326535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
