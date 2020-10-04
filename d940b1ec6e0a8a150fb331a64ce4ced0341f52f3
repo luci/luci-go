@@ -76,6 +76,24 @@
     },
     {
       "key": {
+        "uuid": "5a0f0e48_b802736f",
+        "filename": "rts/presubmit/eval/history/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T20:54:39Z",
+      "side": 1,
+      "message": "added a TODO",
+      "parentUuid": "04c249f1_3925eac4",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5442f0fe_a839c4d2",
         "filename": "rts/presubmit/eval/history/reader.go",
         "patchSetId": 2
@@ -90,6 +108,24 @@
       "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58958931_5d43e98c",
+        "filename": "rts/presubmit/eval/history/reader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T20:54:39Z",
+      "side": 1,
+      "message": "changed this to `src io.Reader` to bring these two aspects from 3 places (here, NewReader, and Close) to one.",
+      "parentUuid": "5442f0fe_a839c4d2",
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -137,6 +173,30 @@
       "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba45e3a9_09ee48a2",
+        "filename": "rts/presubmit/eval/proto/eval.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T20:54:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8682c7bb_ef0185ca",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "d940b1ec6e0a8a150fb331a64ce4ced0341f52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
