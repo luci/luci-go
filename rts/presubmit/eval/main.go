@@ -26,20 +26,12 @@ import (
 
 // Main evaluates an RTS algorithm for Chromium, prints results and exits the
 // process.
-func Main(ctx context.Context, backend Backend, algo Algorithm) {
+func Main(ctx context.Context, algo Algorithm) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer signals.HandleInterrupt(cancel)
 
-	ev := &Eval{
-		Algorithm: algo,
-		Backend:   backend,
-	}
-	if err := ev.RegisterFlags(flag.CommandLine); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	flag.Parse()
+	ev := &Eval{Algorithm: algo}
+	parseFlags(ev)
 
 	var logCfg = gologger.LoggerConfig{
 		Format: `%{message}`,
@@ -55,4 +47,19 @@ func Main(ctx context.Context, backend Backend, algo Algorithm) {
 
 	res.Print(os.Stdout)
 	os.Exit(0)
+}
+
+func parseFlags(ev *Eval) {
+	if err := ev.RegisterFlags(flag.CommandLine); err != nil {
+		fatal(err)
+	}
+	flag.Parse()
+	if err := ev.ValidateFlags(); err != nil {
+		fatal(err)
+	}
+}
+
+func fatal(err error) {
+	fmt.Fprintf(os.Stderr, "fatal: %s\n", err)
+	os.Exit(1)
 }
