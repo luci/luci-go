@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3b2cd95_087237df",
+        "filename": "common/flag/date.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-04T17:43:02Z",
+      "side": 1,
+      "message": "mm-dd or dd-mm? There are sadly locales which interpret it both ways 😞\n\nStill, I\u0027m in favor of yyyy-mm-dd as the least confusing of all formats widely within Google.\n\nSo, how about \n * P0: \"2006-01-24\" here and dateLayout\n * P1: DateYYYYMMDD as the name of the function\n?",
+      "revId": "cdf37d8e46ab5881ccf2d3499c5a074dba80fab0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
