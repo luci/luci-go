@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee6617b7_98a8d3a9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T08:21:04Z",
+      "side": 1,
+      "message": "I tried to make this CL smaller, but did not succeed \u003d\u003e it is a bit messy. PTAL",
+      "revId": "b54eeaa25e1fff5d8e47840fc8f9ac3cf6326535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
