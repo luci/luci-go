@@ -465,13 +465,12 @@ func TestTryjobValidation(t *testing.T) {
 			`), ShouldErrLike, "duplicate")
 
 			So(validate(`
-			  builders {name: "*/master/c"}
-			`), ShouldErrLike, "Buildbot")
-
-			So(validate(`
 				builders {name: "m/n/o"}
 			  builders {name: "a/b/c" equivalent_to {name: "x/y/z"}}
 			`), ShouldBeNil)
+
+			So(validate(`builders {name: "123/b/c"}`), ShouldErrLike,
+				`first part of "123/b/c" is not a valid LUCI project name`)
 		})
 
 		Convey("result_visibility", func() {
