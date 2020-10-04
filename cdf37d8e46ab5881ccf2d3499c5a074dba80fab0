@@ -16,6 +16,24 @@
       "revId": "cdf37d8e46ab5881ccf2d3499c5a074dba80fab0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ccba148_e32cec81",
+        "filename": "common/flag/date.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T20:40:53Z",
+      "side": 1,
+      "message": "P0: done.\n\nP1: I was thinking to sort-of-standardize that this is how we pass dates, as opposed to US-specific format. So I prefer flag.Date() name. But to address a possible concern that doesn\u0027t let folks to have other formats, I\u0027ve generalized this to two functions: flag.Date() and `flag.TimeLayout(t *time.Time, layout string) flag.Getter`.\n\nWDYT?",
+      "parentUuid": "b3b2cd95_087237df",
+      "revId": "cdf37d8e46ab5881ccf2d3499c5a074dba80fab0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
