@@ -36,31 +36,6 @@ import (
 
 var psNotFound = &errors.BoolTag{Key: errors.NewTagKey("patchset not found")}
 
-// GerritChange is a CL on Gerrit.
-// TODO(nodir): delete this struct.
-type GerritChange struct {
-	Host    string `json:"host"`
-	Project string `json:"project"`
-	Number  int    `json:"change"`
-}
-
-// String returns the CL URL.
-func (cl *GerritChange) String() string {
-	return fmt.Sprintf("https://%s/c/%d", cl.Host, cl.Number)
-}
-
-// GerritPatchset is a revision of a Gerrit CL.
-// TODO(nodir): delete this struct.
-type GerritPatchset struct {
-	Change   GerritChange `json:"cl"`
-	Patchset int          `json:"patchset"`
-}
-
-// String returns the patchset URL.
-func (p *GerritPatchset) String() string {
-	return fmt.Sprintf("https://%s/c/%d/%d", p.Change.Host, p.Change.Number, p.Patchset)
-}
-
 type gerritClient struct {
 	// listFilesRPC makes a Gerrit RPC to fetch the list of changed files.
 	// Mockable.
