@@ -20,13 +20,12 @@ import (
 	"time"
 
 	"go.chromium.org/luci/rts/presubmit/eval"
-	"go.chromium.org/luci/rts/presubmit/eval/chromium"
 )
 
 func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().Unix())
-	eval.Main(ctx, &chromium.Backend{}, func(ctx context.Context, in eval.Input) (eval.Output, error) {
+	eval.Main(ctx, func(ctx context.Context, in eval.Input) (eval.Output, error) {
 		return eval.Output{
 			ShouldRun: rand.Intn(2) == 0,
 		}, nil
