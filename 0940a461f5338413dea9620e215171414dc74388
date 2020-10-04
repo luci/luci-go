@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f654aa0_2c82ff56",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-04T08:34:48Z",
+      "side": 1,
+      "message": "PTAL\n\n$ time rts-random -history rts.hist\nTotal analyzed rejections: 717\nSafety score: 0.74 (527/716)\n\nreal    0m0.801s\nuser    0m0.848s\nsys     0m0.292s\n",
+      "revId": "0940a461f5338413dea9620e215171414dc74388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
