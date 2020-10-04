@@ -17,11 +17,14 @@ package eval
 import (
 	"context"
 	"flag"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/rts/presubmit/eval/history"
 )
 
 // defaults
 const (
-	defaultWindowDays  = 7
 	defaultConcurrency = 100
 
 	// defaultGerritQPSLimit is the default Gerrit QPS limit.
@@ -35,10 +38,6 @@ type Eval struct {
 	// The algorithm to evaluate.
 	Algorithm Algorithm
 
-	// The window of time to analyze, in days.
-	// If <=0, defaults to 7.
-	WindowsDays int
-
 	// The number of goroutines to spawn.
 	// If <=0, defaults to 100.
 	Concurrency int
@@ -51,13 +50,12 @@ type Eval struct {
 	// If <=0, defaults to 10.
 	GerritQPSLimit int
 
-	// The evaluation backend to use.
-	Backend Backend
+	// Historical records to use for evaluation.
+	History *history.Reader
 }
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	fs.IntVar(&e.WindowsDays, "window", defaultWindowDays, "The time window to analyze, in days")
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 
 	cacheDir, err := defaultCacheDir()
@@ -67,6 +65,15 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 
 	fs.StringVar(&e.CacheDir, "cache-dir", cacheDir, "Path to the cache dir")
 	fs.IntVar(&e.GerritQPSLimit, "gerrit-qps-limit", defaultGerritQPSLimit, "Max Gerrit QPS")
+	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
+	return nil
+}
+
+// ValidateFlags validates values of flags registered using RegisterFlags.
+func (e *Eval) ValidateFlags() error {
+	if e.History == nil {
+		return errors.New("-history is required")
+	}
 	return nil
 }
 
@@ -77,4 +84,24 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 		Eval: *e,
 	}
 	return run.run(ctx)
+}
+
+type historyFileInputFlag struct {
+	path string
+	ptr  **history.Reader
+}
+
+func (f *historyFileInputFlag) Set(val string) error {
+	r, err := history.OpenFile(val)
+	if err != nil {
+		return err
+	}
+
+	f.path = val
+	*f.ptr = r
+	return nil
+}
+
+func (f *historyFileInputFlag) String() string {
+	return f.path
 }

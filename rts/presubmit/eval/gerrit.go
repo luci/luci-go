@@ -30,11 +30,14 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 var psNotFound = &errors.BoolTag{Key: errors.NewTagKey("patchset not found")}
 
 // GerritChange is a CL on Gerrit.
+// TODO(nodir): delete this struct.
 type GerritChange struct {
 	Host    string `json:"host"`
 	Project string `json:"project"`
@@ -47,6 +50,7 @@ func (cl *GerritChange) String() string {
 }
 
 // GerritPatchset is a revision of a Gerrit CL.
+// TODO(nodir): delete this struct.
 type GerritPatchset struct {
 	Change   GerritChange `json:"cl"`
 	Patchset int          `json:"patchset"`
@@ -70,7 +74,7 @@ type changedFiles struct {
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.
-func (c *gerritClient) ChangedFiles(ctx context.Context, ps *GerritPatchset) ([]string, error) {
+func (c *gerritClient) ChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) ([]string, error) {
 	cacheKey := fmt.Sprintf("%s-%d-%d", ps.Change.Host, ps.Change.Number, ps.Patchset)
 
 	value, err := c.fileListCache.GetOrCreate(ctx, cacheKey, func() (interface{}, error) {
@@ -92,19 +96,19 @@ func (c *gerritClient) ChangedFiles(ctx context.Context, ps *GerritPatchset) ([]
 	return value.(*changedFiles).Names, nil
 }
 
-func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *GerritPatchset) (*gerritpb.ListFilesResponse, error) {
+func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) (*gerritpb.ListFilesResponse, error) {
 	var res *gerritpb.ListFilesResponse
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() (err error) {
 		res, err = c.listFilesWithQuotaErrorsRetries(ctx, ps.Change.Host, &gerritpb.ListFilesRequest{
 			Project:    ps.Change.Project,
 			Number:     int64(ps.Change.Number),
-			RevisionId: strconv.Itoa(ps.Patchset),
+			RevisionId: strconv.Itoa(int(ps.Patchset)),
 		})
 		if grpcutil.IsTransientCode(statusCode(err)) {
 			err = transient.Tag.Apply(err)
 		}
 		return
-	}, retry.LogCallback(ctx, fmt.Sprintf("read %s", ps)))
+	}, retry.LogCallback(ctx, fmt.Sprintf("read %s", psURL(ps))))
 
 	if err != nil {
 		if statusCode(err) == codes.NotFound {
@@ -148,4 +152,9 @@ func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host
 
 func statusCode(err error) codes.Code {
 	return status.Code(errors.Unwrap(err))
+}
+
+// psURL returns the patchset URL.
+func psURL(p *evalpb.GerritPatchset) string {
+	return fmt.Sprintf("https://%s/c/%d/%d", p.Change.Host, p.Change.Number, p.Patchset)
 }
