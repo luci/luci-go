@@ -14,7 +14,11 @@
 
 package eval
 
-import "context"
+import (
+	"context"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
+)
 
 // Algorithm accepts a list of changed files and a test description and
 // decides whether to run it.
@@ -23,20 +27,22 @@ type Algorithm func(context.Context, Input) (Output, error)
 // Input is input to an RTS Algorithm.
 type Input struct {
 	// ChangedFiles is a list of files changed in a patchset.
-	ChangedFiles []string `json:"changedFiles"`
+	ChangedFiles []*SourceFile
 
 	// The algorithm needs to decide whether to run this test.
-	Test *Test
+	Test *evalpb.Test
 }
 
-// Test describes a test.
-type Test struct {
-	// Test identifier.
-	// For Chromium, TestID is a ResultDB TestID.
-	ID string `json:"id"`
+// SourceFile identifies a source file.
+type SourceFile struct {
+	// Repo is a repository identifier.
+	// For googlesource.com repositories, it is a canonical URL, e.g.
+	// https://chromium.googlesource.com/chromium/src
+	Repo string
 
-	// FileName is the name of the file where the test is defined.
-	FileName string `json:"fileName"`
+	// Path to the file relative to the repo root.
+	// Starts with "//".
+	Path string
 }
 
 // Output is the output of an RTS algorithm.

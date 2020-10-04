@@ -16,84 +16,77 @@ package eval
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
 	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // Safety is result of algorithm safety evaluation.
 // A safe algorithm does not let bad CLs pass CQ.
 type Safety struct {
-	AnalyzedPatchSets int
+	// TotalRejections is the total number of analyzed rejections.
+	TotalRejections int
 
-	// EligiblePatchSets is the number of patchsets eligible for safety
-	// evaluation. All of these patchsets were rejected.
-	EligiblePatchSets int
+	// EligibleRejections is the number of rejections eligible for safety
+	// evaluation.
+	EligibleRejections int
 
-	// Rejected is the number of eligible patchsets that would be rejected
-	// if the RTS algorithm in question was used.
-	// Ideally this equals EligiblePatchSets.
-	Rejected int
+	// PreservedRejections is the number of rejections that would be preserved
+	// by the candidate algorithm. Ideally this number equals EligibleRejections.
+	PreservedRejections int
 }
 
-func (r *evalRun) evaluateSafety(ctx context.Context) (*Safety, error) {
-	rejectedPatchSets, err := (&rejectedPatchSetSource{evalRun: r}).Read(ctx)
-	if err != nil {
-		return nil, err
-	}
-	progress := progress{Total: len(rejectedPatchSets)}
-
+func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Rejection) (*Safety, error) {
 	eg, ctx := errgroup.WithContext(ctx)
-	rejectedPatchSetC := make(chan *RejectedPatchSet)
-	eg.Go(func() error {
-		defer close(rejectedPatchSetC)
-		for _, rp := range rejectedPatchSets {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case rejectedPatchSetC <- rp:
-			}
-		}
-		return ctx.Err()
-	})
 
-	var eligibleCount int32
-	var rejectedCount int32
+	var totalRejections, eligibleCount, preservedRejections int32
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
-			for rp := range rejectedPatchSetC {
-				eligible, wouldReject, err := r.processPatchSetSafety(ctx, rp)
-				if err != nil {
-					return errors.Annotate(err, "failed to process patchset %s", &rp.Patchset).Err()
-				}
-				if eligible {
-					atomic.AddInt32(&eligibleCount, 1)
-					if wouldReject {
-						atomic.AddInt32(&rejectedCount, 1)
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+
+				case rej, ok := <-rejectionC:
+					if !ok {
+						return nil
+					}
+
+					atomic.AddInt32(&totalRejections, 1)
+
+					switch eligible, wouldReject, err := r.processRejection(ctx, rej); {
+					case err != nil:
+						return errors.Annotate(err, "failed to process rejection %s", rej).Err()
+					case eligible:
+						atomic.AddInt32(&eligibleCount, 1)
+						if wouldReject {
+							atomic.AddInt32(&preservedRejections, 1)
+						}
 					}
 				}
-				progress.Done(ctx)
 			}
-			return ctx.Err()
 		})
 	}
-
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	logging.Infof(ctx, "Processed all patchsets")
 
 	return &Safety{
-		AnalyzedPatchSets: len(rejectedPatchSets),
-		EligiblePatchSets: int(eligibleCount),
-		Rejected:          int(rejectedCount),
+		TotalRejections:     int(totalRejections),
+		EligibleRejections:  int(eligibleCount),
+		PreservedRejections: int(preservedRejections),
 	}, nil
 }
 
-func (r *evalRun) processPatchSetSafety(ctx context.Context, rp *RejectedPatchSet) (eligible, wouldReject bool, err error) {
+func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (eligible, wouldReject bool, err error) {
 	// TODO(crbug.com/1112125): add support for CL stacks.
 	// This call returns only files modified in the particular patchset and
 	// ignores possible parent CLs that were also tested.
@@ -101,7 +94,7 @@ func (r *evalRun) processPatchSetSafety(ctx context.Context, rp *RejectedPatchSe
 	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
 	// Most RTS algorithms would reject such a patchset, so it represents noise.
 
-	files, err := r.gerrit.ChangedFiles(ctx, &rp.Patchset)
+	files, err := r.changedFiles(ctx, rej)
 	switch {
 	case psNotFound.In(err):
 		// The CL is deleted  => not eligible.
@@ -109,13 +102,13 @@ func (r *evalRun) processPatchSetSafety(ctx context.Context, rp *RejectedPatchSe
 		return
 
 	case err != nil:
-		err = errors.Annotate(err, "failed to read changed files of %s", &rp.Patchset).Err()
+		err = errors.Annotate(err, "failed to read changed files of %s", rej).Err()
 		return
 	}
 
 	// Compare the prediction to facts.
 	in := Input{ChangedFiles: files}
-	for _, t := range rp.FailedTests {
+	for _, t := range rej.FailedTests {
 		in.Test = t
 		var out Output
 		if out, err = r.Algorithm(ctx, in); err != nil {
@@ -131,4 +124,37 @@ func (r *evalRun) processPatchSetSafety(ctx context.Context, rp *RejectedPatchSe
 		}
 	}
 	return
+}
+
+// changedFiles retrieves changed files of all patchsets in the rejection.
+func (r *evalRun) changedFiles(ctx context.Context, rej *evalpb.Rejection) ([]*SourceFile, error) {
+	var ret []*SourceFile
+	var mu sync.Mutex
+	err := parallel.FanOutIn(func(workC chan<- func() error) {
+		for _, ps := range rej.Patchsets {
+			ps := ps
+			workC <- func() error {
+				changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)
+				if err != nil {
+					return err
+				}
+
+				repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
+
+				mu.Lock()
+				defer mu.Unlock()
+				for _, path := range changedFiles {
+					ret = append(ret, &SourceFile{
+						Repo: repo,
+						Path: "//" + path,
+					})
+				}
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, err
 }

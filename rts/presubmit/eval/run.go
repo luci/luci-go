@@ -18,13 +18,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
-	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // Result is the result of evaluation.
@@ -38,9 +38,6 @@ type evalRun struct {
 
 	auth   *auth.Authenticator
 	gerrit *gerritClient
-
-	startTime time.Time
-	endTime   time.Time
 }
 
 func (r *evalRun) run(ctx context.Context) (*Result, error) {
@@ -48,66 +45,70 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 		return nil, err
 	}
 
-	// Evaluate safety and precision sequentially because
-	// individually they already use all CPUs,
-	// and running sequentially improves log readability.
+	ret := &Result{}
 
-	safety, err := r.evaluateSafety(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to evaluate safety").Err()
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
+	// Analyze safety.
+	rejectionC := make(chan *evalpb.Rejection)
+	eg.Go(func() error {
+		safety, err := r.evaluateSafety(ctx, rejectionC)
+		if err != nil {
+			return errors.Annotate(err, "failed to evaluate safety").Err()
+		}
+		ret.Safety = *safety
+		return nil
+	})
+
+	// TODO(nodir): analyze precision.
+
+	// Play back the history.
+	eg.Go(func() error {
+		defer close(rejectionC)
+		defer r.History.Close()
+		for {
+			rec, err := r.History.Read()
+			switch {
+			case err == io.EOF:
+				return nil
+			case err != nil:
+				return errors.Annotate(err, "failed to read history").Err()
+			}
+			switch data := rec.Data.(type) {
+			case *evalpb.Record_Rejection:
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case rejectionC <- data.Rejection:
+				}
+			default:
+				panic(fmt.Sprintf("unexpected record %s", rec))
+			}
+		}
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
 	}
-
-	precision, err := r.evaluatePrecision(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to evaluate precision").Err()
-	}
-
-	return &Result{
-		Safety:    *safety,
-		Precision: *precision,
-	}, nil
-}
-
-// progress prints the number of processed patchsets at most once per second.
-type progress struct {
-	Total int
-
-	done       int
-	mu         sync.Mutex
-	lastReport time.Time
-}
-
-func (p *progress) Done(ctx context.Context) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.done++
-
-	if clock.Since(ctx, p.lastReport) < time.Second {
-		return
-	}
-
-	if !p.lastReport.IsZero() {
-		logging.Infof(ctx, "Processing patchset: %5d/%d\n", p.done, p.Total)
-	}
-	p.lastReport = clock.Now(ctx)
+	return ret, nil
 }
 
 // Print prints the results to w.
 func (r *Result) Print(w io.Writer) (err error) {
 	switch {
-	case r.Safety.AnalyzedPatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: patchsets not found\n")
+	case r.Safety.TotalRejections == 0:
+		_, err = fmt.Printf("Evaluation failed: rejections not found\n")
 
-	case r.Safety.EligiblePatchSets == 0:
-		_, err = fmt.Printf("Evaluation failed: all %d patchsets are ineligible.\n", r.Safety.AnalyzedPatchSets)
+	case r.Safety.EligibleRejections == 0:
+		_, err = fmt.Printf("Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
 
 	default:
-		fmt.Printf("Total analyzed patchsets: %d\n", r.Safety.AnalyzedPatchSets)
+		fmt.Printf("Total analyzed rejections: %d\n", r.Safety.TotalRejections)
 		_, err = fmt.Printf("Safety score: %.2f (%d/%d)\n",
-			float64(r.Safety.Rejected)/float64(r.Safety.EligiblePatchSets),
-			r.Safety.Rejected,
-			r.Safety.EligiblePatchSets,
+			float64(r.Safety.PreservedRejections)/float64(r.Safety.EligibleRejections),
+			r.Safety.PreservedRejections,
+			r.Safety.EligibleRejections,
 		)
 	}
 

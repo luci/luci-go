@@ -37,9 +37,6 @@ const day = 24 * time.Hour
 
 // Init initializes e.
 func (r *evalRun) Init(ctx context.Context) error {
-	if r.WindowsDays <= 0 {
-		r.WindowsDays = defaultWindowDays
-	}
 	if r.Concurrency <= 0 {
 		r.Concurrency = defaultConcurrency
 	}
@@ -54,10 +51,6 @@ func (r *evalRun) Init(ctx context.Context) error {
 			return err
 		}
 	}
-
-	// Skip today because it is likely to be incomplete.
-	r.endTime = time.Now().UTC().Add(-day).Truncate(day)
-	r.startTime = r.endTime.Add(-day * time.Duration(r.WindowsDays))
 
 	// Init auth.
 	authOpts := chromeinfra.DefaultAuthOptions()

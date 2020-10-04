@@ -19,7 +19,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
+
+// TODO(nodir): delete this file.
 
 // Backend interface encapsulates specifics of a particular LUCI project.
 // See ./chromium for a Chromium backend.
@@ -48,5 +51,5 @@ type RejectedPatchSet struct {
 	Timestamp time.Time      `json:"timestamp"`
 
 	// FailedTests are the tests that caused the rejection.
-	FailedTests []*Test `json:"failedTests"`
+	FailedTests []*evalpb.Test `json:"failedTests"`
 }
