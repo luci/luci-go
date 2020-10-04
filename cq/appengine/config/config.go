@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/common/data/stringset"
+	lc "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
 	v2 "go.chromium.org/luci/cv/api/config/v2"
@@ -472,9 +473,8 @@ func validateBuilderName(ctx *validation.Context, name string, knownNames string
 			return
 		}
 	}
-	if parts[0] == "*" {
-		ctx.Errorf("Buildbot builders are no longer allowed in CQ")
-		return
+	if err := lc.ValidateProjectName(parts[0]); err != nil {
+		ctx.Errorf("first part of %q is not a valid LUCI project name", name)
 	}
 }
 
