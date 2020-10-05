@@ -32,6 +32,7 @@ import (
 	commonpb "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
@@ -74,7 +75,7 @@ func TestTriggerBuild(t *testing.T) {
 			OverrideJobID: jobID,
 		}
 		// TODO(nodir): use goconvey.C instead of t in NewController.
-		gitilesMock := gitilespb.NewMockGitilesClient(gomock.NewController(t))
+		gitilesMock := mock_gitiles.NewMockGitilesClient(gomock.NewController(t))
 
 		m := TaskManager{mockGitilesClient: gitilesMock}
 

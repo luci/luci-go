@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/milo/api/config"
@@ -45,7 +46,7 @@ func TestCombinedLogs(t *testing.T) {
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		gitilesMock := gitilespb.NewMockGitilesClient(ctl)
+		gitilesMock := mock_gitiles.NewMockGitilesClient(ctl)
 
 		host := "limited.googlesource.com"
 		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
