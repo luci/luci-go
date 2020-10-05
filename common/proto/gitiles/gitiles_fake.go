@@ -31,9 +31,9 @@ type fakeRepository struct {
 	commits map[string]*git.Commit
 }
 
-// GitilesFake allows testing of Gitiles API without using actual Gitiles
+// Fake allows testing of Gitiles API without using actual Gitiles
 // server. User can set data using SetRepository method.
-type GitilesFake struct {
+type Fake struct {
 	// key: repository name, value fakeRepository
 	m        map[string]fakeRepository
 	callLogs []interface{}
@@ -41,7 +41,7 @@ type GitilesFake struct {
 
 // Log retrieves commit log. Merge commits are supported, but it implements
 // simple logic and likely won't return results in the same order as Gitiles.
-func (g *GitilesFake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error) {
+func (g *Fake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error) {
 	g.addCallLog(in)
 	repository, ok := g.m[in.GetProject()]
 	if !ok {
@@ -101,7 +101,7 @@ func (g *GitilesFake) Log(ctx context.Context, in *LogRequest, opts ...grpc.Call
 }
 
 // Refs retrieves repo refs.
-func (g *GitilesFake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error) {
+func (g *Fake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error) {
 	g.addCallLog(in)
 	p, ok := g.m[in.GetProject()]
 	if !ok {
@@ -119,19 +119,19 @@ func (g *GitilesFake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.Ca
 //
 // DEPRECATED: Use DownloadFile to obtain plain text files.
 // TODO(pprabhu): Migrate known users to DownloadFile and delete this RPC.
-func (g *GitilesFake) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error) {
+func (g *Fake) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error) {
 	g.addCallLog(in)
 	panic("not implemented")
 }
 
 // DownloadFile retrieves a file from the project. This is not implemented.
-func (g *GitilesFake) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error) {
+func (g *Fake) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error) {
 	g.addCallLog(in)
 	panic("not implemented")
 }
 
 // Projects retrieves list of available Gitiles projects
-func (g *GitilesFake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+func (g *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
 	g.addCallLog(in)
 	resp := &ProjectsResponse{
 		Projects: make([]string, len(g.m)),
@@ -160,7 +160,7 @@ func (g *GitilesFake) Projects(ctx context.Context, in *ProjectsRequest, opts ..
 // * refs/heads/master points to rev1
 // commits:
 // rev1 --> rev0 (root commit)
-func (g *GitilesFake) SetRepository(repository string, refs map[string]string, commits []*git.Commit) {
+func (g *Fake) SetRepository(repository string, refs map[string]string, commits []*git.Commit) {
 	if g.m == nil {
 		g.m = map[string]fakeRepository{}
 	}
@@ -187,10 +187,10 @@ func (g *GitilesFake) SetRepository(repository string, refs map[string]string, c
 	}
 }
 
-func (g *GitilesFake) GetCallLogs() []interface{} {
+func (g *Fake) getCallLogs() []interface{} {
 	return g.callLogs
 }
 
-func (g *GitilesFake) addCallLog(in interface{}) {
+func (g *Fake) addCallLog(in interface{}) {
 	g.callLogs = append(g.callLogs, in)
 }
