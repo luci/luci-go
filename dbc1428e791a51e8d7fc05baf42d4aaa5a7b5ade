@@ -324,6 +324,24 @@
     },
     {
       "key": {
+        "uuid": "15e2dba3_99702399",
+        "filename": "rts/presubmit/eval/chromium/durations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-05T07:08:50Z",
+      "side": 1,
+      "message": "reworked the query: taking completely random CLs.\nthis blows up the number of queries we make to Gerrit, but at least this is cached.",
+      "parentUuid": "d6630632_afcb26cc",
+      "revId": "dbc1428e791a51e8d7fc05baf42d4aaa5a7b5ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c279c149_587d9b96",
         "filename": "rts/presubmit/eval/chromium/rejected.go",
         "patchSetId": 3
