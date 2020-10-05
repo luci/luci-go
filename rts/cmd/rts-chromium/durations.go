@@ -22,24 +22,21 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
 
-	"go.chromium.org/luci/common/errors"
-
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // durations calls f for each found test duration.
 func (r *presubmitHistoryRun) durations(ctx context.Context, f func(*evalpb.TestDuration) error) error {
-	bq, err := r.bqClient(ctx)
+	q, err := r.bqQuery(ctx, testDurationsSQL)
 	if err != nil {
-		return errors.Annotate(err, "failed to init BigQuery client").Err()
+		return err
 	}
 
-	q := bq.Query(testDurationsSQL)
-	q.Parameters = []bigquery.QueryParameter{
-		{Name: "startTime", Value: r.startTime},
-		{Name: "endTime", Value: r.endTime},
-		{Name: "frac", Value: r.durationDataFrac},
-	}
+	q.Parameters = append(q.Parameters, bigquery.QueryParameter{
+		Name:  "frac",
+		Value: r.durationDataFrac,
+	})
+
 	it, err := q.Read(ctx)
 	if err != nil {
 		return err
@@ -103,9 +100,11 @@ WITH
 			test_location.file_name,
 			test_id,
 			duration,
-		FROM luci-resultdb.chromium.try_test_results
+		FROM luci-resultdb.chromium.try_test_results tr
 		WHERE partition_time BETWEEN @startTime and @endTime
 			AND RAND() <= @frac
+			AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
+			AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 			AND duration > 0
 
 			-- Exclude broken test locations.
