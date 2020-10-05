@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 
@@ -99,6 +99,7 @@ export class ContextConsumerWrapper extends LitElement {
 describe('context', () => {
   describe('ContextProvider', () => {
     it('should provide context to descendent context consumers', async () => {
+      after(fixtureCleanup);
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>
           <milo-inner-context-provider-test>
@@ -168,6 +169,7 @@ describe('context', () => {
     });
 
     it('should provide context to context consumers in shadow DOMs', async () => {
+      after(fixtureCleanup);
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>
           <milo-inner-context-provider-test>

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-import { fixture, html } from '@open-wc/testing';
+import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 
 import { sanitizeHTML } from './sanitize_html';
@@ -30,9 +30,14 @@ const DIRTY_HTML = `
 </div>
 `;
 
-describe('sanitize_html', async () => {
-  const root = await fixture(html`${sanitizeHTML(DIRTY_HTML)}`);
-  const anchors = root.querySelectorAll('a');
+describe('sanitize_html', () => {
+  let root: Element;
+  let anchors: NodeListOf<HTMLAnchorElement>;
+  before(async () => {
+    root = await fixture(html`${sanitizeHTML(DIRTY_HTML)}`);
+    anchors = root.querySelectorAll('a');
+  });
+  after(fixtureCleanup);
 
   it('should set rel="noopener" when target attribute is set to _blank', () => {
     const anchor = anchors.item(0);
