@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd3ee18f_1d320c5f",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-05T17:52:37Z",
+      "side": 1,
+      "message": "Is grouping by variant_hash needed?",
+      "range": {
+        "startLine": 124,
+        "startChar": 31,
+        "endLine": 124,
+        "endChar": 43
+      },
+      "revId": "e843b049d36b4acc9d084a75efae9073d8031b10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
