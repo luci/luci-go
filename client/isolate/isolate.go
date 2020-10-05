@@ -325,7 +325,7 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
 				return nil, err
 			}
-			err, dirFItems, dirSymItems := archiver.PushDirectory(arch, dep, relPath)
+			dirFItems, dirSymItems, err := archiver.PushDirectory(arch, dep, relPath)
 			if err != nil {
 				return nil, err
 			}
