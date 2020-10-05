@@ -19,6 +19,46 @@
     },
     {
       "key": {
+        "uuid": "76ca163e_9902f267",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-10-05T14:54:10Z",
+      "side": 1,
+      "message": "Thanks Thulsi! Found a typo.",
+      "revId": "96cc09fd64b87dc2de79f5b9ce8da86a2ef7e334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6fff0368_092584fd",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-10-05T14:54:10Z",
+      "side": 1,
+      "message": "mergeable",
+      "range": {
+        "startLine": 385,
+        "startChar": 25,
+        "endLine": 385,
+        "endChar": 35
+      },
+      "revId": "96cc09fd64b87dc2de79f5b9ce8da86a2ef7e334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a0755d69_923cf2f0",
         "filename": "common/api/gerrit/gerrit_test.go",
         "patchSetId": 6
