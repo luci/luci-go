@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "41b4173c_c7ceeebe",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-05T02:29:19Z",
+      "side": 1,
+      "message": "actually i am not so sure about this. It is possible that our code did not retrieve anything in 55sec due to a bug, and it would still return an OK response. This is not right.",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ef8f3c72_1314809d",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 4
