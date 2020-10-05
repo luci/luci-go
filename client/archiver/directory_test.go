@@ -299,7 +299,7 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 		So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
 	}
 
-	err, fItems, symItems := PushDirectory(a, root, "")
+	fItems, symItems, err := PushDirectory(a, root, "")
 	So(err, ShouldBeNil)
 	So(a.Close(), ShouldBeNil)
 
