@@ -108,7 +108,7 @@ const rejectedPatchSetsSQL = `
 			-- Note that for test results, the cutoff is still @endTime.
 			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
 		),
-		failed_test_variants AS (
+		failed_tests AS (
 			SELECT DISTINCT
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) build_id,
 				ANY_VALUE(test_location.file_name) file_name,
@@ -129,7 +129,7 @@ const rejectedPatchSetsSQL = `
 			-- in another for the same patchset.
 			HAVING LOGICAL_AND(NOT expected AND NOT exonerated)
 		),
-		flat AS (
+		patchset_tests AS (
 			SELECT
 				ps.change,
 				ps.patchset,
@@ -137,7 +137,7 @@ const rejectedPatchSetsSQL = `
 				test_id,
 				ANY_VALUE(file_name) as file_name,
 			FROM tryjobs t
-			JOIN failed_test_variants f ON t.id = f.build_id
+			JOIN failed_tests f ON t.id = f.build_id
 			GROUP BY ps.change, ps.patchset, test_id
 		)
 	SELECT
@@ -145,6 +145,6 @@ const rejectedPatchSetsSQL = `
 		patchset as Patchset,
 		ANY_VALUE(ps_approx_timestamp) as Timestamp,
 		ARRAY_AGG(STRUCT(test_id as ID, file_name as FileName)) as FailedTests,
-	FROM flat
-	GROUP BY change, flat.patchset
+	FROM patchset_tests
+	GROUP BY change, patchset
 `
