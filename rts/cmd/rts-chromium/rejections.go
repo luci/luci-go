@@ -18,26 +18,17 @@ import (
 	"context"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
-
-	"go.chromium.org/luci/common/errors"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // rejections calls f for each found CQ rejection.
 func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rejection) error) error {
-	bq, err := r.bqClient(ctx)
+	q, err := r.bqQuery(ctx, rejectedPatchSetsSQL)
 	if err != nil {
-		return errors.Annotate(err, "failed to init BigQuery client").Err()
-	}
-
-	q := bq.Query(rejectedPatchSetsSQL)
-	q.Parameters = []bigquery.QueryParameter{
-		{Name: "startTime", Value: r.startTime},
-		{Name: "endTime", Value: r.endTime},
+		return err
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
@@ -113,8 +104,10 @@ const rejectedPatchSetsSQL = `
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) build_id,
 				ANY_VALUE(test_location.file_name) file_name,
 				test_id,
-			FROM luci-resultdb.chromium.try_test_results
+			FROM luci-resultdb.chromium.try_test_results tr
 			WHERE partition_time BETWEEN @startTime and @endTime
+				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
+				AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 				-- Exclude broken test locations.
 				-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
 				AND REGEXP_CONTAINS(test_location.file_name, r'(?i)\.(cc|html|m|c|cpp)$')

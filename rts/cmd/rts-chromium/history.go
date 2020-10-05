@@ -49,6 +49,8 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 			r.Flags.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-02")
 			r.Flags.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-02")
 			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
+			r.Flags.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
+			r.Flags.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
 			return r
 		},
 	}
@@ -60,6 +62,8 @@ type presubmitHistoryRun struct {
 	startTime        time.Time
 	endTime          time.Time
 	durationDataFrac float64
+	builderRegex     string
+	testIDRegex      string
 
 	authenticator *auth.Authenticator
 	authOpt       *auth.Options
@@ -155,10 +159,29 @@ func (r *presubmitHistoryRun) write(rec *evalpb.Record) error {
 	return nil
 }
 
-func (r *presubmitHistoryRun) bqClient(ctx context.Context) (*bigquery.Client, error) {
+func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquery.Query, error) {
 	creds, err := r.authenticator.PerRPCCredentials()
 	if err != nil {
 		return nil, err
 	}
-	return bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	client, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	if err != nil {
+		return nil, err
+	}
+
+	prepRe := func(rgx string) string {
+		if rgx == "" {
+			return ""
+		}
+		return fmt.Sprintf("^(%s)$", rgx)
+	}
+
+	q := client.Query(sql)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "startTime", Value: r.startTime},
+		{Name: "endTime", Value: r.endTime},
+		{Name: "builder_regexp", Value: prepRe(r.builderRegex)},
+		{Name: "test_id_regexp", Value: prepRe(r.testIDRegex)},
+	}
+	return q, nil
 }
