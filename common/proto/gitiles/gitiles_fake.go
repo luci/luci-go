@@ -31,9 +31,9 @@ type fakeRepository struct {
 	commits map[string]*git.Commit
 }
 
-// GitilesFake allows testing of Gitiles API without using actual Gitiles
+// Fake allows testing of Gitiles API without using actual Gitiles
 // server. User can set data using SetRepository method.
-type GitilesFake struct {
+type Fake struct {
 	// key: repository name, value fakeRepository
 	m        map[string]fakeRepository
 	callLogs []interface{}
@@ -41,9 +41,9 @@ type GitilesFake struct {
 
 // Log retrieves commit log. Merge commits are supported, but it implements
 // simple logic and likely won't return results in the same order as Gitiles.
-func (g *GitilesFake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error) {
-	g.addCallLog(in)
-	repository, ok := g.m[in.GetProject()]
+func (f *Fake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error) {
+	f.addCallLog(in)
+	repository, ok := f.m[in.GetProject()]
 	if !ok {
 		return nil, errors.New("Repository not found")
 	}
@@ -101,9 +101,9 @@ func (g *GitilesFake) Log(ctx context.Context, in *LogRequest, opts ...grpc.Call
 }
 
 // Refs retrieves repo refs.
-func (g *GitilesFake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error) {
-	g.addCallLog(in)
-	p, ok := g.m[in.GetProject()]
+func (f *Fake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error) {
+	f.addCallLog(in)
+	p, ok := f.m[in.GetProject()]
 	if !ok {
 		return nil, errors.New("Repository not found")
 	}
@@ -119,25 +119,25 @@ func (g *GitilesFake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.Ca
 //
 // DEPRECATED: Use DownloadFile to obtain plain text files.
 // TODO(pprabhu): Migrate known users to DownloadFile and delete this RPC.
-func (g *GitilesFake) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error) {
-	g.addCallLog(in)
+func (f *Fake) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error) {
+	f.addCallLog(in)
 	panic("not implemented")
 }
 
 // DownloadFile retrieves a file from the project. This is not implemented.
-func (g *GitilesFake) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error) {
-	g.addCallLog(in)
+func (f *Fake) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error) {
+	f.addCallLog(in)
 	panic("not implemented")
 }
 
 // Projects retrieves list of available Gitiles projects
-func (g *GitilesFake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
-	g.addCallLog(in)
+func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+	f.addCallLog(in)
 	resp := &ProjectsResponse{
-		Projects: make([]string, len(g.m)),
+		Projects: make([]string, len(f.m)),
 	}
 	i := 0
-	for projectName := range g.m {
+	for projectName := range f.m {
 		resp.Projects[i] = projectName
 		i++
 	}
@@ -149,7 +149,7 @@ func (g *GitilesFake) Projects(ctx context.Context, in *ProjectsRequest, opts ..
 //
 // refs keys are references, keys are revisions.
 // Example:
-// g.SetRepository(
+// f.SetRepository(
 //   "foo",
 //   []string{"refs/heads/master", "rev1"},
 //   []*git.Commit{ {Id: "rev1", Parents: []string{"rev0"}}, {Id: "rev0"} }
@@ -160,9 +160,9 @@ func (g *GitilesFake) Projects(ctx context.Context, in *ProjectsRequest, opts ..
 // * refs/heads/master points to rev1
 // commits:
 // rev1 --> rev0 (root commit)
-func (g *GitilesFake) SetRepository(repository string, refs map[string]string, commits []*git.Commit) {
-	if g.m == nil {
-		g.m = map[string]fakeRepository{}
+func (f *Fake) SetRepository(repository string, refs map[string]string, commits []*git.Commit) {
+	if f.m == nil {
+		f.m = map[string]fakeRepository{}
 	}
 	commitMap := make(map[string]*git.Commit, len(commits))
 	for _, commit := range commits {
@@ -181,16 +181,16 @@ func (g *GitilesFake) SetRepository(repository string, refs map[string]string, c
 			panic(fmt.Sprintf("Ref %s points to invalid revision %s", refs, rev))
 		}
 	}
-	g.m[repository] = fakeRepository{
+	f.m[repository] = fakeRepository{
 		refs:    refs,
 		commits: commitMap,
 	}
 }
 
-func (g *GitilesFake) GetCallLogs() []interface{} {
-	return g.callLogs
+func (f *Fake) getCallLogs() []interface{} {
+	return f.callLogs
 }
 
-func (g *GitilesFake) addCallLog(in interface{}) {
-	g.callLogs = append(g.callLogs, in)
+func (f *Fake) addCallLog(in interface{}) {
+	f.callLogs = append(f.callLogs, in)
 }

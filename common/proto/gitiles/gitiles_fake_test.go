@@ -23,13 +23,13 @@ import (
 	git "go.chromium.org/luci/common/proto/git"
 )
 
-func TestGitilesFake(t *testing.T) {
+func TestFake(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	Convey("Edge cases", t, func() {
 		Convey("Empty", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			Convey("Projects", func() {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
 				So(err, ShouldBeNil)
@@ -46,7 +46,7 @@ func TestGitilesFake(t *testing.T) {
 		})
 
 		Convey("Empty project", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			fake.SetRepository("foo", nil, nil)
 			Convey("Projects", func() {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
@@ -66,7 +66,7 @@ func TestGitilesFake(t *testing.T) {
 		})
 
 		Convey("Empty repository", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			refs := map[string]string{"refs/heads/main": ""}
 			fake.SetRepository("foo", refs, nil)
 			Convey("Projects", func() {
@@ -87,14 +87,14 @@ func TestGitilesFake(t *testing.T) {
 		})
 
 		Convey("Reference points to invalid revision", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			So(func() {
 				fake.SetRepository("foo", map[string]string{"foo": "bar"}, nil)
 			}, ShouldPanic)
 		})
 
 		Convey("Duplicate commit", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			So(func() {
 				commits := []*git.Commit{
 					{
@@ -109,7 +109,7 @@ func TestGitilesFake(t *testing.T) {
 		})
 
 		Convey("Broken commit chain", func() {
-			fake := GitilesFake{}
+			fake := Fake{}
 			commits := []*git.Commit{
 				{
 					Id:      "bar",
@@ -142,7 +142,7 @@ func TestGitilesFake(t *testing.T) {
 			"refs/heads/main":   "9",
 			"refs/heads/stable": "1",
 		}
-		fake := GitilesFake{}
+		fake := Fake{}
 		fake.SetRepository("foo", refs, commits)
 
 		Convey("Revs", func() {
@@ -232,7 +232,7 @@ func TestGitilesFake(t *testing.T) {
 			"refs/heads/feature": "b2",
 			"refs/heads/stable":  "7",
 		}
-		fake := GitilesFake{}
+		fake := Fake{}
 		fake.SetRepository("foo", refs, commits)
 
 		Convey("Entire log", func() {
