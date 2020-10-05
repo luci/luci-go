@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -52,7 +53,7 @@ func TestRefSet(t *testing.T) {
 			ctx := context.Background()
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
-			mockClient := gitiles.NewMockGitilesClient(ctl)
+			mockClient := mock_gitiles.NewMockGitilesClient(ctl)
 
 			mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 				Project: "project", RefsPath: "refs/heads",
