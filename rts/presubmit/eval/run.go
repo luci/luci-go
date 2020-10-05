@@ -29,8 +29,9 @@ import (
 
 // Result is the result of evaluation.
 type Result struct {
-	Safety    Safety
-	Precision Precision
+	Safety       Safety
+	Efficiency   Efficiency
+	TotalRecords int
 }
 
 type evalRun struct {
@@ -61,12 +62,25 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 		return nil
 	})
 
-	// TODO(nodir): analyze precision.
+	// Analyze efficiency.
+	durationC := make(chan *evalpb.TestDuration)
+	eg.Go(func() error {
+		efficiency, err := r.evaluateEfficiency(ctx, durationC)
+		if err != nil {
+			return errors.Annotate(err, "failed to evaluate efficiency").Err()
+		}
+		ret.Efficiency = *efficiency
+		return nil
+	})
 
 	// Play back the history.
 	eg.Go(func() error {
-		defer close(rejectionC)
-		defer r.History.Close()
+		defer func() {
+			close(rejectionC)
+			close(durationC)
+			r.History.Close()
+		}()
+
 		for {
 			rec, err := r.History.Read()
 			switch {
@@ -75,12 +89,22 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 			case err != nil:
 				return errors.Annotate(err, "failed to read history").Err()
 			}
+
+			ret.TotalRecords++
+
+			// Send the record to the appropriate channel.
 			switch data := rec.Data.(type) {
 			case *evalpb.Record_Rejection:
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				case rejectionC <- data.Rejection:
+				}
+			case *evalpb.Record_TestDuration:
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case durationC <- data.TestDuration:
 				}
 			default:
 				panic(fmt.Sprintf("unexpected record %s", rec))
@@ -96,22 +120,36 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 
 // Print prints the results to w.
 func (r *Result) Print(w io.Writer) (err error) {
-	switch {
-	case r.Safety.TotalRejections == 0:
-		_, err = fmt.Printf("Evaluation failed: rejections not found\n")
-
-	case r.Safety.EligibleRejections == 0:
-		_, err = fmt.Printf("Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
-
-	default:
-		fmt.Printf("Total analyzed rejections: %d\n", r.Safety.TotalRejections)
-		_, err = fmt.Printf("Safety score: %.2f (%d/%d)\n",
-			float64(r.Safety.PreservedRejections)/float64(r.Safety.EligibleRejections),
-			r.Safety.PreservedRejections,
-			r.Safety.EligibleRejections,
-		)
+	p := func(format string, args ...interface{}) {
+		if err == nil {
+			_, err = fmt.Fprintf(w, format, args...)
+		}
 	}
 
-	// TODO(crbug.com/1112125): print precision.
+	p("Safety:\n")
+	switch {
+	case r.Safety.TotalRejections == 0:
+		p("  Evaluation failed: rejections not found\n")
+
+	case r.Safety.EligibleRejections == 0:
+		p("  Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
+
+	default:
+		p("  Score: %.0f%%\n", float64(100*r.Safety.PreservedRejections)/float64(r.Safety.EligibleRejections))
+		p("  # of eligible rejections: %d\n", r.Safety.EligibleRejections)
+		p("  # of them preserved by this RTS: %d\n", r.Safety.PreservedRejections)
+	}
+
+	p("Efficiency:\n")
+	if r.Efficiency.SampleDuration == 0 {
+		p("  Evaluation failed: no test results with duration\n")
+	} else {
+		saved := r.Efficiency.SampleDuration - r.Efficiency.ForecastDuration
+		p("  Saved: %.0f%%\n", float64(100*saved)/float64(r.Efficiency.SampleDuration))
+		p("  Testing time in the sample: %s\n", r.Efficiency.SampleDuration)
+		p("  Forecasted testing time: %s\n", r.Efficiency.ForecastDuration)
+	}
+
+	p("Total records: %d\n", r.TotalRecords)
 	return
 }
