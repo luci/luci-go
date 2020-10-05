@@ -81,6 +81,7 @@ func (p *Policies) IsDefault() bool {
 	return p.MaxSize == cacheMaxSizeDefault && p.MaxItems == cacheMaxItemsDefault && p.MinFreeSpace == 0
 }
 
+// ErrInvalidHash indicates invalid hash is specified.
 var ErrInvalidHash = errors.New("invalid hash")
 
 // New creates a disk based cache.
@@ -141,6 +142,7 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 	return d, err
 }
 
+// Close closes the Cache, writes the cache status file to cache dir.
 func (d *Cache) Close() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
