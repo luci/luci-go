@@ -16,15 +16,64 @@ package eval
 
 import (
 	"context"
+	"sync/atomic"
+	"time"
+
+	"golang.org/x/sync/errgroup"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // Precision is result of algorithm precision evaluation.
 // A precise algorithm selects only affected tests.
 type Precision struct {
-	// TODO(crbug.com/1112125): add fields.
+	// SampleDuration is the sum of test durations in the analyzed sample of test
+	// results.
+	SampleDuration time.Duration
+
+	// ForecastDuration is the sum of test durations for tests selected by the RTS
+	// algorithm. It is value between 0 and SampleDuration.
+	// The lower the number the better.
+	ForecastDuration time.Duration
 }
 
-func (r *evalRun) evaluatePrecision(ctx context.Context) (*Precision, error) {
-	// TODO(crbug.com/1112125): implement it.
-	return &Precision{}, nil
+func (r *evalRun) evaluatePrecision(ctx context.Context, durationC <-chan *evalpb.TestDuration) (*Precision, error) {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	// Run the algorithm in r.Concurrency goroutines.
+	var total, forecast int64 // in nanoseconds
+	for i := 0; i < r.Concurrency; i++ {
+		eg.Go(func() error {
+			for td := range durationC {
+				durNano := int64(td.Duration.AsDuration())
+				atomic.AddInt64(&total, durNano)
+
+				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
+				if err != nil {
+					return err
+				}
+
+				out, err := r.Algorithm(ctx, Input{
+					ChangedFiles: changedFiles,
+					Test:         td.Test,
+				})
+				if err != nil {
+					return err
+				}
+				if out.ShouldRun {
+					atomic.AddInt64(&forecast, durNano)
+				}
+			}
+			return ctx.Err()
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	return &Precision{
+		SampleDuration:   time.Duration(total),
+		ForecastDuration: time.Duration(forecast),
+	}, nil
 }
