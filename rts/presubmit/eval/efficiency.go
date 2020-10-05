@@ -49,7 +49,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 
 				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
 				switch {
-				case psNotFound.In(err):
+				case len(changedFiles) == 0:
 					continue // Ineligible.
 				case err != nil:
 					return err

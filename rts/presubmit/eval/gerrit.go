@@ -36,8 +36,6 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-var psNotFound = &errors.BoolTag{Key: errors.NewTagKey("patchset not found")}
-
 type gerritClient struct {
 	// listFilesRPC makes a Gerrit RPC to fetch the list of changed files.
 	// Mockable.
@@ -52,21 +50,16 @@ type changedFiles struct {
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.
+// If the patchset does not exist, returns empty list.
 func (c *gerritClient) ChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) ([]string, error) {
 	cacheKey := fmt.Sprintf("%s-%d-%d", ps.Change.Host, ps.Change.Number, ps.Patchset)
 
 	value, err := c.fileListCache.GetOrCreate(ctx, cacheKey, func() (interface{}, error) {
-		res, err := c.fetchChangedFiles(ctx, ps)
+		files, err := c.fetchChangedFiles(ctx, ps)
 		if err != nil {
 			return nil, err
 		}
-
-		names := make([]string, 0, len(res.Files))
-		for name := range res.Files {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		return &changedFiles{Names: names}, nil
+		return &changedFiles{Names: files}, nil
 	})
 	if err != nil {
 		return nil, err
@@ -74,10 +67,10 @@ func (c *gerritClient) ChangedFiles(ctx context.Context, ps *evalpb.GerritPatchs
 	return value.(*changedFiles).Names, nil
 }
 
-func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) (*gerritpb.ListFilesResponse, error) {
-	var res *gerritpb.ListFilesResponse
+func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) ([]string, error) {
+	var files []string
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() (err error) {
-		res, err = c.listFilesWithQuotaErrorsRetries(ctx, ps.Change.Host, &gerritpb.ListFilesRequest{
+		files, err = c.listFilesWithQuotaErrorsRetries(ctx, ps.Change.Host, &gerritpb.ListFilesRequest{
 			Project:    ps.Change.Project,
 			Number:     int64(ps.Change.Number),
 			RevisionId: strconv.Itoa(int(ps.Patchset)),
@@ -87,22 +80,14 @@ func (c *gerritClient) fetchChangedFiles(ctx context.Context, ps *evalpb.GerritP
 		}
 		return
 	}, retry.LogCallback(ctx, fmt.Sprintf("read %s", psURL(ps))))
-
-	if err != nil {
-		if statusCode(err) == codes.NotFound {
-			err = psNotFound.Apply(err)
-		}
-		return nil, err
-	}
-
-	return res, nil
+	return files, err
 }
 
 // listFilesWithQuotaErrorsRetries fetches the list of changed files.
 // If the request fails with quota exhaustion, retries the request in a second,
 // up to 5 times.
 // Does not retry other transient errors, e.g. internal errors.
-func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error) {
+func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host string, req *gerritpb.ListFilesRequest) ([]string, error) {
 	// Retry ResourceExhausted errors with an increased delay.
 	iter := func() retry.Iterator {
 		base := retry.Limited{
@@ -117,29 +102,38 @@ func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host
 		})
 	}
 
-	var ret *gerritpb.ListFilesResponse
+	var files []string
 	err := retry.Retry(ctx, iter, func() (err error) {
-		ret, err = c.callListFiles(ctx, host, req)
+		files, err = c.callListFiles(ctx, host, req)
 		return
 	}, nil)
-	return ret, err
+	return files, err
 }
 
 // callListFiles makes a ListFiles RPC.
-func (c *gerritClient) callListFiles(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error) {
+func (c *gerritClient) callListFiles(ctx context.Context, host string, req *gerritpb.ListFilesRequest) ([]string, error) {
+	c.reportColdCache.Do(func() {
+		logging.Infof(ctx, "The Gerrit cache is cold. It will take time some to fetch Gerrit info. The next evaluation will be faster.")
+	})
+
+	// Make an RPC.
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
-	ret, err := c.listFilesRPC(ctx, host, req)
-
-	// Report cold cache only on success because deleted CLs are not cached.
-	if err == nil {
-		c.reportColdCache.Do(func() {
-			logging.Infof(ctx, "The Gerrit cache is cold. It will take time some to fetch Gerrit info. The next evaluation will be faster.")
-		})
+	res, err := c.listFilesRPC(ctx, host, req)
+	switch {
+	case statusCode(err) == codes.NotFound:
+		return nil, nil
+	case err != nil:
+		return nil, err
 	}
 
-	return ret, err
+	files := make([]string, 0, len(res.Files))
+	for name := range res.Files {
+		files = append(files, name)
+	}
+	sort.Strings(files)
+	return files, nil
 }
 
 func statusCode(err error) codes.Code {

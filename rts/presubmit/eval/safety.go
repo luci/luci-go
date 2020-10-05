@@ -96,7 +96,7 @@ func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (
 
 	files, err := r.changedFiles(ctx, rej.Patchsets...)
 	switch {
-	case psNotFound.In(err):
+	case len(files) == 0:
 		// The CL is deleted  => not eligible.
 		err = nil
 		return
