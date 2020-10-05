@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "c9f51a63_8bad6b62",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-05T20:18:40Z",
+      "side": 1,
+      "message": "One thing I can think of is to check that the next page token about to be returned be different from the one received in the request, to make sure we are making progress in scanning the index. Otherwise return the error, instead of swallowing it.\n\nHow does that sound?",
+      "parentUuid": "41b4173c_c7ceeebe",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ef8f3c72_1314809d",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
         "patchSetId": 4
@@ -50,6 +68,24 @@
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7858c9d1_8ff72192",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-05T20:18:40Z",
+      "side": 1,
+      "message": "!\nDone, thanks.",
+      "parentUuid": "ef8f3c72_1314809d",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
