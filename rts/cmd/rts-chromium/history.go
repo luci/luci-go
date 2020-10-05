@@ -76,6 +76,9 @@ func (r *presubmitHistoryRun) validate() error {
 
 func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if len(args) != 0 {
+		return r.done(errors.New("unexpected positional arguments"))
+	}
 
 	if err := r.validate(); err != nil {
 		return r.done(err)
