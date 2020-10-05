@@ -94,7 +94,7 @@ func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (
 	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
 	// Most RTS algorithms would reject such a patchset, so it represents noise.
 
-	files, err := r.changedFiles(ctx, rej)
+	files, err := r.changedFiles(ctx, rej.Patchsets...)
 	switch {
 	case psNotFound.In(err):
 		// The CL is deleted  => not eligible.
@@ -127,11 +127,11 @@ func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (
 }
 
 // changedFiles retrieves changed files of all patchsets in the rejection.
-func (r *evalRun) changedFiles(ctx context.Context, rej *evalpb.Rejection) ([]*SourceFile, error) {
+func (r *evalRun) changedFiles(ctx context.Context, patchsets ...*evalpb.GerritPatchset) ([]*SourceFile, error) {
 	var ret []*SourceFile
 	var mu sync.Mutex
 	err := parallel.FanOutIn(func(workC chan<- func() error) {
-		for _, ps := range rej.Patchsets {
+		for _, ps := range patchsets {
 			ps := ps
 			workC <- func() error {
 				changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)

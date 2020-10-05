@@ -33,7 +33,7 @@ const (
 	defaultGerritQPSLimit = 10
 )
 
-// Eval estimates safety and precision of a given RTS algorithm.
+// Eval estimates safety and efficiency of a given RTS algorithm.
 type Eval struct {
 	// The algorithm to evaluate.
 	Algorithm Algorithm
