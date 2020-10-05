@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10c5b170_53db3458",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:04:40Z",
+      "side": 1,
+      "message": "yikes, that\u0027s a really long function 😞",
+      "revId": "018b12c82abf1eeb17c6d9898d6d0f207a8a1fb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
