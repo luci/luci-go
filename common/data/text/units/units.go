@@ -24,16 +24,17 @@ var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"
 // Size represents a size in bytes that knows how to print itself.
 type Size int64
 
+// String implements flag.Value interface.
 func (s Size) String() string {
 	return SizeToString(int64(s))
 }
 
+// Set implements flag.Value interface.
 func (s *Size) Set(str string) error {
 	if n, err := strconv.ParseInt(str, 10, 64); err != nil {
 		return err
-	} else {
-		*s = Size(n)
 	}
+	*s = Size(n)
 	return nil
 }
 
