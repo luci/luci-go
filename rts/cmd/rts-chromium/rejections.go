@@ -12,54 +12,93 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package chromium
+package main
 
 import (
+	"context"
+	"time"
+
 	"cloud.google.com/go/bigquery"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/rts/presubmit/eval"
+
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// RejectedPatchSets implements eval.Backend, based on Chromium's CQ and
-// ResultDB BigQuery tables.
-func (b *Backend) RejectedPatchSets(req eval.RejectedPatchSetsRequest) ([]*eval.RejectedPatchSet, error) {
+// rejectedPatchSets calls f for each found CQ rejection.
+func (r *presubmitHistoryRun) rejectedPatchSets(ctx context.Context, f func(*evalpb.Rejection) error) error {
 	// Create a BigQuery client.
-	creds, err := req.Authenticator.PerRPCCredentials()
+	creds, err := r.authenticator.PerRPCCredentials()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	bq, err := bigquery.NewClient(req.Context, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	bq, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to init BigQuery client").Err()
+		return errors.Annotate(err, "failed to init BigQuery client").Err()
 	}
 
 	q := bq.Query(rejectedPatchSetsSQL)
 	q.Parameters = []bigquery.QueryParameter{
-		{Name: "startTime", Value: req.StartTime},
-		{Name: "endTime", Value: req.EndTime},
+		{Name: "startTime", Value: r.startTime},
+		{Name: "endTime", Value: r.endTime},
 	}
-	it, err := q.Read(req.Context)
+	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var ret []*eval.RejectedPatchSet
 	for {
-		rp := &eval.RejectedPatchSet{}
-		err := it.Next(rp)
+		var row rejectionRow
+		err := it.Next(&row)
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return err
 		}
-		ret = append(ret, rp)
+		if err := f(row.proto()); err != nil {
+			return err
+		}
 	}
-	return ret, nil
+	return nil
+}
+
+type rejectionRow struct {
+	Change      int
+	Patchset    int
+	Timestamp   time.Time
+	FailedTests []struct {
+		ID       string
+		FileName string
+	}
+}
+
+func (r *rejectionRow) proto() *evalpb.Rejection {
+	ret := &evalpb.Rejection{
+		Patchsets: []*evalpb.GerritPatchset{
+			{
+				Change: &evalpb.GerritChange{
+					// Assume all Chromium source code is in
+					// https://chromium.googlesource.com/chromium/src
+					// TOOD(nodir): make it fail if it is not.
+					Host:    "chromium-review.googlesource.com",
+					Project: "chromium/src",
+					Number:  int64(r.Change),
+				},
+				Patchset: int64(r.Patchset),
+			},
+		},
+		FailedTests: make([]*evalpb.Test, len(r.FailedTests)),
+	}
+	ret.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
+	for i, t := range r.FailedTests {
+		ret.FailedTests[i] = &evalpb.Test{Id: t.ID, FileName: t.FileName}
+	}
+	return ret
 }
 
 // rejectedPatchSetsSQL is a BigQuery query that returns patchsets with test
@@ -99,24 +138,20 @@ const rejectedPatchSetsSQL = `
 		),
 		flat AS (
 			SELECT
-				ps.host,
 				ps.change,
-				ANY_VALUE(ps.project) project,
 				ps.patchset,
 				MIN(ps_approx_timestamp) ps_approx_timestamp,
 				test_id,
 				ANY_VALUE(file_name) as file_name,
 			FROM tryjobs t
 			JOIN failed_test_variants f ON t.id = f.build_id
-			GROUP BY ps.host, ps.change, ps.patchset, test_id
+			GROUP BY ps.change, ps.patchset, test_id
 		)
 	SELECT
-		STRUCT(
-			STRUCT(host as Host, ANY_VALUE(project) as Project, change as Number) AS Change,
-			patchset as Patchset
-		) Patchset,
+		change as Change,
+		patchset as Patchset,
 		ANY_VALUE(ps_approx_timestamp) as Timestamp,
 		ARRAY_AGG(STRUCT(test_id as ID, file_name as FileName)) as FailedTests,
 	FROM flat
-	GROUP BY host, change, flat.patchset
+	GROUP BY change, flat.patchset
 `
