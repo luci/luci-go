@@ -37,6 +37,10 @@ type timeLayoutFlag struct {
 }
 
 func (f *timeLayoutFlag) String() string {
+	// flag.Value implementations must work for zero values.
+	if f.ptr == nil || f.ptr.IsZero() {
+		return ""
+	}
 	return f.ptr.Format(f.layout)
 }
 

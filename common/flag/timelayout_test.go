@@ -21,17 +21,24 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestDateFlag(t *testing.T) {
+func TestTimeLayoutFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey(`DateFlag`, t, func() {
-		var t time.Time
-		f := Date(&t)
+	Convey(`TimeLayoutFlag`, t, func() {
+		Convey(`Works`, func() {
+			var t time.Time
+			f := Date(&t)
 
-		So(f.Set("2020-01-24"), ShouldBeNil)
-		So(t, ShouldResemble, time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC))
+			So(f.Set("2020-01-24"), ShouldBeNil)
+			So(t, ShouldResemble, time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC))
 
-		So(f.String(), ShouldEqual, "2020-01-24")
-		So(f.Get(), ShouldResemble, t)
+			So(f.String(), ShouldEqual, "2020-01-24")
+			So(f.Get(), ShouldResemble, t)
+		})
+
+		Convey(`zero value`, func() {
+			var t timeLayoutFlag
+			So(t.String(), ShouldEqual, "")
+		})
 	})
 }
