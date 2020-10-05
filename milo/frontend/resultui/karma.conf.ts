@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import fs from 'fs';
+import path from 'path';
 
 import { Config } from 'karma';
 import { DefinePlugin } from 'webpack';
@@ -30,7 +31,7 @@ module.exports = (config: Config) => {
     frameworks: ['mocha', 'chai'],
 
     // list of files / patterns to load in the browser
-    files: ['src/**/*_test.ts'],
+    files: ['index_test.ts'],
 
     // list of files / patterns to exclude
     exclude: [],
@@ -39,12 +40,13 @@ module.exports = (config: Config) => {
     // available preprocessors:
     // https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'src/**/*_test.ts': ['webpack'],
+      'index_test.ts': ['webpack', 'sourcemap'],
     },
 
     plugins: [
       'karma-chrome-launcher',
       'karma-webpack',
+      'karma-sourcemap-loader',
       'karma-mocha',
       'karma-mocha-reporter',
       'karma-chai',
@@ -55,8 +57,18 @@ module.exports = (config: Config) => {
       devtool: 'inline-source-map',
       mode: 'development',
       module: webpackConfig.module,
-      resolve: webpackConfig.resolve,
+      resolve: {
+        ...webpackConfig.resolve,
+        alias: {
+          'assertion-error': path.resolve(__dirname, './src/libs/test_utils/assertion-error'),
+        },
+      },
       externals: webpackConfig.externals,
+      output: {
+        // Use relative file path for cleaner stack trace with navigable source
+        // location in the terminal.
+        devtoolModuleFilenameTemplate: '[resource-path]',
+      },
       plugins: [
         new DefinePlugin({
           'CONFIGS': fs.readFileSync('./dev-configs/configs.json', 'utf-8'),

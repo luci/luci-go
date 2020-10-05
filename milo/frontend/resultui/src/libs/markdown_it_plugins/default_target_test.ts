@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, html } from '@open-wc/testing';
+import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import MarkdownIt from 'markdown-it';
@@ -40,9 +40,13 @@ const md = MarkdownIt('zero', {linkify: true, html: true})
   .enable(['linkify', 'autolink', 'link', 'html_inline', 'html_block'])
   .use(defaultTarget, '_blank');
 
-describe('default_target', async () => {
-  const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
-  const anchors = ele.querySelectorAll('a');
+describe('default_target', () => {
+  let anchors: NodeListOf<HTMLAnchorElement>;
+  before(async () => {
+    const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
+    anchors = ele.querySelectorAll('a');
+  });
+  after(fixtureCleanup);
 
   it('can set default target', () => {
     const anchor1 =  anchors.item(0);
