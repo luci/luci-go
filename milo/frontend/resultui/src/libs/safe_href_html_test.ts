@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 
 import { safeHrefHtml } from './safe_href_html';
 
 describe('safeHrefHtml', () => {
   it('should sanitise dynamically assigned href attribute', async () => {
+    after(fixtureCleanup);
     const anchor = await fixture<HTMLAnchorElement>(safeHrefHtml`
       <a id="link" href=${'javascript:alert(document.domain)'}>js</a>
     `);
@@ -26,6 +27,7 @@ describe('safeHrefHtml', () => {
   });
 
   it('should sanitise dynamically constructed href attribute', async () => {
+    after(fixtureCleanup);
     const anchor = await fixture<HTMLAnchorElement>(safeHrefHtml`
       <a id="link" href="javascript:alert${'(document.domain)'}">js</a>
     `);
@@ -33,6 +35,7 @@ describe('safeHrefHtml', () => {
   });
 
   it('should not sanitise static href attribute', async () => {
+    after(fixtureCleanup);
     const anchor = await fixture<HTMLAnchorElement>(safeHrefHtml`
       <a id="link" href="javascript:alert(document.domain)">js</a>
     `);
@@ -40,6 +43,7 @@ describe('safeHrefHtml', () => {
   });
 
   it('should not modify normal href attribute', async () => {
+    after(fixtureCleanup);
     const anchor = await fixture<HTMLAnchorElement>(safeHrefHtml`
       <a id="link" href="https://www.google.com">js</a>
     `);

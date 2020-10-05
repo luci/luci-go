@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
@@ -30,6 +30,7 @@ const md = MarkdownIt('zero', {linkify: true, html: true})
   .use(defaultTarget, '_blank');
 
 describe('default_target', async () => {
+  after(fixtureCleanup);
   const ele = await fixture(md.render(links));
   const anchors = ele.querySelectorAll('a');
 

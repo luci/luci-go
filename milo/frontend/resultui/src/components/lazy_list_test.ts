@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout } from '@open-wc/testing-helpers/index-no-side-effects';
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects.js';
+import { aTimeout, fixtureCleanup } from '@open-wc/testing-helpers/index-no-side-effects';
+import { fixture, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { css, customElement, LitElement } from 'lit-element';
 
@@ -44,7 +44,6 @@ class LazyListTestEntryElement extends LitElement implements OnEnterList {
 describe('lazy_list_test', () => {
   describe('lazy_list', async () => {
     after(fixtureCleanup);
-
     const lazyList = await fixture<LazyListElement>(html`
       <milo-lazy-list style="height: 100px;">
         ${new Array(100).fill(0).map(() => html`
@@ -87,7 +86,6 @@ describe('lazy_list_test', () => {
   describe('lazy_list with growth', async () => {
     it('should notify entries in the view progressively', async () => {
       after(fixtureCleanup);
-
       const list = await fixture<LazyListElement>(html`
         <milo-lazy-list .growth=${100} style="height: 100px;">
           ${new Array(100).fill(0).map(() => html`
