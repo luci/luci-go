@@ -98,9 +98,9 @@ func TestGerritClient(t *testing.T) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			}
 
-			_, err := client.ChangedFiles(ctx, ps)
-			So(err, ShouldNotBeNil)
-			So(psNotFound.In(err), ShouldBeTrue)
+			files, err := client.ChangedFiles(ctx, ps)
+			So(err, ShouldBeNil)
+			So(files, ShouldBeEmpty)
 		})
 
 		Convey(`Quota errors`, func() {
