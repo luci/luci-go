@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be14ace0_fdede762",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:25:24Z",
+      "side": 1,
+      "message": "this makes me very happy 😊",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "5e815bb82be33260e6890069b83164239a7f6ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "48dcf946_13f01c85",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:25:24Z",
+      "side": 1,
+      "message": "t",
+      "range": {
+        "startLine": 12,
+        "startChar": 11,
+        "endLine": 12,
+        "endChar": 13
+      },
+      "revId": "5e815bb82be33260e6890069b83164239a7f6ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9df087d_4a46386e",
+        "filename": "rts/presubmit/eval/efficiency.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:25:24Z",
+      "side": 1,
+      "message": "pedantic: at first glance, I doubt this is true CPU time because i doubt we have true CPU time for each test.\nW/o thinking much, I\u0027d have used more vague \"compute time\"",
+      "range": {
+        "startLine": 27,
+        "startChar": 38,
+        "endLine": 27,
+        "endChar": 55
+      },
+      "revId": "5e815bb82be33260e6890069b83164239a7f6ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
