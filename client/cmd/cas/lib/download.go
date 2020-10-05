@@ -217,7 +217,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 
 	start = time.Now()
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O threads.
 	ch := make(chan struct{}, runtime.NumCPU())
