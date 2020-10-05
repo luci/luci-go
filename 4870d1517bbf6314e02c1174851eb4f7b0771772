@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "46bc6117_1051d55e",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-05T16:56:11Z",
+      "side": 1,
+      "message": "you are right. renamed: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2450609/",
+      "parentUuid": "a090b1a2_273ff42d",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 22
+      },
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f77a0583_b26a671b",
         "filename": "rts/presubmit/eval/chromium/rejected.go",
         "patchSetId": 16
@@ -39,6 +63,24 @@
       "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32beb3dd_be5ec1a4",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-05T16:56:11Z",
+      "side": 1,
+      "message": "thanks for finding that. This is a problem with data, not with the query. Filed crbug.com/1135182",
+      "parentUuid": "f77a0583_b26a671b",
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

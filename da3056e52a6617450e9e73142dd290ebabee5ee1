@@ -34,6 +34,24 @@
       "revId": "da3056e52a6617450e9e73142dd290ebabee5ee1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3b1c268_2fdf022f",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-05T16:56:11Z",
+      "side": 1,
+      "message": "it would help somewhat for the case you found, but it wouldn\u0027t help if a build contains both a truly failed test and a disabled test like above, so I\u0027d rather solve the problem with the disabled test than make the query more complicated.\n\nunless there are other reasons to join with builds?",
+      "parentUuid": "d868adfa_e4a8651f",
+      "revId": "da3056e52a6617450e9e73142dd290ebabee5ee1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
