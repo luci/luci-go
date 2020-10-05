@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package chrome.rts.presubmit.eval;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "go.chromium.org/luci/rts/presubmit/eval/proto;evalpb";
@@ -30,6 +31,18 @@ message Rejection {
 
   // List of tests that caused the rejection.
   repeated Test failed_tests = 3;
+}
+
+// How long a test took.
+message TestDuration {
+  // The patchsets that were tested.
+  repeated GerritPatchset patchsets = 1;
+
+  // The test that was measured.
+  Test test = 2;
+
+  // How long test execution took.
+  google.protobuf.Duration duration = 3;
 }
 
 // A Gerrit CL.
@@ -71,5 +84,8 @@ message Record {
   oneof data {
     // A code change rejection due to test failures.
     Rejection rejection = 1;
+
+    // A record of test duration.
+    TestDuration test_duration = 2;
   }
 }
