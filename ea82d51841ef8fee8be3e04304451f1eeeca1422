@@ -16,6 +16,23 @@
       "revId": "ea82d51841ef8fee8be3e04304451f1eeeca1422",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d4ecb09_3f55fd0a",
+        "filename": "rts/cmd/rts-chromium/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:40:24Z",
+      "side": 1,
+      "message": "disclaimer **maybe just me**: I find -x-y-percentage \"0.1\" hard to grok quickly in my head, so I\u0027d rather specify --duration-data-sample 0.001. But, I admit my flag name \"sample\" can be less readable to others, unlike percentage.",
+      "revId": "ea82d51841ef8fee8be3e04304451f1eeeca1422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
