@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cas provides remote-apis-sdks client with luci integration.
 package cas
 
 import (
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
+// NewClient returns luci auth configured Client for RBE-CAS.
 func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 	project := strings.Split(instance, "/")[1]
 	var role string

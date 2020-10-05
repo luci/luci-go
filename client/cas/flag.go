@@ -21,14 +21,17 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// Flags contains values parsed from command line arguments for RBE-CAS.
 type Flags struct {
 	Instance string
 }
 
+// Init initializes flag.FlagSet.
 func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
 }
 
+// Parse applies changes specified by command line flags.
 func (c *Flags) Parse() error {
 	if c.Instance == "" {
 		// -cas-instance is optional for now
