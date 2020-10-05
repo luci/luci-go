@@ -33,12 +33,12 @@ const (
 	defaultGerritQPSLimit = 10
 )
 
-// Eval estimates safety and precision of a given RTS algorithm.
+// Eval estimates safety and efficiency of a given RTS algorithm.
 type Eval struct {
 	// The algorithm to evaluate.
 	Algorithm Algorithm
 
-	// The number of goroutines to spawn.
+	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
 	Concurrency int
 
