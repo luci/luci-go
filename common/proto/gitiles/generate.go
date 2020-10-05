@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate cproto
-//go:generate mockgen -source gitiles.pb.go -destination gitiles.mock.pb.go -package gitiles
+//go:generate mockgen -source gitiles.pb.go -destination mock_gitiles/gitiles.mock.pb.go -package mock_gitiles
 
 // Package gitiles contains Gitiles service definition.
 package gitiles
