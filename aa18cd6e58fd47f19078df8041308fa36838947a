@@ -16,6 +16,24 @@
       "revId": "aa18cd6e58fd47f19078df8041308fa36838947a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "12e2ceee_d2f2f062",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-05T22:52:34Z",
+      "side": 1,
+      "message": "Yeah, we once talked about it on Chat and you suggested to do an experiment. After the RunMulti implementation, I did tests again in Dev and found out there wasn\u0027t too much difference of these two approaches. But I\u0027ll keep an eye on it and test it again when verifying the API responses in Prod.",
+      "parentUuid": "28bb7c44_974850f5",
+      "revId": "aa18cd6e58fd47f19078df8041308fa36838947a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
