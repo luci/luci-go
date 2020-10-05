@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -54,6 +55,9 @@ func parseFlags(ev *Eval) {
 		fatal(err)
 	}
 	flag.Parse()
+	if len(flag.Args()) > 0 {
+		fatal(errors.New("unexpected positional arguments"))
+	}
 	if err := ev.ValidateFlags(); err != nil {
 		fatal(err)
 	}
