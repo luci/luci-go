@@ -198,13 +198,13 @@ type PushedDirectoryItem struct {
 // The returned files are in a map from its relative path to PushedDirectoryItem.
 // The returned in-tree symlinks are in a map from its relative path to the
 // relative path it points to.
-func PushDirectory(a *Archiver, root, relDir string) (error, map[*PendingItem]PushedDirectoryItem, map[string]string) {
+func PushDirectory(a *Archiver, root, relDir string) (map[*PendingItem]PushedDirectoryItem, map[string]string, error) {
 	fileItems := make(map[*PendingItem]PushedDirectoryItem)
 	symlinkItems := make(map[string]string)
 
 	fsView, err := common.NewFilesystemView(root, "")
 	if err != nil {
-		return err, nil, nil
+		return nil, nil, err
 	}
 
 	c := make(chan *walkItem)
@@ -229,8 +229,8 @@ func PushDirectory(a *Archiver, root, relDir string) (error, map[*PendingItem]Pu
 	for pending := range fileItems {
 		pending.WaitForHashed()
 		if err = pending.Error(); err != nil {
-			return err, nil, nil
+			return nil, nil, err
 		}
 	}
-	return nil, fileItems, symlinkItems
+	return fileItems, symlinkItems, nil
 }
