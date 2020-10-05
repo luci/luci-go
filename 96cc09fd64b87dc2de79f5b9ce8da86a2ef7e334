@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f7b39cf_d665fb51",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:08:22Z",
+      "side": 1,
+      "message": "lgtm % final suggestion",
+      "revId": "96cc09fd64b87dc2de79f5b9ce8da86a2ef7e334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0755d69_923cf2f0",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 831,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-05T11:08:22Z",
+      "side": 1,
+      "message": "these are highly unlikely to be ever re-used, inlining will increase test readability.",
+      "range": {
+        "startLine": 818,
+        "startChar": 1,
+        "endLine": 831,
+        "endChar": 3
+      },
+      "revId": "96cc09fd64b87dc2de79f5b9ce8da86a2ef7e334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
