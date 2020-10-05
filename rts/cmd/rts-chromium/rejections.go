@@ -21,8 +21,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -31,12 +29,7 @@ import (
 
 // rejectedPatchSets calls f for each found CQ rejection.
 func (r *presubmitHistoryRun) rejectedPatchSets(ctx context.Context, f func(*evalpb.Rejection) error) error {
-	// Create a BigQuery client.
-	creds, err := r.authenticator.PerRPCCredentials()
-	if err != nil {
-		return err
-	}
-	bq, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	bq, err := r.bqClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to init BigQuery client").Err()
 	}
