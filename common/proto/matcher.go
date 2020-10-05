@@ -15,22 +15,20 @@
 package proto
 
 import (
+	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 )
-
-type Matcher interface {
-	Matches(interface{}) bool
-	String() string
-}
 
 type matcherEq struct {
 	expected proto.Message
 }
 
+var _ gomock.Matcher = (*matcherEq)(nil)
+
 // MatcherEqual returns a matcher that matches on protobuf equality.
 // Note: reflect.DeepEqual can't be used with protobuf messages as it may yield
 // unexpected results.
-func MatcherEqual(m proto.Message) Matcher {
+func MatcherEqual(m proto.Message) gomock.Matcher {
 	return &matcherEq{
 		expected: m,
 	}
