@@ -22,6 +22,30 @@
       "revId": "224698b7799276f658ffc331bea975124441cb67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93f42f3d_5e4017bf",
+        "filename": "common/proto/gitiles/gitiles_fake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-10-05T02:42:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9dd2af1_383dbd59",
+      "range": {
+        "startLine": 44,
+        "startChar": 6,
+        "endLine": 44,
+        "endChar": 7
+      },
+      "revId": "224698b7799276f658ffc331bea975124441cb67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
