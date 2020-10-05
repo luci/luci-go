@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
@@ -28,6 +28,7 @@ describe('reviewer_line', () => {
       .enable(['newline', 'linkify'])
       .use(reviewerLine);
 
+    after(fixtureCleanup);
     const ele = await fixture(md.render(singleReviewerLine));
 
     const anchors = ele.querySelectorAll('a');
@@ -43,6 +44,7 @@ describe('reviewer_line', () => {
       .use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
+      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -58,6 +60,7 @@ describe('reviewer_line', () => {
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
+      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -79,6 +82,7 @@ describe('reviewer_line', () => {
       .use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
+      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -94,6 +98,7 @@ describe('reviewer_line', () => {
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
+      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
