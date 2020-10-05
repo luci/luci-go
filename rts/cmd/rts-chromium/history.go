@@ -15,10 +15,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/maruel/subcommands"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -42,6 +48,7 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 			r.Flags.StringVar(&r.out, "out", "", "Path to the output file")
 			r.Flags.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-02")
 			r.Flags.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-02")
+			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
 			return r
 		},
 	}
@@ -49,14 +56,18 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 
 type presubmitHistoryRun struct {
 	baseCommandRun
-	out       string
-	startTime time.Time
-	endTime   time.Time
+	out              string
+	startTime        time.Time
+	endTime          time.Time
+	durationDataFrac float64
 
 	authenticator *auth.Authenticator
 	authOpt       *auth.Options
 
-	w *history.Writer
+	mu                    sync.Mutex
+	w                     *history.Writer
+	recordsWrote          int
+	recordCountNextReport time.Time
 }
 
 func (r *presubmitHistoryRun) validate() error {
@@ -93,18 +104,61 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	}
 	defer r.w.Close()
 
+	fmt.Printf("starting BigQuery queries...\n")
+
+	eg, ctx := errgroup.WithContext(ctx)
+
 	// Fetch the rejections.
-	fmt.Printf("fetching CQ rejections...\n")
-	err = r.rejectedPatchSets(ctx, func(rej *evalpb.Rejection) error {
-		fmt.Print(".")
-		return r.w.Write(&evalpb.Record{
-			Data: &evalpb.Record_Rejection{Rejection: rej},
+	eg.Go(func() error {
+		return r.rejections(ctx, func(rej *evalpb.Rejection) error {
+			return r.write(&evalpb.Record{
+				Data: &evalpb.Record_Rejection{Rejection: rej},
+			})
 		})
 	})
-	if err != nil {
+
+	// Fetch test durations.
+	eg.Go(func() error {
+		return r.durations(ctx, func(td *evalpb.TestDuration) error {
+			return r.write(&evalpb.Record{
+				Data: &evalpb.Record_TestDuration{TestDuration: td},
+			})
+		})
+	})
+
+	if err = eg.Wait(); err != nil {
 		return r.done(err)
 	}
 
-	fmt.Println()
 	return r.done(r.w.Close())
+}
+
+// write write rec to the output file.
+// Occasionally prints out progress.
+func (r *presubmitHistoryRun) write(rec *evalpb.Record) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if err := r.w.Write(rec); err != nil {
+		return err
+	}
+
+	// Occasionally print progress.
+	r.recordsWrote++
+	now := time.Now()
+	if r.recordCountNextReport.Before(now) {
+		if !r.recordCountNextReport.IsZero() {
+			fmt.Printf("wrote %d records\n", r.recordsWrote)
+		}
+		r.recordCountNextReport = now.Add(time.Second)
+	}
+	return nil
+}
+
+func (r *presubmitHistoryRun) bqClient(ctx context.Context) (*bigquery.Client, error) {
+	creds, err := r.authenticator.PerRPCCredentials()
+	if err != nil {
+		return nil, err
+	}
+	return bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 }
