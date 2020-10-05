@@ -15,6 +15,7 @@
 package units
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 )
@@ -22,18 +23,24 @@ import (
 var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"}
 
 // Size represents a size in bytes that knows how to print itself.
+//
+// Size implements flag.Value interface.
 type Size int64
 
+var _ flag.Value = (*Size)(nil)
+
+// String returns pretty printed file size.
 func (s Size) String() string {
 	return SizeToString(int64(s))
 }
 
+// Set sets Size from a given flag args.
 func (s *Size) Set(str string) error {
-	if n, err := strconv.ParseInt(str, 10, 64); err != nil {
+	n, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
 		return err
-	} else {
-		*s = Size(n)
 	}
+	*s = Size(n)
 	return nil
 }
 
