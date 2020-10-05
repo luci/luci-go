@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -26,6 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -39,9 +41,10 @@ var psNotFound = &errors.BoolTag{Key: errors.NewTagKey("patchset not found")}
 type gerritClient struct {
 	// listFilesRPC makes a Gerrit RPC to fetch the list of changed files.
 	// Mockable.
-	listFilesRPC  func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error)
-	limiter       *rate.Limiter
-	fileListCache cache
+	listFilesRPC    func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error)
+	limiter         *rate.Limiter
+	fileListCache   cache
+	reportColdCache sync.Once
 }
 
 type changedFiles struct {
@@ -116,12 +119,26 @@ func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host
 
 	var ret *gerritpb.ListFilesResponse
 	err := retry.Retry(ctx, iter, func() (err error) {
-		if err := c.limiter.Wait(ctx); err != nil {
-			return err
-		}
-		ret, err = c.listFilesRPC(ctx, host, req)
+		ret, err = c.callListFiles(ctx, host, req)
 		return
 	}, nil)
+	return ret, err
+}
+
+// callListFiles makes a ListFiles RPC.
+func (c *gerritClient) callListFiles(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error) {
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+	ret, err := c.listFilesRPC(ctx, host, req)
+
+	// Report cold cache only on success because deleted CLs are not cached.
+	if err == nil {
+		c.reportColdCache.Do(func() {
+			logging.Infof(ctx, "The Gerrit cache is cold. It will take time some to fetch Gerrit info. The next evaluation will be faster.")
+		})
+	}
+
 	return ret, err
 }
 
