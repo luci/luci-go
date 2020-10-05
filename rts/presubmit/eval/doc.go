@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package eval estimates safety and precision of a given RTS algorithm.
+// Package eval estimates safety and efficiency of a given RTS algorithm.
 package eval
