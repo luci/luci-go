@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bca9db57_4be1bab0",
+        "filename": "common/data/text/units/units.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-05T01:43:59Z",
+      "side": 1,
+      "message": "nit:\nSize implements flag.Value interface. \nThe document for this method would be \"String returns pretty prints file size..\" or  something.",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 42
+      },
+      "revId": "1c046dcf028c5550a115743eae0ad023965700d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "077c8776_7ff5bc1c",
+        "filename": "common/data/text/units/units.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-05T01:43:59Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 39
+      },
+      "revId": "1c046dcf028c5550a115743eae0ad023965700d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
