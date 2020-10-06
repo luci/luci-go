@@ -61,25 +61,25 @@ type Query struct {
 	StartTime           time.Time
 	EndTime             time.Time
 	IncludeExperimental bool
-	BuildIdHigh         int64
-	BuildIdLow          int64
+	BuildIDHigh         int64
+	BuildIDLow          int64
 	Canary              *bool
 	PageSize            int32
-	StartCursor         string
+	PageToken           string
 }
 
 // NewQuery builds a Query from pb.SearchBuildsRequest.
-// It assumes CreateTime in req is either unset or valid and will panic on any failures.
+// It assumes req is valid, otherwise may panic.
 func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	if req.GetPredicate() == nil {
 		return &Query{
-			PageSize:    fixPageSize(req.GetPageSize()),
-			StartCursor: req.GetPageToken(),
+			PageSize:  fixPageSize(req.GetPageSize()),
+			PageToken: req.GetPageToken(),
 		}
 	}
 
 	p := req.Predicate
-	s := &Query{
+	q := &Query{
 		Builder:             p.GetBuilder(),
 		Tags:                protoutil.StringPairMap(p.Tags),
 		Status:              p.Status,
@@ -88,12 +88,12 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		EndTime:             mustTimestamp(p.CreateTime.GetEndTime()),
 		IncludeExperimental: p.IncludeExperimental,
 		PageSize:            fixPageSize(req.PageSize),
-		StartCursor:         req.PageToken,
+		PageToken:           req.PageToken,
 	}
 
 	// Filter by gerrit changes.
 	for _, change := range p.GerritChanges {
-		s.Tags.Add("buildset", protoutil.GerritBuildSet(change))
+		q.Tags.Add("buildset", protoutil.GerritBuildSet(change))
 	}
 
 	// Filter by build range.
@@ -103,18 +103,18 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	// that build ids are decreasing. So we need to reverse the order.
 	if p.Build.GetStartBuildId() > 0 {
 		// Add 1 because startBuildId is inclusive and buildHigh is exclusive.
-		s.BuildIdHigh = p.Build.GetStartBuildId() + 1
+		q.BuildIDHigh = p.Build.GetStartBuildId() + 1
 	}
 	if p.Build.GetEndBuildId() > 0 {
 		// Subtract 1 because endBuildId is exclusive and buildLow is inclusive.
-		s.BuildIdLow = p.Build.GetEndBuildId() - 1
+		q.BuildIDLow = p.Build.GetEndBuildId() - 1
 	}
 
 	// Filter by canary.
 	if p.GetCanary() != pb.Trinary_UNSET {
-		s.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
+		q.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
 	}
-	return s
+	return q
 }
 
 // IndexedTags returns the indexed tags.
@@ -131,13 +131,13 @@ func IndexedTags(tags strpair.Map) []string {
 	return set.ToSortedSlice()
 }
 
-// Fetch performs main search builds logic.
+// Fetch performs main build search logic.
 func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
 		return &pb.SearchBuildsResponse{}, nil
 	}
 
-	// Validate bucket ACL permission.
+	// Verify bucket ACL permission.
 	if q.Builder != nil && q.Builder.Bucket != "" {
 		if err := perm.HasInBuilder(ctx, perm.BuildsList, q.Builder); err != nil {
 			return nil, err
@@ -151,8 +151,8 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	if len(IndexedTags(q.Tags)) != 0 {
 		// TODO(crbug/1090540): test switch-case block after fetchOnTagIndex() is complete.
 		switch res, err := q.fetchOnTagIndex(ctx); {
-		case model.TagIndexIncomplete.In(err) && q.StartCursor == "":
-			logging.Warningf(ctx, "Falling back to querying search on builds.")
+		case model.TagIndexIncomplete.In(err) && q.PageToken == "":
+			logging.Warningf(ctx, "Falling back to querying search on builds")
 		case err != nil:
 			return nil, err
 		default:
@@ -160,7 +160,7 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 		}
 	}
 
-	logging.Debugf(ctx, "Querying search on Build.")
+	logging.Debugf(ctx, "Querying search on Build")
 	return q.fetchOnBuild(ctx)
 }
 
@@ -224,11 +224,14 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		if len(rsp.Builds) >= int(q.PageSize) {
 			return datastore.Stop
 		}
+
+		// Check the build status again, as the index might be stale.
 		if q.Status != pb.Status_STATUS_UNSPECIFIED &&
 			q.Status != pb.Status_ENDED_MASK &&
 			q.Status != b.Status {
 			return nil
 		}
+
 		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
 		return nil
 	})
@@ -243,13 +246,14 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	return rsp, nil
 }
 
+// fetchOnTagIndex searches for builds using the TagIndex entities.
 func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	// Have checked earlier that len(IndexedTags) > 0.
 	// Choose the most selective tag to search by.
 	indexedTag := IndexedTags(q.Tags)[0]
 	k, v := strpair.Parse(indexedTag)
 
-	// Load tag index entries and put them to a min-heap, sorted by build_id.
+	// Load tag index entries and put them to a min-heap, sorted by build ID.
 	entries, err := model.SearchTagIndex(ctx, k, v)
 	if err != nil {
 		return nil, err
@@ -307,7 +311,7 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 			// Check for inconsistent entries.
 			if b.BucketID != entriesToFetch[i].BucketID || !buildTags.Has(indexedTag) {
 				logging.Warningf(ctx, "entry with build_id %d is inconsistent", b.ID)
-				inconsistentEntries += 1
+				inconsistentEntries++
 				continue
 			}
 			// Check user-supplied filters.
@@ -334,7 +338,8 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 	return rsp, nil
 }
 
-// filterEntries filters tag index entries by the build id ranges and buckets conditions in the Query.
+// filterEntries filters tag index entries by the build ID ranges and buckets
+// conditions in the Query.
 func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntry) ([]*model.TagIndexEntry, error) {
 	idLow, idHigh := q.idRange()
 	if idHigh == 0 {
@@ -344,7 +349,7 @@ func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntr
 		return nil, nil
 	}
 
-	bucketId := protoutil.FormatBucketID(q.Builder.GetProject(), q.Builder.GetBucket())
+	bucketID := protoutil.FormatBucketID(q.Builder.GetProject(), q.Builder.GetBucket())
 	preprocessed := make([]*model.TagIndexEntry, 0, len(entries))
 	// A cache whether the user has the access permission to buckets.
 	hasAccessCache := map[string]bool{}
@@ -371,7 +376,7 @@ func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntr
 			if !has {
 				continue
 			}
-		} else if bucketId != e.BucketID {
+		} else if bucketID != e.BucketID {
 			continue
 		}
 		preprocessed = append(preprocessed, e)
@@ -382,15 +387,15 @@ func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntr
 // idRange computes the id range from q.BuildIdLow/q.BuildIdHigh, q.StartTime/q.EndTime and q.StartCursor.
 // Returning 0 means no boundary.
 func (q *Query) idRange() (idLow, idHigh int64) {
-	if q.BuildIdLow != 0 || q.BuildIdHigh != 0 {
-		idLow, idHigh = q.BuildIdLow, q.BuildIdHigh
+	if q.BuildIDLow != 0 || q.BuildIDHigh != 0 {
+		idLow, idHigh = q.BuildIDLow, q.BuildIDHigh
 	} else {
-		idLow, idHigh = buildid.IdRange(q.StartTime, q.EndTime)
+		idLow, idHigh = buildid.IDRange(q.StartTime, q.EndTime)
 	}
 
-	if q.StartCursor != "" {
-		if minExclusiveId, _ := strconv.ParseInt(q.StartCursor[len("id>"):], 10, 64); minExclusiveId+1 > idLow {
-			idLow = minExclusiveId + 1
+	if q.PageToken != "" {
+		if minExclusiveID, _ := strconv.ParseInt(q.PageToken[len("id>"):], 10, 64); minExclusiveID+1 > idLow {
+			idLow = minExclusiveID + 1
 		}
 	}
 	return

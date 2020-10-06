@@ -66,10 +66,10 @@ func MayContainBuilds(low, high time.Time) bool {
 	}
 }
 
-// IdRange converts a creation time range to the build id range.
+// IDRange converts a creation time range to the build id range.
 // Low/high bounds are inclusive/exclusive respectively
 // for both time and id ranges.
-func IdRange(low, high time.Time) (int64, int64) {
+func IDRange(low, high time.Time) (int64, int64) {
 	// Convert the inclusive low time bound to the exclusive high id bound.
 	idHigh := idTimeSegment(low.Add(-timeResolution))
 	// Convert the exclusive high time bound to the inclusive low id bound.
