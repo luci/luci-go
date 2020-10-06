@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	isol "go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -119,10 +121,12 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
+	start := time.Now()
 	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
 	if err != nil {
 		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
+	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	client, err := newCasClient(ctx, c.casFlags.Instance, c.parsedAuthOpts, false)
 	if err != nil {
@@ -130,10 +134,12 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	}
 	defer client.Close()
 
+	start = time.Now()
 	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
 	if err != nil {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
+	logging.Infof(ctx, "UploadIfMissing took %s", time.Since(start))
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
