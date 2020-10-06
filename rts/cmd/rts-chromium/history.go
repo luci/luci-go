@@ -24,7 +24,6 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -99,7 +98,7 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 		return r.done(err)
 	}
 
-	r.authenticator = auth.NewAuthenticator(ctx, auth.OptionalLogin, *r.authOpt)
+	r.authenticator = auth.NewAuthenticator(ctx, auth.InteractiveLogin, *r.authOpt)
 
 	// Create the history file.
 	var err error
@@ -160,11 +159,11 @@ func (r *presubmitHistoryRun) write(rec *evalpb.Record) error {
 }
 
 func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquery.Query, error) {
-	creds, err := r.authenticator.PerRPCCredentials()
+	http, err := r.authenticator.Client()
 	if err != nil {
 		return nil, err
 	}
-	client, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	client, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithHTTPClient(http))
 	if err != nil {
 		return nil, err
 	}
