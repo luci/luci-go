@@ -146,8 +146,8 @@ func (r *Result) Print(w io.Writer) (err error) {
 	} else {
 		saved := r.Efficiency.SampleDuration - r.Efficiency.ForecastDuration
 		p("  Saved: %.0f%%\n", float64(100*saved)/float64(r.Efficiency.SampleDuration))
-		p("  Testing time in the sample: %s\n", r.Efficiency.SampleDuration)
-		p("  Forecasted testing time: %s\n", r.Efficiency.ForecastDuration)
+		p("  Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
+		p("  Forecasted compute time: %s\n", r.Efficiency.ForecastDuration)
 	}
 
 	p("Total records: %d\n", r.TotalRecords)
