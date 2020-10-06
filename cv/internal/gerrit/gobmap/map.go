@@ -16,27 +16,83 @@ package gobmap
 
 import (
 	"context"
-	"errors"
+	"time"
+
+	"go.chromium.org/luci/common/errors"
+	pb "go.chromium.org/luci/cv/api/config/v2"
 )
+
+// For each host/repo combination there is a separate GobWatchMap.
+//
+// A GobWatchMap entity stores the updated time, and is also the parent
+// of all of the GobWatchMapProject entities which include LUCI project?
+type GobWatchMap struct {
+	_kind string `gae:"$kind,GobWatchMap"`
+
+	// A string "<host>/<repo>" where host is the Gerrit host and repo is the
+	// Gerrit project, e.g. "chromium-review.googlesource.com/chromium/src".
+	// The schema of the Gerrit host is not included; it is always assumed to
+	// be https.
+	ID string `gae:"$id"`
+
+	// The time that this was last updated.
+	UpdatedTime time.Time `gae:",noindex"`
+}
+
+// GobWatchMapProject contains a mapping used to look up config group IDs
+// for a particular LUCI project.
+type GobWatchMapProject struct {
+	_kind string `gae:"$kind,GobWatchMapProject"`
+
+	// LUCI project name.
+	ID string `gae:"$id"`
+
+	// Each config group may have a list of include ref regexps and exclude ref
+	// regexps. The config group that's returned is the first one where the ref
+	// matches an include ref regexp but does not match any exclude ref regexp.
+	//
+	// A list of Project proto messages with Gerrit project information. Each
+	// contains Name (i.e. Gerrit repo name) RefRegexp, and RefRegexpExclude.
+	Projects []*pb.ConfigGroup_Gerrit_Project
+
+	// ConfigHash is the hash of latest CV config file imported from LUCI Config;
+	// this is updated based on ProjectConfig entity.
+	ConfigHash string `gae:",noindex"`
+}
 
 // UpdateProjectConfig loads the new config and updates the map accordingly.
 func UpdateProjectConfig(ctx context.Context, project string) error {
-	// Call ~config.LatestProjectConfig(project) and for each group, update map as
-	// needed by computing the diff between the old and new versions of configs.
+	// TODO(qyearsley): Implement:
+	// (1) Get the latest config from datastore (using the config package).
+	// (2) For each config group in the config, there is a host, repo, and
+	// a ref specification. Specifically, if cg is the ConfigGroup,
+	// cg.Gerrit.Url is the host (plus schema), cg.Gerrit.Projects is
+	// a list of Gerrit Project messages; within each of those messages
+	// is Name (i.e. repo), RefRegexp, and RefRegexpExclude).
+	// field, which has Url field, which is the Gerrit host plus schema.
 	return errors.New("not implemented")
 }
 
-// Temp. Must be defined in config package.
-// project/content_hash/index
-type ProjectConfigGroupID string
+// TODO(qyearsley): Update/remove this when this is in the config package.
+// This is expected to be "hash/name".
+type ConfigGroupID string
 
-// Lookup returns ConfigGroup IDs which watch the given combination of Gerrit host,
-// repo and ref.
+// Lookup returns config group IDs which watch the given combination of Gerrit
+// host, repo and ref.
 //
-// Due to ref_regexp[_exclude] options, CV can't ensure that each possible
-// combination is watched by at most one ConfigGroup.
-func Lookup(ctx context.Context, host, repo, ref string) ([]ProjectConfigGroupID, error) {
-	// Load entity with ID=(host/repo),
-	// find and return all config groups with match the ref.
+// For example: the input might be ("chromium-review.googlesource.com",
+// "chromium/src", "refs/heads/main"), and the output might be 0 or 1 or
+// multiple IDs which can be used to fetch config groups.
+//
+// Due to the ref_regexp[_exclude] options, CV can't ensure that each possible
+// combination is watched by at most one ConfigGroup, which is why this may
+// return multiple ConfigGroupIDs.
+func Lookup(ctx context.Context, host, repo, ref string) ([]ConfigGroupID, error) {
+	// TODO(qyearsley): Implement:
+	// (1) Load the all GobWatchMapProject entities for the given host and
+	// repo, by doing an ancestor query for GobWatchMapProject with ancestor
+	// (GobWatchMap, "host/repo"). (2) For each entity, inspect the Projects
+	// field to decide which apply to the given ref. By this means, build up a
+	// list of config group IDs.
 	return nil, errors.New("not implemented")
 }
