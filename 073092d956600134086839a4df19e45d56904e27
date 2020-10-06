@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9ca30ec_5aeb725b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-06T22:22:17Z",
+      "side": 1,
+      "message": "may use appstatus.BadRequest(err)?",
+      "range": {
+        "startLine": 49,
+        "startChar": 14,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
