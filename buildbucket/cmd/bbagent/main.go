@@ -31,6 +31,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sync"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -40,12 +41,15 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/host"
 	"go.chromium.org/luci/luciexe/invoke"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	"go.chromium.org/luci/buildbucket/cmd/bbagent/sink"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -81,20 +85,28 @@ func mainImpl() int {
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	check(errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err())
 
-	bbClient, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket)
-	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
-	defer bbClient.CloseAndDrain(ctx)
+	bbOutFn, err := mkBuildBucketOutFn(sctx, input.Build.Infra.Buildbucket)
+	check(errors.Annotate(err, "could create buildbucket OutFn").Err())
+
+	buildSink, err := sink.NewBuildSink(ctx, bbOutFn,
+		func(err error) bool {
+			if grpcutil.Code(err) == codes.InvalidArgument {
+				return true
+			}
+			return false
+		})
+	check(errors.Annotate(err, "could not create build sink").Err())
 
 	// from this point forward we want to try to report errors to buildbucket,
 	// too.
 	check = func(err error) {
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
-			bbClient.C <- &bbpb.Build{
+			buildSink.Sink(&bbpb.Build{
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
-			}
-			bbClient.CloseAndDrain(ctx)
+			})
+			buildSink.Close()
 			os.Exit(1)
 		}
 	}
@@ -184,21 +196,50 @@ func mainImpl() int {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
 	}
 
-	var finalBuild *bbpb.Build
+	var (
+		fatalErr error
+		wg       sync.WaitGroup
+	)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		select {
+		case fatalErr = <-buildSink.Fatal():
+			if fatalErr == nil {
+				return
+			}
+			// TODO(crbug/1127089): cancel is too aggressive here. Once bbagent
+			// learns how to play the deadline protocol, we should send the SIGINT
+			// to the launched luciexe here to let it gracefully shutdown and
+			// emit as many logs as possible.
+			cancel()
+			buildSink.Close()
+			err := bbOutFn(&bbpb.Build{
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: fmt.Sprintf("encounter fatal error when updating build to buildbucket: %s", err.Error()),
+			})
+			logging.WithError(err).Errorf(ctx, "Failed to send the fatal error to Buildbucket")
+		}
+	}()
 
+	var finalBuild *bbpb.Build
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
 	for build := range builds {
-		// TODO(iannucci): add backchannel from buildbucket prpc client to shut
-		// down/cancel the build.
-		bbClient.C <- build
+		buildSink.Sink(build)
 		finalBuild = build
 	}
-
-	check(errors.Annotate(
-		outputFile.Write(finalBuild), "writing final build").Err())
-
-	if finalBuild.Status != bbpb.Status_SUCCESS {
+	if err := outputFile.Write(finalBuild); err != nil {
+		err = errors.Annotate(err, "writing final build").Err()
+		logging.Errorf(ctx, err.Error())
+		buildSink.Sink(&bbpb.Build{
+			Status:          bbpb.Status_INFRA_FAILURE,
+			SummaryMarkdown: err.Error(),
+		})
+	}
+	buildSink.Close()
+	wg.Wait()
+	if finalBuild.Status != bbpb.Status_SUCCESS || fatalErr != nil {
 		return 1
 	}
 	return 0
