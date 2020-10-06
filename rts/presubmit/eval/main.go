@@ -43,11 +43,9 @@ func Main(ctx context.Context, algo Algorithm) {
 	res, err := ev.Run(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
 
 	res.Print(os.Stdout)
-	os.Exit(0)
 }
 
 func parseFlags(ev *Eval) {

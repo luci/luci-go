@@ -38,7 +38,7 @@ type Reader struct {
 func NewReader(r io.Reader) *Reader {
 	ret := &Reader{src: r}
 	ret.zstd, _ = zstd.NewReader(r)             // cannot return error - no options
-	ret.rio = recordio.NewReader(ret.zstd, 1e7) // max 10MB proto.
+	ret.rio = recordio.NewReader(ret.zstd, 1e8) // max 10MB proto.
 	return ret
 }
 

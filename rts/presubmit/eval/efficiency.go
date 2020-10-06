@@ -57,7 +57,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 
 				out, err := r.Algorithm(ctx, Input{
 					ChangedFiles: changedFiles,
-					Test:         td.Test,
+					TestVariant:  td.TestVariant,
 				})
 				if err != nil {
 					return err
