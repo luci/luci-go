@@ -248,6 +248,31 @@ func (vm *VM) getTags() *compute.Tags {
 	return tags
 }
 
+// getScheduling returns a *compute.Scheduling representation of this VM's
+// scheduling options.
+func (vm *VM) getScheduling() *compute.Scheduling {
+	opts := vm.Attributes.GetScheduling()
+	if len(opts.GetNodeAffinity()) == 0 {
+		return nil
+	}
+	affinities := make([]*compute.SchedulingNodeAffinity, len(opts.NodeAffinity))
+	for i, na := range opts.NodeAffinity {
+		affinities[i] = &compute.SchedulingNodeAffinity{
+			Key:      na.Key,
+			Operator: na.Operator.String(),
+		}
+		if len(na.Values) > 0 {
+			affinities[i].Values = make([]string, len(na.Values))
+			for j, v := range na.Values {
+				affinities[i].Values[j] = v
+			}
+		}
+	}
+	return &compute.Scheduling{
+		NodeAffinities: affinities,
+	}
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
@@ -258,6 +283,7 @@ func (vm *VM) GetInstance() *compute.Instance {
 		MinCpuPlatform:    vm.Attributes.GetMinCpuPlatform(),
 		NetworkInterfaces: vm.getNetworkInterfaces(),
 		ServiceAccounts:   vm.getServiceAccounts(),
+		Scheduling:        vm.getScheduling(),
 		Tags:              vm.getTags(),
 	}
 	return inst
