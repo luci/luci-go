@@ -97,7 +97,7 @@ func (Toggle) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{0}
 }
 
-// A buiildbucket user role.
+// A buildbucket user role.
 // Defines what a user can do.
 //
 // The order of enum member tags is important.
