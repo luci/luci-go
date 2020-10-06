@@ -25,7 +25,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
@@ -159,6 +159,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     ];
   }
 
+  @computed private get statusBarColor() {
+    const bpd = this.buildState.buildPageData;
+    return bpd ? BUILD_STATUS_COLOR_MAP[bpd.status] : 'var(--active-color)';
+  }
+
   private renderBuildStatus() {
     const bpd = this.buildState.buildPageData;
     if (!bpd) {
@@ -203,7 +208,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
-        .components=${[{color: 'var(--active-color)', weight: 1}]}
+        .components=${[{color: this.statusBarColor, weight: 1}]}
         .loading=${this.buildState.buildPageDataReq.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
