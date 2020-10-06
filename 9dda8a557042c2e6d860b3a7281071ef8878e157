@@ -33,6 +33,24 @@
       "revId": "9dda8a557042c2e6d860b3a7281071ef8878e157",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0a5a7846_cf20dd3d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T16:38:07Z",
+      "side": 1,
+      "message": "in luci-go the documentation normally is in doc.go files, e.g. go/prpc or go/luciexe. Also it is Go-idiomatic to do so.\n\nI could move some of rts/presubmit/eval/doc.go contents into rts/doc.go though. Is that what you mean?\n\ncould you elaborate why do you prefer README in markdown?",
+      "parentUuid": "f9562e67_bc66536c",
+      "revId": "9dda8a557042c2e6d860b3a7281071ef8878e157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
