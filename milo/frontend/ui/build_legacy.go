@@ -40,7 +40,7 @@ type MiloBuildLegacy struct {
 	Trigger *Trigger
 
 	// Components is a detailed list of components and subcomponents of the page.
-	// This is most often used for steps (buildbot/luci) or deps (luci).
+	// This is most often used for steps or deps.
 	Components []*BuildComponent
 
 	// PropertyGroup is a list of input and output property of this page.

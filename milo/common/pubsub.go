@@ -143,11 +143,10 @@ func EnsurePubSubSubscribed(c context.Context, settings *config.Settings) error 
 		c = withClientFactory(c, prodPubSubClientFactory)
 		return ensureBuildbucketSubscribed(c, settings.Buildbucket.Project)
 	}
-	// TODO(hinoka): Ensure buildbot subscribed.
 	return nil
 }
 
-// ensureBuildbucketSubscribedis called by a cron job and ensures that the Milo
+// ensureBuildbucketSubscribed is called by a cron job and ensures that the Milo
 // instance is properly subscribed to the buildbucket subscription endpoint.
 func ensureBuildbucketSubscribed(c context.Context, projectID string) error {
 	topicID := "builds"
