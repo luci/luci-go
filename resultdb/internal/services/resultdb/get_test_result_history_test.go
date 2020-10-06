@@ -187,7 +187,6 @@ func TestGetTestResultHistory(t *testing.T) {
 				}
 			})
 		})
-
 	})
 }
 
