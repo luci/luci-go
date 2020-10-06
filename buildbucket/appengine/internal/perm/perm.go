@@ -261,11 +261,12 @@ func getRole(ctx context.Context, id identity.Identity, acls []*pb.Acl) (pb.Acl_
 // If the project is empty, it returns all user accessible buckets.
 // Note: if the caller doesn't have the permission, it returns empty buckets.
 func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (buckets []string, err error) {
-	var bucketKeys []*datastore.Key
 	var projKey *datastore.Key
 	if project != "" {
 		projKey = datastore.KeyForObj(ctx, &model.Project{ID: project})
 	}
+
+	var bucketKeys []*datastore.Key
 	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(projKey), &bucketKeys); err != nil {
 		return nil, err
 	}

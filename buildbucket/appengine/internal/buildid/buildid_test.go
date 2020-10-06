@@ -28,7 +28,7 @@ func TestIdRange(t *testing.T) {
 		Convey("valid time", func() {
 			timeLow := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
-			idLow, idHigh := IdRange(timeLow, timeHigh)
+			idLow, idHigh := IDRange(timeLow, timeHigh)
 
 			inRange := func(t time.Time, suffix int64) bool {
 				buildID := idTimeSegment(t) | suffix
@@ -52,7 +52,7 @@ func TestIdRange(t *testing.T) {
 		Convey("invalid time", func() {
 			timeLow := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
-			idLow, idHigh := IdRange(timeLow, timeHigh)
+			idLow, idHigh := IDRange(timeLow, timeHigh)
 			So(idLow, ShouldEqual, 0)
 			So(idHigh, ShouldEqual, 0)
 		})
