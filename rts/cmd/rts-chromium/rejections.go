@@ -55,10 +55,28 @@ type rejectionRow struct {
 	Change      int
 	Patchset    int
 	Timestamp   time.Time
-	FailedTests []struct {
-		ID       string
-		FileName string
+	FailedTests []testRow
+}
+
+type testRow struct {
+	ID       string
+	FileName string
+	Variant  []struct {
+		Key   string
+		Value string
 	}
+}
+
+func (t *testRow) proto() *evalpb.Test {
+	ret := &evalpb.Test{
+		Id:       t.ID,
+		FileName: t.FileName,
+		Variant:  make(map[string]string, len(t.Variant)),
+	}
+	for _, kv := range t.Variant {
+		ret.Variant[kv.Key] = kv.Value
+	}
+	return ret
 }
 
 func (r *rejectionRow) proto() *evalpb.Rejection {
@@ -80,7 +98,7 @@ func (r *rejectionRow) proto() *evalpb.Rejection {
 	}
 	ret.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
 	for i, t := range r.FailedTests {
-		ret.FailedTests[i] = &evalpb.Test{Id: t.ID, FileName: t.FileName}
+		ret.FailedTests[i] = t.proto()
 	}
 	return ret
 }
@@ -100,10 +118,12 @@ const rejectedPatchSetsSQL = `
 			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
 		),
 		failed_test_variants AS (
-			SELECT DISTINCT
+			SELECT
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) build_id,
 				ANY_VALUE(test_location.file_name) file_name,
 				test_id,
+				variant_hash,
+				ANY_VALUE(variant) variant,
 			FROM luci-resultdb.chromium.try_test_results tr
 			WHERE partition_time BETWEEN @startTime and @endTime
 				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
@@ -128,16 +148,17 @@ const rejectedPatchSetsSQL = `
 				ps.patchset,
 				MIN(ps_approx_timestamp) ps_approx_timestamp,
 				test_id,
+				ANY_VALUE(variant) as variant,
 				ANY_VALUE(file_name) as file_name,
 			FROM tryjobs t
 			JOIN failed_test_variants f ON t.id = f.build_id
-			GROUP BY ps.change, ps.patchset, test_id
+			GROUP BY ps.change, ps.patchset, test_id, variant_hash
 		)
 	SELECT
 		change as Change,
 		patchset as Patchset,
 		ANY_VALUE(ps_approx_timestamp) as Timestamp,
-		ARRAY_AGG(STRUCT(test_id as ID, file_name as FileName)) as FailedTests,
+		ARRAY_AGG(STRUCT(test_id as ID, variant as Variant, file_name as FileName)) as FailedTests,
 	FROM flat
 	GROUP BY change, flat.patchset
 `
