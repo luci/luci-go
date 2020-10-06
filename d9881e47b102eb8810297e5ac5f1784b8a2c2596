@@ -125,6 +125,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a10499d5_547ca916",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T19:44:38Z",
+      "side": 1,
+      "message": "so much simpler now!",
+      "parentUuid": "a8ccdfd9_13221dea",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ef8f3c72_1314809d",
