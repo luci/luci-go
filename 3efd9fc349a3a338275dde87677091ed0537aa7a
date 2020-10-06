@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0afdeb31_126e37bf",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-06T19:25:43Z",
+      "side": 1,
+      "message": "Parent key (GobWatchMap) is missing.",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 22
+      },
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2566fae7_59175ed9",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-06T19:25:43Z",
+      "side": 1,
+      "message": "\"repo\" here is redundant. It should just contain 2 lists of regexps: include \u0026 exclude. You don\u0027t actually need to store these as proto, two slices of strings will suffice.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 42
+      },
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0736380_a895e710",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-06T19:25:43Z",
+      "side": 1,
+      "message": "I\u0027ve just realized that this is, sadly, insufficient. Update actually involves 3 kind of ops:\n * add GobWatchMapProject for each Gerrit repo which is watched in new config and not old one\n * delete GobWatchMapProject if it was watched before but not any more\n * update GobWatchMapProject if watched refRegexp has changed.\n\nThe add \u0026 update are easy because Gerrit projects are referenced in the new config version.\n\nCan you think of a way to support delete?",
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
