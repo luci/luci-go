@@ -33,6 +33,24 @@
       "revId": "861a9f08ce1bba243810dc9c29279fb670244f0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76f2035c_7c21216b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-06T03:51:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbef56e9_bf9be51b",
+      "revId": "861a9f08ce1bba243810dc9c29279fb670244f0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
