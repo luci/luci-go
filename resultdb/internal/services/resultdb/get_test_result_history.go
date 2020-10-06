@@ -20,9 +20,9 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
@@ -35,6 +35,7 @@ import (
 
 const (
 	historyDefaultPageSize = 100
+	historyPoolSize        = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
@@ -53,17 +54,38 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 
 	workerCtx, cancelWorker := context.WithCancel(ctx)
 	defer cancelWorker()
-	// Ignore the derived context as we have a single worker.
-	// The closure of the results channel is sufficient to know that the work
-	// is done.
-	eg, _ := errgroup.WithContext(workerCtx)
+	workerErr := make(chan error, 1)
 	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
-	eg.Go(func() error {
+	go func() {
 		defer close(results)
-		return invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
-			return matchingResultsInInvTree(workerCtx, in, invocations.NewIDSet(inv), ts, results)
+		workerErr <- parallel.WorkPool(historyPoolSize, func(workC chan<- func() error) {
+			// Make each task keep a pointer to the done channel of task that
+			// needs to finish streaming results before it.
+			prev := make(chan struct{})
+			close(prev)
+
+			err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+				task := &resultStreamingTask{
+					in:      in,
+					invs:    invocations.NewIDSet(inv),
+					ts:      ts,
+					results: results,
+					done:    make(chan struct{}),
+					prev:    prev,
+				}
+				prev = task.done
+				select {
+				case workC <- func() error { return task.Run(workerCtx) }:
+				case <-workerCtx.Done():
+					return workerCtx.Err()
+				}
+				return nil
+			})
+			if err != nil {
+				workC <- func() error { return err }
+			}
 		})
-	})
+	}()
 
 	ret := &pb.GetTestResultHistoryResponse{
 		Entries: make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize),
@@ -89,17 +111,19 @@ ResultsLoop:
 			ret.Entries = append(ret.Entries, entry)
 			if len(ret.Entries) == int(in.PageSize) {
 				cancelWorker()
-				// Ignore the cancellation returned by the worker.
-				if err := eg.Wait(); err != nil && err != context.Canceled && status.Code(errors.Unwrap(err)) != codes.Canceled {
-					return ret, err
-				}
-				return ret, nil
+				break ResultsLoop
 			}
 		case <-ctx.Done():
 			break ResultsLoop
 		}
 	}
-	return ret, eg.Wait()
+
+	// If we cancelled the context on purpose because we have enough results,
+	// we can safely ignore the error.
+	if ctx.Err() == nil && workerCtx.Err() != nil && int64(len(ret.Entries)) == in.PageSize {
+		return ret, nil
+	}
+	return ret, <-workerErr
 }
 
 // verifyGetTestResultHistoryPermission checks that the caller has permission to
@@ -139,10 +163,34 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 	return nil
 }
 
-// matchingResultsInInvTree gets the matching results reachable from a given
-// invocation, and streams them over the given channel.
-func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRequest, invs invocations.IDSet, ts *timestamp.Timestamp, ret chan<- *pb.GetTestResultHistoryResponse_Entry) error {
-	reachableInvs, err := invocations.Reachable(ctx, invs)
+// resultStreamingTask represents a task with two parts:
+//   - A traversal of the inclusion graph to find the set of reachable
+//     invocations indexed under the same timestamp/commit position,
+//     which can be done in parallel for several invocations in the index.
+//     (Though note that such traversal may itself involve multiple parallel
+//     requests to the database if the results are not yet cached.)
+//   - A query for the test results contained by the invocations in the set
+//     above.
+//     This query can be done in parallel with queries for other sets
+//     of invocations, but note that their results need to be streamed in order.
+type resultStreamingTask struct {
+	ctx     context.Context
+	in      *pb.GetTestResultHistoryRequest
+	invs    invocations.IDSet
+	ts      *timestamp.Timestamp
+	results chan<- *pb.GetTestResultHistoryResponse_Entry
+	done    chan struct{}
+	prev    <-chan struct{}
+}
+
+// Run's returned function gets the matching results reachable from the given
+// invocation.
+// Then, it streams them over the results channel, but only after the previous
+// worker is done streaming its results.
+func (rst *resultStreamingTask) Run(ctx context.Context) error {
+	defer close(rst.done)
+
+	reachableInvs, err := invocations.Reachable(ctx, rst.invs)
 	if err != nil {
 		return err
 	}
@@ -157,15 +205,21 @@ func matchingResultsInInvTree(ctx context.Context, in *pb.GetTestResultHistoryRe
 			query := testresults.Query{
 				InvocationIDs: batch,
 				Predicate: &pb.TestResultPredicate{
-					Variant:      in.VariantPredicate,
-					TestIdRegexp: in.TestIdRegexp,
+					Variant:      rst.in.VariantPredicate,
+					TestIdRegexp: rst.in.TestIdRegexp,
 				},
 			}
 			return query.Run(ctx, func(r *pb.TestResult) error {
 				select {
+				case <-rst.prev:
 				case <-ctx.Done():
 					return ctx.Err()
-				case ret <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: ts}:
+				}
+
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case rst.results <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}:
 					return nil
 				}
 			})
