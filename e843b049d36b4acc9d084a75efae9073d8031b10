@@ -22,6 +22,30 @@
       "revId": "e843b049d36b4acc9d084a75efae9073d8031b10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78a7c792_87db9d7d",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T05:21:41Z",
+      "side": 1,
+      "message": "it was needed before because the intention was to \n1) execute HAVING condition below for each variant\n2) take unique test_ids, i.e. if any of variants failed, then the test is considered failed\n\nhowever EngProd requested variant information in RTS algorithm input, so I have to retrieve variant from BQ.\nI am going to abandon this CL in favor of https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2451268",
+      "parentUuid": "fd3ee18f_1d320c5f",
+      "range": {
+        "startLine": 124,
+        "startChar": 31,
+        "endLine": 124,
+        "endChar": 43
+      },
+      "revId": "e843b049d36b4acc9d084a75efae9073d8031b10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
