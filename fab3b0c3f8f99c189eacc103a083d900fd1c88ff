@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "438f56d5_3fd27e6b",
         "filename": "/PATCHSET_LEVEL",
@@ -14,10 +15,10 @@
       "side": 1,
       "message": "PTAL",
       "revId": "fab3b0c3f8f99c189eacc103a083d900fd1c88ff",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "74ec297f_f3ed1a37",
         "filename": "buildbucket/appengine/internal/search/query.go",
@@ -37,8 +38,31 @@
         "endChar": 38
       },
       "revId": "fab3b0c3f8f99c189eacc103a083d900fd1c88ff",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcfed7e6_3a42018e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T17:26:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74ec297f_f3ed1a37",
+      "range": {
+        "startLine": 228,
+        "startChar": 35,
+        "endLine": 228,
+        "endChar": 38
+      },
+      "revId": "fab3b0c3f8f99c189eacc103a083d900fd1c88ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
