@@ -45,6 +45,29 @@ func (p *ConfigGroup) FromProperty(prop datastore.Property) error {
 	return proto.Unmarshal(data.([]byte), p)
 }
 
+var _ datastore.PropertyConverter = (*ConfigGroup_Gerrit_Project)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'ConfigGroup_Gerrit_Project' to serialize to an unindexed '[]byte' when used with the
+// "go.chromium.org/luci/gae" library.
+func (p *ConfigGroup_Gerrit_Project) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'ConfigGroup_Gerrit_Project' when used with the "go.chromium.org/luci/gae" library.
+func (p *ConfigGroup_Gerrit_Project) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}
+
 var _ datastore.PropertyConverter = (*SubmitOptions)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
