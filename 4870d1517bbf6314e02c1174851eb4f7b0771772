@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "49b79276_76a21733",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T04:54:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46bc6117_1051d55e",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 22
+      },
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f77a0583_b26a671b",
         "filename": "rts/presubmit/eval/chromium/rejected.go",
         "patchSetId": 16
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "thanks for finding that. This is a problem with data, not with the query. Filed crbug.com/1135182",
       "parentUuid": "f77a0583_b26a671b",
+      "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6110cc7_26c3768a",
+        "filename": "rts/presubmit/eval/chromium/rejected.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T04:54:41Z",
+      "side": 1,
+      "message": "i took a closer look at this invocation, and I see that the test *was* retried https://screenshot.googleplex.com/qRCYbATzZpKGFb7",
+      "parentUuid": "32beb3dd_be5ec1a4",
       "revId": "4870d1517bbf6314e02c1174851eb4f7b0771772",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
