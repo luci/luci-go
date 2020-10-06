@@ -85,3 +85,12 @@ export const BUILD_STATUS_ICON_MAP = Object.freeze({
   [BuildStatus.InfraFailure]: 'report',
   [BuildStatus.Canceled]: 'cancel',
 });
+
+export const BUILD_STATUS_COLOR_MAP = Object.freeze({
+  [BuildStatus.Scheduled]: 'var(--scheduled-color)',
+  [BuildStatus.Started]: 'var(--started-color)',
+  [BuildStatus.Success]: 'var(--success-color)',
+  [BuildStatus.Failure]: 'var(--failure-color)',
+  [BuildStatus.InfraFailure]: 'var(--critical-failure-color)',
+  [BuildStatus.Canceled]: 'var(--canceled-color)',
+});
