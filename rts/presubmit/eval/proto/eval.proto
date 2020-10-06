@@ -74,8 +74,13 @@ message Test {
   // For Chromium, a ResultDB TestID.
   string id = 1;
 
+  // One particular way to run this test, expressed as domain-specific key-value
+  // pairs.
+  // For Chromium, this is a ResultDB test variant.
+  map<string, string> variant = 2;
+
   // Path of the file where the test is defined.
-  string file_name = 2;
+  string file_name = 3;
 }
 
 // One historical record.
