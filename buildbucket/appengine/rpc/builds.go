@@ -99,11 +99,6 @@ func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchRespon
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
-func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
 // NewBuilds returns a new pb.BuildsServer.
 func NewBuilds() pb.BuildsServer {
 	return &pb.DecoratedBuilds{
