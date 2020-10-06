@@ -51,6 +51,23 @@
       "revId": "9dda8a557042c2e6d860b3a7281071ef8878e157",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "08203ab1_3d97c715",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-10-06T16:59:17Z",
+      "side": 1,
+      "message": "This is great, thanks.\n\nAs an aside, I had wanted something to allow us to do simulations about the CQ. We have different ideas about how to improve CQ generally, and it\u0027d be nice to be able to quantify how much of an improvement an idea could be. At some point I might try generalizing this to allow for other types of improvements, like changing what jobs CQ would have scheduled or something. Won\u0027t do this in the immediate future though.",
+      "revId": "9dda8a557042c2e6d860b3a7281071ef8878e157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
