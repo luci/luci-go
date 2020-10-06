@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "13854922_7d91daee",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T21:49:13Z",
+      "side": 1,
+      "message": "I tried to remove \"as\" keyword, but apparently it is required inside STRUCT() clause, so for consistency I\u0027d prefer not to remove it. I ensured that all fields use it consistently, e.g. L149 didn\u0027t.",
+      "parentUuid": "9ec91699_4f143b52",
+      "range": {
+        "startLine": 151,
+        "startChar": 23,
+        "endLine": 151,
+        "endChar": 25
+      },
+      "revId": "ee9462bd47cefbc79f1609ceaf3889d254db3f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0957eef7_7e35760e",
@@ -71,6 +95,30 @@
       "writtenOn": "2020-10-06T20:17:43Z",
       "side": 1,
       "message": "Should the message name be updated?",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 12
+      },
+      "revId": "ee9462bd47cefbc79f1609ceaf3889d254db3f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc296b78_195c36f1",
+        "filename": "rts/presubmit/eval/proto/eval.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-06T21:49:13Z",
+      "side": 1,
+      "message": "did a bunch of renames. ptal",
+      "parentUuid": "0957eef7_7e35760e",
       "range": {
         "startLine": 71,
         "startChar": 0,
