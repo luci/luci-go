@@ -357,6 +357,42 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-r
 	}
 }
 
+func cmdGetMergeable(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		result, err := client.GetMergeable(ctx, input.ChangeID, input.RevisionID)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "get-mergeable <options>",
+		ShortDesc: "Checks if this change and revision are mergeable",
+		LongDesc: `Does the mergeability check on a change and revision.
+
+Input should contain a change ID, a revision ID, and a JSON payload, e.g.
+{
+  "change_id": <change-id>,
+  "revision_id": <revision-id>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+For more information on revision-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+
+More information on "get mergeable" may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-mergeable`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:   true,
+				revisionID: true,
+			}, runner)
+		},
+	}
+}
+
 func cmdSubmit(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		si, _ := input.JSONInput.(*gerrit.SubmitInput)

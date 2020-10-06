@@ -730,6 +730,25 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 	return &resp, nil
 }
 
+// MergeableResult contains information if the change for the revision can be merged or not.
+type MergeableResult struct {
+
+	// Mergeable marks if the change is ready to be submitted cleanly, false otherwise
+	Mergeable bool `json:"mergeable"`
+}
+
+// GetMergeable API checks if a change is ready to be submitted cleanly.
+//
+// Returns a MergeableResult that has details if the change be merged or not.
+func (c *Client) GetMergeable(ctx context.Context, changeID string, revisionID string) (*MergeableResult, error) {
+	var resp MergeableResult
+	path := fmt.Sprintf("a/changes/%s/revisions/%s/mergeable", url.PathEscape(changeID), url.PathEscape(revisionID))
+	if _, err := c.get(ctx, path, url.Values{}, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Submit submits a change to the repository. It bypasses the Commit Queue.
 //
 // Returns a Change.
