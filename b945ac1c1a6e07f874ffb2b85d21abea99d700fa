@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afd43fe0_55a37fd4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-06T00:01:09Z",
+      "side": 1,
+      "message": "Weiwei, do you have a demo on this? Or some screenshots?",
+      "revId": "b945ac1c1a6e07f874ffb2b85d21abea99d700fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18ab2179_769cf602",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-06T00:01:09Z",
+      "side": 1,
+      "message": "Is there a bug associated with this?",
+      "revId": "b945ac1c1a6e07f874ffb2b85d21abea99d700fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
