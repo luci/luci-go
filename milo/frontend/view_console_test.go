@@ -15,16 +15,60 @@
 package frontend
 
 import (
+	"encoding/json"
 	"html/template"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 func TestRenderOncallers(t *testing.T) {
 	t.Parallel()
+	ctx := gaetesting.TestingContext()
+	ctx = urlfetch.Set(ctx, http.DefaultTransport)
+	Convey("Oncall fetching works", t, func() {
+		serveMux := http.NewServeMux()
+		serverResponse := func(w http.ResponseWriter, r *http.Request) {
+			name := r.URL.Query()["name"][0]
+			if name == "bad" {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			res := map[string]interface{}{
+				"emails": []string{"foo"},
+			}
+			bytes, _ := json.Marshal(res)
+			w.Write(bytes)
+		}
+		serveMux.HandleFunc("/", serverResponse)
+		server := httptest.NewServer(serveMux)
+		defer server.Close()
+
+		Convey("Fetch failed", func() {
+			oncallConfig := config.Oncall{
+				Url: server.URL + "?name=bad",
+			}
+			result, err := getOncallData(ctx, &oncallConfig)
+			So(err, ShouldBeNil)
+			So(result.Oncallers, ShouldEqual, template.HTML(`ERROR: Fetching oncall failed`))
+		})
+		Convey("Fetch succeeded", func() {
+			oncallConfig := config.Oncall{
+				Name: "Good rotation",
+				Url:  server.URL + "?name=good",
+			}
+			result, err := getOncallData(ctx, &oncallConfig)
+			So(err, ShouldBeNil)
+			So(result.Name, ShouldEqual, "Good rotation")
+			So(result.Oncallers, ShouldEqual, template.HTML(`foo`))
+		})
+	})
 
 	Convey("Rendering oncallers works", t, func() {
 		Convey("Legacy trooper format", func() {

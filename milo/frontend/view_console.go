@@ -298,6 +298,9 @@ func getJSONData(c context.Context, url string, expiration time.Duration, target
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode >= 400 && response.StatusCode <= 599 {
+		return fmt.Errorf("Failed to fetch data: %q returned code %q", url, response.Status)
+	}
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return errors.Annotate(err, "failed to read response body from %q", url).Err()
@@ -346,12 +349,15 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
 	result := ui.Oncall{}
 	err := getJSONData(c, config.Url, 10*time.Minute, &result)
-	if err != nil {
-		return nil, err
+	var renderedHTML template.HTML
+	if err == nil {
+		renderedHTML = renderOncallers(config, &result)
+	} else {
+		renderedHTML = template.HTML("ERROR: Fetching oncall failed")
 	}
 	return &ui.OncallSummary{
 		Name:      config.Name,
-		Oncallers: renderOncallers(config, &result),
+		Oncallers: renderedHTML,
 	}, nil
 }
 
