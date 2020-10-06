@@ -113,20 +113,22 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 
 	// Fetch the rejections.
 	eg.Go(func() error {
-		return r.rejections(ctx, func(rej *evalpb.Rejection) error {
+		err := r.rejections(ctx, func(rej *evalpb.Rejection) error {
 			return r.write(&evalpb.Record{
 				Data: &evalpb.Record_Rejection{Rejection: rej},
 			})
 		})
+		return errors.Annotate(err, "failed to fetch rejections").Err()
 	})
 
 	// Fetch test durations.
 	eg.Go(func() error {
-		return r.durations(ctx, func(td *evalpb.TestDuration) error {
+		err := r.durations(ctx, func(td *evalpb.TestDuration) error {
 			return r.write(&evalpb.Record{
 				Data: &evalpb.Record_TestDuration{TestDuration: td},
 			})
 		})
+		return errors.Annotate(err, "failed to fetch test durations").Err()
 	})
 
 	if err = eg.Wait(); err != nil {
