@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7cba3667_0bc2338b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-06T01:55:43Z",
+      "side": 1,
+      "message": "Before:\nBrowser: https://screenshot.googleplex.com/4GHiEwj6ndSTZeU.png\nTerminal: https://screenshot.googleplex.com/AceBSVP2Zwp9y4z.png\n\nAfter:\nBrowser: https://screenshot.googleplex.com/BG6SBsiPbusZ5LB.png\nTerminal: https://screenshot.googleplex.com/BRKRCoT7dicLKxm.png",
+      "parentUuid": "afd43fe0_55a37fd4",
+      "revId": "b945ac1c1a6e07f874ffb2b85d21abea99d700fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "18ab2179_769cf602",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2020-10-06T00:01:09Z",
       "side": 1,
       "message": "Is there a bug associated with this?",
+      "revId": "b945ac1c1a6e07f874ffb2b85d21abea99d700fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "177299e0_dba2d1c3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-06T01:55:43Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "18ab2179_769cf602",
       "revId": "b945ac1c1a6e07f874ffb2b85d21abea99d700fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
