@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "899ee154_04e8d5c2",
         "filename": "/PATCHSET_LEVEL",
@@ -14,10 +15,10 @@
       "side": 1,
       "message": "LGTM % comment",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "41b4173c_c7ceeebe",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
@@ -31,10 +32,10 @@
       "side": 1,
       "message": "actually i am not so sure about this. It is possible that our code did not retrieve anything in 55sec due to a bug, and it would still return an OK response. This is not right.",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "c9f51a63_8bad6b62",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
@@ -49,10 +50,10 @@
       "message": "One thing I can think of is to check that the next page token about to be returned be different from the one received in the request, to make sure we are making progress in scanning the index. Otherwise return the error, instead of swallowing it.\n\nHow does that sound?",
       "parentUuid": "41b4173c_c7ceeebe",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "02001035_4b5efabc",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
@@ -67,10 +68,28 @@
       "message": "under what circumstances we would return the same page token? FWIU it only takes to fetch a couple of invocations (which we certainly manage to do in 55s) to produce a different token",
       "parentUuid": "c9f51a63_8bad6b62",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "69c0a1fb_178f32d6",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-06T18:16:13Z",
+      "side": 1,
+      "message": "Then I may be misunderstanding. I was thinking about \"our code did not retrieve anything in 55sec due to a bug\", and I thought that this would avoid it.\n\nAre you suggesting that we return a failure if we don\u0027t fill the results page or exhaust the available results in the time alotted?",
+      "parentUuid": "02001035_4b5efabc",
+      "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "ef8f3c72_1314809d",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
@@ -84,10 +103,10 @@
       "side": 1,
       "message": "L75 will hang forever if this line executes.\nconsider\n\n  workC \u003c- func() error { return err }",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "7858c9d1_8ff72192",
         "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
@@ -102,8 +121,7 @@
       "message": "!\nDone, thanks.",
       "parentUuid": "ef8f3c72_1314809d",
       "revId": "d9881e47b102eb8810297e5ac5f1784b8a2c2596",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
