@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -26,6 +27,7 @@ func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().Unix())
 	eval.Main(ctx, func(ctx context.Context, in eval.Input) (eval.Output, error) {
+		fmt.Println(in.Test)
 		return eval.Output{
 			ShouldRun: rand.Intn(2) == 0,
 		}, nil
