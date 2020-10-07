@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7dcffa4c_4238a527",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T18:23:50Z",
+      "side": 1,
+      "message": "the effect is mostly on consumers of resultdb data.\nFWIU nobody expects durations to be negative (since it is not possible), for example RTS actually sums durations up, assuming they are non-negative.\nThe validation acts as a guarantee for data consumers that the data is clean.",
+      "parentUuid": "f3b3d9c6_01bc3247",
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f18283b3_2b2d8666",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
