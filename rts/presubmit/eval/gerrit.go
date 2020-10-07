@@ -113,7 +113,7 @@ func (c *gerritClient) listFilesWithQuotaErrorsRetries(ctx context.Context, host
 // callListFiles makes a ListFiles RPC.
 func (c *gerritClient) callListFiles(ctx context.Context, host string, req *gerritpb.ListFilesRequest) ([]string, error) {
 	c.reportColdCache.Do(func() {
-		logging.Infof(ctx, "The Gerrit cache is cold. It will take time some to fetch Gerrit info. The next evaluation will be faster.")
+		logging.Infof(ctx, "The Gerrit cache is cold. It will take some time to fetch Gerrit info. The next evaluation will be faster.")
 	})
 
 	// Make an RPC.
