@@ -108,8 +108,8 @@ func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (
 
 	// Compare the prediction to facts.
 	in := Input{ChangedFiles: files}
-	for _, t := range rej.FailedTests {
-		in.Test = t
+	for _, tv := range rej.FailedTestVariants {
+		in.TestVariant = tv
 		var out Output
 		if out, err = r.Algorithm(ctx, in); err != nil {
 			err = errors.Annotate(err, "RTS algorithm failed").Err()

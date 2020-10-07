@@ -42,8 +42,7 @@ func Main(ctx context.Context, algo Algorithm) {
 
 	res, err := ev.Run(ctx)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		fatal(err)
 	}
 
 	res.Print(os.Stdout)

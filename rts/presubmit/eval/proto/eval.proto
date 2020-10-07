@@ -29,8 +29,8 @@ message Rejection {
   // When the code change was rejected.
   google.protobuf.Timestamp timestamp = 2;
 
-  // List of tests that caused the rejection.
-  repeated Test failed_tests = 3;
+  // List of test variants that caused the rejection.
+  repeated TestVariant failed_test_variants = 3;
 }
 
 // How long a test took.
@@ -38,8 +38,8 @@ message TestDuration {
   // The patchsets that were tested.
   repeated GerritPatchset patchsets = 1;
 
-  // The test that was measured.
-  Test test = 2;
+  // The test variant that was measured.
+  TestVariant test_variant = 2;
 
   // How long test execution took.
   google.protobuf.Duration duration = 3;
@@ -68,14 +68,20 @@ message GerritPatchset {
   int64 patchset = 2;
 }
 
-// A single test, typically a test case.
-message Test {
+// A single way to run a single test.
+// For example, a particular test case on Windows 10.
+message TestVariant {
   // Test identifier.
   // For Chromium, a ResultDB TestID.
   string id = 1;
 
+  // One particular way to run this test, expressed as domain-specific key-value
+  // pairs.
+  // For Chromium, this is a ResultDB test variant.
+  map<string, string> variant = 2;
+
   // Path of the file where the test is defined.
-  string file_name = 2;
+  string file_name = 3;
 }
 
 // One historical record.

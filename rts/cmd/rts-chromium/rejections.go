@@ -35,58 +35,92 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rej
 		return err
 	}
 
+	// Each result row represents a failed test variant.
+	// The rows are sorted by change and patchset, and one rejection
+	// may span multiple rows.
+	// Accumulate failed tests to the current rejection until we encounter
+	// a different patchset.
+	var curRej *evalpb.Rejection
 	for {
 		var row rejectionRow
-		err := it.Next(&row)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
+		switch err := it.Next(&row); {
+		case err == iterator.Done:
+			// Report the last one.
+			if curRej != nil {
+				return f(curRej)
+			}
+			return nil
+
+		case err != nil:
 			return err
 		}
-		if err := f(row.proto()); err != nil {
-			return err
+
+		// Report the current rejection if we have one and if `row` is a different
+		// patchset.
+		if curRej != nil && (curRej.Patchsets[0].Change.Number != int64(row.Change) || curRej.Patchsets[0].Patchset != int64(row.Patchset)) {
+			if err := f(curRej); err != nil {
+				return err
+			}
+			curRej = nil
 		}
+
+		// Initialize a new rejection if we don't have one.
+		if curRej == nil {
+			curRej = &evalpb.Rejection{
+				Patchsets: []*evalpb.GerritPatchset{
+					{
+						Change: &evalpb.GerritChange{
+							// Assume all Chromium source code is in
+							// https://chromium.googlesource.com/chromium/src
+							// TOOD(nodir): make it fail if it is not.
+							Host:    "chromium-review.googlesource.com",
+							Project: "chromium/src",
+							Number:  int64(row.Change),
+						},
+						Patchset: int64(row.Patchset),
+					},
+				},
+			}
+			curRej.Timestamp, _ = ptypes.TimestampProto(row.Timestamp)
+		}
+
+		curRej.FailedTestVariants = append(curRej.FailedTestVariants, row.FailedTestVariant.proto())
 	}
-	return nil
 }
 
 type rejectionRow struct {
-	Change      int
-	Patchset    int
-	Timestamp   time.Time
-	FailedTests []struct {
-		ID       string
-		FileName string
+	Change            int
+	Patchset          int
+	Timestamp         time.Time
+	FailedTestVariant testVariantRow
+}
+
+type testVariantRow struct {
+	ID       string
+	FileName string
+	Variant  []struct {
+		Key   string
+		Value string
 	}
 }
 
-func (r *rejectionRow) proto() *evalpb.Rejection {
-	ret := &evalpb.Rejection{
-		Patchsets: []*evalpb.GerritPatchset{
-			{
-				Change: &evalpb.GerritChange{
-					// Assume all Chromium source code is in
-					// https://chromium.googlesource.com/chromium/src
-					// TOOD(nodir): make it fail if it is not.
-					Host:    "chromium-review.googlesource.com",
-					Project: "chromium/src",
-					Number:  int64(r.Change),
-				},
-				Patchset: int64(r.Patchset),
-			},
-		},
-		FailedTests: make([]*evalpb.Test, len(r.FailedTests)),
+func (t *testVariantRow) proto() *evalpb.TestVariant {
+	ret := &evalpb.TestVariant{
+		Id:       t.ID,
+		FileName: t.FileName,
+		Variant:  make(map[string]string, len(t.Variant)),
 	}
-	ret.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
-	for i, t := range r.FailedTests {
-		ret.FailedTests[i] = &evalpb.Test{Id: t.ID, FileName: t.FileName}
+	for _, kv := range t.Variant {
+		ret.Variant[kv.Key] = kv.Value
 	}
 	return ret
 }
 
 // rejectedPatchSetsSQL is a BigQuery query that returns patchsets with test
 // failures. Ignores tests that don't have a test location.
+//
+// This query intentionally does not use ARRAY_AGG for failed tests because
+// otherwise a result row size may exceed the API limitation of 10MB.
 const rejectedPatchSetsSQL = `
 	WITH
 		tryjobs AS (
@@ -100,10 +134,12 @@ const rejectedPatchSetsSQL = `
 			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
 		),
 		failed_test_variants AS (
-			SELECT DISTINCT
-				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) build_id,
-				ANY_VALUE(test_location.file_name) file_name,
+			SELECT
+				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
+				ANY_VALUE(test_location.file_name) as file_name,
 				test_id,
+				variant_hash,
+				ANY_VALUE(variant) as variant,
 			FROM luci-resultdb.chromium.try_test_results tr
 			WHERE partition_time BETWEEN @startTime and @endTime
 				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
@@ -121,23 +157,18 @@ const rejectedPatchSetsSQL = `
 			-- a test failed in one CQ attempt for the patchset, and succeeded
 			-- in another for the same patchset.
 			HAVING LOGICAL_AND(NOT expected AND NOT exonerated)
-		),
-		flat AS (
-			SELECT
-				ps.change,
-				ps.patchset,
-				MIN(ps_approx_timestamp) ps_approx_timestamp,
-				test_id,
-				ANY_VALUE(file_name) as file_name,
-			FROM tryjobs t
-			JOIN failed_test_variants f ON t.id = f.build_id
-			GROUP BY ps.change, ps.patchset, test_id
 		)
 	SELECT
-		change as Change,
-		patchset as Patchset,
-		ANY_VALUE(ps_approx_timestamp) as Timestamp,
-		ARRAY_AGG(STRUCT(test_id as ID, file_name as FileName)) as FailedTests,
-	FROM flat
-	GROUP BY change, flat.patchset
+		ps.change as Change,
+		ps.patchset as Patchset,
+		MIN(ps_approx_timestamp) as Timestamp,
+		STRUCT(
+			test_id as ID,
+			ANY_VALUE(variant) as Variant,
+			ANY_VALUE(file_name) as FileName
+		) as FailedTestVariant
+	FROM tryjobs t
+	JOIN failed_test_variants f ON t.id = f.build_id
+	GROUP BY ps.change, ps.patchset, test_id, variant_hash
+	ORDER BY ps.change, ps.patchset
 `

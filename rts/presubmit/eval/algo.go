@@ -29,8 +29,8 @@ type Input struct {
 	// ChangedFiles is a list of files changed in a patchset.
 	ChangedFiles []*SourceFile
 
-	// The algorithm needs to decide whether to run this test.
-	Test *evalpb.Test
+	// The algorithm needs to decide whether to run this test variant.
+	TestVariant *evalpb.TestVariant
 }
 
 // SourceFile identifies a source file.
