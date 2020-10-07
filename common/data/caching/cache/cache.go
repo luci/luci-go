@@ -164,6 +164,13 @@ func (d *Cache) Keys() isolated.HexDigests {
 	return d.lru.keys()
 }
 
+// TotalSize returns the size of the contents maintained in the LRU cache.
+func (d *Cache) TotalSize() units.Size {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.lru.sum
+}
+
 // Touch updates the LRU position of an item to ensure it is kept in the
 // cache.
 //
