@@ -25,8 +25,7 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-// Main evaluates an RTS algorithm for Chromium, prints results and exits the
-// process.
+// Main evaluates an RTS algorithm, prints results and exits the process.
 func Main(ctx context.Context, algo Algorithm) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer signals.HandleInterrupt(cancel)

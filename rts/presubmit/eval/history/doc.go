@@ -15,6 +15,13 @@
 // Package history implements serialization and deserilization of historical
 // records used for RTS evaluation.
 //
+// RTS evaluation uses history files to emulate CQ behavior with a candidate
+// RTS algorithm. Conceptually a history file is a sequence of Record
+// protobuf messages,
+// see https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/rts/presubmit/eval/proto/eval.proto.
+// More specifically, it is a Zstd-compressed RecordIO-encoded sequence of
+// Records.
+//
 // TODO(nodir): consider generalizing. It might be needed for file graph
 // storage.
 package history
