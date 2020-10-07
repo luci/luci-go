@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -122,14 +123,27 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if tr.ResultId == "" {
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
-
 		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
 			tr.TestLocation.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestLocation.FileName)
 		}
-
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 		}
+		// The system-clock of GCE machines may get updated by ntp while a test is running.
+		// It can possibly cause a negative duration produced, because most test harnesses
+		// use system-clock to calculate the run time of a test. For more info, visit
+		// crbug.com/1135892.
+		if s.cfg.CoerceNegativeDuration {
+			// If a negative duration was reported, remove the duration.
+			if duration := tr.GetDuration(); duration != nil {
+				d, err := ptypes.Duration(duration)
+				if err == nil && d < 0 {
+					logging.Warningf(ctx, "Negative duration(%d) was reported; setting nil", d)
+					tr.Duration = nil
+				}
+			}
+		}
+
 		if err := validateTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
