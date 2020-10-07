@@ -55,6 +55,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3cdecb84_711b85d9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-07T19:20:59Z",
+      "side": 1,
+      "message": "For summing durations up, I think adding 0s is as bad as adding negative values, because the number is still not trustworthy.",
+      "parentUuid": "7dcffa4c_4238a527",
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f18283b3_2b2d8666",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
