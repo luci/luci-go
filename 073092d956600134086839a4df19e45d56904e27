@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "249f856b_11edbe62",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T20:50:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6a62989_19cf3348",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 74
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9ca30ec_5aeb725b",
@@ -112,6 +136,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6d92887_1d1865c4",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T20:50:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04ffe7a3_e5cd1c8d",
+      "range": {
+        "startLine": 49,
+        "startChar": 14,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc34de39_37836470",
@@ -135,6 +183,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e67cd5fe_7ac6f021",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T20:50:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc34de39_37836470",
+      "range": {
+        "startLine": 56,
+        "startChar": 68,
+        "endLine": 56,
+        "endChar": 77
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "762b59e2_82f527fd",
@@ -148,6 +220,30 @@
       "writtenOn": "2020-10-07T04:33:13Z",
       "side": 1,
       "message": "consider errors.New(\"...\")\nit is a bit shorter",
+      "range": {
+        "startLine": 58,
+        "startChar": 25,
+        "endLine": 58,
+        "endChar": 67
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99fd0c83_1fa4c9a8",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T20:50:00Z",
+      "side": 1,
+      "message": "Doc says to prefer errors.Reason:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/d2ef779099cd54fb101f056f5f7834b046fb7973/common/errors/annotate.go#536",
+      "parentUuid": "762b59e2_82f527fd",
       "range": {
         "startLine": 58,
         "startChar": 25,
