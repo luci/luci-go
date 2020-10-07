@@ -58,11 +58,10 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, f func(*evalpb.Test
 }
 
 type durationRow struct {
-	Change       int
-	Patchset     int
-	TestID       string
-	TestFileName string
-	Duration     float64
+	Change      int
+	Patchset    int
+	TestVariant testVariantRow
+	Duration    float64
 }
 
 func (r *durationRow) proto() *evalpb.TestDuration {
@@ -80,8 +79,8 @@ func (r *durationRow) proto() *evalpb.TestDuration {
 				Patchset: int64(r.Patchset),
 			},
 		},
-		Test:     &evalpb.Test{Id: r.TestID, FileName: r.TestFileName},
-		Duration: ptypes.DurationProto(time.Duration(r.Duration * 1e9)),
+		TestVariant: r.TestVariant.proto(),
+		Duration:    ptypes.DurationProto(time.Duration(r.Duration * 1e9)),
 	}
 }
 
@@ -96,9 +95,10 @@ WITH
 	),
 	test_results AS (
 		SELECT
-			CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) build_id,
+			CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
 			test_location.file_name,
 			test_id,
+			variant,
 			duration,
 		FROM luci-resultdb.chromium.try_test_results tr
 		WHERE partition_time BETWEEN @startTime and @endTime
@@ -117,8 +117,11 @@ WITH
 SELECT
 	ps.change as Change,
 	ps.patchset as Patchset,
-	test_id as TestID,
-	file_name as TestFileName,
+	STRUCT(
+		test_id as ID,
+		variant as Variant,
+		file_name as FileName
+	) as TestVariant,
 	duration as Duration
 FROM tryjobs t
 JOIN test_results tr ON t.id = tr.build_id
