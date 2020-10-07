@@ -99,12 +99,14 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 }
 
 type results struct {
-	ItemsCold []byte             `json:"items_cold"`
-	ItemsHot  []byte             `json:"items_hot"`
-	Isolated  *isolated.Isolated `json:"isolated"`
+	ItemsCold          []byte             `json:"items_cold"`
+	ItemsHot           []byte             `json:"items_hot"`
+	InitialNumberItems int64              `json:"initial_number_items"`
+	InitialSize        int64              `json:"initial_size"`
+	Isolated           *isolated.Isolated `json:"isolated"`
 }
 
-func (c *downloadRun) outputResults(cache *cache.Cache, dl *downloader.Downloader) error {
+func (c *downloadRun) outputResults(cache *cache.Cache, initStats initCacheStats, dl *downloader.Downloader) error {
 	if c.resultJSON == "" {
 		return nil
 	}
@@ -120,9 +122,11 @@ func (c *downloadRun) outputResults(cache *cache.Cache, dl *downloader.Downloade
 	}
 
 	resultJSON, err := json.Marshal(results{
-		ItemsCold: itemsCold,
-		ItemsHot:  itemsHot,
-		Isolated:  root,
+		ItemsCold:          itemsCold,
+		ItemsHot:           itemsHot,
+		InitialNumberItems: initStats.numItems,
+		InitialSize:        initStats.totalSize,
+		Isolated:           root,
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal result json").Err()
@@ -148,6 +152,11 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	return nil
 }
 
+type initCacheStats struct {
+	numItems  int64
+	totalSize int64
+}
+
 func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, args []string) error {
 	client, err := c.createIsolatedClient(ctx, c.CommandOptions)
 	if err != nil {
@@ -157,6 +166,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 	var files []string
 
 	var diskCache *cache.Cache
+	var initStats initCacheStats
 	if c.cacheDir != "" {
 		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
 			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
@@ -169,6 +179,8 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 			logging.WithError(err).Warningf(ctx, "There is (ignorable?) error when initializing disk cache in %s", c.cacheDir)
 		}
 		defer diskCache.Close()
+		initStats.numItems = int64(len(diskCache.Keys()))
+		initStats.totalSize = int64(diskCache.TotalSize())
 	}
 
 	if err := os.MkdirAll(c.outputDir, os.ModePerm); err != nil {
@@ -197,7 +209,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 		}
 	}
 
-	return c.outputResults(diskCache, dl)
+	return c.outputResults(diskCache, initStats, dl)
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
