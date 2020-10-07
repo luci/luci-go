@@ -281,7 +281,7 @@ func TestGetBuild(t *testing.T) {
 			})
 		})
 
-		Convey("validateBuilderID", func() {
+		Convey("builder ID", func() {
 			Convey("project", func() {
 				req := &pb.GetBuildRequest{
 					Builder:     &pb.BuilderID{},

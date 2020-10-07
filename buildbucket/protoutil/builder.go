@@ -46,6 +46,21 @@ func ValidateBuilderID(b *pb.BuilderID) error {
 	}
 }
 
+// ValidateRequiredBuilderID validates the given builder ID, requiring Bucket
+// and Builder.
+func ValidateRequiredBuilderID(b *pb.BuilderID) error {
+	switch err := ValidateBuilderID(b); {
+	case err != nil:
+		return errors.Annotate(err, "builder").Err()
+	case b.Bucket == "":
+		return errors.Reason("bucket is required").Err()
+	case b.Builder == "":
+		return errors.Reason("builder is required").Err()
+	default:
+		return nil
+	}
+}
+
 // FormatBuilderID returns "{project}/{bucket}/{builder}" string.
 func FormatBuilderID(id *pb.BuilderID) string {
 	return fmt.Sprintf("%s/%s/%s", id.Project, id.Bucket, id.Builder)

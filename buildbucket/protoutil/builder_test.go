@@ -70,6 +70,125 @@ func TestValidateBuilderID(t *testing.T) {
 				err := ValidateBuilderID(b)
 				So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
 			})
+
+			Convey("ok", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+				}
+				err := ValidateBuilderID(b)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("builder", func() {
+			Convey("empty", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+				}
+				err := ValidateBuilderID(b)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("invalid", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Builder: "builder!",
+				}
+				err := ValidateBuilderID(b)
+				So(err, ShouldErrLike, "builder must match")
+			})
+
+			Convey("ok", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Builder: "builder",
+				}
+				err := ValidateBuilderID(b)
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestValidateRequiredBuilderID(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidateRequiredBuilderID", t, func() {
+		Convey("nil", func() {
+			err := ValidateRequiredBuilderID(nil)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("empty", func() {
+			b := &pb.BuilderID{}
+			err := ValidateRequiredBuilderID(b)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("project", func() {
+			b := &pb.BuilderID{}
+			err := ValidateRequiredBuilderID(b)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("bucket", func() {
+			Convey("empty", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+				}
+				err := ValidateRequiredBuilderID(b)
+				So(err, ShouldErrLike, "bucket is required")
+			})
+
+			Convey("invalid", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket!",
+				}
+				err := ValidateRequiredBuilderID(b)
+				So(err, ShouldErrLike, "bucket must match")
+			})
+
+			Convey("v1", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Bucket:  "luci.project.bucket",
+				}
+				err := ValidateRequiredBuilderID(b)
+				So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
+			})
+
+			Convey("builder", func() {
+				Convey("empty", func() {
+					b := &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+					}
+					err := ValidateRequiredBuilderID(b)
+					So(err, ShouldErrLike, "builder is required")
+				})
+
+				Convey("invalid", func() {
+					b := &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder!",
+					}
+					err := ValidateRequiredBuilderID(b)
+					So(err, ShouldErrLike, "builder must match")
+				})
+
+				Convey("ok", func() {
+					b := &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					}
+					err := ValidateRequiredBuilderID(b)
+					So(err, ShouldBeNil)
+				})
+			})
 		})
 	})
 }

@@ -62,11 +62,11 @@ func validateCancel(req *pb.CancelBuildRequest) error {
 	var err error
 	switch {
 	case req.GetId() == 0:
-		return appstatus.Errorf(codes.InvalidArgument, "id is required")
+		return errors.Reason("id is required").Err()
 	case req.SummaryMarkdown == "":
-		return appstatus.Errorf(codes.InvalidArgument, "summary_markdown is required")
+		return errors.Reason("summary_markdown is required").Err()
 	case teeErr(validateSummaryMarkdown(req.SummaryMarkdown), &err) != nil:
-		return appstatus.Errorf(codes.InvalidArgument, "summary_markdown: %s", err)
+		return errors.Annotate(err, "summary_markdown").Err()
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func validateCancel(req *pb.CancelBuildRequest) error {
 // CancelBuild handles a request to cancel a build. Implements pb.BuildsServer.
 func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb.Build, error) {
 	if err := validateCancel(req); err != nil {
-		return nil, err
+		return nil, appstatus.BadRequest(err)
 	}
 	m, err := getFieldMask(req.Fields)
 	if err != nil {
