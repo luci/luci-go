@@ -35,13 +35,8 @@ func validateGet(req *pb.GetBuildRequest) error {
 			return errors.Reason("id is mutually exclusive with (builder and build_number)").Err()
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
-		switch err := protoutil.ValidateBuilderID(req.Builder); {
-		case err != nil:
+		if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
 			return errors.Annotate(err, "builder").Err()
-		case req.Builder.Bucket == "":
-			return errors.Annotate(errors.Reason("bucket is required").Err(), "builder").Err()
-		case req.Builder.Builder == "":
-			return errors.Annotate(errors.Reason("builder is required").Err(), "builder").Err()
 		}
 	default:
 		return errors.Reason("one of id or (builder and build_number) is required").Err()
