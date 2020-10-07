@@ -98,6 +98,26 @@ func TestValidateSearchBuilds(t *testing.T) {
 			err := validatePredicate(pr)
 			So(err, ShouldErrLike, "build is mutually exclusive with create_time")
 		})
+
+		Convey("builder id", func() {
+			Convey("no project", func() {
+				pr := &pb.BuildPredicate{
+					Builder: &pb.BuilderID{Bucket: "bucket"},
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike, `builder: project must match "^[a-z0-9\\-_]+$"`)
+			})
+			Convey("only project and builder", func() {
+				pr := &pb.BuildPredicate{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Builder: "builder",
+					},
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike, "builder: bucket is required")
+			})
+		})
 	})
 
 	Convey("validatePageToken", t, func() {

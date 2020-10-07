@@ -44,8 +44,11 @@ func validateChange(ch *pb.GerritChange) error {
 // validatePredicate validates the given build predicate.
 func validatePredicate(pr *pb.BuildPredicate) error {
 	if b := pr.GetBuilder(); b != nil {
-		if err := protoutil.ValidateBuilderID(b); err != nil {
+		switch err := protoutil.ValidateBuilderID(b); {
+		case err != nil:
 			return errors.Annotate(err, "builder").Err()
+		case b.Bucket == "" && b.Builder != "":
+			return errors.Annotate(errors.Reason("bucket is required").Err(), "builder").Err()
 		}
 	}
 	for i, ch := range pr.GetGerritChanges() {
