@@ -96,7 +96,7 @@ WITH
 	test_results AS (
 		SELECT
 			CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-			test_location.file_name,
+			IFNULL(test_location.file_name, '') as file_name,
 			test_id,
 			variant,
 			duration,
@@ -109,7 +109,7 @@ WITH
 
 			-- Exclude broken test locations.
 			-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
-			AND REGEXP_CONTAINS(test_location.file_name, r'(?i)\.(cc|html|m|c|cpp)$')
+			AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp))$')
 			-- Exclude broken prefixes.
 			-- TODO(nodir): remove after crbug.com/1017288 is fixed.
 			AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')

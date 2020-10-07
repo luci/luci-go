@@ -136,7 +136,7 @@ const rejectedPatchSetsSQL = `
 		failed_test_variants AS (
 			SELECT
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-				ANY_VALUE(test_location.file_name) as file_name,
+				ANY_VALUE(IFNULL(test_location.file_name, '')) as file_name,
 				test_id,
 				variant_hash,
 				ANY_VALUE(variant) as variant,
@@ -146,7 +146,7 @@ const rejectedPatchSetsSQL = `
 				AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 				-- Exclude broken test locations.
 				-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
-				AND REGEXP_CONTAINS(test_location.file_name, r'(?i)\.(cc|html|m|c|cpp)$')
+				AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp))$')
 				-- Exclude broken prefixes.
 				-- TODO(nodir): remove after crbug.com/1017288 is fixed.
 				AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
