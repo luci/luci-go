@@ -252,6 +252,30 @@
       },
       "revId": "073092d956600134086839a4df19e45d56904e27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e5ef4d5_9d2f40c9",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T21:04:12Z",
+      "side": 1,
+      "message": "it says prefer Reason to New+sprintf. This code doesn\u0027t use sprintf",
+      "parentUuid": "99fd0c83_1fa4c9a8",
+      "range": {
+        "startLine": 58,
+        "startChar": 25,
+        "endLine": 58,
+        "endChar": 67
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
