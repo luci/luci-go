@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6a62989_19cf3348",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T05:07:37Z",
+      "side": 1,
+      "message": "Alternatively, teeErr() could be used.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/rpc/common.go;l\u003d64\n\n```\ncase teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), \u0026err) !\u003d nil {\n  return err\n```",
+      "parentUuid": "0b42b8bd_e9eaf7c2",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 74
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9ca30ec_5aeb725b",
