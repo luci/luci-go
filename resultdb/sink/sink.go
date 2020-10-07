@@ -116,6 +116,13 @@ type ServerConfig struct {
 	// BaseTags will be added to each TestResult in addition to the original tags that
 	// the tests were reported with.
 	BaseTags []*pb.StringPair
+
+	// CoerceNegativeDuration specifies whether ReportTestResults() should coerece
+	// the negative duration of a test result.
+	//
+	// If true, the API will set the duration of a test result to 0, if the duration was negative.
+	// If false, the API will return an error if the duration of a test result was negative.
+	CoerceNegativeDuration bool
 }
 
 // Validate validates all the config fields.
