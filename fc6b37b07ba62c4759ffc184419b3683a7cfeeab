@@ -16,6 +16,144 @@
       "message": "Tested locally.\nhttps://paste.googleplex.com/5099651632988160",
       "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "918cf233_65f74141",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "not necessarily proposing, but did you consider uploading 0? That\u0027s what I had in mind. FWIU negative duration means startTime and endTime were so close to each other (almost zero) that the clock actually said it was negative. I am wondering if 0 is closer to the truth than null which means \"I have no idea\"",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cb4a1c8_8f506d80",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "nit: combine these two if statements?",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 138,
+        "endChar": 7
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13fd3217_b91808ce",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "duration.AsDuration()\n\nhttps://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb#Duration.AsDuration",
+      "range": {
+        "startLine": 139,
+        "startChar": 14,
+        "endLine": 139,
+        "endChar": 39
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ad60ed7_e6fa329a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "nit: combine?",
+      "range": {
+        "startLine": 139,
+        "startChar": 7,
+        "endLine": 140,
+        "endChar": 9
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63e5e025_3ee6c86a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "%s\n\notherwise the number of nanoseconds without a unit of measure would be confusing",
+      "range": {
+        "startLine": 141,
+        "startChar": 47,
+        "endLine": 141,
+        "endChar": 48
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e01cb798_8e51dcd4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T15:48:10Z",
+      "side": 1,
+      "message": "this log is hard to act on because it doesno\u0027t tell which test reported that. please include that info",
+      "range": {
+        "startLine": 141,
+        "startChar": 60,
+        "endLine": 141,
+        "endChar": 66
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
