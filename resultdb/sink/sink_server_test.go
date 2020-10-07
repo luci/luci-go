@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -116,6 +117,26 @@ func TestReportTestResults(t *testing.T) {
 		Convey("generates a random ResultID, if omitted", func() {
 			tr.ResultId = ""
 			expected.ResultId = "foo-00101"
+			check(ctx, cfg, tr, expected)
+		})
+
+		Convey("duration", func() {
+			// duration == nil
+			tr.Duration, expected.Duration = nil, nil
+			check(ctx, cfg, tr, expected)
+
+			// duration == 0
+			tr.Duration, expected.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
+			check(ctx, cfg, tr, expected)
+
+			// duration > 0
+			tr.Duration, expected.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
+			check(ctx, cfg, tr, expected)
+
+			// duration < 0
+			// negative durations must be set with nil
+			tr.Duration = ptypes.DurationProto(-8)
+			expected.Duration = nil
 			check(ctx, cfg, tr, expected)
 		})
 
