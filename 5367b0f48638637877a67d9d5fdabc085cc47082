@@ -73,6 +73,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a9b78074_7ee93808",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T19:47:18Z",
+      "side": 1,
+      "message": "i agree that both numbers are not trustworthy,\nmy point was that a negative numbers \"takes away\" duration from other tests.\nsomeone\u0027s code may crash because they expect the sum to be a non-negative number too",
+      "parentUuid": "3cdecb84_711b85d9",
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f18283b3_2b2d8666",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
