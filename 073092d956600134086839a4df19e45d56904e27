@@ -1,6 +1,46 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "60dca2a1_5f4d4b86",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:33:13Z",
+      "side": 1,
+      "message": "LGTM % appstatus.BadRequest",
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b42b8bd_e9eaf7c2",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:33:13Z",
+      "side": 1,
+      "message": "note that this construct is fragile. if we add another case after this one, it will never execute",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 74
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9ca30ec_5aeb725b",
@@ -19,6 +59,76 @@
         "startChar": 14,
         "endLine": 49,
         "endChar": 17
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04ffe7a3_e5cd1c8d",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:33:13Z",
+      "side": 1,
+      "message": "+1, must use it",
+      "parentUuid": "b9ca30ec_5aeb725b",
+      "range": {
+        "startLine": 49,
+        "startChar": 14,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc34de39_37836470",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:33:13Z",
+      "side": 1,
+      "message": "this assumes the caller. it is possible that ValidateRequiredBuilderID might be used for a field with a different name.\n\nit is the callsite\u0027s job to annotate with \"builder\".",
+      "range": {
+        "startLine": 56,
+        "startChar": 68,
+        "endLine": 56,
+        "endChar": 77
+      },
+      "revId": "073092d956600134086839a4df19e45d56904e27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "762b59e2_82f527fd",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:33:13Z",
+      "side": 1,
+      "message": "consider errors.New(\"...\")\nit is a bit shorter",
+      "range": {
+        "startLine": 58,
+        "startChar": 25,
+        "endLine": 58,
+        "endChar": 67
       },
       "revId": "073092d956600134086839a4df19e45d56904e27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
