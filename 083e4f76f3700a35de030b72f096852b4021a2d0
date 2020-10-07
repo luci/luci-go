@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90197f47_ac327880",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T21:39:18Z",
+      "side": 0,
+      "message": "Changed order to match Python, so this case was moved below (and no longer requires Get because passing the case on the next line implies req is not nil).",
+      "revId": "083e4f76f3700a35de030b72f096852b4021a2d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03f22b5d_0921c4f2",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-07T21:39:18Z",
+      "side": 1,
+      "message": "This needs to be done, right? Python is validating properties on Update and Schedule.",
+      "revId": "a4ffe932b0af6d6575f43a871511a222ce74e8eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
