@@ -64,6 +64,7 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 		switch p {
 		case "build.output":
 		case "build.output.properties":
+			// TODO(crbug/1110990): Validate properties.
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
 				return errors.Annotate(err, "build.output.gitiles_commit").Err()
