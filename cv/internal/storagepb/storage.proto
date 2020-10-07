@@ -1,0 +1,121 @@
+message PendingCLGroups {
+  message Dep {
+    // CV's internal CL id.
+    int64 id = 1;
+    bool hard = 2;
+  }
+  message CL {
+    // CV's internal CL id.
+    int64 id = 1;
+    // index in the modes list to save space.
+    int32 mode = 2;
+    repeated Dep deps = 3;
+  }
+  message Group {
+    // CL deps may refer to CLs not in this other group.
+    repeated CL cls = 1;
+  }
+
+  // groups are CL-disjoint. CLs' deps may overlap, however.
+  repeated Group groups = 1;
+  // interns all modes to save space.
+  repeated string modes = 2;
+}
+
+message TryjobDetails {
+  oneof kind {
+    // Populatd fields:
+    // * id
+    // * builder
+    //
+    // * input:
+    //   * gerrit_changes
+    //   * gitiles_commit
+    //   NOTE: properties are not used, as these contain static properties from
+    //         cr-buildbucket.cfg.
+    //
+    // * infra:
+    //   * buildbucket:
+    //     * host
+    //     * properties (those specified in ScheduleBuild, only).
+    //   * resultdb
+    //     * hostname
+    //     * invocation
+    //
+    // * output:
+    //   * properties (but only those which CQ cares about)
+    // * status_details
+    // * summary_markdown
+    // * tags
+    buildbucket.v2.Build buildbucket_build = 1;
+  }
+
+  // Tryjob (CV-internal) IDs for tryjobs triggered by the this tryjob.
+  // This is necessary for `triggered_by` feature of CV, whereby CV doesn't
+  // trigger these tryjobs directly but expects them to be triggered by
+  // `triggered_by` tryjob, aka parent tryjob. Parent tryjob must set its
+  // children via `triggered_build_ids` output property.
+  repeated int64 child_tryjob_ids = 12;
+}
+
+message RefSpecGroupMap {
+  message Group {
+    string name = 1;
+    // TODO: fallback.
+
+    repeated string include = 11;
+    repeated string exclude = 12;
+  }
+  repeated Group groups = 1;
+}
+
+
+// When stored in CL entity, represents latest known Gerrit data.
+// When stored in RunCL entity, represents data pertaining to a fixed patchset.
+message CLDetails {
+  message Gerrit {
+    // http://shortn/_IEEey5ITkW
+    // Contains all revisions, but non-current revisions will not have all the
+    // fields populated. Exact fields TODO.
+    gerrit.ChangeInfo info = 1;
+    gerrit.ListFilesResponse files = 2;
+    gerrit.RelatedChangesResponse related = 3;
+  }
+
+  oneof kind {
+    Gerrit gerrit = 1;
+  }
+}
+
+message RunState {
+  // TODO: incomplete, there will likely be more fields.
+  // TODO: some of these fields can be top-level in Run entity itself.
+
+  // TODO. This is ~cq_config.Tryjobs.Builder.
+  message Builder { }
+  message Requirement {
+    repeated Builder builders = 1;
+  }
+  message ACLsCheck {
+    google.protobuf.Timestamp last_check = 1;
+  }
+  ACLsCheck acls_check = 2;
+
+
+  message TryjobsState {
+    // Recomputed if config changes.
+    Requirement requirement = 1;
+    map<Builder, int64> waiting_on = 2;
+    google.protobuf.Timestamp last_poll = 3;
+  }
+  TryjobsState tryjobs = 3;
+
+  // TODO: what CL is being submitted, which one will be.
+  message Submission {}
+  Submission submission = 4;
+
+  // TODO: keep track of finalization actions, typically involes interacting
+  // with Gerrit.
+  message Finalization{}
+  Finalization finalization = 5;
+}
