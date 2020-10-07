@@ -16,6 +16,24 @@
       "message": "Hi Nodir, added the bucket check as you mentioned in the email. PATL, thanks. \n\n(BTW, I found out a comment has already been added about the most selective indexedTag in Go - https://source.chromium.org/chromium/infra/infra/+/aa18cd6e58fd47f19078df8041308fa36838947a:go/src/go.chromium.org/luci/buildbucket/appengine/internal/search/query.go;l\u003d248;bpv\u003d0)",
       "revId": "eef1e0cd3fcc08622f4f19ce90ce54059d16aa29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aedbb815_3ef8823c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T03:51:42Z",
+      "side": 1,
+      "message": "yeah, that comment is at the callsite, not in the func def.",
+      "parentUuid": "24ddd5ca_4e470a01",
+      "revId": "eef1e0cd3fcc08622f4f19ce90ce54059d16aa29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
