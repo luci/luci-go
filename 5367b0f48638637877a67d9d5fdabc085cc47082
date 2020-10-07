@@ -135,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca482c70_bc8644e2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T23:47:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbad1833_c92ec4bc",
+      "range": {
+        "startLine": 123,
+        "startChar": 13,
+        "endLine": 123,
+        "endChar": 95
+      },
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ca066881_3b67457c",
@@ -219,6 +243,30 @@
       "side": 1,
       "message": "Done with a global var. I\u0027m not sure if I can declare an immutable var, but a simple global var with zero duration should be ok, I think?",
       "parentUuid": "15f0884b_3ab742aa",
+      "range": {
+        "startLine": 140,
+        "startChar": 18,
+        "endLine": 140,
+        "endChar": 41
+      },
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef714bfa_2b2bf8f4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T23:47:26Z",
+      "side": 1,
+      "message": "what you did is what I meant.",
+      "parentUuid": "507924cb_7885efc9",
       "range": {
         "startLine": 140,
         "startChar": 18,
