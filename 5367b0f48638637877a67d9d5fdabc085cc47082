@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f3b3d9c6_01bc3247",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-07T18:19:52Z",
+      "side": 1,
+      "message": "Why do we need to enforce non-negative durations in ResultDB? What\u0027s the consequence if we simply remove the check on negative durations? Or add a bool flag \"-accept-negative-durations\" to make each test framework to decide?",
+      "revId": "5367b0f48638637877a67d9d5fdabc085cc47082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f18283b3_2b2d8666",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
