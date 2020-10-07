@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "804147fb_f4563f5f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "It makes sense. done",
+      "parentUuid": "918cf233_65f74141",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0cb4a1c8_8f506d80",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-10-07T15:48:10Z",
       "side": 1,
       "message": "nit: combine these two if statements?",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 138,
+        "endChar": 7
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c092ba02_87b4ffec",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0cb4a1c8_8f506d80",
       "range": {
         "startLine": 136,
         "startChar": 4,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "577e5b47_b765f62e",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "that\u0027s cool. done.",
+      "parentUuid": "13fd3217_b91808ce",
+      "range": {
+        "startLine": 139,
+        "startChar": 14,
+        "endLine": 139,
+        "endChar": 39
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ad60ed7_e6fa329a",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-10-07T15:48:10Z",
       "side": 1,
       "message": "nit: combine?",
+      "range": {
+        "startLine": 139,
+        "startChar": 7,
+        "endLine": 140,
+        "endChar": 9
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b996114_bfe7d1d4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ad60ed7_e6fa329a",
       "range": {
         "startLine": 139,
         "startChar": 7,
@@ -151,6 +247,54 @@
         "startChar": 60,
         "endLine": 141,
         "endChar": 66
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e03014e3_eb724d41",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e01cb798_8e51dcd4",
+      "range": {
+        "startLine": 141,
+        "startChar": 60,
+        "endLine": 141,
+        "endChar": 66
+      },
+      "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39df75dd_2a96dd85",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-07T17:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63e5e025_3ee6c86a",
+      "range": {
+        "startLine": 141,
+        "startChar": 47,
+        "endLine": 141,
+        "endChar": 48
       },
       "revId": "fc6b37b07ba62c4759ffc184419b3683a7cfeeab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
