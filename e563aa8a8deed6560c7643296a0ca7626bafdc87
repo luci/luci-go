@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "819ce100_649f98cd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T18:24:56Z",
+      "side": 1,
+      "message": "Erik, Gregory: I am happy to follow up on your feedback in another CL.",
+      "revId": "e563aa8a8deed6560c7643296a0ca7626bafdc87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
