@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "924f8a8b_403e01f9",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ad9fe68_5c7a1500",
+      "range": {
+        "startLine": 38,
+        "startChar": 40,
+        "endLine": 38,
+        "endChar": 44
+      },
+      "revId": "c106f9c26af7291474062c9a4e920ef26f8e3fd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0378bed5_2645ed29",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-06T22:59:03Z",
       "side": 1,
       "message": "nit: remove",
+      "range": {
+        "startLine": 122,
+        "startChar": 76,
+        "endLine": 122,
+        "endChar": 78
+      },
+      "revId": "c106f9c26af7291474062c9a4e920ef26f8e3fd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3376aa6_234e0f97",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-07T04:09:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0378bed5_2645ed29",
       "range": {
         "startLine": 122,
         "startChar": 76,
