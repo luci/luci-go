@@ -84,6 +84,36 @@ message Metadata {
   }
 }
 
+// Defines the way in which nodes are selected.
+enum NodeAffinityOperator {
+  OPERATOR_UNSPECIFIED = 0;
+
+  // Requires Compute Engine to seek for matched nodes.
+  IN = 1;
+
+  // Requires Compute Engine to avoid certain nodes.
+  NOT_IN = 2;
+}
+
+// A description of nodes onto which an instance may be scheduled.
+message NodeAffinity {
+  // Corresponds to the label key of Node resource.
+  string key = 1;
+
+  // Defines the operation of node selection.
+  NodeAffinityOperator operator = 2;
+
+  // Corresponds to the label values of Node resource.
+  repeated string values = 3;
+}
+
+// A description of scheduling options for an instance.
+message Scheduling {
+  // A set of node affinity and anti-affinity configurations.
+  // https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes#node_affinity_and_anti-affinity
+  repeated NodeAffinity node_affinity = 1;
+}
+
 // A description of a VM.
 // https://cloud.google.com/compute/docs/reference/rest/v1/instances.
 message VM {
@@ -116,6 +146,9 @@ message VM {
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
   string zone = 9;
+
+  // The scheduling options for this VM.
+  Scheduling scheduling = 10;
 }
 
 // A length of time.

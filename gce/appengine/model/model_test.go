@@ -525,6 +525,100 @@ func TestVM(t *testing.T) {
 
 	})
 
+	Convey("getScheduling", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				s := v.getScheduling()
+				So(s, ShouldBeNil)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Scheduling: &config.Scheduling{
+							NodeAffinity: []*config.NodeAffinity{},
+						},
+					},
+				}
+				s := v.getScheduling()
+				So(s, ShouldBeNil)
+			})
+		})
+
+		Convey("non-zero", func() {
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Scheduling: &config.Scheduling{
+							NodeAffinity: []*config.NodeAffinity{
+								{},
+							},
+						},
+					},
+				}
+				s := v.getScheduling()
+				So(s, ShouldNotBeNil)
+				So(s.NodeAffinities, ShouldHaveLength, 1)
+				So(s.NodeAffinities[0].Key, ShouldEqual, "")
+				So(s.NodeAffinities[0].Operator, ShouldEqual, "OPERATOR_UNSPECIFIED")
+				So(s.NodeAffinities[0].Values, ShouldHaveLength, 0)
+			})
+
+			Convey("non-empty", func() {
+				Convey("key", func() {
+					v := &VM{
+						Attributes: config.VM{
+							Scheduling: &config.Scheduling{
+								NodeAffinity: []*config.NodeAffinity{
+									{
+										Key: "node-affinity-key",
+									},
+								},
+							},
+						},
+					}
+					s := v.getScheduling()
+					So(s.NodeAffinities, ShouldHaveLength, 1)
+					So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
+				})
+				Convey("operator", func() {
+					v := &VM{
+						Attributes: config.VM{
+							Scheduling: &config.Scheduling{
+								NodeAffinity: []*config.NodeAffinity{
+									{
+										Operator: config.NodeAffinityOperator_IN,
+									},
+								},
+							},
+						},
+					}
+					s := v.getScheduling()
+					So(s.NodeAffinities, ShouldHaveLength, 1)
+					So(s.NodeAffinities[0].Operator, ShouldEqual, "IN")
+				})
+				Convey("values", func() {
+					v := &VM{
+						Attributes: config.VM{
+							Scheduling: &config.Scheduling{
+								NodeAffinity: []*config.NodeAffinity{
+									{
+										Values: []string{"node-affinity-value"},
+									},
+								},
+							},
+						},
+					}
+					s := v.getScheduling()
+					So(s.NodeAffinities, ShouldHaveLength, 1)
+					So(s.NodeAffinities[0].Values, ShouldHaveLength, 1)
+					So(s.NodeAffinities[0].Values[0], ShouldEqual, "node-affinity-value")
+				})
+			})
+		})
+	})
+
 	Convey("getTags", t, func() {
 		Convey("zero", func() {
 			Convey("nil", func() {
@@ -567,6 +661,7 @@ func TestVM(t *testing.T) {
 			So(i.Metadata, ShouldBeNil)
 			So(i.MinCpuPlatform, ShouldEqual, "")
 			So(i.NetworkInterfaces, ShouldHaveLength, 0)
+			So(i.Scheduling, ShouldBeNil)
 			So(i.ServiceAccounts, ShouldBeNil)
 			So(i.Tags, ShouldBeNil)
 		})
@@ -590,6 +685,11 @@ func TestVM(t *testing.T) {
 							Network: "network",
 						},
 					},
+					Scheduling: &config.Scheduling{
+						NodeAffinity: []*config.NodeAffinity{
+							{},
+						},
+					},
 				},
 			}
 			i := v.GetInstance()
@@ -599,6 +699,8 @@ func TestVM(t *testing.T) {
 			So(i.MinCpuPlatform, ShouldEqual, "plat")
 			So(i.NetworkInterfaces, ShouldHaveLength, 1)
 			So(i.ServiceAccounts, ShouldBeNil)
+			So(i.Scheduling, ShouldNotBeNil)
+			So(i.Scheduling.NodeAffinities, ShouldHaveLength, 1)
 			So(i.Tags, ShouldBeNil)
 		})
 	})
