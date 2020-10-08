@@ -23,7 +23,7 @@ import { provideUserConfigs, UserConfigsStore } from '../context/app_state/user_
 import { router } from '../routes';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
-  gapi.load('auth2', () => {
+  window.gapi?.load('auth2', () => {
     gapi.auth2
       .init({client_id: CONFIGS.OAUTH2.CLIENT_ID, scope: 'email'})
       .then(resolve, reject);

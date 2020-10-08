@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
+
 import { bugnizerLink } from './bugnizer_link';
 
-const crbugLinks = `
+const bugnizerLinks = `
 b:123 b/234 ab/345 b:proj/456 not a link
 crbug/567
 `;
@@ -28,7 +29,8 @@ const md = MarkdownIt('zero', {linkify: true})
 
 describe('bugnizer_link', () => {
   it('can render links correctly', async () => {
-    const ele = await fixture(md.render(crbugLinks));
+    after(fixtureCleanup);
+    const ele = await fixture(md.render(bugnizerLinks));
 
     const anchors = ele.querySelectorAll('a');
     assert.equal(anchors.length, 2);

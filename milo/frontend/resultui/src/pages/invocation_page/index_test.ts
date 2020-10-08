@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture } from '@open-wc/testing';
+import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { Commands, RouterLocation } from '@vaadin/router';
 import { assert } from 'chai';
 import { html } from 'lit-element';
@@ -30,6 +30,7 @@ describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState, DEFAULT_USER_CONFIGS);
+    after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
       <milo-invocation-page
         .appState=${appState}
@@ -46,6 +47,7 @@ describe('Invocation Page', () => {
   it('should redirect to the not found page when invocation_id is not provided', async () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState, DEFAULT_USER_CONFIGS);
+    after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
       <milo-invocation-page
         .appState=${appState}
