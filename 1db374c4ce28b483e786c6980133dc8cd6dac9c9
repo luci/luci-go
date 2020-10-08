@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa7de057_17ca7712",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-08T05:17:13Z",
+      "side": 1,
+      "message": "PTAL.\n\nSample invocation: https://ci.chromium.org/ui/inv/u-chanli-2020-10-08-03-10-00-6b57087dc7c437f9/test-results\n\nI didn\u0027t consider test_metadata you mentioned in the email earlier. If we decide to do that, then this CL will be blocked.",
+      "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
