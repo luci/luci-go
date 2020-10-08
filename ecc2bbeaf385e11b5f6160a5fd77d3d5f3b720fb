@@ -167,6 +167,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c8762f04_6acdaf24",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T23:59:31Z",
+      "side": 1,
+      "message": "i see. it was not clear that this func assumes that the request is valid. no need to validate the second time. let\u0027s just a func comment about the assumption. Then reader of the code won\u0027t raise the question.",
+      "parentUuid": "d817173e_198dfb22",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 42
+      },
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5f8e86d3_b76a7688",
         "filename": "resultdb/internal/services/resultdb/history_paging.go",
         "patchSetId": 4

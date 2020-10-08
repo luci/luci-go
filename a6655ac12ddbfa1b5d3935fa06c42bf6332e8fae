@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a720aa8_faca4f38",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T23:59:31Z",
+      "side": 1,
+      "message": "there are at least 3 history files now, and it seems that we are implementing history reading in the \"resultdb\" package. I think it is worth adding a new \"history\" package, move most of the logic there, shorten symbol names (no longer have to mention \"history\" in each symbol), such that RPC impl stays simple.\n\nI think this would follow an existing pattern, e.g. see QueryTestResults.\n\n(still reviewing the code)",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
