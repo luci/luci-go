@@ -51,6 +51,24 @@
       "parentUuid": "f5a7c7e0_18f529ba",
       "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4cae3e14_b9d016f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T18:44:55Z",
+      "side": 1,
+      "message": "the suggested alternative is in the doc:\n- The LocationTags protobuf message is defined in resultdb/proto\n- metadata-exporter builder reads dirmetadata (like it does now) and produces a CIPDPackage with a JSON file representing LocationsTag message.\n\nparsing dir_metadata works for those who use dirmetadata. The idea behind LocationTags protobuf message is that it is not tied to DirMetadata, but represents a generic interface.",
+      "parentUuid": "c425d4f2_ef24f2ab",
+      "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
