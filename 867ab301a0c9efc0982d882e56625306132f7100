@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db331672_5ade73bd",
+        "filename": "milo/frontend/resultui/index_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-08T12:30:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5ba6cc6_4ebf4661",
+      "range": {
+        "startLine": 17,
+        "startChar": 13,
+        "endLine": 17,
+        "endChar": 23
+      },
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "314000ff_5e35f9e9",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee478081_53ff2391",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-08T12:30:04Z",
+      "side": 1,
+      "message": "I could\u0027ve opened a separate CL for this.\nBut it is somewhat related.\nThe error trace caused by undefined gapi when running tests is more noticeable after the source map change.\nI think it\u0027s fine to keep the change here.",
+      "parentUuid": "314000ff_5e35f9e9",
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f8634242_088df00e",
@@ -54,6 +96,24 @@
       "writtenOn": "2020-10-08T04:48:07Z",
       "side": 1,
       "message": "Is this comment intentional?",
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c24861f_c6cee940",
+        "filename": "milo/frontend/resultui/src/libs/test_utils/assertion-error.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-08T12:30:04Z",
+      "side": 1,
+      "message": "Yes. It highlights the crucial difference between this implementation and the original implementation.",
+      "parentUuid": "f8634242_088df00e",
       "revId": "867ab301a0c9efc0982d882e56625306132f7100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
