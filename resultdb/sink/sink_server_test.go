@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -29,6 +30,7 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
@@ -119,6 +121,38 @@ func TestReportTestResults(t *testing.T) {
 			check(ctx, cfg, tr, expected)
 		})
 
+		Convey("duration", func() {
+			Convey("with CoerceNegativeDuration", func() {
+				cfg.CoerceNegativeDuration = true
+
+				// duration == nil
+				tr.Duration, expected.Duration = nil, nil
+				check(ctx, cfg, tr, expected)
+
+				// duration == 0
+				tr.Duration, expected.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
+				check(ctx, cfg, tr, expected)
+
+				// duration > 0
+				tr.Duration, expected.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
+				check(ctx, cfg, tr, expected)
+
+				// duration < 0
+				tr.Duration = ptypes.DurationProto(-8)
+				expected.Duration = ptypes.DurationProto(0)
+				check(ctx, cfg, tr, expected)
+			})
+			Convey("without CoerceNegativeDuration", func() {
+				// duration < 0
+				tr.Duration = ptypes.DurationProto(-8)
+				sink, err := newSinkServer(ctx, cfg)
+				So(err, ShouldBeNil)
+
+				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+				_, err = sink.ReportTestResults(ctx, req)
+				So(err, ShouldErrLike, "bad request: duration: is < 0")
+			})
+		})
 		Convey("with ServerConfig.TestLocationBase", func() {
 			cfg.TestLocationBase = "//base/"
 			tr.TestLocation.FileName = "artifact_dir/a_test.cc"

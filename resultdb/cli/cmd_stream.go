@@ -100,6 +100,11 @@ func cmdStream(p Params) *subcommands.Command {
 				Tag to add to every test result in "key:value" format.
 				A key can be repeated.
 			`))
+			r.Flags.BoolVar(&r.coerceNegativeDuration, "coerce-negative-duration",
+				false, text.Doc(`
+				If true, all negative durations will be coerced to 0.
+				If false, test results with negative durations will be rejected.
+			`))
 			return r
 		},
 	}
@@ -109,15 +114,16 @@ type streamRun struct {
 	baseCommandRun
 
 	// flags
-	isNew                bool
-	realm                string
-	testIDPrefix         string
-	testTestLocationBase string
-	vars                 map[string]string
-	artChannelMaxLeases  uint
-	trChannelMaxLeases   uint
-	tags                 strpair.Map
-	pbTags               []*pb.StringPair
+	isNew                  bool
+	realm                  string
+	testIDPrefix           string
+	testTestLocationBase   string
+	vars                   map[string]string
+	artChannelMaxLeases    uint
+	trChannelMaxLeases     uint
+	tags                   strpair.Map
+	pbTags                 []*pb.StringPair
+	coerceNegativeDuration bool
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -231,6 +237,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestResultChannelMaxLeases: r.trChannelMaxLeases,
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
+		CoerceNegativeDuration:     r.coerceNegativeDuration,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
