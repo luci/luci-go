@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cebcd32_1992b4a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-08T04:15:41Z",
+      "side": 1,
+      "message": "Hi Nodir and Sana, can you help to review this CL? Thanks.",
+      "revId": "82ba6e373712e5eccf7277e98f50abac85bbef93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
