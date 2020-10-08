@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7936323_06eff9d2",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-08T22:25:21Z",
+      "side": 1,
+      "message": "Done (I think), now added: \u0027Parent *datastore.Key `gae:\"$parent\"`\u0027",
+      "parentUuid": "0afdeb31_126e37bf",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 22
+      },
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2566fae7_59175ed9",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-06T19:25:43Z",
       "side": 1,
       "message": "\"repo\" here is redundant. It should just contain 2 lists of regexps: include \u0026 exclude. You don\u0027t actually need to store these as proto, two slices of strings will suffice.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 42
+      },
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c1e4151_61609158",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-08T22:25:21Z",
+      "side": 1,
+      "message": "That makes sense (of course, assuming that each GobWatchMapProject only contains entries for one project, and entries for one project but different repos will be split across different entities).",
+      "parentUuid": "2566fae7_59175ed9",
       "range": {
         "startLine": 49,
         "startChar": 0,
@@ -96,6 +144,24 @@
       "side": 1,
       "message": "Original Discussion: https://chat.google.com/room/AAAAKz3_Kuw/sApL2zYfDV8",
       "parentUuid": "e38fac47_70b3c29e",
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c7d633d_f5194c8b",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-08T22:25:21Z",
+      "side": 1,
+      "message": "Update this CL for now to include the extra indexed LUCI project field, with comment.",
+      "parentUuid": "2480d04e_3d48c22a",
       "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
