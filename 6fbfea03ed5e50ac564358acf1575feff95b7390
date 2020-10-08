@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "13e604dc_e3d269d4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-08T23:49:29Z",
+      "side": 1,
+      "message": "forgot to push the new patch in the last CL.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2449035\n",
+      "revId": "6fbfea03ed5e50ac564358acf1575feff95b7390",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
