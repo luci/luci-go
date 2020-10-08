@@ -14,7 +14,7 @@
 
 /**
  * @fileoverview
- * This file serve as a single entry to all the test files.
+ * This file serves as a single entry to all the test files.
  * It can
  * 1. reduce the time to compile all test bundles, and
  * 2. allow us to use relative source map file path (karma gets confused when
