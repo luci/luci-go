@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": true,
       "key": {
         "uuid": "f9995c16_b9b5304d",
         "filename": "cv/api/migration/migration.proto",
@@ -20,10 +21,10 @@
         "endChar": 67
       },
       "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "8ab6bd41_7ccdcc0c",
         "filename": "cv/api/migration/migration.proto",
@@ -44,10 +45,10 @@
         "endChar": 67
       },
       "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "8d2adb91_1860324a",
         "filename": "cv/api/migration/migration.proto",
@@ -68,8 +69,31 @@
         "endChar": 67
       },
       "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a04f784_94da1b03",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-08T10:47:33Z",
+      "side": 1,
+      "message": "Yes, and yes.",
+      "parentUuid": "8d2adb91_1860324a",
+      "range": {
+        "startLine": 34,
+        "startChar": 44,
+        "endLine": 34,
+        "endChar": 67
+      },
+      "revId": "693fc860860c3fccfbf2c1089db3ad5120cef84f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
