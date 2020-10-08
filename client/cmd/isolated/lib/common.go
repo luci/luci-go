@@ -86,8 +86,7 @@ func (c *commonFlags) createIsolatedClient(ctx context.Context, opts CommandOpti
 	if opts.AnonClient != nil {
 		isolOpts = append(isolOpts, isolatedclient.WithAnonymousClient(opts.AnonClient))
 	}
-	isolCl = c.isolatedFlags.NewClient(isolOpts...)
-	return
+	return c.isolatedFlags.NewClient(isolOpts...)
 }
 
 // CommandOptions is used to initialize an isolated command.
