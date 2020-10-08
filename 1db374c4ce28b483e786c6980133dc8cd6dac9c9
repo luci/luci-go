@@ -16,6 +16,23 @@
       "message": "PTAL.\n\nSample invocation: https://ci.chromium.org/ui/inv/u-chanli-2020-10-08-03-10-00-6b57087dc7c437f9/test-results\n\nI didn\u0027t consider test_metadata you mentioned in the email earlier. If we decide to do that, then this CL will be blocked.",
       "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5a7c7e0_18f529ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T07:07:39Z",
+      "side": 1,
+      "message": "1) this differs from \n   https://docs.google.com/document/d/1wChdmRALNLvzaQDn7tf8qbJ7Y0Zd-WH1nLWq99CRlRQ/edit#bookmark\u003did.e9w58nx5xro9\n  quite a bit. Is this intentional?\n\n2) luci-go code should not depend on infra.git code",
+      "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
