@@ -62,6 +62,24 @@
       "message": "I\u0027ve just realized that this is, sadly, insufficient. Update actually involves 3 kind of ops:\n * add GobWatchMapProject for each Gerrit repo which is watched in new config and not old one\n * delete GobWatchMapProject if it was watched before but not any more\n * update GobWatchMapProject if watched refRegexp has changed.\n\nThe add \u0026 update are easy because Gerrit projects are referenced in the new config version.\n\nCan you think of a way to support delete?",
       "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e38fac47_70b3c29e",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-08T10:52:08Z",
+      "side": 1,
+      "message": "**I was wrong about queries in Datastore**\n\nWe can query across *all* child entities w/o specifying ancestor, but we need to add actual indexed property into child entity, effectively duplicating id.\nI\u0027ve updated ERD diagram and design doc: https://screenshot.googleplex.com/VKZnVd8R2CnqP8D",
+      "parentUuid": "f0736380_a895e710",
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
