@@ -80,6 +80,24 @@
       "parentUuid": "f0736380_a895e710",
       "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2480d04e_3d48c22a",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-08T16:53:58Z",
+      "side": 1,
+      "message": "Original Discussion: https://chat.google.com/room/AAAAKz3_Kuw/sApL2zYfDV8",
+      "parentUuid": "e38fac47_70b3c29e",
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
