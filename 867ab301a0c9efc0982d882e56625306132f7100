@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5ba6cc6_4ebf4661",
+        "filename": "milo/frontend/resultui/index_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-08T04:48:07Z",
+      "side": 1,
+      "message": "nits: serves as the",
+      "range": {
+        "startLine": 17,
+        "startChar": 13,
+        "endLine": 17,
+        "endChar": 23
+      },
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "314000ff_5e35f9e9",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-08T04:48:07Z",
+      "side": 1,
+      "message": "This seems not related to this CL?",
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8634242_088df00e",
+        "filename": "milo/frontend/resultui/src/libs/test_utils/assertion-error.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-08T04:48:07Z",
+      "side": 1,
+      "message": "Is this comment intentional?",
+      "revId": "867ab301a0c9efc0982d882e56625306132f7100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
