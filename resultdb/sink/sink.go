@@ -116,6 +116,10 @@ type ServerConfig struct {
 	// BaseTags will be added to each TestResult in addition to the original tags that
 	// the tests were reported with.
 	BaseTags []*pb.StringPair
+
+	// DirMDFile is the path to the file contains dirs maps from a directory
+	// to its metadata.
+	DirMDFile string
 }
 
 // Validate validates all the config fields.

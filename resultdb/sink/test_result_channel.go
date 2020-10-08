@@ -17,14 +17,20 @@ package sink
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+
+	dirmdpb "infra/tools/dirmd/proto"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -45,6 +51,9 @@ type testResultChannel struct {
 	// 1 indicates that testResultChannel started the process of closing and draining
 	// the channel. 0, otherwise.
 	closed int32
+
+	// dirs maps from a directory to its metadata.
+	dirMD *dirmdpb.Mapping
 }
 
 func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultChannel {
@@ -67,11 +76,37 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for TestResult: %s", err))
 	}
+
+	if err = c.getChromeMetadata(); err != nil {
+		panic(fmt.Sprintf("failed to parse dir metadata file: %s", err))
+	}
+	if c.dirMD != nil && c.dirMD.Dirs != nil {
+		logging.Infof(ctx, "trchannel: Got the mapping")
+	} else {
+		logging.Infof(ctx, "trchannel: not got the mapping")
+	}
+
 	return c
 }
 
+func (c *testResultChannel) getChromeMetadata() error {
+	if c.cfg.DirMDFile != "" {
+		mdFile, err := os.Open(c.cfg.DirMDFile)
+		if err != nil {
+			return err
+		}
+		defer mdFile.Close()
+
+		c.dirMD = &dirmdpb.Mapping{}
+		if err = (&jsonpb.Unmarshaler{}).Unmarshal(mdFile, c.dirMD); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *testResultChannel) closeAndDrain(ctx context.Context) {
-	// annonuce that it is in the process of closeAndDrain.
+	// announce that it is in the process of closeAndDrain.
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
@@ -92,13 +127,65 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
+// dirMDTags gets extra tags by looking for the directory of test location
+// in the dirs map.
+func (c *testResultChannel) dirMDTags(fileName string) []*pb.StringPair {
+	if c.dirMD == nil || c.dirMD.GetDirs() == nil {
+		return nil
+	}
+	if fileName == "" {
+		return nil
+	}
+
+	// fileName must start with "//" and it has been validated.
+	dir := filepath.Dir(fileName[2:])
+	for dir != "." {
+		if md, ok := c.dirMD.Dirs[dir]; ok {
+			tags := make([]*pb.StringPair, 0, 3)
+			if md.GetMonorail().GetComponent() != "" {
+				tags = append(
+					tags,
+					&pb.StringPair{
+						Key:   "monorail_component",
+						Value: md.Monorail.Component})
+			}
+
+			if md.GetTeamEmail() != "" {
+				tags = append(
+					tags,
+					&pb.StringPair{
+						Key:   "team",
+						Value: md.TeamEmail})
+			}
+
+			if md.GetOs() != dirmdpb.OS_OS_UNSPECIFIED {
+				tags = append(
+					tags,
+					&pb.StringPair{
+						Key:   "monorail_os",
+						Value: md.Os.String()})
+			}
+			return tags
+		}
+		dir = filepath.Dir(dir)
+	}
+	return nil
+}
+
 func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	// retried batch?
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
+
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
+			if tr.GetTestLocation().GetFileName() != "" {
+				if dirMDTags := c.dirMDTags(tr.TestLocation.FileName); dirMDTags != nil {
+					tags = append(tags, dirMDTags...)
+				}
+			}
+
 			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
