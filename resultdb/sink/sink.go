@@ -123,6 +123,10 @@ type ServerConfig struct {
 	// If true, the API will coerce negative durations to 0.
 	// If false, the API will return an error for negative durations.
 	CoerceNegativeDuration bool
+
+	// DirMDFile is the path to the file contains dirs maps from a directory
+	// to its metadata.
+	DirMDFile string
 }
 
 // Validate validates all the config fields.
