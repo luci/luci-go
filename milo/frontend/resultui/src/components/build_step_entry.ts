@@ -67,7 +67,13 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     this.prerender = false;
   }
 
-  @computed private get shortName() { return this.step.name.split('|')[0] || 'ERROR: Empty Name'; }
+  @computed private get shortName() {
+    if (!this.step.name) {
+      return 'ERROR: Empty Name';
+    }
+    const parts = this.step.name.split('|');
+    return parts[parts.length - 1];
+  }
 
   @computed private get duration() {
     const start = DateTime.fromISO(this.step.interval.start);
