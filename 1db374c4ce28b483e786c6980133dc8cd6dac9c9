@@ -33,6 +33,24 @@
       "message": "1) this differs from \n   https://docs.google.com/document/d/1wChdmRALNLvzaQDn7tf8qbJ7Y0Zd-WH1nLWq99CRlRQ/edit#bookmark\u003did.e9w58nx5xro9\n  quite a bit. Is this intentional?\n\n2) luci-go code should not depend on infra.git code",
       "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c425d4f2_ef24f2ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-08T18:13:08Z",
+      "side": 1,
+      "message": "\u003e 1) this differs from \n\u003e    https://docs.google.com/document/d/1wChdmRALNLvzaQDn7tf8qbJ7Y0Zd-WH1nLWq99CRlRQ/edit#bookmark\u003did.e9w58nx5xro9\n\u003e   quite a bit. Is this intentional?\n\nMy bad, I thought location tag file was the original design of https://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tools/dirmd/proto/mapping.proto\n\nI think parsing the dir_metadata file directly also works, WDYT?\n\n\u003e 2) luci-go code should not depend on infra.git code\nWhat\u0027s the suggested alternative? Should I copy the protos then?",
+      "parentUuid": "f5a7c7e0_18f529ba",
+      "revId": "1db374c4ce28b483e786c6980133dc8cd6dac9c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
