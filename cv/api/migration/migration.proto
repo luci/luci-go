@@ -1,0 +1,51 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package migration;
+
+option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
+
+
+import "google/protobuf/empty.proto";
+
+import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
+
+
+// Migration service is for INTERNAL LUCI CV USE ONLY.
+// CAN AND WILL CHANGE WITHOUT NOTICE IN BACKWARDS INCOMPATIBLE WAY.
+//
+// This is temporary API to be called by CQDaemon, CV's predecessor, during the
+// migration from CQDaemon to CV.
+service Migration {
+
+  // ReportRuns notifies CV of the Runs CQDaemon is currently working with.
+  //
+  // Used to determine whether CV's view of the world matches that of CQDaemon.
+  // Initially, this is just FYI for CV.
+  rpc ReportRuns(ReportRunsRequest) returns (google.protobuf.Empty);
+}
+
+message ReportRunsRequest {
+  repeated ReportedRun runs = 1;
+}
+
+message ReportedRun {
+  // Re-use BQ attempt for now.
+  bigquery.Attempt attempt = 1;
+
+  // TODO(tandrii): add more fields as needed.
+}
