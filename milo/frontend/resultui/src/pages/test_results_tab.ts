@@ -116,12 +116,29 @@ export class TestResultsTabElement extends MobxLitElement {
       ${unexpectedVariants.length === 0 ? html`
       <div class="list-entry">No unexpected test results.</div>
       <hr class="divider">
-      ` : ''}
+      ` : html ``}
+      ${this.renderIntegrationHint()}
       ${this.renderVariants(unexpectedVariants)}
       ${this.renderVariants(flakyVariants)}
       ${this.renderVariants(exoneratedVariants)}
       ${this.renderVariants(expectedVariants)}
     `;
+  }
+
+  private renderIntegrationHint() {
+    const state = this.invocationState;
+    return this.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading? html `
+      <div class="list-entry">
+        Don't see results of your test framework here?
+        This might be because they are not integrated with ResultDB yet.
+        Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+        <span
+          id="hide-hint"
+          @click=${() => this.userConfigs.hints.showResultDbIntegrationHint = false}
+        >Don't show again</span>
+      </div>
+      <hr class="divider">
+    `: html ``
   }
 
   private renderVariants(variants: ReadonlyVariant[]) {
@@ -186,18 +203,6 @@ export class TestResultsTabElement extends MobxLitElement {
             <mwc-icon class="inline-icon" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
           </span>
         </div>
-        <span
-          class="list-entry"
-          style=${styleMap({'display': this.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading ? '' : 'none'})}
-        >
-          Don't see results of your test framework here?
-          This might be because they are not integrated with ResultDB yet.
-          Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
-          <span
-            id="hide-hint"
-            @click=${() => this.userConfigs.hints.showResultDbIntegrationHint = false}
-          >Don't show again</span>
-        </span>
       </div>
     `;
   }
