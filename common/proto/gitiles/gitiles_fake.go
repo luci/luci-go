@@ -187,7 +187,8 @@ func (f *Fake) SetRepository(repository string, refs map[string]string, commits 
 	}
 }
 
-func (f *Fake) getCallLogs() []interface{} {
+// GetCallLogs returns callLogs.
+func (f *Fake) GetCallLogs() []interface{} {
 	return f.callLogs
 }
 
