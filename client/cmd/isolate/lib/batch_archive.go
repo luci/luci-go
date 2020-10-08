@@ -185,7 +185,10 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archive
 	if err != nil {
 		return err
 	}
-	client := c.createIsolatedClient(authClient)
+	client, err := c.createIsolatedClient(authClient)
+	if err != nil {
+		return err
+	}
 
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
