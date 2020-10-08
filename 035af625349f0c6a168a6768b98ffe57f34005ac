@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "519d07dd_702e645b",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "is there a reason we go from 0% all the way to 100%? as opposed to 10% for starters?",
+      "range": {
+        "startLine": 130,
+        "startChar": 85,
+        "endLine": 130,
+        "endChar": 88
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e80cc3d_1d8ad3cd",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "for consistency with the other code, and to reduce a chance that we\u0027d be calling dev from prod, I recommend reversing this if statement: use prod by default, and switch to dev is ctx.Value(\"env\") \u003d\u003d \"Dev\"",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 2
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1d27d77_4134e08f",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "we have a goroutine leak here.\nwe need to cancel Go\u0027s ctx in this case",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 75
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6657a749_49d4b6eb",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 99,
+        "startChar": 46,
+        "endLine": 99,
+        "endChar": 61
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46fbd90e_fa52643c",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "this is a very generic function name. note that in Go, symbol namespace is eniter package, not just a file, so `compare()` in cancel_build.go points to this func.\n\ni recommend something more specific to search, e.g. compareSearchResults. \nThe same applies to other symbols in this file, e.g. responseBundle.",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 12
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e56ffb3_88ad1876",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "this uses code-designed-for-testing in production. I think it may backfire\n\nthis is a very slow function because it serializes to text.\nit would be much faster, and not complicated, to compare only ids.\n\nbut overall, expect that diffs will happen sometimes, because there is a race between two implementations",
+      "range": {
+        "startLine": 108,
+        "startChar": 9,
+        "endLine": 108,
+        "endChar": 28
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85231bbe_176a0637",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-08T21:25:12Z",
+      "side": 1,
+      "message": "why not reuse code?",
+      "range": {
+        "startLine": 117,
+        "startChar": 15,
+        "endLine": 117,
+        "endChar": 21
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
