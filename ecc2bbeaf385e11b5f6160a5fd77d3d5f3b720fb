@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c309299_23996e9f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-08T23:44:33Z",
+      "side": 1,
+      "message": "It is now. I intended do to a couple of smaller cleanups after this patchset, but I\u0027ve done them in patchset 5.\n\nDid you have any specific concerns?",
+      "parentUuid": "42a4deac_a90e6da4",
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "84f93ebf_5eaced24",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c99210e_72f4b3ec",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-08T23:44:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84f93ebf_5eaced24",
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1edbb5ee_46793794",
@@ -48,6 +84,30 @@
       "writtenOn": "2020-10-08T22:24:35Z",
       "side": 1,
       "message": "must check len(parts)",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 2
+      },
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c03632d_33b8ec1d",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-08T23:44:33Z",
+      "side": 1,
+      "message": "validation does this.",
+      "parentUuid": "1edbb5ee_46793794",
       "range": {
         "startLine": 81,
         "startChar": 0,
@@ -81,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d817173e_198dfb22",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-08T23:44:33Z",
+      "side": 1,
+      "message": "This is all validated separately. I\u0027ve added an extra validation call in this method. PTAL",
+      "parentUuid": "74568c2a_341b78aa",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 42
+      },
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5f8e86d3_b76a7688",
@@ -94,6 +178,30 @@
       "writtenOn": "2020-10-08T22:24:35Z",
       "side": 1,
       "message": "?",
+      "range": {
+        "startLine": 106,
+        "startChar": 8,
+        "endLine": 107,
+        "endChar": 10
+      },
+      "revId": "ecc2bbeaf385e11b5f6160a5fd77d3d5f3b720fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54847ddb_48afddb6",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-08T23:44:33Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "5f8e86d3_b76a7688",
       "range": {
         "startLine": 106,
         "startChar": 8,
