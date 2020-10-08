@@ -105,6 +105,10 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, all negative durations will be coerced to 0.
 				If false, test results with negative durations will be rejected.
 			`))
+			r.Flags.StringVar(&r.dirMDFile, "dir-metadata", "", text.Doc(`
+				Path to the file that contains dirs maps from a directory in chromium/src.git to its metadata. See
+				https://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tools/dirmd/proto/mapping.proto;l=14.
+			`))
 			return r
 		},
 	}
@@ -124,6 +128,7 @@ type streamRun struct {
 	tags                   strpair.Map
 	pbTags                 []*pb.StringPair
 	coerceNegativeDuration bool
+	dirMDFile              string
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -238,6 +243,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
 		CoerceNegativeDuration:     r.coerceNegativeDuration,
+		DirMDFile:                  r.dirMDFile,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

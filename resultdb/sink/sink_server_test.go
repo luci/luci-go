@@ -113,6 +113,16 @@ func TestReportTestResults(t *testing.T) {
 				cfg.BaseTags, tr.Tags, expected.Tags = t1, t2, append(t1, t2...)
 				check(ctx, cfg, tr, expected)
 			})
+
+			Convey("with ServerConfig.DirMDFile", func() {
+				cfg.DirMDFile = "test_data/dir_map.json"
+				expected.Tags = pbutil.StringPairs(
+					"k1", "v1",
+					"monorail_component", "Monorail>Component",
+					"monorail_os", "WINDOWS",
+					"team", "team_email@chromium.org")
+				check(ctx, cfg, tr, expected)
+			})
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {
