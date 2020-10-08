@@ -121,7 +121,10 @@ func (c *archiveRun) archiveToIsolate(ctx context.Context, al *archiveLogger) er
 	if err != nil {
 		return err
 	}
-	client := c.createIsolatedClient(authCl)
+	client, err := c.createIsolatedClient(authCl)
+	if err != nil {
+		return err
+	}
 
 	opts := &c.ArchiveOptions
 	// Parse the incoming isolate file.

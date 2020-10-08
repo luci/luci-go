@@ -41,9 +41,6 @@ func (c *Flags) Init(f *flag.FlagSet) {
 
 // Parse applies changes specified by command line flags.
 func (c *Flags) Parse() error {
-	if c.ServerURL == "" {
-		return errors.New("-isolate-server must be specified")
-	}
 	if c.ServerURL == "fake" {
 		ts := httptest.NewServer(isolatedfake.New())
 		c.ServerURL = ts.URL
@@ -60,6 +57,9 @@ func (c *Flags) Parse() error {
 	return nil
 }
 
-func (c *Flags) NewClient(opts ...Option) *Client {
-	return NewClient(c.ServerURL, append([]Option{WithNamespace(c.Namespace)}, opts...)...)
+func (c *Flags) NewClient(opts ...Option) (*Client, error) {
+	if c.ServerURL == "" {
+		return nil, errors.New("-isolate-server must be specified")
+	}
+	return NewClient(c.ServerURL, append([]Option{WithNamespace(c.Namespace)}, opts...)...), nil
 }

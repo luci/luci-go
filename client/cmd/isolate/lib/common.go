@@ -92,7 +92,7 @@ func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client,
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
-func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
+func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) (*isolatedclient.Client, error) {
 	userAgent := "isolate-go/" + IsolateVersion
 	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
 		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
