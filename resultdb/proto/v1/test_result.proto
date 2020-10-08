@@ -127,7 +127,8 @@ message TestResult {
 
 // Location of the test definition.
 message TestLocation {
-  reserved 1; // We might want to add repo URL later.
+  // A repo identifier. Its value is the Gitiles URL of the repo.
+  string repo = 1;
 
   // Name of the file where the test is defined.
   // For files in a repository, must start with "//"
