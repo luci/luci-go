@@ -1,0 +1,10 @@
+{
+  "dirs":{
+    ".":{"monorail":{"project":"chromium"}},
+    "artifact_dir": {
+      "monorail":{"project":"chromium", "component": "Monorail>Component"},
+      "teamEmail": "team_email@chromium.org",
+      "os": "WINDOWS"
+    }
+  }
+}
