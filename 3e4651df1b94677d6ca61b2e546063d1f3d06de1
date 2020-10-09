@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab94e460_491f3ad3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-09T19:38:04Z",
+      "side": 1,
+      "message": "Thanks for uploading this; I think we might want to edit/discuss a little bit in the doc if it\u0027s easier -- and then update this CL based on that before committing?",
+      "revId": "3e4651df1b94677d6ca61b2e546063d1f3d06de1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
