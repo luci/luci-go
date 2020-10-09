@@ -89,7 +89,6 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 						printLostRejection(p, rej)
 						logging.Infof(ctx, "%s", buf.Bytes())
 					}
-					return nil
 				}
 			}
 		})
