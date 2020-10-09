@@ -15,15 +15,17 @@
 package eval
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -39,17 +41,24 @@ type Safety struct {
 	// evaluation.
 	EligibleRejections int
 
-	// PreservedRejections is the number of rejections that would be preserved
-	// by the candidate algorithm. Ideally this number equals EligibleRejections.
-	PreservedRejections int
+	// LostRejections are the rejections that would not be preserved
+	// by the candidate algorithm, i.e. the bad patchsets would land.
+	// The candidate RTS algorithm did not select any of the failed tests
+	// in these rejections.
+	//
+	// Ideally this slice is empty.
+	LostRejections []*evalpb.Rejection
 }
 
 func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Rejection) (*Safety, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 
-	var totalRejections, eligibleCount, preservedRejections int32
+	var ret Safety
+	var mu sync.Mutex
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
+			buf := &bytes.Buffer{}
+			p := newPrinter(buf)
 			for {
 				select {
 				case <-ctx.Done():
@@ -60,17 +69,27 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 						return nil
 					}
 
-					atomic.AddInt32(&totalRejections, 1)
+					eligible, wouldReject, err := r.processRejection(ctx, rej)
 
-					switch eligible, wouldReject, err := r.processRejection(ctx, rej); {
-					case err != nil:
-						return errors.Annotate(err, "failed to process rejection %s", rej).Err()
-					case eligible:
-						atomic.AddInt32(&eligibleCount, 1)
-						if wouldReject {
-							atomic.AddInt32(&preservedRejections, 1)
+					mu.Lock()
+					ret.TotalRejections++
+					if err == nil && eligible {
+						ret.EligibleRejections++
+						if !wouldReject {
+							ret.LostRejections = append(ret.LostRejections, rej)
 						}
 					}
+					mu.Unlock()
+					if err != nil {
+						return errors.Annotate(err, "failed to process rejection %q", rej).Err()
+					}
+
+					if !wouldReject {
+						buf.Reset()
+						printLostRejection(p, rej)
+						logging.Infof(ctx, "%s", buf.Bytes())
+					}
+					return nil
 				}
 			}
 		})
@@ -79,11 +98,7 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 		return nil, err
 	}
 
-	return &Safety{
-		TotalRejections:     int(totalRejections),
-		EligibleRejections:  int(eligibleCount),
-		PreservedRejections: int(preservedRejections),
-	}, nil
+	return &ret, nil
 }
 
 func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (eligible, wouldReject bool, err error) {
@@ -157,4 +172,75 @@ func (r *evalRun) changedFiles(ctx context.Context, patchsets ...*evalpb.GerritP
 		return nil, err
 	}
 	return ret, err
+}
+
+// printLostRejection prints a rejection that wouldn't be preserved by the
+// candidate RTS algorithm.
+func printLostRejection(p *printer, rej *evalpb.Rejection) error {
+	pf := p.printf
+
+	pf("Lost rejection:\n")
+	p.Level++
+
+	// Print patchsets.
+	if len(rej.Patchsets) == 1 {
+		pf("%s\n", psURL(rej.Patchsets[0]))
+	} else {
+		pf("- patchsets:\n")
+		p.Level++
+		for _, ps := range rej.Patchsets {
+			pf("%s\n", psURL(ps))
+		}
+		p.Level--
+	}
+
+	printTestVariants(p, rej.FailedTestVariants)
+
+	p.Level--
+	return p.err
+}
+
+// printTestVariants prints tests grouped by variant.
+func printTestVariants(p *printer, testVariants []*evalpb.TestVariant) {
+	pf := p.printf
+
+	// Group by variant.
+	byVariant := map[string][]*evalpb.TestVariant{}
+	var keys []string
+	for _, tv := range testVariants {
+		key := variantString(tv.Variant)
+		tests, ok := byVariant[key]
+		byVariant[key] = append(tests, tv)
+		if !ok {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+
+	// Print tests grouped by variant.
+	pf("Failed and not selected tests:\n")
+	p.Level++
+	for _, key := range keys {
+		pf("- ")
+		if key == "" {
+			pf("<empty test variant>\n")
+		} else {
+			pf("%s\n", key)
+		}
+
+		ts := byVariant[key]
+		sort.Slice(ts, func(i, j int) bool {
+			return ts[i].Id < ts[j].Id
+		})
+
+		p.Level++
+		for _, t := range ts {
+			p.printf("- %s\n", t.Id)
+			if t.FileName != "" {
+				p.printf("  in %s\n", t.FileName)
+			}
+		}
+		p.Level--
+	}
+	p.Level--
 }

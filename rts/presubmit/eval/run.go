@@ -119,37 +119,39 @@ func (r *evalRun) run(ctx context.Context) (*Result, error) {
 }
 
 // Print prints the results to w.
-func (r *Result) Print(w io.Writer) (err error) {
-	p := func(format string, args ...interface{}) {
-		if err == nil {
-			_, err = fmt.Fprintf(w, format, args...)
-		}
-	}
+func (r *Result) Print(w io.Writer) error {
+	p := newPrinter(w)
+	pf := p.printf
 
-	p("Safety:\n")
+	pf("Safety:\n")
+	p.Level++
 	switch {
 	case r.Safety.TotalRejections == 0:
-		p("  Evaluation failed: rejections not found\n")
+		pf("Evaluation failed: rejections not found\n")
 
 	case r.Safety.EligibleRejections == 0:
-		p("  Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
+		pf("Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
 
 	default:
-		p("  Score: %.0f%%\n", float64(100*r.Safety.PreservedRejections)/float64(r.Safety.EligibleRejections))
-		p("  # of eligible rejections: %d\n", r.Safety.EligibleRejections)
-		p("  # of them preserved by this RTS: %d\n", r.Safety.PreservedRejections)
+		preserved := r.Safety.EligibleRejections - len(r.Safety.LostRejections)
+		pf("Score: %.0f%%\n", float64(100*preserved)/float64(r.Safety.EligibleRejections))
+		pf("# of eligible rejections: %d\n", r.Safety.EligibleRejections)
+		pf("# of them preserved by this RTS: %d\n", preserved)
 	}
+	p.Level--
 
-	p("Efficiency:\n")
+	pf("Efficiency:\n")
+	p.Level++
 	if r.Efficiency.SampleDuration == 0 {
-		p("  Evaluation failed: no test results with duration\n")
+		pf("Evaluation failed: no test results with duration\n")
 	} else {
 		saved := r.Efficiency.SampleDuration - r.Efficiency.ForecastDuration
-		p("  Saved: %.0f%%\n", float64(100*saved)/float64(r.Efficiency.SampleDuration))
-		p("  Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
-		p("  Forecasted compute time: %s\n", r.Efficiency.ForecastDuration)
+		pf("Saved: %.0f%%\n", float64(100*saved)/float64(r.Efficiency.SampleDuration))
+		pf("Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
+		pf("Forecasted compute time: %s\n", r.Efficiency.ForecastDuration)
 	}
+	p.Level--
 
-	p("Total records: %d\n", r.TotalRecords)
-	return
+	pf("Total records: %d\n", r.TotalRecords)
+	return p.err
 }
