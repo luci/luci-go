@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "df3e9d59_5ad8cc27",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T23:51:18Z",
+      "side": 1,
+      "message": "Chatted offline. Cancel goCtx after getting the py response.",
+      "parentUuid": "c38d69eb_5c88824f",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 34
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f23952e4_9788a151",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-10-09T18:56:12Z",
       "side": 1,
       "message": "nit: because of the inherent race, sometimes you will have warnings where\ngo responded like\n\n  101\n  102\n  103\n\nand python responded like\n\n  100\n  102\n  102\n\na more useful warning would say that Go is missing 102, and has extra 101.",
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd137d3c_c88f1b3d",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T23:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f23952e4_9788a151",
       "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9e3b1ff_72f823ed",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T23:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c40b9420_40313321",
+      "range": {
+        "startLine": 110,
+        "startChar": 37,
+        "endLine": 110,
+        "endChar": 39
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "80ebd7f8_a43fdb84",
@@ -98,6 +164,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "50096c48_42b5f8ba",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T23:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80ebd7f8_a43fdb84",
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f2377bd_2e60b54f",
@@ -111,6 +195,30 @@
       "writtenOn": "2020-10-09T18:56:12Z",
       "side": 1,
       "message": "when this loop starts, len(ids) \u003d\u003d len(builds), and this line adds more.\nwhen this func exits, len(ids) will be 2*len(builds)\n\ntypically in such cases we do \n  ids[i] \u003d b.Id",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 25
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d881d17_f3ae7cd4",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T23:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f2377bd_2e60b54f",
       "range": {
         "startLine": 124,
         "startChar": 2,
