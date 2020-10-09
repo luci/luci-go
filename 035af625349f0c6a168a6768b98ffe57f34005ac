@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d12be6fb_6124cfb1",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "yeah, should be 10%",
+      "parentUuid": "519d07dd_702e645b",
+      "range": {
+        "startLine": 130,
+        "startChar": 85,
+        "endLine": 130,
+        "endChar": 88
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5e80cc3d_1d8ad3cd",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "80d60956_66031ac9",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e80cc3d_1d8ad3cd",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 2
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a1d27d77_4134e08f",
@@ -60,6 +108,30 @@
       "writtenOn": "2020-10-08T21:25:12Z",
       "side": 1,
       "message": "we have a goroutine leak here.\nwe need to cancel Go\u0027s ctx in this case",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 75
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55538f27_8f2ae657",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "It is not in a spawned goroutine by the main flow. After 5 seconds, the `verifySearch()` would return with the python responses to the caller - `SearchBuilds()`, which would return those results to users. \n\nThe reason I added a timeout here is to not be block so long in case the `searchBuildsGoPath()` takes 5 seconds longer than python service. Because the users are still waiting for the response. If the \ngo path takes much longer than py path (which is highly unlikely happen), then just give up the later comparison and directly return.",
+      "parentUuid": "a1d27d77_4134e08f",
       "range": {
         "startLine": 93,
         "startChar": 2,
@@ -116,6 +188,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "20cea564_74d9f60f",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46fbd90e_fa52643c",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 12
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b35db507_3e5d1fe9",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6657a749_49d4b6eb",
+      "range": {
+        "startLine": 99,
+        "startChar": 46,
+        "endLine": 99,
+        "endChar": 61
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e56ffb3_88ad1876",
@@ -139,6 +259,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b63a957b_dd2367f0",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "I was thinking to compare entire protos in case of any difference in certain proto field. But since the GetBuild has already compared each field of a Build proto, it should be okay to only compare ids.",
+      "parentUuid": "2e56ffb3_88ad1876",
+      "range": {
+        "startLine": 108,
+        "startChar": 9,
+        "endLine": 108,
+        "endChar": 28
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "85231bbe_176a0637",
@@ -152,6 +296,30 @@
       "writtenOn": "2020-10-08T21:25:12Z",
       "side": 1,
       "message": "why not reuse code?",
+      "range": {
+        "startLine": 117,
+        "startChar": 15,
+        "endLine": 117,
+        "endChar": 21
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c177f06_7d94c18c",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-09T09:46:39Z",
+      "side": 1,
+      "message": "Because the `SearchBuilds()` is bonded on the BuildsServer. \nIf reuse that function, it needs to \n```\n  b :\u003d Builds{}\n  goRes, goErr :\u003d b.SearchBuilds(ctx, req)\n```\n `searchBuildsGoPath` is just to make sure it has same code path as `SearchBuilds()`.",
+      "parentUuid": "85231bbe_176a0637",
       "range": {
         "startLine": 117,
         "startChar": 15,
