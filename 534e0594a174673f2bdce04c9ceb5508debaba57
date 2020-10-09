@@ -16,6 +16,24 @@
       "message": "(sorry, i didn\u0027t mean to delete your AS-vote, but I also am not sure you meant it, so not yet submitting)",
       "revId": "534e0594a174673f2bdce04c9ceb5508debaba57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f50e0afb_51a79ed0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-09T21:39:41Z",
+      "side": 1,
+      "message": "NP :-)",
+      "parentUuid": "80a04c8b_0b5d3a68",
+      "revId": "534e0594a174673f2bdce04c9ceb5508debaba57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
