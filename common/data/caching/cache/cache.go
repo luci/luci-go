@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -70,15 +69,18 @@ type Policies struct {
 
 // AddFlags adds flags for cache policy parameters.
 func (p *Policies) AddFlags(f *flag.FlagSet) {
-	p.MaxSize = cacheMaxSizeDefault
-	f.Var(&p.MaxSize, "cache-max-size", "Cache is trimmed if the cache gets larger than this value.")
+	f.Var(&p.MaxSize, "cache-max-size", "Cache is trimmed if the cache gets larger than this value. If 0, the cache is effectively a leak.")
 	f.IntVar(&p.MaxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
 	f.Var(&p.MinFreeSpace, "cache-min-free-space", "Cache is trimmed if disk free space becomes lower than this value.")
 }
 
 // IsDefault returns whether some flags are set or not.
 func (p *Policies) IsDefault() bool {
-	return p.MaxSize == cacheMaxSizeDefault && p.MaxItems == cacheMaxItemsDefault && p.MinFreeSpace == 0
+	return p.MaxSize == 0 && p.MaxItems == cacheMaxItemsDefault && p.MinFreeSpace == 0
+}
+
+func (p *Policies) fitsCacheSize(s units.Size) bool {
+	return p.MaxSize == 0 || s <= p.MaxSize
 }
 
 // ErrInvalidHash indicates invalid hash is specified.
@@ -304,7 +306,6 @@ func (d *Cache) GetUsed() []int64 {
 const maxUint = ^uint(0)
 const maxInt = int(maxUint >> 1)
 
-const cacheMaxSizeDefault = math.MaxInt64
 const cacheMaxItemsDefault = maxInt
 
 func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) error {
@@ -330,7 +331,7 @@ func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) e
 		_ = os.Remove(fname)
 		return errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
 	}
-	if units.Size(size) > d.policies.MaxSize {
+	if !d.policies.fitsCacheSize(units.Size(size)) {
 		_ = os.Remove(fname)
 		return errors.Reason("item too large, size=%d, limit=%d", size, d.policies.MaxSize).Err()
 	}
@@ -424,7 +425,7 @@ func (d *Cache) respectPolicies() error {
 		if err != nil {
 			return errors.Annotate(err, "couldn't estimate the free space at %s", d.path).Err()
 		}
-		if d.lru.length() <= d.policies.MaxItems && d.lru.sum <= d.policies.MaxSize && freeSpace >= minFreeSpaceWanted {
+		if d.lru.length() <= d.policies.MaxItems && d.policies.fitsCacheSize(d.lru.sum) && freeSpace >= minFreeSpaceWanted {
 			break
 		}
 		if d.lru.length() == 0 {
