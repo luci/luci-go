@@ -17,21 +17,19 @@ package eval
 import (
 	"context"
 	"flag"
+	"runtime"
 
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 )
 
-// defaults
-const (
-	defaultConcurrency = 100
+var defaultConcurrency = runtime.GOMAXPROCS(0)
 
-	// defaultGerritQPSLimit is the default Gerrit QPS limit.
-	// The default is chosen experimentally, with a goal to avoid hitting the
-	// short-term quota.
-	defaultGerritQPSLimit = 10
-)
+// defaultGerritQPSLimit is the default Gerrit QPS limit.
+// The default is chosen experimentally, with a goal to avoid hitting the
+// short-term quota.
+const defaultGerritQPSLimit = 10
 
 // Eval estimates safety and efficiency of a given RTS algorithm.
 type Eval struct {
@@ -56,7 +54,7 @@ type Eval struct {
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
+	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel, defaults to the number of vCPUs")
 
 	cacheDir, err := defaultCacheDir()
 	if err != nil {
