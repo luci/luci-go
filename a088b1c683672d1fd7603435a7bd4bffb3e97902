@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3abb039_606b52e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-09T22:25:15Z",
+      "side": 1,
+      "message": "Sorry for the belated review. Code LGTM except for s/ConfigGroupID/ProjectConfigGroupID/g. Others are mostly open questions in documentation.",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b68ba0a2_1a5cc668",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-09T22:25:15Z",
+      "side": 1,
+      "message": "Curious: Is this used for cleaning up unwatched repos (i.e. GobWatchMap that has 0 child entity and UpdatedTime \u003c now() - $some_duration)?",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d80f0710_94677f1f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-09T22:25:15Z",
+      "side": 1,
+      "message": "To clarify, I think you mean querying for *ALL* non-root entities without providing ancestor and filter based on an indexed property? \"querying with a filter on ID\" sounds like a different thing and should work?",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 35
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2091fc4e_b44e6c16",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-09T22:25:15Z",
+      "side": 1,
+      "message": "and create new `GobWatchMap` entities in some occasions I believe.",
+      "range": {
+        "startLine": 83,
+        "startChar": 23,
+        "endLine": 83,
+        "endChar": 24
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd44c1c4_5d0423df",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-09T22:25:15Z",
+      "side": 1,
+      "message": "I think this should still be `ProjectConfigGroupID` as Lookup should also tell which LUCI Project is watching the given host+repo+ref because later on, when we load the content of the returned ConfigGroup, we would require Project as well to construct the parent key of ConfigGroup.\n\nAnyway, this should be added in `config` pkg so that we can add there later and modify the function signature after that.",
+      "range": {
+        "startLine": 108,
+        "startChar": 60,
+        "endLine": 108,
+        "endChar": 73
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
