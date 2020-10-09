@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69c7723c_1a6b0730",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-09T18:29:50Z",
+      "side": 1,
+      "message": "is\n\n(not yet, but will be)",
+      "range": {
+        "startLine": 55,
+        "startChar": 9,
+        "endLine": 55,
+        "endChar": 15
+      },
+      "revId": "ddc63a20c20b79431fb628f12a5f486b9e78a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3338a1f5_20a799f9",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-09T18:29:50Z",
+      "side": 1,
+      "message": "if you intent to to test this and then update this comment, OK.\nOtherwise, I\u0027d rather make bold claim that this field is needed first and if there is a way to avoid it later, then comment can be deleted with the field.",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "ddc63a20c20b79431fb628f12a5f486b9e78a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

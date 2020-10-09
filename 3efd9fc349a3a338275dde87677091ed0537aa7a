@@ -97,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "76aece1f_e521cdcf",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-09T18:29:50Z",
+      "side": 1,
+      "message": "i\u0027m sorry, my comment earlier was wrong: 1 LUCI project may watch the same repo from two diff config groups.\nSo, we need list of tuples (cfg_group, [incl], [excl]). Please see the protos in design doc I\u0027ve added this week.",
+      "parentUuid": "2c1e4151_61609158",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 42
+      },
+      "revId": "3efd9fc349a3a338275dde87677091ed0537aa7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0736380_a895e710",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 4
