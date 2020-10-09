@@ -16,6 +16,109 @@
       "message": "Hi Nodir, I\u0027ve addressed the feedback. PTAL.",
       "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c38d69eb_5c88824f",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "i think the intention is to 5s since beginning of our request, rather than 5s since python response.\nif so, I think we need to call time.After before making the python request",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 34
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f23952e4_9788a151",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "nit: because of the inherent race, sometimes you will have warnings where\ngo responded like\n\n  101\n  102\n  103\n\nand python responded like\n\n  100\n  102\n  102\n\na more useful warning would say that Go is missing 102, and has extra 101.",
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c40b9420_40313321",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "why i++ isn\u0027t here?",
+      "range": {
+        "startLine": 110,
+        "startChar": 37,
+        "endLine": 110,
+        "endChar": 39
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80ebd7f8_a43fdb84",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "nit: i think this loop could be implemented without calling getBuildIDs? we could iterate builds.\ngetBuildIDs is really needed only if responses are not the same, so I think it would be more efficient to call getBuildIDs only in that case, i.e. in L117",
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f2377bd_2e60b54f",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "when this loop starts, len(ids) \u003d\u003d len(builds), and this line adds more.\nwhen this func exits, len(ids) will be 2*len(builds)\n\ntypically in such cases we do \n  ids[i] \u003d b.Id",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 25
+      },
+      "revId": "f3b484ab4a8c66bf4c0691175cdf5d16ead34420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

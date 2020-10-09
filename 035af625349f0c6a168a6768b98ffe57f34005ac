@@ -144,6 +144,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b1d0ce5c_f018f5c5",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "i understand why it is done. My concern is that it is not complete because the goroutine started in L73 will be still running after this goroutine exits. Moreover, the above goroutine will never exit because it will block on sending to goResCh (because nobody is receiving from it).\n\ni recommend:\n\n  goResCtx, cancelGoRes :\u003d context.WithCancel(ctx)\n  go func() {\n    goRes, goErr :\u003d searchBuildsGoPath(goResCtx, req)\n    goResCh \u003c- \u0026searchResponseBundle{res: goRes, err: goErr}\n  }()  \n\nthen here \n\n  cancelGoRes()\n  \u003c-goResCh\n\nthis way we tell that goroutine to stop immediately, but also wait for it stop",
+      "parentUuid": "55538f27_8f2ae657",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 75
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6657a749_49d4b6eb",
         "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
         "patchSetId": 3
@@ -320,6 +344,30 @@
       "side": 1,
       "message": "Because the `SearchBuilds()` is bonded on the BuildsServer. \nIf reuse that function, it needs to \n```\n  b :\u003d Builds{}\n  goRes, goErr :\u003d b.SearchBuilds(ctx, req)\n```\n `searchBuildsGoPath` is just to make sure it has same code path as `SearchBuilds()`.",
       "parentUuid": "85231bbe_176a0637",
+      "range": {
+        "startLine": 117,
+        "startChar": 15,
+        "endLine": 117,
+        "endChar": 21
+      },
+      "revId": "035af625349f0c6a168a6768b98ffe57f34005ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c4e6325_04119254",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T18:56:12Z",
+      "side": 1,
+      "message": "not necessarily calling for action, but what\u0027s the problem with this code?\nif it is still a problem, why not extract that code to a separate func. It is not like SearchBuilds depends on Builds\u0027s state",
+      "parentUuid": "5c177f06_7d94c18c",
       "range": {
         "startLine": 117,
         "startChar": 15,
