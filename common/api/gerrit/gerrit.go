@@ -244,6 +244,16 @@ type VoteInfo struct {
 	Value       int64 `json:"value"`
 }
 
+// SubmittedTogetherInfo contains information about a collection of changes that would be submitted together.
+type SubmittedTogetherInfo struct {
+
+	// A list of ChangeInfo entities representing the changes to be submitted together.
+	Changes []Change `json:"changes"`
+
+	// The number of changes to be submitted together that the current user cannot see.
+	NonVisibleChanges int `json:"non_visible_changes,omitempty"`
+}
+
 // ValidateGerritURL validates Gerrit URL for use in this package.
 func ValidateGerritURL(gerritURL string) error {
 	_, err := NormalizeGerritURL(gerritURL)
@@ -419,13 +429,13 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 // to return non-default properties for each Change. The supported strings for
 // options are listed in Gerrit's api documentation at the link below:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-func (c *Client) ChangesSubmittedTogether(ctx context.Context, changeID string, options ChangeDetailsParams) ([]*Change, error) {
-	var resp []*Change
+func (c *Client) ChangesSubmittedTogether(ctx context.Context, changeID string, options ChangeDetailsParams) (*SubmittedTogetherInfo, error) {
+	var resp SubmittedTogetherInfo
 	path := fmt.Sprintf("a/changes/%s/submitted_together", url.PathEscape(changeID))
 	if _, err := c.get(ctx, path, options.queryString(), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return &resp, nil
 }
 
 // ChangeInput contains the parameters necessary for creating a change in

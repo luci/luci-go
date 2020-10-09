@@ -154,19 +154,30 @@ func TestChangesSubmittedTogether(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("SubmittedTogether", t, func() {
+		var nonVisibleResp string
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, ")]}'\n[%s,%s]\n", fakeCL1Str, fakeCL6Str)
+			fmt.Fprintf(w, ")]}'\n{ \"changes\":[%s,%s]%s}\n", fakeCL1Str, fakeCL6Str, nonVisibleResp)
 		})
 		defer srv.Close()
 
-		Convey("WithOptions", func() {
+		Convey("WithCurrentRevisionOptions", func() {
+			nonVisibleResp = ""
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
 			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
 			So(err, ShouldBeNil)
-			So(cls[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
-			So(cls[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+			So(cls.Changes[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
+			So(cls.Changes[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+		})
+		Convey("WithNonVisibleChangesOptions", func() {
+			nonVisibleResp = ",\"non_visible_changes\":1"
+			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION", "NON_VISIBLE_CHANGES"}}
+			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
+			So(err, ShouldBeNil)
+			So(cls.Changes[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
+			So(cls.Changes[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+			So(cls.NonVisibleChanges, ShouldEqual, 1)
 		})
 
 	})
