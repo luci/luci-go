@@ -157,7 +157,7 @@ func TestChangesSubmittedTogether(t *testing.T) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, ")]}'\n[%s,%s]\n", fakeCL1Str, fakeCL6Str)
+			fmt.Fprintf(w, ")]}'\n{ \"changes\":[%s,%s],\n\"non_visible_changes\":0\n}", fakeCL1Str, fakeCL6Str)
 		})
 		defer srv.Close()
 
@@ -165,8 +165,9 @@ func TestChangesSubmittedTogether(t *testing.T) {
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
 			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
 			So(err, ShouldBeNil)
-			So(cls[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
-			So(cls[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+			So(cls.Changes[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
+			So(cls.Changes[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+			So(cls.NonVisibleChanges, ShouldEqual, 0)
 		})
 
 	})

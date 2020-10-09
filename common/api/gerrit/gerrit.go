@@ -402,6 +402,11 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 	return &resp, nil
 }
 
+type SubmittedTogetherInfo struct {
+	Changes           []Change `json:"changes"`
+	NonVisibleChanges int      `json:"non_visible_changes"`
+}
+
 // ChangesSubmittedTogether returns a list of Gerrit changes which are submitted
 // when Submit is called for the given change, including the current change itself.
 // As a special case, the list is empty if this change would be submitted by itself
@@ -419,13 +424,13 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 // to return non-default properties for each Change. The supported strings for
 // options are listed in Gerrit's api documentation at the link below:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-func (c *Client) ChangesSubmittedTogether(ctx context.Context, changeID string, options ChangeDetailsParams) ([]*Change, error) {
-	var resp []*Change
+func (c *Client) ChangesSubmittedTogether(ctx context.Context, changeID string, options ChangeDetailsParams) (*SubmittedTogetherInfo, error) {
+	var resp SubmittedTogetherInfo
 	path := fmt.Sprintf("a/changes/%s/submitted_together", url.PathEscape(changeID))
 	if _, err := c.get(ctx, path, options.queryString(), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return &resp, nil
 }
 
 // ChangeInput contains the parameters necessary for creating a change in
