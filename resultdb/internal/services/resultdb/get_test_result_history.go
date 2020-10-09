@@ -16,26 +16,24 @@ package resultdb
 
 import (
 	"context"
+	"sort"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/history"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
-	historyDefaultPageSize = 100
-	historyPoolSize        = 10
+	historyWorkers = 10
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
@@ -46,84 +44,78 @@ func (s *resultDBServer) GetTestResultHistory(ctx context.Context, in *pb.GetTes
 	if err := validateGetTestResultHistoryRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	if in.PageSize == 0 {
-		in.PageSize = historyDefaultPageSize
-	}
+
+	resultsOffset := history.InitPaging(in)
+
 	ctx, cancelTx := span.ReadOnlyTransaction(ctx)
 	defer cancelTx()
 
+	outOfTime := history.ExpirationFlag(ctx)
 	workerCtx, cancelWorker := context.WithCancel(ctx)
 	defer cancelWorker()
+
 	workerErr := make(chan error, 1)
-	results := make(chan *pb.GetTestResultHistoryResponse_Entry)
+	results := make(chan history.PageItem)
 	go func() {
 		defer close(results)
-		workerErr <- parallel.WorkPool(historyPoolSize, func(workC chan<- func() error) {
-			// Make each task keep a pointer to the done channel of task that
-			// needs to finish streaming results before it.
-			prev := make(chan struct{})
-			close(prev)
-
-			err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
-				task := &resultStreamingTask{
-					in:      in,
-					invs:    invocations.NewIDSet(inv),
-					ts:      ts,
-					results: results,
-					done:    make(chan struct{}),
-					prev:    prev,
-				}
-				prev = task.done
-				select {
-				case workC <- func() error { return task.Run(workerCtx) }:
-				case <-workerCtx.Done():
-					return workerCtx.Err()
-				}
-				return nil
-			})
-			if err != nil {
-				workC <- func() error { return err }
-			}
+		pool := history.NewStreamerPool(historyWorkers, in, results, workerErr)
+		defer func() { <-pool.Purge(workerCtx) }()
+		err := invocations.ByTimestamp(workerCtx, in.Realm, in.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+			pool.AddInv(workerCtx, inv, ts)
+			return nil
 		})
+		if err != nil {
+			select {
+			case workerErr <- err:
+			case <-ctx.Done():
+				// It is okay to dismiss ctx.Err() here because there's
+				// already an error in workerErr.
+			}
+			return
+		}
 	}()
 
 	ret := &pb.GetTestResultHistoryResponse{
 		Entries: make([]*pb.GetTestResultHistoryResponse_Entry, 0, in.PageSize),
 	}
-	// Collect results sent over the results channel until either:
-	//  - The page of results is full,
-	//  - The context is Done,
-	//  - Or the worker is done with its work (and closes the results channel).
-	//
-	// TODO(crbug.com/1074407): Implement ordering of the results indexed
-	// together by (TestID, VariantHash) .
-	//
-	// NB: The results in the channel are already ordered by indexed timestamp.
-	//
-	// TODO(crbug.com/1074407): Implement paging support.
-ResultsLoop:
-	for {
-		select {
-		case entry, ok := <-results:
-			if !ok {
-				break ResultsLoop
+
+	firstUnsortedEntry := 0
+
+	for item := range results {
+		if item.Entry != nil {
+			ret.Entries = append(ret.Entries, item.Entry)
+		}
+		if item.PageBreak != nil {
+			if resultsOffset > len(ret.Entries) {
+				return ret, appstatus.BadRequest(errors.Reason("bad page token: more results to skip than exist at index point").Err())
 			}
-			ret.Entries = append(ret.Entries, entry)
-			if len(ret.Entries) == int(in.PageSize) {
+			sortEntries(ret.Entries[firstUnsortedEntry:])
+			ret.Entries = ret.Entries[resultsOffset:]
+			resultsOffset = 0
+
+			if len(ret.Entries) >= int(in.PageSize) {
 				cancelWorker()
-				break ResultsLoop
+				ret.NextPageToken = history.MakePageToken(item.PageBreak, int(in.PageSize)-firstUnsortedEntry)
+				ret.Entries = ret.Entries[:in.PageSize]
+				return ret, nil
 			}
-		case <-ctx.Done():
-			break ResultsLoop
+			if *outOfTime && firstUnsortedEntry > 0 {
+				cancelWorker()
+				ret.NextPageToken = history.MakePageToken(item.PageBreak, 0)
+				ret.Entries = ret.Entries[:firstUnsortedEntry]
+				return ret, nil
+			}
+
+			firstUnsortedEntry = len(ret.Entries)
 		}
 	}
 
-	// If we cancelled the context on purpose because we have enough results,
-	// we can safely ignore the error.
-	if ctx.Err() == nil && workerCtx.Err() != nil && int64(len(ret.Entries)) == in.PageSize {
+	select {
+	case err := <-workerErr:
+		return ret, err
+	default:
 		return ret, nil
 	}
-	return ret, <-workerErr
 }
 
 // verifyGetTestResultHistoryPermission checks that the caller has permission to
@@ -160,70 +152,26 @@ func validateGetTestResultHistoryRequest(in *pb.GetTestResultHistoryRequest) err
 			return errors.Annotate(err, "variant_predicate").Err()
 		}
 	}
+	if in.GetPageToken() != "" {
+		if err := history.ValidatePageToken(in.GetPageToken()); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-// resultStreamingTask represents a task with two parts:
-//   - A traversal of the inclusion graph to find the set of reachable
-//     invocations indexed under the same timestamp/commit position,
-//     which can be done in parallel for several invocations in the index.
-//     (Though note that such traversal may itself involve multiple parallel
-//     requests to the database if the results are not yet cached.)
-//   - A query for the test results contained by the invocations in the set
-//     above.
-//     This query can be done in parallel with queries for other sets
-//     of invocations, but note that their results need to be streamed in order.
-type resultStreamingTask struct {
-	ctx     context.Context
-	in      *pb.GetTestResultHistoryRequest
-	invs    invocations.IDSet
-	ts      *timestamp.Timestamp
-	results chan<- *pb.GetTestResultHistoryResponse_Entry
-	done    chan struct{}
-	prev    <-chan struct{}
-}
-
-// Run's returned function gets the matching results reachable from the given
-// invocation.
-// Then, it streams them over the results channel, but only after the previous
-// worker is done streaming its results.
-func (rst *resultStreamingTask) Run(ctx context.Context) error {
-	defer close(rst.done)
-
-	reachableInvs, err := invocations.Reachable(ctx, rst.invs)
-	if err != nil {
-		return err
-	}
-
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-	for _, batch := range reachableInvs.Batches() {
-		batch := batch
-		eg.Go(func() error {
-			// TODO(crbug.com/1107678): Implement support for FieldMask to return
-			// only a subset of each result.
-			query := testresults.Query{
-				InvocationIDs: batch,
-				Predicate: &pb.TestResultPredicate{
-					Variant:      rst.in.VariantPredicate,
-					TestIdRegexp: rst.in.TestIdRegexp,
-				},
+// sortEntries sorts results in the slice by (TestId, VariantHash, ResultId).
+// It's assumed that all the results in the slice are indexed under the same
+// timestamp/ordinal.
+func sortEntries(s []*pb.GetTestResultHistoryResponse_Entry) {
+	l := func(i, j int) bool {
+		if s[i].Result.TestId == s[j].Result.TestId {
+			if s[i].Result.VariantHash == s[j].Result.VariantHash {
+				return s[i].Result.ResultId < s[j].Result.ResultId
 			}
-			return query.Run(ctx, func(r *pb.TestResult) error {
-				select {
-				case <-rst.prev:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case rst.results <- &pb.GetTestResultHistoryResponse_Entry{Result: r, InvocationTimestamp: rst.ts}:
-					return nil
-				}
-			})
-		})
+			return s[i].Result.VariantHash < s[j].Result.VariantHash
+		}
+		return s[i].Result.TestId < s[j].Result.TestId
 	}
-	return eg.Wait()
+	sort.Slice(s, l)
 }
