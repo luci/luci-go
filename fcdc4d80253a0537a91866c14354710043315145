@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e90b3e74_7d3d131b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-09T19:57:33Z",
+      "side": 1,
+      "message": "All the rest of the response structs are at the top of the file together, this should probably move up.",
+      "range": {
+        "startLine": 405,
+        "startChar": 0,
+        "endLine": 405,
+        "endChar": 35
+      },
+      "revId": "fcdc4d80253a0537a91866c14354710043315145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e037a8f_f6e24ebb",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 407,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-09T19:57:33Z",
+      "side": 1,
+      "message": ",omitempty",
+      "range": {
+        "startLine": 407,
+        "startChar": 54,
+        "endLine": 407,
+        "endChar": 55
+      },
+      "revId": "fcdc4d80253a0537a91866c14354710043315145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c7fde7e0_6a2d1efa",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-09T19:57:33Z",
+      "side": 1,
+      "message": "The \\n\u0027s are generally not required (We don\u0027t need to test Go\u0027s handling of JSON whitespace).",
+      "range": {
+        "startLine": 160,
+        "startChar": 47,
+        "endLine": 160,
+        "endChar": 49
+      },
+      "revId": "fcdc4d80253a0537a91866c14354710043315145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8a84318_40ea304e",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-09T19:57:33Z",
+      "side": 1,
+      "message": "This query would not return non_visible_changes, `NON_VISIBLE_CHANGES` needs to be set in the options. Perhaps we should have 2 different test cases, one with/one without.",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 72
+      },
+      "revId": "fcdc4d80253a0537a91866c14354710043315145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
