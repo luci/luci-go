@@ -184,6 +184,20 @@ func TestNew(t *testing.T) {
 		So(c.Close(), ShouldBeNil)
 	})
 
+	Convey(`MaxSize 0`, t, func() {
+		dir := t.TempDir()
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
+		c, err := New(Policies{MaxSize: 0, MaxItems: 1}, dir, h)
+		So(err, ShouldBeNil)
+
+		file1Content := []byte("foo")
+		file1Digest := isolated.HashBytes(h, file1Content)
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
+		So(c.Keys(), ShouldHaveLength, 1)
+		So(c.Close(), ShouldBeNil)
+	})
+
 	Convey(`HardLink will update used`, t, func() {
 		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
