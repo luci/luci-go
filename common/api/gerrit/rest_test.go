@@ -426,7 +426,7 @@ func TestAddReviewer(t *testing.T) {
 						"_account_id": 10001,
 						"name": "Reviewer Review",
 						"approvals": {
-							"Code-Review": "-1"
+							"Code-Review": " 0"
 						}
 					}
 				]
@@ -470,7 +470,7 @@ func TestAddReviewer(t *testing.T) {
 						AccountId: 10001,
 					},
 					Approvals: map[string]int32{
-						"Code-Review": -1,
+						"Code-Review": 0,
 					},
 				},
 			},

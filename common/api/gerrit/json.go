@@ -240,6 +240,7 @@ type reviewerInfo struct {
 func (ri *reviewerInfo) ToProtoReviewerInfo() (*gerritpb.ReviewerInfo, error) {
 	approvals := make(map[string]int32, 0)
 	for label, score := range ri.Approvals {
+		score = strings.TrimLeft(score, " ")
 		scoreInt, err := strconv.ParseInt(score, 10, 32)
 		if err != nil {
 			return nil, errors.Annotate(err, "parsing approvals").Err()
