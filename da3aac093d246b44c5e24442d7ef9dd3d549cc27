@@ -16,6 +16,46 @@
       "message": "Hi Nodir, I\u0027ve addressed the comments. PTAL again, thx.\n\n(BTW, the search_builds_verification.go is a temporary file and will be deleted once verification is done.)",
       "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "38c0984e_706d9d03",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T23:57:37Z",
+      "side": 1,
+      "message": "defer cancelGoCtx()\n\ni think `go vet` would complain.",
+      "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "776b6b00_679ba5f8",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T23:57:37Z",
+      "side": 1,
+      "message": "why is this needed? if the context is cancelled, then searchBuildsGoPath will return goCtx.Err()\n\nwithout this, we also don\u0027t need L74",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 9
+      },
+      "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
