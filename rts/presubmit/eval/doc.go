@@ -58,8 +58,14 @@
 //
 //   ./rts-random -history cq.hist
 //
-// Example of output:
+// Example of stdout + stderr:
 //
+//   Lost rejection:
+//     https://chromium-review.googlesource.com/c/2451378/1
+//     Failed and not selected tests:
+//       - builder:linux-chromeos-rel | os:Ubuntu-16.04 | test_suite:interactive_ui_tests
+//         - ninja://chrome/test:interactive_ui_tests/FeaturePromoSnoozeInteractiveTest.DismissDoesNotSnooze
+//           in //chrome/browser/ui/views/in_product_help/feature_promo_snooze_interactive_uitest.cc
 //   Safety:
 //     Score: 74%
 //     # of eligible rejections: 5190
