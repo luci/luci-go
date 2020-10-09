@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3790d048_b0d8df83",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-09T19:10:18Z",
+      "side": 1,
+      "message": "Bugfix so that Set Reviewer will work when there are \" 0\" scores.",
+      "revId": "c9ca988187fe275ca0f19d869c2a8c258fe2d500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
