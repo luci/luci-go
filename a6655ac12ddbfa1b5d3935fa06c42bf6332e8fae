@@ -16,6 +16,448 @@
       "message": "there are at least 3 history files now, and it seems that we are implementing history reading in the \"resultdb\" package. I think it is worth adding a new \"history\" package, move most of the logic there, shorten symbol names (no longer have to mention \"history\" in each symbol), such that RPC impl stays simple.\n\nI think this would follow an existing pattern, e.g. see QueryTestResults.\n\n(still reviewing the code)",
       "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "380fed78_c2ef4c95",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "high-level: I think this impl could be simpler. Consider:\n- have a channel workC with struct{inv_to_fetch, channel_for_result}\n- have a buffered allResultC, of type `chan chan resultItem`\n- in the ByTimestamp callback, for each inv\n  - create a new channel for result, resultC\n  - send resultC to allResultC\n  - send workItem{theInv, resultC} to workC\n  \n- have N concurrent workers listening to workC. Each worker:\n  - reads the next item from workC\n  - fetches results, sends then to the workItem.resultC\n- final goroutine\n  - listens to allResultC. for each resultC\n    - receives from the resultC and adds to the response\n\n- have a global semaphore around RPCs\n",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e1c8e09_ff8962bc",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "error is ignored",
+      "range": {
+        "startLine": 65,
+        "startChar": 8,
+        "endLine": 65,
+        "endChar": 14
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e13e0b1_600912f3",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "nit: combine?",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 158,
+        "endChar": 6
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d999ce4_85dce15a",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "this is racy\n\nwhy not close a chan struct{}\n\nbut not sure the approach about the approach overall because the goroutine leaks",
+      "range": {
+        "startLine": 46,
+        "startChar": 41,
+        "endLine": 46,
+        "endChar": 46
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74d8061c_ae1d9205",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "reversed the conditoin, so that the code below unindented.\nalso some of vars above aren\u0027t used if !ok",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 8
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11452e5f_747283f9",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "why is this a param, as opposed to a variable one line above?",
+      "range": {
+        "startLine": 51,
+        "startChar": 10,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8423e802_e3c179b0",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "this goroutine leaks. nothing is waiting for it to finish",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 24
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63149f3f_2b22522b",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/go.chromium.org/luci/common/clock#Until",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 18
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10bb1182_63531411",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "why not\n\n  switch startIP :\u003d startIP.(type) {\n    case *tsIndexPoint:\n      in.GetTimestampRange().Latest \u003d startIP.(*timestamp.Timestamp)\n    ...\n  }",
+      "range": {
+        "startLine": 91,
+        "startChar": 12,
+        "endLine": 91,
+        "endChar": 35
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6e6538a_f8f146e3",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "looks like we have a tuple in a tuple? ((kind, indexPoint), skip).\n\ndid you consider page token \u003d (kind, indexPoint, skip) ?",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 102,
+        "endChar": 36
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81aa60c2_61ab2157",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "in Go, err messages must start with a lower case letter\n\napplies to other places as well",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d51bbd8_72538be8",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "why not standard String() ?\n\nhttps://pkg.go.dev/fmt/#Stringer",
+      "range": {
+        "startLine": 121,
+        "startChar": 24,
+        "endLine": 121,
+        "endChar": 32
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0f5715c_0c5966db",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "nit: tokenField() would be more Go-idiomatic, I think",
+      "range": {
+        "startLine": 125,
+        "startChar": 24,
+        "endLine": 125,
+        "endChar": 36
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea8ccd34_9f3bc339",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "I think the following would be less code and more space-efficient\n\n  ts :\u003d \u0026timestamp.Timestamp{}\n  err :\u003d proto.Unmarshal([]byte(s), ts)\n  ...\n  return ts\n\nwdyt?",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 142,
+        "endChar": 2
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0a0198e_26a37037",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8c2a7cf_0cea1aa9",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "this func simply forwards params to fields. what values does it add?",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d3f5aa5_1d3c9d10",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "i think semaphore locking must be as closer the areas of the code that you want to protect (i assume RPCs) as possible.\nRun() waits on other things \u003d\u003e the whole semaphore waits on them.",
+      "range": {
+        "startLine": 56,
+        "startChar": 10,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc3528e6_fec3a473",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "where is the guarantee it is not nil?",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 4
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b6002f3_b5718c64",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "this will close much later than when the task is done, or possibly never\n\ndo you mean here that the channel is already closed? if so, please make the code say that, e.g. return a closed channel\n\n\n--\n\ni think it would be simpler to put Acquire() inside the goroutine.",
+      "range": {
+        "startLine": 63,
+        "startChar": 8,
+        "endLine": 63,
+        "endChar": 18
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68432684_895c60c6",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-09T01:01:37Z",
+      "side": 1,
+      "message": "FWIU the complexity and complexity of delayed purging exist because we accumulate invocations for the same timestamp.\n\nquestion: what is the benefit of accumulating invocations?\n\nthere are at least two cons:\n- additional complexity\n- we start fetching results with a delay",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 3
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
