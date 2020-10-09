@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc442551_f608ecd3",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-10-09T04:39:42Z",
+      "side": 1,
+      "message": "nit: originally when i suggested isUnbounded(), i was talking strictly about `MaxSize \u003d\u003d 0`. That said, also checking `s \u003c\u003d p.MaxSize` seems simpler, though. Maybe make the name more accurate? E.g. fitsCacheSize()?",
+      "range": {
+        "startLine": 82,
+        "startChar": 19,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "5fdab9712ef4cd58c44c40a27b5f2e51595eea9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
