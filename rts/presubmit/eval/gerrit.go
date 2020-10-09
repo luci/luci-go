@@ -50,6 +50,7 @@ type changedFiles struct {
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.
+// Each file is a relative path, e.g. "chrome.cc".
 // If the patchset does not exist, returns empty list.
 func (c *gerritClient) ChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) ([]string, error) {
 	cacheKey := fmt.Sprintf("%s-%d-%d", ps.Change.Host, ps.Change.Number, ps.Patchset)
@@ -130,7 +131,9 @@ func (c *gerritClient) callListFiles(ctx context.Context, host string, req *gerr
 
 	files := make([]string, 0, len(res.Files))
 	for name := range res.Files {
-		files = append(files, name)
+		if name != "/COMMIT_MSG" {
+			files = append(files, name)
+		}
 	}
 	sort.Strings(files)
 	return files, nil
