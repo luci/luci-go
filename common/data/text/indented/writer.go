@@ -24,6 +24,7 @@ type Writer struct {
 	io.Writer       // underlying writer.
 	Level      int  // number of times \t must be inserted before each line.
 	UseSpaces  bool // true iff Level is the number of spaces instead of tabs.
+	Width      int  // number of whitespace characters in each level. Defaults to 1.
 	insideLine bool
 }
 
@@ -33,15 +34,28 @@ const Limit = 256
 var indentationTabs = bytes.Repeat([]byte{'\t'}, Limit)
 var indentationSpaces = bytes.Repeat([]byte{' '}, Limit)
 
+// prefix returns the indentation prefix.
+func (w *Writer) prefix() []byte {
+	if w.Level == 0 {
+		return nil
+	}
+
+	buf := indentationTabs
+	if w.UseSpaces {
+		buf = indentationSpaces
+	}
+
+	width := w.Width
+	if width <= 0 {
+		width = 1
+	}
+	return buf[:width*w.Level]
+}
+
 // Write writes data inserting a newline before each line.
 // Panics if w.Indent is outside of [0, Limit) range.
 func (w *Writer) Write(data []byte) (n int, err error) {
 	// Do not print indentation if there is no data.
-	indentBuf := indentationTabs
-	if w.UseSpaces {
-		indentBuf = indentationSpaces
-	}
-
 	for len(data) > 0 {
 		var printUntil int
 		endsWithNewLine := false
@@ -53,7 +67,7 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 		} else {
 			if lineBeginning {
 				// Print indentation.
-				w.Writer.Write(indentBuf[:w.Level])
+				w.Writer.Write(w.prefix())
 				w.insideLine = true
 			}
 
