@@ -74,6 +74,84 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldErrLike, "request_id cannot contain")
 		})
 
+		Convey("builder ID", func() {
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{},
+			}
+			err := validateSchedule(req)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("exe", func() {
+			Convey("empty", func() {
+				req := &pb.ScheduleBuildRequest{
+					Exe:             &pb.Executable{},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("package", func() {
+				req := &pb.ScheduleBuildRequest{
+					Exe: &pb.Executable{
+						CipdPackage: "package",
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "cipd_package must not be specified")
+			})
+
+			Convey("version", func() {
+				Convey("invalid", func() {
+					req := &pb.ScheduleBuildRequest{
+						Exe: &pb.Executable{
+							CipdVersion: "invalid!",
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldErrLike, "cipd_version")
+				})
+
+				Convey("valid", func() {
+					req := &pb.ScheduleBuildRequest{
+						Exe: &pb.Executable{
+							CipdVersion: "valid",
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldBeNil)
+				})
+			})
+		})
+
+		Convey("gitiles commit", func() {
+			req := &pb.ScheduleBuildRequest{
+				GitilesCommit: &pb.GitilesCommit{
+					Host: "example.com",
+				},
+				TemplateBuildId: 1,
+			}
+			err := validateSchedule(req)
+			So(err, ShouldErrLike, "gitiles_commit")
+		})
+
+		Convey("tags", func() {
+			req := &pb.ScheduleBuildRequest{
+				Tags: []*pb.StringPair{
+					{
+						Key: "key:value",
+					},
+				},
+				TemplateBuildId: 1,
+			}
+			err := validateSchedule(req)
+			So(err, ShouldErrLike, "tags")
+		})
+
 		Convey("priority", func() {
 			Convey("negative", func() {
 				req := &pb.ScheduleBuildRequest{
@@ -92,14 +170,6 @@ func TestScheduleBuild(t *testing.T) {
 				err := validateSchedule(req)
 				So(err, ShouldErrLike, "priority must be in")
 			})
-		})
-
-		Convey("builder ID", func() {
-			req := &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{},
-			}
-			err := validateSchedule(req)
-			So(err, ShouldErrLike, "project must match")
 		})
 	})
 }

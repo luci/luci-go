@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
@@ -25,21 +26,40 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+// validateExecutable validates the given executable.
+func validateExecutable(exe *pb.Executable) error {
+	var err error
+	switch {
+	case exe.GetCipdPackage() != "":
+		return errors.Reason("cipd_package must not be specified").Err()
+	case exe.GetCipdVersion() != "" && teeErr(common.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
+		return errors.Annotate(err, "cipd_version").Err()
+	default:
+		return nil
+	}
+}
+
 // validateSchedule validates the given request.
 func validateSchedule(req *pb.ScheduleBuildRequest) error {
 	var err error
 	switch {
 	case strings.Contains(req.GetRequestId(), "/"):
 		return errors.Reason("request_id cannot contain '/'").Err()
-	case req.GetPriority() < 0 || req.GetPriority() > 255:
-		return errors.Reason("priority must be in [0, 255]").Err()
 	case req.GetBuilder() == nil && req.GetTemplateBuildId() == 0:
 		return errors.Reason("builder or template_build_id is required").Err()
-	case req.GetBuilder() != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
-		return err
+	case req.Builder != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
+		return errors.Annotate(err, "builder").Err()
+	case teeErr(validateExecutable(req.Exe), &err) != nil:
+		return errors.Annotate(err, "exe").Err()
+	case req.GitilesCommit != nil && teeErr(validateCommitWithRef(req.GitilesCommit), &err) != nil:
+		return errors.Annotate(err, "gitiles_commit").Err()
+	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
+		return errors.Annotate(err, "tags").Err()
+	case req.Priority < 0 || req.Priority > 255:
+		return errors.Reason("priority must be in [0, 255]").Err()
 	}
 
-	// TODO(crbug/1042991): Validate Exe, Properties, GitilesCommit, Tags, Dimensions, Notify.
+	// TODO(crbug/1042991): Validate Properties, Gerrit Changes, Dimensions, Notify.
 	return nil
 }
 

@@ -51,7 +51,7 @@ func ValidateBuilderID(b *pb.BuilderID) error {
 func ValidateRequiredBuilderID(b *pb.BuilderID) error {
 	switch err := ValidateBuilderID(b); {
 	case err != nil:
-		return errors.Annotate(err, "builder").Err()
+		return err
 	case b.Bucket == "":
 		return errors.Reason("bucket is required").Err()
 	case b.Builder == "":
