@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -67,6 +68,11 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	if err := validateSchedule(req); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	// TODO(crbug/1042991): Ensure Builder, Project are set (i.e. load TemplateBuildId if specified).
+	if err := perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+		return nil, err
 	}
 
 	return nil, nil
