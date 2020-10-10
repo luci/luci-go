@@ -76,8 +76,9 @@ func TestGerritClient(t *testing.T) {
 				actualReq = req
 				return &gerritpb.ListFilesResponse{
 					Files: map[string]*gerritpb.FileInfo{
-						"a.go": {},
-						"b.go": {},
+						"a.go":        {},
+						"b.go":        {},
+						"/COMMIT_MSG": {},
 					},
 				}, nil
 			}
