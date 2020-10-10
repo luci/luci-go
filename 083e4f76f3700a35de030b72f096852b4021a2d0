@@ -16,6 +16,24 @@
       "message": "not sure if you saw the comments i posted after this CL landed",
       "revId": "083e4f76f3700a35de030b72f096852b4021a2d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7e32bea_175b0d19",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-10T00:45:11Z",
+      "side": 1,
+      "message": "Incorporated into https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2458783.",
+      "parentUuid": "9e3f4e32_497cda31",
+      "revId": "083e4f76f3700a35de030b72f096852b4021a2d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
