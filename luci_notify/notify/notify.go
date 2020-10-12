@@ -151,17 +151,20 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucketp
 	return false
 }
 
-// BlamelistRepoWhiteset computes the aggregate repository whitelist for all
+// BlamelistRepoAllowset computes the aggregate repository allowlist for all
 // blamelist notification configurations in a given set of notifications.
-func BlamelistRepoWhiteset(notifications notifypb.Notifications) stringset.Set {
-	whiteset := stringset.New(0)
+func BlamelistRepoAllowset(notifications notifypb.Notifications) stringset.Set {
+	allowset := stringset.New(0)
 	for _, notification := range notifications.GetNotifications() {
 		blamelistInfo := notification.GetNotifyBlamelist()
 		for _, repo := range blamelistInfo.GetRepositoryWhitelist() {
-			whiteset.Add(repo)
+			allowset.Add(repo)
+		}
+		for _, repo := range blamelistInfo.GetRepositoryAllowlist() {
+			allowset.Add(repo)
 		}
 	}
-	return whiteset
+	return allowset
 }
 
 // ToNotify encapsulates a notification, along with the list of matching steps
@@ -232,18 +235,20 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 			continue
 		}
 
-		// If the whitelist is empty, use the static blamelist.
+		// If the allowlist is empty, use the static blamelist.
 		whitelist := n.NotifyBlamelist.GetRepositoryWhitelist()
-		if len(whitelist) == 0 {
+		allowlist := n.NotifyBlamelist.GetRepositoryAllowlist()
+		allowlist = append(allowlist, whitelist...)
+		if len(allowlist) == 0 {
 			for _, e := range commitsBlamelist(inputBlame, n.Template) {
 				appendRecipient(e)
 			}
 			continue
 		}
 
-		// If the whitelist is non-empty, use the dynamic blamelist.
-		whiteset := stringset.NewFromSlice(whitelist...)
-		for _, e := range outputBlame.Filter(whiteset).Blamelist(n.Template) {
+		// If the allowlist is non-empty, use the dynamic blamelist.
+		allowset := stringset.NewFromSlice(allowlist...)
+		for _, e := range outputBlame.Filter(allowset).Blamelist(n.Template) {
 			appendRecipient(e)
 		}
 	}
