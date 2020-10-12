@@ -82,13 +82,15 @@ message Notification {
     // blamelist. If unset, a blamelist will be computed based on a Builder's
     // repository field. If set, however luci-notify computes the blamelist for
     // all commits related to a build (which may span multiple repositories)
-    // which are part of repository in this repository whitelist.
+    // which are part of repository in this repository allowlist.
     //
     // Repositories should be valid Gerrit/Gitiles repository URLs, such as
     // https://chromium.googlesource.com/chromium/src
     //
-    // Optional.
+    // Optional. To be removed when we switch to repository_allowlist
     repeated string repository_whitelist = 1;
+    // Optional
+    repeated string repository_allowlist = 2;
   }
 
   // Deprecated. Notify on each build success.

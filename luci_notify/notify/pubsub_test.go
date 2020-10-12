@@ -507,11 +507,11 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(newBuild, rev2, checkoutNew)
 		}
 
-		Convey(`blamelist no whitelist`, func() {
+		Convey(`blamelist no allowlist`, func() {
 			testBlamelistConfig("test-builder-blamelist-1", changeEmail, commit2Email)
 		})
 
-		Convey(`blamelist with whitelist`, func() {
+		Convey(`blamelist with allowlist`, func() {
 			testBlamelistConfig("test-builder-blamelist-2", changeEmail, commit1Email)
 		})
 

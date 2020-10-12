@@ -105,7 +105,7 @@ func TestCheckout(t *testing.T) {
 		So(&result, ShouldResembleProto, &gitilesCheckout)
 	})
 
-	Convey(`Filter repositories from whitelist`, t, func() {
+	Convey(`Filter repositories from allowlist`, t, func() {
 		checkout := NewCheckout(gitilesCheckout)
 		repoURL := protoutil.GitilesRepoURL(gitilesCheckout.Commits[0])
 		filteredCheckout := checkout.Filter(stringset.NewFromSlice([]string{repoURL}...))
@@ -173,7 +173,7 @@ func TestLogs(t *testing.T) {
 		"https://chromium.googlesource.com/third_party/hello": testCommits,
 	}
 
-	Convey(`Filter repositories from whitelist`, t, func() {
+	Convey(`Filter repositories from allowlist`, t, func() {
 		filteredLogs := testLogs.Filter(stringset.NewFromSlice([]string{
 			"https://chromium.googlesource.com/chromium/src",
 		}...))
