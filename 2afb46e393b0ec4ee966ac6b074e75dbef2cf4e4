@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a3be02d_00e0de04",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-12T04:24:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d46fa2b_c6f7154d",
+      "range": {
+        "startLine": 56,
+        "startChar": 45,
+        "endLine": 56,
+        "endChar": 46
+      },
+      "revId": "2afb46e393b0ec4ee966ac6b074e75dbef2cf4e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e26b59c_cc1a9672",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-12T03:12:14Z",
       "side": 1,
       "message": "I think we should not need this anymore",
+      "range": {
+        "startLine": 67,
+        "startChar": 41,
+        "endLine": 67,
+        "endChar": 42
+      },
+      "revId": "2afb46e393b0ec4ee966ac6b074e75dbef2cf4e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e9daf57_3b0c18f1",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-12T04:24:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e26b59c_cc1a9672",
       "range": {
         "startLine": 67,
         "startChar": 41,
