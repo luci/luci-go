@@ -16,6 +16,23 @@
       "message": "It\u0027s unfortunate we have to do this, but I think you\u0027re right - IIUC lucicfg sends configs to services as text protos, so services depend on field names (not just IDs). Otherwise this proto change would be backwards compatible.\n\nMaybe worth running this past someone more familiar with lucicfg (e.g. vadimsh@) to confirm?",
       "revId": "bca009c2b4cd7739a9a9e4e47b3526630c56baa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d29b7f9_40fcc59a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T07:30:28Z",
+      "side": 1,
+      "message": "Hi Vadim, would you mind having a look at the CL to see if the plan outlined here makes sense? Thank you.",
+      "revId": "bca009c2b4cd7739a9a9e4e47b3526630c56baa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
