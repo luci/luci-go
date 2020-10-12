@@ -287,9 +287,15 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 
 // finalizeInvocation finalizes the invocation.
 func (r *streamRun) finalizeInvocation(ctx context.Context) error {
+	id, err := pbutil.ParseInvocationName(r.invocation.Name)
+	if err != nil {
+		return errors.Reason("failed to parse invocation name(%q): %s", r.invocation.Name, err).Err()
+	}
+
+	fmt.Fprintf(os.Stderr, "rdb-stream: finalizing the invocation - https://ci.chromium.org/ui/inv/%s\n", id)
 	ctx = metadata.AppendToOutgoingContext(
 		ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
-	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+	_, err = r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
 		Name: r.invocation.Name,
 	})
 	return err
