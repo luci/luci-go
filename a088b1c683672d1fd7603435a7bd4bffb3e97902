@@ -90,6 +90,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0ffe53c3_2c560b26",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-12T23:11:59Z",
+      "side": 1,
+      "message": "Great I agree, we don\u0027t need this entity. Can you remove it from here and from digram and design doc?\n\n\nfwiw, at some point I meant to save some sort of cache in root entity, but then I abandoned idea, but forgot to simplify 😊",
+      "parentUuid": "875201c4_9dae857f",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d80f0710_94677f1f",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 8
@@ -243,6 +261,30 @@
       "side": 1,
       "message": "I mean we can certainly do that as well. I thought this ConfigGroupID is the same as the one defined here (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2417835/8/cv/appengine/internal/config/store.go#97) which intentionally omit the project part as it is already available in parent key.\n\nSo either we create a new ProjectConfigGroupID and keep the existing one or rename the existing one to something else and make ConfigGroupId \u003d \"$project/$hash/$name\". I actually prefer the former approach as I can\u0027t find an appropriate name for the existing type. WDYT?",
       "parentUuid": "fe4a71a1_6905d7f3",
+      "range": {
+        "startLine": 108,
+        "startChar": 60,
+        "endLine": 108,
+        "endChar": 73
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a117ec27_700a25a0",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-12T23:11:59Z",
+      "side": 1,
+      "message": "We have both kinds of ids: projcet/$hash/$name (e.g. here) and $hash/$name (e.g. Run entity).\nSo, we need to name these somehow.\nEither ProjectConfigGroupID and ConfigGroupID (my proposal, because I suck at naming)\nor smth else. I don\u0027t have good ideas (I generated ConfigGroupID and PartialConfigGroupID, but I think it\u0027s more confusing).\n\nSo, my vote is to go with ProjectConfigGroupID and ConfigGroupID  for now and update if we can find shorter names.",
+      "parentUuid": "9d05ba8c_48b04bdb",
       "range": {
         "startLine": 108,
         "startChar": 60,
