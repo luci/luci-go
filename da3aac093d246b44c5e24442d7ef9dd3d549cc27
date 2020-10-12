@@ -98,6 +98,30 @@
       },
       "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6999a6a9_12c35359",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-12T23:21:03Z",
+      "side": 1,
+      "message": "Tested in Dev, it always cancelled goctx before giving enough time to get result.  May be it\u0027s because `the time on initiating goroutine + go path runtime` \u003e `time on python path`. \n\nAnyway, we cannot immediately cancel the go path when python returns.\n\nAdded the `5s+[how much time python will take]` condition back.",
+      "parentUuid": "07c9da81_81827181",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 9
+      },
+      "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
