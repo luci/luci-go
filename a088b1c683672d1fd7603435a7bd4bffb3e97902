@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc225bc0_5c894f0e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-12T22:06:39Z",
+      "side": 1,
+      "message": "Thanks for comments Yiwei -- made a follow-up CL to address those: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2466648 but feel free to respond to comments here too.",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b68ba0a2_1a5cc668",
@@ -37,6 +54,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1ba832f4_50f2a43b",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-12T22:06:39Z",
+      "side": 1,
+      "message": "Good question; I had actually included this here without thinking about it much, since it was in the diagram.\n\nBut now that I think about it... I\u0027m not sure it\u0027s necessary.\n\n - All cleanup can be done in Update; GobWatchMap entities could also be removed.\n - Regardless of the last updated time, we can just update all entities that need to be updated. UpdatedTime doesn\u0027t need to be used during update.\n\nAnd if there\u0027s no UpdatedTime, then actually... I believe we don\u0027t need to ever put any GobWatchMap entities in datastore; I believe that the only purpose that the GobWatchMap level of the hierarchy serves is so that we can do ancestor queries based on a host/repo key. Does that sound right?",
+      "parentUuid": "b68ba0a2_1a5cc668",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d80f0710_94677f1f",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 8
@@ -48,6 +83,30 @@
       "writtenOn": "2020-10-09T22:25:15Z",
       "side": 1,
       "message": "To clarify, I think you mean querying for *ALL* non-root entities without providing ancestor and filter based on an indexed property? \"querying with a filter on ID\" sounds like a different thing and should work?",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 35
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "421876c2_bbe7f429",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-12T22:06:39Z",
+      "side": 1,
+      "message": "If making a non-ancestor query just fetching all entities of a given kind and string ID works, then we don\u0027t need this indexed property and it should be removed. Clarified the TODO a little.",
+      "parentUuid": "d80f0710_94677f1f",
       "range": {
         "startLine": 58,
         "startChar": 7,
@@ -81,6 +140,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "17e3ea80_d989a4c3",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-12T22:06:39Z",
+      "side": 1,
+      "message": "Done, rephrased to note that.",
+      "parentUuid": "2091fc4e_b44e6c16",
+      "range": {
+        "startLine": 83,
+        "startChar": 23,
+        "endLine": 83,
+        "endChar": 24
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd44c1c4_5d0423df",
@@ -94,6 +177,30 @@
       "writtenOn": "2020-10-09T22:25:15Z",
       "side": 1,
       "message": "I think this should still be `ProjectConfigGroupID` as Lookup should also tell which LUCI Project is watching the given host+repo+ref because later on, when we load the content of the returned ConfigGroup, we would require Project as well to construct the parent key of ConfigGroup.\n\nAnyway, this should be added in `config` pkg so that we can add there later and modify the function signature after that.",
+      "range": {
+        "startLine": 108,
+        "startChar": 60,
+        "endLine": 108,
+        "endChar": 73
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe4a71a1_6905d7f3",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-12T22:06:39Z",
+      "side": 1,
+      "message": "Perhaps we could keep the name ConfigGroupID, but just have it include LUCI project as part of the ID? Is there a reason why we would need to have some other config group ID that doesn\u0027t include LUCI project?",
+      "parentUuid": "dd44c1c4_5d0423df",
       "range": {
         "startLine": 108,
         "startChar": 60,
