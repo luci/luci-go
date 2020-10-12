@@ -72,6 +72,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "875201c4_9dae857f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-12T22:31:37Z",
+      "side": 1,
+      "message": "Agreed. @tandrii, is there any usecase you have in mind when you include UpdatedTime property in GobWatchMap?",
+      "parentUuid": "1ba832f4_50f2a43b",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d80f0710_94677f1f",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 8
@@ -201,6 +219,30 @@
       "side": 1,
       "message": "Perhaps we could keep the name ConfigGroupID, but just have it include LUCI project as part of the ID? Is there a reason why we would need to have some other config group ID that doesn\u0027t include LUCI project?",
       "parentUuid": "dd44c1c4_5d0423df",
+      "range": {
+        "startLine": 108,
+        "startChar": 60,
+        "endLine": 108,
+        "endChar": 73
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d05ba8c_48b04bdb",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-12T22:31:37Z",
+      "side": 1,
+      "message": "I mean we can certainly do that as well. I thought this ConfigGroupID is the same as the one defined here (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2417835/8/cv/appengine/internal/config/store.go#97) which intentionally omit the project part as it is already available in parent key.\n\nSo either we create a new ProjectConfigGroupID and keep the existing one or rename the existing one to something else and make ConfigGroupId \u003d \"$project/$hash/$name\". I actually prefer the former approach as I can\u0027t find an appropriate name for the existing type. WDYT?",
+      "parentUuid": "fe4a71a1_6905d7f3",
       "range": {
         "startLine": 108,
         "startChar": 60,
