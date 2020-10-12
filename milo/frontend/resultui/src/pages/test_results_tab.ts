@@ -20,6 +20,7 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
+import '../components/hotkey';
 import '../components/left_panel';
 import '../components/test_filter';
 import '../components/test_nav_tree';
@@ -59,9 +60,14 @@ export class TestResultsTabElement extends MobxLitElement {
     return this.invocationState.selectedNode.testCount === 1 && [...this.invocationState.selectedNode.tests()].length === 1;
   }
 
-  private toggleAllVariants(expand: boolean) {
+  @observable.ref private allVariantsWereExpanded = false;
+  private toggleAllVariants(expand?: boolean) {
+    if (expand === undefined) {
+      expand = !this.allVariantsWereExpanded;
+    }
+    this.allVariantsWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry')
-      .forEach((e) => e.expanded = expand);
+      .forEach((e) => e.expanded = expand!);
   }
 
   connectedCallback() {
@@ -211,14 +217,16 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`
       <div id="header">
         <milo-test-filter></milo-test-filter>
-        <mwc-button
-          dense unelevated
-          @click=${() => this.toggleAllVariants(true)}
-        >Expand All</mwc-button>
-        <mwc-button
-          dense unelevated
-          @click=${() => this.toggleAllVariants(false)}
-        >Collapse All</mwc-button>
+        <milo-hotkey key="x" .handle=${() => this.toggleAllVariants()} title="press x to toggle all entries">
+          <mwc-button
+            dense unelevated
+            @click=${() => this.toggleAllVariants(true)}
+          >Expand All</mwc-button>
+          <mwc-button
+            dense unelevated
+            @click=${() => this.toggleAllVariants(false)}
+          >Collapse All</mwc-button>
+        </milo-hotkey>
       </div>
       <div id="main">${this.renderMain()}</div>
     `;
@@ -233,7 +241,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;

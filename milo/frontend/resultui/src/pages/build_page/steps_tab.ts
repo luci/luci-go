@@ -21,6 +21,7 @@ import { computed, observable } from 'mobx';
 import '../../components/build_step_entry';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
 import '../../components/dot_spinner';
+import '../../components/hotkey';
 import '../../components/lazy_list';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeUserConfigs, UserConfigs } from '../../context/app_state/user_configs';
@@ -48,9 +49,14 @@ export class StepsTabElement extends MobxLitElement {
     return !this.buildState.buildPageData?.steps?.find((s) => s.status !== BuildStatus.Success);
   }
 
-  private toggleAllSteps(expand: boolean) {
+  private allStepsWereExpanded = false;
+  private toggleAllSteps(expand?: boolean) {
+    if (expand === undefined) {
+      expand = !this.allStepsWereExpanded;
+    }
+    this.allStepsWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
-      .forEach((e) => e.toggleAllSteps(expand));
+      .forEach((e) => e.toggleAllSteps(expand!));
   }
 
   protected render() {
@@ -86,16 +92,18 @@ export class StepsTabElement extends MobxLitElement {
           </div>
         </div>
         <span></span>
-        <mwc-button
-          class="action-button"
-          dense unelevated
-          @click=${() => this.toggleAllSteps(true)}
-        >Expand All</mwc-button>
-        <mwc-button
-          class="action-button"
-          dense unelevated
-          @click=${() => this.toggleAllSteps(false)}
-        >Collapse All</mwc-button>
+        <milo-hotkey key="x" .handle=${() => this.toggleAllSteps()} title="press x to toggle all entries">
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllSteps(true)}
+          >Expand All</mwc-button>
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllSteps(false)}
+          >Collapse All</mwc-button>
+        </milo-hotkey>
       </div>
       <milo-lazy-list id="main" .growth=${300}>
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
