@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "da9efa44_5f63f19c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T20:22:46Z",
+      "side": 1,
+      "message": "I see",
+      "parentUuid": "3932be3c_184bde02",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 16,
+        "endChar": 31
+      },
+      "revId": "bca009c2b4cd7739a9a9e4e47b3526630c56baa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "37855697_d533132d",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-12T18:43:49Z",
       "side": 1,
       "message": "There\u0027s one more painful step before that: discover all config files that actually use the deprecated field and update them to use the new field. luci-notify.cfg is declared in projects listed here: \n\nhttps://apis-explorer.appspot.com/apis-explorer/?base\u003dhttps://luci-config.appspot.com/_ah/api#p/config/v1/config.get_project_configs?path\u003dluci-notify.cfg\u0026hashes_only\u003dtrue\u0026_h\u003d1\u0026",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 1
+      },
+      "revId": "bca009c2b4cd7739a9a9e4e47b3526630c56baa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f3c3133_a94f6b47",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T20:22:46Z",
+      "side": 1,
+      "message": "Got it. Will do.",
+      "parentUuid": "37855697_d533132d",
       "range": {
         "startLine": 17,
         "startChar": 0,
