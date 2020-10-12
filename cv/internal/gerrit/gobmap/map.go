@@ -16,7 +16,6 @@ package gobmap
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,9 +33,6 @@ type GobWatchMap struct {
 	// The schema of the Gerrit host is not included; it is always assumed to
 	// be https.
 	ID string `gae:"$id"`
-
-	// The time that this was last updated.
-	UpdatedTime time.Time `gae:",noindex"`
 }
 
 // GobWatchMapProject contains a mapping used to look up config group IDs
@@ -54,24 +50,26 @@ type GobWatchMapProject struct {
 	//
 	// This is used when querying for entities to update or remove in the
 	// update operation.
-	// TODO(qyearsley): Determine whether this is needed, and remove it
-	// if querying with a filter on ID doesn't work.
+	// TODO(qyearsley): Determine whether this is needed, and remove it if a
+	// query for all non-root entities filtering on string ID doesn't work.
 	Project string
 
 	// Each config group has a name, and a list of include ref regexps and
 	// exclude ref regexps. The config group that's returned is the first one
 	// where the ref matches an include ref regexp but does not match any
 	// exclude ref regexp.
-	// We need the ref regexps to determine which group matches, and we
-	// need the group name to construct a config group ID.
-	// TODO(qyearsley): Add RefSpecGroupMap when it's checked in
+	//
+	// We need the ref regexps to determine which group matches, and we need
+	// the group name to construct a config group ID.
+	// TODO(qyearsley): Add RefSpecGroupMap when it's checked in.
 
 	// ConfigHash is the hash of latest CV config file imported from LUCI Config;
 	// this is updated based on ProjectConfig entity.
 	ConfigHash string `gae:",noindex"`
 }
 
-// UpdateProjectConfig loads the new config and updates the map accordingly.
+// UpdateProjectConfig loads the new config and updates the gob map entities
+// accordingly.
 //
 // This may include adding, removing and modifying entities.
 func UpdateProjectConfig(ctx context.Context, project string) error {
@@ -79,8 +77,8 @@ func UpdateProjectConfig(ctx context.Context, project string) error {
 	// - Fetch the current state of the map by querying for all
 	//   GobWatchMapProject entities for the LUCI project.
 	// - Get the latest config from datastore (using the config package).
-	// - Determine which GobWatchMapProject entities need to be modified,
-	//   removed, or added.
+	// - Determine which GobWatchMap or GobWatchMapProject entities need to be
+	//   modified, removed, or added.
 	// - Note that for each config group in the config, there is a host, repo,
 	//   and a ref specification. Specifically, if cg is the ConfigGroup,
 	//   cg.Gerrit.Url is the host (plus schema), cg.Gerrit.Projects is a list
@@ -90,9 +88,10 @@ func UpdateProjectConfig(ctx context.Context, project string) error {
 	return errors.New("not implemented")
 }
 
-// TODO(qyearsley): Update/remove this when this is in the config package.
-// This is expected to be "hash/name", where hash is the config hash for
-// the LUCI project config that contains the config group.
+// TODO(qyearsley): Update when this is in the config package.
+// This is expected to be "project/hash/name", where project is the LUCI
+// proejc, hash is the config hash for the LUCI project config that contains
+// the config group, and name is the config group name.
 type ConfigGroupID string
 
 // Lookup returns config group IDs which watch the given combination of Gerrit
