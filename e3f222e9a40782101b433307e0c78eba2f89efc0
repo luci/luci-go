@@ -75,6 +75,30 @@
       },
       "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0302e40a_c123dffa",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-12T23:02:54Z",
+      "side": 1,
+      "message": "If your question was \"why not stdout?\", then here is the answer.\n\nPOSIX defines stdout and stderr as follow\n- standard output (for writing conventional output)\n- standard error (for writing diagnostic output)\n\nhttps://pubs.opengroup.org/onlinepubs/009695399/functions/stdin.html\n\nThus, it\u0027s common that shell utilities and daemons print diagnostic outputs in stderr. In this app, the stdout of the test binary can be kept as original, if the invocation is printed to stderr,",
+      "parentUuid": "8a15b24f_34ff484b",
+      "range": {
+        "startLine": 295,
+        "startChar": 16,
+        "endLine": 295,
+        "endChar": 22
+      },
+      "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
