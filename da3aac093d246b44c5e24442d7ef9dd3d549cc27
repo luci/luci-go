@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "33ccfaa8_29b35691",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-12T22:07:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38c0984e_706d9d03",
+      "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "776b6b00_679ba5f8",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-10-09T23:57:37Z",
       "side": 1,
       "message": "why is this needed? if the context is cancelled, then searchBuildsGoPath will return goCtx.Err()\n\nwithout this, we also don\u0027t need L74",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 9
+      },
+      "revId": "da3aac093d246b44c5e24442d7ef9dd3d549cc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07c9da81_81827181",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-12T22:07:24Z",
+      "side": 1,
+      "message": "I added this for two reasons.\n1) make sure to log some msg about the go context cancellation.\n\n2) make sure to receive nil searchResponseBundle struct instead of empty struct from `goResCh` channel. Because I wrote a test locally using `memory/datastore` to simulate this behavior, and found out searchBuildsGoPath didn\u0027t return `goCtx.Err()` but the empty response with nil error after cancellation. We cannot use `prod/datastore` locally. So just in case, I added the `case \u003c-goCtx.Done():` to ensure to return nil searchResponseBundle and log the cancellation msg.",
+      "parentUuid": "776b6b00_679ba5f8",
       "range": {
         "startLine": 77,
         "startChar": 2,
