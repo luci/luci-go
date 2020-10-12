@@ -34,6 +34,47 @@
       "parentUuid": "e6b7caba_916902f2",
       "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecf2bf31_65f6dcc6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-12T22:19:25Z",
+      "side": 1,
+      "message": "Ah, yes that makes sense.",
+      "parentUuid": "a50a1609_eec23c61",
+      "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a15b24f_34ff484b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-12T22:19:25Z",
+      "side": 1,
+      "message": "Quick question, why use stderr here?",
+      "range": {
+        "startLine": 295,
+        "startChar": 16,
+        "endLine": 295,
+        "endChar": 22
+      },
+      "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
