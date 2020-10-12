@@ -16,6 +16,24 @@
       "message": "This will only work for local runs, I mean when run `rdb stream -new`, right?",
       "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a50a1609_eec23c61",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-12T22:16:36Z",
+      "side": 1,
+      "message": "Yes you are right. \n\nJFYI, the bug asks to print the invocation for local runs. If rdb runs without -new, then the invocation is created by Swarming or BB, and rdb doesn\u0027t print the invocation at all.\n\nFor non-local runs, Swarming or BB console is responsible to display the invocation ID created.",
+      "parentUuid": "e6b7caba_916902f2",
+      "revId": "e3f222e9a40782101b433307e0c78eba2f89efc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
