@@ -291,7 +291,7 @@ consoles: {
 	id: "default"
 	name: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
@@ -325,7 +325,7 @@ consoles: {
 	id: "realm_test_console"
 	name: "realm_test"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	realm: "foo:fake_realm"
 	manifest_name: "REVISION"
 }
@@ -432,7 +432,7 @@ headers: {
 consoles: {
 	id: "default_header"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -448,7 +448,7 @@ consoles: {
 consoles: {
 	id: "console.bar"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -458,7 +458,7 @@ consoles: {
 consoles: {
 	id: "console.baz"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	builders: {
 		name: "buildbucket/luci.foo.other/baz"
 		category: "main|other"
@@ -489,7 +489,7 @@ var badConsoleCfg = `
 consoles: {
 	id: "baz"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "refs/heads/main"
 	manifest_name: "REVISION"
 	builders: {
 		name: ""

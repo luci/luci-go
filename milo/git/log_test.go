@@ -71,13 +71,13 @@ func TestLog(t *testing.T) {
 
 		Convey("cold cache", func() {
 			Convey("ACLs respected", func() {
-				_, err := impl.Log(cDenied, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
+				_, err := impl.Log(cDenied, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
 			req := &gitilespb.LogRequest{
 				Project:    "project",
-				Committish: "refs/heads/master",
+				Committish: "refs/heads/main",
 				PageSize:   100,
 			}
 			res := &gitilespb.LogResponse{
@@ -85,7 +85,7 @@ func TestLog(t *testing.T) {
 			}
 
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req)).Return(res, nil)
-			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 100})
+			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, res.Log)
 
@@ -94,12 +94,12 @@ func TestLog(t *testing.T) {
 			// so another call with cause a test failure.
 
 			Convey("ACLs respected even with cache", func() {
-				_, err := impl.Log(cDenied, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
+				_, err := impl.Log(cDenied, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
 			Convey("with ref in cache", func() {
-				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
+				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResembleProto, res.Log[:50])
 			})
@@ -159,20 +159,20 @@ func TestLog(t *testing.T) {
 				refCache := (&logReq{
 					host:    host,
 					project: "project",
-				}).mkCache(c, "refs/heads/master")
+				}).mkCache(c, "refs/heads/main")
 				err = memcache.Delete(c, refCache.Key())
 				So(err, ShouldBeNil)
 
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
-					Committish: "refs/heads/master",
+					Committish: "refs/heads/main",
 					PageSize:   100,
 				}
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[:100],
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
-				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
+				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res2.Log[:50])
 			})
@@ -180,7 +180,7 @@ func TestLog(t *testing.T) {
 		Convey("paging", func() {
 			req1 := &gitilespb.LogRequest{
 				Project:    "project",
-				Committish: "refs/heads/master",
+				Committish: "refs/heads/main",
 				PageSize:   100,
 			}
 			res1 := &gitilespb.LogResponse{
@@ -197,7 +197,7 @@ func TestLog(t *testing.T) {
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req1)).Return(res1, nil)
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 
-			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 150})
+			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 150})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[:150])
 		})

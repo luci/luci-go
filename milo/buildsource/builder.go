@@ -29,7 +29,7 @@ type BuilderID string
 
 // Split breaks the BuilderID into pieces.
 //   - backend is always 'buildbucket'
-//   - backendGroup is either the bucket or master name
+//   - backendGroup is either the bucket or builder group
 //   - builderName is the builder name.
 //
 // Returns an error if the BuilderID is malformed (wrong # slashes) or if any of

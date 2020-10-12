@@ -102,8 +102,8 @@ func TestBuildIDLink(t *testing.T) {
 	Convey(`TestLastFinishedBuildIDLink`, t, func() {
 		Convey("Buildbot build gets expected link", func() {
 			Convey("with valid BuildID", func() {
-				buildID, project := "buildbot/master/builder/number", "proj"
-				So(buildIDLink(buildID, project), ShouldEqual, "/buildbot/master/builder/number")
+				buildID, project := "buildbot/buildergroup/builder/number", "proj"
+				So(buildIDLink(buildID, project), ShouldEqual, "/buildbot/buildergroup/builder/number")
 			})
 
 			Convey("with invalid BuildID", func() {

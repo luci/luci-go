@@ -85,13 +85,13 @@ func TestCombinedLogs(t *testing.T) {
 		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) *gomock.Call {
 			return gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(&gitilespb.LogRequest{
 				Project: "project", Committish: reqCommit,
-				PageSize: 100, ExcludeAncestorsOf: "refs/heads/master",
+				PageSize: 100, ExcludeAncestorsOf: "refs/heads/main",
 			})).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
 		}
 
 		Convey("ACLs respected", func() {
 			_, err := impl.CombinedLogs(
-				cDenied, host, "project", "refs/heads/master",
+				cDenied, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
@@ -99,7 +99,7 @@ func TestCombinedLogs(t *testing.T) {
 		Convey("no refs match", func() {
 			mockRefsCall("refs/branch-heads", refTips{})
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(len(commits), ShouldEqual, 0)
@@ -113,7 +113,7 @@ func TestCombinedLogs(t *testing.T) {
 			mockLogCall(fakeCommits[0].Id, fakeCommits[0:5])
 
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[0:5])
@@ -146,7 +146,7 @@ func TestCombinedLogs(t *testing.T) {
 			mockLogCall(fakeCommits[20].Id, fakeCommits[20:30])
 
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master", []string{
+				cAllowed, host, "project", "refs/heads/main", []string{
 					`regexp:refs/branch-heads/\d+\.\d+`,
 					`regexp:refs/heads/\d+\.\d+\.\d+`,
 				}, 7)
@@ -167,7 +167,7 @@ func TestCombinedLogs(t *testing.T) {
 			mockLogCall(fakeCommits[5].Id, fakeCommits[5:10])
 
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[0:10])
@@ -183,14 +183,14 @@ func TestCombinedLogs(t *testing.T) {
 			mockLogCall(fakeCommits[10].Id, fakeCommits[10:20]).Times(1)
 
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResembleProto, fakeCommits[0:20])
 
 			// This call should use logs from cache.
 			commits, err = impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResembleProto, fakeCommits[0:20])
@@ -214,14 +214,14 @@ func TestCombinedLogs(t *testing.T) {
 			mockLogCall(fakeCommits[10].Id, fakeCommits[10:13])
 
 			commits, err := impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResembleProto, []*gitpb.Commit{
 				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]})
 
 			commits, err = impl.CombinedLogs(
-				cAllowed, host, "project", "refs/heads/master",
+				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResembleProto, []*gitpb.Commit{
