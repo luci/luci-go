@@ -16,6 +16,92 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/7520/steps\n\nPress \"x\" to expand/collapse all entries.",
       "revId": "85a1b2697743ffafb1cc94587251f08174a96c14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2335bfd5_f35d9ef9",
+        "filename": "milo/frontend/resultui/src/components/hotkey_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T01:40:17Z",
+      "side": 1,
+      "message": "I find it\u0027s easier to read if we can just use the actual number here, but it\u0027s up to you,",
+      "range": {
+        "startLine": 46,
+        "startChar": 41,
+        "endLine": 46,
+        "endChar": 60
+      },
+      "revId": "85a1b2697743ffafb1cc94587251f08174a96c14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c587dad7_f7935f23",
+        "filename": "milo/frontend/resultui/src/components/hotkey_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T01:40:17Z",
+      "side": 1,
+      "message": "May be we can make a function for dispatching both keydown and keyup events?",
+      "revId": "85a1b2697743ffafb1cc94587251f08174a96c14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85baf588_b6e654f1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T01:40:17Z",
+      "side": 1,
+      "message": "I feel a bit weird when we have the optional variable here. Maybe change this to \n\n```\nprivate toggleAllSteps(expand: boolean) {\n  this.allStepWereExpanded \u003d expand;\n  // Same as before\n}\n\nprivate toggleAllStepsByShortcut() {\n   this.toggleAllSteps(!this.allStepWereExpanded);\n}\n```\n\nand in line 95, we call toggleAllStepsByShortcut()?",
+      "range": {
+        "startLine": 53,
+        "startChar": 25,
+        "endLine": 53,
+        "endChar": 31
+      },
+      "revId": "85a1b2697743ffafb1cc94587251f08174a96c14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b8d687f_56d0b65f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-12T01:40:17Z",
+      "side": 1,
+      "message": "\"toggle all entries\" sounds not very clear. I suggest may be we use \"toggle expand/collapse of all entries\"",
+      "range": {
+        "startLine": 95,
+        "startChar": 75,
+        "endLine": 95,
+        "endChar": 104
+      },
+      "revId": "85a1b2697743ffafb1cc94587251f08174a96c14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
