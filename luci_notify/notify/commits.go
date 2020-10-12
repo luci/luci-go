@@ -100,12 +100,12 @@ func (c Checkout) ToGitilesCommits() notifypb.GitilesCommits {
 	return result
 }
 
-// Filter filters out repositories from the Checkout which are not in the whitelist
+// Filter filters out repositories from the Checkout which are not in the allowlist
 // and returns a new Checkout.
-func (c Checkout) Filter(whiteset stringset.Set) Checkout {
+func (c Checkout) Filter(allowset stringset.Set) Checkout {
 	newCheckout := make(Checkout)
 	for repo, commit := range c {
-		if whiteset.Has(repo) {
+		if allowset.Has(repo) {
 			newCheckout[repo] = commit
 		}
 	}
@@ -151,12 +151,12 @@ func ComputeLogs(c context.Context, luciProject string, oldCheckout, newCheckout
 	return result, err
 }
 
-// Filter filters out repositories from the Logs which are not in the whitelist
+// Filter filters out repositories from the Logs which are not in the allowlist
 // and returns a new Logs.
-func (l Logs) Filter(whiteset stringset.Set) Logs {
+func (l Logs) Filter(allowset stringset.Set) Logs {
 	newLogs := make(Logs)
 	for repo, commits := range l {
-		if whiteset.Has(repo) {
+		if allowset.Has(repo) {
 			newLogs[repo] = commits
 		}
 	}

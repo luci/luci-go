@@ -260,10 +260,10 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 
 	// Get the blamelist logs, if needed.
 	var aggregateLogs Logs
-	aggregateRepoWhiteset := BlamelistRepoWhiteset(builder.Notifications)
-	if len(aggregateRepoWhiteset) > 0 && len(checkout) > 0 {
+	aggregateRepoAllowset := BlamelistRepoAllowset(builder.Notifications)
+	if len(aggregateRepoAllowset) > 0 && len(checkout) > 0 {
 		oldCheckout := NewCheckout(builder.GitilesCommits)
-		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
+		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoAllowset), history)
 		if err != nil {
 			return errors.Annotate(err, "failed to compute logs").Err()
 		}
