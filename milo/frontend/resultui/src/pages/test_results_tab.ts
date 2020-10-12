@@ -20,6 +20,7 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
+import '../components/hotkey';
 import '../components/left_panel';
 import '../components/test_filter';
 import '../components/test_nav_tree';
@@ -59,10 +60,13 @@ export class TestResultsTabElement extends MobxLitElement {
     return this.invocationState.selectedNode.testCount === 1 && [...this.invocationState.selectedNode.tests()].length === 1;
   }
 
+  @observable.ref private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
+    this.allVariantsWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry')
       .forEach((e) => e.expanded = expand);
   }
+  private toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
 
   connectedCallback() {
     super.connectedCallback();
@@ -211,14 +215,16 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`
       <div id="header">
         <milo-test-filter></milo-test-filter>
-        <mwc-button
-          dense unelevated
-          @click=${() => this.toggleAllVariants(true)}
-        >Expand All</mwc-button>
-        <mwc-button
-          dense unelevated
-          @click=${() => this.toggleAllVariants(false)}
-        >Collapse All</mwc-button>
+        <milo-hotkey key="x" .handle=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
+          <mwc-button
+            dense unelevated
+            @click=${() => this.toggleAllVariants(true)}
+          >Expand All</mwc-button>
+          <mwc-button
+            dense unelevated
+            @click=${() => this.toggleAllVariants(false)}
+          >Collapse All</mwc-button>
+        </milo-hotkey>
       </div>
       <div id="main">${this.renderMain()}</div>
     `;
@@ -233,7 +239,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;
