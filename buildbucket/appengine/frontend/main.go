@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -87,9 +88,13 @@ func main() {
 		// through to this service, proxying the remainder to Python.
 		makeOverride := func(prodPct, devPct int) func(*router.Context) bool {
 			return func(ctx *router.Context) bool {
+				// TODO(crbug/1090540): remove env k-v
+				ctx.Context = context.WithValue(ctx.Context, "env", "Prod")
 				pct := prodPct
 				if isDev(ctx.Request) {
 					pct = devPct
+					// TODO(crbug/1090540): remove env k-v
+					ctx.Context = context.WithValue(ctx.Context, "env", "Dev")
 				}
 				switch val := ctx.Request.Header.Get("Should-Proxy"); val {
 				case "true":
@@ -122,7 +127,7 @@ func main() {
 		// makeOverride(prod % -> Go, dev % -> Go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "Batch", makeOverride(0, 0))
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "CancelBuild", makeOverride(0, 0))
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "SearchBuilds", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "SearchBuilds", makeOverride(0, 10))
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 0))
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "UpdateBuild", makeOverride(0, 0))
 		return nil

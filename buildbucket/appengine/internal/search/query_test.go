@@ -108,7 +108,7 @@ func TestNewSearchQuery(t *testing.T) {
 				BuildIDLow:          99,
 				Canary:              proto.Bool(true),
 				PageSize:            100,
-				PageToken:         "",
+				PageToken:           "",
 			})
 		})
 
@@ -124,7 +124,7 @@ func TestNewSearchQuery(t *testing.T) {
 			query := NewQuery(req)
 
 			So(query, ShouldResemble, &Query{
-				PageSize:    2,
+				PageSize:  2,
 				PageToken: "aa",
 			})
 		})
