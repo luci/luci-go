@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3395ffce_c2ee8fa4",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "Do you mean test results here?",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 39
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "654d8094_04f07557",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "Should this be called \"Offset\" then?",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 6
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1ec1c5e_27b6080b",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "\"the page token included in the incoming request\"?",
+      "range": {
+        "startLine": 57,
+        "startChar": 22,
+        "endLine": 57,
+        "endChar": 67
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a37d91f_161b7278",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "Should we return the annotated original err? same below",
+      "range": {
+        "startLine": 87,
+        "startChar": 17,
+        "endLine": 87,
+        "endChar": 23
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75f28455_975182fc",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "When we add support for commit_postion, how will this func change?",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 22
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd1dc782_f228eee0",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "What is `ft`?",
+      "range": {
+        "startLine": 61,
+        "startChar": 71,
+        "endLine": 61,
+        "endChar": 75
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c0cc770_59b0aeb3",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "Could you add a comment to explain why +1 here?",
+      "range": {
+        "startLine": 91,
+        "startChar": 13,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39ae583a_4c1d6478",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "So r.Index is the index for the item per invocation, not per IndexPoint?",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a3cbe32_a81639fb",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-13T22:46:17Z",
+      "side": 1,
+      "message": "Should we use the same semaphore to bound access to Invocations table (L104) and TestResults table?",
+      "range": {
+        "startLine": 132,
+        "startChar": 9,
+        "endLine": 132,
+        "endChar": 21
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
