@@ -123,6 +123,13 @@ message TestResult {
       (google.api.field_behavior) = OUTPUT_ONLY,
       (google.api.field_behavior) = IMMUTABLE
   ];
+
+  // Invocation ID for Invocation to which this test result belongs
+  string invocation_id = 13 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (google.api.field_behavior) = IMMUTABLE
+  ];
+
 }
 
 // Location of the test definition.
