@@ -202,6 +202,7 @@ export class ResultEntryElement extends MobxLitElement {
     #summary-html pre {
       margin: 0;
       font-size: 12px;
+      white-space: pre-wrap;
     }
 
     .kv-key::after {
