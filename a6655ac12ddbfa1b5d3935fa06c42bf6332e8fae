@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0efe2e3a_48ab5bf6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "380fed78_c2ef4c95",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e1c8e09_ff8962bc",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "error is ignored",
+      "range": {
+        "startLine": 65,
+        "startChar": 8,
+        "endLine": 65,
+        "endChar": 14
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26e04d4d_0874d0c7",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3e1c8e09_ff8962bc",
       "range": {
         "startLine": 65,
         "startChar": 8,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7452ccf7_363caa2f",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e13e0b1_600912f3",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 158,
+        "endChar": 6
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0d999ce4_85dce15a",
@@ -104,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbac4569_65fc9869",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "0d999ce4_85dce15a",
+      "range": {
+        "startLine": 46,
+        "startChar": 41,
+        "endLine": 46,
+        "endChar": 46
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "74d8061c_ae1d9205",
@@ -117,6 +207,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "reversed the conditoin, so that the code below unindented.\nalso some of vars above aren\u0027t used if !ok",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 8
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3772b021_8504aa2f",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "74d8061c_ae1d9205",
       "range": {
         "startLine": 50,
         "startChar": 1,
@@ -173,6 +287,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0815b3b_88599034",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "11452e5f_747283f9",
+      "range": {
+        "startLine": 51,
+        "startChar": 10,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98172fad_780a6e94",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8423e802_e3c179b0",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 24
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63149f3f_2b22522b",
@@ -186,6 +348,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "https://pkg.go.dev/go.chromium.org/luci/common/clock#Until",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 18
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "beb5bedc_fd4af758",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "63149f3f_2b22522b",
       "range": {
         "startLine": 52,
         "startChar": 8,
@@ -219,6 +405,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "034a21ea_ec9a9a36",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "I was having trouble with the conversion (I still can\u0027t fully wrap my head around go interfaces/underlying types/type definitions/casts/type assertions)\nAfter some experimentation I found that this works:\n`in.GetTimeRange().Latest \u003d (*timestamp.Timestamp)(startIP.(*tsIndexPoint))`",
+      "parentUuid": "10bb1182_63531411",
+      "range": {
+        "startLine": 91,
+        "startChar": 12,
+        "endLine": 91,
+        "endChar": 35
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d6e6538a_f8f146e3",
@@ -232,6 +442,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "looks like we have a tuple in a tuple? ((kind, indexPoint), skip).\n\ndid you consider page token \u003d (kind, indexPoint, skip) ?",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 102,
+        "endChar": 36
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77d9784f_ab62d6b1",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6e6538a_f8f146e3",
       "range": {
         "startLine": 102,
         "startChar": 12,
@@ -265,6 +499,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "724417c0_39b21997",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81aa60c2_61ab2157",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1d51bbd8_72538be8",
@@ -278,6 +536,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "why not standard String() ?\n\nhttps://pkg.go.dev/fmt/#Stringer",
+      "range": {
+        "startLine": 121,
+        "startChar": 24,
+        "endLine": 121,
+        "endChar": 32
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6202ab77_77dbb51c",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "1d51bbd8_72538be8",
       "range": {
         "startLine": 121,
         "startChar": 24,
@@ -311,6 +593,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2780bba_98803fb1",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0f5715c_0c5966db",
+      "range": {
+        "startLine": 125,
+        "startChar": 24,
+        "endLine": 125,
+        "endChar": 36
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ea8ccd34_9f3bc339",
@@ -324,6 +630,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "I think the following would be less code and more space-efficient\n\n  ts :\u003d \u0026timestamp.Timestamp{}\n  err :\u003d proto.Unmarshal([]byte(s), ts)\n  ...\n  return ts\n\nwdyt?",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 142,
+        "endChar": 2
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff4abff4_a776ff00",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done, however I had to hex-encode the []byte, because simple casting breaks `pagination.Token()` (which expects each part of the token to be a valid utf8 string, apparently it internally marshals to a repeated string proto field, which checks this)\nI considered marshaling to text proto, but it\u0027s not as space efficient.",
+      "parentUuid": "ea8ccd34_9f3bc339",
       "range": {
         "startLine": 133,
         "startChar": 1,
@@ -351,6 +681,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "50089982_0a32b553",
+        "filename": "resultdb/internal/services/resultdb/history_paging.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0a0198e_26a37037",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a8c2a7cf_0cea1aa9",
@@ -368,6 +716,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d191f133_989abe18",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "a8c2a7cf_0cea1aa9",
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8d3f5aa5_1d3c9d10",
@@ -381,6 +747,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "i think semaphore locking must be as closer the areas of the code that you want to protect (i assume RPCs) as possible.\nRun() waits on other things \u003d\u003e the whole semaphore waits on them.",
+      "range": {
+        "startLine": 56,
+        "startChar": 10,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb3c1321_b741ade3",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8d3f5aa5_1d3c9d10",
       "range": {
         "startLine": 56,
         "startChar": 10,
@@ -414,6 +804,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "176843bd_9d922dc4",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fc3528e6_fec3a473",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 4
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b6002f3_b5718c64",
@@ -437,6 +851,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a22e16f6_c9d6f273",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0b6002f3_b5718c64",
+      "range": {
+        "startLine": 63,
+        "startChar": 8,
+        "endLine": 63,
+        "endChar": 18
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "68432684_895c60c6",
@@ -450,6 +888,30 @@
       "writtenOn": "2020-10-09T01:01:37Z",
       "side": 1,
       "message": "FWIU the complexity and complexity of delayed purging exist because we accumulate invocations for the same timestamp.\n\nquestion: what is the benefit of accumulating invocations?\n\nthere are at least two cons:\n- additional complexity\n- we start fetching results with a delay",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 3
+      },
+      "revId": "a6655ac12ddbfa1b5d3935fa06c42bf6332e8fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2964179c_2f464907",
+        "filename": "resultdb/internal/services/resultdb/history_worker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-13T19:41:20Z",
+      "side": 1,
+      "message": "I\u0027ve changed this to the approach you suggested.\n\nThe purpose of the accumulation is:\n- to sort their results together (results should be sorted by timestamp, then by testid, varianthash, resultid)\n- so that the page token is unambiguous. E.g. if the page token says ts:\u00272020-01-01T10:12:30\u0027, skip:\u00275\u0027 but there\u0027s two or more invocations at the same timestamp, skip:5 is only meaningful if we sort the results from all such invocations.\n\nI think this is likely not a problem with timestamps, but will be one with commit positions, so I am postponing this decision til that is implemented.",
+      "parentUuid": "68432684_895c60c6",
       "range": {
         "startLine": 73,
         "startChar": 0,
