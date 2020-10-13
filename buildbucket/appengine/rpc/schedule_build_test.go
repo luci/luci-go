@@ -115,6 +115,75 @@ func TestScheduleBuild(t *testing.T) {
 				So(rsp, ShouldBeNil)
 			})
 		})
+
+		Convey("template build ID", func() {
+			Convey("not found", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("permission denied", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInputProperties{
+					ID:    1,
+					Build: datastore.MakeKey(ctx, "Build", 1),
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("ok", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:caller@example.com",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInputProperties{
+					ID:    1,
+					Build: datastore.MakeKey(ctx, "Build", 1),
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldBeNil)
+			})
+		})
 	})
 
 	Convey("validateSchedule", t, func() {
