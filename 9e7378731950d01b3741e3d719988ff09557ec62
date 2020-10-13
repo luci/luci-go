@@ -22,6 +22,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28aa6e29_89e8bf9d",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2020-10-13T23:10:28Z",
+      "side": 1,
+      "message": "Exactly what I said in the CL description: TestResult has no explicit reference to the corresponding Invocation. The only way to determine whether a connection exists in an RPC call, and this is basic structural information about the test result. This is a serious error which needs to be fixed.",
+      "parentUuid": "fba602a5_3edaf051",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
