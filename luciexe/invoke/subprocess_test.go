@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"testing"
 	"time"
 
@@ -33,17 +34,30 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-const selfTestEnvvar = "LUCIEXE_INVOKE_TEST"
+const (
+	selfTestEnvvar    = "LUCIEXE_INVOKE_TEST"
+	interruptExitCode = 71
+)
 
 func init() {
-	if varVal := os.Getenv(selfTestEnvvar); varVal != "" {
-
-		if varVal == "hang" {
-			<-time.After(time.Minute)
-			fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
+	switch os.Getenv(selfTestEnvvar) {
+	case "":
+	case "hang":
+		<-time.After(time.Minute)
+		fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
+		os.Exit(1)
+	case "terminate":
+		signalCh := make(chan os.Signal, 1)
+		signal.Notify(signalCh)
+		fmt.Fprintln(os.Stderr, "Redirect Signal")
+		select {
+		case <-signalCh:
+			os.Exit(interruptExitCode)
+		case <-time.After(time.Minute):
+			fmt.Fprintln(os.Stderr, "ERROR: Timeout waiting for Interrupt")
 			os.Exit(1)
 		}
-
+	default:
 		out := flag.String("output", "", "write the output here")
 		flag.Parse()
 
@@ -147,6 +161,19 @@ func TestSubprocess(t *testing.T) {
 			So(err, ShouldErrLike, "waiting for luciexe")
 
 			So(time.Now(), ShouldHappenWithin, time.Second, start)
+		})
+
+		Convey(`terminate`, func() {
+			o.Env.Set(selfTestEnvvar, "terminate")
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			So(err, ShouldBeNil)
+			// ensure subprocess can intercept the signal.
+			<-time.After(100 * time.Millisecond)
+			err = sp.Terminate()
+			So(err, ShouldBeNil)
+			_, err = sp.Wait()
+			So(err, ShouldErrLike, "waiting for luciexe")
+			So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, interruptExitCode)
 		})
 	})
 }

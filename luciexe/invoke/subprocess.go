@@ -47,6 +47,29 @@ type Subprocess struct {
 	err      error
 }
 
+// Terminate sends SIGTERM on unix or CTRL+BREAK on windows to the running
+// luciexe process.
+func (s *Subprocess) Terminate() error {
+	if s.isRunning() {
+		return s.terminiate()
+	}
+	return nil
+}
+
+// Kill kills the running luciexe process.
+func (s *Subprocess) Kill() error {
+	if s.isRunning() {
+		return s.cmd.Process.Kill()
+	}
+	return nil
+}
+
+func (s *Subprocess) isRunning() bool {
+	return (s != nil && s.cmd != nil && s.cmd.Process != nil) && // started
+		(s.cmd.ProcessState == nil || !s.cmd.ProcessState.Exited()) // not exited
+
+}
+
 // Start launches a binary implementing the luciexe protocol and returns
 // immediately with a *Subprocess.
 //
