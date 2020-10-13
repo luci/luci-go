@@ -51,6 +51,8 @@ const (
 )
 
 var (
+	// BuildsAdd allows to schedule new builds in a bucket.
+	BuildsAdd = realms.RegisterPermission("buildbucket.builds.add")
 	// BuildsGet allows to see all information about a build.
 	BuildsGet = realms.RegisterPermission("buildbucket.builds.get")
 	// BuildsList allows to list and search builds in a bucket.
@@ -67,6 +69,7 @@ var (
 // Permission -> a minimal legacy role it requires.
 var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 	// Builds.
+	BuildsAdd:    pb.Acl_SCHEDULER,
 	BuildsGet:    pb.Acl_READER,
 	BuildsList:   pb.Acl_READER,
 	BuildsCancel: pb.Acl_WRITER,

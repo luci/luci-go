@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,14 +43,77 @@ func TestScheduleBuild(t *testing.T) {
 			Identity: "user:caller@example.com",
 		})
 
-		Convey("ok", func() {
-			req := &pb.ScheduleBuildRequest{
-				RequestId:       "id",
-				TemplateBuildId: 1,
-			}
-			rsp, err := srv.ScheduleBuild(ctx, req)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldBeNil)
+		Convey("builder", func() {
+			Convey("not found", func() {
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("permission denied", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("ok", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:caller@example.com",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldBeNil)
+			})
 		})
 	})
 
