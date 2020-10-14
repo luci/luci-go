@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9539cdd_f75b7f3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T23:28:43Z",
+      "side": 1,
+      "message": "(Patchset title should have been `fixing comment`)",
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -39,6 +39,30 @@
       },
       "revId": "5435ce2d7ede78f03e5d99d36a72e5bef281ba9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "112c6a72_51782110",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T23:28:43Z",
+      "side": 1,
+      "message": "i is the zero-based index of the last item. So if we are at i\u003d3 (i.e. the 4th item) the next page would have to skip i+1 (i.e. 4) items: (0, 1, 2, 3)",
+      "parentUuid": "b2ed2588_905b414b",
+      "range": {
+        "startLine": 92,
+        "startChar": 16,
+        "endLine": 92,
+        "endChar": 19
+      },
+      "revId": "5435ce2d7ede78f03e5d99d36a72e5bef281ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
