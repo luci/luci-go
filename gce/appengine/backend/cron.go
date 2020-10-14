@@ -25,11 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
-	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -105,24 +103,4 @@ func manageBotsAsync(c context.Context) error {
 // reportQuotasAsync schedules task queue tasks to report quota in each project.
 func reportQuotasAsync(c context.Context) error {
 	return trigger(c, &tasks.ReportQuota{}, datastore.NewQuery(model.ProjectKind))
-}
-
-// countTasks counts tasks for each queue.
-func countTasks(c context.Context) error {
-	qs := getDispatcher(c).GetQueues()
-	logging.Debugf(c, "found %d task queues", len(qs))
-	for _, q := range qs {
-		s, err := taskqueue.Stats(c, q)
-		switch {
-		case err != nil:
-			return errors.Annotate(err, "failed to get %q task queue stats", q).Err()
-		case len(s) < 1:
-			return errors.Reason("failed to get %q task queue stats", q).Err()
-		}
-		t := &metrics.TaskCount{}
-		if err := t.Update(c, q, s[0].InFlight, s[0].Tasks); err != nil {
-			return errors.Annotate(err, "failed to update %q task queue count", q).Err()
-		}
-	}
-	return nil
 }
