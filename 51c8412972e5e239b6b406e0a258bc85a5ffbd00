@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1932ade5_9a9ca9bf",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Yes, changed comment.",
+      "parentUuid": "3395ffce_c2ee8fa4",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 39
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "654d8094_04f07557",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-13T22:46:17Z",
       "side": 1,
       "message": "Should this be called \"Offset\" then?",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 6
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee9a9c54_aa1526bb",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "654d8094_04f07557",
       "range": {
         "startLine": 44,
         "startChar": 1,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f291f5c_606635f9",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1ec1c5e_27b6080b",
+      "range": {
+        "startLine": 57,
+        "startChar": 22,
+        "endLine": 57,
+        "endChar": 67
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6a37d91f_161b7278",
@@ -83,6 +155,30 @@
       "writtenOn": "2020-10-13T22:46:17Z",
       "side": 1,
       "message": "Should we return the annotated original err? same below",
+      "range": {
+        "startLine": 87,
+        "startChar": 17,
+        "endLine": 87,
+        "endChar": 23
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ee1bbd6_15613a4a",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Earlier (PS#2) Nodir said that \"internal structure of page tokens is impl details and is advised not to be exposed: https://google.aip.dev/158#opacity\nso let\u0027s omit these details\"",
+      "parentUuid": "6a37d91f_161b7278",
       "range": {
         "startLine": 87,
         "startChar": 17,
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "191917a7_6d97b4cd",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "We would switch based on req.range.(type) to use invocations.ByCommitPosition. Also, each work item will contain a set of invocations instead of a single invocation. An earlier patchset did this for timestamps, but thought it might be unnecessary as timestamp collisions should be rare.",
+      "parentUuid": "75f28455_975182fc",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 22
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bd1dc782_f228eee0",
@@ -129,6 +249,30 @@
       "writtenOn": "2020-10-13T22:46:17Z",
       "side": 1,
       "message": "What is `ft`?",
+      "range": {
+        "startLine": 61,
+        "startChar": 71,
+        "endLine": 61,
+        "endChar": 75
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8a5287e_5b70089f",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Missed rename. Changed to `wiC` (work item channel)",
+      "parentUuid": "bd1dc782_f228eee0",
       "range": {
         "startLine": 61,
         "startChar": 71,
@@ -185,6 +329,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c12fceac_39a88f59",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "Added ``` \n// If we stopped here, the next page would start at i + 1.\n// I.e. skip i+1 results from the current index point.\n```",
+      "parentUuid": "3c0cc770_59b0aeb3",
+      "range": {
+        "startLine": 91,
+        "startChar": 13,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9b5916a_b9e1b1e7",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "This patchset assumes each indexed invocation is its own index point.\n\nThe reasoning is here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2441875/comment/68432684_895c60c6/",
+      "parentUuid": "39ae583a_4c1d6478",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a3cbe32_a81639fb",
@@ -198,6 +390,30 @@
       "writtenOn": "2020-10-13T22:46:17Z",
       "side": 1,
       "message": "Should we use the same semaphore to bound access to Invocations table (L104) and TestResults table?",
+      "range": {
+        "startLine": 132,
+        "startChar": 9,
+        "endLine": 132,
+        "endChar": 21
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "122b2cef_ec4d496d",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-14T00:35:55Z",
+      "side": 1,
+      "message": "That\u0027s a good question. I thought the limit of spanner connections is global and not per table.",
+      "parentUuid": "8a3cbe32_a81639fb",
       "range": {
         "startLine": 132,
         "startChar": 9,
