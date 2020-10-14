@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d55b7892_ea7fefbd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-14T22:44:48Z",
+      "side": 1,
+      "message": "Implementing code_owners Find OWNERS for file or folder endpoint.",
+      "revId": "6d495a2d5064a88fcd763aab2d589c67f4fff6e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
