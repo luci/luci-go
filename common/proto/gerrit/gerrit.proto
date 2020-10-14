@@ -94,6 +94,9 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 
+  // Lists the code owners for a file/folder in a branch
+  rpc ListFileOwners(ListFileOwnersRequest) returns (ListOwnersResponse);
+
   // Lists the projects on a Gerrit host
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
@@ -911,4 +914,42 @@ message RefInfo{
   string ref = 1;
   // The revision the branch points to
   string revision = 2;
+}
+
+// Options when requesting information about an account
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#details
+message AccountOptions{
+  // Include account details in the response
+  bool details = 1;
+
+  // Include all registered emails
+  // Requires the caller to have Modify Account global capability
+  bool all_emails = 2;
+}
+
+// Information to request the list of OWNERS for a file/folder in a branch
+message ListFileOwnersRequest{
+  // The project name
+  string project = 1;
+
+  // The ref ID (eg: main)
+  string ref = 2;
+
+  // The file or folder in question
+  string path = 3;
+
+  // Options about how much detail to return in the AccountInfo
+  AccountOptions options = 4;
+}
+
+// Information about a single OWNER
+message OwnerInfo{
+  AccountInfo account = 1;
+}
+
+// Code OWNERS for a particular request
+message ListOwnersResponse{
+  // The account(s) who are OWNERS
+  repeated OwnerInfo owners = 1;
 }
