@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -75,9 +77,10 @@ func verifySearch(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchB
 	go func() {
 		defer close(goResCh)
 		goRes, goErr := searchBuildsGoPath(goCtx, req)
+		logging.Debugf(goCtx, "search verification: goroutine - goRes: %s\ngoErr: %v", goRes.String(), goErr)
 		select {
 		case <-goCtx.Done():
-			logging.Debugf(goCtx, "search verification: go context is cancelled")
+			logging.Debugf(goCtx, "search verification: go context is done. goCtx err: %v", goCtx.Err())
 			return
 		case goResCh <- &searchResponseBundle{res: goRes, err: goErr}:
 		}
@@ -86,30 +89,43 @@ func verifySearch(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchB
 	// get Py results.
 	logging.Debugf(ctx, "search verification: calling pyHost:%s", pyHost)
 	pyRes, pyErr := pyClient.client.SearchBuilds(ctx, req)
-	if pyErr != nil {
-		logging.Errorf(ctx, "search verification: Python response error - %v", pyErr)
-	}
 	logging.Debugf(ctx, "search verification: successfully get Python response")
+
+	// convert the gRPC error to the appstatus error.
+	if pyErr != nil {
+		if e, ok := status.FromError(pyErr); ok {
+			pyErr = appstatus.Error(e.Code(), e.Message())
+		} else {
+			logging.Debugf(ctx, "search verification: not able to parse rpc errors from Py service - %v", pyErr)
+		}
+	}
 
 	// compare search results.
 	select {
 	case goResBundle := <-goResCh:
 		compareSearchResults(ctx, goResBundle, &searchResponseBundle{res: pyRes, err: pyErr})
 	case <-time.After(5 * time.Second):
+		logging.Debugf(ctx, "search verification: cancelling after 5s...")
 		cancelGoCtx()
 	}
+
 	return pyRes, pyErr
 }
 
 // compareSearchResults is to compareSearchResults py and go responses for SearchBuilds.
 func compareSearchResults(ctx context.Context, goResBundle *searchResponseBundle, pyResBundle *searchResponseBundle) {
 	if goResBundle == nil {
-		logging.Warningf(ctx, "search verification: diff found - goResBundle is nil, while pyResBundle %v", pyResBundle)
+		logging.Warningf(ctx, "search verification: diff found - goResBundle is nil, while pyResBundle %v and %v", pyResBundle.res.String(), pyResBundle.err)
 		return
 	}
+	// only compare error code.
 	if goResBundle.err != pyResBundle.err {
-		logging.Warningf(ctx, "search verification: diff found - err is not equal\n go - %v\n py - %v", goResBundle.err, pyResBundle.err)
-		return
+		gStatus, gOk := appstatus.Get(goResBundle.err)
+		pyStatus, pyOk := appstatus.Get(pyResBundle.err)
+		if !(gOk && pyOk && gStatus.Code() == pyStatus.Code()) {
+			logging.Warningf(ctx, "search verification: diff found - err is not equal\n go - %v\n py - %v", goResBundle.err, pyResBundle.err)
+			return
+		}
 	}
 
 	var miss, extra []int64
