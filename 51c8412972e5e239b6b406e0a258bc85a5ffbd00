@@ -377,6 +377,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbb61359_c0fe7c06",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-14T02:06:41Z",
+      "side": 1,
+      "message": "Yeah I think it makes sense since it\u0027s not very likely that tow invocations have exactly the same timestamp.\n\nBut a comment to mention this assumption would be better.",
+      "parentUuid": "c9b5916a_b9e1b1e7",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a3cbe32_a81639fb",
@@ -414,6 +438,30 @@
       "side": 1,
       "message": "That\u0027s a good question. I thought the limit of spanner connections is global and not per table.",
       "parentUuid": "8a3cbe32_a81639fb",
+      "range": {
+        "startLine": 132,
+        "startChar": 9,
+        "endLine": 132,
+        "endChar": 21
+      },
+      "revId": "51c8412972e5e239b6b406e0a258bc85a5ffbd00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39ec5e23_5dafea51",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-14T02:06:41Z",
+      "side": 1,
+      "message": "Yeah, I think you\u0027re right.",
+      "parentUuid": "122b2cef_ec4d496d",
       "range": {
         "startLine": 132,
         "startChar": 9,

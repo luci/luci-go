@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "764278d6_4cd11198",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-14T02:06:41Z",
+      "side": 1,
+      "message": "I don\u0027t think I have more comments.",
+      "revId": "5435ce2d7ede78f03e5d99d36a72e5bef281ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2ed2588_905b414b",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-14T02:06:41Z",
+      "side": 1,
+      "message": "Should the next page skips i and starts from i+1?",
+      "range": {
+        "startLine": 92,
+        "startChar": 16,
+        "endLine": 92,
+        "endChar": 19
+      },
+      "revId": "5435ce2d7ede78f03e5d99d36a72e5bef281ba9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
