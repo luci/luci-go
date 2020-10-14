@@ -33,6 +33,24 @@
       "message": "Wait does the other CL fix DeadlineExceeded everywhere? All SearchBuild requests were failing on dev I thought.",
       "revId": "056c0fb863590c52af92786e26ddf5b66f9f7564",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef17e3f1_2d74d9dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-14T23:14:48Z",
+      "side": 1,
+      "message": "The failures on 10/13 - 10/14 morning have mix reasons. \n1) The comparison operation is heavy and the version was wrong. It overrode 100% traffic to Go instead of 10% (I uploaded my local version for the convenience of some manual testings and didn\u0027t realize the dispatch.yaml had taken effect in Dev). I noticed it spun up 124 instances - https://screenshot.googleplex.com/5WXCgYayx6FeWoR.\n\n2) Majority requests have the permission issues which we discussed in the meeting. Their responses are like `rpc error code \u003dnot found`. But the service didn\u0027t attach the appstatus code and as a result, it became the internal error. It has been fixed in the parent CL.\n\n\nNow, Dev has run the correct version over 10+ hours and everything looks good. So I decide to turn on verification in Prod. I\u0027m going to monitor it and if any issues, I\u0027ll roll back to the non-overridden version.",
+      "parentUuid": "5c131f04_9515ecc4",
+      "revId": "056c0fb863590c52af92786e26ddf5b66f9f7564",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
