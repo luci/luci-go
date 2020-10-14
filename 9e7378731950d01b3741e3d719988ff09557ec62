@@ -70,6 +70,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cb57849_d89d1053",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-14T18:49:32Z",
+      "side": 1,
+      "message": "if this is a serious error, wouldn\u0027t the API guidelines explicitly recommend `parent` field? https://google.aip.dev/122#fields-representing-a-resources-parent",
+      "parentUuid": "cebe1459_145c4d34",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
