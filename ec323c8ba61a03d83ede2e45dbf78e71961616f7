@@ -3,6 +3,46 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c3e62e21_e61e9ac8",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-14T00:57:26Z",
+      "side": 1,
+      "message": "suggest to write tests on this function to directly assert the returned requests.",
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c3a37f7_f73b1f42",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-14T00:57:26Z",
+      "side": 1,
+      "message": "It seems the python version won\u0027t throw an error to users if the BuildInputProperties is not found. It just throws errors when Build is not found. I get the above idea from the py unit tests where the BuildInputProperties is not set (https://source.chromium.org/chromium/infra/infra/+/5d0f88657fe7c312a9fe36cdbab322fd77ab07eb:appengine/cr-buildbucket/test/api_test.py;l\u003d782-809). \n\nIf so, I suggest to reuse the function `LoadBuildBundles(ctx context.Context, pbBuilds []*pb.Build, m mask.Mask)` by constructing a input_properties mask.",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e6338af2_7e12cab6",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -14,6 +54,24 @@
       "writtenOn": "2020-10-13T02:24:50Z",
       "side": 1,
       "message": "This code loads a build without infra, then references infra on L255 and L256:\nhttps://chromium.googlesource.com/infra/infra/+/5d0f88657fe7c312a9fe36cdbab322fd77ab07eb/appengine/cr-buildbucket/api.py#233\n\nBut this ends up not mattering because later in the ScheduleBuild pipeline, it sets the correct values for Dimensions and Priority anyway. Therefore I\u0027ve omitted setting these fields here, because it does nothing but mislead.",
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "371be318_4af2c4ab",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-14T00:57:26Z",
+      "side": 1,
+      "message": "Yeah, Dimensions and Priority look like empty from the py code.",
+      "parentUuid": "e6338af2_7e12cab6",
       "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
