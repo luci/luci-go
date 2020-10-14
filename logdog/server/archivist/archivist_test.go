@@ -372,6 +372,21 @@ func TestHandleArchive(t *testing.T) {
 				})
 			})
 
+			Convey(`Will truncate long descriptor paths in GS filenames`, func() {
+				desc.Name = strings.Repeat("very/long/prefix/", 200)
+				So(len(desc.Path()), ShouldBeGreaterThan, 2048)
+				reloadDesc()
+				addTestEntry(project, 0, 1)
+
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+
+				So(archiveRequest.StreamUrl, ShouldContainSubstring, "-TRUNCATED-")
+				So(len(archiveRequest.StreamUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
+
+				So(archiveRequest.IndexUrl, ShouldContainSubstring, "-TRUNCATED-")
+				So(len(archiveRequest.IndexUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
+			})
+
 			Convey(`When a transient archival error occurs, will not consume the task.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.New("test error", transient.Tag) }
