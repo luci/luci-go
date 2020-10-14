@@ -34,6 +34,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringlistflag"
@@ -76,7 +77,7 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 		fmt.Printf("Table %q does not exist.\n", tableID)
 		fmt.Println("It will be created with the following schema:")
 		fmt.Println(strings.Repeat("=", 80))
-		fmt.Println(schemaString(td.Schema))
+		fmt.Println(bq.SchemaString(td.Schema))
 		fmt.Println(strings.Repeat("=", 80))
 		if !shouldContinue() {
 			return errCanceledByUser
@@ -111,9 +112,9 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 
 		// add fields missing in td.Schema because BigQuery does not support
 		// removing fields anyway.
-		addMissingFields(&td.Schema, md.Schema)
+		bq.AddMissingFields(&td.Schema, md.Schema)
 
-		if diff := schemaDiff(md.Schema, td.Schema); diff == "" {
+		if diff := bq.SchemaDiff(md.Schema, td.Schema); diff == "" {
 			fmt.Println("No changes to schema detected.")
 		} else {
 			fmt.Println("The following changes to the schema will be made:")
@@ -238,17 +239,17 @@ func main() {
 // schemaFromMessage loads a message by name from .proto files in dir
 // and converts the message to a bigquery schema.
 func schemaFromMessage(desc *descriptor.FileDescriptorSet, messageName string) (schema bigquery.Schema, description string, err error) {
-	conv := schemaConverter{
-		desc:           desc,
-		sourceCodeInfo: make(map[*descriptor.FileDescriptorProto]sourceCodeInfoMap, len(desc.File)),
+	conv := bq.SchemaConverter{
+		Desc:           desc,
+		SourceCodeInfo: make(map[*descriptor.FileDescriptorProto]bq.SourceCodeInfoMap, len(desc.File)),
 	}
 	for _, f := range desc.File {
-		conv.sourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
+		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
 		if err != nil {
 			return nil, "", errors.Annotate(err, "failed to index source code info in file %q", f.GetName()).Err()
 		}
 	}
-	return conv.schema(messageName)
+	return conv.Schema(messageName)
 }
 
 func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, error) {
