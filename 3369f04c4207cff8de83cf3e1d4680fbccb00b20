@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1fa5392_d6184a5f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-14T21:52:09Z",
+      "side": 1,
+      "message": "Hi, can you help to review this CL? thanks. \n\n(I\u0027ve tested in Dev with 10% traffic going through the go path. All works well.)",
+      "revId": "3369f04c4207cff8de83cf3e1d4680fbccb00b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
