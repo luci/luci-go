@@ -25,11 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
-	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -108,6 +106,7 @@ func reportQuotasAsync(c context.Context) error {
 }
 
 // countTasks counts tasks for each queue.
+/*
 func countTasks(c context.Context) error {
 	qs := getDispatcher(c).GetQueues()
 	logging.Debugf(c, "found %d task queues", len(qs))
@@ -126,3 +125,4 @@ func countTasks(c context.Context) error {
 	}
 	return nil
 }
+*/
