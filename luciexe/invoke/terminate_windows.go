@@ -19,7 +19,8 @@ package invoke
 import (
 	"os/exec"
 	"syscall"
-	"windows"
+
+	"golang.org/x/sys/windows"
 
 	"go.chromium.org/luci/common/errors"
 )
