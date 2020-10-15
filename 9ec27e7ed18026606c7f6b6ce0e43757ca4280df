@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63c90670_89d23c55",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-15T04:21:14Z",
+      "side": 1,
+      "message": "I am not sure if I should update the patch version or minor version here. The change is backward-compatible (luci-notify is currently supporting both repository_whitelist and repository_allowlist).\n\nSince there is no project currently using the repository_whitelist field, does that mean I can just land this CL and modify luci-notify to remove the repository_whitelist field?",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "9ec27e7ed18026606c7f6b6ce0e43757ca4280df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
