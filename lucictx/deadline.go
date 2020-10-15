@@ -68,6 +68,17 @@ const (
 	TimeoutEvent
 )
 
+func (de DeadlineEvent) String() string {
+	switch de {
+	case InterruptEvent:
+		return "InterruptEvent"
+	case TimeoutEvent:
+		return "TimeoutEvent"
+	default:
+		return "ClosureEvent"
+	}
+}
+
 // earlier returns the earlier of a and b, treating "zero" as "infinity".
 func earlier(a, b time.Time) time.Time {
 	if a.IsZero() {

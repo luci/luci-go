@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"testing"
 	"time"
 
@@ -28,22 +29,37 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-const selfTestEnvvar = "LUCIEXE_INVOKE_TEST"
+const (
+	selfTestEnvvar    = "LUCIEXE_INVOKE_TEST"
+	terminateExitCode = 71
+	timeoutExitCode   = 97
+)
 
 func init() {
-	if varVal := os.Getenv(selfTestEnvvar); varVal != "" {
-
-		if varVal == "hang" {
-			<-time.After(time.Minute)
-			fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
-			os.Exit(1)
+	switch os.Getenv(selfTestEnvvar) {
+	case "":
+	case "hang":
+		<-time.After(time.Minute)
+		fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
+		os.Exit(1)
+	case "signal":
+		signalCh := make(chan os.Signal, 1)
+		signal.Notify(signalCh, signals.Interrupts()...)
+		select {
+		case <-signalCh:
+			os.Exit(terminateExitCode)
+		case <-time.After(time.Minute):
+			fmt.Fprintln(os.Stderr, "ERROR: Timeout waiting for Signal")
+			os.Exit(timeoutExitCode)
 		}
-
+	default:
 		out := flag.String("output", "", "write the output here")
 		flag.Parse()
 
@@ -82,7 +98,7 @@ func TestSubprocess(t *testing.T) {
 		selfArgs := []string{os.Args[0]}
 
 		Convey(`defaults`, func() {
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -92,7 +108,7 @@ func TestSubprocess(t *testing.T) {
 
 		Convey(`collect`, func() {
 			o.CollectOutput = true
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -120,7 +136,7 @@ func TestSubprocess(t *testing.T) {
 					Logs: []*bbpb.Log{{Name: "stdout"}},
 				},
 			}
-			sp, err := Start(ctx, selfArgs, inputBuild, o)
+			sp, err := Start(ctx, selfArgs, inputBuild, o, nil)
 			So(err, ShouldBeNil)
 			build, err := sp.Wait()
 			So(err, ShouldBeNil)
@@ -140,7 +156,7 @@ func TestSubprocess(t *testing.T) {
 			start := time.Now()
 
 			o.Env.Set(selfTestEnvvar, "hang")
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
 			So(err, ShouldBeNil)
 			cancel()
 			_, err = sp.Wait()
@@ -148,5 +164,37 @@ func TestSubprocess(t *testing.T) {
 
 			So(time.Now(), ShouldHappenWithin, time.Second, start)
 		})
+
+		Convey(`deadline`, func() {
+			o.Env.Set(selfTestEnvvar, "signal")
+			deadlineEventCh := make(chan lucictx.DeadlineEvent, 1)
+			sendEvent := func(evt lucictx.DeadlineEvent) {
+				deadlineEventCh <- evt
+			}
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, deadlineEventCh)
+			So(err, ShouldBeNil)
+			// ensure subprocess is ready to catch the signal.
+			<-time.After(100 * time.Millisecond)
+			Convey(`interrupt`, func() {
+				go sendEvent(lucictx.InterruptEvent)
+				_, err = sp.Wait()
+				So(err, ShouldNotBeNil)
+				So(Interrupted.In(err), ShouldBeTrue)
+				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
+			})
+			Convey(`timeout`, func() {
+				go sendEvent(lucictx.TimeoutEvent)
+				_, err = sp.Wait()
+				So(err, ShouldNotBeNil)
+				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
+			})
+			Convey(`closure`, func() {
+				go sendEvent(lucictx.ClosureEvent)
+				_, err = sp.Wait()
+				So(err, ShouldNotBeNil)
+				So(sp.cmd.ProcessState.ExitCode(), ShouldNotEqual, timeoutExitCode)
+			})
+		})
+
 	})
 }
