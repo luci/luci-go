@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81ab81fa_7c14534b",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-15T05:54:42Z",
+      "side": 1,
+      "message": "proto.Marshal() could perform better and save more spaces than json.Mashal(), especially if we going to add more data fields into TestMetadata.\n\nAlso, I think it\u0027s ok to skip a check on err, if we use proto.Marshal(), as the input is already a valid proto message. Then, this function can be kept without returning an error.",
+      "range": {
+        "startLine": 163,
+        "startChar": 32,
+        "endLine": 163,
+        "endChar": 44
+      },
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
