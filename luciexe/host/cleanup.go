@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 )
 
-type cleanupFn func() error
+type cleanupFn func(ctx context.Context) error
 type cleanupItem struct {
 	name string
 	cb   cleanupFn
@@ -35,7 +35,7 @@ func (c cleanupSlice) run(ctx context.Context) {
 	for i := len(c) - 1; i >= 0; i-- {
 		itm := c[i]
 		logging.Infof(ctx, "running cleanup %q", itm.name)
-		err := itm.cb()
+		err := itm.cb(ctx)
 		if merr.Assign(i, err) {
 			logging.WithError(err).Errorf(ctx, "cleanup %q failed", itm.name)
 		} else {
@@ -58,7 +58,7 @@ func (c *cleanupSlice) add(name string, cb cleanupFn) {
 
 func restoreEnv() cleanupFn {
 	origEnv := environ.System()
-	return func() error {
+	return func(_ context.Context) error {
 		os.Clearenv()
 		return errors.Annotate(origEnv.Iter(os.Setenv), "restoring original env").Err()
 	}
