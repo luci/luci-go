@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "260d61daafef44b883009c71a01df6e9fa950021",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8819f924_8f6f08d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:40:22Z",
+      "side": 1,
+      "message": "code is ok, but i think we should use binary encoding",
+      "revId": "260d61daafef44b883009c71a01df6e9fa950021",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "272e0947_a0ab09f8",
+        "filename": "resultdb/internal/testutil/insert/insert.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:40:22Z",
+      "side": 1,
+      "message": "missing:\n\n  So(err, ShouldBeNil)",
+      "range": {
+        "startLine": 114,
+        "startChar": 54,
+        "endLine": 114,
+        "endChar": 64
+      },
+      "revId": "260d61daafef44b883009c71a01df6e9fa950021",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
