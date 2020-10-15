@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca27565f_195a3ed7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:30:19Z",
+      "side": 1,
+      "message": "will sink protos be updated in another CL?",
+      "revId": "91e562f5bece1805ce2e44a3c6bd35ea7e0d9a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c719c37_b1b46be4",
@@ -71,6 +88,30 @@
       "writtenOn": "2020-10-15T05:31:12Z",
       "side": 1,
       "message": "is it valid to specify line without file_name?\nis it valid to specify file_name without repo?",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "91e562f5bece1805ce2e44a3c6bd35ea7e0d9a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b667cb20_ec5b323b",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:30:19Z",
+      "side": 1,
+      "message": "good questions. this should be clarified",
+      "parentUuid": "da92f6b4_ffa6aee5",
       "range": {
         "startLine": 43,
         "startChar": 2,
