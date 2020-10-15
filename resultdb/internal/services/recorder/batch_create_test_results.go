@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -97,12 +98,16 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
 	ms := make([]*spanner.Mutation, len(in.Requests))
+	var err error
 	for i, r := range in.Requests {
-		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		ret.TestResults[i], ms[i], err = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		if err != nil {
+			return nil, appstatus.BadRequest(err)
+		}
 	}
 
 	var realm string
-	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
@@ -121,7 +126,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation, error) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
@@ -148,11 +153,21 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"RunDurationUsec": runDuration,
 		"Tags":            ret.Tags,
 	}
+
 	if ret.TestLocation != nil {
 		row["TestLocationFileName"] = ret.TestLocation.FileName
 		// Spanner client does not support int32
 		row["TestLocationLine"] = int(ret.TestLocation.Line)
 	}
+
+	if ret.TestMetadata != nil {
+		tmdBytes, err := json.Marshal(ret.TestMetadata)
+		if err != nil {
+			return nil, nil, err
+		}
+		row["TestMetadata"] = tmdBytes
+	}
+
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
-	return ret, mutation
+	return ret, mutation, nil
 }
