@@ -39,6 +39,30 @@
       },
       "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3011079_0550c2e7",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-15T20:26:55Z",
+      "side": 1,
+      "message": "I agree. We already have a proto field in the database (for bq exports)\nIf the concern is human readability we could use proto.MarshalTextString() could we not?",
+      "parentUuid": "81ab81fa_7c14534b",
+      "range": {
+        "startLine": 163,
+        "startChar": 32,
+        "endLine": 163,
+        "endChar": 44
+      },
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
