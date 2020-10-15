@@ -22,6 +22,30 @@
       },
       "revId": "9ec27e7ed18026606c7f6b6ce0e43757ca4280df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "46a3cd0a_0dbc5a26",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-15T05:10:09Z",
+      "side": 1,
+      "message": "Considering this feature was unused, 1.21.1 is fine. We still want to bump the version to be able to tell if this change as deployed at all.\n\n\u003e Since there is no project currently using the repository_whitelist field, does that mean I can just land this CL and modify luci-notify to remove the repository_whitelist field?\n\nYes.",
+      "parentUuid": "63c90670_89d23c55",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "9ec27e7ed18026606c7f6b6ce0e43757ca4280df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
