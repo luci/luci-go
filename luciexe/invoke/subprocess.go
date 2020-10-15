@@ -17,8 +17,10 @@ package invoke
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -27,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -42,10 +46,15 @@ type Subprocess struct {
 	closeChannels chan<- struct{}
 	allClosed     <-chan error
 
-	waitOnce sync.Once
-	build    *bbpb.Build
-	err      error
+	waitOnce           sync.Once
+	build              *bbpb.Build
+	err                error
+	firstDeadlineEvent atomic.Value // stores lucictx.DeadlineEvent
 }
+
+// Interrupted is an error tag which should be applied when the luciexe
+// subprocess fails due to receiving InterruptEvent in the deadlineChannel.
+var Interrupted = errors.BoolTag{Key: errors.NewTagKey("Subprocess is interrupted")}
 
 // Terminate sends SIGTERM on unix or CTRL+BREAK on windows to the luciexe
 // process if it has started.
@@ -72,6 +81,13 @@ func (s *Subprocess) Kill() error {
 //  * luciexeArgs[0] must be the full absolute path to the luciexe binary.
 //  * input must be the Build message you wish to pass to the luciexe binary.
 //  * opts is optional (may be nil to take all defaults)
+//  * deadlineEvtCh is optional. When supplied, it must be the cleanup channel
+//    returned by calling `lucictx.AdjustDeadline` in the outer layer. While
+//    the luciexe subprocess is running, if
+//      - `InterruptEvent` is received, the subprocess will be terminated and
+//         the error returned by `Wait()` will be tagged with `Interrupted`.
+//      - `TimeoutEvent` is received, the subprocess will be terminated.
+//      - `ClosureEvent` is received, the subprocess will be killed.
 //
 // Callers MUST call Wait and/or cancel the context or this will leak handles
 // for the process' stdout/stderr.
@@ -82,7 +98,7 @@ func (s *Subprocess) Kill() error {
 // The caller SHOULD immediately take Subprocess.Step, append it to the current
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
-func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
+func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options, deadlineEvtCh <-chan lucictx.DeadlineEvent) (*Subprocess, error) {
 	initialBuildData, err := proto.Marshal(mkInitialBuild(ctx, input))
 	if err != nil {
 		return nil, errors.Annotate(err, "marshalling initial Build").Err()
@@ -124,14 +140,47 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		return nil, errors.Annotate(err, "launching luciexe").Err()
 	}
 
-	return &Subprocess{
+	s := &Subprocess{
 		Step:        launchOpts.step,
 		collectPath: launchOpts.collectPath,
 		cmd:         cmd,
 
 		closeChannels: closeChannels,
 		allClosed:     allClosed,
-	}, nil
+	}
+
+	if deadlineEvtCh != nil {
+		go func() {
+			select {
+			case <-closeChannels:
+				// luciexe subprocess exits normally
+			case evt := <-deadlineEvtCh:
+				s.firstDeadlineEvent.Store(evt)
+				logging.Warningf(ctx, "Received %s", s.firstDeadlineEvent)
+				terminateSent := false
+				for {
+					switch evt {
+					case lucictx.InterruptEvent, lucictx.TimeoutEvent:
+						if !terminateSent && s.Terminate() == nil {
+							terminateSent = true
+						}
+					case lucictx.ClosureEvent:
+						// Try kill only once even if it fails. By the time a ClosureEvent
+						// event is received, if `lucictx.AdjustDeadline()` is applied
+						// correctly, ctx should be cancelled already, thus the subprocess
+						// might already be killed as it is launched via
+						// `exec.CommandContext`.
+						s.Kill()
+						return
+					default:
+						panic(fmt.Sprintf("impossible DeadlineEvent %s", evt))
+					}
+					evt = <-deadlineEvtCh
+				}
+			}
+		}()
+	}
+	return s, nil
 }
 
 // Wait waits for the subprocess to terminate.
@@ -145,6 +194,24 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 // Calling this multiple times is OK; it will return the same values every time.
 func (s *Subprocess) Wait() (*bbpb.Build, error) {
 	s.waitOnce.Do(func() {
+		defer func() {
+			firstDeadlineEvent := s.firstDeadlineEvent.Load()
+			if firstDeadlineEvent == nil {
+				return
+			}
+			switch evt := firstDeadlineEvent.(lucictx.DeadlineEvent); {
+			case s.err != nil:
+				if evt == lucictx.InterruptEvent {
+					s.err = Interrupted.Apply(s.err)
+				}
+			case evt == lucictx.InterruptEvent:
+				s.err = errors.Reason("luciexe process is interrupted").Tag(Interrupted).Err()
+			case evt == lucictx.TimeoutEvent:
+				s.err = errors.Reason("luciexe process times out").Err()
+			case evt == lucictx.ClosureEvent:
+				s.err = errors.Reason("luciexe process's context is cancelled").Err()
+			}
+		}()
 		// No matter what, we want to close stdout/stderr; if none of the other
 		// return values have set `err`, it will be set to the result of closing
 		// stdout/stderr.
