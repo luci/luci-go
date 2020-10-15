@@ -23,35 +23,37 @@ import (
 	"go.chromium.org/luci/lucictx"
 )
 
-func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error) {
+func startAuthServices(ctx context.Context, opts *Options) (context.Context, cleanupSlice, error) {
 	var myCleanups cleanupSlice
 	defer myCleanups.run(ctx)
 
 	env := environ.New(nil)
 
 	if err := opts.ExeAuth.Launch(ctx, opts.authDir); err != nil {
-		return nil, errors.Annotate(err, "setting up task auth").Err()
+		return ctx, nil, errors.Annotate(err, "setting up task auth").Err()
 	}
 	opts.ExeAuth.Report(ctx)
 	ctx = opts.ExeAuth.Export(ctx, env)
-	myCleanups.add("authctx", func() error {
+	myCleanups.add("authctx", func(ctx context.Context) error {
 		opts.ExeAuth.Close(ctx)
 		return nil
 	})
 
 	exported, err := lucictx.ExportInto(ctx, opts.lucictxDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+		return ctx, nil, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
 	}
-	myCleanups.add("LUCI_CONTEXT", exported.Close)
+	myCleanups.add("LUCI_CONTEXT", func(_ context.Context) error {
+		return exported.Close()
+	})
 	exported.SetInEnviron(env)
 
 	if err := env.Iter(os.Setenv); err != nil {
-		return nil, errors.Annotate(err, "setting up environment").Err()
+		return ctx, nil, errors.Annotate(err, "setting up environment").Err()
 	}
 
 	callerCleanups := myCleanups
 	myCleanups = nil
 
-	return callerCleanups, nil
+	return ctx, callerCleanups, nil
 }
