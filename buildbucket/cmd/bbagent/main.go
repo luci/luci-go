@@ -27,15 +27,18 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/golang/protobuf/jsonpb"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -48,6 +51,8 @@ import (
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var maxReserveDuration = 2 * time.Minute
 
 func main() {
 	go func() {
@@ -100,6 +105,11 @@ func mainImpl() int {
 	}
 
 	cctx, cancel := context.WithCancel(ctx)
+	if dl := lucictx.GetDeadline(ctx); dl.GetSoftDeadline() != 0 {
+		softDeadline := convertFloatToUnixTime(dl.GetSoftDeadline())
+		gracePeriod := time.Duration(dl.GetGracePeriod() * float64(time.Second))
+		cctx, cancel = context.WithDeadline(ctx, softDeadline.Add(gracePeriod))
+	}
 	defer cancel()
 
 	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
@@ -174,9 +184,10 @@ func mainImpl() int {
 			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
 		}
-		// TODO(yiwzhang): adjust the deadline here and pass the cleanup channel
-		// to invoke.
-		subp, err := invoke.Start(ctx, exeArgs, input.Build, invokeOpts, nil)
+		reserve := calcDeadlineReserve(ctx)
+		deadlineEventCh, dctx, _ := lucictx.AdjustDeadline(ctx, reserve, 500*time.Millisecond)
+		logging.Infof(ctx, "reserved %s from deadline for bbagent cleanup", reserve)
+		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts, deadlineEventCh)
 		if err != nil {
 			return err
 		}
@@ -205,6 +216,28 @@ func mainImpl() int {
 		return 1
 	}
 	return 0
+}
+
+// Returns min(1% of the remaining time towards current soft deadline,
+// `maxReserveDuration`). Returns 0 If soft deadline doesn't exist or
+// has already been exceeded.
+func calcDeadlineReserve(ctx context.Context) time.Duration {
+	curSoftDeadline := convertFloatToUnixTime(lucictx.GetDeadline(ctx).GetSoftDeadline())
+	if now := clock.Now(ctx).UTC(); !curSoftDeadline.IsZero() && now.Before(curSoftDeadline) {
+		if reserve := now.Sub(curSoftDeadline) / 100; reserve < maxReserveDuration {
+			return reserve
+		}
+		return maxReserveDuration
+	}
+	return 0
+}
+
+func convertFloatToUnixTime(f float64) time.Time {
+	if f == 0 {
+		return time.Time{}
+	}
+	sec, frac := math.Modf(f)
+	return time.Unix(int64(sec), int64(frac*float64(time.Second))).UTC()
 }
 
 func resolveExe(path string) (string, error) {
