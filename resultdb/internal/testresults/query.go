@@ -163,10 +163,12 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	}
 	selectIfIncluded("SummaryHtml", "summary_html")
 	selectIfIncluded("Tags", "tags")
+	selectIfIncluded("TestMetadata", "test_metadata")
 
 	// Build a parser function.
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
+	var tmd []byte
 	parser = func(row *spanner.Row) (*pb.TestResult, error) {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
@@ -195,6 +197,8 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &summaryHTML)
 			case "Tags":
 				ptrs = append(ptrs, &tr.Tags)
+			case "TestMetadata":
+				ptrs = append(ptrs, &tmd)
 			default:
 				panic("impossible")
 			}
@@ -209,9 +213,13 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		// empty after q.Mask.Trim(tr).
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
 		tr.SummaryHtml = string(summaryHTML)
+
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 		populateTestLocation(tr, testLocationFileName, testLocationLine)
+		if err := populateTestMetadata(tr, tmd); err != nil {
+			return nil, errors.Annotate(err, "error Unmarshalling test_metadata for %s", tr.Name).Err()
+		}
 		if err := q.Mask.Trim(tr); err != nil {
 			return nil, errors.Annotate(err, "error trimming fields for %s", tr.Name).Err()
 		}

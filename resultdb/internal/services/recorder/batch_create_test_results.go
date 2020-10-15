@@ -158,6 +158,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		// Spanner client does not support int32
 		row["TestLocationLine"] = int(ret.TestLocation.Line)
 	}
+
 	if ret.TestMetadata != nil {
 		var err error
 		if row["TestMetadata"], err = json.Marshal(ret.TestMetadata); err != nil {

@@ -16,6 +16,7 @@
 package insert
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -108,6 +109,11 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		if tr.TestLocation != nil {
 			mutMap["TestLocationFileName"] = tr.TestLocation.FileName
 			mutMap["TestLocationLine"] = int(tr.TestLocation.Line)
+		}
+		if tr.TestMetadata != nil {
+			if tmdBytes, err := json.Marshal(tr.TestMetadata); err == nil {
+				mutMap["TestMetadata"] = tmdBytes
+			}
 		}
 
 		ms[i] = spanutil.InsertMap("TestResults", mutMap)
