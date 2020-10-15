@@ -316,6 +316,29 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 	return lfr, nil
 }
 
+func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwnersRequest, opts ...grpc.CallOption) (*gerritpb.ListOwnersResponse, error) {
+	var resp []ownerInfo
+	params := url.Values{}
+	if req.Options.Details {
+		params.Add("o", "DETAILS")
+	}
+	if req.Options.AllEmails {
+		params.Add("o", "ALL_EMAILS")
+	}
+
+	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", req.Project, req.Ref, req.Path)
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "list file owners").Err()
+	}
+	owners := make([]*gerritpb.OwnerInfo, len(resp))
+	for i, owner := range resp {
+		owners[i] = &gerritpb.OwnerInfo{Account: owner.Account.ToProto()}
+	}
+	return &gerritpb.ListOwnersResponse{
+		Owners: owners,
+	}, nil
+}
+
 func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsRequest, opts ...grpc.CallOption) (*gerritpb.ListProjectsResponse, error) {
 	resp := map[string]*projectInfo{}
 	params := url.Values{}
