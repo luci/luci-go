@@ -16,6 +16,7 @@ package lucictx
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"os/signal"
@@ -67,6 +68,19 @@ const (
 	// a timeout on deadline-gracePeriod.
 	TimeoutEvent
 )
+
+func (de DeadlineEvent) String() string {
+	switch de {
+	case ClosureEvent:
+		return "ClosureEvent"
+	case InterruptEvent:
+		return "InterruptEvent"
+	case TimeoutEvent:
+		return "TimeoutEvent"
+	default:
+		panic(fmt.Sprintf("impossible DeadlineEvent %d", de))
+	}
+}
 
 // earlier returns the earlier of a and b, treating "zero" as "infinity".
 func earlier(a, b time.Time) time.Time {

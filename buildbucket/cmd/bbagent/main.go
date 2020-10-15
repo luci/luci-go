@@ -170,10 +170,13 @@ func mainImpl() int {
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
-		subp, err := invoke.Start(ctx, exeArgs, input.Build, &invoke.Options{
+		invokeOpts := &invoke.Options{
 			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
-		})
+		}
+		// TODO(yiwzhang): adjust the deadline here and pass the cleanup channel
+		// to invoke.
+		subp, err := invoke.Start(ctx, exeArgs, input.Build, invokeOpts, nil)
 		if err != nil {
 			return err
 		}
