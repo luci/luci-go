@@ -63,6 +63,93 @@
       },
       "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2a2c28f_c4f6c365",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:37:33Z",
+      "side": 1,
+      "message": "+1 to binary encoding\n\nalso feel free to panic if marshaling fails (so no need change this func signature).\nproto marshaling must not fail - we just unmarshalled it from the request\n\nalso not compress it too? this is mostly strings - should be well compressible? see spanutil.Compressed",
+      "parentUuid": "f3011079_0550c2e7",
+      "range": {
+        "startLine": 163,
+        "startChar": 32,
+        "endLine": 163,
+        "endChar": 44
+      },
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c1e76f3_c2258b53",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:37:33Z",
+      "side": 1,
+      "message": "please refer to the proto message",
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60ba7815_fcdebd04",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:37:33Z",
+      "side": 1,
+      "message": "nit: i think one line would be more readable.",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 58
+      },
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86c88167_2d19e8d8",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-15T23:37:33Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 137,
+        "startChar": 1,
+        "endLine": 137,
+        "endChar": 11
+      },
+      "revId": "bc15e8b0c160a7c89c00d4ad3ac012668349120a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
