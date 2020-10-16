@@ -125,21 +125,19 @@ const rejectedPatchSetsSQL = `
 	WITH
 		tryjobs AS (
 			SELECT
-				b.id,
-				ps,
+				b.id as build_id,
+				ps.change,
+				ps.patchset,
 				partition_time as ps_approx_timestamp,
 			FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
 			-- Read next-day attempts too in case the CQ attempt finished soon after 12am.
 			-- Note that for test results, the cutoff is still @endTime.
 			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
 		),
-		failed_test_variants AS (
+		test_results AS (
 			SELECT
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-				ANY_VALUE(IFNULL(test_location.file_name, '')) as file_name,
-				test_id,
-				variant_hash,
-				ANY_VALUE(variant) as variant,
+				*
 			FROM luci-resultdb.chromium.try_test_results tr
 			WHERE partition_time BETWEEN @startTime and @endTime
 				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
@@ -150,6 +148,28 @@ const rejectedPatchSetsSQL = `
 				-- Exclude broken prefixes.
 				-- TODO(nodir): remove after crbug.com/1017288 is fixed.
 				AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
+		),
+		flaky_test_variants_per_ps AS (
+			SELECT change, patchset, test_id, variant_hash
+			FROM tryjobs j
+			JOIN test_results r USING (build_id)
+			GROUP BY change, patchset, test_id, variant_hash
+			HAVING LOGICAL_OR(expected) AND LOGICAL_OR(not expected and not exonerated)
+		),
+		flaky_tests_variants AS (
+			SELECT DISTINCT test_id, variant_hash
+			FROM flaky_test_variants_per_ps
+		),
+		failed_test_variants AS (
+			SELECT
+				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
+				ANY_VALUE(IFNULL(test_location.file_name, '')) as file_name,
+				test_id,
+				variant_hash,
+				ANY_VALUE(variant) as variant,
+			FROM test_results tr
+			LEFT JOIN flaky_tests_variants flaky USING (test_id, variant_hash)
+			WHERE flaky.test_id IS NULL -- not flaky
 			GROUP BY build_id, test_id, variant_hash
 			-- TODO(crbug.com/1112125): consider doing this filtering after joining with patchsets.
 			-- This will increase the query cost, but might improve
@@ -157,18 +177,29 @@ const rejectedPatchSetsSQL = `
 			-- a test failed in one CQ attempt for the patchset, and succeeded
 			-- in another for the same patchset.
 			HAVING LOGICAL_AND(NOT expected AND NOT exonerated)
+		),
+		failed_patchsets AS (
+			SELECT
+				change,
+				patchset,
+				MIN(ps_approx_timestamp) as ps_approx_timestamp,
+				ARRAY_AGG(f) test_failures,
+			FROM tryjobs t
+			JOIN failed_test_variants f USING (build_id)
+			GROUP BY change, patchset
+			-- Exclude massively failed patchsets. Such patchsets are hard to miss.
+			HAVING (SELECT COUNT(DISTINCT test_id) FROM UNNEST(test_failures)) < 10000
 		)
 	SELECT
-		ps.change as Change,
-		ps.patchset as Patchset,
+		change as Change,
+		patchset as Patchset,
 		MIN(ps_approx_timestamp) as Timestamp,
 		STRUCT(
-			test_id as ID,
-			ANY_VALUE(variant) as Variant,
-			ANY_VALUE(file_name) as FileName
-		) as FailedTestVariant
-	FROM tryjobs t
-	JOIN failed_test_variants f ON t.id = f.build_id
-	GROUP BY ps.change, ps.patchset, test_id, variant_hash
-	ORDER BY ps.change, ps.patchset
+			f.test_id as ID,
+			ANY_VALUE(f.variant) as Variant,
+			ANY_VALUE(f.file_name) as FileName
+		) as FailedTestVariant,
+	FROM failed_patchsets ps, ps.test_failures f
+	GROUP BY change, patchset, f.test_id, f.variant_hash
+	ORDER BY change, patchset
 `
