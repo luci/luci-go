@@ -79,6 +79,10 @@ var (
 	// ErrResponseTooBig is returned by Call when the Response's body size exceeds
 	// the Client's MaxContentLength limit.
 	ErrResponseTooBig = status.Error(codes.Unavailable, "prpc: response too big")
+
+	// ErrNoStreamingSupport is returned if a pRPC client is used to start a
+	// streaming RPC. They are not supported.
+	ErrNoStreamingSupport = status.Error(codes.Unimplemented, "prpc: no streaming support")
 )
 
 // Client can make pRPC calls.
@@ -122,6 +126,40 @@ type Client struct {
 	// testPostHTTP is a test-installed callback that is invoked after an HTTP
 	// request finishes.
 	testPostHTTP func(context.Context, error) error
+}
+
+var _ grpc.ClientConnInterface = (*Client)(nil)
+
+// Invoke performs a unary RPC and returns after the response is received
+// into reply.
+//
+// It is a part of grpc.ClientConnInterface.
+func (c *Client) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+	// 'method' looks like "/service.Name/MethodName".
+	parts := strings.Split(method, "/")
+	if len(parts) != 3 || parts[0] != "" {
+		return status.Errorf(codes.Internal, "prpc: not a valid method name %q", method)
+	}
+	serviceName, methodName := parts[1], parts[2]
+
+	// Inputs and outputs must be proto messages.
+	in, ok := args.(proto.Message)
+	if !ok {
+		return status.Errorf(codes.Internal, "prpc: bad argument type %T, not a proto", args)
+	}
+	out, ok := reply.(proto.Message)
+	if !ok {
+		return status.Errorf(codes.Internal, "prpc: bad reply type %T, not a proto", reply)
+	}
+
+	return c.Call(ctx, serviceName, methodName, in, out, opts...)
+}
+
+// NewStream begins a streaming RPC.
+//
+// It is a part of grpc.ClientConnInterface.
+func (c *Client) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	return nil, ErrNoStreamingSupport
 }
 
 // prepareOptions copies client options and applies opts.
