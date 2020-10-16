@@ -411,14 +411,10 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 	}
 	sa.path = sa.desc.Path()
 
-	// Construct our staged archival paths.
-	if sa.stream, err = sa.makeStagingPaths("logstream.entries", uid); err != nil {
+	// Construct staged archival paths sa.stream and sa.index.
+	if err = sa.makeStagingPaths(uid); err != nil {
 		return nil, err
 	}
-	if sa.index, err = sa.makeStagingPaths("logstream.index", uid); err != nil {
-		return nil, err
-	}
-
 	return &sa, nil
 }
 
@@ -443,46 +439,56 @@ type stagedArchival struct {
 // makeStagingPaths returns a stagingPaths instance for the given path and
 // file name. It incorporates a unique ID into the staging name to differentiate
 // it from other staging paths for the same path/name.
-func (sa *stagedArchival) makeStagingPaths(name, uid string) (stagingPaths, error) {
-	// Either of these paths may be shared between projects. To enforce
-	// an absence of conflicts, we will insert the project name as part of the
-	// path.
+//
+// These paths may be shared between projects. To enforce an absence of
+// conflicts, we will insert the project name as part of the path.
+func (sa *stagedArchival) makeStagingPaths(uid string) error {
+	nameMap := map[string]*stagingPaths{
+		"logstream.entries": &sa.stream,
+		"logstream.index":   &sa.index,
+	}
 
 	const maxGSFilenameLength = 1024
 	// The sa.path is user-provided and is unlimited. It is known to be large
 	// enough to exceed max ID length (https://crbug.com/1138017).
 	// So, truncate it if needed while avoiding overwrites by using crypto hash.
-	path := string(sa.path)
-	ret := stagingPaths{
-		staged: sa.GSStagingBase.Concat(sa.project, path, uid, name),
-		final:  sa.GSBase.Concat(sa.project, path, name),
+	longestFilenameLen := 0
+	updateLongestFilenameLen := func(paths ...gs.Path) {
+		for _, p := range paths {
+			if l := len(p.Filename()); l > longestFilenameLen {
+				longestFilenameLen = l
+			}
+		}
 	}
 
-	_, longestFilename := ret.staged.Split()
-	if _, f := ret.final.Split(); len(f) > len(longestFilename) {
-		longestFilename = f
+	for name, spaths := range nameMap {
+		spaths.staged = sa.GSStagingBase.Concat(sa.project, string(sa.path), uid, name)
+		spaths.final = sa.GSBase.Concat(sa.project, string(sa.path), name)
+		updateLongestFilenameLen(spaths.staged, spaths.final)
 	}
 
-	excess := len(longestFilename) - maxGSFilenameLength
+	excess := longestFilenameLen - maxGSFilenameLength
 	if excess <= 0 {
-		return ret, nil
+		return nil
 	}
 
 	const truncated = "-TRUNCATED-"
 	const hashBytes = 8 // collision chance is 1 in 2^(8*8).
-	if len(path) <= excess+len(truncated)+hashBytes*2 /* hexdigest */ {
+	if len(sa.path) <= excess+len(truncated)+hashBytes*2 /* hexdigest */ {
 		// TODO(tandrii): this should be handled via project config validation.
-		return ret, errors.Reason("GSStagingBase %q or GSBase %q too long", sa.GSStagingBase, sa.GSBase).Err()
+		return errors.Reason("GSStagingBase %q or GSBase %q too long", sa.GSStagingBase, sa.GSBase).Err()
 	}
 
 	hasher := sha256.New()
-	hasher.Write([]byte(path))
+	hasher.Write([]byte(sa.path))
 	h := hex.EncodeToString(hasher.Sum(nil)[:hashBytes]) // len(h) == 2*hashBytes
-	path = path[:len(path)-excess-len(truncated)-len(h)] + truncated + h
+	sapath := string(sa.path)[:len(sa.path)-excess-len(truncated)-len(h)] + truncated + h
 
-	ret.staged = sa.GSStagingBase.Concat(sa.project, path, uid, name)
-	ret.final = sa.GSBase.Concat(sa.project, path, name)
-	return ret, nil
+	for name, spaths := range nameMap {
+		spaths.staged = sa.GSStagingBase.Concat(sa.project, sapath, uid, name)
+		spaths.final = sa.GSBase.Concat(sa.project, sapath, name)
+	}
+	return nil
 }
 
 // checkComplete performs a quick scan of intermediate storage to ensure that

@@ -89,6 +89,9 @@ type testGSClient struct {
 }
 
 func (c *testGSClient) NewWriter(p gs.Path) (gs.Writer, error) {
+	if l := len(p.Filename()); l > 1024 {
+		panic(fmt.Errorf("too long filepath %d: %q", l, p))
+	}
 	w := testGSWriter{
 		client: c,
 		path:   p,
@@ -380,11 +383,14 @@ func TestHandleArchive(t *testing.T) {
 
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 
-				So(archiveRequest.StreamUrl, ShouldContainSubstring, "-TRUNCATED-")
+				// GS allows up to 1024 bytes long names.
 				So(len(archiveRequest.StreamUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
-
-				So(archiveRequest.IndexUrl, ShouldContainSubstring, "-TRUNCATED-")
 				So(len(archiveRequest.IndexUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
+
+				// While not essential, it's nice to put both files under the same
+				// GS "directory".
+				gsDirName := func(p string) string { return p[0:strings.LastIndex(p, "/")] }
+				So(gsDirName(archiveRequest.StreamUrl), ShouldEqual, gsDirName(archiveRequest.IndexUrl))
 			})
 
 			Convey(`When a transient archival error occurs, will not consume the task.`, func() {
