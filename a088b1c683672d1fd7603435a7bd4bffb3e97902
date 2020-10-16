@@ -106,6 +106,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "20d8f600_53586de8",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T22:28:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ffe53c3_2c560b26",
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d80f0710_94677f1f",
@@ -285,6 +303,30 @@
       "side": 1,
       "message": "We have both kinds of ids: projcet/$hash/$name (e.g. here) and $hash/$name (e.g. Run entity).\nSo, we need to name these somehow.\nEither ProjectConfigGroupID and ConfigGroupID (my proposal, because I suck at naming)\nor smth else. I don\u0027t have good ideas (I generated ConfigGroupID and PartialConfigGroupID, but I think it\u0027s more confusing).\n\nSo, my vote is to go with ProjectConfigGroupID and ConfigGroupID  for now and update if we can find shorter names.",
       "parentUuid": "9d05ba8c_48b04bdb",
+      "range": {
+        "startLine": 108,
+        "startChar": 60,
+        "endLine": 108,
+        "endChar": 73
+      },
+      "revId": "a088b1c683672d1fd7603435a7bd4bffb3e97902",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7eed2e19_bcb3348f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T22:28:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a117ec27_700a25a0",
       "range": {
         "startLine": 108,
         "startChar": 60,
