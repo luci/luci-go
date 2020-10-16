@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91fe6011_46a73de0",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:21:52Z",
+      "side": 1,
+      "message": "trName\ntr.Name is not yet assigned",
+      "range": {
+        "startLine": 220,
+        "startChar": 80,
+        "endLine": 220,
+        "endChar": 87
+      },
+      "revId": "6f9b6a2ec7d45b938ed332d86329975d9d5b487f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23e7cefa_4e7ce1e0",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:21:52Z",
+      "side": 1,
+      "message": "u ?",
+      "range": {
+        "startLine": 220,
+        "startChar": 43,
+        "endLine": 220,
+        "endChar": 44
+      },
+      "revId": "6f9b6a2ec7d45b938ed332d86329975d9d5b487f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad62fe1c_53526085",
+        "filename": "resultdb/internal/testutil/insert/insert.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:21:52Z",
+      "side": 1,
+      "message": "google.golang.org/protobuf/proto",
+      "revId": "6f9b6a2ec7d45b938ed332d86329975d9d5b487f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
