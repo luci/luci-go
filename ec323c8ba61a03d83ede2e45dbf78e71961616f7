@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1de96b95_dfe60e4c",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T01:34:03Z",
+      "side": 1,
+      "message": "nit: this doesn\u0027t really explain the purpose of this func",
+      "range": {
+        "startLine": 69,
+        "startChar": 31,
+        "endLine": 69,
+        "endChar": 80
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c3e62e21_e61e9ac8",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -20,6 +43,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0e58abbb_025c296b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T01:34:03Z",
+      "side": 1,
+      "message": "must check if the request has access to the build\n\npython does it implicitly, by calling service.get_build_async (in hindsight, comment is missing there)",
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7c3a37f7_f73b1f42",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -31,6 +71,30 @@
       "writtenOn": "2020-10-14T00:57:26Z",
       "side": 1,
       "message": "It seems the python version won\u0027t throw an error to users if the BuildInputProperties is not found. It just throws errors when Build is not found. I get the above idea from the py unit tests where the BuildInputProperties is not set (https://source.chromium.org/chromium/infra/infra/+/5d0f88657fe7c312a9fe36cdbab322fd77ab07eb:appengine/cr-buildbucket/test/api_test.py;l\u003d782-809). \n\nIf so, I suggest to reuse the function `LoadBuildBundles(ctx context.Context, pbBuilds []*pb.Build, m mask.Mask)` by constructing a input_properties mask.",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ff6f757_91418934",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T01:34:03Z",
+      "side": 1,
+      "message": "+1 to reuse LoadBuildBundles. This looks like a copy-pasta.\n\nalso int to the LoadBuildBundles: a signature\n  LoadBuildBundles(ctx context.Context, m mask.Mask, pbBuilds ...*pb.Build)\ncould be more ergonomic",
+      "parentUuid": "7c3a37f7_f73b1f42",
       "range": {
         "startLine": 82,
         "startChar": 0,
