@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac0da598_2236d7b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T05:54:51Z",
+      "side": 1,
+      "message": "I realized I should update sink protos since it needs to import test_metadata.proto for test_location anyways.",
+      "parentUuid": "45381a1d_3f38ec06",
+      "revId": "91e562f5bece1805ce2e44a3c6bd35ea7e0d9a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c719c37_b1b46be4",

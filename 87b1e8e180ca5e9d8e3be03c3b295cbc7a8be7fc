@@ -22,6 +22,30 @@
       },
       "revId": "87b1e8e180ca5e9d8e3be03c3b295cbc7a8be7fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d69896e_c7a8e977",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T05:54:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05014906_19889f94",
+      "range": {
+        "startLine": 148,
+        "startChar": 8,
+        "endLine": 148,
+        "endChar": 28
+      },
+      "revId": "87b1e8e180ca5e9d8e3be03c3b295cbc7a8be7fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
