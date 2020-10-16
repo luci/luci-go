@@ -16,11 +16,12 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -97,12 +98,16 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
 	ms := make([]*spanner.Mutation, len(in.Requests))
+	var err error
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		if err != nil {
+			return nil, appstatus.BadRequest(err)
+		}
 	}
 
 	var realm string
-	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
@@ -153,6 +158,20 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		// Spanner client does not support int32
 		row["TestLocationLine"] = int(ret.TestLocation.Line)
 	}
+	if ret.TestMetadata != nil {
+		if tmd, err := proto.Marshal(ret.TestMetadata); err != nil {
+			panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))
+		} else {
+			row["TestMetadata"] = spanutil.Compressed(tmd)
+		}
+	}
+	//if ret.TestMetadata != nil {
+	//	var err error
+	//	if row["TestMetadata"], err = json.Marshal(ret.TestMetadata); err != nil {
+	//		panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))
+	//	}
+	//}
+
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation
 }
