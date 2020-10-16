@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a83f794_36a614a4",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-16T23:14:40Z",
+      "side": 1,
+      "message": "Why is this necessary? What happens if this branch is deleted?",
+      "range": {
+        "startLine": 119,
+        "startChar": 2,
+        "endLine": 125,
+        "endChar": 3
+      },
+      "revId": "8c205843e344a2fa2590ed20f07780919d6c909e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a523bee_87d0077e",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-16T23:14:40Z",
+      "side": 1,
+      "message": "cleanup callbacks are all parts of internal API, it would be more transparent just to pass this error explicitly alongside context.Context. Stuffing stuff into context.Context makes sense only if it needs to traverse some API boundaries that are hard to change.",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 49
+      },
+      "revId": "8c205843e344a2fa2590ed20f07780919d6c909e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
