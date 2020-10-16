@@ -16,14 +16,26 @@ package main
 
 import (
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+
+	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/migration"
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	modules := []module.Module{
+		gaeemulation.NewModuleFromFlags(),
+	}
 
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+	server.Main(nil, modules, func(srv *server.Server) error {
+		// Register pRPC servers.
+		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
+
+		srv.Routes.GET("/hello-world", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello world")
 			c.Writer.Write([]byte("Hello, world. This is LUCI Change Verifier."))
 		})
