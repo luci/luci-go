@@ -59,6 +59,10 @@ func (a *accountInfo) ToProto() *gerritpb.AccountInfo {
 	}
 }
 
+type ownerInfo struct {
+	Account accountInfo `json:"account,omitempty"`
+}
+
 type timestamp struct {
 	time.Time
 }

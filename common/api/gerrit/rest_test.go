@@ -623,6 +623,98 @@ func TestListFiles(t *testing.T) {
 	})
 }
 
+func TestGetFileOwners(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	Convey("Get Owners: ", t, func() {
+		Convey("Details", func() {
+			var actualURL *url.URL
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualURL = r.URL
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'
+				[
+					{
+						"account": {
+							"_account_id": 1000096,
+							"name": "User Name",
+							"email": "user@test.com",
+							"username": "username"
+						}
+					}
+				]`)
+			})
+			defer srv.Close()
+
+			resp, err := c.ListFileOwners(ctx, &gerritpb.ListFileOwnersRequest{
+				Project: "projectName",
+				Ref:     "main",
+				Path:    "path/to/file",
+				Options: &gerritpb.AccountOptions{
+					Details: true,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(actualURL.Path, ShouldEqual, "/projects/projectName/branches/main/code_owners/path/to/file")
+			So(actualURL.Query().Get("o"), ShouldEqual, "DETAILS")
+			So(resp, ShouldResemble, &gerritpb.ListOwnersResponse{
+				Owners: []*gerritpb.OwnerInfo{
+					&gerritpb.OwnerInfo{
+						Account: &gerritpb.AccountInfo{
+							AccountId: 1000096,
+							Name:      "User Name",
+							Email:     "user@test.com",
+							Username:  "username",
+						},
+					},
+				},
+			})
+		})
+		Convey("All Emails", func() {
+			var actualURL *url.URL
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualURL = r.URL
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'
+				[
+					{
+						"account": {
+							"_account_id": 1000096,
+							"email": "test@test.com",
+							"secondary_emails": ["alt@test.com"]
+						}
+					}
+				]`)
+			})
+			defer srv.Close()
+
+			resp, err := c.ListFileOwners(ctx, &gerritpb.ListFileOwnersRequest{
+				Project: "projectName",
+				Ref:     "main",
+				Path:    "path/to/file",
+				Options: &gerritpb.AccountOptions{
+					AllEmails: true,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(actualURL.Path, ShouldEqual, "/projects/projectName/branches/main/code_owners/path/to/file")
+			So(actualURL.Query().Get("o"), ShouldEqual, "ALL_EMAILS")
+			So(resp, ShouldResemble, &gerritpb.ListOwnersResponse{
+				Owners: []*gerritpb.OwnerInfo{
+					&gerritpb.OwnerInfo{
+						Account: &gerritpb.AccountInfo{
+							AccountId:       1000096,
+							Email:           "test@test.com",
+							SecondaryEmails: []string{"alt@test.com"},
+						},
+					},
+				},
+			})
+		})
+	})
+}
 func TestListProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

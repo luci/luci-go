@@ -295,6 +295,26 @@ func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
 }
 
+// ListFileOwners mocks base method.
+func (m *MockGerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFileOwners", varargs...)
+	ret0, _ := ret[0].(*ListOwnersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFileOwners indicates an expected call of ListFileOwners.
+func (mr *MockGerritClientMockRecorder) ListFileOwners(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritClient)(nil).ListFileOwners), varargs...)
+}
+
 // ListProjects mocks base method.
 func (m *MockGerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
 	m.ctrl.T.Helper()
@@ -551,6 +571,21 @@ func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesReques
 func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
+}
+
+// ListFileOwners mocks base method.
+func (m *MockGerritServer) ListFileOwners(arg0 context.Context, arg1 *ListFileOwnersRequest) (*ListOwnersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFileOwners", arg0, arg1)
+	ret0, _ := ret[0].(*ListOwnersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFileOwners indicates an expected call of ListFileOwners.
+func (mr *MockGerritServerMockRecorder) ListFileOwners(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritServer)(nil).ListFileOwners), arg0, arg1)
 }
 
 // ListProjects mocks base method.
