@@ -248,7 +248,7 @@ func runDeadlineMonitor(ctx context.Context, cancel func(), adjustedSoftDeadline
 		defer cancel()
 
 		evt := func() DeadlineEvent {
-			defer signalStop(sigCh)
+			// defer signalStop(sigCh)
 
 			select {
 			case <-timeoutC:
