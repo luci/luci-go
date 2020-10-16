@@ -16,6 +16,24 @@
       "message": "After this change, all fields are nullable, is there a way to still keep some fields required?",
       "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e161169_c59bf25b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-16T07:49:30Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/bq/schema.go;l\u003d73\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/google/descutil/util.go;l\u003d226\n\nI haven\u0027t tried, but `(google.api.field_behavior) \u003d REQUIRED` can possibly add FieldDescriptorProto_LABEL_REQUIRED to the field label?",
+      "parentUuid": "4dbd3a7e_fc157f73",
+      "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
