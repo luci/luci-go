@@ -16,6 +16,23 @@
       "message": "PTAL. Meanwhile, I\u0027m trying to hack up something to test the changes using `led`",
       "revId": "297597200fb33ef9b6501a4750716cba8c40aa00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c70cb83_62091a69",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T01:58:15Z",
+      "side": 1,
+      "message": "Test with dummy luciexe: https://crrev.com/c/2468569\n\nTimeout: https://screenshot.googleplex.com/RJ8boYDwiXk3SLK\n  * Can see luciexe waiting for 20s after getting terminated before getting killed: https://luci-logdog-dev.appspot.com/logs/infra-experimental/led/yiwzhang_google.com/5e1138c352b67ac2a7fa6f1f563a624728769d69fde76680549c8c3b9deaccc9/+/u/stderr\n\nInterrupt: https://screenshot.googleplex.com/5ovY7rJfaF2U7Fi\n  * Can see luciexe waiting for 20s after getting terminated before getting killed: https://luci-logdog-dev.appspot.com/logs/infra-experimental/led/yiwzhang_google.com/2ca128fc56ec512bc5b2eec33117cba08b8d8f6224e0826f83affb5731013d56/+/u/stderr\n  ",
+      "revId": "297597200fb33ef9b6501a4750716cba8c40aa00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
