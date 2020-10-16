@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10ac2906_c149e807",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T01:39:58Z",
+      "side": 1,
+      "message": "please no. let\u0027s not hardcode things.",
+      "range": {
+        "startLine": 36,
+        "startChar": 23,
+        "endLine": 37,
+        "endChar": 16
+      },
+      "revId": "c6134f25ba8a2f9ac874d93d26d14b6ccb6edfbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78fd32f7_125536fb",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T01:39:58Z",
+      "side": 1,
+      "message": "ignoring input usually leads to frustration because the problem is discovered further the source-of-the-problem, i.e. with a delay. Consider instead \"Requires non-empty file_name\".",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "c6134f25ba8a2f9ac874d93d26d14b6ccb6edfbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
