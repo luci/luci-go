@@ -124,6 +124,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case msg.TestLocation != nil && ec.isErr(ValidateTestLocation(msg.TestLocation), "test_location"):
+	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
 	}
 	return err
 }
@@ -139,9 +140,16 @@ func ValidateTestResultStatus(s pb.TestStatus) error {
 	return nil
 }
 
+// ValidateTestMetadata returns a non-nil error if tmd is invalid.
+func ValidateTestMetadata(tmd *pb.TestMetadata) error {
+	return ValidateTestLocation(tmd.Location)
+}
+
 // ValidateTestLocation returns a non-nil error if loc is invalid.
 func ValidateTestLocation(loc *pb.TestLocation) error {
 	switch {
+	case strings.HasSuffix(loc.Repo, ".git"):
+		return errors.Reason("repo: must not end with .git").Err()
 	case loc.FileName == "":
 		return errors.Reason("file_name: unspecified").Err()
 	case loc.Line < 0:
