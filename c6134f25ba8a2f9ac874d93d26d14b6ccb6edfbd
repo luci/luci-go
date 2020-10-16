@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "234e82ae_3b107481",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T02:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10ac2906_c149e807",
+      "range": {
+        "startLine": 36,
+        "startChar": 23,
+        "endLine": 37,
+        "endChar": 16
+      },
+      "revId": "c6134f25ba8a2f9ac874d93d26d14b6ccb6edfbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "78fd32f7_125536fb",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-16T01:39:58Z",
       "side": 1,
       "message": "ignoring input usually leads to frustration because the problem is discovered further the source-of-the-problem, i.e. with a delay. Consider instead \"Requires non-empty file_name\".",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "c6134f25ba8a2f9ac874d93d26d14b6ccb6edfbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b40eed87_c3b5bbc1",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T02:04:10Z",
+      "side": 1,
+      "message": "We actually have a check on empty file_names.. my bad.",
+      "parentUuid": "78fd32f7_125536fb",
       "range": {
         "startLine": 48,
         "startChar": 5,
