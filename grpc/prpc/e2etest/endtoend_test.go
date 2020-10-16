@@ -53,7 +53,7 @@ func TestEndToEnd(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		client := NewHelloClient(prpcClient)
+		client := NewHelloPRPCClient(prpcClient)
 
 		Convey(`Can round-trip a hello message`, func() {
 			svc.R = &HelloReply{Message: "sup"}
