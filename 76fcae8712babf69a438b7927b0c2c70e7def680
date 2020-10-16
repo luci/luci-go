@@ -16,6 +16,24 @@
       "message": "i thought we agreed to delete it entirely",
       "revId": "76fcae8712babf69a438b7927b0c2c70e7def680",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c62a919_7906f642",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T22:28:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af783764_f041d64a",
+      "revId": "76fcae8712babf69a438b7927b0c2c70e7def680",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
