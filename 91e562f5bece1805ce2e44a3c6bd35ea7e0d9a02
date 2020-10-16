@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45381a1d_3f38ec06",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T00:47:03Z",
+      "side": 1,
+      "message": "Yes that\u0027s the plan",
+      "parentUuid": "ca27565f_195a3ed7",
+      "revId": "91e562f5bece1805ce2e44a3c6bd35ea7e0d9a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c719c37_b1b46be4",
@@ -65,6 +83,30 @@
       "writtenOn": "2020-10-15T05:31:12Z",
       "side": 1,
       "message": "I can see that this was originally worded with \"SHOULD\". Why wasn\u0027t it worded with MUST? do we allow some cases, where blackshes are acceptable?",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 11
+      },
+      "revId": "91e562f5bece1805ce2e44a3c6bd35ea7e0d9a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62bf8f57_08af8f18",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T00:47:03Z",
+      "side": 1,
+      "message": "Since we have a validation on the file name having backslashes: https://source.corp.google.com/piper///depot/google3/third_party/golang/luci_go/resultdb/pbutil/test_result.go;l\u003d162 I\u0027m fine with changing this to \"MUST\".",
+      "parentUuid": "7c719c37_b1b46be4",
       "range": {
         "startLine": 42,
         "startChar": 5,
