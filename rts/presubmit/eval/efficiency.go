@@ -16,7 +16,8 @@ package eval
 
 import (
 	"context"
-	"sync/atomic"
+	"math"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -36,17 +37,30 @@ type Efficiency struct {
 	ForecastDuration time.Duration
 }
 
+// Score returns the efficiency score.
+// May return NaN.
+func (e *Efficiency) Score() float64 {
+	if e.SampleDuration == 0 {
+		return math.NaN()
+	}
+	saved := e.SampleDuration - e.ForecastDuration
+	return float64(100*saved) / float64(e.SampleDuration)
+}
+
 func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *evalpb.TestDuration) (*Efficiency, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Run the algorithm in r.Concurrency goroutines.
-	var totalNano, forecastNano int64
+	var ret Efficiency
+	var mu sync.Mutex
 	in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			for td := range durationC {
-				durNano := int64(td.Duration.AsDuration())
-				atomic.AddInt64(&totalNano, durNano)
+				dur := td.Duration.AsDuration()
+				mu.Lock()
+				ret.SampleDuration += dur
+				mu.Unlock()
 
 				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
 				switch {
@@ -62,8 +76,12 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 				case err != nil:
 					return err
 				case out.ShouldRunAny:
-					atomic.AddInt64(&forecastNano, durNano)
+					mu.Lock()
+					ret.ForecastDuration += dur
+					mu.Unlock()
 				}
+
+				r.progress.ReportCurrentEfficiency(ctx, ret)
 			}
 			return ctx.Err()
 		})
@@ -73,8 +91,5 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 		return nil, err
 	}
 
-	return &Efficiency{
-		SampleDuration:   time.Duration(totalNano),
-		ForecastDuration: time.Duration(forecastNano),
-	}, nil
+	return &ret, nil
 }
