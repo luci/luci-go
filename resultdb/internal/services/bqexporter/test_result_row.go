@@ -20,6 +20,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/golang/protobuf/descriptor"
+	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+
+	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google/descutil"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -28,11 +34,35 @@ import (
 
 var testResultRowSchema bigquery.Schema
 
+var testResultRowMessage = "luci.resultdb.v1.TestResultRow"
+
 func init() {
 	var err error
-	if testResultRowSchema, err = bigquery.InferSchema(&TestResultRow{}); err != nil {
+	if testResultRowSchema, err = generateSchema(); err != nil {
 		panic(err)
 	}
+}
+
+func generateSchema() (schema bigquery.Schema, err error) {
+	fd, _ := descriptor.MessageDescriptorProto(&pb.TestResultRow{})
+	// We also need to get FileDescriptorProto for StringPair and TestMetadata
+	// because they are defined in different files.
+	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
+	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
+	fdset := &desc.FileDescriptorSet{
+		File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd}}
+	conv := bq.SchemaConverter{
+		Desc:           fdset,
+		SourceCodeInfo: make(map[*desc.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),
+	}
+	for _, f := range fdset.File {
+		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to index source code info in file %q", fd.GetName()).Err()
+		}
+	}
+	schema, _, err = conv.Schema(testResultRowMessage)
+	return schema, err
 }
 
 // Row size limit is 1Mib according to
