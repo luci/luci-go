@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df5eea6a_3817e4bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T22:58:22Z",
+      "side": 1,
+      "message": "Sorry for removing code that I just wrote. PTAL",
+      "revId": "60f422635dc2b1db8afb3961933a10d9b3d1ba0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
