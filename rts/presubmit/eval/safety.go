@@ -121,22 +121,18 @@ func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (
 	}
 
 	// Compare the prediction to facts.
-	in := Input{ChangedFiles: files}
-	for _, tv := range rej.FailedTestVariants {
-		in.TestVariant = tv
-		var out Output
-		if out, err = r.Algorithm(ctx, in); err != nil {
-			err = errors.Annotate(err, "RTS algorithm failed").Err()
-			return
-		}
-		eligible = true
-
-		if out.ShouldRun {
-			// At least one failed test would run => the bad patchset would be rejected.
-			wouldReject = true
-			return
-		}
+	in := Input{
+		ChangedFiles: files,
+		TestVariants: rej.FailedTestVariants,
 	}
+	out, err := r.Algorithm(ctx, in)
+	if err != nil {
+		err = errors.Annotate(err, "RTS algorithm failed").Err()
+		return
+	}
+	eligible = true
+	// At least one failed test would run => the bad patchset would be rejected.
+	wouldReject = out.ShouldRunAny
 	return
 }
 

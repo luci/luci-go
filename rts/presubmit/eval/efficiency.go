@@ -41,6 +41,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 
 	// Run the algorithm in r.Concurrency goroutines.
 	var totalNano, forecastNano int64
+	in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			for td := range durationC {
@@ -55,14 +56,12 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 					return err
 				}
 
-				out, err := r.Algorithm(ctx, Input{
-					ChangedFiles: changedFiles,
-					TestVariant:  td.TestVariant,
-				})
-				if err != nil {
+				in.ChangedFiles = changedFiles
+				in.TestVariants[0] = td.TestVariant
+				switch out, err := r.Algorithm(ctx, in); {
+				case err != nil:
 					return err
-				}
-				if out.ShouldRun {
+				case out.ShouldRunAny:
 					atomic.AddInt64(&forecastNano, durNano)
 				}
 			}

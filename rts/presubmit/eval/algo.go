@@ -29,8 +29,8 @@ type Input struct {
 	// ChangedFiles is a list of files changed in a patchset.
 	ChangedFiles []*SourceFile
 
-	// The algorithm needs to decide whether to run this test variant.
-	TestVariant *evalpb.TestVariant
+	// The algorithm needs to decide whether to run these test variants.
+	TestVariants []*evalpb.TestVariant
 }
 
 // SourceFile identifies a source file.
@@ -47,6 +47,7 @@ type SourceFile struct {
 
 // Output is the output of an RTS algorithm.
 type Output struct {
-	// ShouldRun is true if the test should run as a part of the suite.
-	ShouldRun bool
+	// ShouldRunAny is true if any of the test variants should run as a
+	// part of the suite.
+	ShouldRunAny bool
 }
