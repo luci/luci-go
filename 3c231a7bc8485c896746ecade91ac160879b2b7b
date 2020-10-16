@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a25251e_30ae2a38",
+        "filename": "rts/presubmit/eval/efficiency.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T21:34:17Z",
+      "side": 1,
+      "message": "good point: not sure. This doesn\u0027t look right and there is no comment explaining this. Moved down.",
+      "parentUuid": "8c8ccd64_4a4a34e5",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 15
+      },
+      "revId": "3c231a7bc8485c896746ecade91ac160879b2b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "425a1987_16b7b7fb",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-16T19:52:44Z",
       "side": 1,
       "message": "nit: this doesn\u0027t necessary report it, only updates it. Maybe UpdateCurrentSafety? \nand ditto below.",
+      "range": {
+        "startLine": 178,
+        "startChar": 19,
+        "endLine": 178,
+        "endChar": 25
+      },
+      "revId": "3c231a7bc8485c896746ecade91ac160879b2b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b4108a5_1778bce8",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T21:34:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "425a1987_16b7b7fb",
       "range": {
         "startLine": 178,
         "startChar": 19,
