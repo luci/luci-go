@@ -17,6 +17,7 @@ package eval
 import (
 	"context"
 	"flag"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -31,6 +32,8 @@ const (
 	// The default is chosen experimentally, with a goal to avoid hitting the
 	// short-term quota.
 	defaultGerritQPSLimit = 10
+
+	defaultProgressReportInterval = 5 * time.Second
 )
 
 // Eval estimates safety and efficiency of a given RTS algorithm.
@@ -52,6 +55,9 @@ type Eval struct {
 
 	// Historical records to use for evaluation.
 	History *history.Reader
+
+	// How often to report progress. Defaults to 5s.
+	ProgressReportInterval time.Duration
 }
 
 // RegisterFlags registers flags for the Eval fields.
@@ -66,6 +72,7 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.StringVar(&e.CacheDir, "cache-dir", cacheDir, "Path to the cache dir")
 	fs.IntVar(&e.GerritQPSLimit, "gerrit-qps-limit", defaultGerritQPSLimit, "Max Gerrit QPS")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
+	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
 	return nil
 }
 

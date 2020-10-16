@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -48,6 +49,19 @@ type Safety struct {
 	//
 	// Ideally this slice is empty.
 	LostRejections []*evalpb.Rejection
+}
+
+func (s *Safety) preserved() int {
+	return s.EligibleRejections - len(s.LostRejections)
+}
+
+// Score returns the safety score.
+// May return NaN.
+func (s *Safety) Score() float64 {
+	if s.TotalRejections == 0 || s.EligibleRejections == 0 {
+		return math.NaN()
+	}
+	return float64(100*s.preserved()) / float64(s.EligibleRejections)
 }
 
 func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Rejection) (*Safety, error) {
@@ -83,6 +97,8 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 					if err != nil {
 						return errors.Annotate(err, "failed to process rejection %q", rej).Err()
 					}
+
+					r.progress.UpdateCurrentSafety(ctx, ret)
 
 					if eligible && !wouldReject {
 						buf.Reset()

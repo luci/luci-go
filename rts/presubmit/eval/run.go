@@ -15,14 +15,20 @@
 package eval
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"math"
+	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
@@ -36,6 +42,8 @@ type Result struct {
 
 type evalRun struct {
 	Eval
+
+	progress progress
 
 	auth   *auth.Authenticator
 	gerrit *gerritClient
@@ -133,10 +141,9 @@ func (r *Result) Print(w io.Writer) error {
 		pf("Evaluation failed: all %d rejections are ineligible.\n", r.Safety.TotalRejections)
 
 	default:
-		preserved := r.Safety.EligibleRejections - len(r.Safety.LostRejections)
-		pf("Score: %.0f%%\n", float64(100*preserved)/float64(r.Safety.EligibleRejections))
+		pf("Score: %.0f%%\n", r.Safety.Score())
 		pf("# of eligible rejections: %d\n", r.Safety.EligibleRejections)
-		pf("# of them preserved by this RTS: %d\n", preserved)
+		pf("# of them preserved by this RTS: %d\n", r.Safety.preserved())
 	}
 	p.Level--
 
@@ -145,8 +152,7 @@ func (r *Result) Print(w io.Writer) error {
 	if r.Efficiency.SampleDuration == 0 {
 		pf("Evaluation failed: no test results with duration\n")
 	} else {
-		saved := r.Efficiency.SampleDuration - r.Efficiency.ForecastDuration
-		pf("Saved: %.0f%%\n", float64(100*saved)/float64(r.Efficiency.SampleDuration))
+		pf("Saved: %.0f%%\n", r.Efficiency.Score())
 		pf("Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
 		pf("Forecasted compute time: %s\n", r.Efficiency.ForecastDuration)
 	}
@@ -154,4 +160,70 @@ func (r *Result) Print(w io.Writer) error {
 
 	pf("Total records: %d\n", r.TotalRecords)
 	return p.err
+}
+
+// progress captures the most recent state of evaluation and occasionally
+// logs it.
+//
+// It is goroutine-safe.
+type progress struct {
+	reportInterval     time.Duration
+	recentResult       Result
+	loggedMostRecently time.Time
+	mu                 sync.Mutex
+
+	buf bytes.Buffer
+}
+
+func (p *progress) UpdateCurrentSafety(ctx context.Context, s Safety) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.recentResult.Safety = s
+	p.maybeLog(ctx)
+}
+
+func (p *progress) UpdateCurrentEfficiency(ctx context.Context, e Efficiency) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.recentResult.Efficiency = e
+	p.maybeLog(ctx)
+}
+
+func (p *progress) maybeLog(ctx context.Context) {
+	interval := p.reportInterval
+	if interval <= 0 {
+		interval = defaultProgressReportInterval
+	}
+
+	now := clock.Now(ctx)
+	switch {
+	case p.loggedMostRecently.IsZero():
+		p.loggedMostRecently = now
+
+	case now.After(p.loggedMostRecently.Add(interval)):
+		logging.Infof(ctx, "%s", p.reportLine())
+		p.loggedMostRecently = now
+	}
+}
+
+func (p *progress) reportLine() string {
+	p.buf.Reset()
+
+	printScore := func(score float64) {
+		if math.IsNaN(score) {
+			fmt.Fprintf(&p.buf, "?")
+		} else {
+			fmt.Fprintf(&p.buf, "%02.0f%%", score)
+		}
+	}
+
+	fmt.Fprintf(&p.buf, "safety: ")
+	printScore(p.recentResult.Safety.Score())
+
+	fmt.Fprintf(&p.buf, " | efficiency: ")
+	printScore(p.recentResult.Efficiency.Score())
+
+	return p.buf.String()
 }
