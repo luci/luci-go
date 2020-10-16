@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d657d9bc_dfb3ed16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "sorry for delay.",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "418af9b7_9a268854",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "nit: can you tab one more time to the right so it\u0027s not on the same indent as the `\"account\": {` line.\n(also, i guess there is a mix of spaces and tabs)",
+      "range": {
+        "startLine": 640,
+        "startChar": 5,
+        "endLine": 643,
+        "endChar": 27
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7db84018_31f499b2",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 661,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "^ delete?",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49339f5e_19c19412",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 675,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "nit: i think it\u0027s better to have 1 top convey block with \"Get Owners\" and two sub-blocks with \"Details\" and \"All emails\"",
+      "range": {
+        "startLine": 675,
+        "startChar": 1,
+        "endLine": 675,
+        "endChar": 44
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8d8c2be_08ba8800",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "delete",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1c1025f4_540d3567",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "refs/heads/main",
+      "range": {
+        "startLine": 938,
+        "startChar": 21,
+        "endLine": 938,
+        "endChar": 25
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ea623a8_e5fc7fda",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 941,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "imo, worth mentioning if path starts with \"/\", e.g.:\n\npath relative to repository\u0027s root to the file or folder in question.",
+      "range": {
+        "startLine": 941,
+        "startChar": 2,
+        "endLine": 941,
+        "endChar": 35
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6abc319e_2988cfd7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 950,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T13:33:17Z",
+      "side": 1,
+      "message": "do you expect to have more fields here? If not, why do we need OwnerInfo type vs just re-using AccountInfo?",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
