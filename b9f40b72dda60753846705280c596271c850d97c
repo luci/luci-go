@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2770a96_caa3a3c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T18:15:45Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3e484b3_00350351",
+        "filename": "cv/appengine/.gitignore",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T18:15:45Z",
+      "side": 1,
+      "message": "Why would there be a file/directory named apengine under cv/appengine? (Optionally add a comment above this line)",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "889c02d7_c1157364",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-16T18:15:45Z",
+      "side": 1,
+      "message": "Out of curiosity, what does this do?",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
