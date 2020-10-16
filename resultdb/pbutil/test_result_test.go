@@ -266,6 +266,17 @@ func TestValidateTestResult(t *testing.T) {
 				msg.TestLocation.Line = -1
 				So(validate(msg), ShouldErrLike, "test_location: line: must not be negative")
 			})
+			Convey("repo", func() {
+				msg.TestLocation.Repo = "https://chromium.googlesource.com/chromium/src.git"
+				So(validate(msg), ShouldErrLike, "test_location: repo: must not end with .git")
+			})
+		})
+
+		Convey("Test metadata", func() {
+			Convey("no location", func() {
+				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
+				So(validate(msg), ShouldBeNil)
+			})
 		})
 	})
 }
