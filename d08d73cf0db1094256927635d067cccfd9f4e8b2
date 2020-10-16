@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55ad09fd_a6cfac1e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "LGTM % comments",
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "877ce975_9db687cb",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "use the new one: google.golang.org/protobuf/proto\nin other files too",
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e242a13_05aefda4",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "i think these changes are not necessary",
+      "range": {
+        "startLine": 101,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 6
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5fb6f5aa_68625a58",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 4
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a2c2418_739bd788",
+        "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "consistency: move to next lines",
+      "range": {
+        "startLine": 67,
+        "startChar": 17,
+        "endLine": 67,
+        "endChar": 19
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da429b05_2d6cfc4f",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "note that this comment doesn\u0027t really explain the format, e.g. that it is compressed (see L171) or that it is binary-encoded",
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e61e826f_0c7d8631",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "this won\u0027t be human-readable. omit?",
+      "range": {
+        "startLine": 105,
+        "startChar": 69,
+        "endLine": 105,
+        "endChar": 78
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f626c7a3_f635c2fe",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T05:20:14Z",
+      "side": 1,
+      "message": "len(tmd) doesn\u0027t work?",
+      "range": {
+        "startLine": 131,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
