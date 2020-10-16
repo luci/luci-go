@@ -44,8 +44,6 @@ service Migration {
 
 message ReportRunsRequest {
   repeated ReportedRun runs = 1;
-  // LUCI project.
-  string project = 2;
 }
 
 message ReportedRun {
@@ -57,6 +55,4 @@ message ReportedRun {
 
 message FinishedRunRequest {
   ReportedRun run = 1;
-  // LUCI project.
-  string project = 2;
 }
