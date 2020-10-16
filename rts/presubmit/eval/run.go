@@ -43,87 +43,93 @@ type Result struct {
 type evalRun struct {
 	Eval
 
-	progress progress
-
 	auth   *auth.Authenticator
 	gerrit *gerritClient
+
+	// internal mutable state
+	res                      Result
+	buf                      bytes.Buffer
+	mostRecentProgressReport time.Time
+	mu                       sync.Mutex
+
+	rejectionC chan *evalpb.Rejection
+	durationC  chan *evalpb.TestDuration
 }
 
-func (r *evalRun) run(ctx context.Context) (*Result, error) {
+func (r *evalRun) run(ctx context.Context) error {
 	if err := r.Init(ctx); err != nil {
-		return nil, err
+		return err
 	}
 
-	ret := &Result{}
+	// Init internal state.
+	r.res = Result{}
+	r.mostRecentProgressReport = time.Time{}
+	r.rejectionC = make(chan *evalpb.Rejection)
+	r.durationC = make(chan *evalpb.TestDuration)
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
 	// Analyze safety.
-	rejectionC := make(chan *evalpb.Rejection)
 	eg.Go(func() error {
-		safety, err := r.evaluateSafety(ctx, rejectionC)
-		if err != nil {
-			return errors.Annotate(err, "failed to evaluate safety").Err()
-		}
-		ret.Safety = *safety
-		return nil
+		err := r.evaluateSafety(ctx)
+		return errors.Annotate(err, "failed to evaluate safety").Err()
 	})
 
 	// Analyze efficiency.
-	durationC := make(chan *evalpb.TestDuration)
 	eg.Go(func() error {
-		efficiency, err := r.evaluateEfficiency(ctx, durationC)
-		if err != nil {
-			return errors.Annotate(err, "failed to evaluate efficiency").Err()
-		}
-		ret.Efficiency = *efficiency
-		return nil
+		err := r.evaluateEfficiency(ctx)
+		return errors.Annotate(err, "failed to evaluate efficiency").Err()
 	})
 
 	// Play back the history.
 	eg.Go(func() error {
 		defer func() {
-			close(rejectionC)
-			close(durationC)
+			close(r.rejectionC)
+			close(r.durationC)
 			r.History.Close()
 		}()
-
-		for {
-			rec, err := r.History.Read()
-			switch {
-			case err == io.EOF:
-				return nil
-			case err != nil:
-				return errors.Annotate(err, "failed to read history").Err()
-			}
-
-			ret.TotalRecords++
-
-			// Send the record to the appropriate channel.
-			switch data := rec.Data.(type) {
-			case *evalpb.Record_Rejection:
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case rejectionC <- data.Rejection:
-				}
-			case *evalpb.Record_TestDuration:
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case durationC <- data.TestDuration:
-				}
-			default:
-				panic(fmt.Sprintf("unexpected record %s", rec))
-			}
-		}
+		err := r.playbackHistory(ctx)
+		return errors.Annotate(err, "failed to playback history").Err()
 	})
 
-	if err := eg.Wait(); err != nil {
-		return nil, err
+	return eg.Wait()
+}
+
+// playbackHistory reads records from r.Eval.History and dispatches them
+// to r.rejectionC and r.durationC.
+func (r *evalRun) playbackHistory(ctx context.Context) error {
+	for {
+		rec, err := r.History.Read()
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to read history").Err()
+		}
+
+		r.mu.Lock()
+		r.res.TotalRecords++
+		r.mu.Unlock()
+
+		// Send the record to the appropriate channel.
+		switch data := rec.Data.(type) {
+		case *evalpb.Record_Rejection:
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case r.rejectionC <- data.Rejection:
+			}
+		case *evalpb.Record_TestDuration:
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case r.durationC <- data.TestDuration:
+			}
+		default:
+			panic(fmt.Sprintf("unexpected record %s", rec))
+		}
 	}
-	return ret, nil
 }
 
 // Print prints the results to w.
@@ -162,68 +168,39 @@ func (r *Result) Print(w io.Writer) error {
 	return p.err
 }
 
-// progress captures the most recent state of evaluation and occasionally
-// logs it.
-//
-// It is goroutine-safe.
-type progress struct {
-	reportInterval     time.Duration
-	recentResult       Result
-	loggedMostRecently time.Time
-	mu                 sync.Mutex
-
-	buf bytes.Buffer
-}
-
-func (p *progress) UpdateCurrentSafety(ctx context.Context, s Safety) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.recentResult.Safety = s
-	p.maybeLog(ctx)
-}
-
-func (p *progress) UpdateCurrentEfficiency(ctx context.Context, e Efficiency) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.recentResult.Efficiency = e
-	p.maybeLog(ctx)
-}
-
-func (p *progress) maybeLog(ctx context.Context) {
-	interval := p.reportInterval
+func (r *evalRun) maybeReportProgress(ctx context.Context) {
+	interval := r.ProgressReportInterval
 	if interval <= 0 {
 		interval = defaultProgressReportInterval
 	}
 
 	now := clock.Now(ctx)
 	switch {
-	case p.loggedMostRecently.IsZero():
-		p.loggedMostRecently = now
+	case r.mostRecentProgressReport.IsZero():
+		r.mostRecentProgressReport = now
 
-	case now.After(p.loggedMostRecently.Add(interval)):
-		logging.Infof(ctx, "%s", p.reportLine())
-		p.loggedMostRecently = now
+	case now.After(r.mostRecentProgressReport.Add(interval)):
+		logging.Infof(ctx, "%s", r.progressReportLine())
+		r.mostRecentProgressReport = now
 	}
 }
 
-func (p *progress) reportLine() string {
-	p.buf.Reset()
+func (r *evalRun) progressReportLine() string {
+	r.buf.Reset()
 
 	printScore := func(score float64) {
 		if math.IsNaN(score) {
-			fmt.Fprintf(&p.buf, "?")
+			fmt.Fprintf(&r.buf, "?")
 		} else {
-			fmt.Fprintf(&p.buf, "%02.0f%%", score)
+			fmt.Fprintf(&r.buf, "%02.0f%%", score)
 		}
 	}
 
-	fmt.Fprintf(&p.buf, "safety: ")
-	printScore(p.recentResult.Safety.Score())
+	fmt.Fprintf(&r.buf, "safety: ")
+	printScore(r.res.Safety.Score())
 
-	fmt.Fprintf(&p.buf, " | efficiency: ")
-	printScore(p.recentResult.Efficiency.Score())
+	fmt.Fprintf(&r.buf, " | efficiency: ")
+	printScore(r.res.Efficiency.Score())
 
-	return p.buf.String()
+	return r.buf.String()
 }

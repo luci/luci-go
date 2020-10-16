@@ -90,7 +90,10 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 		// make a copy of settings
 		Eval: *e,
 	}
-	return run.run(ctx)
+	if err := run.run(ctx); err != nil {
+		return nil, err
+	}
+	return &run.res, nil
 }
 
 type historyFileInputFlag struct {
