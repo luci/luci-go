@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4ac6cd4_b562fb8c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T18:25:34Z",
+      "side": 1,
+      "message": "I think attempt already has the LUCI Project it belongs to[1]. Do we need to replicate it in the request?\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto;l\u003d33-34;drc\u003da524ab5c5c417bd3f9746211b464c3c1ef351cde",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 46
+      },
+      "revId": "1e82dc48050422a76df44cfe6f6088bdfecd407f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "62e25226_68ad19c2",
