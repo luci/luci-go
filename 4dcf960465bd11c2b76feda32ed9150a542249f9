@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9596a140_8c1beb57",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-16T08:14:52Z",
+      "side": 1,
+      "message": "add [deprecated\u003dtrue]?",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 34
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad81d60d_8d327a45",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-16T08:14:52Z",
+      "side": 1,
+      "message": "add spaces",
+      "range": {
+        "startLine": 99,
+        "startChar": 26,
+        "endLine": 99,
+        "endChar": 27
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
