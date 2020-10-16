@@ -84,7 +84,7 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 						return errors.Annotate(err, "failed to process rejection %q", rej).Err()
 					}
 
-					if !wouldReject {
+					if eligible && !wouldReject {
 						buf.Reset()
 						printLostRejection(p, rej)
 						logging.Infof(ctx, "%s", buf.Bytes())
