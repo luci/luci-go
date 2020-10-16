@@ -20,6 +20,132 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5dc0aadc_31e1dea6",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "these protos aren\u0027t like other protos in this package - others are for RPCs.\nShould this be luci.resultdb.bq or something like that?\n\nthen the names below would make more sense. For example, nothing in \"TestResultRow\" or \"InvocationFields\" hint about BQ",
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7ccf8b8_7dfe9bd2",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "please add a comment",
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b68a3cca_d5c2de83",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "Chromium CI builds\n\nother projects might have a totally different structure",
+      "range": {
+        "startLine": 31,
+        "startChar": 66,
+        "endLine": 31,
+        "endChar": 75
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e088235a_1342b2e2",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "test_id, because this is a proto file and other proto files use snake_case\n\nsame below",
+      "range": {
+        "startLine": 40,
+        "startChar": 25,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1949360d_af9c9d78",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "space",
+      "range": {
+        "startLine": 48,
+        "startChar": 29,
+        "endLine": 48,
+        "endChar": 30
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c0a5eae_72000aa8",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "why not map\u003cstring, string\u003e?",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 21
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9596a140_8c1beb57",
         "filename": "resultdb/proto/v1/test_result_row.proto",
         "patchSetId": 2
@@ -36,6 +162,29 @@
         "startChar": 0,
         "endLine": 87,
         "endChar": 34
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "297d9816_2158a318",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:12:52Z",
+      "side": 1,
+      "message": "Record is a more standard name for this",
+      "range": {
+        "startLine": 94,
+        "startChar": 18,
+        "endLine": 94,
+        "endChar": 24
       },
       "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
