@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "599486a3_b8f45fbe",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "877ce975_9db687cb",
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1e242a13_05aefda4",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-10-16T05:20:14Z",
       "side": 1,
       "message": "i think these changes are not necessary",
+      "range": {
+        "startLine": 101,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 6
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e36a61f4_6fad029b",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e242a13_05aefda4",
       "range": {
         "startLine": 101,
         "startChar": 0,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "436d7952_a7b4c5e1",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5fb6f5aa_68625a58",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 4
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6a2c2418_739bd788",
@@ -104,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d044416_9901e215",
+        "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a2c2418_739bd788",
+      "range": {
+        "startLine": 67,
+        "startChar": 17,
+        "endLine": 67,
+        "endChar": 19
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da429b05_2d6cfc4f",
@@ -117,6 +207,24 @@
       "writtenOn": "2020-10-16T05:20:14Z",
       "side": 1,
       "message": "note that this comment doesn\u0027t really explain the format, e.g. that it is compressed (see L171) or that it is binary-encoded",
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e498500a_4c98263a",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da429b05_2d6cfc4f",
       "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -146,6 +254,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "aee860c5_351adc71",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e61e826f_0c7d8631",
+      "range": {
+        "startLine": 105,
+        "startChar": 69,
+        "endLine": 105,
+        "endChar": 78
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f626c7a3_f635c2fe",
         "filename": "resultdb/internal/testresults/test_result.go",
         "patchSetId": 3
@@ -157,6 +289,30 @@
       "writtenOn": "2020-10-16T05:20:14Z",
       "side": 1,
       "message": "len(tmd) doesn\u0027t work?",
+      "range": {
+        "startLine": 131,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "d08d73cf0db1094256927635d067cccfd9f4e8b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6dcbad9_9f7723b7",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-16T06:19:05Z",
+      "side": 1,
+      "message": "it works.",
+      "parentUuid": "f626c7a3_f635c2fe",
       "range": {
         "startLine": 131,
         "startChar": 4,
