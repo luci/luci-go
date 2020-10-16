@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -152,6 +153,13 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		row["TestLocationFileName"] = ret.TestLocation.FileName
 		// Spanner client does not support int32
 		row["TestLocationLine"] = int(ret.TestLocation.Line)
+	}
+	if ret.TestMetadata != nil {
+		if tmd, err := proto.Marshal(ret.TestMetadata); err != nil {
+			panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))
+		} else {
+			row["TestMetadata"] = spanutil.Compressed(tmd)
+		}
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation

@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -74,6 +75,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var summaryHTML spanutil.Compressed
 	var testLocationFileName spanner.NullString
 	var testLocationLine spanner.NullInt64
+	var tmd spanutil.Compressed
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":              &tr.Variant,
 		"VariantHash":          &tr.VariantHash,
@@ -85,6 +87,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		"Tags":                 &tr.Tags,
 		"TestLocationFileName": &testLocationFileName,
 		"TestLocationLine":     &testLocationLine,
+		"TestMetadata":         &tmd,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -98,6 +101,9 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	populateExpectedField(tr, maybeUnexpected)
 	populateDurationField(tr, micros)
 	populateTestLocation(tr, testLocationFileName, testLocationLine)
+	if err := populateTestMetadata(tr, tmd); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
+	}
 	return tr, nil
 }
 
@@ -119,4 +125,13 @@ func populateTestLocation(tr *pb.TestResult, fileName spanner.NullString, line s
 			Line:     int32(line.Int64),
 		}
 	}
+}
+
+func populateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
+	if len(tmd) == 0 {
+		return nil
+	}
+
+	tr.TestMetadata = &pb.TestMetadata{}
+	return proto.Unmarshal(tmd, tr.TestMetadata)
 }
