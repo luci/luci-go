@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aeb521c3_a87a1fe2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T15:59:47Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "e922cbb6f2b6f6e4a2b6ebae9afb2a966c5a04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6db80856_56a01322",
+        "filename": "resultdb/sink/proto/v1/test_result.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T15:59:47Z",
+      "side": 1,
+      "message": "deprecated?",
+      "revId": "e922cbb6f2b6f6e4a2b6ebae9afb2a966c5a04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
