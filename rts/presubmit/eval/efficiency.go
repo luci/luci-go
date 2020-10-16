@@ -53,9 +53,9 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 	// Run the algorithm in r.Concurrency goroutines.
 	var ret Efficiency
 	var mu sync.Mutex
-	in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
+			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 			for td := range durationC {
 				dur := td.Duration.AsDuration()
 				mu.Lock()
