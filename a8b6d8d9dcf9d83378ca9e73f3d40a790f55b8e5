@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d8e1887_abf59505",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "418af9b7_9a268854",
+      "range": {
+        "startLine": 640,
+        "startChar": 5,
+        "endLine": 643,
+        "endChar": 27
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7db84018_31f499b2",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-10-16T13:33:17Z",
       "side": 1,
       "message": "^ delete?",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84210e5b_dc92932f",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 661,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "oops! yes.",
+      "parentUuid": "7db84018_31f499b2",
       "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d73523c5_2577020d",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 675,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49339f5e_19c19412",
+      "range": {
+        "startLine": 675,
+        "startChar": 1,
+        "endLine": 675,
+        "endChar": 44
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d8d8c2be_08ba8800",
@@ -98,6 +164,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c97f352_3eda748a",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8d8c2be_08ba8800",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1c1025f4_540d3567",
@@ -111,6 +195,30 @@
       "writtenOn": "2020-10-16T13:33:17Z",
       "side": 1,
       "message": "refs/heads/main",
+      "range": {
+        "startLine": 938,
+        "startChar": 21,
+        "endLine": 938,
+        "endChar": 25
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95b5d665_98e8bc54",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c1025f4_540d3567",
       "range": {
         "startLine": 938,
         "startChar": 21,
@@ -144,6 +252,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6764943c_8fbc7218",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 941,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ea623a8_e5fc7fda",
+      "range": {
+        "startLine": 941,
+        "startChar": 2,
+        "endLine": 941,
+        "endChar": 35
+      },
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6abc319e_2988cfd7",
@@ -157,6 +289,24 @@
       "writtenOn": "2020-10-16T13:33:17Z",
       "side": 1,
       "message": "do you expect to have more fields here? If not, why do we need OwnerInfo type vs just re-using AccountInfo?",
+      "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b9dc163_316fcbc1",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 950,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-10-16T16:48:41Z",
+      "side": 1,
+      "message": "Gerrit design doc has other fields as priority \u003e\u003d 4 (not guaranteed to be implemented); like the potential for OwnerInfo to represent either an individual or a group and contain an option _more_owners. I guess I was unsure of whether or not to write the message with that in mind. WDYT?",
+      "parentUuid": "6abc319e_2988cfd7",
       "revId": "a8b6d8d9dcf9d83378ca9e73f3d40a790f55b8e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
