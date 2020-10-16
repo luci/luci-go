@@ -16,6 +16,75 @@
       "message": "Updated",
       "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d991058e_fac45641",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T23:47:37Z",
+      "side": 1,
+      "message": "I\u0027m not sure you are referring to the full key here (i.e parent entity key + current entity key). I think the ID for this entity should just be LUCI Project name. Host and repo comes from parent key and LUCI Project name is namespaced by that so there won\u0027t be any conflict.",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58831692_de2f379c",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T23:47:37Z",
+      "side": 1,
+      "message": "s/schema/scheme",
+      "range": {
+        "startLine": 48,
+        "startChar": 57,
+        "endLine": 48,
+        "endChar": 63
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e9b1727_10d51ee4",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T23:47:37Z",
+      "side": 1,
+      "message": "nit: I think we can rename it to UpdateGobWatchMap or UpdateFromProjectConfig because this function is not really updating the project config.",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 22
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
