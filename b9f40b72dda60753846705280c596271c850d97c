@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "cfa79ed6_59ff7b68",
+        "filename": "cv/appengine/.gitignore",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T18:44:08Z",
+      "side": 1,
+      "message": "Common Go feature: `go build` creates an executable named after the package, in this case \"appengine\". \n\nEventually, we might split the appengine into a bunch of services, but for now it\u0027s as good a name as any.",
+      "parentUuid": "b3e484b3_00350351",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "889c02d7_c1157364",
         "filename": "cv/appengine/main.go",
         "patchSetId": 1
@@ -48,6 +66,24 @@
       "writtenOn": "2020-10-16T18:15:45Z",
       "side": 1,
       "message": "Out of curiosity, what does this do?",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "946771ed_129ec296",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T18:44:08Z",
+      "side": 1,
+      "message": "tl;dr gives datastore APIs. But see this: https://godoc.org/go.chromium.org/luci/server/gaeemulation (you can also copy-pasta the import link to get to it)\n\nit\u0027s true that I don\u0027t need it yet, but I\u0027ll need it soon.",
+      "parentUuid": "889c02d7_c1157364",
       "revId": "b9f40b72dda60753846705280c596271c850d97c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
