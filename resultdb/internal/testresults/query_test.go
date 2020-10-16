@@ -323,5 +323,21 @@ func TestQueryTestResults(t *testing.T) {
 				})
 			})
 		})
+
+		Convey(`Test metadata`, func() {
+			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestStatus_PASS)
+			expected[0].TestMetadata = &pb.TestMetadata{
+				Name: "original_name",
+				Location: &pb.TestLocation{
+					FileName: "//a_test.go",
+					Line:     54,
+				},
+			}
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+
+			actual, _ := mustFetch(q)
+			So(actual, ShouldResembleProto, expected)
+		})
 	})
 }
