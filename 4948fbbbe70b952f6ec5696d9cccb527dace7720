@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "4948fbbbe70b952f6ec5696d9cccb527dace7720",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2451b907_45c9a577",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-16T22:48:19Z",
+      "side": 1,
+      "message": "I think the behavior between Linux and Windows is different here.\n\nOn Linux we\u0027ll be sending SIGTERM only to the luciexe process. On Windows we\u0027ll be sending Ctrl+C to the luciexe process and all its subprocesses (unless they start as a new process group). I think this will interfere with graceful termination of the subprocesses?\n\nAnother issue is that GenerateConsoleCtrlEvent is ignored if the process has no console attached. So this may mysteriously break later if we decided, for example, run Swarming bot via pythonw.exe (that has no console).\n\nBut I don\u0027t know of a better way 🙈",
+      "revId": "4948fbbbe70b952f6ec5696d9cccb527dace7720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
