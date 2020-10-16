@@ -142,6 +142,53 @@ func (x *ReportedRun) GetAttempt() *v1.Attempt {
 	return nil
 }
 
+type ReportFinishedRunRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Run *ReportedRun `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
+}
+
+func (x *ReportFinishedRunRequest) Reset() {
+	*x = ReportFinishedRunRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_migration_migration_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReportFinishedRunRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportFinishedRunRequest) ProtoMessage() {}
+
+func (x *ReportFinishedRunRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_migration_migration_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportFinishedRunRequest.ProtoReflect.Descriptor instead.
+func (*ReportFinishedRunRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ReportFinishedRunRequest) GetRun() *ReportedRun {
+	if x != nil {
+		return x.Run
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_cv_api_migration_migration_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDesc = []byte{
@@ -162,16 +209,25 @@ var file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDesc = []byte{
 	0x74, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x12, 0x2b, 0x0a, 0x07, 0x61, 0x74, 0x74, 0x65, 0x6d, 0x70,
 	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x62, 0x69, 0x67, 0x71, 0x75, 0x65,
 	0x72, 0x79, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x6d, 0x70, 0x74, 0x52, 0x07, 0x61, 0x74, 0x74, 0x65,
-	0x6d, 0x70, 0x74, 0x32, 0x4f, 0x0a, 0x09, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x12, 0x42, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x1c,
-	0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x52, 0x65, 0x70, 0x6f, 0x72,
-	0x74, 0x52, 0x75, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
-	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x3b, 0x6d, 0x69,
-	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6d, 0x70, 0x74, 0x22, 0x44, 0x0a, 0x18, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x46, 0x69, 0x6e,
+	0x69, 0x73, 0x68, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x28, 0x0a, 0x03, 0x72, 0x75, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65,
+	0x64, 0x52, 0x75, 0x6e, 0x52, 0x03, 0x72, 0x75, 0x6e, 0x32, 0xa1, 0x01, 0x0a, 0x09, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x42, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x72,
+	0x74, 0x52, 0x75, 0x6e, 0x73, 0x12, 0x1c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x2e, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x75, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x50, 0x0a, 0x11, 0x52,
+	0x65, 0x70, 0x6f, 0x72, 0x74, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x52, 0x75, 0x6e,
+	0x12, 0x23, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x52, 0x65, 0x70,
+	0x6f, 0x72, 0x74, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x52, 0x75, 0x6e, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x33, 0x5a,
+	0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
+	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x3b, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -186,23 +242,27 @@ func file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_api_migration_migration_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_cv_api_migration_migration_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_cv_api_migration_migration_proto_goTypes = []interface{}{
-	(*ReportRunsRequest)(nil), // 0: migration.ReportRunsRequest
-	(*ReportedRun)(nil),       // 1: migration.ReportedRun
-	(*v1.Attempt)(nil),        // 2: bigquery.Attempt
-	(*empty.Empty)(nil),       // 3: google.protobuf.Empty
+	(*ReportRunsRequest)(nil),        // 0: migration.ReportRunsRequest
+	(*ReportedRun)(nil),              // 1: migration.ReportedRun
+	(*ReportFinishedRunRequest)(nil), // 2: migration.ReportFinishedRunRequest
+	(*v1.Attempt)(nil),               // 3: bigquery.Attempt
+	(*empty.Empty)(nil),              // 4: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_cv_api_migration_migration_proto_depIdxs = []int32{
 	1, // 0: migration.ReportRunsRequest.runs:type_name -> migration.ReportedRun
-	2, // 1: migration.ReportedRun.attempt:type_name -> bigquery.Attempt
-	0, // 2: migration.Migration.ReportRuns:input_type -> migration.ReportRunsRequest
-	3, // 3: migration.Migration.ReportRuns:output_type -> google.protobuf.Empty
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 1: migration.ReportedRun.attempt:type_name -> bigquery.Attempt
+	1, // 2: migration.ReportFinishedRunRequest.run:type_name -> migration.ReportedRun
+	0, // 3: migration.Migration.ReportRuns:input_type -> migration.ReportRunsRequest
+	2, // 4: migration.Migration.ReportFinishedRun:input_type -> migration.ReportFinishedRunRequest
+	4, // 5: migration.Migration.ReportRuns:output_type -> google.protobuf.Empty
+	4, // 6: migration.Migration.ReportFinishedRun:output_type -> google.protobuf.Empty
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_api_migration_migration_proto_init() }
@@ -235,6 +295,18 @@ func file_go_chromium_org_luci_cv_api_migration_migration_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_api_migration_migration_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReportFinishedRunRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -242,7 +314,7 @@ func file_go_chromium_org_luci_cv_api_migration_migration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -273,6 +345,8 @@ type MigrationClient interface {
 	// Used to determine whether CV's view of the world matches that of CQDaemon.
 	// Initially, this is just FYI for CV.
 	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 type migrationPRPCClient struct {
 	client *prpc.Client
@@ -285,6 +359,15 @@ func NewMigrationPRPCClient(client *prpc.Client) MigrationClient {
 func (c *migrationPRPCClient) ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.client.Call(ctx, "migration.Migration", "ReportRuns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *migrationPRPCClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.client.Call(ctx, "migration.Migration", "ReportFinishedRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -308,6 +391,15 @@ func (c *migrationClient) ReportRuns(ctx context.Context, in *ReportRunsRequest,
 	return out, nil
 }
 
+func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/migration.Migration/ReportFinishedRun", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigrationServer is the server API for Migration service.
 type MigrationServer interface {
 	// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
@@ -315,6 +407,8 @@ type MigrationServer interface {
 	// Used to determine whether CV's view of the world matches that of CQDaemon.
 	// Initially, this is just FYI for CV.
 	ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error)
+	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error)
 }
 
 // UnimplementedMigrationServer can be embedded to have forward compatible implementations.
@@ -323,6 +417,9 @@ type UnimplementedMigrationServer struct {
 
 func (*UnimplementedMigrationServer) ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportRuns not implemented")
+}
+func (*UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
 }
 
 func RegisterMigrationServer(s prpc.Registrar, srv MigrationServer) {
@@ -347,6 +444,24 @@ func _Migration_ReportRuns_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportFinishedRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).ReportFinishedRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/ReportFinishedRun",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).ReportFinishedRun(ctx, req.(*ReportFinishedRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Migration_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "migration.Migration",
 	HandlerType: (*MigrationServer)(nil),
@@ -354,6 +469,10 @@ var _Migration_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportRuns",
 			Handler:    _Migration_ReportRuns_Handler,
+		},
+		{
+			MethodName: "ReportFinishedRun",
+			Handler:    _Migration_ReportFinishedRun_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
