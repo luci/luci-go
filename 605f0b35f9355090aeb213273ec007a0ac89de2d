@@ -34,6 +34,24 @@
       "parentUuid": "4dbd3a7e_fc157f73",
       "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a37964c8_8345d8d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-16T16:16:21Z",
+      "side": 1,
+      "message": "i think \"required\" in those links is an artifact of proto2 https://developers.google.com/protocol-buffers/docs/proto\nproto3 doesn\u0027t support it\n\ni don\u0027t know how to keep fields nullable. is it important?",
+      "parentUuid": "8e161169_c59bf25b",
+      "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
