@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "6f8fa890d6d13d42196fb7eae87f2ea0f254ea36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4aa0565_aac3a4db",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-16T23:01:00Z",
+      "side": 1,
+      "message": "It is not really being waited on when reading (`select` has `default` clause) and not blocked on when writing (it is buffered). Consider replacing with atomic.Value.",
+      "range": {
+        "startLine": 149,
+        "startChar": 23,
+        "endLine": 149,
+        "endChar": 58
+      },
+      "revId": "6f8fa890d6d13d42196fb7eae87f2ea0f254ea36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1079ae93_5bf72b6d",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-16T23:01:00Z",
+      "side": 1,
+      "message": "Should we at least log the error?",
+      "range": {
+        "startLine": 165,
+        "startChar": 27,
+        "endLine": 165,
+        "endChar": 40
+      },
+      "revId": "6f8fa890d6d13d42196fb7eae87f2ea0f254ea36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
