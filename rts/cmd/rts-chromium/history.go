@@ -173,7 +173,7 @@ func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquer
 	}
 
 	prepRe := func(rgx string) string {
-		if rgx == "" {
+		if rgx == "" || rgx == ".*" {
 			return ""
 		}
 		return fmt.Sprintf("^(%s)$", rgx)
