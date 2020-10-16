@@ -86,6 +86,24 @@
       "parentUuid": "889c02d7_c1157364",
       "revId": "b9f40b72dda60753846705280c596271c850d97c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fa8def6_b538e698",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-16T19:02:21Z",
+      "side": 1,
+      "message": "Yes. And it\u0027s for sure need if we plan on store config in datastore: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2427189/2/cv/appengine/main.go#35",
+      "parentUuid": "946771ed_129ec296",
+      "revId": "b9f40b72dda60753846705280c596271c850d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
