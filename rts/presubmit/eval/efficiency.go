@@ -16,7 +16,8 @@ package eval
 
 import (
 	"context"
-	"sync/atomic"
+	"math"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -36,34 +37,52 @@ type Efficiency struct {
 	ForecastDuration time.Duration
 }
 
+// Score returns the efficiency score.
+// May return NaN.
+func (e *Efficiency) Score() float64 {
+	if e.SampleDuration == 0 {
+		return math.NaN()
+	}
+	saved := e.SampleDuration - e.ForecastDuration
+	return float64(100*saved) / float64(e.SampleDuration)
+}
+
 func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *evalpb.TestDuration) (*Efficiency, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Run the algorithm in r.Concurrency goroutines.
-	var totalNano, forecastNano int64
+	var ret Efficiency
+	var mu sync.Mutex
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 			for td := range durationC {
-				durNano := int64(td.Duration.AsDuration())
-				atomic.AddInt64(&totalNano, durNano)
-
 				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
 				switch {
+				case err != nil:
+					return err
 				case len(changedFiles) == 0:
 					continue // Ineligible.
-				case err != nil:
+				}
+
+				// Run the algorithm.
+				in.ChangedFiles = changedFiles
+				in.TestVariants[0] = td.TestVariant
+				out, err := r.Algorithm(ctx, in)
+				if err != nil {
 					return err
 				}
 
-				in.ChangedFiles = changedFiles
-				in.TestVariants[0] = td.TestVariant
-				switch out, err := r.Algorithm(ctx, in); {
-				case err != nil:
-					return err
-				case out.ShouldRunAny:
-					atomic.AddInt64(&forecastNano, durNano)
+				// Record results.
+				mu.Lock()
+				dur := td.Duration.AsDuration()
+				ret.SampleDuration += dur
+				if out.ShouldRunAny {
+					ret.ForecastDuration += dur
 				}
+				mu.Unlock()
+
+				r.progress.UpdateCurrentEfficiency(ctx, ret)
 			}
 			return ctx.Err()
 		})
@@ -73,8 +92,5 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 		return nil, err
 	}
 
-	return &Efficiency{
-		SampleDuration:   time.Duration(totalNano),
-		ForecastDuration: time.Duration(forecastNano),
-	}, nil
+	return &ret, nil
 }
