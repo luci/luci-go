@@ -29,6 +29,12 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luciexe/invoke"
+)
+
+var (
+	cbErrorKey          = "cb error"
+	maxLogFlushWaitTime = 30 * time.Second
 )
 
 // Run executes `cb` in a "luciexe" host environment.
@@ -65,7 +71,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	defer cleanup.run(ctx)
 
 	cleanupComplete := make(chan struct{})
-	cleanup.add("cleanupComplete", func() error {
+	cleanup.add("cleanupComplete", func(_ context.Context) error {
 		close(cleanupComplete)
 		return nil
 	})
@@ -74,7 +80,8 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	cleanup.add("restoreEnv", restoreEnv())
 
 	logging.Infof(ctx, "starting auth services")
-	if err := cleanup.concat(startAuthServices(ctx, &opts)); err != nil {
+	ctx, cleanupSlice, err := startAuthServices(ctx, &opts)
+	if err := cleanup.concat(cleanupSlice, err); err != nil {
 		return nil, err
 	}
 
@@ -83,14 +90,14 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	if err != nil {
 		return nil, err
 	}
-	cleanup.add("butler", func() error {
+	cleanup.add("butler", func(_ context.Context) error {
 		butler.Activate()
 		return butler.Wait()
 	})
 
 	logging.Infof(ctx, "starting build.proto merging agent")
 	agent := spyOn(ctx, butler, opts.BaseBuild)
-	cleanup.add("buildmerge spy", func() error {
+	cleanup.add("buildmerge spy", func(ctx context.Context) error {
 		agent.Close()
 		logging.Infof(ctx, "waiting for buildmerge spy to finish")
 		<-agent.DrainC
@@ -108,10 +115,18 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 
 	// Transfer ownership of cleanups to goroutine
 	userCleanup := cleanup
-	userCleanup.add("flush u/", func() error {
-		cctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
+	userCleanup.add("flush u/", func(ctx context.Context) error {
+		if err, ok := ctx.Value(&cbErrorKey).(error); ok && invoke.Interrupted.In(err) {
+			//`cb` is interrupted. The host process is likely to be killed shortly.
+			// We need to flush as many logs as possible since it might be useful
+			// to debug the luciexe's behavior during interruption.
+			butler.DrainNamespace(ctx, agent.UserNamespace)
+			return nil
+		}
+		wt := calcLogFlushWaitTime(ctx)
+		cctx, cancel := clock.WithTimeout(ctx, wt)
 		defer cancel()
-		logging.Infof(ctx, "waiting up to 30 seconds for user logs to flush")
+		logging.Infof(cctx, "waiting up to %s for user logs to flush", wt)
 		leftovers := butler.DrainNamespace(cctx, agent.UserNamespace)
 		if len(leftovers) > 0 {
 			builder := strings.Builder{}
@@ -124,21 +139,38 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 		}
 		return nil
 	})
-	userCleanup.add("butler.Activate", func() error {
+	userCleanup.add("butler.Activate", func(_ context.Context) error {
 		butler.Activate()
 		return nil
 	})
 	cleanup = nil
 
 	go func() {
-		defer userCleanup.run(ctx)
 		logging.Infof(ctx, "invoking host environment callback")
-
 		if err := cb(ctx, opts); err != nil {
+			ctx = context.WithValue(ctx, &cbErrorKey, err)
 			logging.Errorf(ctx, "host environment callback failed:")
 			errors.Log(ctx, err)
 		}
+		userCleanup.run(ctx)
 	}()
 
 	return buildCh, nil
+}
+
+// If ctx has the deadline set, waitTime is min(half of the remaining time
+// towards deadline, `maxLogFlushWaitTime`). Otherwise, waitTime is the same
+// as `maxLogFlushWaitTime`.
+func calcLogFlushWaitTime(ctx context.Context) time.Duration {
+	if deadline, ok := ctx.Deadline(); ok {
+		switch waitTime := deadline.Sub(clock.Now(ctx)) / 2; {
+		case waitTime < 0:
+			return 0
+		case waitTime > maxLogFlushWaitTime:
+			return maxLogFlushWaitTime
+		default:
+			return waitTime
+		}
+	}
+	return maxLogFlushWaitTime
 }
