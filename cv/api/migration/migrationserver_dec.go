@@ -41,3 +41,20 @@ func (s *DecoratedMigration) ReportRuns(ctx context.Context, req *ReportRunsRequ
 	}
 	return
 }
+
+func (s *DecoratedMigration) ReportFinishedRun(ctx context.Context, req *ReportFinishedRunRequest) (rsp *empty.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ReportFinishedRun", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ReportFinishedRun(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ReportFinishedRun", rsp, err)
+	}
+	return
+}

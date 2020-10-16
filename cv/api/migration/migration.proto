@@ -37,6 +37,9 @@ service Migration {
   // Used to determine whether CV's view of the world matches that of CQDaemon.
   // Initially, this is just FYI for CV.
   rpc ReportRuns(ReportRunsRequest) returns (google.protobuf.Empty);
+
+  // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+  rpc ReportFinishedRun(ReportFinishedRunRequest) returns (google.protobuf.Empty);
 }
 
 message ReportRunsRequest {
@@ -48,4 +51,8 @@ message ReportedRun {
   bigquery.Attempt attempt = 1;
 
   // TODO(tandrii): add more fields as needed.
+}
+
+message ReportFinishedRunRequest {
+  ReportedRun run = 1;
 }
