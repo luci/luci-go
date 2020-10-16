@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c8ccd64_4a4a34e5",
+        "filename": "rts/presubmit/eval/efficiency.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T19:52:44Z",
+      "side": 1,
+      "message": "unrelated to CL thought: why do we increment SampleDuration in these 2 cases?",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 15
+      },
+      "revId": "3c231a7bc8485c896746ecade91ac160879b2b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "425a1987_16b7b7fb",
+        "filename": "rts/presubmit/eval/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-16T19:52:44Z",
+      "side": 1,
+      "message": "nit: this doesn\u0027t necessary report it, only updates it. Maybe UpdateCurrentSafety? \nand ditto below.",
+      "range": {
+        "startLine": 178,
+        "startChar": 19,
+        "endLine": 178,
+        "endChar": 25
+      },
+      "revId": "3c231a7bc8485c896746ecade91ac160879b2b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
