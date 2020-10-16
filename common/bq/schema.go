@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package bq
 
 import (
 	"bytes"
@@ -31,19 +31,19 @@ import (
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
-// sourceCodeInfoMap maps descriptor proto messages to source code info,
+// SourceCodeInfoMap maps descriptor proto messages to source code info,
 // if available.
 // See also descutil.IndexSourceCodeInfo.
-type sourceCodeInfoMap map[interface{}]*descriptor.SourceCodeInfo_Location
+type SourceCodeInfoMap map[interface{}]*descriptor.SourceCodeInfo_Location
 
-type schemaConverter struct {
-	desc           *descriptor.FileDescriptorSet
-	sourceCodeInfo map[*descriptor.FileDescriptorProto]sourceCodeInfoMap
+type SchemaConverter struct {
+	Desc           *descriptor.FileDescriptorSet
+	SourceCodeInfo map[*descriptor.FileDescriptorProto]SourceCodeInfoMap
 }
 
-// schema constructs a bigquery.Schema from a named message.
-func (c *schemaConverter) schema(messageName string) (schema bigquery.Schema, description string, err error) {
-	file, obj, _ := descutil.Resolve(c.desc, messageName)
+// Schema constructs a bigquery.Schema from a named message.
+func (c *SchemaConverter) Schema(messageName string) (schema bigquery.Schema, description string, err error) {
+	file, obj, _ := descutil.Resolve(c.Desc, messageName)
 	if obj == nil {
 		return nil, "", fmt.Errorf("message %q is not found", messageName)
 	}
@@ -65,7 +65,7 @@ func (c *schemaConverter) schema(messageName string) (schema bigquery.Schema, de
 }
 
 // field constructs bigquery.FieldSchema from proto field descriptor.
-func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *descriptor.FieldDescriptorProto) (*bigquery.FieldSchema, error) {
+func (c *SchemaConverter) field(file *descriptor.FileDescriptorProto, field *descriptor.FieldDescriptorProto) (*bigquery.FieldSchema, error) {
 	schema := &bigquery.FieldSchema{
 		Name:        field.GetName(),
 		Description: c.description(file, field),
@@ -118,7 +118,7 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 			// See also https://bit.ly/chromium-bq-struct
 			schema.Type = bigquery.StringFieldType
 		default:
-			switch s, _, err := c.schema(typeName); {
+			switch s, _, err := c.Schema(typeName); {
 			case err != nil:
 				return nil, err
 			case len(s) == 0:
@@ -139,8 +139,8 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 // ptr points to.
 // If ptr is a field of an enum type, appends
 // "\nValid values: <comma-separated enum member names>".
-func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr interface{}) string {
-	description := c.sourceCodeInfo[file][ptr].GetLeadingComments()
+func (c *SchemaConverter) description(file *descriptor.FileDescriptorProto, ptr interface{}) string {
+	description := c.SourceCodeInfo[file][ptr].GetLeadingComments()
 
 	// Trim leading whitespace.
 	lines := strings.Split(description, "\n")
@@ -174,7 +174,7 @@ func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 
 	// Append valid enum values.
 	if field, ok := ptr.(*descriptor.FieldDescriptorProto); ok && field.GetType() == descriptor.FieldDescriptorProto_TYPE_ENUM {
-		_, obj, _ := descutil.Resolve(c.desc, strings.TrimPrefix(field.GetTypeName(), "."))
+		_, obj, _ := descutil.Resolve(c.Desc, strings.TrimPrefix(field.GetTypeName(), "."))
 		if enum, ok := obj.(*descriptor.EnumDescriptorProto); ok {
 			names := make([]string, len(enum.Value))
 			for i, v := range enum.Value {
@@ -232,18 +232,19 @@ func printSchema(w *indented.Writer, s bigquery.Schema) {
 	}
 }
 
-func schemaString(s bigquery.Schema) string {
+// SchemaString returns schema in string format.
+func SchemaString(s bigquery.Schema) string {
 	var buf bytes.Buffer
 	printSchema(&indented.Writer{Writer: &buf}, s)
 	return buf.String()
 }
 
-// schemaDiff returns unified diff of two schemas.
+// SchemaDiff returns unified diff of two schemas.
 // Returns "" if there is no difference.
-func schemaDiff(before, after bigquery.Schema) string {
+func SchemaDiff(before, after bigquery.Schema) string {
 	ret, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:        difflib.SplitLines(schemaString(before)),
-		B:        difflib.SplitLines(schemaString(after)),
+		A:        difflib.SplitLines(SchemaString(before)),
+		B:        difflib.SplitLines(SchemaString(after)),
 		FromFile: "Current",
 		ToFile:   "New",
 		Context:  3,
@@ -258,16 +259,16 @@ func schemaDiff(before, after bigquery.Schema) string {
 	return ret
 }
 
-// addMissingFields copies fields from src to dest if they are not present in
+// AddMissingFields copies fields from src to dest if they are not present in
 // dest.
-func addMissingFields(dest *bigquery.Schema, src bigquery.Schema) {
+func AddMissingFields(dest *bigquery.Schema, src bigquery.Schema) {
 	destFields := indexFields(*dest)
 	for _, sf := range src {
 		switch df := destFields[sf.Name]; {
 		case df == nil:
 			*dest = append(*dest, sf)
 		default:
-			addMissingFields(&df.Schema, sf.Schema)
+			AddMissingFields(&df.Schema, sf.Schema)
 		}
 	}
 }
