@@ -208,9 +208,11 @@ func (r *evalRun) progressReportLine() string {
 
 	fmt.Fprintf(&r.buf, "safety: ")
 	printScore(r.res.Safety.Score())
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.EligibleRejections)
 
 	fmt.Fprintf(&r.buf, " | efficiency: ")
 	printScore(r.res.Efficiency.Score())
+	fmt.Fprintf(&r.buf, " (%s of testing)", r.res.Efficiency.SampleDuration)
 
 	return r.buf.String()
 }
