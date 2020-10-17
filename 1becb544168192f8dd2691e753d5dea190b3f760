@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "92c325cd_a6ef0fb2",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-17T21:49:26Z",
+      "side": 1,
+      "message": "So there were a couple possibilities if there are no parent entities in datastore:\n\n1. Keep the hierarchy with the parent key. In this case, `Lookup` does an ancestor query to narrow down to a specific host/repo.\n\n2. Have no parent key, and have \"host/repo\" as a field in the model. In this case `Lookup` does a query filtering for equality on HostRepo. (And in this case the ID of the entity doesn\u0027t matter so much.)\n\nIs there any reason to believe that one of those queries is more performant than the other?",
+      "parentUuid": "d991058e_fac45641",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "58831692_de2f379c",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 2
@@ -54,6 +78,30 @@
       "writtenOn": "2020-10-16T23:47:37Z",
       "side": 1,
       "message": "s/schema/scheme",
+      "range": {
+        "startLine": 48,
+        "startChar": 57,
+        "endLine": 48,
+        "endChar": 63
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42536e1a_e3651185",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-17T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58831692_de2f379c",
       "range": {
         "startLine": 48,
         "startChar": 57,
@@ -77,6 +125,30 @@
       "writtenOn": "2020-10-16T23:47:37Z",
       "side": 1,
       "message": "nit: I think we can rename it to UpdateGobWatchMap or UpdateFromProjectConfig because this function is not really updating the project config.",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 22
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f13ab725_5d73f207",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-17T21:49:26Z",
+      "side": 1,
+      "message": "Agree. What do you think about just `Update`, since I think it\u0027s the only Update function we need, and the type of argument it takes (project name) is clear from the function definition?",
+      "parentUuid": "0e9b1727_10d51ee4",
       "range": {
         "startLine": 66,
         "startChar": 3,
