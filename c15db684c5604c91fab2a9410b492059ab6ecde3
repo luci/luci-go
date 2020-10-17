@@ -64,6 +64,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "141c15c2_b788d54d",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa6c6db_69c89aee",
+      "range": {
+        "startLine": 54,
+        "startChar": 48,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6da4d875_d4d09f86",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8023f1f8_682de88e",
+      "range": {
+        "startLine": 54,
+        "startChar": 32,
+        "endLine": 54,
+        "endChar": 36
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b000c64_6bcf1780",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "\"Assumes the page token is valid\" would be the same meaning with fewer words?",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 57,
+        "endChar": 78
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98c0ef54_b7cbb335",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b000c64_6bcf1780",
       "range": {
         "startLine": 57,
         "startChar": 3,
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da211057_60494f22",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca1bd4be_e002cfd8",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 41
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "79730fba_56c1a63d",
@@ -123,6 +219,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "i think reusing the interface for this switching would be cleaner:\n\n  type indexPoint interface {\n     ...\n     initPaging(*pb.GetTestResultHistoryRequest)\n  }",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 24
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17c7b892_e5f67372",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "I hadn\u0027t thought of that. Thanks. Done.",
+      "parentUuid": "79730fba_56c1a63d",
       "range": {
         "startLine": 68,
         "startChar": 1,
@@ -156,6 +276,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5451e2a_76fdfae0",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41a75eb2_44824a67",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 3
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "abebf6a3_99c136ba",
@@ -169,6 +313,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "this error message is lost. maybe log it?\npagination.InvalidToken preserves it. Consider using it here.",
+      "range": {
+        "startLine": 86,
+        "startChar": 61,
+        "endLine": 86,
+        "endChar": 64
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ba77e3e_997146ac",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abebf6a3_99c136ba",
       "range": {
         "startLine": 86,
         "startChar": 61,
@@ -202,6 +370,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f64e4ee4_9456714c",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1552d996_a8acfef8",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 6
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e8222c0_5b4644d5",
@@ -215,6 +407,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "q",
+      "range": {
+        "startLine": 109,
+        "startChar": 56,
+        "endLine": 109,
+        "endChar": 57
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d83e1c2e_228197bd",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e8222c0_5b4644d5",
       "range": {
         "startLine": 109,
         "startChar": 56,
@@ -248,6 +464,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ae80f18_54bd1683",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59dcf4e1_7c6124d7",
+      "range": {
+        "startLine": 140,
+        "startChar": 5,
+        "endLine": 140,
+        "endChar": 32
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db6278c0_cdaf94e6",
@@ -261,6 +501,24 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "nit: the code would be more readable if it was less indented, which is achievable by reversing the if statements",
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a19eb30_6def66b8",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db6278c0_cdaf94e6",
       "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -288,6 +546,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a91673a_49c7e0b5",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a41fa9f4_ebbb30b2",
+      "range": {
+        "startLine": 150,
+        "startChar": 15,
+        "endLine": 150,
+        "endChar": 16
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bddbed15_e08a8fee",
@@ -305,6 +587,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da4c0031_0ea8c8f5",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "I guess my concern is that both invocations.Reachable and querying results using IDSet.Batches() are already using some parallelism, and it\u0027s not clear to me how it compounds.\n\nFor now, I\u0027ll remove the semaphore.",
+      "parentUuid": "bddbed15_e08a8fee",
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b372aee7_04019f41",
@@ -318,6 +618,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "from the",
+      "range": {
+        "startLine": 37,
+        "startChar": 60,
+        "endLine": 37,
+        "endChar": 67
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bcacf86_86dab1dd",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b372aee7_04019f41",
       "range": {
         "startLine": 37,
         "startChar": 60,
@@ -351,6 +675,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bcfb6f0_d244f981",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "11a31a2e_3b8ede6c",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 30
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "65b4e160_d745d4ed",
@@ -364,6 +712,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "for wi :\u003d range wiC {",
+      "range": {
+        "startLine": 67,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 5
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b1f41aa_958951f7",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65b4e160_d745d4ed",
       "range": {
         "startLine": 67,
         "startChar": 3,
@@ -391,6 +763,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "84250b8b_26a7f23a",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a118d9f_d431254e",
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ca064fb0_d7b219d2",
@@ -404,6 +794,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "i think this allocates memory each time it runs. Maybe do the cast only once, before the loop?",
+      "range": {
+        "startLine": 150,
+        "startChar": 9,
+        "endLine": 150,
+        "endChar": 31
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d6bb2ba_dea9c43a",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca064fb0_d7b219d2",
       "range": {
         "startLine": 150,
         "startChar": 9,
@@ -437,6 +851,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e1153a9_efaacdfe",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c4759b7_41f7ba07",
+      "range": {
+        "startLine": 44,
+        "startChar": 7,
+        "endLine": 44,
+        "endChar": 8
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ee4878fe_b72c75e6",
@@ -460,6 +898,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3afd11f4_82571da1",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee4878fe_b72c75e6",
+      "range": {
+        "startLine": 57,
+        "startChar": 17,
+        "endLine": 57,
+        "endChar": 34
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "840c8aef_2a1cf3e8",
@@ -473,6 +935,30 @@
       "writtenOn": "2020-10-16T01:21:10Z",
       "side": 1,
       "message": "i think this can be just\n\n  for r :\u003d range results\n\nbecause L66 guarantees to close it if the context is cancelled\n\n--\n\nbut stepping back, I wonder how much simpler the code would be if this loop can be merged with the loop in Collect().\n\nsee also my suggestion above to hide all the low-level details of the history package",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 4
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e73871e0_95c38481",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-17T04:39:09Z",
+      "side": 1,
+      "message": "Merged it, and hid the guts under a single history.Query.Execute()",
+      "parentUuid": "840c8aef_2a1cf3e8",
       "range": {
         "startLine": 78,
         "startChar": 0,
