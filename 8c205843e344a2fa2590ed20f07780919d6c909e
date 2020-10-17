@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5c9843c_18f37a35",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-17T04:52:50Z",
+      "side": 1,
+      "message": "I think the rationale is, if bbagent is interrupted (e.g. user cancels the build and swarming task get cancelled), once luciexe/recipe exits, we want to use all the remaining time to stream the logs before bbagent gets killed (receive SIGKILL from swarming). So that those logs will be available in logdog instead of die with bbagent.\n\nI think I can remove it, because SIGKILL would definitely arrive before wait is over. In theory, it will be at most 500ms before receiving SIGKILL and wait is guaranteed larger than that.",
+      "parentUuid": "7a83f794_36a614a4",
+      "range": {
+        "startLine": 119,
+        "startChar": 2,
+        "endLine": 125,
+        "endChar": 3
+      },
+      "revId": "8c205843e344a2fa2590ed20f07780919d6c909e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a523bee_87d0077e",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-16T23:14:40Z",
       "side": 1,
       "message": "cleanup callbacks are all parts of internal API, it would be more transparent just to pass this error explicitly alongside context.Context. Stuffing stuff into context.Context makes sense only if it needs to traverse some API boundaries that are hard to change.",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 49
+      },
+      "revId": "8c205843e344a2fa2590ed20f07780919d6c909e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "60f32f5c_bc39c479",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-17T04:52:50Z",
+      "side": 1,
+      "message": "Noted! since err no longer used, we don\u0027t need to pass through error anymore.",
+      "parentUuid": "7a523bee_87d0077e",
       "range": {
         "startLine": 151,
         "startChar": 3,
