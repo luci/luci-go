@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -166,18 +167,59 @@ func TestGetTestResultHistory(t *testing.T) {
 			}
 			testutil.MustApply(ctx, ms...)
 
-			Convey(`truncated`, func() {
+			Convey(`page token`, func() {
 				req.Realm = "testproject:testrealm"
 				req.PageSize = 5
 				res, err := srv.GetTestResultHistory(ctx, req)
 				So(err, ShouldBeNil)
-				So(res.Entries, ShouldHaveLength, 5)
+				n := len(res.Entries)
+				So(n, ShouldBeLessThanOrEqualTo, req.PageSize)
+				parts, err := pagination.ParseToken(res.NextPageToken)
+				So(err, ShouldBeNil)
+				So(parts[0], ShouldEqual, "ts")
+				So(parts[2], ShouldEqual, fmt.Sprintf("%d", n))
+			})
+
+			Convey(`paging`, func() {
+				req.Realm = "testproject:testrealm"
+				req.PageSize = 10
+				res, err := srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 10)
+
+				// Get next page.
+				req.PageToken = res.NextPageToken
+				res, err = srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.Entries, ShouldHaveLength, 10)
+
+				// Get next page.
+				req.PageToken = res.NextPageToken
+				res, err = srv.GetTestResultHistory(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
+				So(res.Entries, ShouldHaveLength, 7)
+			})
+
+			Convey(`out of time`, func() {
+				req.Realm = "testproject:testrealm"
+				// Use system clock to avoid issues with spanner.
+				ctx := clock.Set(ctx, clock.GetSystemClock())
+				// Make a context that is just about to expire to force the api
+				// to return partial results.
+				expiringCtx, cancel := clock.WithTimeout(ctx, 4*time.Second)
+				defer cancel()
+				res, err := srv.GetTestResultHistory(expiringCtx, req)
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldNotEqual, "")
+				So(res.Entries, ShouldHaveLength, 9)
 			})
 
 			Convey(`all results`, func() {
 				req.Realm = "testproject:testrealm"
 				res, err := srv.GetTestResultHistory(ctx, req)
 				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
 				So(res.Entries, ShouldHaveLength, 27)
 				for i := 0; i < 9; i++ {
 					So(res.Entries[i].InvocationTimestamp, ShouldResembleProto, latest)
@@ -220,10 +262,10 @@ func insertOneResultsInv(ms []*spanner.Mutation, id string, ts time.Time, indexe
 		ms = append(ms,
 			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
-				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				"ResultId":        fmt.Sprintf("result_%d_within_inv_%s", i, id),
+				"TestId":          fmt.Sprintf("ninja://chrome/test:foo_tests/BarTest.DoBaz-%s", id),
+				"ResultId":        fmt.Sprintf("%d", i),
 				"Variant":         pbutil.Variant("result_index", fmt.Sprintf("%d", i), "dummy", "true"),
-				"VariantHash":     "deadbeef",
+				"VariantHash":     fmt.Sprintf("deadbeef%d", i),
 				"CommitTimestamp": spanner.CommitTimestamp,
 				"Status":          pb.TestStatus_PASS,
 				"RunDurationUsec": 1534567,
