@@ -33,9 +33,9 @@ func TestReaderWriter(t *testing.T) {
 		buf := bytes.NewBuffer(nil)
 
 		records := []*evalpb.Record{
-			parseRecord("rejection { timestamp { seconds: 1 } }"),
-			parseRecord("rejection { timestamp { seconds: 2 } }"),
-			parseRecord("rejection { timestamp { seconds: 3 } }"),
+			parseRecord(`test_duration { test_variant { id: "1" } }`),
+			parseRecord(`test_duration { test_variant { id: "2" } }`),
+			parseRecord(`test_duration { test_variant { id: "3" } }`),
 		}
 
 		// Write the records.
