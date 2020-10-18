@@ -25,8 +25,8 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// durations calls f for each found test duration.
-func (r *presubmitHistoryRun) durations(ctx context.Context, f func(*evalpb.TestDuration) error) error {
+// durations calls the callback for each found test duration.
+func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*evalpb.TestDuration) error) error {
 	q, err := r.bqQuery(ctx, testDurationsSQL)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, f func(*evalpb.Test
 		case err != nil:
 			return err
 		default:
-			if err := f(row.proto()); err != nil {
+			if err := callback(row.proto()); err != nil {
 				return err
 			}
 		}
