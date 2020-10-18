@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6a6c5df_d0a4c6cf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:30:16Z",
+      "side": 1,
+      "message": "ha, i\u0027m too early here. Still LGTM",
+      "revId": "750efa691d22b1070afa106338f97b8f10cad35b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
