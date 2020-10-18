@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b01817c5_9b9d3ec9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:18:18Z",
+      "side": 1,
+      "message": "+Weiwei -- I\u0027m total noob at web programming, so please review critically.",
+      "revId": "f69636fcf8259262e0de887c05b79028956abc5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
