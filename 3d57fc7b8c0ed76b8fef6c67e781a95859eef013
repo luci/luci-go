@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa530e71_f2d0aead",
+        "filename": "web/apps/gulp-common.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-18T19:51:24Z",
+      "side": 1,
+      "message": "Not sure what \"compile\" is, but compiling and vulcanizing at the same time seems wrong. Or gulp is smart enough to figure internal dependencies and run only truly independent steps in parallel?",
+      "range": {
+        "startLine": 302,
+        "startChar": 9,
+        "endLine": 302,
+        "endChar": 17
+      },
+      "revId": "3d57fc7b8c0ed76b8fef6c67e781a95859eef013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
