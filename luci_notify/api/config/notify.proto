@@ -86,11 +86,10 @@ message Notification {
     //
     // Repositories should be valid Gerrit/Gitiles repository URLs, such as
     // https://chromium.googlesource.com/chromium/src
-    //
-    // Optional. To be removed when we switch to repository_allowlist
-    repeated string repository_whitelist = 1;
     // Optional
     repeated string repository_allowlist = 2;
+
+    reserved 1;
   }
 
   // Deprecated. Notify on each build success.

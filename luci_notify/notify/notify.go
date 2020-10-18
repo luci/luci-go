@@ -157,9 +157,6 @@ func BlamelistRepoAllowset(notifications notifypb.Notifications) stringset.Set {
 	allowset := stringset.New(0)
 	for _, notification := range notifications.GetNotifications() {
 		blamelistInfo := notification.GetNotifyBlamelist()
-		for _, repo := range blamelistInfo.GetRepositoryWhitelist() {
-			allowset.Add(repo)
-		}
 		for _, repo := range blamelistInfo.GetRepositoryAllowlist() {
 			allowset.Add(repo)
 		}
@@ -236,9 +233,7 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 		}
 
 		// If the allowlist is empty, use the static blamelist.
-		whitelist := n.NotifyBlamelist.GetRepositoryWhitelist()
 		allowlist := n.NotifyBlamelist.GetRepositoryAllowlist()
-		allowlist = append(allowlist, whitelist...)
 		if len(allowlist) == 0 {
 			for _, e := range commitsBlamelist(inputBlame, n.Template) {
 				appendRecipient(e)
