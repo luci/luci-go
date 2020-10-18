@@ -115,6 +115,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1419aff2_944515d4",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:26:39Z",
+      "side": 1,
+      "message": "\u003e Ah, this clarifies what you were saying earlier in the meeting, thanks!\n\u003e \n\u003e I\u0027m still wondering, would this way be more performant than keeping the host/repo part in a \"parent\" key and doing an ancestory query for all entities with a particular parent key? Is that still an option?\n\nSame. Behind the scenes, ancestor query with a given parent implies MIN,MAX on the child entity key that I outlined above (exact algo I don\u0027t remember, but I think Robbie documented it somewhere, at least he once told me about it in ~2016)",
+      "parentUuid": "63163aa1_56d85140",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "58831692_de2f379c",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 2
