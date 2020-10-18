@@ -33,6 +33,27 @@ message Rejection {
   repeated TestVariant failed_test_variants = 3;
 }
 
+// One part of a split Rejection message.
+//
+// Multiple fragments are combined with proto.Merge() called on their
+// "rejection" fields. Note that repeated fields are concatenated.
+message RejectionFragment {
+  // Rejection data in this fragment.
+  // May be unset, e.g. if this is a terminal fragment.
+  Rejection rejection = 1;
+
+  // True if this is the last fragment of the Rejection in a sequence of
+  // fragments. All fragments of the same rejection must be contiguous.
+  //
+  // Note that the following sequence of Records is valid:
+  //  fragment for rejection R1
+  //  test duration
+  //  fragment for rejection R1, terminal
+  //  fragment for rejection R2
+  // Here there is a test duration record between rejection fragments.
+  bool terminal = 2;
+}
+
 // How long a test took.
 message TestDuration {
   // The patchsets that were tested.
@@ -89,7 +110,7 @@ message TestVariant {
 message Record {
   oneof data {
     // A code change rejection due to test failures.
-    Rejection rejection = 1;
+    RejectionFragment rejection_fragment = 1;
 
     // A record of test duration.
     TestDuration test_duration = 2;

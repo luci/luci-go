@@ -24,8 +24,12 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
+var terminalRejectionFragment = &evalpb.RejectionFragment{
+	Terminal: true,
+}
+
 // rejections calls f for each found CQ rejection.
-func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rejection) error) error {
+func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.RejectionFragment) error) error {
 	q, err := r.bqQuery(ctx, rejectedPatchSetsSQL)
 	if err != nil {
 		return err
@@ -35,56 +39,49 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rej
 		return err
 	}
 
-	// Each result row represents a failed test variant.
-	// The rows are sorted by change and patchset, and one rejection
-	// may span multiple rows.
-	// Accumulate failed tests to the current rejection until we encounter
-	// a different patchset.
-	var curRej *evalpb.Rejection
+	// The result rows are ordered by change and patchset numbers,
+	// and so are the rejection fragments.
+	// Keep track of the current patchset to detect patchset boundaries.
+	var curChange, curPS int
+
+	maybeFinalizeCurrent := func() error {
+		if curChange == 0 {
+			return nil
+		}
+		return f(terminalRejectionFragment)
+	}
+
+	// Iterate over results and call f.
+	// One fragment represents at most one BigQuery row.
 	for {
+		// Read the next row.
 		var row rejectionRow
 		switch err := it.Next(&row); {
 		case err == iterator.Done:
-			// Report the last one.
-			if curRej != nil {
-				return f(curRej)
-			}
-			return nil
-
+			return maybeFinalizeCurrent()
 		case err != nil:
 			return err
 		}
 
-		// Report the current rejection if we have one and if `row` is a different
-		// patchset.
-		if curRej != nil && (curRej.Patchsets[0].Change.Number != int64(row.Change) || curRej.Patchsets[0].Patchset != int64(row.Patchset)) {
-			if err := f(curRej); err != nil {
+		rej := &evalpb.Rejection{
+			FailedTestVariants: []*evalpb.TestVariant{row.FailedTestVariant.proto()},
+		}
+		// Finalize the current rejection if this patchset is different.
+		if curChange != row.Change || curPS != row.Patchset {
+			if err := maybeFinalizeCurrent(); err != nil {
 				return err
 			}
-			curRej = nil
+
+			// Include the patchset-level info only in the first fragment.
+			row.populatePatchsetInfo(rej)
 		}
 
-		// Initialize a new rejection if we don't have one.
-		if curRej == nil {
-			curRej = &evalpb.Rejection{
-				Patchsets: []*evalpb.GerritPatchset{
-					{
-						Change: &evalpb.GerritChange{
-							// Assume all Chromium source code is in
-							// https://chromium.googlesource.com/chromium/src
-							// TOOD(nodir): make it fail if it is not.
-							Host:    "chromium-review.googlesource.com",
-							Project: "chromium/src",
-							Number:  int64(row.Change),
-						},
-						Patchset: int64(row.Patchset),
-					},
-				},
-			}
-			curRej.Timestamp, _ = ptypes.TimestampProto(row.Timestamp)
+		if err := f(&evalpb.RejectionFragment{Rejection: rej}); err != nil {
+			return err
 		}
 
-		curRej.FailedTestVariants = append(curRej.FailedTestVariants, row.FailedTestVariant.proto())
+		curChange = row.Change
+		curPS = row.Patchset
 	}
 }
 
@@ -93,6 +90,21 @@ type rejectionRow struct {
 	Patchset          int
 	Timestamp         time.Time
 	FailedTestVariant testVariantRow
+}
+
+func (r *rejectionRow) populatePatchsetInfo(rej *evalpb.Rejection) {
+	rej.Patchsets = []*evalpb.GerritPatchset{{
+		Change: &evalpb.GerritChange{
+			// Assume all Chromium source code is in
+			// https://chromium.googlesource.com/chromium/src
+			// TOOD(nodir): make it fail if it is not.
+			Host:    "chromium-review.googlesource.com",
+			Project: "chromium/src",
+			Number:  int64(r.Change),
+		},
+		Patchset: int64(r.Patchset),
+	}}
+	rej.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
 }
 
 type testVariantRow struct {
