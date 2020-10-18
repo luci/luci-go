@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6944c35e_d5370fd0",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T15:30:51Z",
+      "side": 1,
+      "message": "The goal is fast reads by host/repo. Since there can be several, we want them to be located in close proximity, which means their IDs (\u003cparent keys\u003e + child ID) must be close to each other.\nSo, ID must be semantically (host,repo,project).\n\nWe can query based on .host_repo field, but this means datastore has to first check secondary index to get list of IDs and actually read the entities.\nIdeal query would just use the primary index: we need to get all records s.t.\n   id \u003e (host, repo, MIN)\n and\n   id \u003c (host, repo, MAX)\n\nwhere MIN,MAX are lexicographic boundaries.\n\n\nFinally, how to encode (host,repo,project) ID as a string while having easy MIN \u0026 MAX?\nIdeally, we shouldn\u0027t make assumptions on GoB / LUCI charsets (just in case these are relaxed later), but it\u0027s to assume they\u0027ll be \u003c 64KiB long each:\n\n4-byte hex-encoded host len\n\u003chost\u003e\n4-byte hex-encoded repo len\n\u003crepo\u003e\n4-byte hex-encoded LUCI project len\n\u003cproject\u003e\n\nThus, suitable MIN and MAX lexicographic boundaries are \"0000\" and \"FFFF\", respectively.\ne.g. searching for \"chromium.googlesource.com\" \"chromiumos\" repo would mean querying for \n  ID \u003e \"0019chromium.googlesource.com000Achromiumos0000\"\n  ID \u003c \"0019chromium.googlesource.com000AchromiumosFFFF\"\nwhich will find \n  ID \u003d \"0019chromium.googlesource.com000Achromiumos0008chromeos\" (aka LUCI project\u003dchromeos)\n\nAgree?",
+      "parentUuid": "92c325cd_a6ef0fb2",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "58831692_de2f379c",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 2
@@ -149,6 +173,30 @@
       "side": 1,
       "message": "Agree. What do you think about just `Update`, since I think it\u0027s the only Update function we need, and the type of argument it takes (project name) is clear from the function definition?",
       "parentUuid": "0e9b1727_10d51ee4",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 22
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "083cd5d2_0d369889",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T15:30:51Z",
+      "side": 1,
+      "message": "Update 👍",
+      "parentUuid": "f13ab725_5d73f207",
       "range": {
         "startLine": 66,
         "startChar": 3,
