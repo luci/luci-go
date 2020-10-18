@@ -91,6 +91,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "63163aa1_56d85140",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": "Ah, this clarifies what you were saying earlier in the meeting, thanks!\n\nI\u0027m still wondering, would this way be more performant than keeping the host/repo part in a \"parent\" key and doing an ancestory query for all entities with a particular parent key? Is that still an option?",
+      "parentUuid": "6944c35e_d5370fd0",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "58831692_de2f379c",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 2

@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "940739ad_4520ffd8",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc2369f9_2cc0a761",
+      "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "123c561c_b6356480",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "27da1fc2_43a4c273",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "123c561c_b6356480",
+      "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c7ddb4a_5dc10fd2",
@@ -48,6 +84,24 @@
       "writtenOn": "2020-10-18T15:30:51Z",
       "side": 1,
       "message": "per my comment on prior patch, please update.",
+      "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eef6be38_e37c272d",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c7ddb4a_5dc10fd2",
       "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8df55650_5f1c64f7",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb3974b7_1535397f",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 16
+      },
+      "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d9955812_5e42e7d2",
@@ -88,6 +166,24 @@
       "writtenOn": "2020-10-18T15:30:51Z",
       "side": 1,
       "message": "lgtm it and let\u0027s check it in 😊",
+      "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49b36e87_4397f0ba",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:49:07Z",
+      "side": 1,
+      "message": ":-) LGTMd (but with comments in the doc)",
+      "parentUuid": "d9955812_5e42e7d2",
       "revId": "2dcd1553113c3ec7c6e09af24f74c15923e85e3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
