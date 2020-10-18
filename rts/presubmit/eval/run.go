@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
@@ -99,6 +100,7 @@ func (r *evalRun) run(ctx context.Context) error {
 // playbackHistory reads records from r.Eval.History and dispatches them
 // to r.rejectionC and r.durationC.
 func (r *evalRun) playbackHistory(ctx context.Context) error {
+	curRej := &evalpb.Rejection{}
 	for {
 		rec, err := r.History.Read()
 		switch {
@@ -114,18 +116,26 @@ func (r *evalRun) playbackHistory(ctx context.Context) error {
 
 		// Send the record to the appropriate channel.
 		switch data := rec.Data.(type) {
-		case *evalpb.Record_Rejection:
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case r.rejectionC <- data.Rejection:
+
+		case *evalpb.Record_RejectionFragment:
+			proto.Merge(curRej, data.RejectionFragment.Rejection)
+			if data.RejectionFragment.Terminal {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case r.rejectionC <- curRej:
+					// Start a new rejection.
+					curRej = &evalpb.Rejection{}
+				}
 			}
+
 		case *evalpb.Record_TestDuration:
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case r.durationC <- data.TestDuration:
 			}
+
 		default:
 			panic(fmt.Sprintf("unexpected record %s", rec))
 		}
