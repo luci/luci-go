@@ -29,6 +29,7 @@ var format = require('gulp-clang-format');
 var fs = require('fs');
 var glob = require('glob-all');
 var gulpIf = require('gulp-if');
+var useref = require('gulp-useref');
 var htmlmin = require('gulp-htmlmin');
 var historyApiFallback = require('connect-history-api-fallback');
 var hyd = require('hydrolysis');
@@ -163,12 +164,8 @@ exports.setup = function(gulp, appDir, config) {
   };
 
   var optimizeHtmlTask = function(src, dest) {
-    var assets = $.useref.assets({
-      searchPath: ['.tmp', '.']
-    });
-
     return gulp.src(src)
-      .pipe(assets)
+      .pipe(useref({ searchPath: ['.tmp', '.'] }))
       // Concatenate and minify JavaScript
       .pipe($.if('*.js', $.uglify({
         preserveComments: 'some'
@@ -176,8 +173,7 @@ exports.setup = function(gulp, appDir, config) {
       // Concatenate and minify styles
       // In case you are still using useref build blocks
       .pipe($.if('*.css', cleanCSS()))
-      .pipe(assets.restore())
-      .pipe($.useref())
+      .pipe(useref({ searchPath: ['.tmp', '.'] }))
       // Minify any HTML
       .pipe($.if('*.html', htmlmin({
         remoteAttributeQuotes: false,
