@@ -1113,7 +1113,7 @@ def _notify_notification_pb(node):
         )
     if node.props.notify_blamelist:
         pb.notify_blamelist = notify_pb.Notification.Blamelist(
-            repository_whitelist = node.props.blamelist_repos_whitelist,
+            repository_allowlist = node.props.blamelist_repos_whitelist,
         )
     return pb
 
