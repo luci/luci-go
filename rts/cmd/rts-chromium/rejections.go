@@ -138,50 +138,83 @@ const rejectedPatchSetsSQL = `
 	WITH
 		tryjobs AS (
 			SELECT
-				b.id,
-				ps,
+				b.id as build_id,
+				ps.change,
+				ps.earliest_equivalent_patchset as patchset,
 				partition_time as ps_approx_timestamp,
 			FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
-			-- Read next-day attempts too in case the CQ attempt finished soon after 12am.
-			-- Note that for test results, the cutoff is still @endTime.
-			WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			WHERE partition_time BETWEEN @startTime AND @endTime
 		),
-		failed_test_variants AS (
+		test_results AS (
 			SELECT
 				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-				ANY_VALUE(IFNULL(test_location.file_name, '')) as file_name,
 				test_id,
 				variant_hash,
-				ANY_VALUE(variant) as variant,
+				variant,
+				expected,
+				test_location.file_name,
 			FROM luci-resultdb.chromium.try_test_results tr
-			WHERE partition_time BETWEEN @startTime and @endTime
+			-- Read prev-day and next-day results too to ensure that we have ALL
+			-- results of a given CQ attempt.
+			WHERE partition_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+				AND not exonerated
+				AND status != 'SKIP'
 				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
 				AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 				-- Exclude broken test locations.
 				-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
-				AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp))$')
+				AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp|js))$')
 				-- Exclude broken prefixes.
 				-- TODO(nodir): remove after crbug.com/1017288 is fixed.
 				AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
-			GROUP BY build_id, test_id, variant_hash
-			-- TODO(crbug.com/1112125): consider doing this filtering after joining with patchsets.
-			-- This will increase the query cost, but might improve
-			-- data quality. Currenly the query is vulnerable to situations where
-			-- a test failed in one CQ attempt for the patchset, and succeeded
-			-- in another for the same patchset.
-			HAVING LOGICAL_AND(NOT expected AND NOT exonerated)
+		),
+		-- Test results annotated with patchset.
+		ps_test_results AS (
+			SELECT change, patchset, ps_approx_timestamp, r.*
+			FROM test_results r
+			JOIN tryjobs USING (build_id)
+		),
+
+		-- Test variants that are considered flaky.
+		-- They will be excluded from the analysis.
+		flaky_test_variants_per_cl AS (
+			SELECT DISTINCT change, test_id, variant_hash
+			FROM ps_test_results
+			GROUP BY change, patchset, test_id, variant_hash
+			HAVING LOGICAL_OR(expected) AND LOGICAL_OR(NOT expected)
+		),
+		flaky_test_variants AS (
+			SELECT test_id, variant_hash
+			FROM flaky_test_variants_per_cl
+			GROUP BY test_id, variant_hash
+			-- the test variant is flaky in at least 5 separate CLs
+			HAVING COUNT(*) > 5
+		),
+		-- Failed tests per patchset, including potentially flaky tests.
+		failed_test_variants_per_ps AS (
+			SELECT
+				change,
+				patchset,
+				test_id,
+				variant_hash,
+				MIN(ps_approx_timestamp) as ps_approx_timestamp,
+				ANY_VALUE(variant) as variant,
+				ANY_VALUE(file_name) as file_name
+			FROM ps_test_results
+			GROUP BY change, patchset, test_id, variant_hash
+			HAVING LOGICAL_AND(NOT expected)
 		)
 	SELECT
-		ps.change as Change,
-		ps.patchset as Patchset,
-		MIN(ps_approx_timestamp) as Timestamp,
+		change as Change,
+		patchset as Patchset,
+		ps_approx_timestamp as Timestamp,
 		STRUCT(
 			test_id as ID,
-			ANY_VALUE(variant) as Variant,
-			ANY_VALUE(file_name) as FileName
+			variant as Variant,
+			file_name as FileName
 		) as FailedTestVariant
-	FROM tryjobs t
-	JOIN failed_test_variants f ON t.id = f.build_id
-	GROUP BY ps.change, ps.patchset, test_id, variant_hash
-	ORDER BY ps.change, ps.patchset
+	FROM failed_test_variants_per_ps
+	LEFT JOIN flaky_test_variants flaky USING (test_id, variant_hash)
+	WHERE flaky.test_id IS NULL -- not flaky
+	ORDER BY change, patchset
 `
