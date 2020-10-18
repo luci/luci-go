@@ -16,6 +16,63 @@
       "message": "+Weiwei -- I\u0027m total noob at web programming, so please review critically.",
       "revId": "f69636fcf8259262e0de887c05b79028956abc5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3475d082_d856f140",
+        "filename": "web/inc/auth/auth-signin.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:22:16Z",
+      "side": 1,
+      "message": "most new code is adapted copy-pasta from https://chromium.googlesource.com/infra/luci/luci-go/+/f69636fcf8259262e0de887c05b79028956abc5a/web/inc/rpc/rpc-call.html",
+      "revId": "f69636fcf8259262e0de887c05b79028956abc5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f8ecba5_c9d003dc",
+        "filename": "web/inc/auth/auth-signin.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:22:16Z",
+      "side": 1,
+      "message": "i tested both locally, proof of working signIn which gives me confidence this will work w/o breakage once deployed to prod: https://screenshot.googleplex.com/38TBA2e8BP2VJDc \n(note: localhost:8080 is important, as both host:port must be in allowlist of clientId)",
+      "range": {
+        "startLine": 120,
+        "startChar": 10,
+        "endLine": 127,
+        "endChar": 11
+      },
+      "revId": "f69636fcf8259262e0de887c05b79028956abc5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "183b261e_37108a34",
+        "filename": "web/inc/rpcexplorer/test/descriptor.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:22:16Z",
+      "side": 1,
+      "message": "tbh, i have no idea why this changes 😞",
+      "revId": "f69636fcf8259262e0de887c05b79028956abc5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
