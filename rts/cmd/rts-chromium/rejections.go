@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
 
@@ -97,7 +98,7 @@ type rejectionRow struct {
 
 type testVariantRow struct {
 	ID       string
-	FileName string
+	FileName bigquery.NullString
 	Variant  []struct {
 		Key   string
 		Value string
@@ -107,7 +108,7 @@ type testVariantRow struct {
 func (t *testVariantRow) proto() *evalpb.TestVariant {
 	ret := &evalpb.TestVariant{
 		Id:       t.ID,
-		FileName: t.FileName,
+		FileName: t.FileName.StringVal,
 		Variant:  make(map[string]string, len(t.Variant)),
 	}
 	for _, kv := range t.Variant {
