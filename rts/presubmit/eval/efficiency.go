@@ -17,7 +17,6 @@ package eval
 import (
 	"context"
 	"math"
-	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -47,16 +46,16 @@ func (e *Efficiency) Score() float64 {
 	return float64(100*saved) / float64(e.SampleDuration)
 }
 
-func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *evalpb.TestDuration) (*Efficiency, error) {
+// evaluateEfficiency reads test durations from r.durationC,
+// updates r.res.Efficiency and calls r.maybeReportProgress.
+func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Run the algorithm in r.Concurrency goroutines.
-	var ret Efficiency
-	var mu sync.Mutex
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
-			for td := range durationC {
+			for td := range r.durationC {
 				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
 				switch {
 				case err != nil:
@@ -74,23 +73,18 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context, durationC <-chan *eval
 				}
 
 				// Record results.
-				mu.Lock()
 				dur := td.Duration.AsDuration()
-				ret.SampleDuration += dur
+				r.mu.Lock()
+				r.res.Efficiency.SampleDuration += dur
 				if out.ShouldRunAny {
-					ret.ForecastDuration += dur
+					r.res.Efficiency.ForecastDuration += dur
 				}
-				mu.Unlock()
-
-				r.progress.UpdateCurrentEfficiency(ctx, ret)
+				r.maybeReportProgress(ctx)
+				r.mu.Unlock()
 			}
 			return ctx.Err()
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	return &ret, nil
+	return eg.Wait()
 }

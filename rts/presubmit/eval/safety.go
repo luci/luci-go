@@ -64,11 +64,11 @@ func (s *Safety) Score() float64 {
 	return float64(100*s.preserved()) / float64(s.EligibleRejections)
 }
 
-func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Rejection) (*Safety, error) {
+// evaluateSafety reads rejections from r.rejectionC,
+// updates r.res.Safety and calls r.maybeReportProgress.
+func (r *evalRun) evaluateSafety(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
-	var ret Safety
-	var mu sync.Mutex
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			buf := &bytes.Buffer{}
@@ -78,27 +78,26 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 				case <-ctx.Done():
 					return ctx.Err()
 
-				case rej, ok := <-rejectionC:
+				case rej, ok := <-r.rejectionC:
 					if !ok {
 						return nil
 					}
 
 					eligible, wouldReject, err := r.processRejection(ctx, rej)
-
-					mu.Lock()
-					ret.TotalRejections++
-					if err == nil && eligible {
-						ret.EligibleRejections++
-						if !wouldReject {
-							ret.LostRejections = append(ret.LostRejections, rej)
-						}
-					}
-					mu.Unlock()
 					if err != nil {
 						return errors.Annotate(err, "failed to process rejection %q", rej).Err()
 					}
 
-					r.progress.UpdateCurrentSafety(ctx, ret)
+					r.mu.Lock()
+					r.res.Safety.TotalRejections++
+					if eligible {
+						r.res.Safety.EligibleRejections++
+						if !wouldReject {
+							r.res.Safety.LostRejections = append(r.res.Safety.LostRejections, rej)
+						}
+					}
+					r.maybeReportProgress(ctx)
+					r.mu.Unlock()
 
 					if eligible && !wouldReject {
 						buf.Reset()
@@ -109,11 +108,8 @@ func (r *evalRun) evaluateSafety(ctx context.Context, rejectionC chan *evalpb.Re
 			}
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
 
-	return &ret, nil
+	return eg.Wait()
 }
 
 func (r *evalRun) processRejection(ctx context.Context, rej *evalpb.Rejection) (eligible, wouldReject bool, err error) {
