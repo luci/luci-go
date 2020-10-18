@@ -7,6 +7,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import"
     href="../bower_components/google-signin/google-signin-aware.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-request.html">
 
 <!--
   The `auth-signin` element displays sign-in/sign-out button, user email and
@@ -60,6 +61,11 @@
           readOnly: true
         },
 
+        // Used iff "GET /auth/api/v1/server/client_id gives empty clientId.
+        defaultClientId: String,
+
+        // TODO(tandrii): remove in favor of /auth/api/v1/server/client_id.
+        // Left here for compatibility.
         clientId: {
           type: String,
           notify: true,
@@ -74,10 +80,52 @@
 
       attached: function() {
         this._attached = true;
-        this._pushClientId();
+        if (this.clientId) {
+          // Compatability with apps which hard-code clientId.
+          this._pushClientId();
+        } else {
+          this._ironRequest = document.createElement('iron-request');
+          this._ironRequest.send(this._toRequestClientID());
+          this._ironRequest.completes
+            .then(this._clientIdLoaded.bind(this, null))
+            .catch(this._clientIdLoaded.bind(this));
+        }
       },
 
       _clientIdChanged: function() {
+        this._pushClientId();
+      },
+
+      _toRequestClientID: function() {
+        var path = '/auth/api/v1/server/client_id';
+        return {
+          url:  document.location.protocol + '//' + document.location.host + path,
+          method: 'GET',
+          headers: {'content-type': 'application/json'},
+          handleAs: 'json',
+        };
+      },
+
+      _clientIdLoaded: function(error) {
+        var status = this._ironRequest.xhr.status;
+        if (error && typeof status !== 'number') {
+          // We didn't receive the response.
+          throw error;
+        }
+        if (this._ironRequest.response == null) {
+          throw Error('could not parse response');
+        }
+        this.clientId = this._ironRequest.response.client_id;
+        if (!this.clientId){
+          if (!this.defaultClientId){
+            console.warn("/auth/api/v1/server/client_id gave empty clientId, "
+              + "and no default-client-id provided. Sign In won't work");
+          } else {
+            console.warn("/auth/api/v1/server/client_id gave empty clientId, "
+              + "using default-client-id " + this.defaultClientId);
+            this.clientId = this.defaultClientId;
+          }
+        }
         this._pushClientId();
       },
 
