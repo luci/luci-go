@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "8114bfeb40eddd539ce22ba39581bc7c68ae59c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f460836_94d29117",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T15:49:43Z",
+      "side": 1,
+      "message": "s/f/clbk or rejectionClbk  (it\u0027s hard to narrow `f` in a long func)",
+      "range": {
+        "startLine": 32,
+        "startChar": 62,
+        "endLine": 32,
+        "endChar": 63
+      },
+      "revId": "8114bfeb40eddd539ce22ba39581bc7c68ae59c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8fa7848d_94f78d14",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T15:49:43Z",
+      "side": 1,
+      "message": "I\u0027d encapsulate the highlighted code in maybeFinalizePrior(row) as it encapulates curChange, curPS entirely and results in IMO easier to read code:\n\n  ...\n  case err \u003d\u003d iterator.Done:\n    return maybeFinalizePrior(nil)\n  case err !\u003d nil:\n    return nil\n  }\n  rej :\u003d \u0026evalpb.Rejection{\n    FailedTestVariants: []*evalpb.TestVariant{row.FailedTestVariant.proto()},\n  }\n  switch newPS, err :\u003d maybeFinalizePrior(row); {\n  case err !\u003d nil:\n    return err\n  case newPS:\n    rej.Patchsets \u003d []...\n  }\n  ...",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 72,
+        "endChar": 22
+      },
+      "revId": "8114bfeb40eddd539ce22ba39581bc7c68ae59c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
