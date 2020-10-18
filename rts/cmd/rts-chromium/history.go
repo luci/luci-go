@@ -50,6 +50,10 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
 			r.Flags.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
 			r.Flags.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
+			r.Flags.IntVar(&r.minCLFlakes, "min-cl-flakes", 5, text.Doc(`
+				In order to conlude that a test variant is flaky and exclude it from analysis,
+				it must have mixed results in <min-cl-flakes> unique CLs.
+			`))
 			return r
 		},
 	}
@@ -63,6 +67,7 @@ type presubmitHistoryRun struct {
 	durationDataFrac float64
 	builderRegex     string
 	testIDRegex      string
+	minCLFlakes      int
 
 	authenticator *auth.Authenticator
 	authOpt       *auth.Options
