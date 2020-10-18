@@ -22,6 +22,30 @@
       },
       "revId": "3d57fc7b8c0ed76b8fef6c67e781a95859eef013",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bad52cd5_9956c10e",
+        "filename": "web/apps/gulp-common.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-18T23:08:52Z",
+      "side": 1,
+      "message": "well, it schedules all in parallel, but vulcanize step will start, notice compile isn\u0027t done and block on it.",
+      "parentUuid": "fa530e71_f2d0aead",
+      "range": {
+        "startLine": 302,
+        "startChar": 9,
+        "endLine": 302,
+        "endChar": 17
+      },
+      "revId": "3d57fc7b8c0ed76b8fef6c67e781a95859eef013",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
