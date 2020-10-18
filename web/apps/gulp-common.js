@@ -34,7 +34,6 @@ var historyApiFallback = require('connect-history-api-fallback');
 var hyd = require('hydrolysis');
 var merge = require('merge-stream');
 var reload = browserSync.reload;
-var runSequence = require('run-sequence');
 var ts = require('gulp-typescript');
 var sourcemaps = require('gulp-sourcemaps');
 var tslint = require('gulp-tslint');
@@ -104,10 +103,10 @@ exports.setup_common = function(gulp) {
   });
 
   // Build production files, the default task
-  gulp.task('lint', ['tslint']);
+  gulp.task('lint', gulp.series(['tslint']));
 
   // Build production files, the default task
-  gulp.task('presubmit', ['lint', 'check-format', 'check-ts']);
+  gulp.task('presubmit', gulp.parallel(['lint', 'check-format', 'check-ts']));
 };
 
 // Project-specific tasks.
@@ -273,10 +272,10 @@ exports.setup = function(gulp, appDir, config) {
       layout.dist());
   });
 
-  gulp.task('compile', ['ts']);
+  gulp.task('compile', gulp.series(['ts']));
 
   // Vulcanize granular configuration
-  gulp.task('vulcanize', ['compile'], function() {
+  gulp.task('vulcanize', gulp.series(['compile'], function vulcanize() {
     var fsResolver = hyd.FSResolver
     return gulp.src('elements/elements.html')
       .pipe($.vulcanize({
@@ -286,7 +285,7 @@ exports.setup = function(gulp, appDir, config) {
       }))
       .pipe(gulp.dest(layout.dist('elements')))
       .pipe($.size({title: 'vulcanize'}));
-  });
+  }));
 
   // Clean output directory
   gulp.task('clean', function() {
@@ -296,8 +295,15 @@ exports.setup = function(gulp, appDir, config) {
     return del(remove.concat(keep), {force: true, dot:true});
   });
 
+  // Build production files, the default task
+  gulp.task('default', gulp.series([
+    'clean',
+    gulp.parallel(['copy', 'styles', 'images', 'fonts', 'html', 'compile', 'vulcanize']),
+  ]));
+
+
   // Watch files for changes & reload
-  gulp.task('serve', ['default'], function() {
+  gulp.task('serve', gulp.series(['default'], function() {
     browserSync({
       port: 5000,
       ui: {
@@ -328,10 +334,10 @@ exports.setup = function(gulp, appDir, config) {
     gulp.watch(['elements/**/*.css'], ['elements', reload]);
     gulp.watch(['images/**/*'], [reload]);
     gulp.watch(['inc/**/*.ts'], { cwd: exports.base }, ['compile', reload]);
-  });
+  }));
 
   // Build and serve the output from the dist build
-  gulp.task('serve:dist', ['default'], function() {
+  gulp.task('serve:dist', gulp.series(['default'], function() {
     browserSync({
       port: 5000,
       ui: {
@@ -354,15 +360,8 @@ exports.setup = function(gulp, appDir, config) {
       server: layout.dist(),
       middleware: [historyApiFallback()]
     });
-  });
+  }));
 
-  // Build production files, the default task
-  gulp.task('default', ['clean'], function(cb) {
-    runSequence(
-      ['copy', 'styles', 'images', 'fonts', 'html', 'compile'],
-      'vulcanize',
-      cb);
-  });
 
   // Install common targets.
   exports.setup_common(gulp);
