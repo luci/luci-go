@@ -16,6 +16,23 @@
       "message": "Thanks for uploading this; I think we might want to edit/discuss a little bit in the doc if it\u0027s easier -- and then update this CL based on that before committing?",
       "revId": "3e4651df1b94677d6ca61b2e546063d1f3d06de1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27b18401_a78bb49e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-18T22:41:42Z",
+      "side": 1,
+      "message": "\u003e Patch Set 1:\n\u003e \n\u003e Yes, let\u0027s discuss on the doc.\n\nI\u0027ve added a couple questions there and edited it slightly.\n\nI\u0027m OK with submitting this when you\u0027re ready though, maybe after clarifying in the doc and then copying over here again?",
+      "revId": "3e4651df1b94677d6ca61b2e546063d1f3d06de1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
