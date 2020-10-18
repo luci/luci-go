@@ -112,19 +112,25 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Fetch the rejections.
+	var rejections int
 	eg.Go(func() error {
-		err := r.rejections(ctx, func(rej *evalpb.Rejection) error {
+		err := r.rejections(ctx, func(frag *evalpb.RejectionFragment) error {
+			if frag.Terminal {
+				rejections++
+			}
 			return r.write(&evalpb.Record{
-				Data: &evalpb.Record_Rejection{Rejection: rej},
+				Data: &evalpb.Record_RejectionFragment{RejectionFragment: frag},
 			})
 		})
 		return errors.Annotate(err, "failed to fetch rejections").Err()
 	})
 
 	// Fetch test durations.
+	var durations int
 	if r.durationDataFrac > 0 {
 		eg.Go(func() error {
 			err := r.durations(ctx, func(td *evalpb.TestDuration) error {
+				durations++
 				return r.write(&evalpb.Record{
 					Data: &evalpb.Record_TestDuration{TestDuration: td},
 				})
@@ -136,6 +142,10 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	if err = eg.Wait(); err != nil {
 		return r.done(err)
 	}
+
+	r.mu.Lock()
+	fmt.Printf("total: %d rejections, %d durations, %d records\n", rejections, durations, r.recordsWrote)
+	r.mu.Unlock()
 
 	return r.done(r.w.Close())
 }
