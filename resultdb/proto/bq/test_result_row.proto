@@ -1,0 +1,104 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
+
+// TestResultRow represents a row in a BigQuery table for result of a functional
+// test case.
+message TestResultRow {
+  // Exported contains info of the exported invocation.
+  //
+  // Note: it's possible that this invocation is not the result's
+  // immediate parent invocation, but the including invocation.
+  // For example if the BigQuery table is for all test results of Chromium CI
+  // builds, then the exported invocation is for a CI build, which includes
+  // multiple invocations for swarming tasks within that build.
+  InvocationRecord exported = 1;
+
+  // Parent contains info of the result's immediate parent invocation.
+  InvocationRecord parent = 2;
+
+  // Is a unique identifier of the test in a LUCI project.
+  // Refer to TestResult.test_id for details.
+  string test_id = 3;
+
+  // Identifies a test result in a given invocation and test id.
+  string result_id = 4;
+
+  // Describes one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  repeated luci.resultdb.v1.StringPair variant = 5;
+
+  // A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  string variant_hash = 6;
+
+  // Expected is a flag indicating whether the result of test case execution is expected.
+  // Refer to TestResult.Expected for details.
+  bool expected = 7;
+
+  // Status of the test result.
+  // See TestStatus for possible values.
+  string status = 8;
+
+  // A human-readable explanation of the result, in HTML.
+  string summary_html = 9;
+
+  // The point in time when the test case started to execute.
+  google.protobuf.Timestamp start_time = 10;
+
+  // Duration of the test case execution in seconds.
+  google.protobuf.Duration duration = 11;
+
+  // Tags contains metadata for this test result.
+  // It might describe this particular execution or the test case.
+  repeated luci.resultdb.v1.StringPair tags = 12;
+
+  // If the failures of the test variant are exonerated.
+  // Note: the exoneration is at the test variant level, not result level.
+  bool exonerated = 13;
+
+  // Partition_time is used to partition the table.
+  // It is the time when exported invocation was created in Spanner.
+  // https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
+  // mentions "The partitioning column must be a top-level field."
+  // So we keep this column here instead of adding the CreateTime to Invocation.
+  google.protobuf.Timestamp partition_time = 14;
+
+  // The location of the test definition.
+  // Deprecated. Use test_metadata instead.
+  luci.resultdb.v1.TestLocation test_location = 15 [deprecated=true];
+
+  // Metadata of the test case,
+  // e.g. the original test name, test_location, monorail_component and team_email.
+  luci.resultdb.v1.TestMetadata test_metadata = 16;
+}
+
+message InvocationRecord {
+  // The ID of the invocation.
+  string id = 1;
+  // Tags represents Invocation-level string key-value pairs.
+  // A key can be repeated.
+  repeated luci.resultdb.v1.StringPair tags = 2;
+  // The LUCI Realm the invocation exists under.
+  string realm = 3;
+}
