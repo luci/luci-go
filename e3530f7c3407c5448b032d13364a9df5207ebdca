@@ -16,6 +16,115 @@
       "message": "PTAL\n\nThese tips were derived from experiments with the algorithm I am working on. I will start sending it for review this week.",
       "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "348ef090_213c7d5e",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:54:43Z",
+      "side": 1,
+      "message": "does it actually work outside infra\u0027s go env? If not, maybe worth linking to env.py readme?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 52
+      },
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "645e6c5f_49886c59",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:54:43Z",
+      "side": 1,
+      "message": "for",
+      "range": {
+        "startLine": 58,
+        "startChar": 32,
+        "endLine": 58,
+        "endChar": 34
+      },
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff872735_1e5aead7",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:54:43Z",
+      "side": 1,
+      "message": "imo, redundant (though, it\u0027d be hilarious if its perf was better than status quo 😄)",
+      "range": {
+        "startLine": 70,
+        "startChar": 47,
+        "endLine": 70,
+        "endChar": 71
+      },
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd6cb8b7_f6569fbc",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:54:43Z",
+      "side": 1,
+      "message": "nit: split line",
+      "range": {
+        "startLine": 107,
+        "startChar": 95,
+        "endLine": 107,
+        "endChar": 159
+      },
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f19f79d3_b477ec83",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:54:43Z",
+      "side": 1,
+      "message": "missing \\",
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
