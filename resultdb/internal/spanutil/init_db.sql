@@ -189,6 +189,11 @@ CREATE TABLE TestResults (
   -- See also TestResult.test_location.line field.
   TestLocationLine INT64,
 
+  -- Compressed metadata for the test case.
+  -- For example original test name, test location, etc.
+  -- See TestResult.test_metadata for details.
+  TestMetadata BYTES(MAX),
+
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

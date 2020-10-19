@@ -59,7 +59,7 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 	Convey("ValidateBatchCreateTestResultsRequest", t, func() {
 		req := validBatchCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
 
-		Convey("suceeeds", func() {
+		Convey("succeeds", func() {
 			So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
 
 			Convey("with empty request_id", func() {

@@ -22,12 +22,12 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
