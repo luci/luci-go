@@ -118,6 +118,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1574fc49_24a2e01f",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T17:19:31Z",
+      "side": 1,
+      "message": "in https://google.aip.dev/122#fields-representing-a-resources-parent, parent field is in the request message, not a resource message. There is no recommendation to have a parent field in the resource message.\n\n\u003e parse a complex a string\n\n  invocation \u003d name.split(\u0027/\u0027)[1]\n\n?",
+      "parentUuid": "71a2207f_549fe58f",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
