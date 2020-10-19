@@ -16,6 +16,24 @@
       "message": "very lgtm % surprised you didn\u0027t put default.",
       "revId": "bf4dcd435868bbe80fd751f2e63f6dfc3c63e249",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2741e57f_4c649e0d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T01:40:28Z",
+      "side": 1,
+      "message": "ah, good point.\ninitially my reasoning was \"there may be other projects where tests tend to be fast, so e.g. 1s wouldn\u0027t be a good default\", but then I remembered that this is a chromium-specific executable\n\nmade it 1s",
+      "parentUuid": "75dab906_1561df05",
+      "revId": "bf4dcd435868bbe80fd751f2e63f6dfc3c63e249",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
