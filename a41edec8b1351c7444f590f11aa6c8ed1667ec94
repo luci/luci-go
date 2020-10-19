@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "234ae9b5_d1fa8985",
+        "filename": "casviewer/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-19T21:51:40Z",
+      "side": 1,
+      "message": "@tikuta, @jwata: To counteract https://chromium.googlesource.com/external/github.com/bazelbuild/remote-apis-sdks.git/+/8ef7ef94965b667c969a752461949b0ffadf4529\n\nTests no longer work by default since they try to make authenticated RPC call in NewClient and there are no mocks for it.",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 35
+      },
+      "revId": "a41edec8b1351c7444f590f11aa6c8ed1667ec94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
