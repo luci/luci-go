@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
+
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -108,6 +110,11 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		if tr.TestLocation != nil {
 			mutMap["TestLocationFileName"] = tr.TestLocation.FileName
 			mutMap["TestLocationLine"] = int(tr.TestLocation.Line)
+		}
+		if tr.TestMetadata != nil {
+			tmdBytes, err := proto.Marshal(tr.TestMetadata)
+			So(err, ShouldBeNil)
+			mutMap["TestMetadata"] = spanutil.Compressed(tmdBytes)
 		}
 
 		ms[i] = spanutil.InsertMap("TestResults", mutMap)
