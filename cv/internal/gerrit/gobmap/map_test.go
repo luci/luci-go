@@ -25,12 +25,12 @@ import (
 func TestGobMap(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateProjectConfig", t, func() {
+	Convey("Update", t, func() {
 		ctx := context.Background()
 
 		Convey("not implemented", func() {
 			So(
-				UpdateProjectConfig(ctx, "project-foo"),
+				Update(ctx, "project-foo"),
 				ShouldErrLike, "not implemented")
 		})
 	})
