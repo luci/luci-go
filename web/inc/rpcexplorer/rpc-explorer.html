@@ -72,7 +72,7 @@
       <div class="navbar-collapse collapse">
         <div class="nav navbar-nav navbar-right">
           <div id="signinContainer">
-            <auth-signin client-id="[[clientId]]"></auth-signin>
+            <auth-signin default-client-id="[[defaultClientId]]"></auth-signin>
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@
           observer: '_onExplorerRootPathChanged'
         },
 
-        clientId: String,
+        defaultClientId: String,
 
         service: String,
 
