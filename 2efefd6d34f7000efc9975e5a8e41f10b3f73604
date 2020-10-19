@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9fce1c9_8d92f8e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1419102
+      },
+      "writtenOn": "2020-10-19T23:31:54Z",
+      "side": 1,
+      "message": "LGTM, had two thoughts.",
+      "revId": "2efefd6d34f7000efc9975e5a8e41f10b3f73604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "910684f1_a3cbb373",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1419102
+      },
+      "writtenOn": "2020-10-19T23:31:54Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 19,
+        "startChar": 38,
+        "endLine": 19,
+        "endChar": 41
+      },
+      "revId": "2efefd6d34f7000efc9975e5a8e41f10b3f73604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d50b214_bd35e4a5",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1419102
+      },
+      "writtenOn": "2020-10-19T23:31:54Z",
+      "side": 1,
+      "message": "Might be good to add a bit in here about what a \"satisfactory safety score\" is.  One way to think about it is that each rejection that\u0027s not preserved is a CL that will land in CI and need to be reverted by a sheriff, so over whatever time period is being observed, what\u0027s a reasonable load to add to sheriffs?  1 CL/week for X% efficiency?",
+      "revId": "2efefd6d34f7000efc9975e5a8e41f10b3f73604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
