@@ -137,6 +137,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6af7fa7a_109c36b8",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-19T18:21:05Z",
+      "side": 1,
+      "message": "I think what I mean in the original comment above is that if we go with parent key+ancestor query approach, there\u0027s no point to include host+repo in the child entity Key. I totally agree with the approach Andrii has suggested above (I saw the latest PS has already changed to that ;)) as long as we document the structure of the Key.",
+      "parentUuid": "1419aff2_944515d4",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58831692_de2f379c",
@@ -245,6 +269,30 @@
       "side": 1,
       "message": "Update 👍",
       "parentUuid": "f13ab725_5d73f207",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 22
+      },
+      "revId": "1becb544168192f8dd2691e753d5dea190b3f760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f875782d_7009f709",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-19T18:21:05Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "083cd5d2_0d369889",
       "range": {
         "startLine": 66,
         "startChar": 3,
