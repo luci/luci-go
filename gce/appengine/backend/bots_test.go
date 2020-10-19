@@ -78,7 +78,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
 					return http.StatusInternalServerError, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -103,7 +103,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("deleted", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
 					return http.StatusNotFound, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -125,7 +125,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("deletes", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
 					return http.StatusOK, &swarming.SwarmingRpcsDeletedResponse{}
 				}
 				datastore.Put(c, &model.VM{
@@ -386,9 +386,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("terminated", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						So(req, ShouldHaveSameTypeAs, &map[string]string{})
-						So(*(req.(*map[string]string)), ShouldBeEmpty)
+					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, map[string]interface{}{
 							"bot_id":        "id",
 							"first_seen_ts": "2019-03-13T00:12:29.882948",
@@ -561,7 +559,7 @@ func TestTerminateBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
 					return http.StatusInternalServerError, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -583,7 +581,7 @@ func TestTerminateBot(t *testing.T) {
 			Convey("terminates", func() {
 				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 				rpcsToSwarming := 0
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
 					rpcsToSwarming++
 					return http.StatusOK, &swarming.SwarmingRpcsTerminateResponse{}
 				}
