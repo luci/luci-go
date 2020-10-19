@@ -16,6 +16,92 @@
       "message": "PTAL.\n\nAndrii, I am adding you because I changed time windows for CQ and test results, and because switched to earliest_equilvalent_patchset",
       "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce2bbd9a_a774c247",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 23
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:47:07Z",
+      "side": 1,
+      "message": "A",
+      "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07a34033_b3328421",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:47:07Z",
+      "side": 1,
+      "message": "A",
+      "range": {
+        "startLine": 197,
+        "startChar": 5,
+        "endLine": 197,
+        "endChar": 7
+      },
+      "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6719d29e_1f53442e",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:47:07Z",
+      "side": 1,
+      "message": "vulNerable",
+      "range": {
+        "startLine": 198,
+        "startChar": 67,
+        "endLine": 198,
+        "endChar": 77
+      },
+      "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "039509e0_025eca33",
+        "filename": "rts/cmd/rts-chromium/rejections.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-19T14:47:07Z",
+      "side": 1,
+      "message": "👍i like this, i was actually worried you selected distinct (cl,ps) only reading just the description.",
+      "range": {
+        "startLine": 201,
+        "startChar": 4,
+        "endLine": 203,
+        "endChar": 14
+      },
+      "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
