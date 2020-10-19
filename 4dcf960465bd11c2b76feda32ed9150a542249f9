@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c9024096_70a93133",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-19T21:03:34Z",
+      "side": 1,
+      "message": "Should I create a bq/ dir for this proto? Or it\u0027s OK to keep it in v1/ dir?",
+      "parentUuid": "42f71688_65cc5667",
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a7ccf8b8_7dfe9bd2",
         "filename": "resultdb/proto/v1/test_result_row.proto",
         "patchSetId": 2
