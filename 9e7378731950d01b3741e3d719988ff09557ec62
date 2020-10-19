@@ -94,6 +94,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71a2207f_549fe58f",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2020-10-19T17:16:00Z",
+      "side": 1,
+      "message": "Nodir: Sorry, you may have to rephrase that. That link contains an explicit recommendation for a parent field, but your phrasing implies that the API guidelines _don\u0027t_ explicitly recommend that.\n\n\u003e the format \"invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}\", wouldn\u0027t that be sufficient?\n\nNo, it would not. Having to parse a complex string is not a good way to retrieve this information either.",
+      "parentUuid": "2cb57849_d89d1053",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
