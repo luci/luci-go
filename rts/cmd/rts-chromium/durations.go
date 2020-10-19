@@ -32,10 +32,16 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, f func(*evalpb.Test
 		return err
 	}
 
-	q.Parameters = append(q.Parameters, bigquery.QueryParameter{
-		Name:  "frac",
-		Value: r.durationDataFrac,
-	})
+	q.Parameters = append(q.Parameters,
+		bigquery.QueryParameter{
+			Name:  "frac",
+			Value: r.durationDataFrac,
+		},
+		bigquery.QueryParameter{
+			Name:  "minDuration",
+			Value: r.minDuration.Seconds(),
+		},
+	)
 
 	it, err := q.Read(ctx)
 	if err != nil {
@@ -105,7 +111,7 @@ WITH
 			AND RAND() <= @frac
 			AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
 			AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
-			AND duration > 0
+			AND duration > @minDuration
 
 			-- Exclude broken test locations.
 			-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
