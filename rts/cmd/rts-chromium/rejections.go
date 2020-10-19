@@ -28,8 +28,8 @@ var terminalRejectionFragment = &evalpb.RejectionFragment{
 	Terminal: true,
 }
 
-// rejections calls f for each found CQ rejection.
-func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.RejectionFragment) error) error {
+// rejections calls the callback for each found CQ rejection.
+func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*evalpb.RejectionFragment) error) error {
 	q, err := r.bqQuery(ctx, rejectedPatchSetsSQL)
 	if err != nil {
 		return err
@@ -48,10 +48,10 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rej
 		if curChange == 0 {
 			return nil
 		}
-		return f(terminalRejectionFragment)
+		return callback(terminalRejectionFragment)
 	}
 
-	// Iterate over results and call f.
+	// Iterate over results and call the callback.
 	// One fragment represents at most one BigQuery row.
 	for {
 		// Read the next row.
@@ -76,7 +76,7 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, f func(*evalpb.Rej
 			row.populatePatchsetInfo(rej)
 		}
 
-		if err := f(&evalpb.RejectionFragment{Rejection: rej}); err != nil {
+		if err := callback(&evalpb.RejectionFragment{Rejection: rej}); err != nil {
 			return err
 		}
 
