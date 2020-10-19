@@ -1,5 +1,3 @@
-lucicfg.enable_experiment("crbug.com/1054172")
-
 luci.project(
     name = "project",
     buildbucket = "cr-buildbucket.appspot.com",

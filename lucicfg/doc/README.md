@@ -2080,11 +2080,6 @@ luci.tree_closer(
 
 Defines a rule for closing or opening a tree via a tree status app.
 
-*** note
-**Experimental.** This feature is under development and guarded by
-`crbug.com/1054172` experiment.
-***
-
 The set of builders that are being observed is defined through `notified_by`
 field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
 finishes, the builder "notifies" all (but usually none or just one)
