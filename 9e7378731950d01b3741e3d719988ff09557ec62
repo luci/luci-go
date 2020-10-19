@@ -142,6 +142,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf06662f_ba3198ea",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2020-10-19T17:37:08Z",
+      "side": 1,
+      "message": "Having the sole way to access basic information about a result rely on parsing a long string with a number of pieces is brittle and counterintuitive.\n\nI assumed that since you were linking that page it had relevance to the discussion, and since only a page about resource messages would be relevant, I didn\u0027t double-check that. Since it doesn\u0027t say _anything_ about resource messages, that was a faulty assumption. The other portions of the AIP which do say things about resource messages do explicitly specify means of representing associations.\n\nHowever, that is beside the point. The AIP specifies necessary conditions, not sufficient ones. This API is hard to use, and that is a serious error regardless of whether it is technically in compliance with the AIP.",
+      "parentUuid": "1574fc49_24a2e01f",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
