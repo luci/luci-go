@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b07b7cb_35742c45",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T07:13:11Z",
+      "side": 1,
+      "message": "PTAL\n\nThese tips were derived from experiments with the algorithm I am working on. I will start sending it for review this week.",
+      "revId": "e3530f7c3407c5448b032d13364a9df5207ebdca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
