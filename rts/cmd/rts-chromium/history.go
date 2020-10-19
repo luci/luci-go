@@ -48,6 +48,7 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 			r.Flags.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-02")
 			r.Flags.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-02")
 			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
+			r.Flags.DurationVar(&r.minDuration, "min-duration", time.Second, "Minimum duration to fetch")
 			r.Flags.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
 			r.Flags.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
 			return r
@@ -63,6 +64,7 @@ type presubmitHistoryRun struct {
 	durationDataFrac float64
 	builderRegex     string
 	testIDRegex      string
+	minDuration      time.Duration
 
 	authenticator *auth.Authenticator
 	authOpt       *auth.Options
