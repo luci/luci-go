@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e95c2b9_dd5bea15",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 23
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T04:07:51Z",
+      "side": 1,
+      "message": "PTAL.\n\nAndrii, I am adding you because I changed time windows for CQ and test results, and because switched to earliest_equilvalent_patchset",
+      "revId": "2bfb079fa9741c42be6741fdf68ae5fe568bd3eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
