@@ -20,6 +20,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
@@ -113,6 +114,7 @@ message TestResult {
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Where the test is defined, e.g. the file name.
+  // Deprecated. In favor of test_metadata.
   TestLocation test_location = 11;
 
   // Hash of the variant.
@@ -123,21 +125,9 @@ message TestResult {
       (google.api.field_behavior) = OUTPUT_ONLY,
       (google.api.field_behavior) = IMMUTABLE
   ];
-}
 
-// Location of the test definition.
-message TestLocation {
-  reserved 1; // We might want to add repo URL later.
-
-  // Name of the file where the test is defined.
-  // For files in a repository, must start with "//"
-  // Example: "//components/payments/core/payment_request_data_util_unittest.cc"
-  // Max length: 512.
-  // SHOULD not use backslashes.
-  string file_name = 2;
-
-  // One-based line number where the test is defined.
-  int32 line = 3;
+  // Information about the test at the time of its execution.
+  TestMetadata test_metadata = 13;
 }
 
 // Machine-readable status of a test result.

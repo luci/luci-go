@@ -1,0 +1,52 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+
+// Information about a test.
+message TestMetadata {
+  // The original test name.
+  string name = 1;
+
+  // Where the test is defined, e.g. the file name.
+  TestLocation location = 2;
+}
+
+// Location of the test definition.
+message TestLocation {
+  // Gitiles URL as the identifier for a repo.
+  // Format for Gitiles URL: https://<host>/<project>
+  // For example "https://chromium.googlesource.com/chromium/src"
+  // Must not end with ".git".
+  // SHOULD be specified.
+  // TODO(crbug.com/1103287): Make it required when adding monorail_components
+  // and other metadata because we'll need repo to look for such data in
+  // location tag file.
+  string repo = 1;
+
+  // Name of the file where the test is defined.
+  // For files in a repository, must start with "//"
+  // Example: "//components/payments/core/payment_request_data_util_unittest.cc"
+  // Max length: 512.
+  // MUST not use backslashes.
+  // Required.
+  string file_name = 2;
+
+  // One-based line number where the test is defined.
+  int32 line = 3;
+}
