@@ -41,7 +41,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var crosMasterRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
+var crosMainRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
 // nesting information.
@@ -239,13 +239,13 @@ func (b *Build) BuildSetLinks() []template.HTML {
 	buildSets := b.BuildSets()
 	links := make([]template.HTML, 0, len(buildSets))
 	for _, buildSet := range buildSets {
-		result := crosMasterRE.FindStringSubmatch(buildSet)
+		result := crosMainRE.FindStringSubmatch(buildSet)
 		if result == nil {
 			// Don't know how to link, just return the text.
 			links = append(links, template.HTML(template.HTMLEscapeString(buildSet)))
 		} else {
-			// This linking is for legacy ChromeOS builders to show a linke to their
-			// master builder, it can be removed when these have been transitioned
+			// This linking is for legacy ChromeOS builders to show a link to their
+			// main builder, it can be removed when these have been transitioned
 			// to parallel CQ.
 			buildbucketId := result[1]
 			builderURL := fmt.Sprintf("https://ci.chromium.org/b/%s", buildbucketId)

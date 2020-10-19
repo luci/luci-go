@@ -75,12 +75,12 @@ type BuildSummary struct {
 	BuildKey *datastore.Key `gae:"$parent"`
 
 	// Global identifier for the builder that this Build belongs to, i.e.:
-	//   "buildbot/<mastername>/<buildername>"
+	//   "buildbot/<buildergroup>/<buildername>"
 	//   "buildbucket/<bucketname>/<buildername>"
 	BuilderID string
 
 	// Global identifier for this Build.
-	// Buildbot: "buildbot/<mastername>/<buildername>/<buildnumber>"
+	// Buildbot: "buildbot/<buildergroup>/<buildername>/<buildnumber>"
 	// Buildbucket: "buildbucket/<buildaddr>"
 	// For buildbucket, <buildaddr> looks like <bucketname>/<buildername>/<buildnumber> if available
 	// and <buildid> otherwise.
@@ -95,8 +95,8 @@ type BuildSummary struct {
 	//
 	//   * swarming://<host>/task/<taskID>
 	//   * swarming://<host>/bot/<botID>
-	//   * buildbot://<master>/build/<builder>/<number>
-	//   * buildbot://<master>/bot/<bot>
+	//   * buildbot://<buildergroup>/build/<builder>/<number>
+	//   * buildbot://<buildergroup>/bot/<bot>
 	//   * buildbucket://<host>/build/<buildID>
 	//
 	// This will be used for queries, and can be used to store semantically-sound
@@ -113,7 +113,7 @@ type BuildSummary struct {
 	// Example:
 	//   commit/gitiles/<host>/<project/path>/+/<commit>
 	//
-	// See https://chromium.googlesource.com/infra/infra/+/master/appengine/cr-buildbucket/doc/index.md#buildset-tag
+	// See https://chromium.googlesource.com/infra/infra/+/HEAD/appengine/cr-buildbucket/doc/index.md#buildset-tag
 	BuildSet []string
 
 	// Created is the time when the Build was first created. Due to pending
@@ -303,7 +303,7 @@ func (bs *BuildSummary) GitilesCommit() *buildbucketpb.GitilesCommit {
 // Depends on buildbucket.ParseBuildAddress to get project
 // Depends on frontend/routes.go for link structures.
 //
-// Buildbot: "buildbot/<mastername>/<buildername>/<buildnumber>"
+// Buildbot: "buildbot/<buildergroup>/<buildername>/<buildnumber>"
 // Buildbucket: "buildbucket/<buildaddr>"
 // For buildbucket, <buildaddr> looks like <bucketname>/<buildername>/<buildnumber> if available
 // and <buildid> otherwise.
