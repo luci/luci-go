@@ -125,7 +125,10 @@ func NewClient(ctx context.Context, instance string) (*client.Client, error) {
 		client.DialParams{
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
-		}, &client.PerRPCCreds{Creds: creds})
+		},
+		&client.PerRPCCreds{Creds: creds},
+		client.StartupCapabilities(false),
+	)
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
 		t := grpcutil.Tag.With(status.Code(err))
