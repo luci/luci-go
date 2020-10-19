@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa327e12_94f81365",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T21:37:57Z",
+      "side": 1,
+      "message": "bq dir would be better, otherwise, as a consumer of API, i might be confused/mislead by this file.",
+      "parentUuid": "c9024096_70a93133",
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a7ccf8b8_7dfe9bd2",
         "filename": "resultdb/proto/v1/test_result_row.proto",
         "patchSetId": 2
@@ -289,6 +307,30 @@
         "startChar": 29,
         "endLine": 48,
         "endChar": 30
+      },
+      "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e88df906_9cd2d114",
+        "filename": "resultdb/proto/v1/test_result_row.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-19T21:37:57Z",
+      "side": 1,
+      "message": "at the BQ level, map\u003cstring, string\u003e is represented as a repeated record with \"key\" and \"value\" which is same as StringPair.\n\nbut it doesn\u0027t really matter, so resolving",
+      "parentUuid": "534b5655_2e2ab065",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 21
       },
       "revId": "4dcf960465bd11c2b76feda32ed9150a542249f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
