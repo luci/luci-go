@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8454fc05_c96d25b7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-19T18:33:41Z",
+      "side": 1,
+      "message": "Need to bump the version to 1.21.2 in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/version.go#27 too.",
+      "revId": "287316540ee7e53eeac16f92e1f5bb15006d0eca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
