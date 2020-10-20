@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f377d7c3_e3d183e1",
+        "filename": "grpc/cmd/cproto/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T22:42:36Z",
+      "side": 1,
+      "message": "No. \"protoc-gen-go-grpc\" is the new plugin, it doesn\u0027t need custom transformGoFile step.",
+      "parentUuid": "cc97250e_7d900c84",
+      "range": {
+        "startLine": 225,
+        "startChar": 64,
+        "endLine": 226,
+        "endChar": 51
+      },
+      "revId": "16dbb25632c32893e11f78c96c2f97d94039bae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "801fba93_70b3c779",
         "filename": "grpc/cmd/cproto/main.go",
         "patchSetId": 1
