@@ -17,25 +17,21 @@ package apiservers
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/grpc/grpcutil"
 	schedulerpb "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/internal"
-	"go.chromium.org/luci/server/auth"
 )
 
 // AdminServerWithACL returns AdminServer implementation that checks all callers
 // are in the given administrator group.
 func AdminServerWithACL(e engine.EngineInternal, c catalog.Catalog, adminGroup string) internal.AdminServer {
-	return &internal.DecoratedAdmin{
+	// TODO: restore
+	/*return &internal.DecoratedAdmin{
 		Service: &adminServer{
 			Engine:  e,
 			Catalog: c,
@@ -57,6 +53,10 @@ func AdminServerWithACL(e engine.EngineInternal, c catalog.Catalog, adminGroup s
 		Postlude: func(c context.Context, methodName string, rsp proto.Message, err error) error {
 			return grpcutil.GRPCifyAndLogErr(c, err)
 		},
+	}*/
+	return &adminServer{
+		Engine:  e,
+		Catalog: c,
 	}
 }
 
@@ -65,6 +65,8 @@ func AdminServerWithACL(e engine.EngineInternal, c catalog.Catalog, adminGroup s
 // It also returns regular errors, NOT gRPC errors. AdminServerWithACL takes
 // care of authorization and conversion of errors to grpc ones.
 type adminServer struct {
+	internal.UnimplementedAdminServer
+
 	Engine  engine.EngineInternal
 	Catalog catalog.Catalog
 }

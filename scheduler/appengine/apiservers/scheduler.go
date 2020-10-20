@@ -40,6 +40,8 @@ import (
 
 // SchedulerServer implements scheduler.Scheduler API.
 type SchedulerServer struct {
+	scheduler.UnimplementedSchedulerServer
+
 	Engine  engine.Engine
 	Catalog catalog.Catalog
 }
