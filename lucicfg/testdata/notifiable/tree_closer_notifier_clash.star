@@ -1,5 +1,3 @@
-lucicfg.enable_experiment("crbug.com/1054172")
-
 luci.tree_closer(
     name = "some name",
     tree_status_host = "some-tree.example.com",

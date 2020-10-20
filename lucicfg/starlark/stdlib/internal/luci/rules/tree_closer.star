@@ -19,9 +19,6 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "notifiable")
 
-# Guard usage of luci.tree_closer behind an experiment until its API is stable.
-experiment = experiments.register("crbug.com/1054172")
-
 def _tree_closer(
         ctx,
         *,
@@ -32,11 +29,6 @@ def _tree_closer(
         template = None,
         notified_by = None):
     """Defines a rule for closing or opening a tree via a tree status app.
-
-    *** note
-    **Experimental.** This feature is under development and guarded by
-    `crbug.com/1054172` experiment.
-    ***
 
     The set of builders that are being observed is defined through `notified_by`
     field here or `notifies` field in luci.builder(...). Whenever a build
@@ -73,7 +65,7 @@ def _tree_closer(
       notified_by: builders to receive status notifications from. This relation
         can also be defined via `notifies` field in luci.builder(...).
     """
-    experiment.require()
+
     return notifiable.add(
         name = name,
         props = {
