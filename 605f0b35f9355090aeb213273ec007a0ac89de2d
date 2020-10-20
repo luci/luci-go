@@ -52,6 +52,24 @@
       "parentUuid": "8e161169_c59bf25b",
       "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe97a663_53c4e03c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-20T00:18:57Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s important, but it\u0027ll be nice to keep them required as before. Resolving this.",
+      "parentUuid": "a37964c8_8345d8d0",
+      "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
