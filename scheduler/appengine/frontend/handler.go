@@ -197,7 +197,11 @@ func main() {
 		Engine:  globalEngine.PublicAPI(),
 		Catalog: globalCatalog,
 	})
-	internal.RegisterAdminServer(&api, apiservers.AdminServerWithACL(globalEngine, globalCatalog, adminGroup))
+	internal.RegisterAdminServer(&api, &apiservers.AdminServer{
+		Engine:     globalEngine,
+		Catalog:    globalCatalog,
+		AdminGroup: adminGroup,
+	})
 	discovery.Enable(&api)
 	api.InstallHandlers(r, base)
 

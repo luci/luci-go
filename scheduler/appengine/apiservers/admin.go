@@ -17,8 +17,6 @@ package apiservers
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,46 +30,23 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// AdminServerWithACL returns AdminServer implementation that checks all callers
-// are in the given administrator group.
-func AdminServerWithACL(e engine.EngineInternal, c catalog.Catalog, adminGroup string) internal.AdminServer {
-	return &internal.DecoratedAdmin{
-		Service: &adminServer{
-			Engine:  e,
-			Catalog: c,
-		},
+// AdminServer implements internal.admin.Admin API.
+type AdminServer struct {
+	internal.UnimplementedAdminServer
 
-		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-			caller := auth.CurrentIdentity(c)
-			logging.Warningf(c, "Admin call %q by %q", methodName, caller)
-			switch yes, err := auth.IsMember(c, adminGroup); {
-			case err != nil:
-				return nil, status.Errorf(codes.Internal, "failed to check ACL")
-			case !yes:
-				return nil, status.Errorf(codes.PermissionDenied, "not an administrator")
-			default:
-				return c, nil
-			}
-		},
-
-		Postlude: func(c context.Context, methodName string, rsp proto.Message, err error) error {
-			return grpcutil.GRPCifyAndLogErr(c, err)
-		},
-	}
-}
-
-// adminServer implements internal.admin.Admin API without ACL check.
-//
-// It also returns regular errors, NOT gRPC errors. AdminServerWithACL takes
-// care of authorization and conversion of errors to grpc ones.
-type adminServer struct {
-	Engine  engine.EngineInternal
-	Catalog catalog.Catalog
+	Engine     engine.EngineInternal
+	Catalog    catalog.Catalog
+	AdminGroup string
 }
 
 // GetDebugJobState implements the corresponding RPC method.
-func (s *adminServer) GetDebugJobState(c context.Context, r *schedulerpb.JobRef) (resp *internal.DebugJobState, err error) {
-	switch state, err := s.Engine.GetDebugJobState(c, r.Project+"/"+r.Job); {
+func (s *AdminServer) GetDebugJobState(ctx context.Context, r *schedulerpb.JobRef) (resp *internal.DebugJobState, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err := s.checkAdmin(ctx, "GetDebugJobState"); err != nil {
+		return nil, err
+	}
+
+	switch state, err := s.Engine.GetDebugJobState(ctx, r.Project+"/"+r.Job); {
 	case err == engine.ErrNoSuchJob:
 		return nil, status.Errorf(codes.NotFound, "no such job")
 	case err != nil:
@@ -94,5 +69,19 @@ func (s *adminServer) GetDebugJobState(c context.Context, r *schedulerpb.JobRef)
 			RecentlyFinishedSet: state.RecentlyFinishedSet,
 			PendingTriggersSet:  state.PendingTriggersSet,
 		}, nil
+	}
+}
+
+// checkAdmin verifies the caller is in the administrators group.
+func (s *AdminServer) checkAdmin(ctx context.Context, methodName string) error {
+	caller := auth.CurrentIdentity(ctx)
+	logging.Warningf(ctx, "Admin call %q by %q", methodName, caller)
+	switch yes, err := auth.IsMember(ctx, s.AdminGroup); {
+	case err != nil:
+		return status.Errorf(codes.Internal, "failed to check ACL")
+	case !yes:
+		return status.Errorf(codes.PermissionDenied, "not an administrator")
+	default:
+		return nil
 	}
 }
