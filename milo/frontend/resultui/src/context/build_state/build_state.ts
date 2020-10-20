@@ -58,6 +58,11 @@ export class BuildState {
     return this.buildPageDataReq.value;
   }
 
+  @computed
+  get isCanary(): boolean {
+    return Boolean(this.buildPageData?.input.experiments?.includes('luci.non_production'));
+  }
+
   @computed({keepAlive: true})
   get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
     // Since response can be different when queried at different time,

@@ -78,7 +78,7 @@ export interface BuildInput {
   readonly properties: {[key: string]: unknown};
   readonly gitiles_commit?: GitilesCommit;
   readonly gerrit_changes?: GerritChange[];
-  readonly experimental: boolean;
+  readonly experiments?: string[];
 }
 
 export interface GitilesCommit {
