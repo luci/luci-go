@@ -48,6 +48,7 @@ type TestMetadata struct {
 	// The original test name.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the test is defined, e.g. the file name.
+	// location.repo MUST be specified.
 	Location *TestLocation `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
 }
 
@@ -108,9 +109,6 @@ type TestLocation struct {
 	// For example "https://chromium.googlesource.com/chromium/src"
 	// Must not end with ".git".
 	// SHOULD be specified.
-	// TODO(crbug.com/1103287): Make it required when adding monorail_components
-	// and other metadata because we'll need repo to look for such data in
-	// location tag file.
 	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
 	// Name of the file where the test is defined.
 	// For files in a repository, must start with "//"
