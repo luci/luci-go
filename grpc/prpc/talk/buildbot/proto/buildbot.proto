@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package buildbot;
 
+option go_package = "go.chromium.org/luci/grpc/prpc/talk/buildbot/proto;buildbot";
+
 // Buildbot can run builds.
 service Buildbot {
     // Search returns builds matching a criteria.

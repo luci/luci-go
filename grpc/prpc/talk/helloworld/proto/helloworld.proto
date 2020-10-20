@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package helloworld;
 
+option go_package = "go.chromium.org/luci/grpc/prpc/talk/helloworld/proto;helloworld";
+
 // The greeting service definition.
 service Greeter {
   // SayHello greets a user.

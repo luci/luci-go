@@ -35,7 +35,7 @@ var train = flag.Bool("test.train", false, "retrain golden files")
 
 func TestMain(t *testing.T) {
 	if runtime.GOOS == "windows" || runtime.GOARCH == "386" {
-		t.Skipf("we don't have protoc these build machines.")
+		t.Skipf("we don't have protoc on these build machines.")
 	}
 
 	Convey("Main", t, func() {
