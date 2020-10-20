@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package prpc;
 
+option go_package = "go.chromium.org/luci/grpc/prpc";
+
 import "google/protobuf/field_mask.proto";
 
 // The greeting service definition.

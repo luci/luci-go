@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package test;
 
+option go_package = "tmp;test";
+
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/timestamp.proto";
 

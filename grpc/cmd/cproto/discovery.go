@@ -19,14 +19,16 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -41,9 +43,9 @@ var discoveryTmpl = template.Must(template.New("").Parse(strings.TrimSpace(`
 package {{.GoPkg}};
 
 {{if .ImportDiscovery}}
-import discovery "go.chromium.org/luci/grpc/discovery"
+import "go.chromium.org/luci/grpc/discovery"
 {{end}}
-import "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import "google.golang.org/protobuf/types/descriptorpb"
 
 func init() {
 	{{if .ImportDiscovery}}discovery.{{end}}RegisterDescriptorSetCompressed(
@@ -60,7 +62,7 @@ func init() {
 // Will not return nil.
 //
 // Do NOT modify the returned descriptor.
-func FileDescriptorSet() *descriptor.FileDescriptorSet {
+func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 	// We just need ONE of the service names to look up the FileDescriptorSet.
 	ret, err := {{if .ImportDiscovery}}discovery.{{end}}GetDescriptorSet("{{index .ServiceNames 0 }}")
 	if err != nil {
@@ -73,13 +75,13 @@ func FileDescriptorSet() *descriptor.FileDescriptorSet {
 // genDiscoveryFile generates a Go discovery file that calls
 // discovery.RegisterDescriptorSetCompressed(serviceNames, compressedDescBytes)
 // in an init function.
-func genDiscoveryFile(c context.Context, target, descFile, protoPkg, goPkg string) error {
+func genDiscoveryFile(c context.Context, target, descFile string) error {
 	descBytes, err := ioutil.ReadFile(descFile)
 	if err != nil {
 		return err
 	}
 
-	var desc descriptor.FileDescriptorSet
+	var desc descriptorpb.FileDescriptorSet
 	if err := proto.Unmarshal(descBytes, &desc); err != nil {
 		return fmt.Errorf("cannot parse generated descriptor file: %s", err)
 	}
@@ -87,7 +89,7 @@ func genDiscoveryFile(c context.Context, target, descFile, protoPkg, goPkg strin
 	var serviceNames []string
 	for _, f := range desc.File {
 		for _, s := range f.Service {
-			serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", protoPkg, s.GetName()))
+			serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", f.GetPackage(), s.GetName()))
 		}
 	}
 	if len(serviceNames) == 0 {
@@ -105,9 +107,14 @@ func genDiscoveryFile(c context.Context, target, descFile, protoPkg, goPkg strin
 		return err
 	}
 
+	goPkg, err := build.ImportDir(filepath.Dir(target), 0)
+	if err != nil {
+		return err
+	}
+
 	var buf bytes.Buffer
 	err = discoveryTmpl.Execute(&buf, map[string]interface{}{
-		"GoPkg":           goPkg,
+		"GoPkg":           goPkg.Name,
 		"ImportDiscovery": !inDiscoveryPackage,
 		"ServiceNames":    serviceNames,
 		"CompressedBytes": asByteArray(compressedDescBytes),

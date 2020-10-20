@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package test;
 
+option go_package = "tmp;test";
+
 service S1 {
     rpc M(Req) returns (Res) {};
 }

@@ -48,6 +48,10 @@ var (
 		"disable-grpc", false,
 		"disable grpc and prpc stubs generation, implies -discovery=false",
 	)
+	useGRPCPlugin = flag.Bool(
+		"use-grpc-plugin", false,
+		"use protoc-gen-go-grpc to generate gRPC stubs instead of protoc-gen-go",
+	)
 )
 
 // Well-known Google proto packages -> go packages they are implemented in.
@@ -60,13 +64,13 @@ var googlePackages = map[string]string{
 	"google/type/postal_address.proto": "google.golang.org/genproto/googleapis/type/postaladdress",
 	"google/type/timeofday.proto":      "google.golang.org/genproto/googleapis/type/timeofday",
 
-	"google/protobuf/any.proto":        "github.com/golang/protobuf/ptypes/any",
-	"google/protobuf/descriptor.proto": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-	"google/protobuf/duration.proto":   "github.com/golang/protobuf/ptypes/duration",
-	"google/protobuf/empty.proto":      "github.com/golang/protobuf/ptypes/empty",
-	"google/protobuf/struct.proto":     "github.com/golang/protobuf/ptypes/struct",
-	"google/protobuf/timestamp.proto":  "github.com/golang/protobuf/ptypes/timestamp",
-	"google/protobuf/wrappers.proto":   "github.com/golang/protobuf/ptypes/wrappers",
+	"google/protobuf/any.proto":        "google.golang.org/protobuf/types/known/anypb",
+	"google/protobuf/descriptor.proto": "google.golang.org/protobuf/types/descriptorpb",
+	"google/protobuf/duration.proto":   "google.golang.org/protobuf/types/known/durationpb",
+	"google/protobuf/empty.proto":      "google.golang.org/protobuf/types/known/emptypb",
+	"google/protobuf/struct.proto":     "google.golang.org/protobuf/types/known/structpb",
+	"google/protobuf/timestamp.proto":  "google.golang.org/protobuf/types/known/timestamppb",
+	"google/protobuf/wrappers.proto":   "google.golang.org/protobuf/types/known/wrapperspb",
 
 	"google/rpc/code.proto":          "google.golang.org/genproto/googleapis/rpc/code",
 	"google/rpc/error_details.proto": "google.golang.org/genproto/googleapis/rpc/errdetails",
@@ -143,10 +147,15 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 	for k, v := range pathMap {
 		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
-	if !*disableGRPC {
+	if !*disableGRPC && !*useGRPCPlugin {
+		// Note: this enables deprecated protoc-gen-go grpc plugin.
 		params = append(params, "plugins=grpc")
 	}
 	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), goOut))
+
+	if !*disableGRPC && *useGRPCPlugin {
+		args = append(args, fmt.Sprintf("--go-grpc_out=%s", goOut))
+	}
 
 	for _, f := range protoFiles {
 		// We must prepend an go-style absolute path to the filename otherwise
@@ -210,20 +219,18 @@ func run(c context.Context, goPath []string, dir string) error {
 		return nil
 	}
 
-	// Transform .go files by adding pRPC stubs after gPRC stubs.
-	var goPkg, protoPkg string
 	for _, p := range protoFiles {
 		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+".pb.go")
-		var t transformer
-		if err := t.transformGoFile(goFile); err != nil {
-			return fmt.Errorf("could not transform %s: %s", goFile, err)
-		}
 
-		if protoPkg == "" && len(t.services) > 0 {
-			protoPkg = t.services[0].protoPackageName
-		}
-		if goPkg == "" {
-			goPkg = t.PackageName
+		// Transform .go files by adding pRPC stubs after gPRC stubs. Code generated
+		// by protoc-gen-go-grpc plugin doesn't need this, since it uses interfaces
+		// in the generated code (that pRPC implements) instead of concrete gRPC
+		// types.
+		if !*useGRPCPlugin {
+			var t transformer
+			if err := t.transformGoFile(goFile); err != nil {
+				return fmt.Errorf("could not transform %s: %s", goFile, err)
+			}
 		}
 
 		if strings.HasSuffix(p, "_test.proto") {
@@ -233,10 +240,10 @@ func run(c context.Context, goPath []string, dir string) error {
 			}
 		}
 	}
-	if *withDiscovery && goPkg != "" && protoPkg != "" {
-		// Generate pb.prpc.go
+
+	if *withDiscovery {
 		discoveryFile := "pb.discovery.go"
-		if err := genDiscoveryFile(c, filepath.Join(outDir, discoveryFile), descPath, protoPkg, goPkg); err != nil {
+		if err := genDiscoveryFile(c, filepath.Join(outDir, discoveryFile), descPath); err != nil {
 			return err
 		}
 	}

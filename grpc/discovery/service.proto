@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package discovery;
 
+option go_package = "go.chromium.org/luci/grpc/discovery";
+
 import "google/protobuf/descriptor.proto";
 
 // Discovery describes services.
