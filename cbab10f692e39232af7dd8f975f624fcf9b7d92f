@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2540c7d8_801f4fb9",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-20T15:44:43Z",
+      "side": 1,
+      "message": "I am not seeing a good way to test this, and am looking for suggestions.",
+      "range": {
+        "startLine": 131,
+        "startChar": 78,
+        "endLine": 131,
+        "endChar": 111
+      },
+      "revId": "cbab10f692e39232af7dd8f975f624fcf9b7d92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

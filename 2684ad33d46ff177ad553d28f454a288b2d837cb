@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ba61602_539081f1",
+        "filename": "gce/appengine/backend/bots_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2020-10-20T15:44:43Z",
+      "side": 0,
+      "message": "Request body is always nil so this seemed unnecessary.",
+      "range": {
+        "startLine": 390,
+        "startChar": 6,
+        "endLine": 391,
+        "endChar": 52
+      },
+      "revId": "2684ad33d46ff177ad553d28f454a288b2d837cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
