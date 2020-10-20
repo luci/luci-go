@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package scheduler.config;
 
-option go_package = "messages";
+option go_package = "go.chromium.org/luci/scheduler/appengine/messages";
 
 import "go.chromium.org/luci/common/proto/options.proto";
 
