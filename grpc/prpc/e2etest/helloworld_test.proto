@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package e2etest;
 
+option go_package = "go.chromium.org/luci/grpc/prpc/e2etest";
+
 // The request message containing the user's name.
 message HelloRequest {
   string name = 1;
