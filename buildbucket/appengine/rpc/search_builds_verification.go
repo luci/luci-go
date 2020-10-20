@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -87,8 +88,9 @@ func verifySearch(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchB
 
 	// get Py results.
 	logging.Debugf(ctx, "search verification: calling pyHost:%s", pyHost)
+	pyStartedAt := clock.Now(ctx)
 	pyRes, pyErr := pyClient.client.SearchBuilds(ctx, req)
-	logging.Debugf(ctx, "search verification: successfully get Python response")
+	logDuration(ctx, pyStartedAt, "search verification: py RPC calls for SearchBuilds")
 
 	// convert the gRPC error to the appstatus error.
 	if pyErr != nil {
@@ -169,6 +171,8 @@ func getBuildIDs(builds []*pb.Build) []int64 {
 // searchBuildsGoPath executes the normal Go search path.
 // All code is copied from `SearchBuilds` function.
 func searchBuildsGoPath(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
+	startedAt := clock.Now(ctx)
+	defer logDuration(ctx, startedAt, "search verification: Go path for SearchBuilds")
 	logging.Debugf(ctx, "search verification: searching in Go")
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
@@ -186,4 +190,8 @@ func searchBuildsGoPath(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.S
 		return nil, err
 	}
 	return rsp, nil
+}
+
+func logDuration(ctx context.Context, start time.Time, msg string) {
+	logging.Debugf(ctx, "%s took %s", msg, time.Since(start))
 }
