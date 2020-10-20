@@ -21,11 +21,10 @@
 package buildbucketpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -36,10 +35,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Status of a build or a step.
 type Status int32
@@ -636,9 +631,9 @@ type TimeRange struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Inclusive lower boundary. Optional.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Exclusive upper boundary. Optional.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 }
 
 func (x *TimeRange) Reset() {
@@ -673,14 +668,14 @@ func (*TimeRange) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *TimeRange) GetStartTime() *timestamp.Timestamp {
+func (x *TimeRange) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *TimeRange) GetEndTime() *timestamp.Timestamp {
+func (x *TimeRange) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
@@ -696,7 +691,7 @@ type RequestedDimension struct {
 	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	// If set, ignore this dimension after this duration.
-	Expiration *duration.Duration `protobuf:"bytes,3,opt,name=expiration,proto3" json:"expiration,omitempty"`
+	Expiration *durationpb.Duration `protobuf:"bytes,3,opt,name=expiration,proto3" json:"expiration,omitempty"`
 }
 
 func (x *RequestedDimension) Reset() {
@@ -745,7 +740,7 @@ func (x *RequestedDimension) GetValue() string {
 	return ""
 }
 
-func (x *RequestedDimension) GetExpiration() *duration.Duration {
+func (x *RequestedDimension) GetExpiration() *durationpb.Duration {
 	if x != nil {
 		return x.Expiration
 	}
@@ -943,8 +938,8 @@ var file_go_chromium_org_luci_buildbucket_proto_common_proto_goTypes = []interfa
 	(*RequestedDimension)(nil),               // 9: buildbucket.v2.RequestedDimension
 	(*StatusDetails_ResourceExhaustion)(nil), // 10: buildbucket.v2.StatusDetails.ResourceExhaustion
 	(*StatusDetails_Timeout)(nil),            // 11: buildbucket.v2.StatusDetails.Timeout
-	(*timestamp.Timestamp)(nil),              // 12: google.protobuf.Timestamp
-	(*duration.Duration)(nil),                // 13: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),            // 12: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),              // 13: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_buildbucket_proto_common_proto_depIdxs = []int32{
 	10, // 0: buildbucket.v2.StatusDetails.resource_exhaustion:type_name -> buildbucket.v2.StatusDetails.ResourceExhaustion
