@@ -49,7 +49,7 @@ func TestGetJobsApi(t *testing.T) {
 		fakeEng, catalog := newTestEngine()
 		fakeTaskBlob, err := registerURLFetcher(catalog)
 		So(err, ShouldBeNil)
-		ss := SchedulerServer{fakeEng, catalog}
+		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
 		Convey("Empty", func() {
 			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) { return []*engine.Job{}, nil }
@@ -161,7 +161,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		fakeEng, catalog := newTestEngine()
 		_, err := registerURLFetcher(catalog)
 		So(err, ShouldBeNil)
-		ss := SchedulerServer{fakeEng, catalog}
+		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
 		Convey("Job not found", func() {
 			fakeEng.mockNoJob()
@@ -261,7 +261,7 @@ func TestGetInvocationApi(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		ss := SchedulerServer{fakeEng, catalog}
+		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
 		Convey("OK", func() {
 			fakeEng.mockJob("proj/job")
@@ -328,7 +328,7 @@ func TestJobActionsApi(t *testing.T) {
 	Convey("works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		ss := SchedulerServer{fakeEng, catalog}
+		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
 		Convey("PermissionDenied", func() {
 			fakeEng.mockJob("proj/job")
@@ -368,7 +368,7 @@ func TestAbortInvocationApi(t *testing.T) {
 	Convey("works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		ss := SchedulerServer{fakeEng, catalog}
+		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
 		Convey("PermissionDenied", func() {
 			fakeEng.mockJob("proj/job")

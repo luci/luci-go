@@ -20,15 +20,9 @@
 
 package internal
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
-	context "context"
 	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	pb "go.chromium.org/luci/scheduler/appengine/task/gitiles/pb"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -501,106 +495,4 @@ func file_go_chromium_org_luci_scheduler_appengine_internal_admin_proto_init() {
 	file_go_chromium_org_luci_scheduler_appengine_internal_admin_proto_rawDesc = nil
 	file_go_chromium_org_luci_scheduler_appengine_internal_admin_proto_goTypes = nil
 	file_go_chromium_org_luci_scheduler_appengine_internal_admin_proto_depIdxs = nil
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// AdminClient is the client API for Admin service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type AdminClient interface {
-	// GetDebugJobState returns detailed report about the job state.
-	//
-	// Useful when debugging internal issues.
-	GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error)
-}
-type adminPRPCClient struct {
-	client *prpc.Client
-}
-
-func NewAdminPRPCClient(client *prpc.Client) AdminClient {
-	return &adminPRPCClient{client}
-}
-
-func (c *adminPRPCClient) GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error) {
-	out := new(DebugJobState)
-	err := c.client.Call(ctx, "internal.admin.Admin", "GetDebugJobState", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-type adminClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
-	return &adminClient{cc}
-}
-
-func (c *adminClient) GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error) {
-	out := new(DebugJobState)
-	err := c.cc.Invoke(ctx, "/internal.admin.Admin/GetDebugJobState", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// AdminServer is the server API for Admin service.
-type AdminServer interface {
-	// GetDebugJobState returns detailed report about the job state.
-	//
-	// Useful when debugging internal issues.
-	GetDebugJobState(context.Context, *v1.JobRef) (*DebugJobState, error)
-}
-
-// UnimplementedAdminServer can be embedded to have forward compatible implementations.
-type UnimplementedAdminServer struct {
-}
-
-func (*UnimplementedAdminServer) GetDebugJobState(context.Context, *v1.JobRef) (*DebugJobState, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDebugJobState not implemented")
-}
-
-func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {
-	s.RegisterService(&_Admin_serviceDesc, srv)
-}
-
-func _Admin_GetDebugJobState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.JobRef)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServer).GetDebugJobState(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/internal.admin.Admin/GetDebugJobState",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServer).GetDebugJobState(ctx, req.(*v1.JobRef))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _Admin_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "internal.admin.Admin",
-	HandlerType: (*AdminServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetDebugJobState",
-			Handler:    _Admin_GetDebugJobState_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/scheduler/appengine/internal/admin.proto",
 }
