@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
+var maxLogFlushWaitTime = 30 * time.Second
+
 // Run executes `cb` in a "luciexe" host environment.
 //
 // The merged Build objects collected from the host environment (i.e. generated
@@ -109,9 +111,10 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	// Transfer ownership of cleanups to goroutine
 	userCleanup := cleanup
 	userCleanup.add("flush u/", func() error {
-		cctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
+		wt := calcLogFlushWaitTime(ctx)
+		cctx, cancel := clock.WithTimeout(ctx, wt)
 		defer cancel()
-		logging.Infof(ctx, "waiting up to 30 seconds for user logs to flush")
+		logging.Infof(ctx, "waiting up to %s for user logs to flush", wt)
 		leftovers := butler.DrainNamespace(cctx, agent.UserNamespace)
 		if len(leftovers) > 0 {
 			builder := strings.Builder{}
@@ -141,4 +144,21 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	}()
 
 	return buildCh, nil
+}
+
+// If ctx has the deadline set, waitTime is min(half of the remaining time
+// towards deadline, `maxLogFlushWaitTime`). Otherwise, waitTime is the same
+// as `maxLogFlushWaitTime`.
+func calcLogFlushWaitTime(ctx context.Context) time.Duration {
+	if deadline, ok := ctx.Deadline(); ok {
+		switch waitTime := deadline.Sub(clock.Now(ctx)) / 2; {
+		case waitTime < 0:
+			return 0
+		case waitTime > maxLogFlushWaitTime:
+			return maxLogFlushWaitTime
+		default:
+			return waitTime
+		}
+	}
+	return maxLogFlushWaitTime
 }
