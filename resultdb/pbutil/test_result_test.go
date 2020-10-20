@@ -277,6 +277,15 @@ func TestValidateTestResult(t *testing.T) {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
 				So(validate(msg), ShouldBeNil)
 			})
+			Convey("location no repo", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					Location: &pb.TestLocation{
+						FileName: "//file_name",
+					},
+				}
+				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: required")
+			})
 		})
 	})
 }
