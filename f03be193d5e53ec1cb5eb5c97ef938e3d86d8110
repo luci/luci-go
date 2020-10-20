@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec037e97_5530a3ba",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-20T20:35:02Z",
+      "side": 1,
+      "message": "1. Use clock.Now(ctx) instead, as it\u0027s mockable in tests (not critical right now, but better for consistency)\n2. Are you sure time.Now is called immediately?\n  verified via https://play.golang.com/p/o7NeEAQlc_M that it will actually work as intended, but it\u0027s fragile because someone may refactor this to:\n  defer func () { duration(...) } \n\nat which point time.Now() will be called during defer only. So, better:\n\nstartedAt :\u003d time.Now()\ndefer logDuration(startedAt)",
+      "range": {
+        "startLine": 172,
+        "startChar": 21,
+        "endLine": 172,
+        "endChar": 31
+      },
+      "revId": "f03be193d5e53ec1cb5eb5c97ef938e3d86d8110",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cbfff71_43e7b9b2",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-20T20:35:02Z",
+      "side": 1,
+      "message": "nit: logDuration",
+      "range": {
+        "startLine": 192,
+        "startChar": 5,
+        "endLine": 192,
+        "endChar": 13
+      },
+      "revId": "f03be193d5e53ec1cb5eb5c97ef938e3d86d8110",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
