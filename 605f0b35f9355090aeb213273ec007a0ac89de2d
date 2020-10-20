@@ -70,6 +70,24 @@
       "parentUuid": "a37964c8_8345d8d0",
       "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6500bba_171fb9c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-20T01:51:47Z",
+      "side": 1,
+      "message": "https://screenshot.googleplex.com/5RJiiNjb2Pe8oZm shows that the schema has been successfully updated (because there\u0027s test_metadata now) and the previous required fields are still required.",
+      "parentUuid": "fe97a663_53c4e03c",
+      "revId": "605f0b35f9355090aeb213273ec007a0ac89de2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
