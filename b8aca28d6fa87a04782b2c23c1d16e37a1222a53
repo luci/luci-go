@@ -106,6 +106,24 @@
       "parentUuid": "c0db7ca0_37eb6d3c",
       "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edcc0692_58bd46c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T22:21:49Z",
+      "side": 1,
+      "message": "They actually replied and landed the fix already, yay.",
+      "parentUuid": "2c63129e_9f273d71",
+      "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
