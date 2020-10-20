@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51463ad7_cf8f71e1",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-20T03:47:06Z",
+      "side": 1,
+      "message": "Noted and fixed",
+      "parentUuid": "3341b4c8_73ab596f",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "297597200fb33ef9b6501a4750716cba8c40aa00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32b9463a_47669c23",
@@ -71,6 +95,30 @@
       "writtenOn": "2020-10-19T18:58:02Z",
       "side": 1,
       "message": "nit: dctx for consistency",
+      "range": {
+        "startLine": 189,
+        "startChar": 16,
+        "endLine": 189,
+        "endChar": 19
+      },
+      "revId": "297597200fb33ef9b6501a4750716cba8c40aa00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "71b2a4da_f90050a4",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-20T03:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32b9463a_47669c23",
       "range": {
         "startLine": 189,
         "startChar": 16,
