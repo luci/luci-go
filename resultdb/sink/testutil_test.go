@@ -116,6 +116,12 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		TestLocation: &pb.TestLocation{
 			FileName: "//artifact_dir/a_test.cc",
 		},
+		TestMetadata: &pb.TestMetadata{
+			Name: "name",
+			Location: &pb.TestLocation{
+				FileName: "//artifact_dir/a_test.cc",
+			},
+		},
 	}, cleanup
 }
 

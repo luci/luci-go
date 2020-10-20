@@ -79,6 +79,12 @@ func TestReportTestResults(t *testing.T) {
 			TestLocation: &pb.TestLocation{
 				FileName: tr.TestLocation.FileName,
 			},
+			TestMetadata: &pb.TestMetadata{
+				Name: "name",
+				Location: &pb.TestLocation{
+					FileName: tr.TestLocation.FileName,
+				},
+			},
 		}
 		Convey("works", func() {
 			Convey("with ServerConfig.TestIDPrefix", func() {
