@@ -166,6 +166,30 @@
       },
       "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e07e5acb_a17bff43",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T05:38:13Z",
+      "side": 1,
+      "message": "We are happy to provide a function in the resultdb module to parse invocation ID out of a test result name. In that case, the brittle aspect is hidden from you, and we (the owners of resultdb) are perfectly fine with writing parsing ourselves. I actually don\u0027t find this parsing brittle because the test result name format is stable and well documented, see line 38. In fact, we already have this function in Go: \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/invocation.go;l\u003d38?q\u003dParseInvocationName\u0026sq\u003d\nand it is critical part of GetTestResult RPC because it accepts only a test result name without the explicit invocation_id.\n\nI am concerned that adding invocation_id field adds information to the message that is already there. It will increase the response size unnecessarily, server memory usage (spent on marshaling), potentially increase latency. Note that out of all protobuf messages on ResultDB, this one represents the bulk of the data.\n\nIf we add invocation ID here, should we also add it to TestExoneration?\n\nAlso please note that this CL does little, since the code that populates the data is not modified. It is unclear to me if this is how you ask Chan to actually update the code to populate the field, or you are volunteering to do it yourself.",
+      "parentUuid": "cf06662f_ba3198ea",
+      "range": {
+        "startLine": 128,
+        "startChar": 9,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "9e7378731950d01b3741e3d719988ff09557ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
