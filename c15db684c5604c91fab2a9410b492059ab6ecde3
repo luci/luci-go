@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "aea5c2b2_9d38ac88",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "fwiw i meant to remove the redundant \"the\". Now there is no article",
+      "parentUuid": "6da4d875_d4d09f86",
+      "range": {
+        "startLine": 54,
+        "startChar": 32,
+        "endLine": 54,
+        "endChar": 36
+      },
+      "revId": "c15db684c5604c91fab2a9410b492059ab6ecde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b000c64_6bcf1780",

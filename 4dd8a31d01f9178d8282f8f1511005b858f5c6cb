@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9bdd5f4_0918b242",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "i am not sure this type is needed. it currently serves two functions:\n\n1) provide indexPoint to collect(). However, all index points from the same workItem are same, and workItem already has indexPoint. We could simplify by replacing `chan chan PageItem` with `chan *workItem`. Then in fetchAll(), for any result we would know the timestamp\n\n2) store offset. However, fetchAll() doesn\u0027t actually send offset. collect() produces offset, but stores it in the PageItem for some reason, as opposed to storing it in a local variable. Also note that it needs offset only of the latest or current item. I think all we need is an int variable there.\n\nfinally, if PageItem doesn\u0027t exist, then we don\u0027t need worker.go:97 loop",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54d4e792_8a5f6df3",
+        "filename": "resultdb/internal/history/paging.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 6
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f382b3b1_4318ebed",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 2
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81636e84_f11a6f16",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "it says \"ignore context error\", but it doesn\u0027t check if the err is a context error?",
+      "range": {
+        "startLine": 92,
+        "startChar": 21,
+        "endLine": 92,
+        "endChar": 33
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a75df573_85b0ad0b",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "for i, r :\u003d range q.results {",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 37
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d144a207_e0f8a955",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "we are re-creating a slice in each iteration. consider declaring `var items []PageItem` before the first loop, and then `items \u003d items[:0]` here to reuse it",
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7183a2b2_230cb03e",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "simpler:\n\n  if ctx.Err() !\u003d nil {\n    return ctx.Err()\n  }",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 3
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f785557_3154c1cd",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "*workItem",
+      "range": {
+        "startLine": 176,
+        "startChar": 41,
+        "endLine": 176,
+        "endChar": 49
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76b41f8d_90a77f96",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "any reason this isn\u0027t a method of *workItem ?",
+      "range": {
+        "startLine": 176,
+        "startChar": 4,
+        "endLine": 176,
+        "endChar": 5
+      },
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9da2c3f5_1b8770c5",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "re another comment: we wouldn\u0027t need this either",
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7f3a6bc_649a5629",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T09:27:46Z",
+      "side": 1,
+      "message": "should these tests be in the history package?",
+      "revId": "4dd8a31d01f9178d8282f8f1511005b858f5c6cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
