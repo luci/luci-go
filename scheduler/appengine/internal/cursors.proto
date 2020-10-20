@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package internal.cursors;
 
-option go_package = "internal";
+option go_package = "go.chromium.org/luci/scheduler/appengine/internal";
 
 
 // InvocationsCursor is used to paginate results of GetInvocations RPC call.
