@@ -34,6 +34,24 @@
       "parentUuid": "11a01941_66d39455",
       "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3694b5c2_70707d2e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T01:43:55Z",
+      "side": 1,
+      "message": "I\u0027m not sure tests are useful because -use-grpc-plugin skips all custom code generation. It just calls \"protoc ...\".\n\n\u003e i didn\u0027t find usage of -use-grpc-plugin in next CLs\n\nI\u0027m trying to convert Scheduler to use new plugin. It is not trivial, I\u0027m still working on it.\n\n\u003e what is your plan to update the golden files to use the new format?\n\nMy plan is to delete them :) cproto will not do any advanced code generation.",
+      "parentUuid": "c9e92f4c_20985699",
+      "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
