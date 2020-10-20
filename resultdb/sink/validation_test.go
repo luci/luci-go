@@ -17,6 +17,7 @@ package sink
 import (
 	"testing"
 
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,6 +35,18 @@ func TestValidateTestResult(t *testing.T) {
 			tr.TestLocation.FileName = ""
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
 			So(err, ShouldErrLike, "test_location: file_name: unspecified")
+		})
+
+		Convey(`TestMetadata`, func() {
+			tr.TestMetadata = &pb.TestMetadata{
+				Name: "name",
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "//file",
+				},
+			}
+			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+			So(err, ShouldBeNil)
 		})
 	})
 }
