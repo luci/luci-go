@@ -16,6 +16,69 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/7520/overview\nNote: all builds are hardcoded to be canary in the demo.\n",
       "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2669ae56_8cc3c03b",
+        "filename": "milo/frontend/resultui/out/static/styles/style.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-20T03:39:05Z",
+      "side": 1,
+      "message": "It\u0027s really hard to read this yellow-on-white text. Can we give it a background or something?",
+      "range": {
+        "startLine": 34,
+        "startChar": 19,
+        "endLine": 34,
+        "endChar": 26
+      },
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7818e52f_6d927843",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-20T03:39:05Z",
+      "side": 1,
+      "message": "Does this mean you can remove the \"should_show_canary_warming\" field from BuildPageData?",
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "568b005f_8effbd0b",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-20T03:39:05Z",
+      "side": 1,
+      "message": "for my info: how come this is different to the legacy page, which just checks build.Canary?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/ui/build.go;l\u003d318;drc\u003de42b2392a3ff79d0c9952c3fc190f3f01383f666",
+      "range": {
+        "startLine": 63,
+        "startChar": 4,
+        "endLine": 63,
+        "endChar": 91
+      },
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
