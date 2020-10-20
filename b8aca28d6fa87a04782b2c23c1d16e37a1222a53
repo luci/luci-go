@@ -70,6 +70,24 @@
       "parentUuid": "3694b5c2_70707d2e",
       "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0db7ca0_37eb6d3c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T01:56:39Z",
+      "side": 1,
+      "message": "Well, crap. The feature I was hoping to use to avoid prpc code generation was reverted in https://github.com/grpc/grpc-go/commit/02cd07d9bb5609fe76f8bb8d948037e79a8b29c7 :-/ \n\nBefore that CL, generated _grpc.pb.go had:\n\n  func RegisterServiceName(s grpc.ServiceRegistrar, impl ...)\n\nWhere https://godoc.org/google.golang.org/grpc#ServiceRegistrar is actually already implemented by *prpc.Server.\n\nNow generated code has (just like it did initially):\n\n  func RegisterServiceName(s *grpc.Server, ...)\n\n:(\n\nSo I guess I\u0027ll just 🙈 and keep using old grpc plugin and custom code generator. This CL is still useful since it updates to newer protobuf library.",
+      "parentUuid": "3694b5c2_70707d2e",
+      "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
