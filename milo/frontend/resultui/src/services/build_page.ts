@@ -45,7 +45,6 @@ export interface BuildPageData extends Build {
   buildset_links: string[];
   steps?: StepExt[];
   human_status: string;
-  should_show_canary_warming: boolean;
   input_properties: Property[];
   output_properties: Property[];
   builder_link: Link;

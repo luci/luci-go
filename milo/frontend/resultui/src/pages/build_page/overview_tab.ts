@@ -76,6 +76,22 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderCanaryWarning() {
+    if (!this.buildState.isCanary) {
+      return html``;
+    }
+    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.buildState.buildPageData!.status) === -1) {
+      return html``;
+    }
+    return html`
+      <div id="canary-warning">
+        WARNING: This build ran on a canary version of LUCI. If you suspect it
+        failed due to infra, retry the build. Next time it may use the
+        non-canary version.
+      </div>
+    `;
+  }
+
   private async cancelBuild(reason: string) {
     await this.appState.buildsService!.cancelBuild({
       id: this.buildState.buildPageData!.id,
@@ -300,6 +316,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div id="main">
         <div>
           ${this.renderStatusTime()}
+          ${this.renderCanaryWarning()}
           ${this.renderSummary()}
           ${this.renderInput()}
           ${this.renderInfra()}
@@ -357,6 +374,11 @@ export class OverviewTabElement extends MobxLitElement {
     mwc-button {
       transform: scale(0.8);
       vertical-align: middle;
+    }
+
+    #canary-warning {
+      background-color: var(--warning-color);
+      font-weight: 500;
     }
 
     #summary-html {
