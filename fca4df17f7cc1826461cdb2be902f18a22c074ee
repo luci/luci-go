@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86041bfa_30cc30d6",
+        "filename": "grpc/cmd/cproto/discovery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T00:38:56Z",
+      "side": 0,
+      "message": "It actually was a bug. It is possible to have multiple different proto packages inside a single go package. You\u0027ll see in the next CL that it happens in some Buildbucket protos.",
+      "range": {
+        "startLine": 90,
+        "startChar": 60,
+        "endLine": 90,
+        "endChar": 68
+      },
+      "revId": "fca4df17f7cc1826461cdb2be902f18a22c074ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
