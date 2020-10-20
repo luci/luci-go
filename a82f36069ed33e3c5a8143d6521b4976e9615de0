@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ce45bb9_b16e8b74",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-20T17:57:19Z",
+      "side": 1,
+      "message": "PTAL.\n\nRelated changes:\nhttp://crrev.com/i/3349761\nhttp://crrev.com/i/3349762",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
