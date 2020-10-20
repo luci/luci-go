@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "2f3589892d61af7436485352b41803c28336290f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00cb86a2_94e7b772",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T00:25:09Z",
+      "side": 1,
+      "message": "given that we intend to make Repo required, should we add it here?\n\nalso, should we require TestResult.test_metadata.location.repo (but not TestResult.test_location.repo)?",
+      "revId": "2f3589892d61af7436485352b41803c28336290f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
