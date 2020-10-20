@@ -16,6 +16,24 @@
       "message": "lgtm though arbitrariness of /2 is worrying",
       "revId": "e76ce46bef728b986a1759eac415b1e5580b59ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83081db4_66741d2b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-20T02:52:41Z",
+      "side": 1,
+      "message": "Oh yes! The current way is pretty dumb now. Simply speaking, we use half of the remaining time to flush the log to logdog and the rest to flush the final build to buildbucket. I want to land it first to see how it goes and optimize later on if needed.",
+      "parentUuid": "55bee74a_efc9fbb4",
+      "revId": "e76ce46bef728b986a1759eac415b1e5580b59ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
