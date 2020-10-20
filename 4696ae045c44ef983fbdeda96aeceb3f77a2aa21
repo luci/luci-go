@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49d3effa_2be2570a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-20T03:27:42Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/7520/overview\nNote: all builds are hardcoded to be canary in the demo.\n",
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
