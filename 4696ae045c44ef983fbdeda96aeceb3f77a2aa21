@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "220ca7e5_7a74d8af",
+        "filename": "milo/frontend/resultui/out/static/styles/style.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-20T04:08:55Z",
+      "side": 1,
+      "message": "changed to black text and yellow background. WDYT?",
+      "parentUuid": "2669ae56_8cc3c03b",
+      "range": {
+        "startLine": 34,
+        "startChar": 19,
+        "endLine": 34,
+        "endChar": 26
+      },
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7818e52f_6d927843",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 4
@@ -71,6 +95,48 @@
       "writtenOn": "2020-10-20T03:39:05Z",
       "side": 1,
       "message": "for my info: how come this is different to the legacy page, which just checks build.Canary?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/ui/build.go;l\u003d318;drc\u003de42b2392a3ff79d0c9952c3fc190f3f01383f666",
+      "range": {
+        "startLine": 63,
+        "startChar": 4,
+        "endLine": 63,
+        "endChar": 91
+      },
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b484e8b9_3926b795",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-20T04:08:55Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "7818e52f_6d927843",
+      "revId": "4696ae045c44ef983fbdeda96aeceb3f77a2aa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64921715_829abda2",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-10-20T04:08:55Z",
+      "side": 1,
+      "message": "build.Canary is deprecated.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d233",
+      "parentUuid": "568b005f_8effbd0b",
       "range": {
         "startLine": 63,
         "startChar": 4,
