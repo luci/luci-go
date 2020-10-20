@@ -16,6 +16,24 @@
       "message": "I started reviewing this but it\u0027s going to take much more time for me to comprehend the whole query to do an actual review. If others are more familiar with the schema and SQL usage please go ahead.",
       "revId": "6b6c25ee2a275dcead5bb67b59a3242c7e26820a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6976e400_af312d1e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 25
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2020-10-20T20:20:22Z",
+      "side": 1,
+      "message": "Oops, really late to this. Glad you got through it! :)",
+      "parentUuid": "1882c4de_236125ed",
+      "revId": "6b6c25ee2a275dcead5bb67b59a3242c7e26820a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
