@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9951932f_29478df8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-10-20T16:07:59Z",
+      "side": 1,
+      "message": "Looks fine with me, will wait for Sana or Vadim to approve.\n\nThis should fix the remaining issue about recreated VM with the same name.",
+      "revId": "cbab10f692e39232af7dd8f975f624fcf9b7d92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2540c7d8_801f4fb9",
