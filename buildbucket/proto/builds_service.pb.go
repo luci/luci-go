@@ -14,8 +14,6 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	_struct "github.com/golang/protobuf/ptypes/struct"
 	status "google.golang.org/genproto/googleapis/rpc/status"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
@@ -23,6 +21,7 @@ import (
 	status1 "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -33,10 +32,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A request message for GetBuild rpc.
 type GetBuildRequest struct {
@@ -507,7 +502,7 @@ type ScheduleBuildRequest struct {
 	// * ["$recipe_engine/runtime", "is_experimental"]
 	//
 	// V1 equivalent: corresponds to "properties" key in "parameters_json".
-	Properties *_struct.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
+	Properties *structpb.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
 	// Value for Build.input.gitiles_commit.
 	//
 	// Setting this field will cause the created build to have a "buildset"
@@ -636,7 +631,7 @@ func (x *ScheduleBuildRequest) GetExperiments() map[string]bool {
 	return nil
 }
 
-func (x *ScheduleBuildRequest) GetProperties() *_struct.Struct {
+func (x *ScheduleBuildRequest) GetProperties() *structpb.Struct {
 	if x != nil {
 		return x.Properties
 	}
@@ -1621,7 +1616,7 @@ var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_goTypes = [
 	(*field_mask.FieldMask)(nil),          // 15: google.protobuf.FieldMask
 	(*Build)(nil),                         // 16: buildbucket.v2.Build
 	(Trinary)(0),                          // 17: buildbucket.v2.Trinary
-	(*_struct.Struct)(nil),                // 18: google.protobuf.Struct
+	(*structpb.Struct)(nil),               // 18: google.protobuf.Struct
 	(*GitilesCommit)(nil),                 // 19: buildbucket.v2.GitilesCommit
 	(*GerritChange)(nil),                  // 20: buildbucket.v2.GerritChange
 	(*StringPair)(nil),                    // 21: buildbucket.v2.StringPair
