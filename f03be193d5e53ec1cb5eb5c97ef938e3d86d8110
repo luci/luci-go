@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a2a62db1_0e8cd5e7",
+        "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-20T20:37:08Z",
+      "side": 1,
+      "message": "nit: can you log Py response duration here too (with 2s totals, ~50ms delay of GAE is neglible)",
+      "revId": "f03be193d5e53ec1cb5eb5c97ef938e3d86d8110",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ec037e97_5530a3ba",
         "filename": "buildbucket/appengine/rpc/search_builds_verification.go",
         "patchSetId": 1
