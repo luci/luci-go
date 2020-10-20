@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package gitiles.messages;
 
-option go_package = "pb";
+option go_package = "go.chromium.org/luci/scheduler/appengine/task/gitiles/pb";
 
 // Child is the last part and its sha1 tip.
 message Child {

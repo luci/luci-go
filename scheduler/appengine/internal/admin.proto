@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package internal.admin;
 
-option go_package = "internal";
+option go_package = "go.chromium.org/luci/scheduler/appengine/internal";
 
 import "google/protobuf/timestamp.proto";
 

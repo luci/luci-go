@@ -787,7 +787,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
+			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 
 		Convey("a bunch of tasks, deduplicated by hitting memcache", func() {
@@ -802,7 +802,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
+			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 
 		Convey("a bunch of tasks, deduplicated by hitting task queue", func() {
@@ -820,7 +820,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
+			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 	})
 }
@@ -1106,7 +1106,6 @@ func TestAbortJob(t *testing.T) {
 			// Run all processes to completion.
 			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
 				panic("must not be called")
-				return nil
 			}
 			tasks, _, err = tq.RunSimulation(c, nil)
 			So(err, ShouldBeNil)

@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package scheduler;
 
+option go_package = "go.chromium.org/luci/scheduler/api/scheduler/v1;scheduler";
+
 import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto";
 

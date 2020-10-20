@@ -201,7 +201,7 @@ func TestTaskMarshaling(t *testing.T) {
 		So(err, ShouldBeNil)
 		task, err := c.UnmarshalTask(ctx, blob)
 		So(err, ShouldBeNil)
-		So(task, ShouldResemble, &messages.UrlFetchTask{
+		So(task, ShouldResembleProto, &messages.UrlFetchTask{
 			Url: "123",
 		})
 
@@ -371,7 +371,7 @@ func TestConfigReading(t *testing.T) {
 
 			task, err := cat.UnmarshalTask(ctx, defs[0].Task)
 			So(err, ShouldBeNil)
-			So(task, ShouldResemble, &messages.NoopTask{})
+			So(task, ShouldResembleProto, &messages.NoopTask{})
 
 			task, err = cat.UnmarshalTask(ctx, []byte("blarg"))
 			So(err, ShouldNotBeNil)
