@@ -20,6 +20,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "78e0cc2e_2b388d01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-20T00:27:01Z",
+      "side": 1,
+      "message": "we are missing metadata validation in sink/validation.go:validateTestResult",
+      "revId": "2f3589892d61af7436485352b41803c28336290f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "00cb86a2_94e7b772",
         "filename": "resultdb/sink/testutil_test.go",
         "patchSetId": 1
