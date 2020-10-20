@@ -24,6 +24,7 @@ message TestMetadata {
   string name = 1;
 
   // Where the test is defined, e.g. the file name.
+  // location.repo MUST be specified.
   TestLocation location = 2;
 }
 
@@ -34,9 +35,6 @@ message TestLocation {
   // For example "https://chromium.googlesource.com/chromium/src"
   // Must not end with ".git".
   // SHOULD be specified.
-  // TODO(crbug.com/1103287): Make it required when adding monorail_components
-  // and other metadata because we'll need repo to look for such data in
-  // location tag file.
   string repo = 1;
 
   // Name of the file where the test is defined.
