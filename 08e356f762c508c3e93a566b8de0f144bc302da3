@@ -33,6 +33,24 @@
       "message": "later, when we remove TestResult.test_location, this comment will move back to TestLocation.repo, right?",
       "revId": "08e356f762c508c3e93a566b8de0f144bc302da3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47037fe4_75c7eee5",
+        "filename": "resultdb/proto/v1/test_metadata.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-20T01:46:26Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "9dd32b79_c7f85ac9",
+      "revId": "08e356f762c508c3e93a566b8de0f144bc302da3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
