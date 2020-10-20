@@ -39,6 +39,30 @@
       },
       "revId": "cbab10f692e39232af7dd8f975f624fcf9b7d92f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe2e8b5f_3f5c85c6",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-20T17:40:40Z",
+      "side": 1,
+      "message": "I\u0027m not sure you need to test this because it\u0027s just using the Swarming API as exposed. We\u0027re not testing \".Fields(\"items/event_type\") either. If this filter didn\u0027t exist and we needed to add some actual logic to compare timestamps on returned events, that\u0027d warrant testing.",
+      "parentUuid": "2540c7d8_801f4fb9",
+      "range": {
+        "startLine": 131,
+        "startChar": 78,
+        "endLine": 131,
+        "endChar": 111
+      },
+      "revId": "cbab10f692e39232af7dd8f975f624fcf9b7d92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
