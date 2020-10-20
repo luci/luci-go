@@ -234,3 +234,22 @@ func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error
 	}
 	return realms, nil
 }
+
+// ReadBQExports reads the invocation's BQExports.
+func ReadBQExports(ctx context.Context, id ID) ([]*pb.BigQueryExport, error) {
+	var bqExports [][]byte
+	var ret []*pb.BigQueryExport
+	if err := ReadColumns(ctx, id, map[string]interface{}{"BigQueryExports": &bqExports}); err != nil {
+		return nil, err
+	}
+	if len(bqExports) > 0 {
+		ret = make([]*pb.BigQueryExport, len(bqExports))
+		for i, buf := range bqExports {
+			ret[i] = &pb.BigQueryExport{}
+			if err := proto.Unmarshal(buf, ret[i]); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return ret, nil
+}

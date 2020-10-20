@@ -22,12 +22,12 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -50,7 +51,7 @@ const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 var bqTableCache = caching.RegisterLRUCache(50)
 
-// Options is bqexpoerter configuration.
+// Options is bqexporter configuration.
 type Options struct {
 	// How often to query for tasks.
 	TaskQueryInterval time.Duration
@@ -129,6 +130,12 @@ func InitServer(srv *server.Server, opts Options) {
 	}
 	srv.RunInBackground("bqexport", func(ctx context.Context) {
 		d.Run(ctx, tasks.BQExport, b.exportResultsToBigQuery)
+	})
+
+	tasks.BQExportTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.ExportInvocationToBQ)
+		bqExport, _ := proto.Marshal(task.BqExport)
+		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), bqExport)
 	})
 }
 

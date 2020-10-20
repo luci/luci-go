@@ -243,9 +243,16 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 			"IncludedInvocationId": includedID,
 		}))
 	}
-	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		if tasks.UseBQExportTQ.Enabled(ctx) {
+			// Use TQ-based tasks.
+			tasks.ScheduleBQExport(ctx, originInvID, s.InvBQTable)
+		} else {
+			// Use legacy db row-based tasks.
+			ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
+		}
+
 		// Check origin invocation state again.
 		if err := shouldWriteInvocation(ctx, originInvID); err != nil {
 			return err

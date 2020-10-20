@@ -24,14 +24,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -39,6 +40,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/formats"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -102,6 +104,8 @@ func TestValidateDeriveChromiumInvocationRequest(t *testing.T) {
 func TestDeriveChromiumInvocation(t *testing.T) {
 	Convey(`TestDeriveChromiumInvocation`, t, func(c C) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, sched := tq.TestingContext(ctx, nil)
+		ctx = experiments.Enable(ctx, tasks.UseBQExportTQ)
 
 		testutil.MustApply(ctx, insert.Invocation("inserted", pb.Invocation_FINALIZED, nil))
 		testutil.MustApply(ctx, insert.Invocation("active", pb.Invocation_ACTIVE, nil))
@@ -280,13 +284,12 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			// Read InvocationTask to confirm it's added.
 			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.Name).RowID()))
 			var payload []byte
-			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
+			testutil.MustNotFindRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,
 			})
-			bqExports := &pb.BigQueryExport{}
-			err = proto.Unmarshal(payload, bqExports)
-			So(err, ShouldBeNil)
-			So(bqExports, ShouldResembleProto, deriver.InvBQTable)
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
+				{InvocationId: string(invID), BqExport: deriver.InvBQTable},
+			})
 
 			// Query artifacts to make sure it's saved.
 			sq := &artifacts.Query{
@@ -339,13 +342,13 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			// Read InvocationTask to confirm it's added for origin1 task.
 			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.IncludedInvocations[0]).RowID()))
 			var payload []byte
-			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
+			testutil.MustNotFindRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,
 			})
-			bqExports := &pb.BigQueryExport{}
-			err = proto.Unmarshal(payload, bqExports)
-			So(err, ShouldBeNil)
-			So(bqExports, ShouldResembleProto, deriver.InvBQTable)
+
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
+				{InvocationId: string(invocations.MustParseName(inv.IncludedInvocations[0])), BqExport: deriver.InvBQTable},
+			})
 		})
 	})
 }

@@ -16,8 +16,15 @@ syntax = "proto3";
 
 package luci.resultdb.internal.tasks;
 
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/internal/tasks/taskspb";
 
 message TryFinalizeInvocation {
   string invocation_id = 1;
+}
+
+message ExportInvocationToBQ {
+  string invocation_id = 1;
+  luci.resultdb.v1.BigQueryExport bq_export = 2;
 }

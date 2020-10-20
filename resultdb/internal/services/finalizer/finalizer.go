@@ -304,10 +304,27 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 						return err
 					}
 				}
+				if tasks.UseBQExportTQ.Enabled(ctx) {
+					bqExports, err := invocations.ReadBQExports(ctx, invID)
+					if err != nil {
+						return err
+					}
+					for i, bqx := range bqExports {
+						tq.MustAddTask(ctx, &tq.Task{
+							Payload: &taskspb.ExportInvocationToBQ{
+								BqExport:     bqx,
+								InvocationId: string(invID),
+							},
+							Title: fmt.Sprintf("%s:%d", string(invID), i),
+						})
+					}
+					return nil
+				}
 				// Enqueue tasks to export the invocation to BigQuery.
 				// Note: this cannot be done in parallel with insertNextFinalizationTasks
 				// because a Spanner session can process only one DML query at a time.
 				return insertBigQueryTasks(ctx, invID)
+
 			}
 
 			// Update the invocation state.
