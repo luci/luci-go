@@ -11,10 +11,9 @@
 package buildbucketpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -26,10 +25,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
-
 // A notification about a build.
 type Notification struct {
 	state         protoimpl.MessageState
@@ -37,7 +32,7 @@ type Notification struct {
 	unknownFields protoimpl.UnknownFields
 
 	// When this notification was created.
-	Timestamp *timestamp.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Cloud Project ID of the Buildbucket instance that sent this notification,
 	// e.g. "cr-buildbucket".
 	// Useful if a service listens to both prod and dev instances of buildbucket.
@@ -81,7 +76,7 @@ func (*Notification) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_notification_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Notification) GetTimestamp() *timestamp.Timestamp {
+func (x *Notification) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -220,9 +215,9 @@ func file_go_chromium_org_luci_buildbucket_proto_notification_proto_rawDescGZIP(
 
 var file_go_chromium_org_luci_buildbucket_proto_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_buildbucket_proto_notification_proto_goTypes = []interface{}{
-	(*Notification)(nil),        // 0: buildbucket.v2.Notification
-	(*NotificationConfig)(nil),  // 1: buildbucket.v2.NotificationConfig
-	(*timestamp.Timestamp)(nil), // 2: google.protobuf.Timestamp
+	(*Notification)(nil),          // 0: buildbucket.v2.Notification
+	(*NotificationConfig)(nil),    // 1: buildbucket.v2.NotificationConfig
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_buildbucket_proto_notification_proto_depIdxs = []int32{
 	2, // 0: buildbucket.v2.Notification.timestamp:type_name -> google.protobuf.Timestamp

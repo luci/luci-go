@@ -2,14 +2,14 @@
 
 package buildbucketpb
 
-import discovery "go.chromium.org/luci/grpc/discovery"
+import "go.chromium.org/luci/grpc/discovery"
 
-import "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import "google.golang.org/protobuf/types/descriptorpb"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(
 		[]string{
-			"buildbucket.v2.BotAPI", "buildbucket.v2.Builders", "buildbucket.v2.Builds",
+			"swarming.v1.BotAPI", "buildbucket.v2.Builders", "buildbucket.v2.Builds",
 		},
 		[]byte{31, 139,
 			8, 0, 0, 0, 0, 0, 0, 255, 236, 253, 125, 116, 28, 217,
@@ -6828,9 +6828,9 @@ func init() {
 // Will not return nil.
 //
 // Do NOT modify the returned descriptor.
-func FileDescriptorSet() *descriptor.FileDescriptorSet {
+func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 	// We just need ONE of the service names to look up the FileDescriptorSet.
-	ret, err := discovery.GetDescriptorSet("buildbucket.v2.BotAPI")
+	ret, err := discovery.GetDescriptorSet("swarming.v1.BotAPI")
 	if err != nil {
 		panic(err)
 	}

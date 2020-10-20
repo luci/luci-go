@@ -21,13 +21,12 @@
 package buildbucketpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	_struct "github.com/golang/protobuf/ptypes/struct"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	api "go.chromium.org/luci/swarming/proto/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -38,10 +37,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A single build, identified by an int64 id.
 // Belongs to a builder.
@@ -91,19 +86,19 @@ type Build struct {
 	// Verified LUCI identity that canceled this build.
 	CanceledBy string `protobuf:"bytes,23,opt,name=canceled_by,json=canceledBy,proto3" json:"canceled_by,omitempty"`
 	// When the build was created.
-	CreateTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// When the build started.
 	// Required iff status is STARTED, SUCCESS or FAILURE.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// When the build ended.
 	// Present iff status is terminal.
 	// MUST NOT be before start_time.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// When the build was most recently updated.
 	//
 	// RPC: can be > end_time if, e.g. new tags were attached to a completed
 	// build.
-	UpdateTime *timestamp.Timestamp `protobuf:"bytes,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	// Status of the build.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
 	//
@@ -162,12 +157,12 @@ type Build struct {
 	// Maximum build pending time.
 	// If the timeout is reached, the build is marked as INFRA_FAILURE status
 	// and both status_details.{timeout, resource_exhaustion} are set.
-	SchedulingTimeout *duration.Duration `protobuf:"bytes,26,opt,name=scheduling_timeout,json=schedulingTimeout,proto3" json:"scheduling_timeout,omitempty"`
+	SchedulingTimeout *durationpb.Duration `protobuf:"bytes,26,opt,name=scheduling_timeout,json=schedulingTimeout,proto3" json:"scheduling_timeout,omitempty"`
 	// Maximum build execution time.
 	// Not to be confused with scheduling_timeout.
 	// If the timeout is reached, the build is marked as INFRA_FAILURE status
 	// and status_details.timeout is set.
-	ExecutionTimeout *duration.Duration `protobuf:"bytes,27,opt,name=execution_timeout,json=executionTimeout,proto3" json:"execution_timeout,omitempty"`
+	ExecutionTimeout *durationpb.Duration `protobuf:"bytes,27,opt,name=execution_timeout,json=executionTimeout,proto3" json:"execution_timeout,omitempty"`
 	// If set, swarming was requested to wait until it sees at least one bot
 	// report a superset of the build's requested dimensions.
 	WaitForCapacity bool `protobuf:"varint,28,opt,name=wait_for_capacity,json=waitForCapacity,proto3" json:"wait_for_capacity,omitempty"`
@@ -240,28 +235,28 @@ func (x *Build) GetCanceledBy() string {
 	return ""
 }
 
-func (x *Build) GetCreateTime() *timestamp.Timestamp {
+func (x *Build) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
 	}
 	return nil
 }
 
-func (x *Build) GetStartTime() *timestamp.Timestamp {
+func (x *Build) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *Build) GetEndTime() *timestamp.Timestamp {
+func (x *Build) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
 	return nil
 }
 
-func (x *Build) GetUpdateTime() *timestamp.Timestamp {
+func (x *Build) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdateTime
 	}
@@ -345,14 +340,14 @@ func (x *Build) GetCanary() bool {
 	return false
 }
 
-func (x *Build) GetSchedulingTimeout() *duration.Duration {
+func (x *Build) GetSchedulingTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.SchedulingTimeout
 	}
 	return nil
 }
 
-func (x *Build) GetExecutionTimeout() *duration.Duration {
+func (x *Build) GetExecutionTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.ExecutionTimeout
 	}
@@ -463,7 +458,7 @@ type Build_Input struct {
 	// RPC: By default, this field is excluded from responses.
 	//
 	// V1 equivalent: corresponds to "properties" key in "parameters_json".
-	Properties *_struct.Struct `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
+	Properties *structpb.Struct `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
 	// The Gitiles commit to run against.
 	// Usually present in CI builds, set by LUCI Scheduler.
 	// If not present, the build may checkout "refs/heads/master".
@@ -523,7 +518,7 @@ func (*Build_Input) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Build_Input) GetProperties() *_struct.Struct {
+func (x *Build_Input) GetProperties() *structpb.Struct {
 	if x != nil {
 		return x.Properties
 	}
@@ -577,7 +572,7 @@ type Build_Output struct {
 	// V1 equivalent: corresponds to "properties" key in
 	// "result_details_json".
 	// In V1 output properties are not populated until build ends.
-	Properties *_struct.Struct `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
+	Properties *structpb.Struct `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
 	// Build checked out and executed on this commit.
 	//
 	// Should correspond to Build.Input.gitiles_commit.
@@ -622,7 +617,7 @@ func (*Build_Output) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescGZIP(), []int{0, 1}
 }
 
-func (x *Build_Output) GetProperties() *_struct.Struct {
+func (x *Build_Output) GetProperties() *structpb.Struct {
 	if x != nil {
 		return x.Properties
 	}
@@ -658,7 +653,7 @@ type BuildInfra_Buildbucket struct {
 	// In particular, CQ uses this to decide whether the build created by
 	// someone else is appropriate for CQ, e.g. it was created with the same
 	// properties that CQ would use.
-	RequestedProperties *_struct.Struct `protobuf:"bytes,5,opt,name=requested_properties,json=requestedProperties,proto3" json:"requested_properties,omitempty"`
+	RequestedProperties *structpb.Struct `protobuf:"bytes,5,opt,name=requested_properties,json=requestedProperties,proto3" json:"requested_properties,omitempty"`
 	// Dimensions that were specified in ScheduleBuildRequest to create this
 	// build.
 	RequestedDimensions []*RequestedDimension `protobuf:"bytes,6,rep,name=requested_dimensions,json=requestedDimensions,proto3" json:"requested_dimensions,omitempty"`
@@ -705,7 +700,7 @@ func (x *BuildInfra_Buildbucket) GetServiceConfigRevision() string {
 	return ""
 }
 
-func (x *BuildInfra_Buildbucket) GetRequestedProperties() *_struct.Struct {
+func (x *BuildInfra_Buildbucket) GetRequestedProperties() *structpb.Struct {
 	if x != nil {
 		return x.RequestedProperties
 	}
@@ -1110,7 +1105,7 @@ type BuildInfra_Swarming_CacheEntry struct {
 	// immediately fallback to a cold cache request.
 	//
 	// The value must be multiples of 60 seconds.
-	WaitForWarmCache *duration.Duration `protobuf:"bytes,3,opt,name=wait_for_warm_cache,json=waitForWarmCache,proto3" json:"wait_for_warm_cache,omitempty"`
+	WaitForWarmCache *durationpb.Duration `protobuf:"bytes,3,opt,name=wait_for_warm_cache,json=waitForWarmCache,proto3" json:"wait_for_warm_cache,omitempty"`
 	// Environment variable with this name will be set to the path to the cache
 	// directory.
 	EnvVar string `protobuf:"bytes,4,opt,name=env_var,json=envVar,proto3" json:"env_var,omitempty"`
@@ -1162,7 +1157,7 @@ func (x *BuildInfra_Swarming_CacheEntry) GetPath() string {
 	return ""
 }
 
-func (x *BuildInfra_Swarming_CacheEntry) GetWaitForWarmCache() *duration.Duration {
+func (x *BuildInfra_Swarming_CacheEntry) GetWaitForWarmCache() *durationpb.Duration {
 	if x != nil {
 		return x.WaitForWarmCache
 	}
@@ -1425,15 +1420,15 @@ var file_go_chromium_org_luci_buildbucket_proto_build_proto_goTypes = []interfac
 	(*BuildInfra_ResultDB)(nil),            // 8: buildbucket.v2.BuildInfra.ResultDB
 	(*BuildInfra_Swarming_CacheEntry)(nil), // 9: buildbucket.v2.BuildInfra.Swarming.CacheEntry
 	(*BuilderID)(nil),                      // 10: buildbucket.v2.BuilderID
-	(*timestamp.Timestamp)(nil),            // 11: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),          // 11: google.protobuf.Timestamp
 	(Status)(0),                            // 12: buildbucket.v2.Status
 	(Trinary)(0),                           // 13: buildbucket.v2.Trinary
 	(*StatusDetails)(nil),                  // 14: buildbucket.v2.StatusDetails
 	(*Step)(nil),                           // 15: buildbucket.v2.Step
 	(*StringPair)(nil),                     // 16: buildbucket.v2.StringPair
 	(*Executable)(nil),                     // 17: buildbucket.v2.Executable
-	(*duration.Duration)(nil),              // 18: google.protobuf.Duration
-	(*_struct.Struct)(nil),                 // 19: google.protobuf.Struct
+	(*durationpb.Duration)(nil),            // 18: google.protobuf.Duration
+	(*structpb.Struct)(nil),                // 19: google.protobuf.Struct
 	(*GitilesCommit)(nil),                  // 20: buildbucket.v2.GitilesCommit
 	(*GerritChange)(nil),                   // 21: buildbucket.v2.GerritChange
 	(*Log)(nil),                            // 22: buildbucket.v2.Log

@@ -23,12 +23,11 @@
 package buildbucketpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "go.chromium.org/luci/common/proto"
 	v1 "go.chromium.org/luci/resultdb/proto/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -39,10 +38,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Toggle is a boolean with an extra state UNSET.
 // When protobuf messages are merged, UNSET does not overwrite an existing
@@ -513,7 +508,7 @@ type Builder struct {
 	// Percentage of builds that should use a canary swarming task template.
 	// A value from 0 to 100.
 	// If omitted, a global server-defined default percentage is used.
-	TaskTemplateCanaryPercentage *wrappers.UInt32Value `protobuf:"bytes,22,opt,name=task_template_canary_percentage,json=taskTemplateCanaryPercentage,proto3" json:"task_template_canary_percentage,omitempty"`
+	TaskTemplateCanaryPercentage *wrapperspb.UInt32Value `protobuf:"bytes,22,opt,name=task_template_canary_percentage,json=taskTemplateCanaryPercentage,proto3" json:"task_template_canary_percentage,omitempty"`
 	// A mapping of experiment name to the percentage chance (0-100) that it will
 	// apply to builds generated from this builder. Experiments are simply strings
 	// which various parts of the stack (from LUCI services down to your build
@@ -762,7 +757,7 @@ func (x *Builder) GetExperimental() Toggle {
 	return Toggle_UNSET
 }
 
-func (x *Builder) GetTaskTemplateCanaryPercentage() *wrappers.UInt32Value {
+func (x *Builder) GetTaskTemplateCanaryPercentage() *wrapperspb.UInt32Value {
 	if x != nil {
 		return x.TaskTemplateCanaryPercentage
 	}
@@ -819,7 +814,7 @@ type Swarming struct {
 	Builders []*Builder `protobuf:"bytes,4,rep,name=builders,proto3" json:"builders,omitempty"`
 	// DEPRECATED. Use builder_defaults.task_template_canary_percentage instead.
 	// Setting this field sets builder_defaults.task_template_canary_percentage.
-	TaskTemplateCanaryPercentage *wrappers.UInt32Value `protobuf:"bytes,5,opt,name=task_template_canary_percentage,json=taskTemplateCanaryPercentage,proto3" json:"task_template_canary_percentage,omitempty"`
+	TaskTemplateCanaryPercentage *wrapperspb.UInt32Value `protobuf:"bytes,5,opt,name=task_template_canary_percentage,json=taskTemplateCanaryPercentage,proto3" json:"task_template_canary_percentage,omitempty"`
 }
 
 func (x *Swarming) Reset() {
@@ -882,7 +877,7 @@ func (x *Swarming) GetBuilders() []*Builder {
 	return nil
 }
 
-func (x *Swarming) GetTaskTemplateCanaryPercentage() *wrappers.UInt32Value {
+func (x *Swarming) GetTaskTemplateCanaryPercentage() *wrapperspb.UInt32Value {
 	if x != nil {
 		return x.TaskTemplateCanaryPercentage
 	}
@@ -1522,22 +1517,22 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZI
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = []interface{}{
-	(Toggle)(0),                  // 0: buildbucket.Toggle
-	(Acl_Role)(0),                // 1: buildbucket.Acl.Role
-	(*Acl)(nil),                  // 2: buildbucket.Acl
-	(*AclSet)(nil),               // 3: buildbucket.AclSet
-	(*Builder)(nil),              // 4: buildbucket.Builder
-	(*Swarming)(nil),             // 5: buildbucket.Swarming
-	(*Bucket)(nil),               // 6: buildbucket.Bucket
-	(*BuildbucketCfg)(nil),       // 7: buildbucket.BuildbucketCfg
-	(*Builder_CacheEntry)(nil),   // 8: buildbucket.Builder.CacheEntry
-	(*Builder_Recipe)(nil),       // 9: buildbucket.Builder.Recipe
-	(*Builder_ResultDB)(nil),     // 10: buildbucket.Builder.ResultDB
-	nil,                          // 11: buildbucket.Builder.ExperimentsEntry
-	(*Executable)(nil),           // 12: buildbucket.v2.Executable
-	(Trinary)(0),                 // 13: buildbucket.v2.Trinary
-	(*wrappers.UInt32Value)(nil), // 14: google.protobuf.UInt32Value
-	(*v1.BigQueryExport)(nil),    // 15: luci.resultdb.v1.BigQueryExport
+	(Toggle)(0),                    // 0: buildbucket.Toggle
+	(Acl_Role)(0),                  // 1: buildbucket.Acl.Role
+	(*Acl)(nil),                    // 2: buildbucket.Acl
+	(*AclSet)(nil),                 // 3: buildbucket.AclSet
+	(*Builder)(nil),                // 4: buildbucket.Builder
+	(*Swarming)(nil),               // 5: buildbucket.Swarming
+	(*Bucket)(nil),                 // 6: buildbucket.Bucket
+	(*BuildbucketCfg)(nil),         // 7: buildbucket.BuildbucketCfg
+	(*Builder_CacheEntry)(nil),     // 8: buildbucket.Builder.CacheEntry
+	(*Builder_Recipe)(nil),         // 9: buildbucket.Builder.Recipe
+	(*Builder_ResultDB)(nil),       // 10: buildbucket.Builder.ResultDB
+	nil,                            // 11: buildbucket.Builder.ExperimentsEntry
+	(*Executable)(nil),             // 12: buildbucket.v2.Executable
+	(Trinary)(0),                   // 13: buildbucket.v2.Trinary
+	(*wrapperspb.UInt32Value)(nil), // 14: google.protobuf.UInt32Value
+	(*v1.BigQueryExport)(nil),      // 15: luci.resultdb.v1.BigQueryExport
 }
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_depIdxs = []int32{
 	1,  // 0: buildbucket.Acl.role:type_name -> buildbucket.Acl.Role

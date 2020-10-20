@@ -21,10 +21,9 @@
 package buildbucketpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -35,10 +34,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A build step.
 //
@@ -70,12 +65,12 @@ type Step struct {
 	//
 	// MUST be specified, if specified in any of its children.
 	// MUST be in range [parent.start_time, parent.end_time].
-	StartTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp when the step ended.
 	// Present iff status is terminal.
 	// MUST NOT be before start_time.
 	// MUST be in range [parent.start_time, parent.end_time], or unspecified.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
 	//
@@ -148,14 +143,14 @@ func (x *Step) GetName() string {
 	return ""
 }
 
-func (x *Step) GetStartTime() *timestamp.Timestamp {
+func (x *Step) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *Step) GetEndTime() *timestamp.Timestamp {
+func (x *Step) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
@@ -233,10 +228,10 @@ func file_go_chromium_org_luci_buildbucket_proto_step_proto_rawDescGZIP() []byte
 
 var file_go_chromium_org_luci_buildbucket_proto_step_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_go_chromium_org_luci_buildbucket_proto_step_proto_goTypes = []interface{}{
-	(*Step)(nil),                // 0: buildbucket.v2.Step
-	(*timestamp.Timestamp)(nil), // 1: google.protobuf.Timestamp
-	(Status)(0),                 // 2: buildbucket.v2.Status
-	(*Log)(nil),                 // 3: buildbucket.v2.Log
+	(*Step)(nil),                  // 0: buildbucket.v2.Step
+	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(Status)(0),                   // 2: buildbucket.v2.Status
+	(*Log)(nil),                   // 3: buildbucket.v2.Log
 }
 var file_go_chromium_org_luci_buildbucket_proto_step_proto_depIdxs = []int32{
 	1, // 0: buildbucket.v2.Step.start_time:type_name -> google.protobuf.Timestamp
