@@ -88,6 +88,24 @@
       "parentUuid": "3694b5c2_70707d2e",
       "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c63129e_9f273d71",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-20T02:30:12Z",
+      "side": 1,
+      "message": "Submitted https://github.com/grpc/grpc-go/issues/3966 Have no hope.",
+      "parentUuid": "c0db7ca0_37eb6d3c",
+      "revId": "b8aca28d6fa87a04782b2c23c1d16e37a1222a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
