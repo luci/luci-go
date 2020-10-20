@@ -63,6 +63,7 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 			TestMetadata: &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
 					FileName: "//a_test.go",
 					Line:     54,
 				}},
