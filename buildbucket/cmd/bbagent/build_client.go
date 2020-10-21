@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/grpc/prpc"
@@ -95,8 +96,11 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 }
 
 // options for the dispatcher.Channel
-func channelOpts(ctx context.Context) *dispatcher.Options {
-	return &dispatcher.Options{
+func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
+	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch, err error) (retry bool) {
+		return transient.Tag.In(err)
+	})
+	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
 			BatchSize:    1,
@@ -115,8 +119,9 @@ func channelOpts(ctx context.Context) *dispatcher.Options {
 			},
 		},
 		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
-		ErrorFn: dispatcher.ErrorFnQuiet,
+		ErrorFn: errorFn,
 	}
+	return opts, errCh
 }
 
 func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.BuildsClient) dispatcher.SendFn {
