@@ -634,13 +634,6 @@ var (
 					`{{ if gt $i 0 }} {{ end }}` +
 					`{{ $link.HTML }}` +
 					`{{ end }}`))
-	resultsPageOptInTemplate = template.Must(
-		template.New("optIn").
-			Parse(`
-				<div id="opt-in-banner">
-					Try the new test results page
-					<a href="/ui/inv/{{ . }}">here</a>!
-				</div>`))
 	newBuildPageOptInTemplate = template.Must(
 		template.New("optIn").
 			Parse(`
@@ -681,19 +674,6 @@ func (l LinkSet) HTML() template.HTML {
 	}
 	buf := bytes.Buffer{}
 	if err := linkifySetTemplate.Execute(&buf, l); err != nil {
-		panic(err)
-	}
-	return template.HTML(buf.Bytes())
-}
-
-// TestResultsOptInHTML returns a link to the test results page of the build.
-func (b *Build) TestResultsOptInHTML() template.HTML {
-	if b.GetInfra().GetResultdb().GetInvocation() == "" {
-		return ""
-	}
-	invID := strings.TrimPrefix(b.Infra.Resultdb.Invocation, "invocations/")
-	buf := bytes.Buffer{}
-	if err := resultsPageOptInTemplate.Execute(&buf, invID); err != nil {
 		panic(err)
 	}
 	return template.HTML(buf.Bytes())
