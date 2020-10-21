@@ -73,6 +73,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "07f10228_aea56b89",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T19:33:57Z",
+      "side": 1,
+      "message": "they would be if they mutated it, but they don\u0027t",
+      "parentUuid": "df7055f2_dec1a718",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 68,
+        "endChar": 6
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1bec6c96_f6096554",
         "filename": "resultdb/internal/history/worker.go",
         "patchSetId": 12
