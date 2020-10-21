@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
@@ -86,23 +87,10 @@ func mainImpl() int {
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	check(errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err())
 
-	bbClient, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket)
+	bbclient, secrets, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
-	defer bbClient.CloseAndDrain(ctx)
-
-	// from this point forward we want to try to report errors to buildbucket,
-	// too.
-	check = func(err error) {
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			bbClient.C <- &bbpb.Build{
-				Status:          bbpb.Status_INFRA_FAILURE,
-				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
-			}
-			bbClient.CloseAndDrain(ctx)
-			os.Exit(1)
-		}
-	}
+	logdogOutput, err := mkLogdogOutput(sctx, input.Build.Infra.Logdog)
+	check(errors.Annotate(err, "could not create logdog output").Err())
 
 	var (
 		cctx   context.Context
@@ -116,6 +104,24 @@ func mainImpl() int {
 		cctx, cancel = context.WithCancel(ctx)
 	}
 	defer cancel()
+
+	buildsCh, err := dispatcher.NewChannel(cctx, channelOpts(cctx), mkSendFn(cctx, secrets, bbclient))
+	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
+	defer buildsCh.CloseAndDrain(cctx)
+
+	// from this point forward we want to try to report errors to buildbucket,
+	// too.
+	check = func(err error) {
+		if err != nil {
+			logging.Errorf(cctx, err.Error())
+			buildsCh.C <- &bbpb.Build{
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
+			}
+			buildsCh.CloseAndDrain(cctx)
+			os.Exit(1)
+		}
+	}
 
 	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
 		// For buildbucket builds, buildbucket creates the invocations and saves the
@@ -136,13 +142,11 @@ func mainImpl() int {
 		ButlerLogLevel: logging.Warning,
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
 			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
-		ExeAuth: host.DefaultExeAuth("bbagent", input.KnownPublicGerritHosts),
+		LogdogOutput: logdogOutput,
+		ExeAuth:      host.DefaultExeAuth("bbagent", input.KnownPublicGerritHosts),
 	}
-	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
-	check(err)
 	cwd, err := os.Getwd()
 	check(errors.Annotate(err, "getting cwd").Err())
-
 	opts.BaseDir = filepath.Join(cwd, "x")
 
 	exeArgs := append(([]string)(nil), input.Build.Exe.Cmd...)
@@ -214,7 +218,7 @@ func mainImpl() int {
 	for build := range builds {
 		// TODO(iannucci): add backchannel from buildbucket prpc client to shut
 		// down/cancel the build.
-		bbClient.C <- build
+		buildsCh.C <- build
 		finalBuild = build
 	}
 
