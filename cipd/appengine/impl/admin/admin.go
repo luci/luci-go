@@ -29,11 +29,25 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
 
-// adminImpl implements cipd.AdminServer, with an assumption that auth check has
-// already been done by the decorator setup in AdminAPI(), see acl.go.
+// AdminAPI returns an ACL-protected implementation of cipd.AdminServer that can
+// be exposed as a public API (i.e. admins can use it via external RPCs).
+func AdminAPI(d *tq.Dispatcher) api.AdminServer {
+	impl := &adminImpl{
+		acl: rpcacl.CheckAdmin,
+		tq:  d,
+	}
+	impl.init()
+	return impl
+}
+
+// adminImpl implements cipd.AdminServer.
 type adminImpl struct {
+	api.UnimplementedAdminServer
+
+	acl func(context.Context) error
 	tq  *tq.Dispatcher
 	ctl *mapper.Controller
 }
@@ -68,6 +82,10 @@ func toStatus(err error) error {
 
 // LaunchJob implements the corresponding RPC method, see the proto doc.
 func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.JobID, error) {
+	if err := impl.acl(ctx); err != nil {
+		return nil, err
+	}
+
 	def, ok := mappers[cfg.Kind] // see mappers.go
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "unknown mapper kind")
@@ -92,6 +110,9 @@ func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.
 
 // AbortJob implements the corresponding RPC method, see the proto doc.
 func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empty, error) {
+	if err := impl.acl(ctx); err != nil {
+		return nil, err
+	}
 	_, err := impl.ctl.AbortJob(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
@@ -101,6 +122,9 @@ func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empt
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
 func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.JobState, error) {
+	if err := impl.acl(ctx); err != nil {
+		return nil, err
+	}
 	job, err := impl.ctl.GetJob(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
@@ -118,6 +142,9 @@ func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.Job
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
 func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *api.JobID) (*api.TagFixReport, error) {
+	if err := impl.acl(ctx); err != nil {
+		return nil, err
+	}
 	tags, err := fixMarkedTags(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)

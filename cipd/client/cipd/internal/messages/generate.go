@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-grpc-plugin
 
 package messages
-
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
