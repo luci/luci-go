@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedAdmin struct {
@@ -42,7 +42,7 @@ func (s *DecoratedAdmin) LaunchJob(ctx context.Context, req *JobConfig) (rsp *Jo
 	return
 }
 
-func (s *DecoratedAdmin) AbortJob(ctx context.Context, req *JobID) (rsp *empty.Empty, err error) {
+func (s *DecoratedAdmin) AbortJob(ctx context.Context, req *JobID) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "AbortJob", req)
