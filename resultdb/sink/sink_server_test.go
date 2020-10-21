@@ -163,7 +163,19 @@ func TestReportTestResults(t *testing.T) {
 		Convey("with ServerConfig.TestLocationBase", func() {
 			cfg.TestLocationBase = "//base/"
 			tr.TestLocation.FileName = "artifact_dir/a_test.cc"
+			tr.TestMetadata = &pb.TestMetadata{
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "artifact_dir/a_test.cc",
+				},
+			}
 			expected.TestLocation.FileName = "//base/artifact_dir/a_test.cc"
+			expected.TestMetadata = &pb.TestMetadata{
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "//base/artifact_dir/a_test.cc",
+				},
+			}
 			check(ctx, cfg, tr, expected)
 		})
 

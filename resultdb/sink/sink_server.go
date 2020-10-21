@@ -128,6 +128,9 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
 			tr.TestLocation.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestLocation.FileName)
 		}
+		if tr.GetTestMetadata().GetLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.TestMetadata.Location.FileName, "//") {
+			tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestMetadata.Location.FileName)
+		}
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 		}
