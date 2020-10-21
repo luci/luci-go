@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca097933_c959ce2a",
+        "filename": "cipd/appengine/impl/admin/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T04:55:26Z",
+      "side": 1,
+      "message": "As we are no longer using svcdec. It looks like now that for all new RPC methods, we need to remember to call `impl.acl` at the beginning. Would `UnaryServerInterceptor` help facilitate this?",
+      "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
