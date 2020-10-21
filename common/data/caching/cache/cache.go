@@ -241,9 +241,23 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	dest := d.itemPath(digest)
+	if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
+		terr := func() error {
+			if runtime.GOOS == "darwin" {
+				// TODO(crbug.com/1140864): Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
+				if cerr := filesystem.Copy(dest, src, fi.Mode()); cerr != nil {
+					err = errors.Annotate(err, "fallback copy failed: %v", cerr).Err()
+				} else {
+					return nil
+				}
+			}
 
-	if err := os.Link(src, d.itemPath(digest)); err != nil && !os.IsExist(err) {
-		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+			return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+		}()
+		if terr != nil {
+			return terr
+		}
 	}
 
 	d.lru.pushFront(digest, units.Size(fi.Size()))
