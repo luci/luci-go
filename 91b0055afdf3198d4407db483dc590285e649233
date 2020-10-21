@@ -97,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "477de622_a9672eff",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-21T19:37:59Z",
+      "side": 1,
+      "message": "They need to mutate their testresults.Query{} to specify the batch of invocationIDs\n\nOr did you mean that wi.query would be of type *pb.TestResultPredicate?",
+      "parentUuid": "df7055f2_dec1a718",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 68,
+        "endChar": 6
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1bec6c96_f6096554",
         "filename": "resultdb/internal/history/worker.go",
         "patchSetId": 12
