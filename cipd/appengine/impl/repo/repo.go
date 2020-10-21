@@ -81,6 +81,8 @@ type Server interface {
 
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct {
+	api.UnimplementedRepositoryServer
+
 	tq *tq.Dispatcher
 
 	meta metadata.Storage  // storage for package prefix metadata
