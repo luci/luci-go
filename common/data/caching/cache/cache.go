@@ -382,14 +382,27 @@ func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	if err := os.Link(src, dest); err != nil {
-		if _, serr := os.Stat(src); errors.Contains(serr, os.ErrNotExist) {
-			// In Windows, os.Link may fail with access denied error even if |src| isn't there.
-			// And this is to normalize returned error in such case.
-			// https://crbug.com/1098265
-			err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v", src, err).Err()
+		if terr := func() error {
+			// Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
+			if runtime.GOOS == "darwin" {
+				if cerr := filesystem.Copy(dest, src, perm); cerr != nil {
+					err = errors.Annotate(err, "fallback copy failed: %v", cerr).Err()
+				} else {
+					return nil
+				}
+			}
+			if _, serr := os.Stat(src); errors.Contains(serr, os.ErrNotExist) {
+				// In Windows, os.Link may fail with access denied error even if |src| isn't there.
+				// And this is to normalize returned error in such case.
+				// https://crbug.com/1098265
+				err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v", src, err).Err()
+			}
+			debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
+			return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
+		}(); terr != nil {
+			return terr
 		}
-		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
-		return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
+
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
