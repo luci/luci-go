@@ -24,8 +24,6 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
@@ -33,6 +31,7 @@ import (
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -43,10 +42,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A request message for CreateInvocation.
 type CreateInvocationRequest struct {
@@ -1060,7 +1055,7 @@ var file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_goTypes = []inter
 	(*field_mask.FieldMask)(nil),                // 13: google.protobuf.FieldMask
 	(*TestResult)(nil),                          // 14: luci.resultdb.v1.TestResult
 	(*TestExoneration)(nil),                     // 15: luci.resultdb.v1.TestExoneration
-	(*empty.Empty)(nil),                         // 16: google.protobuf.Empty
+	(*emptypb.Empty)(nil),                       // 16: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_depIdxs = []int32{
 	12, // 0: luci.resultdb.v1.CreateInvocationRequest.invocation:type_name -> luci.resultdb.v1.Invocation
@@ -1304,7 +1299,7 @@ type RecorderClient interface {
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
 	// Updates inclusions for a non-finalized invocation.
-	UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Appends a test result to a non-finalized invocation.
 	CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
 	// Atomically appends a batch of test results to a non-finalized invocation.
@@ -1359,8 +1354,8 @@ func (c *recorderPRPCClient) FinalizeInvocation(ctx context.Context, in *Finaliz
 	return out, nil
 }
 
-func (c *recorderPRPCClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *recorderPRPCClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "UpdateIncludedInvocations", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1448,8 +1443,8 @@ func (c *recorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInv
 	return out, nil
 }
 
-func (c *recorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *recorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/UpdateIncludedInvocations", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1515,7 +1510,7 @@ type RecorderServer interface {
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error)
 	// Updates inclusions for a non-finalized invocation.
-	UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*empty.Empty, error)
+	UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error)
 	// Appends a test result to a non-finalized invocation.
 	CreateTestResult(context.Context, *CreateTestResultRequest) (*TestResult, error)
 	// Atomically appends a batch of test results to a non-finalized invocation.
@@ -1543,7 +1538,7 @@ func (*UnimplementedRecorderServer) UpdateInvocation(context.Context, *UpdateInv
 func (*UnimplementedRecorderServer) FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FinalizeInvocation not implemented")
 }
-func (*UnimplementedRecorderServer) UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+func (*UnimplementedRecorderServer) UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateIncludedInvocations not implemented")
 }
 func (*UnimplementedRecorderServer) CreateTestResult(context.Context, *CreateTestResultRequest) (*TestResult, error) {

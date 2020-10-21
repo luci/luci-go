@@ -21,12 +21,11 @@
 package resultpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -37,10 +36,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Machine-readable status of a test result.
 type TestStatus int32
@@ -185,10 +180,10 @@ type TestResult struct {
 	// UTF-8.
 	SummaryHtml string `protobuf:"bytes,7,opt,name=summary_html,json=summaryHtml,proto3" json:"summary_html,omitempty"`
 	// The point in time when the test case started to execute.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Duration of the test case execution.
 	// MUST be equal to or greater than 0.
-	Duration *duration.Duration `protobuf:"bytes,9,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration *durationpb.Duration `protobuf:"bytes,9,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Metadata for this test result.
 	// It might describe this particular execution or the test case.
 	// A key can be repeated.
@@ -286,14 +281,14 @@ func (x *TestResult) GetSummaryHtml() string {
 	return ""
 }
 
-func (x *TestResult) GetStartTime() *timestamp.Timestamp {
+func (x *TestResult) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *TestResult) GetDuration() *duration.Duration {
+func (x *TestResult) GetDuration() *durationpb.Duration {
 	if x != nil {
 		return x.Duration
 	}
@@ -542,15 +537,15 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_rawDescGZIP()
 var file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_goTypes = []interface{}{
-	(TestStatus)(0),             // 0: luci.resultdb.v1.TestStatus
-	(*TestResult)(nil),          // 1: luci.resultdb.v1.TestResult
-	(*TestExoneration)(nil),     // 2: luci.resultdb.v1.TestExoneration
-	(*Variant)(nil),             // 3: luci.resultdb.v1.Variant
-	(*timestamp.Timestamp)(nil), // 4: google.protobuf.Timestamp
-	(*duration.Duration)(nil),   // 5: google.protobuf.Duration
-	(*StringPair)(nil),          // 6: luci.resultdb.v1.StringPair
-	(*TestLocation)(nil),        // 7: luci.resultdb.v1.TestLocation
-	(*TestMetadata)(nil),        // 8: luci.resultdb.v1.TestMetadata
+	(TestStatus)(0),               // 0: luci.resultdb.v1.TestStatus
+	(*TestResult)(nil),            // 1: luci.resultdb.v1.TestResult
+	(*TestExoneration)(nil),       // 2: luci.resultdb.v1.TestExoneration
+	(*Variant)(nil),               // 3: luci.resultdb.v1.Variant
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 5: google.protobuf.Duration
+	(*StringPair)(nil),            // 6: luci.resultdb.v1.StringPair
+	(*TestLocation)(nil),          // 7: luci.resultdb.v1.TestLocation
+	(*TestMetadata)(nil),          // 8: luci.resultdb.v1.TestMetadata
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_depIdxs = []int32{
 	3, // 0: luci.resultdb.v1.TestResult.variant:type_name -> luci.resultdb.v1.Variant
