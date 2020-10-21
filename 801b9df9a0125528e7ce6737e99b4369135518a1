@@ -33,6 +33,47 @@
       "message": "As we are no longer using svcdec. It looks like now that for all new RPC methods, we need to remember to call `impl.acl` at the beginning. Would `UnaryServerInterceptor` help facilitate this?",
       "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2766d2b0_dd35e9d0",
+        "filename": "cipd/appengine/impl/admin/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-21T13:30:55Z",
+      "side": 1,
+      "message": "svcdec was nice because it encapsulated ACL checks with the server implementation.\nUnaryServerInterceptor oth adds such checks quite separately from implementation, so I don\u0027t think it\u0027s the way to go.",
+      "parentUuid": "ca097933_c959ce2a",
+      "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2eed73b_8b280fe0",
+        "filename": "cipd/appengine/impl/cas/acled.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-21T13:30:55Z",
+      "side": 1,
+      "message": "really cool!",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 24
+      },
+      "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
