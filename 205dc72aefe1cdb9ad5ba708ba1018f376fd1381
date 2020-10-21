@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "205dc72aefe1cdb9ad5ba708ba1018f376fd1381",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fac8336a_08c27b1c",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-21T19:57:00Z",
+      "side": 1,
+      "message": "IIUC, we only need UpdateBuild. Consider introducing a narrow interface only for that:\n\n  type BuildsClient interface {\n    UpdateBuild(...)\n  }\n\n  func newBuildsClient(...) (BuildsClient, ...)\n\nThen there\u0027 no need to touch this file whenever new RPC methods are added.",
+      "range": {
+        "startLine": 63,
+        "startChar": 83,
+        "endLine": 63,
+        "endChar": 100
+      },
+      "revId": "205dc72aefe1cdb9ad5ba708ba1018f376fd1381",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
