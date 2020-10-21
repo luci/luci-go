@@ -18,6 +18,12 @@ import (
 	"context"
 	"time"
 
+	"golang.org/x/time/rate"
+
+	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -29,10 +35,64 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/grpc/prpc"
-	"golang.org/x/time/rate"
-	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/grpc/metadata"
 )
+
+var _ bbpb.BuildsClient = dummyBBClient{}
+
+type dummyBBClient struct{}
+
+func (dummyBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
+func (dummyBBClient) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest, opts ...grpc.CallOption) (*bbpb.SearchBuildsResponse, error) {
+	return nil, nil
+}
+func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
+func (dummyBBClient) ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
+func (dummyBBClient) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
+func (dummyBBClient) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
+	return nil, nil
+}
+
+func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket) (bbpb.BuildsClient, *bbpb.BuildSecrets, error) {
+	hostname := infraOpts.GetHostname()
+	if hostname == "" {
+		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
+		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: "dummy token"}, nil
+	}
+	opts := prpc.DefaultOptions()
+	opts.Insecure = lhttp.IsLocalHost(hostname)
+	opts.Retry = nil // luciexe handles retries itself.
+
+	prpcClient := &prpc.Client{
+		Host:    hostname,
+		Options: opts,
+	}
+	secrets, err := readBuildSecrets(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	prpcClient.C, err = auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+		MonitorAs: "bbagent/buildbucket",
+	}).Client()
+	if err != nil {
+		return nil, nil, err
+	}
+	// TODO(iannucci): Exchange secret build token+nonce for a running build token
+	// here to confirm that:
+	//   * We're the ONLY ones servicing this build (detect duplicate Swarming
+	//     tasks). Failure to exchange the token would let us know that we got
+	//     double-booked.
+	//   * Auth is properly configured for buildbucket before we start running the
+	//     user code.
+	return bbpb.NewBuildsPRPCClient(prpcClient), secrets, nil
+}
 
 // options for the dispatcher.Channel
 func channelOpts(ctx context.Context) *dispatcher.Options {
@@ -57,49 +117,6 @@ func channelOpts(ctx context.Context) *dispatcher.Options {
 		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
 		ErrorFn: dispatcher.ErrorFnQuiet,
 	}
-}
-
-func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket) (ret dispatcher.Channel, err error) {
-	var sendFn dispatcher.SendFn
-	if hostname := infraOpts.GetHostname(); hostname == "" {
-		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
-		sendFn = func(b *buffer.Batch) error {
-			return nil // noop
-		}
-	} else {
-		opts := prpc.DefaultOptions()
-		opts.Insecure = lhttp.IsLocalHost(hostname)
-		opts.Retry = nil // luciexe handles retries itself.
-
-		prpcClient := &prpc.Client{
-			Host:    hostname,
-			Options: opts,
-		}
-
-		var secrets *bbpb.BuildSecrets
-		secrets, err = readBuildSecrets(ctx)
-		if err != nil {
-			return
-		}
-
-		prpcClient.C, err = auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
-			MonitorAs: "bbagent/buildbucket",
-		}).Client()
-		if err != nil {
-			return
-		}
-
-		// TODO(iannucci): Exchange secret build token+nonce for a running build token
-		// here to confirm that:
-		//   * We're the ONLY ones servicing this build (detect duplicate Swarming
-		//     tasks). Failure to exchange the token would let us know that we got
-		//     double-booked.
-		//   * Auth is properly configured for buildbucket before we start running the
-		//     user code.
-		sendFn = mkSendFn(ctx, secrets, bbpb.NewBuildsPRPCClient(prpcClient))
-	}
-
-	return dispatcher.NewChannel(ctx, channelOpts(ctx), sendFn)
 }
 
 func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.BuildsClient) dispatcher.SendFn {
