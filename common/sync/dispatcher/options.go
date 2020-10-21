@@ -152,6 +152,23 @@ func ErrorFnQuiet(b *buffer.Batch, err error) (retry bool) {
 	return transient.Tag.In(err)
 }
 
+// ErrorFnReport is an implementation of Options.ErrorFn which sends all errors
+// to a buffered channel. The channel MUST be drained as quickly as possible.
+// Otherwise, it may block all dispatcher actions.
+//
+// If `inner` error function is provided, it is used to determine `retry`.
+// Otherwise, `retry` is always false.
+func ErrorFnReport(bufferSize int, inner ErrorFn) (ErrorFn, <-chan error) {
+	errCh := make(chan error, bufferSize)
+	return func(b *buffer.Batch, err error) bool {
+		errCh <- err
+		if inner != nil {
+			return inner(b, err)
+		}
+		return false
+	}, errCh
+}
+
 // DropFnQuiet is an implementation of Options.DropFn which drops batches
 // without logging anything.
 func DropFnQuiet(*buffer.Batch, bool) {}
