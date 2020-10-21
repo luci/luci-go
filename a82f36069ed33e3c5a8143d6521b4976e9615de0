@@ -16,6 +16,155 @@
       "message": "PTAL.\n\nRelated changes:\nhttp://crrev.com/i/3349761\nhttp://crrev.com/i/3349762",
       "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "823e10a9_7f43a5ed",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "Add a test?",
+      "range": {
+        "startLine": 239,
+        "startChar": 5,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1259c3da_14e8489b",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "Should we add a TODO to update exportResultsToBigQuery to take bqExport as *pb.BigQueryExport?",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 84
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0966fed6_f0401eec",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "tasks.ScheduleBQExport?",
+      "range": {
+        "startLine": 313,
+        "startChar": 6,
+        "endLine": 319,
+        "endChar": 8
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe7b426d_3878b8ee",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91360bf9_cf6dab49",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "Could you add a test to test the TQ-based code path? Link L150.",
+      "range": {
+        "startLine": 172,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 4
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e9cdc02_f5f4f38e",
+        "filename": "resultdb/internal/tasks/bq_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "Naming nit: \"bq-export\" or  \"bq-exporter\"?",
+      "range": {
+        "startLine": 32,
+        "startChar": 23,
+        "endLine": 32,
+        "endChar": 36
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d99b2fb1_e494d0bc",
+        "filename": "resultdb/internal/tasks/taskspb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T02:19:41Z",
+      "side": 1,
+      "message": "nit: newline.",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
