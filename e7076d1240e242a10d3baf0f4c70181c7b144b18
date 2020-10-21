@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a864f83_00d35e57",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T20:00:03Z",
+      "side": 1,
+      "message": "Simulated using led with https://crrev.com/c/2490746 and can see when UpdateBuild fails with InvalidArgument error, bbagent interrupted the running luciexe and logged the error (in the prod environment, it will send the error to buildbucket for real). \n\nhttps://chromium-swarm-dev.appspot.com/task?id\u003d4f6568442adf4810",
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
