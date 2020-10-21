@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "11e32816_de90a966",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T20:34:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c593c120_8ce9bcce",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66c6de07_8a182bf2",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2de239ed_ffae0623",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T20:34:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66c6de07_8a182bf2",
+      "range": {
+        "startLine": 38,
+        "startChar": 34,
+        "endLine": 38,
+        "endChar": 52
+      },
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e72c3033_a761598d",
@@ -77,6 +125,24 @@
       "writtenOn": "2020-10-21T18:51:23Z",
       "side": 1,
       "message": "isn\u0027t this proto sink-specific? should it be in the sink package?",
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24ab497c_971ea7c3",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-21T20:34:09Z",
+      "side": 1,
+      "message": "Yes... moved.",
+      "parentUuid": "e72c3033_a761598d",
       "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
