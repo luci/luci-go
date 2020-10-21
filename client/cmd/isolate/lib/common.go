@@ -88,7 +88,7 @@ func (c *commonServerFlags) Parse() error {
 
 func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
 	// Don't enforce authentication by using OptionalLogin mode. This is needed
-	// for IP whitelisted bots: they have NO credentials to send.
+	// for IP-allowed bots: they have NO credentials to send.
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
