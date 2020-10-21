@@ -1,0 +1,43 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsink.v1;
+
+option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
+
+// Maps from directory paths to extra tags to attach to TestResults.
+message LocationTags {
+  // Map from directory paths in a repo to extra tags to attach to TestResults.
+  message Repo {
+    // The key is a relative dir path.
+    // "" means repo root and represents default for all subdirs.
+    // Must use forward slash as a dir separator.
+    map<string, Dir> dirs = 1;
+  }
+
+  // Extra tags to attach to TestResults for a directory.
+  message Dir {
+    // If a key is not defined for subdir, but defined for a ancestor dir, then
+    // the value in the ancestor is implied.
+    map<string, string> tags = 1;
+  }
+
+  // The key is a Gitiles URL as the identifier for a repo.
+  // Format for Gitiles URL: https://<host>/<project>
+  // For example "https://chromium.googlesource.com/chromium/src"
+  // Must not end with ".git".
+  map<string, Repo> repos = 1;
+}
