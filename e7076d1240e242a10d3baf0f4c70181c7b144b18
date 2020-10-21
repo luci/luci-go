@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6d21437_8d6373a7",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T21:28:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00245c77_5294936f",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 53
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fe653c04_e64ce1cf",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-10-21T20:18:42Z",
       "side": 1,
       "message": "why is this necessary? Can `close(shutdownCh)` below be just replaced with `shutdown()`?",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 213,
+        "endChar": 5
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5297e2e8_1a137fad",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T21:28:38Z",
+      "side": 1,
+      "message": "`shutdown` is in the closure of an anonymous function now. Alternatively, I can leak `shutdown` by storing it in a atomic.Value defined in the outer scope so that we don\u0027t need to depend on channel. WDYT?",
+      "parentUuid": "fe653c04_e64ce1cf",
       "range": {
         "startLine": 207,
         "startChar": 2,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e45e6e6e_b75c6d7d",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T21:28:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07c78965_85c63c16",
+      "range": {
+        "startLine": 242,
+        "startChar": 4,
+        "endLine": 246,
+        "endChar": 4
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "814d6a84_0c46e938",
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "737479a0_29e3b13d",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T21:28:38Z",
+      "side": 1,
+      "message": "Good point. Done!",
+      "parentUuid": "814d6a84_0c46e938",
+      "range": {
+        "startLine": 267,
+        "startChar": 5,
+        "endLine": 267,
+        "endChar": 42
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "44a245c8_c7d2c882",
@@ -123,6 +219,30 @@
       "writtenOn": "2020-10-21T20:18:42Z",
       "side": 1,
       "message": "what will be the exit code if UpdateBuild fails?",
+      "range": {
+        "startLine": 304,
+        "startChar": 0,
+        "endLine": 307,
+        "endChar": 9
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d1a629b_ccb72779",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T21:28:38Z",
+      "side": 1,
+      "message": "Oops.. I accidentally delete `return 1` in both error blocks.",
+      "parentUuid": "44a245c8_c7d2c882",
       "range": {
         "startLine": 304,
         "startChar": 0,
