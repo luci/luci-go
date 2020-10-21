@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
-//go:generate svcdec -type AdminServer
+//go:generate cproto -use-grpc-plugin
 
 // Package internal contains internal structs used by the tasks and the engine.
 package internal
