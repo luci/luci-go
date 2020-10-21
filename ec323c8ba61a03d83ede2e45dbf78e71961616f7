@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7eebf4a2_d6c170df",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-21T05:28:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1de96b95_dfe60e4c",
+      "range": {
+        "startLine": 69,
+        "startChar": 31,
+        "endLine": 69,
+        "endChar": 80
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c3e62e21_e61e9ac8",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "14bc56d6_be9280bc",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-21T05:28:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3e62e21_e61e9ac8",
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0e58abbb_025c296b",
@@ -54,6 +96,24 @@
       "writtenOn": "2020-10-16T01:34:03Z",
       "side": 1,
       "message": "must check if the request has access to the build\n\npython does it implicitly, by calling service.get_build_async (in hindsight, comment is missing there)",
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d333944a_ab07e1d7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-21T05:28:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e58abbb_025c296b",
       "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -94,6 +154,30 @@
       "writtenOn": "2020-10-16T01:34:03Z",
       "side": 1,
       "message": "+1 to reuse LoadBuildBundles. This looks like a copy-pasta.\n\nalso int to the LoadBuildBundles: a signature\n  LoadBuildBundles(ctx context.Context, m mask.Mask, pbBuilds ...*pb.Build)\ncould be more ergonomic",
+      "parentUuid": "7c3a37f7_f73b1f42",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3688cebc_15f8de84",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-21T05:28:56Z",
+      "side": 1,
+      "message": "How do you specify a mask that means \"everything except infra and output properties\"? Wouldn\u0027t you have to enumerate every top-level field?",
       "parentUuid": "7c3a37f7_f73b1f42",
       "range": {
         "startLine": 82,
