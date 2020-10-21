@@ -191,6 +191,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e9dcef8e_3a486001",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T06:26:42Z",
+      "side": 1,
+      "message": "specify what you need explicitly? this is what this code does - it explicitly loads input props",
+      "parentUuid": "3688cebc_15f8de84",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e6338af2_7e12cab6",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
