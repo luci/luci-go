@@ -9,7 +9,7 @@ import "google.golang.org/protobuf/types/descriptorpb"
 func init() {
 	discovery.RegisterDescriptorSetCompressed(
 		[]string{
-			"scheduler.Scheduler", "internal.admin.Admin",
+			"internal.admin.Admin",
 		},
 		[]byte{31, 139,
 			8, 0, 0, 0, 0, 0, 0, 255, 236, 189, 107, 108, 28, 73,
@@ -1165,7 +1165,7 @@ func init() {
 // Do NOT modify the returned descriptor.
 func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 	// We just need ONE of the service names to look up the FileDescriptorSet.
-	ret, err := discovery.GetDescriptorSet("scheduler.Scheduler")
+	ret, err := discovery.GetDescriptorSet("internal.admin.Admin")
 	if err != nil {
 		panic(err)
 	}

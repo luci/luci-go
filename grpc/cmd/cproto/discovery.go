@@ -17,7 +17,6 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"go/build"
 	"io/ioutil"
@@ -29,6 +28,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 const (
@@ -75,7 +76,7 @@ func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 // genDiscoveryFile generates a Go discovery file that calls
 // discovery.RegisterDescriptorSetCompressed(serviceNames, compressedDescBytes)
 // in an init function.
-func genDiscoveryFile(c context.Context, target, descFile string) error {
+func genDiscoveryFile(target string, descFile string, protos []string) error {
 	descBytes, err := ioutil.ReadFile(descFile)
 	if err != nil {
 		return err
@@ -86,10 +87,16 @@ func genDiscoveryFile(c context.Context, target, descFile string) error {
 		return fmt.Errorf("cannot parse generated descriptor file: %s", err)
 	}
 
+	protoSet := stringset.NewFromSlice(protos...)
+
 	var serviceNames []string
 	for _, f := range desc.File {
-		for _, s := range f.Service {
-			serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", f.GetPackage(), s.GetName()))
+		// Discover services only in *.proto files we generated code for, not in
+		// their dependencies.
+		if protoSet.Has(f.GetName()) {
+			for _, s := range f.Service {
+				serviceNames = append(serviceNames, fmt.Sprintf("%s.%s", f.GetPackage(), s.GetName()))
+			}
 		}
 	}
 	if len(serviceNames) == 0 {

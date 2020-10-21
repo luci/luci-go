@@ -83,11 +83,11 @@ var googlePackages = map[string]string{
 }
 
 // compile runs protoc on protoFiles. protoFiles must be relative to dir.
-func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, descSetOut string) (outDir string, err error) {
+func compile(ctx context.Context, gopath, importPaths, protoFiles []string, dir, descSetOut string) (outDirFS, outDirProto string, err error) {
 	// make it absolute to find in $GOPATH and because protoc wants paths
 	// to be under proto paths.
 	if dir, err = filepath.Abs(dir); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// By default place go files in CWD,
@@ -98,7 +98,7 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 	allProtoPaths := make([]string, 0, len(importPaths)+len(gopath)+1)
 	for _, p := range importPaths {
 		if p, err = filepath.Abs(p); err != nil {
-			return "", err
+			return "", "", err
 		}
 		allProtoPaths = append(allProtoPaths, p)
 	}
@@ -107,7 +107,7 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 		if info, err := os.Stat(path); os.IsNotExist(err) || !info.IsDir() {
 			continue
 		} else if err != nil {
-			return "", err
+			return "", "", err
 		}
 		allProtoPaths = append(allProtoPaths, path)
 
@@ -126,12 +126,13 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 	// Find where Go files will be generated.
 	for _, p := range allProtoPaths {
 		if strings.HasPrefix(dir, p) {
-			outDir = filepath.Join(goOut, dir[len(p):])
+			outDirFS = filepath.Join(goOut, dir[len(p):])
+			outDirProto = dir[len(p)+1:]
 			break
 		}
 	}
-	if outDir == "" {
-		return "", fmt.Errorf("proto files are neither under $GOPATH/src nor -proto-path")
+	if outDirFS == "" {
+		return "", "", fmt.Errorf("proto files are neither under $GOPATH/src nor -proto-path")
 	}
 
 	args := []string{
@@ -174,14 +175,14 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 		// The solution is to always use absolute paths.
 		args = append(args, path.Join(dir, f))
 	}
-	logging.Infof(c, "protoc %s", strings.Join(args, " "))
+	logging.Infof(ctx, "protoc %s", strings.Join(args, " "))
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
-	return outDir, protoc.Run()
+	return outDirFS, outDirProto, protoc.Run()
 }
 
-func run(c context.Context, goPath []string, dir string) error {
+func run(ctx context.Context, goPath []string, dir string) error {
 	if s, err := os.Stat(dir); os.IsNotExist(err) {
 		return fmt.Errorf("%s does not exist", dir)
 	} else if err != nil {
@@ -210,7 +211,7 @@ func run(c context.Context, goPath []string, dir string) error {
 		descPath = filepath.Join(tmpDir, "package.desc")
 	}
 
-	outDir, err := compile(c, goPath, protoImportPaths, protoFiles, dir, descPath)
+	outDirFS, outDirProto, err := compile(ctx, goPath, protoImportPaths, protoFiles, dir, descPath)
 	if err != nil {
 		return err
 	}
@@ -220,7 +221,7 @@ func run(c context.Context, goPath []string, dir string) error {
 	}
 
 	for _, p := range protoFiles {
-		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+".pb.go")
+		goFile := filepath.Join(outDirFS, strings.TrimSuffix(p, ".proto")+".pb.go")
 
 		// Transform .go files by adding pRPC stubs after gPRC stubs. Code generated
 		// by protoc-gen-go-grpc plugin doesn't need this, since it uses interfaces
@@ -242,8 +243,13 @@ func run(c context.Context, goPath []string, dir string) error {
 	}
 
 	if *withDiscovery {
-		discoveryFile := "pb.discovery.go"
-		if err := genDiscoveryFile(c, filepath.Join(outDir, discoveryFile), descPath); err != nil {
+		// Paths of processed *.proto files as they are registered in the proto
+		// registry.
+		registryPaths := make([]string, len(protoFiles))
+		for i, p := range protoFiles {
+			registryPaths[i] = path.Join(outDirProto, p)
+		}
+		if err := genDiscoveryFile(filepath.Join(outDirFS, "pb.discovery.go"), descPath, registryPaths); err != nil {
 			return err
 		}
 	}
@@ -251,7 +257,7 @@ func run(c context.Context, goPath []string, dir string) error {
 	return nil
 }
 
-func setupLogging(c context.Context) context.Context {
+func setupLogging(ctx context.Context) context.Context {
 	lvl := logging.Warning
 	if *verbose {
 		lvl = logging.Debug

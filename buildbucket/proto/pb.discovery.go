@@ -9,7 +9,7 @@ import "google.golang.org/protobuf/types/descriptorpb"
 func init() {
 	discovery.RegisterDescriptorSetCompressed(
 		[]string{
-			"swarming.v1.BotAPI", "buildbucket.v2.Builders", "buildbucket.v2.Builds",
+			"buildbucket.v2.Builders", "buildbucket.v2.Builds",
 		},
 		[]byte{31, 139,
 			8, 0, 0, 0, 0, 0, 0, 255, 236, 253, 125, 116, 28, 217,
@@ -6830,7 +6830,7 @@ func init() {
 // Do NOT modify the returned descriptor.
 func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 	// We just need ONE of the service names to look up the FileDescriptorSet.
-	ret, err := discovery.GetDescriptorSet("swarming.v1.BotAPI")
+	ret, err := discovery.GetDescriptorSet("buildbucket.v2.Builders")
 	if err != nil {
 		panic(err)
 	}
