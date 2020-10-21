@@ -36,5 +36,5 @@ func getFreeSpace(path string) (uint64, error) {
 	if err := unix.Statfs(path, &statfs); err != nil {
 		return 0, err
 	}
-	return statfs.Bavail * uint64(statfs.Bsize), nil
+	return statfs.Bavail * uint64(statfs.Frsize), nil
 }
