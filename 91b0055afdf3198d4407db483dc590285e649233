@@ -121,6 +121,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cc677192_03e64220",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T20:35:15Z",
+      "side": 1,
+      "message": "i meant wi.query.predicate would be the predicate, and the code here would be\n\n  \t\t\tquery :\u003d testresults.Query{\n\t\t\t\tInvocationIDs: batch,\n\t\t\t\tPredicate: wi.q.predicate,\n\t\t\t}\n\nnote that this comment selects only the predicate part",
+      "parentUuid": "477de622_a9672eff",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 68,
+        "endChar": 6
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1bec6c96_f6096554",
         "filename": "resultdb/internal/history/worker.go",
         "patchSetId": 12
