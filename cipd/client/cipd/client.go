@@ -426,11 +426,11 @@ func NewClient(opts ClientOptions) (Client, error) {
 
 	cas := opts.casMock
 	if cas == nil {
-		cas = api.NewStoragePRPCClient(prpcC)
+		cas = api.NewStorageClient(prpcC)
 	}
 	repo := opts.repoMock
 	if repo == nil {
-		repo = api.NewRepositoryPRPCClient(prpcC)
+		repo = api.NewRepositoryClient(prpcC)
 	}
 	s := opts.storageMock
 	if s == nil {

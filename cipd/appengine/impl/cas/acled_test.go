@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -36,6 +34,8 @@ import (
 func TestACLDecorator(t *testing.T) {
 	t.Parallel()
 
+	acledSrv := Public(&api.UnimplementedStorageServer{})
+
 	anon := identity.AnonymousIdentity
 	someone := identity.Identity("user:someone@example.com")
 	admin := identity.Identity("user:admin@example.com")
@@ -47,23 +47,35 @@ func TestACLDecorator(t *testing.T) {
 	}
 	ctx := auth.WithState(context.Background(), state)
 
-	noForceHash := &api.FinishUploadRequest{}
-	withForceHash := &api.FinishUploadRequest{ForceHash: &api.ObjectRef{}}
-	cancelReq := &api.CancelUploadRequest{}
+	getObjectURL := func() (interface{}, error) {
+		return acledSrv.GetObjectURL(ctx, nil)
+	}
+	beginUpload := func() (interface{}, error) {
+		return acledSrv.BeginUpload(ctx, nil)
+	}
+	noForceHash := func() (interface{}, error) {
+		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{})
+	}
+	withForceHash := func() (interface{}, error) {
+		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{ForceHash: &api.ObjectRef{}})
+	}
+	cancelReq := func() (interface{}, error) {
+		return acledSrv.CancelUpload(ctx, &api.CancelUploadRequest{})
+	}
 
 	var cases = []struct {
 		method  string
 		caller  identity.Identity
-		request proto.Message
+		request func() (interface{}, error)
 		allowed bool
 	}{
-		{"GetObjectURL", anon, nil, false},
-		{"GetObjectURL", someone, nil, false},
-		{"GetObjectURL", admin, nil, true},
+		{"GetObjectURL", anon, getObjectURL, false},
+		{"GetObjectURL", someone, getObjectURL, false},
+		{"GetObjectURL", admin, getObjectURL, true},
 
-		{"BeginUpload", anon, nil, false},
-		{"BeginUpload", someone, nil, false},
-		{"BeginUpload", admin, nil, true},
+		{"BeginUpload", anon, beginUpload, false},
+		{"BeginUpload", someone, beginUpload, false},
+		{"BeginUpload", admin, beginUpload, true},
 
 		{"FinishUpload", anon, noForceHash, true},
 		{"FinishUpload", someone, noForceHash, true},
@@ -81,9 +93,9 @@ func TestACLDecorator(t *testing.T) {
 	for idx, cs := range cases {
 		Convey(fmt.Sprintf("%d - %s by %s", idx, cs.method, cs.caller), t, func() {
 			state.Identity = cs.caller
-			_, err := aclPrelude(ctx, cs.method, cs.request)
+			_, err := cs.request()
 			if cs.allowed {
-				So(err, ShouldBeNil)
+				So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
 			} else {
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 			}
