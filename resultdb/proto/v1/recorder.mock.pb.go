@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockRecorderClient is a mock of RecorderClient interface.
@@ -116,14 +116,14 @@ func (mr *MockRecorderClientMockRecorder) FinalizeInvocation(ctx, in interface{}
 }
 
 // UpdateIncludedInvocations mocks base method.
-func (m *MockRecorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockRecorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "UpdateIncludedInvocations", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -299,10 +299,10 @@ func (mr *MockRecorderServerMockRecorder) FinalizeInvocation(arg0, arg1 interfac
 }
 
 // UpdateIncludedInvocations mocks base method.
-func (m *MockRecorderServer) UpdateIncludedInvocations(arg0 context.Context, arg1 *UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+func (m *MockRecorderServer) UpdateIncludedInvocations(arg0 context.Context, arg1 *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateIncludedInvocations", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

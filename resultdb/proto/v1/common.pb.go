@@ -21,10 +21,9 @@
 package resultpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -35,10 +34,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A key-value map describing one variant of a test case.
 //
@@ -325,9 +320,9 @@ type TimeRange struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The oldest timestamp to include in the range.
-	Earliest *timestamp.Timestamp `protobuf:"bytes,1,opt,name=earliest,proto3" json:"earliest,omitempty"`
+	Earliest *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=earliest,proto3" json:"earliest,omitempty"`
 	// Include only timestamps that are strictly older than this.
-	Latest *timestamp.Timestamp `protobuf:"bytes,2,opt,name=latest,proto3" json:"latest,omitempty"`
+	Latest *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=latest,proto3" json:"latest,omitempty"`
 }
 
 func (x *TimeRange) Reset() {
@@ -362,14 +357,14 @@ func (*TimeRange) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *TimeRange) GetEarliest() *timestamp.Timestamp {
+func (x *TimeRange) GetEarliest() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Earliest
 	}
 	return nil
 }
 
-func (x *TimeRange) GetLatest() *timestamp.Timestamp {
+func (x *TimeRange) GetLatest() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Latest
 	}
@@ -440,13 +435,13 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP() []by
 
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interface{}{
-	(*Variant)(nil),             // 0: luci.resultdb.v1.Variant
-	(*StringPair)(nil),          // 1: luci.resultdb.v1.StringPair
-	(*CommitPosition)(nil),      // 2: luci.resultdb.v1.CommitPosition
-	(*CommitPositionRange)(nil), // 3: luci.resultdb.v1.CommitPositionRange
-	(*TimeRange)(nil),           // 4: luci.resultdb.v1.TimeRange
-	nil,                         // 5: luci.resultdb.v1.Variant.DefEntry
-	(*timestamp.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(*Variant)(nil),               // 0: luci.resultdb.v1.Variant
+	(*StringPair)(nil),            // 1: luci.resultdb.v1.StringPair
+	(*CommitPosition)(nil),        // 2: luci.resultdb.v1.CommitPosition
+	(*CommitPositionRange)(nil),   // 3: luci.resultdb.v1.CommitPositionRange
+	(*TimeRange)(nil),             // 4: luci.resultdb.v1.TimeRange
+	nil,                           // 5: luci.resultdb.v1.Variant.DefEntry
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
 	5, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry

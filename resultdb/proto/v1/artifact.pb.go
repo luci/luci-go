@@ -21,10 +21,9 @@
 package resultpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -35,10 +34,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A file produced during a build/test, typically a test artifact.
 // The parent resource is either a TestResult or an Invocation.
@@ -74,7 +69,7 @@ type Artifact struct {
 	// storage level, but it is converted to an HTTPS URL before serving.
 	FetchUrl string `protobuf:"bytes,3,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
 	// When fetch_url expires. If expired, re-request this Artifact.
-	FetchUrlExpiration *timestamp.Timestamp `protobuf:"bytes,4,opt,name=fetch_url_expiration,json=fetchUrlExpiration,proto3" json:"fetch_url_expiration,omitempty"`
+	FetchUrlExpiration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fetch_url_expiration,json=fetchUrlExpiration,proto3" json:"fetch_url_expiration,omitempty"`
 	// Media type of the artifact.
 	// Logs are typically "text/plain" and screenshots are typically "image/png".
 	// Optional.
@@ -138,7 +133,7 @@ func (x *Artifact) GetFetchUrl() string {
 	return ""
 }
 
-func (x *Artifact) GetFetchUrlExpiration() *timestamp.Timestamp {
+func (x *Artifact) GetFetchUrlExpiration() *timestamppb.Timestamp {
 	if x != nil {
 		return x.FetchUrlExpiration
 	}
@@ -204,8 +199,8 @@ func file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDescGZIP() []
 
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_goTypes = []interface{}{
-	(*Artifact)(nil),            // 0: luci.resultdb.v1.Artifact
-	(*timestamp.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(*Artifact)(nil),              // 0: luci.resultdb.v1.Artifact
+	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_depIdxs = []int32{
 	1, // 0: luci.resultdb.v1.Artifact.fetch_url_expiration:type_name -> google.protobuf.Timestamp

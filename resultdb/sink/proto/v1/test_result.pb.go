@@ -21,12 +21,11 @@
 package sinkpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v1 "go.chromium.org/luci/resultdb/proto/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -37,10 +36,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A result file format.
 type TestResultFile_Format int32
@@ -121,15 +116,16 @@ type TestResult struct {
 	// Equivalent of luci.resultdb.v1.TestResult.summary_html.
 	SummaryHtml string `protobuf:"bytes,5,opt,name=summary_html,json=summaryHtml,proto3" json:"summary_html,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.start_time.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.duration.
-	Duration *duration.Duration `protobuf:"bytes,7,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration *durationpb.Duration `protobuf:"bytes,7,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.tags.
 	Tags []*v1.StringPair `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Artifacts to upload and associate with this test result.
 	// The map key is an artifact id.
 	Artifacts map[string]*Artifact `protobuf:"bytes,9,rep,name=artifacts,proto3" json:"artifacts,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Equivalent of luci.resultdb.v1.TestResult.test_location.
+	// Deprecated, use test_metadata instead.
 	TestLocation *v1.TestLocation `protobuf:"bytes,10,opt,name=test_location,json=testLocation,proto3" json:"test_location,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.test_metadata.
 	TestMetadata *v1.TestMetadata `protobuf:"bytes,11,opt,name=test_metadata,json=testMetadata,proto3" json:"test_metadata,omitempty"`
@@ -202,14 +198,14 @@ func (x *TestResult) GetSummaryHtml() string {
 	return ""
 }
 
-func (x *TestResult) GetStartTime() *timestamp.Timestamp {
+func (x *TestResult) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *TestResult) GetDuration() *duration.Duration {
+func (x *TestResult) GetDuration() *durationpb.Duration {
 	if x != nil {
 		return x.Duration
 	}
@@ -506,17 +502,17 @@ func file_go_chromium_org_luci_resultdb_sink_proto_v1_test_result_proto_rawDescG
 var file_go_chromium_org_luci_resultdb_sink_proto_v1_test_result_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_go_chromium_org_luci_resultdb_sink_proto_v1_test_result_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_go_chromium_org_luci_resultdb_sink_proto_v1_test_result_proto_goTypes = []interface{}{
-	(TestResultFile_Format)(0),  // 0: luci.resultsink.v1.TestResultFile.Format
-	(*TestResult)(nil),          // 1: luci.resultsink.v1.TestResult
-	(*Artifact)(nil),            // 2: luci.resultsink.v1.Artifact
-	(*TestResultFile)(nil),      // 3: luci.resultsink.v1.TestResultFile
-	nil,                         // 4: luci.resultsink.v1.TestResult.ArtifactsEntry
-	(v1.TestStatus)(0),          // 5: luci.resultdb.v1.TestStatus
-	(*timestamp.Timestamp)(nil), // 6: google.protobuf.Timestamp
-	(*duration.Duration)(nil),   // 7: google.protobuf.Duration
-	(*v1.StringPair)(nil),       // 8: luci.resultdb.v1.StringPair
-	(*v1.TestLocation)(nil),     // 9: luci.resultdb.v1.TestLocation
-	(*v1.TestMetadata)(nil),     // 10: luci.resultdb.v1.TestMetadata
+	(TestResultFile_Format)(0),    // 0: luci.resultsink.v1.TestResultFile.Format
+	(*TestResult)(nil),            // 1: luci.resultsink.v1.TestResult
+	(*Artifact)(nil),              // 2: luci.resultsink.v1.Artifact
+	(*TestResultFile)(nil),        // 3: luci.resultsink.v1.TestResultFile
+	nil,                           // 4: luci.resultsink.v1.TestResult.ArtifactsEntry
+	(v1.TestStatus)(0),            // 5: luci.resultdb.v1.TestStatus
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 7: google.protobuf.Duration
+	(*v1.StringPair)(nil),         // 8: luci.resultdb.v1.StringPair
+	(*v1.TestLocation)(nil),       // 9: luci.resultdb.v1.TestLocation
+	(*v1.TestMetadata)(nil),       // 10: luci.resultdb.v1.TestMetadata
 }
 var file_go_chromium_org_luci_resultdb_sink_proto_v1_test_result_proto_depIdxs = []int32{
 	5,  // 0: luci.resultsink.v1.TestResult.status:type_name -> luci.resultdb.v1.TestStatus
