@@ -22,6 +22,30 @@
       },
       "revId": "7e845dd6a326c15a4121bbec1f2b64a671314181",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5968643b_dfd5da82",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-10-21T08:20:25Z",
+      "side": 1,
+      "message": "I think using function here simplify the code handling falback success.",
+      "parentUuid": "774e153e_23584089",
+      "range": {
+        "startLine": 246,
+        "startChar": 10,
+        "endLine": 246,
+        "endChar": 24
+      },
+      "revId": "7e845dd6a326c15a4121bbec1f2b64a671314181",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
