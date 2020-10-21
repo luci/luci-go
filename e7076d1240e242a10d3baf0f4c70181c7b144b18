@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b160a468_52435b87",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-21T22:56:37Z",
+      "side": 1,
+      "message": "No, it\u0027s fine. I missed `shutdown` is created in a function which is called asynchronously.\n\nTBH, this whole bbagent thing looks extremely complicated for what it does and I\u0027m afraid it will start biting us in the ass with deadlocks and race conditions...",
+      "parentUuid": "5297e2e8_1a137fad",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 213,
+        "endChar": 5
+      },
+      "revId": "e7076d1240e242a10d3baf0f4c70181c7b144b18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "07c78965_85c63c16",
