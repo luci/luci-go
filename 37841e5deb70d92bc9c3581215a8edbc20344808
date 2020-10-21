@@ -16,6 +16,69 @@
       "message": "PTAL",
       "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c593c120_8ce9bcce",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T18:51:23Z",
+      "side": 1,
+      "message": "let\u0027s clarify: forward slash. I think that\u0027s the point of this sentence",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66c6de07_8a182bf2",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T18:51:23Z",
+      "side": 1,
+      "message": "this was OK in the design doc, but in the proto let\u0027s specify the format.\nsame as in TestLocation.repo?",
+      "range": {
+        "startLine": 38,
+        "startChar": 34,
+        "endLine": 38,
+        "endChar": 52
+      },
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e72c3033_a761598d",
+        "filename": "resultdb/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T18:51:23Z",
+      "side": 1,
+      "message": "isn\u0027t this proto sink-specific? should it be in the sink package?",
+      "revId": "37841e5deb70d92bc9c3581215a8edbc20344808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
