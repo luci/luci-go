@@ -126,7 +126,12 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
 		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
+			// path.Join converts the leading double slashes to a single slash, add a slash to keep the double slashes.
 			tr.TestLocation.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestLocation.FileName)
+		}
+		if tr.GetTestMetadata().GetLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.TestMetadata.Location.FileName, "//") {
+			// path.Join converts the leading double slashes to a single slash, add a slash to keep the double slashes.
+			tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestMetadata.Location.FileName)
 		}
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
