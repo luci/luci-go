@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedRecorder struct {
@@ -93,7 +93,7 @@ func (s *DecoratedRecorder) FinalizeInvocation(ctx context.Context, req *Finaliz
 	return
 }
 
-func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "UpdateIncludedInvocations", req)

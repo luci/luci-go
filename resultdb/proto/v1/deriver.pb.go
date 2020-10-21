@@ -24,7 +24,6 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -41,10 +40,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Used a google.rpc.PreconditionFailure.Violation.type returned as a Status
 // detail by DeriveChromiumInvocation when responding with a PreconditionFailure status

@@ -21,11 +21,10 @@
 package resultpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -36,10 +35,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 type Invocation_State int32
 
@@ -124,7 +119,7 @@ type Invocation struct {
 	State Invocation_State `protobuf:"varint,2,opt,name=state,proto3,enum=luci.resultdb.v1.Invocation_State" json:"state,omitempty"`
 	// When the invocation was created.
 	// Output only.
-	CreateTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Invocation-level string key-value pairs.
 	// A key can be repeated.
 	Tags []*StringPair `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -132,10 +127,10 @@ type Invocation struct {
 	// If this field is set, implies that the invocation is finalized.
 	//
 	// Output only.
-	FinalizeTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=finalize_time,json=finalizeTime,proto3" json:"finalize_time,omitempty"`
+	FinalizeTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finalize_time,json=finalizeTime,proto3" json:"finalize_time,omitempty"`
 	// Timestamp when the invocation will be forcefully finalized.
 	// Can be extended with UpdateInvocation until finalized.
-	Deadline *timestamp.Timestamp `protobuf:"bytes,7,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	Deadline *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=deadline,proto3" json:"deadline,omitempty"`
 	// Names of invocations included into this one. Overall results of this
 	// invocation is a UNION of results directly included into this invocation
 	// and results from the included invocations, recursively.
@@ -222,7 +217,7 @@ func (x *Invocation) GetState() Invocation_State {
 	return Invocation_STATE_UNSPECIFIED
 }
 
-func (x *Invocation) GetCreateTime() *timestamp.Timestamp {
+func (x *Invocation) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
 	}
@@ -236,14 +231,14 @@ func (x *Invocation) GetTags() []*StringPair {
 	return nil
 }
 
-func (x *Invocation) GetFinalizeTime() *timestamp.Timestamp {
+func (x *Invocation) GetFinalizeTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.FinalizeTime
 	}
 	return nil
 }
 
-func (x *Invocation) GetDeadline() *timestamp.Timestamp {
+func (x *Invocation) GetDeadline() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Deadline
 	}
@@ -596,7 +591,7 @@ var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_goTypes = []int
 	(*BigQueryExport)(nil),             // 2: luci.resultdb.v1.BigQueryExport
 	(*HistoryOptions)(nil),             // 3: luci.resultdb.v1.HistoryOptions
 	(*BigQueryExport_TestResults)(nil), // 4: luci.resultdb.v1.BigQueryExport.TestResults
-	(*timestamp.Timestamp)(nil),        // 5: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),      // 5: google.protobuf.Timestamp
 	(*StringPair)(nil),                 // 6: luci.resultdb.v1.StringPair
 	(*CommitPosition)(nil),             // 7: luci.resultdb.v1.CommitPosition
 	(*TestResultPredicate)(nil),        // 8: luci.resultdb.v1.TestResultPredicate

@@ -24,9 +24,6 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
@@ -34,6 +31,8 @@ import (
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -44,10 +43,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A request message for GetInvocation RPC.
 type GetInvocationRequest struct {
@@ -501,7 +496,7 @@ type QueryTestResultsRequest struct {
 	// results uploaded 4m ago.
 	// Choosing a larger duration may reduce request latency.
 	// Must be <=30m.
-	MaxStaleness *duration.Duration `protobuf:"bytes,3,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
+	MaxStaleness *durationpb.Duration `protobuf:"bytes,3,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
 	// The maximum number of test results to return.
 	//
 	// The service may return fewer than this value.
@@ -568,7 +563,7 @@ func (x *QueryTestResultsRequest) GetPredicate() *TestResultPredicate {
 	return nil
 }
 
-func (x *QueryTestResultsRequest) GetMaxStaleness() *duration.Duration {
+func (x *QueryTestResultsRequest) GetMaxStaleness() *durationpb.Duration {
 	if x != nil {
 		return x.MaxStaleness
 	}
@@ -677,7 +672,7 @@ type QueryTestExonerationsRequest struct {
 	// results uploaded 4m ago.
 	// Choosing a larger duration may reduce request latency.
 	// Must be <=30m.
-	MaxStaleness *duration.Duration `protobuf:"bytes,3,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
+	MaxStaleness *durationpb.Duration `protobuf:"bytes,3,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
 	// The maximum number of test exonerations to return.
 	//
 	// The service may return fewer than this value.
@@ -738,7 +733,7 @@ func (x *QueryTestExonerationsRequest) GetPredicate() *TestExonerationPredicate 
 	return nil
 }
 
-func (x *QueryTestExonerationsRequest) GetMaxStaleness() *duration.Duration {
+func (x *QueryTestExonerationsRequest) GetMaxStaleness() *durationpb.Duration {
 	if x != nil {
 		return x.MaxStaleness
 	}
@@ -838,7 +833,7 @@ type QueryTestResultStatisticsRequest struct {
 	// results uploaded 4m ago.
 	// Choosing a larger duration may reduce request latency.
 	// Must be <=30m.
-	MaxStaleness *duration.Duration `protobuf:"bytes,2,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
+	MaxStaleness *durationpb.Duration `protobuf:"bytes,2,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
 }
 
 func (x *QueryTestResultStatisticsRequest) Reset() {
@@ -880,7 +875,7 @@ func (x *QueryTestResultStatisticsRequest) GetInvocations() []string {
 	return nil
 }
 
-func (x *QueryTestResultStatisticsRequest) GetMaxStaleness() *duration.Duration {
+func (x *QueryTestResultStatisticsRequest) GetMaxStaleness() *durationpb.Duration {
 	if x != nil {
 		return x.MaxStaleness
 	}
@@ -1154,7 +1149,7 @@ type QueryArtifactsRequest struct {
 	// artifacts uploaded 4m ago.
 	// Choosing a larger duration may reduce request latency.
 	// Must be <=30m.
-	MaxStaleness *duration.Duration `protobuf:"bytes,4,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
+	MaxStaleness *durationpb.Duration `protobuf:"bytes,4,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
 	// The maximum number of artifacts to return.
 	//
 	// The service may return fewer than this value.
@@ -1222,7 +1217,7 @@ func (x *QueryArtifactsRequest) GetTestResultPredicate() *TestResultPredicate {
 	return nil
 }
 
-func (x *QueryArtifactsRequest) GetMaxStaleness() *duration.Duration {
+func (x *QueryArtifactsRequest) GetMaxStaleness() *durationpb.Duration {
 	if x != nil {
 		return x.MaxStaleness
 	}
@@ -1571,7 +1566,7 @@ type GetTestResultHistoryResponse_Entry struct {
 	// Commit position of the invocation that contains the result, if available.
 	CommitPosition *CommitPosition `protobuf:"bytes,1,opt,name=commit_position,json=commitPosition,proto3" json:"commit_position,omitempty"`
 	// Creation time of the invocation that contains the result.
-	InvocationTimestamp *timestamp.Timestamp `protobuf:"bytes,2,opt,name=invocation_timestamp,json=invocationTimestamp,proto3" json:"invocation_timestamp,omitempty"`
+	InvocationTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=invocation_timestamp,json=invocationTimestamp,proto3" json:"invocation_timestamp,omitempty"`
 	// The result itself. Masked by the `fields` field of
 	// `GetResultHistoryRequest`.
 	Result *TestResult `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
@@ -1616,7 +1611,7 @@ func (x *GetTestResultHistoryResponse_Entry) GetCommitPosition() *CommitPosition
 	return nil
 }
 
-func (x *GetTestResultHistoryResponse_Entry) GetInvocationTimestamp() *timestamp.Timestamp {
+func (x *GetTestResultHistoryResponse_Entry) GetInvocationTimestamp() *timestamppb.Timestamp {
 	if x != nil {
 		return x.InvocationTimestamp
 	}
@@ -2006,14 +2001,14 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_goTypes = []inter
 	(*TestResult)(nil),                         // 23: luci.resultdb.v1.TestResult
 	(*TestExoneration)(nil),                    // 24: luci.resultdb.v1.TestExoneration
 	(*TestResultPredicate)(nil),                // 25: luci.resultdb.v1.TestResultPredicate
-	(*duration.Duration)(nil),                  // 26: google.protobuf.Duration
+	(*durationpb.Duration)(nil),                // 26: google.protobuf.Duration
 	(*TestExonerationPredicate)(nil),           // 27: luci.resultdb.v1.TestExonerationPredicate
 	(*Artifact)(nil),                           // 28: luci.resultdb.v1.Artifact
 	(*VariantPredicate)(nil),                   // 29: luci.resultdb.v1.VariantPredicate
 	(*CommitPositionRange)(nil),                // 30: luci.resultdb.v1.CommitPositionRange
 	(*TimeRange)(nil),                          // 31: luci.resultdb.v1.TimeRange
 	(*CommitPosition)(nil),                     // 32: luci.resultdb.v1.CommitPosition
-	(*timestamp.Timestamp)(nil),                // 33: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),              // 33: google.protobuf.Timestamp
 	(*Invocation)(nil),                         // 34: luci.resultdb.v1.Invocation
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_depIdxs = []int32{

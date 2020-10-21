@@ -21,12 +21,11 @@
 package resultpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v1 "go.chromium.org/luci/resultdb/proto/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -37,10 +36,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // TestResultRow represents a row in a BigQuery table for result of a functional
 // test case.
@@ -78,9 +73,9 @@ type TestResultRow struct {
 	// A human-readable explanation of the result, in HTML.
 	SummaryHtml string `protobuf:"bytes,9,opt,name=summary_html,json=summaryHtml,proto3" json:"summary_html,omitempty"`
 	// The point in time when the test case started to execute.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,10,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Duration of the test case execution in seconds.
-	Duration *duration.Duration `protobuf:"bytes,11,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration *durationpb.Duration `protobuf:"bytes,11,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Tags contains metadata for this test result.
 	// It might describe this particular execution or the test case.
 	Tags []*v1.StringPair `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -92,7 +87,7 @@ type TestResultRow struct {
 	// https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
 	// mentions "The partitioning column must be a top-level field."
 	// So we keep this column here instead of adding the CreateTime to Invocation.
-	PartitionTime *timestamp.Timestamp `protobuf:"bytes,14,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
+	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The location of the test definition.
 	// Deprecated. Use test_metadata instead.
 	//
@@ -198,14 +193,14 @@ func (x *TestResultRow) GetSummaryHtml() string {
 	return ""
 }
 
-func (x *TestResultRow) GetStartTime() *timestamp.Timestamp {
+func (x *TestResultRow) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *TestResultRow) GetDuration() *duration.Duration {
+func (x *TestResultRow) GetDuration() *durationpb.Duration {
 	if x != nil {
 		return x.Duration
 	}
@@ -226,7 +221,7 @@ func (x *TestResultRow) GetExonerated() bool {
 	return false
 }
 
-func (x *TestResultRow) GetPartitionTime() *timestamp.Timestamp {
+func (x *TestResultRow) GetPartitionTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.PartitionTime
 	}
@@ -410,13 +405,13 @@ func file_go_chromium_org_luci_resultdb_proto_bq_test_result_row_proto_rawDescGZ
 
 var file_go_chromium_org_luci_resultdb_proto_bq_test_result_row_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_resultdb_proto_bq_test_result_row_proto_goTypes = []interface{}{
-	(*TestResultRow)(nil),       // 0: luci.resultdb.bq.TestResultRow
-	(*InvocationRecord)(nil),    // 1: luci.resultdb.bq.InvocationRecord
-	(*v1.StringPair)(nil),       // 2: luci.resultdb.v1.StringPair
-	(*timestamp.Timestamp)(nil), // 3: google.protobuf.Timestamp
-	(*duration.Duration)(nil),   // 4: google.protobuf.Duration
-	(*v1.TestLocation)(nil),     // 5: luci.resultdb.v1.TestLocation
-	(*v1.TestMetadata)(nil),     // 6: luci.resultdb.v1.TestMetadata
+	(*TestResultRow)(nil),         // 0: luci.resultdb.bq.TestResultRow
+	(*InvocationRecord)(nil),      // 1: luci.resultdb.bq.InvocationRecord
+	(*v1.StringPair)(nil),         // 2: luci.resultdb.v1.StringPair
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 4: google.protobuf.Duration
+	(*v1.TestLocation)(nil),       // 5: luci.resultdb.v1.TestLocation
+	(*v1.TestMetadata)(nil),       // 6: luci.resultdb.v1.TestMetadata
 }
 var file_go_chromium_org_luci_resultdb_proto_bq_test_result_row_proto_depIdxs = []int32{
 	1,  // 0: luci.resultdb.bq.TestResultRow.exported:type_name -> luci.resultdb.bq.InvocationRecord
