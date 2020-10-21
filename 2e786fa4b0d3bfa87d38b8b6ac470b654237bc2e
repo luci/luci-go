@@ -22,6 +22,30 @@
       },
       "revId": "2e786fa4b0d3bfa87d38b8b6ac470b654237bc2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afd78f04_f233d1b6",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T15:53:50Z",
+      "side": 0,
+      "message": "they are CPU-hungry, but I also realized that those goroutines also read cached gerrit changed files from disk. \n-j 8 resulted in lower performance than -j 100.\n\nthere are some other annoyances that history files aren\u0027t self-sufficient (they don\u0027t have files modified by a CL), so I think I will fix that first; and then re-evaluate this CL.\n\nmarking WIP for now",
+      "parentUuid": "6815679a_34a3f37b",
+      "range": {
+        "startLine": 28,
+        "startChar": 22,
+        "endLine": 28,
+        "endChar": 25
+      },
+      "revId": "2e786fa4b0d3bfa87d38b8b6ac470b654237bc2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
