@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -discovery=false
 
 // Package tasks contains task queue tasks definitions.
 package tasks
