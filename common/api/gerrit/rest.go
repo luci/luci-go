@@ -326,7 +326,7 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 		params.Add("o", "ALL_EMAILS")
 	}
 
-	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", req.Project, req.Ref, req.Path)
+	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", url.PathEscape(req.Project), url.PathEscape(req.Ref), url.PathEscape(req.Path))
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "list file owners").Err()
 	}
