@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42f4c164_22380a7b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-21T00:04:23Z",
+      "side": 1,
+      "message": "PTAL\n\nIt happened because previously pb.discovery.go was gated on a presence of generated gRPC stubs in *.pb.go produced by protoc. But now it never touches generated code and uses protobuf descriptors only, so it needs to check if processed *.proto files (and only them) had any services in them.",
+      "revId": "404e561f3a5f186e66f00f765d7775665c50662a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
