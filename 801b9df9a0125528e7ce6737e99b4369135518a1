@@ -55,6 +55,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1466470e_bacf3a2c",
+        "filename": "cipd/appengine/impl/admin/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-21T20:46:06Z",
+      "side": 1,
+      "message": "Got it. Thanks.",
+      "parentUuid": "2766d2b0_dd35e9d0",
+      "revId": "801b9df9a0125528e7ce6737e99b4369135518a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b2eed73b_8b280fe0",
         "filename": "cipd/appengine/impl/cas/acled.go",
         "patchSetId": 2
