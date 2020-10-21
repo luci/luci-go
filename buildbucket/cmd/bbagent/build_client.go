@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 )
 
@@ -49,6 +51,11 @@ func (dummyBBClient) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequ
 	return nil, nil
 }
 func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	for _, step := range in.GetBuild().GetSteps() {
+		if step.GetName() == "SimulateUpdateBuildFailureNow" {
+			return nil, grpcutil.Errf(codes.InvalidArgument, "UpdateBuild goes wrong")
+		}
+	}
 	return nil, nil
 }
 func (dummyBBClient) ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
