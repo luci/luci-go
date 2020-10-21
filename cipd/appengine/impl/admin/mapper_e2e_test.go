@@ -35,7 +35,8 @@ func SetupTest() (context.Context, *adminImpl) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	admin := &adminImpl{
-		tq: &tq.Dispatcher{BaseURL: "/internal/tq/"},
+		acl: func(context.Context) error { return nil },
+		tq:  &tq.Dispatcher{BaseURL: "/internal/tq/"},
 	}
 	admin.init()
 

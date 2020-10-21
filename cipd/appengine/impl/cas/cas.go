@@ -84,6 +84,8 @@ func Internal(d *tq.Dispatcher) StorageServer {
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
+	api.UnimplementedStorageServer
+
 	tq *tq.Dispatcher
 
 	// Mocking points for tests. See Internal() for real implementations.
