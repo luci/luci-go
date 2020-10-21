@@ -43,6 +43,40 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4f97164e_e85b6d90",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "this function is very specific to bqexporter. Should it be in a package specific to BQ Exporting? e.g. bqexporter\n\nmore over, if you add bqexporter.Schedule which accepts only invocation ID, then this func would be private (\u003d smaller API surface)",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9335e3a_6922fb26",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "nit: if this condition is inverted, then the code below is dedented, making it more readable.\n\nalso means we don\u0027t need L241",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1259c3da_14e8489b",
         "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
         "patchSetId": 1
@@ -66,6 +100,70 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "89862911_48cdcbd0",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "or do a step forward and refactor exportResultsToBigQuery to accept the proto?\nwe are marshaling a proto only to unmarshal it in the next func",
+      "parentUuid": "1259c3da_14e8489b",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 84
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19dd6971_7bea82e8",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "this code is retried if the txn is aborted, so it may enqueue same export many times.",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c5aec72_b84c7a91",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "just `invID` doesn\u0027t work?",
+      "range": {
+        "startLine": 318,
+        "startChar": 35,
+        "endLine": 318,
+        "endChar": 48
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0966fed6_f0401eec",
         "filename": "resultdb/internal/services/finalizer/finalizer.go",
         "patchSetId": 1
@@ -82,6 +180,29 @@
         "startChar": 6,
         "endLine": 319,
         "endChar": 8
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1d02597_982f5472",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "should this be in `else` block? we are exporting the same thing twice?",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 326,
+        "endChar": 7
       },
       "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -146,6 +267,23 @@
         "endLine": 32,
         "endChar": 36
       },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f005de8_cedebd89",
+        "filename": "resultdb/internal/tasks/bq_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T04:57:02Z",
+      "side": 1,
+      "message": "is there a reason this code is not in a bqexporter-specific package?\n\nprevious reason was, I think, that we had our own impl of tasks, but that is no longer the case",
       "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
