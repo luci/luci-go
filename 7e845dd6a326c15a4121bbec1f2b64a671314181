@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "774e153e_23584089",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-21T08:04:36Z",
+      "side": 1,
+      "message": "nit: Just curious why you need to define a function for the fallback handling.",
+      "range": {
+        "startLine": 246,
+        "startChar": 10,
+        "endLine": 246,
+        "endChar": 24
+      },
+      "revId": "7e845dd6a326c15a4121bbec1f2b64a671314181",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

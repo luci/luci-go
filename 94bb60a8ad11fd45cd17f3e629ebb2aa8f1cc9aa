@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab8ab13f_8dcec1a4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-21T08:04:36Z",
+      "side": 1,
+      "message": "Ack. Thank you for the confirmation.",
+      "parentUuid": "e8d83ab8_38103b85",
+      "range": {
+        "startLine": 7,
+        "startChar": 30,
+        "endLine": 7,
+        "endChar": 53
+      },
+      "revId": "94bb60a8ad11fd45cd17f3e629ebb2aa8f1cc9aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e6b1b3b4_3adccf8a",
