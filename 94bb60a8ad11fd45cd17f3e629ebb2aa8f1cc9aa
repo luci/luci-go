@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f0bc2e1_6a61a4cd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-21T06:16:06Z",
+      "side": 1,
+      "message": "Hmm,\n- Is this issue already happening now with isolated Go?\n- Does the python code have the fallback?",
+      "range": {
+        "startLine": 7,
+        "startChar": 30,
+        "endLine": 7,
+        "endChar": 53
+      },
+      "revId": "94bb60a8ad11fd45cd17f3e629ebb2aa8f1cc9aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6b1b3b4_3adccf8a",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-21T06:16:06Z",
+      "side": 1,
+      "message": "Please file a bug and put it to TODO.",
+      "range": {
+        "startLine": 248,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 97
+      },
+      "revId": "94bb60a8ad11fd45cd17f3e629ebb2aa8f1cc9aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
