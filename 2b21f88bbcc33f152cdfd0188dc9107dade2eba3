@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "2b21f88bbcc33f152cdfd0188dc9107dade2eba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4719e7c_3f3c90f4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-21T15:49:47Z",
+      "side": 1,
+      "message": "i forgot: do we add a *single* slash because s.cfg.TestLocationBase has double slash, but path.Join removes one of them? \na comment would be helpful for a future reader",
+      "range": {
+        "startLine": 132,
+        "startChar": 39,
+        "endLine": 132,
+        "endChar": 42
+      },
+      "revId": "2b21f88bbcc33f152cdfd0188dc9107dade2eba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
