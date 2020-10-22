@@ -68,6 +68,24 @@
       "parentUuid": "a6ee9b65_1703b9cc",
       "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea25df34_bcc3d672",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-22T18:48:15Z",
+      "side": 1,
+      "message": "PSA would barely help: the problem is that it is a breaking change: humans have to change their behavior.\nAnnouncing it doesn\u0027t change the fact it is breaking.\n\nWhy not flags -force-resultdb or -force-no-resultdb (mutually exclusive). If any of the passed, then they override \n\n  bbi.GetResultdb() !\u003d nil \u0026\u0026 bbi.Resultdb.GetInvocation() !\u003d \"\"\n\nlogic",
+      "parentUuid": "e9d31dd0_90676467",
+      "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
