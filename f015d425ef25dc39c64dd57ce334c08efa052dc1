@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d7da3b5_012dc6bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-22T18:22:48Z",
+      "side": 1,
+      "message": "I think maybe I should change the immediate problem instead, which is for a swarming task to enable resultdb, it\u0027s not necessary that the build also has resultdb on.",
+      "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a6ee9b65_1703b9cc",
@@ -31,6 +48,24 @@
       "writtenOn": "2020-10-22T06:57:41Z",
       "side": 1,
       "message": "this will break current users of led because now led requires passing -resultdb",
+      "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9d31dd0_90676467",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-22T18:22:48Z",
+      "side": 1,
+      "message": "A major usage that I know is Build Recipe Tester and I plan to change the recipe to add the flag.\n\nI don\u0027t know other use cases that requires resultdb.\n\nDo you think a PSA could help?",
+      "parentUuid": "a6ee9b65_1703b9cc",
       "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
