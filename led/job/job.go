@@ -292,7 +292,7 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 //
 // `uid` and `parentTaskId`, if specified, override the user and parentTaskId
 // fields, respectively.
-func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId string, ks KitchenSupport) error {
+func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId string, ks KitchenSupport, resultdb bool) error {
 	if sw := jd.GetSwarming(); sw != nil {
 		if uid != "" {
 			sw.Task.User = uid
@@ -329,7 +329,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	// Enable swarming/resultdb integration.
-	if bbi.GetResultdb() != nil && bbi.Resultdb.GetInvocation() != "" {
+	if resultdb && bbi.GetResultdb() != nil {
 		// Clear the original build's ResultDB invocation.
 		bbi.Resultdb.Invocation = ""
 		sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
