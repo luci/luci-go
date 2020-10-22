@@ -260,7 +260,7 @@ export class OverviewTabElement extends MobxLitElement {
       readOnly: true,
       showPrintMargin: false,
       scrollPastEnd: false,
-      fontSize: 14,
+      fontSize: 12,
       maxLines: 50,
     };
 
