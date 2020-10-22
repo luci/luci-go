@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5084f1bc_a548e45f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-22T05:16:52Z",
+      "side": 1,
+      "message": "not related to this CL: signature\n\n  func LoadBuildBundles(ctx, mask, builds ...*Build) error\n\nwould be more ergonomic",
+      "revId": "33a73e84f6a4cf345f710311b248ee3af7174f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
