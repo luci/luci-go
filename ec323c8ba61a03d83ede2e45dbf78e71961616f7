@@ -215,6 +215,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bed6748f_1757668f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-22T01:49:47Z",
+      "side": 1,
+      "message": "Yes but I don\u0027t currently have to enumerate every property and update it if a new property is added to the Build message. LoadBuildBundles also ignores missing builds, but we need to err here if there\u0027s a missing build, which the current getBuild call already does.",
+      "parentUuid": "e9dcef8e_3a486001",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "ec323c8ba61a03d83ede2e45dbf78e71961616f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e6338af2_7e12cab6",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
