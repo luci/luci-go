@@ -205,12 +205,13 @@ type Options struct {
 
 	ShutdownDelay time.Duration // how long to wait after SIGTERM before shutting down
 
-	ClientAuth      clientauth.Options // base settings for client auth options
-	TokenCacheDir   string             // where to cache auth tokens (optional)
-	AuthDBPath      string             // if set, load AuthDB from a file
-	AuthServiceHost string             // hostname of an Auth Service to use
-	AuthDBDump      string             // Google Storage path to fetch AuthDB dumps from
-	AuthDBSigner    string             // service account that signs AuthDB dumps
+	ClientAuth       clientauth.Options // base settings for client auth options
+	TokenCacheDir    string             // where to cache auth tokens (optional)
+	AuthDBPath       string             // if set, load AuthDB from a file
+	AuthServiceHost  string             // hostname of an Auth Service to use
+	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
+	AuthDBSigner     string             // service account that signs AuthDB dumps
+	FrontendClientID string             // OAuth2 ClientID for frontend (e.g. user sign in)
 
 	CloudProject string // name of the hosting Google Cloud Project
 	CloudRegion  string // name of the hosting Google Cloud region
@@ -292,6 +293,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"auth-db-signer",
 		o.AuthDBSigner,
 		"Service account that signs AuthDB dumps. Default is derived from -auth-service-host if it is *.appspot.com",
+	)
+	f.StringVar(
+		&o.FrontendClientID,
+		"frontend-client-id",
+		o.FrontendClientID,
+		"OAuth2 clientID for use in frontend, e.g. for user sign in (optional)",
 	)
 	f.StringVar(
 		&o.CloudProject,
@@ -1314,7 +1321,7 @@ func (s *Server) initAuth() error {
 		Signer:              signerImpl{srv: s},
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
-		FrontendClientID:    nil, // TODO(vadimsh): Implement.
+		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
 		EndUserIP:           getRemoteIP,
 		IsDevMode:           !s.Options.Prod,
 	})
