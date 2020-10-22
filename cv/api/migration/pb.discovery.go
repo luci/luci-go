@@ -2,9 +2,9 @@
 
 package migrationpb
 
-import discovery "go.chromium.org/luci/grpc/discovery"
+import "go.chromium.org/luci/grpc/discovery"
 
-import "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import "google.golang.org/protobuf/types/descriptorpb"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(
@@ -668,7 +668,7 @@ func init() {
 // Will not return nil.
 //
 // Do NOT modify the returned descriptor.
-func FileDescriptorSet() *descriptor.FileDescriptorSet {
+func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 	// We just need ONE of the service names to look up the FileDescriptorSet.
 	ret, err := discovery.GetDescriptorSet("migration.Migration")
 	if err != nil {

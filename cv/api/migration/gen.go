@@ -15,6 +15,4 @@
 // Package migrationpb is internal to LUCI CV and CQDaemon. DO NOT USE.
 package migrationpb
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec
-//go:generate cproto
-//go:generate svcdec -type MigrationServer
+//go:generate cproto -use-grpc-plugin
