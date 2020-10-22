@@ -186,7 +186,7 @@ func searchBuildsGoPath(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.S
 	if err != nil {
 		return nil, err
 	}
-	if err = model.LoadBuildBundles(ctx, rsp.Builds, mask); err != nil {
+	if err = model.LoadBuildDetails(ctx, mask, rsp.Builds...); err != nil {
 		return nil, err
 	}
 	return rsp, nil

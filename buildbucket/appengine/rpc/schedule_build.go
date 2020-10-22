@@ -66,6 +66,8 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 	return nil
 }
 
+// templateBuildMask enumerates properties to read from template builds. See
+// scheduleRequestFromTemplate.
 var templateBuildMask = mask.MustFromReadMask(
 	&pb.Build{},
 	"builder",
@@ -94,7 +96,7 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	}
 
 	b := bld.ToSimpleBuildProto(ctx)
-	if err := model.LoadBuildBundles(ctx, []*pb.Build{b}, templateBuildMask); err != nil {
+	if err := model.LoadBuildDetails(ctx, templateBuildMask, b); err != nil {
 		return nil, err
 	}
 
