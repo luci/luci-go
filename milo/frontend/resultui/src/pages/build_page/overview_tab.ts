@@ -327,7 +327,7 @@ export class OverviewTabElement extends MobxLitElement {
         <div>
           ${this.renderTags()}
           ${this.renderProperties('Input Properties', bpd.input.properties)}
-          ${this.renderProperties('Output Properties', bpd.input.properties)}
+          ${this.renderProperties('Output Properties', bpd.output.properties)}
         </div>
       </div>
     `;
