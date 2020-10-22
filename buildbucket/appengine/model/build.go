@@ -148,14 +148,15 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 
 // ToProto returns the *pb.Build representation of this build.
 func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
-	pbBuilds := []*pb.Build{b.ToSimpleBuildProto(ctx)}
-	if err := LoadBuildBundles(ctx, pbBuilds, m); err != nil {
+	build := b.ToSimpleBuildProto(ctx)
+	if err := LoadBuildDetails(ctx, m, build); err != nil {
 		return nil, err
 	}
-	return pbBuilds[0], nil
+	return build, nil
 }
 
-// ToSimpleBuildProto returns the *pb.Build without loading steps, infra, input/output properties.
+// ToSimpleBuildProto returns the *pb.Build without loading steps, infra,
+// input/output properties.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	p := proto.Clone(&b.Proto).(*pb.Build)
 	for _, t := range b.Tags {
@@ -170,9 +171,10 @@ func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	return p
 }
 
-// LoadBuildBundles load the build bundles into the proto builds and trim them according to the mask.
-func LoadBuildBundles(ctx context.Context, pbBuilds []*pb.Build, m mask.Mask) error {
-	l := len(pbBuilds)
+// LoadBuildDetails loads the details of the given builds, trimming them
+// according to the mask.
+func LoadBuildDetails(ctx context.Context, m mask.Mask, builds ...*pb.Build) error {
+	l := len(builds)
 	inf := make([]*BuildInfra, 0, l)
 	inp := make([]*BuildInputProperties, 0, l)
 	out := make([]*BuildOutputProperties, 0, l)
@@ -197,7 +199,7 @@ func LoadBuildBundles(ctx context.Context, pbBuilds []*pb.Build, m mask.Mask) er
 	if err != nil {
 		return err
 	}
-	for i, p := range pbBuilds {
+	for i, p := range builds {
 		if p.GetId() <= 0 {
 			return errors.Reason("invalid build for %q", p).Err()
 		}
@@ -235,7 +237,7 @@ func LoadBuildBundles(ctx context.Context, pbBuilds []*pb.Build, m mask.Mask) er
 		return errors.Annotate(err, "error fetching build details").Err()
 	}
 
-	for i, p := range pbBuilds {
+	for i, p := range builds {
 		p.Infra = &inf[i].Proto.BuildInfra
 		if p.Input == nil {
 			p.Input = &pb.Build_Input{}
