@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcfb4feb_753a9035",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8753eba8_827cbf4a",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c8261438_a078bf2d",
@@ -143,6 +167,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a578863_11dc05b0",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc677192_03e64220",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 68,
+        "endChar": 6
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1bec6c96_f6096554",
@@ -156,6 +204,30 @@
       "writtenOn": "2020-10-21T04:30:38Z",
       "side": 1,
       "message": "this won\u0027t work for cpIndexPoint. Should we reuse the fact indexPoint is an interface?\n\n  type indexPoint interface {\n    ...\n    initEntry(*pb.GetTestResultHistoryResponse_Entry)\n  }\n\nand then here\n\n  entry :\u003d \u0026pb.GetTestResultHistoryResponse_Entry{ Result: r }\n  wi.ip.initEntry(entry)",
+      "range": {
+        "startLine": 76,
+        "startChar": 26,
+        "endLine": 76,
+        "endChar": 72
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bbb7f86_efd3f9ce",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1bec6c96_f6096554",
       "range": {
         "startLine": 76,
         "startChar": 26,
@@ -189,6 +261,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d498a451_015e52b4",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f8c2edb_05d2e3b2",
+      "range": {
+        "startLine": 77,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 5
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7f6bcf53_ce2f73e7",
@@ -202,6 +298,30 @@
       "writtenOn": "2020-10-21T04:30:38Z",
       "side": 1,
       "message": "any reason this isn\u0027t `ctx`? original ctx isn\u0027t used after this",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 10
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f43eeaef_e2fe480d",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7f6bcf53_ce2f73e7",
       "range": {
         "startLine": 107,
         "startChar": 1,
@@ -229,6 +349,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2750be3_d05773d2",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e9c7336_12d67d95",
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "406d1209_be722187",
@@ -242,6 +380,24 @@
       "writtenOn": "2020-10-21T04:30:38Z",
       "side": 1,
       "message": "note that golint complains when structs are initialized without specifying fields, and\nthe more fields are initialized, the harder it is understand which fields are being initialized.\n\nif fields are specified, then eC can be inlined",
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be943d98_d7c271b8",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "406d1209_be722187",
       "revId": "91b0055afdf3198d4407db483dc590285e649233",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -269,6 +425,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "adead167_ba832632",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b20c3fe_a16f3317",
+      "range": {
+        "startLine": 198,
+        "startChar": 5,
+        "endLine": 198,
+        "endChar": 14
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e03b1ee_fb21c3d8",
@@ -282,6 +462,30 @@
       "writtenOn": "2020-10-21T04:30:38Z",
       "side": 1,
       "message": "why is this needed?\n\nthis doesn\u0027t mean the error is a context error. It means the error is cancel error.\n\ni suspect what you are really after is a cancel error? Why are we catching deadlineExceeded if we cancel context?\n\nalternatively, i wonder if what you mean really is `ignoreErr` as opposed to `ignoreCtxErr`. In that case, we don\u0027t have to check that it is necessarily a context error\n\n-------------\n\n\nstepping further back (after reading all this code): i find q.cancel() calls in collect() a bit fragile because it cancels its own context. I think a future programmer might accidentally change the code where it tries to use the context after cancel() was called.\n\nWDYT about:\n- remove q.cancel\n- remove context.WithCancel() call in Execute\n- remove isCtxErr and ignoreCtxErr (btw, unclear to me why ignoreCtxErr is a field, as opposed to variable)\n- add a new boolean tag, like this: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/deriver/formats/gtest.go;l\u003d73?q\u003df:resultdb%20BoolTag\n- return an error annotated with the tag in L182 and L189\n- in Execute(), if eg.Wait() returns an error tagged with this tag, then set it to nil\n\nthen we don\u0027t need to call cancel() because returning an error if any of goroutines of the error group, automatically cancels the context for all goroutines.\nAlso it means we don\u0027t need to do any sniffing of the error type.",
+      "range": {
+        "startLine": 221,
+        "startChar": 2,
+        "endLine": 221,
+        "endChar": 38
+      },
+      "revId": "91b0055afdf3198d4407db483dc590285e649233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e783c74c_abed885c",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-10-22T02:30:36Z",
+      "side": 1,
+      "message": "This is pretty cool, I wish I noticed this earlier. Done.",
+      "parentUuid": "2e03b1ee_fb21c3d8",
       "range": {
         "startLine": 221,
         "startChar": 2,
