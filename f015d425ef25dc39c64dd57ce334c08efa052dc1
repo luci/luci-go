@@ -16,6 +16,23 @@
       "message": "PTAL\n\nSample: https://chromium-swarm.appspot.com/task?d\u003dtrue\u0026id\u003d4f67a6088e58cb10\n\nrun by `led get-builder|./led launch -modernize -resultdb`",
       "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6ee9b65_1703b9cc",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-22T06:57:41Z",
+      "side": 1,
+      "message": "this will break current users of led because now led requires passing -resultdb",
+      "revId": "f015d425ef25dc39c64dd57ce334c08efa052dc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
