@@ -20,9 +20,11 @@ import (
 
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -64,14 +66,64 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 	return nil
 }
 
-// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
-func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	if err := validateSchedule(req); err != nil {
-		return nil, appstatus.BadRequest(err)
+var templateBuildMask = mask.MustFromReadMask(
+	&pb.Build{},
+	"builder",
+	"critical",
+	"exe",
+	"input.gerrit_changes",
+	"input.gitiles_commit",
+	"input.properties",
+	"tags",
+)
+
+// scheduleRequestFromTemplate returns a request with fields populated by the
+// given template_build_id if there is one. Fields set in the request override
+// fields populated from the template. Does not modify the incoming request.
+func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, error) {
+	if req.GetTemplateBuildId() == 0 {
+		return req, nil
 	}
 
-	// TODO(crbug/1042991): Ensure Builder, Project are set (i.e. load TemplateBuildId if specified).
-	if err := perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+	bld, err := getBuild(ctx, req.TemplateBuildId)
+	if err != nil {
+		return nil, err
+	}
+	if err := perm.HasInBuilder(ctx, perm.BuildsGet, bld.Proto.Builder); err != nil {
+		return nil, err
+	}
+
+	b := bld.ToSimpleBuildProto(ctx)
+	if err := model.LoadBuildBundles(ctx, []*pb.Build{b}, templateBuildMask); err != nil {
+		return nil, err
+	}
+
+	ret := &pb.ScheduleBuildRequest{
+		Builder: b.Builder,
+		// TODO(crbug/1042991): Set Canary and Experimental.
+		// Canary, Experimental need to convert bool -> trinary. Python seems to do it wrong.
+		Critical:      b.Critical,
+		Exe:           b.Exe,
+		GerritChanges: b.Input.GerritChanges,
+		GitilesCommit: b.Input.GitilesCommit,
+		Properties:    b.Input.Properties,
+		Tags:          b.Tags,
+	}
+
+	// TODO(crbug/1042991): Apply overrides.
+	return ret, nil
+}
+
+// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
+func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
+	var err error
+	if err = validateSchedule(req); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
+		return nil, err
+	}
+	if err = perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
 		return nil, err
 	}
 
