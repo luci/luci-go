@@ -32,25 +32,32 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/host"
 	"go.chromium.org/luci/luciexe/invoke"
-
-	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var maxReserveDuration = 2 * time.Minute
@@ -105,7 +112,8 @@ func mainImpl() int {
 	}
 	defer cancel()
 
-	buildsCh, err := dispatcher.NewChannel(cctx, channelOpts(cctx), mkSendFn(cctx, secrets, bbclient))
+	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, secrets, bbclient))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 
@@ -186,6 +194,7 @@ func mainImpl() int {
 	check(errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
+	shutdownCh := make(chan struct{})
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
@@ -194,7 +203,14 @@ func mainImpl() int {
 			CacheDir: input.CacheDir,
 		}
 		reserve := calcDeadlineReserve(ctx)
-		deadlineEventCh, dctx, _ := lucictx.AdjustDeadline(ctx, reserve, 500*time.Millisecond)
+		deadlineEventCh, dctx, shutdown := lucictx.AdjustDeadline(ctx, reserve, 500*time.Millisecond)
+		go func() {
+			select {
+			case <-shutdownCh:
+				shutdown()
+			case <-dctx.Done():
+			}
+		}()
 		if newSoftDeadline := lucictx.GetDeadline(dctx).GetSoftDeadline(); newSoftDeadline != 0 {
 			logging.Infof(dctx,
 				"attempted to reserve %s from soft deadline for bbagent cleanup; new soft deadline: %s",
@@ -211,19 +227,83 @@ func mainImpl() int {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
 	}
 
-	var finalBuild *bbpb.Build
+	var (
+		finalBuild *bbpb.Build
+		fatalErr   atomic.Value
+	)
+
+	go func() {
+		// Monitors the `dispatcherErrCh` and checks for fatal error determined by
+		// `fatalPred`. Stops the build shuttling and shuts down the luciexe if a
+		// fatal error is received.
+		stopped := false
+		fatalPred := func(err error) bool {
+			// TODO(crbug.com/1140612): Figure out a better solution to handle the
+			// InvalidArgument error at the beginning of the build when build status
+			// hasn't switched to STARTED yet.
+			// Possible solution: keep calling GetBuild and start shuttling the build
+			// once GetBuild returns STARTED status. For now, simply tolerate such
+			// error.
+			if grpcutil.Code(err) == codes.InvalidArgument && !strings.Contains(err.Error(), "cannot update steps of a SCHEDULED build") {
+				return true
+			}
+			return false
+		}
+		for {
+			select {
+			case err := <-dispatcherErrCh:
+				if !stopped && fatalPred(err) {
+					close(shutdownCh)
+					fatalErr.Store(err)
+					stopped = true
+				}
+			case <-cctx.Done():
+				return
+			}
+		}
+	}()
 
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
 	for build := range builds {
-		// TODO(iannucci): add backchannel from buildbucket prpc client to shut
-		// down/cancel the build.
-		buildsCh.C <- build
-		finalBuild = build
+		if fatalErr.Load() == nil {
+			buildsCh.C <- build
+			finalBuild = build
+		}
+	}
+	buildsCh.CloseAndDrain(cctx)
+
+	// Now that the builds channel has been closed now. Update to bb directly.
+	reportErrToBB := func(err error) {
+		errors.Log(cctx, err)
+		_, bbErr := bbclient.UpdateBuild(
+			metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
+			&bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: err.Error(),
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{
+					Paths: []string{
+						"build.status",
+						"build.summary_markdown",
+					},
+				},
+			})
+		if bbErr != nil {
+			logging.Errorf(cctx, "Failed to report error %s to Buildbucket due to %s", err, bbErr)
+		}
 	}
 
-	check(errors.Annotate(
-		outputFile.Write(finalBuild), "writing final build").Err())
+	if err := fatalErr.Load(); err != nil {
+		reportErrToBB(errors.Annotate(err.(error), "encounter fatal error while updating build to buildbucket").Err())
+		return 1
+	}
+
+	if err := outputFile.Write(finalBuild); err != nil {
+		reportErrToBB(errors.Annotate(err, "writing final build").Err())
+		return 1
+	}
 
 	if finalBuild.Status != bbpb.Status_SUCCESS {
 		return 1
