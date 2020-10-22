@@ -271,7 +271,7 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOn
 		sort.Strings(missingRefs)
 		ctl.DebugLog("The following configured refs didn't match a single actual ref: %s\n"+
 			"Hint: have you granted read access to LUCI Scheduler on relevant refs in %q\n"+
-			"Resolved refs from gitiles:\n%s\n",
+			"Resolved refs from gitiles:\n%q?\n",
 			missingRefs, cfg.Repo, refs.current)
 		return nil, errors.Reason("%d unresolved refs", len(missingRefs)).Err()
 	}
