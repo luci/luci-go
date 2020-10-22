@@ -58,11 +58,13 @@ type cmdLaunch struct {
 
 	modernize bool
 	dump      bool
+	resultdb  bool
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
+	c.Flags.BoolVar(&c.resultdb, "resultdb", false, "Enable Swarming/ResultDB integration on the launched task.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -90,6 +92,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
 		ParentTaskId:    os.Getenv("SWARMING_TASK_ID"),
+		ResultDB:        c.resultdb,
 	})
 	if err != nil {
 		return nil, err
