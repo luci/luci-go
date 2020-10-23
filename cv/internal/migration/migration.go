@@ -20,12 +20,20 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 )
+
+// allowGroup is a Chrome Infra Auth group, members of which are allowed to call
+// migration API. It's hardcoded here because this code is temporary.
+const allowGroup = "luci-cv-migration-crbug-1141880"
 
 type MigrationServer struct {
 	migrationpb.UnimplementedMigrationServer
@@ -35,7 +43,12 @@ type MigrationServer struct {
 //
 // Used to determine whether CV's view of the world matches that of CQDaemon.
 // Initially, this is just FYI for CV.
-func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (*empty.Empty, error) {
+func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return
+	}
+
 	cls := 0
 	// TODO(tandrii): grab project ID from auth context.
 	project := "<UNKNOWN>"
@@ -44,14 +57,32 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 		cls += len(r.Attempt.GerritChanges)
 	}
 	logging.Infof(ctx, "CQD[%s] is working on %d attempts %d CLs right now", project, len(req.Runs), cls)
-	return &empty.Empty{}, nil
+	resp = &empty.Empty{}
+	return
 }
 
 // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (*empty.Empty, error) {
+func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return
+	}
+
 	a := req.Run.Attempt
 	logging.Infof(ctx, "CQD[%s] finished working on %s (%s) attempt with %s", a.LuciProject, a.Key, clsOf(a), a.Status.String())
-	return &empty.Empty{}, nil
+	resp = &empty.Empty{}
+	return
+}
+
+func (m *MigrationServer) checkAllowed(ctx context.Context) error {
+	switch yes, err := auth.IsMember(ctx, allowGroup); {
+	case err != nil:
+		return status.Errorf(codes.Internal, "failed to check ACL")
+	case !yes:
+		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+	default:
+		return nil
+	}
 }
 
 // clsOf emits CL of the Attempt (aka Run) preserving the order but avoiding
