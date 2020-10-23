@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "116672f4_0adea942",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-23T18:30:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "178414fe_d20bfd97",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 8
+      },
+      "revId": "3b34dd9e988161d937c677e2d8d329062caf6ecc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b13fd6f5_b2ae4095",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-10-23T16:22:52Z",
       "side": 1,
       "message": "\"\"\n\nlaunch.go uses \"\" as default",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 82,
+        "endChar": 13
+      },
+      "revId": "3b34dd9e988161d937c677e2d8d329062caf6ecc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce4950b5_7edc353a",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-10-23T18:30:05Z",
+      "side": 1,
+      "message": "We don\u0027t really need it. removed.",
+      "parentUuid": "b13fd6f5_b2ae4095",
       "range": {
         "startLine": 82,
         "startChar": 2,
