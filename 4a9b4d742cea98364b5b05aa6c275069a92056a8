@@ -16,6 +16,24 @@
       "message": "The decorator was not used? No auth?",
       "revId": "4a9b4d742cea98364b5b05aa6c275069a92056a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c115fb44_4e577686",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-23T00:12:29Z",
+      "side": 1,
+      "message": "yep. I haven\u0027t done auth yet and I\u0027m glad actually 😊",
+      "parentUuid": "7a6c1c88_44b9fdbf",
+      "revId": "4a9b4d742cea98364b5b05aa6c275069a92056a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
