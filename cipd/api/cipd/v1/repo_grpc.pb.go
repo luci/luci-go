@@ -239,6 +239,55 @@ type RepositoryClient interface {
 	//   INVALID_ARGUMENT if the request is malformed.
 	//   NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(ctx context.Context, in *DetachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Attaches one or more metadata entries to an instance.
+	//
+	// An instance metadata entry is a key-value pair, where the key is a
+	// lowercase string and the value is an arbitrary blob up to 512 Kb in size.
+	//
+	// A single key can have multiple different values associated with it.
+	// Completely identical key-value pairs are deduplicated: attaching already
+	// attached metadata is a noop. Thus all metadata of an instance is a
+	// multimap, where a key maps to a set of unique values.
+	//
+	// A metadata entry is identified by its fingerprint: a hash of concatenated
+	// key and value (see InstanceMetadata message for details). It can be used,
+	// for example, to point to an entry to detach in DetachMetadata.
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	//   FAILED_PRECONDITION if the instance is still being processed.
+	//   ABORTED if the instance has some failed processors associated with it,
+	//       such instance is effectively broken and should not be used.
+	AttachMetadata(ctx context.Context, in *AttachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Detaches one or more metadata entries if they were attached.
+	//
+	// Entries are identified by their fingerprints. They can either be calculated
+	// from a key-value pair by the client (see InstanceMetadata message for
+	// details), by the server (if InstanceMetadata messages inside
+	// DetachMetadataRequest have 'key' and 'value' populated, but not
+	// 'fingerprint') or taken from some existing InstanceMetadata message (e.g.
+	// from inside a ListMetadataResponse).
+	//
+	// Detaching metadata that doesn't exist is a noop.
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	DetachMetadata(ctx context.Context, in *DetachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Lists metadata entries attached to an instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error)
 	// Takes a version string and resolves it into a concrete package instance.
 	//
 	// A version string can be any of:
@@ -432,6 +481,33 @@ func (c *repositoryClient) AttachTags(ctx context.Context, in *AttachTagsRequest
 func (c *repositoryClient) DetachTags(ctx context.Context, in *DetachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/cipd.Repository/DetachTags", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) AttachMetadata(ctx context.Context, in *AttachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/AttachMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) DetachMetadata(ctx context.Context, in *DetachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/DetachMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error) {
+	out := new(ListMetadataResponse)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/ListMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -699,6 +775,55 @@ type RepositoryServer interface {
 	//   INVALID_ARGUMENT if the request is malformed.
 	//   NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(context.Context, *DetachTagsRequest) (*empty.Empty, error)
+	// Attaches one or more metadata entries to an instance.
+	//
+	// An instance metadata entry is a key-value pair, where the key is a
+	// lowercase string and the value is an arbitrary blob up to 512 Kb in size.
+	//
+	// A single key can have multiple different values associated with it.
+	// Completely identical key-value pairs are deduplicated: attaching already
+	// attached metadata is a noop. Thus all metadata of an instance is a
+	// multimap, where a key maps to a set of unique values.
+	//
+	// A metadata entry is identified by its fingerprint: a hash of concatenated
+	// key and value (see InstanceMetadata message for details). It can be used,
+	// for example, to point to an entry to detach in DetachMetadata.
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	//   FAILED_PRECONDITION if the instance is still being processed.
+	//   ABORTED if the instance has some failed processors associated with it,
+	//       such instance is effectively broken and should not be used.
+	AttachMetadata(context.Context, *AttachMetadataRequest) (*empty.Empty, error)
+	// Detaches one or more metadata entries if they were attached.
+	//
+	// Entries are identified by their fingerprints. They can either be calculated
+	// from a key-value pair by the client (see InstanceMetadata message for
+	// details), by the server (if InstanceMetadata messages inside
+	// DetachMetadataRequest have 'key' and 'value' populated, but not
+	// 'fingerprint') or taken from some existing InstanceMetadata message (e.g.
+	// from inside a ListMetadataResponse).
+	//
+	// Detaching metadata that doesn't exist is a noop.
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	DetachMetadata(context.Context, *DetachMetadataRequest) (*empty.Empty, error)
+	// Lists metadata entries attached to an instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	//
+	// Returns:
+	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//   INVALID_ARGUMENT if the request is malformed.
+	//   NOT_FOUND if the package or the instance doesn't exist.
+	ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error)
 	// Takes a version string and resolves it into a concrete package instance.
 	//
 	// A version string can be any of:
@@ -798,6 +923,15 @@ func (UnimplementedRepositoryServer) AttachTags(context.Context, *AttachTagsRequ
 }
 func (UnimplementedRepositoryServer) DetachTags(context.Context, *DetachTagsRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DetachTags not implemented")
+}
+func (UnimplementedRepositoryServer) AttachMetadata(context.Context, *AttachMetadataRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AttachMetadata not implemented")
+}
+func (UnimplementedRepositoryServer) DetachMetadata(context.Context, *DetachMetadataRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DetachMetadata not implemented")
+}
+func (UnimplementedRepositoryServer) ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMetadata not implemented")
 }
 func (UnimplementedRepositoryServer) ResolveVersion(context.Context, *ResolveVersionRequest) (*Instance, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveVersion not implemented")
@@ -1112,6 +1246,60 @@ func _Repository_DetachTags_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Repository_AttachMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AttachMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).AttachMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/AttachMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).AttachMetadata(ctx, req.(*AttachMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Repository_DetachMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DetachMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).DetachMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/DetachMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).DetachMetadata(ctx, req.(*DetachMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Repository_ListMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).ListMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/ListMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).ListMetadata(ctx, req.(*ListMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Repository_ResolveVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResolveVersionRequest)
 	if err := dec(in); err != nil {
@@ -1251,6 +1439,18 @@ var _Repository_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DetachTags",
 			Handler:    _Repository_DetachTags_Handler,
+		},
+		{
+			MethodName: "AttachMetadata",
+			Handler:    _Repository_AttachMetadata_Handler,
+		},
+		{
+			MethodName: "DetachMetadata",
+			Handler:    _Repository_DetachMetadata_Handler,
+		},
+		{
+			MethodName: "ListMetadata",
+			Handler:    _Repository_ListMetadata_Handler,
 		},
 		{
 			MethodName: "ResolveVersion",

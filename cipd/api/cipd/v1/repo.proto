@@ -307,6 +307,58 @@ service Repository {
   //   NOT_FOUND if the package or the instance doesn't exist.
   rpc DetachTags(DetachTagsRequest) returns (google.protobuf.Empty);
 
+  // Attaches one or more metadata entries to an instance.
+  //
+  // An instance metadata entry is a key-value pair, where the key is a
+  // lowercase string and the value is an arbitrary blob up to 512 Kb in size.
+  //
+  // A single key can have multiple different values associated with it.
+  // Completely identical key-value pairs are deduplicated: attaching already
+  // attached metadata is a noop. Thus all metadata of an instance is a
+  // multimap, where a key maps to a set of unique values.
+  //
+  // A metadata entry is identified by its fingerprint: a hash of concatenated
+  // key and value (see InstanceMetadata message for details). It can be used,
+  // for example, to point to an entry to detach in DetachMetadata.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package or the instance doesn't exist.
+  //   FAILED_PRECONDITION if the instance is still being processed.
+  //   ABORTED if the instance has some failed processors associated with it,
+  //       such instance is effectively broken and should not be used.
+  rpc AttachMetadata(AttachMetadataRequest) returns (google.protobuf.Empty);
+
+  // Detaches one or more metadata entries if they were attached.
+  //
+  // Entries are identified by their fingerprints. They can either be calculated
+  // from a key-value pair by the client (see InstanceMetadata message for
+  // details), by the server (if InstanceMetadata messages inside
+  // DetachMetadataRequest have 'key' and 'value' populated, but not
+  // 'fingerprint') or taken from some existing InstanceMetadata message (e.g.
+  // from inside a ListMetadataResponse).
+  //
+  // Detaching metadata that doesn't exist is a noop.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package or the instance doesn't exist.
+  rpc DetachMetadata(DetachMetadataRequest) returns (google.protobuf.Empty);
+
+  // Lists metadata entries attached to an instance.
+  //
+  // Either returns all metadata or only entries with requested keys. The list
+  // is sorted by the registration time of metadata entries (the most recent
+  // first).
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package or the instance doesn't exist.
+  rpc ListMetadata(ListMetadataRequest) returns (ListMetadataResponse);
+
   // Takes a version string and resolves it into a concrete package instance.
   //
   // A version string can be any of:
@@ -636,9 +688,9 @@ message ListRefsResponse {
 // The total length of the tag (as "key:value" pair) should be less that 400
 // bytes.
 message Tag {
-  // Key should be a lowercase identifier-like string ([a-z0-9_\-]+).
+  // Key is a lowercase string matching [a-z0-9_\-]+.
   string key = 1;
-  // Value can be an arbitrary string.
+  // Value is a string matching [A-Za-z0-9$()*+,\-./:;<=>@\\_{}~ ]+.
   string value = 2;
 
   // User that attached this tag (output only).
@@ -665,6 +717,69 @@ message DetachTagsRequest {
   ObjectRef instance = 2;
   // One or more tags to detach (order doesn't matter).
   repeated Tag tags = 3;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message InstanceMetadata {
+  // Key is a lowercase string matching [a-z0-9_\-]{1,400}.
+  string key = 1;
+  // Value is an arbitrary byte blob smaller than 512 Kb.
+  bytes value = 2;
+  // Optional MIME content type of the metadata value, primarily for UI.
+  string content_type = 3;
+
+  // Fingerprint identifies this metadata entry.
+  //
+  // It is the first 16 bytes of SHA256("<key>:<value>") in lowercase hex
+  // encoding (i.e. it is 32 lowercase hex characters).
+  //
+  // Populated by the server in all responses. Ignored in AttachMetadataRequest,
+  // optionally used in DetachMetadataRequest.
+  string fingerprint = 4;
+
+  // User that attached this metadata (output only).
+  string attached_by = 5;
+  // When the metadata was attached (output only).
+  google.protobuf.Timestamp attached_ts = 6;
+}
+
+
+message AttachMetadataRequest {
+  // The package that holds the instance we attach metadata to.
+  string package = 1;
+  // The instance we attach metadata to.
+  ObjectRef instance = 2;
+  // One or more metadata entries to attach.
+  repeated InstanceMetadata metadata = 3;
+}
+
+
+message DetachMetadataRequest {
+  // The package that holds the instance we detach metadata from.
+  string package = 1;
+  // The instance we detach metadata from.
+  ObjectRef instance = 2;
+  // Entries to detach: only 'fingerprint' or 'key'+'value' are used.
+  repeated InstanceMetadata metadata = 3;
+}
+
+
+message ListMetadataRequest {
+  // The package that holds the instance we list metadata of.
+  string package = 1;
+  // The instance to list metadata of.
+  ObjectRef instance = 2;
+  // Metadata keys to limit the listing to or empty to list all metadata.
+  repeated string keys = 3;
+}
+
+
+message ListMetadataResponse {
+  // Discovered metadata ordered by 'attached_ts' (the most recent first).
+  repeated InstanceMetadata metadata = 1;
 }
 
 
