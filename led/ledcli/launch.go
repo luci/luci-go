@@ -15,6 +15,7 @@
 package ledcli
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/led/job"
@@ -58,11 +60,17 @@ type cmdLaunch struct {
 
 	modernize bool
 	dump      bool
+	resultdb  string
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
+	c.Flags.StringVar(&c.resultdb, "resultdb", "unspecified", text.Doc(`
+		Flag for Swarming/ResultDB integration on the launched task. Can be "on", "off" or "unspecified"(default).
+		 If "on", resultdb will be forcefully enabled.
+		 If "off", resultdb will be forcefully disabled.
+		 If "unspecified", resultdb will be enabled if the original build had resultdb enabled.`))
 	c.cmdBase.initFlags(opts)
 }
 
@@ -70,6 +78,13 @@ func (c *cmdLaunch) jobInput() bool                  { return true }
 func (c *cmdLaunch) positionalRange() (min, max int) { return 0, 0 }
 
 func (c *cmdLaunch) validateFlags(ctx context.Context, _ []string, _ subcommands.Env) (err error) {
+	if c.resultdb != "on" && c.resultdb != "off" && c.resultdb != "unspecified" {
+		return fmt.Errorf(text.Doc(`
+			-resultdb should be "on", "off" or "unspecified".
+			 If "on", resultdb will be forcefully enabled.
+			 If "off", resultdb will be forcefully disabled.
+			 If "unspecified", resultdb will be enabled if the original build had resultdb enabled.`))
+	}
 	return
 }
 
@@ -90,6 +105,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
 		ParentTaskId:    os.Getenv("SWARMING_TASK_ID"),
+		ResultDB:        c.resultdb,
 	})
 	if err != nil {
 		return nil, err
