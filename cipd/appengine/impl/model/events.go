@@ -80,12 +80,14 @@ type Event struct {
 	Event   []byte         `gae:",noindex"` // serialized cipd.Event proto
 
 	// Fields extracted from cipd.Event for indexing.
-	Kind     api.EventKind
-	Who      string
-	When     int64  // nanoseconds since EventsEpoch
-	Instance string // literal 'NONE' for package events, to be able to query them
-	Ref      string
-	Tag      string
+	Kind          api.EventKind
+	Who           string
+	When          int64  // nanoseconds since EventsEpoch
+	Instance      string // literal 'NONE' for package events, to be able to query them
+	Ref           string
+	Tag           string
+	MdKey         string
+	MdFingerprint string
 }
 
 // FromProto fills in the entity based on the proto message.
@@ -110,6 +112,8 @@ func (e *Event) FromProto(c context.Context, p *api.Event) *Event {
 	}
 	e.Ref = p.Ref
 	e.Tag = p.Tag
+	e.MdKey = p.MdKey
+	e.MdFingerprint = p.MdFingerprint
 	return e
 }
 

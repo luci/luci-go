@@ -35,12 +35,14 @@ enum EventKind {
   PACKAGE_UNHIDDEN = 203;
 
   // Instance events: relate to a particular package instance.
-  INSTANCE_CREATED      = 300;
-  INSTANCE_DELETED      = 301;
-  INSTANCE_REF_SET      = 302;
-  INSTANCE_REF_UNSET    = 303;
-  INSTANCE_TAG_ATTACHED = 304;
-  INSTANCE_TAG_DETACHED = 305;
+  INSTANCE_CREATED           = 300;
+  INSTANCE_DELETED           = 301;
+  INSTANCE_REF_SET           = 302;
+  INSTANCE_REF_UNSET         = 303;
+  INSTANCE_TAG_ATTACHED      = 304;
+  INSTANCE_TAG_DETACHED      = 305;
+  INSTANCE_METADATA_ATTACHED = 306;
+  INSTANCE_METADATA_DETACHED = 307;
 }
 
 
@@ -65,6 +67,14 @@ message Event {
   string tag = 7;       // a tag (in 'k:v' form) for INSTANCE_TAG_*
 
   // An ACL diff for PREFIX_ACL_CHANGED.
+
   repeated cipd.PrefixMetadata.ACL granted_role = 8;
   repeated cipd.PrefixMetadata.ACL revoked_role = 9;
+
+  // Fields used for INSTANCE_METADATA_* events.
+
+  string md_key = 10;           // a metadata key
+  string md_value = 11;         // a metadata value, populated only for exported content types
+  string md_content_type = 12;  // a metadata content type
+  string md_fingerprint = 13;   // a metadata fingerprint
 }
