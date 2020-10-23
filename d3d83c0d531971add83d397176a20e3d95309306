@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74c03575_fc955840",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-23T17:38:43Z",
+      "side": 1,
+      "message": "Nice!",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 9
+      },
+      "revId": "d3d83c0d531971add83d397176a20e3d95309306",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e16b27d_e351661d",
+        "filename": "cv/api/migration/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-23T17:38:43Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 14
+      },
+      "revId": "d3d83c0d531971add83d397176a20e3d95309306",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
