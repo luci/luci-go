@@ -23,6 +23,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/led/job"
@@ -58,11 +59,18 @@ type cmdLaunch struct {
 
 	modernize bool
 	dump      bool
+	resultdb  job.RDBEnablement
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
+	c.resultdb = ""
+	c.Flags.Var(&c.resultdb, "resultdb", text.Doc(`
+		Flag for Swarming/ResultDB integration on the launched task. Can be "on" or "off".
+		 If "on", resultdb will be forcefully enabled.
+		 If "off", resultdb will be forcefully disabled.
+		 If unspecified, resultdb will be enabled if the original build had resultdb enabled.`))
 	c.cmdBase.initFlags(opts)
 }
 
@@ -90,6 +98,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
 		ParentTaskId:    os.Getenv("SWARMING_TASK_ID"),
+		ResultDB:        c.resultdb,
 	})
 	if err != nil {
 		return nil, err
