@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c590f05_f988e2f9",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-23T22:01:24Z",
+      "side": 1,
+      "message": "Oops.",
+      "parentUuid": "4da2408e_1a7c9dc9",
+      "range": {
+        "startLine": 345,
+        "startChar": 21,
+        "endLine": 345,
+        "endChar": 42
+      },
+      "revId": "0f283026ddb3de9511071eb18ad5c5bb30c05672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f173327_fd8475b2",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-23T21:31:21Z",
       "side": 1,
       "message": "In addition to using fingerprint to identify the metadata, shall we also allow user to provide the exact key value pairs? It probably doesn\u0027t make sense for large blob value. However, I assume the `git_revision` tag today will be converted to metadata and I think it will be much easier just to provide `git_revision:XXX` directly instead of having a extra step to find the fingerprint of the metadata.WDYT?",
+      "range": {
+        "startLine": 761,
+        "startChar": 0,
+        "endLine": 761,
+        "endChar": 35
+      },
+      "revId": "0f283026ddb3de9511071eb18ad5c5bb30c05672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32b133e2_53171cb9",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 761,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-23T22:01:24Z",
+      "side": 1,
+      "message": "Fine, added. But it seems redundant (it just moves SHA256 calculation from the client to the server). My motivation for not adding it was relative obscurity of DetachTags. It is not exposed via \"cipd\" CLI interface and using is discouraged. So convenience of using it is supposedly not a problem.\n\nA pro of supporting raw key-value here is that DetachMetadataRequest now looks similar to DetachTagsRequest, which is nice.",
+      "parentUuid": "3f173327_fd8475b2",
       "range": {
         "startLine": 761,
         "startChar": 0,
