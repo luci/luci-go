@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e982d3b3_6e51eeb8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-23T16:22:52Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "3b34dd9e988161d937c677e2d8d329062caf6ecc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "178414fe_d20bfd97",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-23T16:22:52Z",
+      "side": 1,
+      "message": "nit: go likes all letters of an abbreviation capitalized.\nso strictly speaking this should be RDBEnablement :P",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 8
+      },
+      "revId": "3b34dd9e988161d937c677e2d8d329062caf6ecc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b13fd6f5_b2ae4095",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-23T16:22:52Z",
+      "side": 1,
+      "message": "\"\"\n\nlaunch.go uses \"\" as default",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 82,
+        "endChar": 13
+      },
+      "revId": "3b34dd9e988161d937c677e2d8d329062caf6ecc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
