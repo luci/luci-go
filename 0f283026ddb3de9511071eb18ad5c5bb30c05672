@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4da2408e_1a7c9dc9",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-23T21:31:21Z",
+      "side": 1,
+      "message": "DetachMetadataRequest?",
+      "range": {
+        "startLine": 345,
+        "startChar": 21,
+        "endLine": 345,
+        "endChar": 42
+      },
+      "revId": "0f283026ddb3de9511071eb18ad5c5bb30c05672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f173327_fd8475b2",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 761,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-23T21:31:21Z",
+      "side": 1,
+      "message": "In addition to using fingerprint to identify the metadata, shall we also allow user to provide the exact key value pairs? It probably doesn\u0027t make sense for large blob value. However, I assume the `git_revision` tag today will be converted to metadata and I think it will be much easier just to provide `git_revision:XXX` directly instead of having a extra step to find the fingerprint of the metadata.WDYT?",
+      "range": {
+        "startLine": 761,
+        "startChar": 0,
+        "endLine": 761,
+        "endChar": 35
+      },
+      "revId": "0f283026ddb3de9511071eb18ad5c5bb30c05672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
