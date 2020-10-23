@@ -91,6 +91,8 @@ service ResultDB {
   // Supports invocation inclusions.
   rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
 
+  // Retrieves test results in a given range of either time or commit position.
+  // Accepts test variant predicate to filter the results.
   rpc GetTestResultHistory (GetTestResultHistoryRequest) returns (
     GetTestResultHistoryResponse) {};
 }
@@ -438,7 +440,10 @@ message GetTestResultHistoryRequest {
   // Whether the test results are indexed by commit position and/or timestamp is
   // determined according to invocation.history_options.
   oneof range {
-    CommitPositionRange cp_range = 4;
+    // A range of commit positions.
+    CommitPositionRange commit_position_range = 4;
+
+    // A range of time.
     TimeRange time_range = 5;
   }
 
