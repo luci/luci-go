@@ -41,6 +41,8 @@ type Cache struct {
 	path     string
 	h        crypto.Hash
 
+	createdDir map[string]struct{}
+
 	// Lock protected.
 	mu  sync.Mutex // This protects modification of cached entries under |path| too.
 	lru lruDict    // Implements LRU based eviction.
@@ -103,10 +105,11 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 	}
 
 	d := &Cache{
-		policies: policies,
-		path:     path,
-		h:        h,
-		lru:      makeLRUDict(h),
+		policies:   policies,
+		path:       path,
+		h:          h,
+		lru:        makeLRUDict(h),
+		createdDir: make(map[string]struct{}),
 	}
 	p := d.statePath()
 
@@ -229,6 +232,13 @@ func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
 	return d.add(digest, src, nil)
 }
 
+func (d *Cache) ensureDir(dir string) error {
+	if _, ok := d.createdDir[dir]; ok {
+		return nil
+	}
+	return os.MkdirAll(dir, 0700)
+}
+
 // AddFileWithoutValidation adds src as cache entry with hardlink.
 // But this doesn't do any content validation.
 //
@@ -242,6 +252,11 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	dest := d.itemPath(digest)
+
+	if err := d.ensureDir(filepath.Dir(dest)); err != nil {
+		return err
+	}
+
 	if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
 		terr := func() error {
 			if runtime.GOOS == "darwin" {
@@ -425,7 +440,8 @@ func (d *Cache) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os
 }
 
 func (d *Cache) itemPath(digest isolated.HexDigest) string {
-	return filepath.Join(d.path, string(digest))
+	di := string(digest)
+	return filepath.Join(d.path, di[:2], di[2:4], di[4:])
 }
 
 func (d *Cache) statePath() string {
