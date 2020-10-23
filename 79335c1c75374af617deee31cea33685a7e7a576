@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c73efdab_07245603",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-23T06:15:16Z",
+      "side": 1,
+      "message": "not sure how I missed this, but perhaps we need a more elaborate name, e.g. commit_position_range\nbecause this looks cryptic: https://screenshot.googleplex.com/AkbZFKq6CxsyVNY",
+      "range": {
+        "startLine": 441,
+        "startChar": 24,
+        "endLine": 441,
+        "endChar": 26
+      },
+      "revId": "79335c1c75374af617deee31cea33685a7e7a576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
