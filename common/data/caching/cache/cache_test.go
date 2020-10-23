@@ -16,10 +16,12 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"go.chromium.org/luci/common/isolated"
@@ -250,4 +252,30 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
+}
+
+func benchmarkManyFilesInDir(b *testing.B, files int) {
+	tmp, err := ioutil.TempDir(os.TempDir(), "")
+	if err != nil {
+		b.Fatalf("filaed to create dir: %v", err)
+	}
+
+	for i := 0; i < files; i++ {
+		if err := ioutil.WriteFile(filepath.Join(tmp, strconv.Itoa(i)), nil, 0666); err != nil {
+			b.Fatalf("failed to write %d: %v", i, err)
+		}
+	}
+
+	b.ResetTimer()
+	if err := ioutil.WriteFile(filepath.Join(tmp, strconv.Itoa(files)), nil, 0666); err != nil {
+		b.Fatalf("failed to write: %v", err)
+	}
+}
+
+func BenchmarkManyFilesInDir(b *testing.B) {
+	for _, i := range []int{100, 1000, 10000, 100000} {
+		b.Run(fmt.Sprintf("files %d", i), func(b *testing.B) {
+			benchmarkManyFilesInDir(b, i)
+		})
+	}
 }
