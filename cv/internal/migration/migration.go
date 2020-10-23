@@ -27,7 +27,9 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 )
 
-type MigrationServer struct{}
+type MigrationServer struct {
+	migrationpb.UnimplementedMigrationServer
+}
 
 // ReportRuns notifies CV of the Runs CQDaemon is currently working with.
 //

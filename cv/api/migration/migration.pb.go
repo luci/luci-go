@@ -20,18 +20,11 @@
 
 package migrationpb
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
-	context "context"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	v1 "go.chromium.org/luci/cv/api/bigquery/v1"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -42,10 +35,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 type ReportRunsRequest struct {
 	state         protoimpl.MessageState
@@ -248,7 +237,7 @@ var file_go_chromium_org_luci_cv_api_migration_migration_proto_goTypes = []inter
 	(*ReportedRun)(nil),              // 1: migration.ReportedRun
 	(*ReportFinishedRunRequest)(nil), // 2: migration.ReportFinishedRunRequest
 	(*v1.Attempt)(nil),               // 3: bigquery.Attempt
-	(*empty.Empty)(nil),              // 4: google.protobuf.Empty
+	(*emptypb.Empty)(nil),            // 4: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_cv_api_migration_migration_proto_depIdxs = []int32{
 	1, // 0: migration.ReportRunsRequest.runs:type_name -> migration.ReportedRun
@@ -326,155 +315,4 @@ func file_go_chromium_org_luci_cv_api_migration_migration_proto_init() {
 	file_go_chromium_org_luci_cv_api_migration_migration_proto_rawDesc = nil
 	file_go_chromium_org_luci_cv_api_migration_migration_proto_goTypes = nil
 	file_go_chromium_org_luci_cv_api_migration_migration_proto_depIdxs = nil
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// MigrationClient is the client API for Migration service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type MigrationClient interface {
-	// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-	//
-	// Used to determine whether CV's view of the world matches that of CQDaemon.
-	// Initially, this is just FYI for CV.
-	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-}
-type migrationPRPCClient struct {
-	client *prpc.Client
-}
-
-func NewMigrationPRPCClient(client *prpc.Client) MigrationClient {
-	return &migrationPRPCClient{client}
-}
-
-func (c *migrationPRPCClient) ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.client.Call(ctx, "migration.Migration", "ReportRuns", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *migrationPRPCClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.client.Call(ctx, "migration.Migration", "ReportFinishedRun", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-type migrationClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewMigrationClient(cc grpc.ClientConnInterface) MigrationClient {
-	return &migrationClient{cc}
-}
-
-func (c *migrationClient) ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/migration.Migration/ReportRuns", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/migration.Migration/ReportFinishedRun", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MigrationServer is the server API for Migration service.
-type MigrationServer interface {
-	// ReportRuns notifies CV of the Runs CQDaemon is currently working with.
-	//
-	// Used to determine whether CV's view of the world matches that of CQDaemon.
-	// Initially, this is just FYI for CV.
-	ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error)
-	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error)
-}
-
-// UnimplementedMigrationServer can be embedded to have forward compatible implementations.
-type UnimplementedMigrationServer struct {
-}
-
-func (*UnimplementedMigrationServer) ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportRuns not implemented")
-}
-func (*UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
-}
-
-func RegisterMigrationServer(s prpc.Registrar, srv MigrationServer) {
-	s.RegisterService(&_Migration_serviceDesc, srv)
-}
-
-func _Migration_ReportRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportRunsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).ReportRuns(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/ReportRuns",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).ReportRuns(ctx, req.(*ReportRunsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportFinishedRunRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).ReportFinishedRun(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/ReportFinishedRun",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).ReportFinishedRun(ctx, req.(*ReportFinishedRunRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _Migration_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "migration.Migration",
-	HandlerType: (*MigrationServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ReportRuns",
-			Handler:    _Migration_ReportRuns_Handler,
-		},
-		{
-			MethodName: "ReportFinishedRun",
-			Handler:    _Migration_ReportFinishedRun_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/cv/api/migration/migration.proto",
 }
