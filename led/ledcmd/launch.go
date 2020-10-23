@@ -52,6 +52,9 @@ type LaunchSwarmingOpts struct {
 	FinalBuildProto string
 
 	KitchenSupport job.KitchenSupport
+
+	// A flag for swarming/ResultDB integration on the launched task.
+	ResultDB job.RDBEnablement
 }
 
 // GetUID derives a user id string from the Authenticator for use with
@@ -85,7 +88,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	}
 
 	logging.Infof(ctx, "building swarming task")
-	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport); err != nil {
+	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport, opts.ResultDB); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
 	}
 
