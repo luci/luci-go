@@ -248,6 +248,30 @@ func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsReq
 	return out.(*empty.Empty), nil
 }
 
+func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *api.AttachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("AttachMetadata", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *api.DetachMetadataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("DetachMetadata", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error) {
+	out, err := m.call("ListMetadata", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ListMetadataResponse), nil
+}
+
 func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *api.ResolveVersionRequest, opts ...grpc.CallOption) (*api.Instance, error) {
 	out, err := m.call("ResolveVersion", in, opts)
 	if err != nil {
