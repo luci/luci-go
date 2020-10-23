@@ -16,12 +16,16 @@ package cache
 
 import (
 	"bytes"
+	"crypto"
+	"encoding/hex"
 	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
+	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -250,4 +254,42 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
+}
+
+func BenchmarkAddFileWithoutValidation(b *testing.B) {
+	// TODO(https://github.com/golang/go/issues/41062): use b.TempDir in Go 1.16.
+	tmp, err := ioutil.TempDir(os.TempDir(), "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+
+	src := filepath.Join(tmp, "src")
+	if err := os.Mkdir(src, 0700); err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		if err := ioutil.WriteFile(filepath.Join(src, s), []byte(s), 0600); err != nil {
+			b.Fatalf("failed to write: %v", err)
+		}
+	}
+
+	h := crypto.SHA256
+	c, err := New(Policies{
+		MaxSize: units.Size(b.N),
+	}, filepath.Join(tmp, "cache"), h)
+	if err != nil {
+		b.Fatalf("failed to instantiate cache: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		d := hex.EncodeToString(h.New().Sum([]byte(s)))
+		if err := c.AddFileWithoutValidation(isolated.HexDigest(d), filepath.Join(src, s)); err != nil {
+			b.Fatalf("failed to write: %v", err)
+		}
+	}
+	b.StopTimer()
 }
