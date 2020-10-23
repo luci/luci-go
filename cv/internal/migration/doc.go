@@ -15,4 +15,5 @@
 // Package migration implements migration API to be called by CQDaemon.
 //
 // The package is meant to be deleted after migration to CV is over.
+// TODO(cbrug/1141880): delete this package.
 package migration
