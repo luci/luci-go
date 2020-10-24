@@ -26,6 +26,12 @@ message TestMetadata {
   // Where the test is defined, e.g. the file name.
   // location.repo MUST be specified.
   TestLocation location = 2;
+
+  // Tags for the test. For example:
+  // * monorail_component of the test;
+  // * team_email of the team who's responsible to the test;
+  // * os that the test code is specific to.
+  map<string, string> tags = 3;
 }
 
 // Location of the test definition.
