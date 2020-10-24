@@ -120,6 +120,24 @@ func TestReportTestResults(t *testing.T) {
 				cfg.BaseTags, tr.Tags, expected.Tags = t1, t2, append(t1, t2...)
 				check(ctx, cfg, tr, expected)
 			})
+
+			Convey("with ServerConfig.LocTagsFile", func() {
+				cfg.LocTagsFile = "test_data/location_tags.json"
+				expected.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					Location: &pb.TestLocation{
+						Repo:     "https://chromium.googlesource.com/chromium/src",
+						FileName: tr.TestLocation.FileName,
+					},
+					Tags: map[string]string{
+						"monorail_project":   "chromium",
+						"monorail_component": "Monorail>Component",
+						"teamEmail":          "team_email@chromium.org",
+						"os":                 "WINDOWS",
+					},
+				}
+				check(ctx, cfg, tr, expected)
+			})
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {

@@ -105,6 +105,10 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, all negative durations will be coerced to 0.
 				If false, test results with negative durations will be rejected.
 			`))
+			r.Flags.StringVar(&r.locTagsFile, "location-tags-file", "", text.Doc(`
+				Path to the file that contains test location tags. See
+				https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/proto/v1/location_tag.proto?q=location_tag.proto.
+			`))
 			return r
 		},
 	}
@@ -124,6 +128,7 @@ type streamRun struct {
 	tags                   strpair.Map
 	pbTags                 []*pb.StringPair
 	coerceNegativeDuration bool
+	locTagsFile            string
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -238,6 +243,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
 		CoerceNegativeDuration:     r.coerceNegativeDuration,
+		LocTagsFile:                r.locTagsFile,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

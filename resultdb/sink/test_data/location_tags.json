@@ -1,0 +1,21 @@
+{
+  "repos": {
+    "https://chromium.googlesource.com/chromium/src" : {
+      "dirs": {
+      	".": {
+      	  "tags": {
+      	    "monorail_project": "chromium"
+      	  }
+      	},
+      	"artifact_dir": {
+      	  "tags": {
+      	    "monorail_project": "chromium",
+      	    "monorail_component": "Monorail>Component",
+      	    "teamEmail": "team_email@chromium.org",
+      	    "os": "WINDOWS"
+      	  }
+      	}
+      }
+    }
+  }
+}
