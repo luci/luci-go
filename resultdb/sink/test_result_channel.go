@@ -17,10 +17,13 @@ package sink
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -45,6 +48,9 @@ type testResultChannel struct {
 	// 1 indicates that testResultChannel started the process of closing and draining
 	// the channel. 0, otherwise.
 	closed int32
+
+	// dirs maps from a directory to its metadata.
+	locationTags *sinkpb.LocationTags
 }
 
 func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultChannel {
@@ -67,11 +73,30 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for TestResult: %s", err))
 	}
+	if err = c.getLocationTags(); err != nil {
+		panic(fmt.Sprintf("failed to parse location tags file: %s", err))
+	}
 	return c
 }
 
+func (c *testResultChannel) getLocationTags() error {
+	if c.cfg.LocTagsFile != "" {
+		f, err := os.Open(c.cfg.LocTagsFile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		c.locationTags = &sinkpb.LocationTags{}
+		if err = (&jsonpb.Unmarshaler{}).Unmarshal(f, c.locationTags); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *testResultChannel) closeAndDrain(ctx context.Context) {
-	// annonuce that it is in the process of closeAndDrain.
+	// announce that it is in the process of closeAndDrain.
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
@@ -92,13 +117,46 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
+// locationTagsTags sets the test tags in tmd by looking for the directory of
+// tmd.Location.FileName in the location tags file.
+func (c *testResultChannel) locationTagsTags(tmd *pb.TestMetadata) {
+	if c.locationTags == nil {
+		return
+	}
+	if tmd.Location == nil || tmd.Location.FileName == "" {
+		return
+	}
+	repo, ok := c.locationTags.Repos[tmd.Location.Repo]
+	switch {
+	case !ok:
+		return
+	case len(repo.GetDirs()) == 0:
+		return
+	}
+	// fileName must start with "//" and it has been validated.
+	dir := filepath.Dir(tmd.Location.FileName[2:])
+
+	// Start from the directory of the file, then try upper directories if not
+	// found.
+	for dir != "." {
+		if dir, ok := repo.Dirs[dir]; ok {
+			tmd.Tags = dir.Tags
+			return
+		}
+		dir = filepath.Dir(dir)
+	}
+}
+
 func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	// retried batch?
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
+
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
+			c.locationTagsTags(tr.TestMetadata)
+
 			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
