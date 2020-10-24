@@ -83,6 +83,10 @@ func TestDeletePackage(t *testing.T) {
 				{Key: "k1", Value: chr},
 				{Key: "k2", Value: chr},
 			}), ShouldBeNil)
+			So(AttachInstanceMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "k1", Value: []byte(chr)},
+				{Key: "k2", Value: []byte(chr)},
+			}), ShouldBeNil)
 		}
 
 		// Some unrelated instance in a different package to be left alone.
@@ -93,7 +97,7 @@ func TestDeletePackage(t *testing.T) {
 		So(reg, ShouldBeTrue)
 
 		// Before the deletion.
-		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 21)
+		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 29)
 		So(entitiesCount(PackageKey(ctx, "another-pkg")), ShouldEqual, 2)
 
 		So(DeletePackage(ctx, "pkg"), ShouldBeNil)
