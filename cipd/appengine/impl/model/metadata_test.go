@@ -296,6 +296,143 @@ func TestMetadata(t *testing.T) {
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the instance is not ready yet")
 		})
+
+		Convey("DetachMetadata happy paths", func() {
+			inst := putInst("pkg", digest, nil)
+
+			// Attach a bunch of metadata first, so we have something to detach.
+			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("0"), ContentType: "text/0"},
+				{Key: "a", Value: []byte("1"), ContentType: "text/1"},
+				{Key: "a", Value: []byte("2"), ContentType: "text/2"},
+				{Key: "a", Value: []byte("3"), ContentType: "text/3"},
+				{Key: "a", Value: []byte("4"), ContentType: "text/4"},
+				{Key: "a", Value: []byte("5"), ContentType: "text/5"},
+			}), ShouldBeNil)
+
+			// Detach one existing using a key-value pair.
+			tc.Add(time.Second)
+			So(getMD("a", "0", inst), ShouldNotBeNil)
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("0")},
+			}), ShouldBeNil)
+			So(getMD("a", "0", inst), ShouldBeNil)
+
+			// Detach one existing using a fingerprint pair.
+			tc.Add(time.Second)
+			So(getMD("a", "1", inst), ShouldNotBeNil)
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Fingerprint: fp("a", "1")},
+			}), ShouldBeNil)
+			So(getMD("a", "1", inst), ShouldBeNil)
+
+			// Detach one missing.
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("z0")},
+			}), ShouldBeNil)
+
+			// Detach a bunch of existing, including dups.
+			tc.Add(time.Second)
+			So(getMD("a", "2", inst), ShouldNotBeNil)
+			So(getMD("a", "3", inst), ShouldNotBeNil)
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("2")},
+				{Key: "a", Value: []byte("3")},
+				{Key: "a", Value: []byte("2")},
+				{Fingerprint: fp("a", "3")},
+			}), ShouldBeNil)
+			So(getMD("a", "2", inst), ShouldBeNil)
+			So(getMD("a", "3", inst), ShouldBeNil)
+
+			// Detach a bunch of missing.
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("z1")},
+				{Key: "a", Value: []byte("z2")},
+			}), ShouldBeNil)
+
+			// Detach a mix of existing and missing.
+			tc.Add(time.Second)
+			So(getMD("a", "4", inst), ShouldNotBeNil)
+			So(getMD("a", "5", inst), ShouldNotBeNil)
+			So(DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("z3")},
+				{Key: "a", Value: []byte("4")},
+				{Key: "a", Value: []byte("z4")},
+				{Key: "a", Value: []byte("5")},
+			}), ShouldBeNil)
+			So(getMD("a", "4", inst), ShouldBeNil)
+			So(getMD("a", "5", inst), ShouldBeNil)
+
+			// All 'detach' events have been collected (skip checking 'attach' ones).
+			So(GetEvents(ctx)[:6], ShouldResembleProto, []*api.Event{
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(4*time.Second + 1)),
+					MdKey:         "a",
+					MdValue:       "5",
+					MdContentType: "text/5",
+					MdFingerprint: fp("a", "5"),
+				},
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(4 * time.Second)),
+					MdKey:         "a",
+					MdValue:       "4",
+					MdContentType: "text/4",
+					MdFingerprint: fp("a", "4"),
+				},
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(3*time.Second + 1)),
+					MdKey:         "a",
+					MdValue:       "3",
+					MdContentType: "text/3",
+					MdFingerprint: fp("a", "3"),
+				},
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(3 * time.Second)),
+					MdKey:         "a",
+					MdValue:       "2",
+					MdContentType: "text/2",
+					MdFingerprint: fp("a", "2"),
+				},
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					MdKey:         "a",
+					MdValue:       "1",
+					MdContentType: "text/1",
+					MdFingerprint: fp("a", "1"),
+				},
+				{
+					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Package:       "pkg",
+					Instance:      digest,
+					Who:           string(testutil.TestUser),
+					When:          google.NewTimestamp(testutil.TestTime.Add(1 * time.Second)),
+					MdKey:         "a",
+					MdValue:       "0",
+					MdContentType: "text/0",
+					MdFingerprint: fp("a", "0"),
+				},
+			})
+		})
 	})
 }
 
