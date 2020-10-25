@@ -163,36 +163,110 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 			return nil
 		}
 
-		// Prepare event log entries.
-		events := Events{}
-		for _, ent := range missing {
-			// Export only valid UTF-8 values of known text-like content types.
-			mdValue := ""
-			if ShouldExportMetadataValue(ent.ContentType) {
-				mdValue = string(ent.Value)
-				if !utf8.ValidString(mdValue) {
-					mdValue = ""
-				}
-			}
-			events.Emit(&api.Event{
-				Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
-				Package:       inst.Package.StringID(),
-				Instance:      inst.InstanceID,
-				Who:           who,
-				When:          google.NewTimestamp(now),
-				MdKey:         ent.Key,
-				MdValue:       mdValue,
-				MdContentType: ent.ContentType,
-				MdFingerprint: ent.Fingerprint,
-			})
-		}
-
 		// Store everything.
 		if err := datastore.Put(ctx, missing); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return events.Flush(ctx)
+		return flushToEventLog(ctx, missing, api.EventKind_INSTANCE_METADATA_ATTACHED, inst, who, now)
 	})
+}
+
+// DetachMetadata detaches a bunch of metadata entries from an instance.
+//
+// Assumes inputs are already validated. If Fingerprint is populated, uses it
+// to identifies entries to detach. Otherwise calculates it from Key and Value
+// (which must be populated in this case).
+//
+// Launches a transaction inside (and thus can't be a part of a transaction
+// itself).
+func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetadata) error {
+	now := clock.Now(ctx).UTC()
+	who := string(auth.CurrentIdentity(ctx))
+
+	// Calculate fingerprints before the transaction, it is relatively slow. Throw
+	// away duplicate entries.
+	seen := stringset.New(len(md))
+	filtered := md[:0]
+	for _, m := range md {
+		if m.Fingerprint == "" {
+			m.Fingerprint = common.InstanceMetadataFingerprint(m.Key, m.Value)
+		}
+		if seen.Add(m.Fingerprint) {
+			filtered = append(filtered, m)
+		}
+	}
+	md = filtered
+
+	return Txn(ctx, "DetachMetadata", func(c context.Context) error {
+		// Prepare to fetch everything from the datastore to figure out what entries
+		// actually exist, for the event log.
+		instKey := datastore.KeyForObj(ctx, inst)
+		ents := make([]*InstanceMetadata, len(md))
+		for i, m := range md {
+			ents[i] = &InstanceMetadata{
+				Fingerprint: m.Fingerprint,
+				Instance:    instKey,
+			}
+		}
+
+		existing := make([]*InstanceMetadata, 0, len(ents))
+		if err := datastore.Get(ctx, ents); err != nil {
+			merr, ok := err.(errors.MultiError)
+			if !ok {
+				return errors.Annotate(err, "failed to fetch metadata").Tag(transient.Tag).Err()
+			}
+			for i, err := range merr {
+				switch err {
+				case nil:
+					existing = append(existing, ents[i])
+				case datastore.ErrNoSuchEntity:
+					// Skip, that's ok.
+				default:
+					return errors.Annotate(err, "failed to fetch metadata %q", ents[i].Fingerprint).Tag(transient.Tag).Err()
+				}
+			}
+		} else {
+			existing = ents
+		}
+
+		if len(existing) == 0 {
+			return nil
+		}
+
+		// Store everything.
+		if err := datastore.Delete(ctx, existing); err != nil {
+			return transient.Tag.Apply(err)
+		}
+		return flushToEventLog(ctx, existing, api.EventKind_INSTANCE_METADATA_DETACHED, inst, who, now)
+	})
+}
+
+// flushToEventLog emits a bunch of event log entries with metadata.
+func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind api.EventKind, inst *Instance, who string, now time.Time) error {
+	nowTS := google.NewTimestamp(now)
+	events := Events{}
+	for _, ent := range ents {
+		// Export only valid UTF-8 values of known text-like content types.
+		mdValue := ""
+		if ShouldExportMetadataValue(ent.ContentType) {
+			mdValue = string(ent.Value)
+			if !utf8.ValidString(mdValue) {
+				mdValue = ""
+			}
+		}
+		events.Emit(&api.Event{
+			Kind:          kind,
+			Package:       inst.Package.StringID(),
+			Instance:      inst.InstanceID,
+			Who:           who,
+			When:          nowTS,
+			MdKey:         ent.Key,
+			MdValue:       mdValue,
+			MdContentType: ent.ContentType,
+			MdFingerprint: ent.Fingerprint,
+		})
+	}
+	return events.Flush(ctx)
 }
 
 // guessPlainText returns true for smallish printable ASCII strings.

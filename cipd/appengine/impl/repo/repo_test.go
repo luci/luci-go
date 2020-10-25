@@ -2011,7 +2011,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("AttachMetadata happy path", func() {
+		Convey("AttachMetadata/DetachMetadata happy path", func() {
 			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
@@ -2022,57 +2022,131 @@ func TestInstanceMetadata(t *testing.T) {
 			// Attached both.
 			So(getMD(inst, "k:0").AttachedBy, ShouldEqual, "user:writer@example.com")
 			So(getMD(inst, "k:1").AttachedBy, ShouldEqual, "user:writer@example.com")
+
+			// Detaching requires OWNER. Detach one by giving a KV pair, and another
+			// via its fingerprint.
+			_, err = impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: []*api.InstanceMetadata{
+					{
+						Key:   "k",
+						Value: []byte{'0'},
+					},
+					{
+						Fingerprint: common.InstanceMetadataFingerprint("k", []byte{'1'}),
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// Missing now.
+			So(getMD(inst, "k:0"), ShouldBeNil)
+			So(getMD(inst, "k:1"), ShouldBeNil)
 		})
 
 		Convey("Bad package", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b//",
-				Instance: objRef,
-				Metadata: md("k:0", "k:1"),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b//",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'package'")
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b//",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
 		})
 
 		Convey("Bad ObjectRef", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c",
-				Metadata: md("k:0", "k:1"),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'instance'")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'instance'")
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'instance'")
+			})
 		})
 
 		Convey("Empty metadata list", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c",
-				Instance: objRef,
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "cannot be empty")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "cannot be empty")
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "cannot be empty")
+			})
 		})
 
 		Convey("Bad metadata key", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c",
-				Instance: objRef,
-				Metadata: md("ZZZ:0"),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("ZZZ:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `invalid metadata key`)
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `invalid metadata key`)
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("ZZZ:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `invalid metadata key`)
+			})
 		})
 
 		Convey("Bad metadata value", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c",
-				Instance: objRef,
-				Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
+			})
 		})
 
-		Convey("Bad metadata content type", func() {
+		Convey("Bad metadata content type in AttachMetadata", func() {
 			m := md("k:0")
 			m[0].ContentType = "zzz zzz"
 			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
@@ -2084,24 +2158,58 @@ func TestInstanceMetadata(t *testing.T) {
 			So(err, ShouldErrLike, `metadata with key "k" - bad content-type "zzz zzz`)
 		})
 
-		Convey("No access", func() {
-			_, err := impl.AttachMetadata(as("reader@example.com"), &api.AttachMetadataRequest{
+		Convey("Bad fingerprint in DetachMetadata", func() {
+			_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
-				Metadata: md("k:0", "k:1"),
+				Metadata: []*api.InstanceMetadata{
+					{Fingerprint: "bad"},
+				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "has no required WRITER role")
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, `bad metadata fingerprint "bad"`)
+		})
+
+		Convey("No access", func() {
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("reader@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "has no required WRITER role")
+			})
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("writer@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "has no required OWNER role")
+			})
 		})
 
 		Convey("Missing package", func() {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c/missing",
-				Instance: objRef,
-				Metadata: md("k:0", "k:1"),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c/missing",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c/missing",
+					Instance: objRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
 		})
 
 		Convey("Missing instance", func() {
@@ -2109,13 +2217,24 @@ func TestInstanceMetadata(t *testing.T) {
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("b", 40),
 			}
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
-				Package:  "a/b/c",
-				Instance: missingRef,
-				Metadata: md("k:0", "k:1"),
+			Convey("AttachMetadata", func() {
+				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: missingRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+			Convey("DetachMetadata", func() {
+				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: missingRef,
+					Metadata: md("k:0", "k:1"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
+			})
 		})
 	})
 }
