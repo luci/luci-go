@@ -15,7 +15,10 @@
 package common
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"mime"
 	"path"
 	"regexp"
 	"sort"
@@ -54,6 +57,12 @@ var (
 
 	// packageRefRe is a regular expression for a ref.
 	packageRefRe = regexp.MustCompile(`^[a-z0-9_./\-]{1,256}$`)
+
+	// Parameters for instance metadata key-value validation.
+	metadataKeyMaxLen = 400
+	metadataValMaxLen = 512 * 1024
+	metadataKeyReStr  = `^[a-z0-9_\-]+$`
+	metadataKeyRe     = regexp.MustCompile(metadataKeyReStr)
 )
 
 // Pin uniquely identifies an instance of some package.
@@ -347,4 +356,54 @@ func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
 		ret[subdir] = pkgs.ToSlice()
 	}
 	return ret
+}
+
+// ValidateInstanceMetadataKey returns an error if the given key can't be used
+// as an instance metadata key.
+func ValidateInstanceMetadataKey(key string) error {
+	if len(key) > metadataKeyMaxLen {
+		return fmt.Errorf("the metadata key is too long, should be <=%d chars: %q", metadataKeyMaxLen, key)
+	}
+	if !metadataKeyRe.MatchString(key) {
+		return fmt.Errorf("invalid metadata key (should match %q): %q", metadataKeyReStr, key)
+	}
+	return nil
+}
+
+// ValidateInstanceMetadataLen returns an error if the given length of the
+// metadata payload is too large.
+func ValidateInstanceMetadataLen(l int) error {
+	if l > metadataValMaxLen {
+		return fmt.Errorf("the metadata value is too long, should be <=%d bytes, got %d", metadataValMaxLen, l)
+	}
+	return nil
+}
+
+// ValidateContentType returns an error if the given string can't be used as
+// an instance metadata content type.
+func ValidateContentType(ct string) error {
+	if ct == "" {
+		return nil
+	}
+	if len(ct) > 400 {
+		return fmt.Errorf("the content type is too long, should be <=400 bytes, got %d", len(ct))
+	}
+	_, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		return fmt.Errorf("bad content-type %q - %s", ct, err)
+	}
+	return nil
+}
+
+// InstanceMetadataFingerprint calculates a fingerprint of an instance metadata
+// entry.
+//
+// Doesn't do any validation.
+func InstanceMetadataFingerprint(key string, value []byte) string {
+	h := sha256.New()
+	h.Write([]byte(key))
+	h.Write([]byte{':'})
+	h.Write(value)
+	sum := h.Sum(nil)
+	return hex.EncodeToString(sum[:16])
 }
