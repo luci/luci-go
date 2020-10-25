@@ -411,3 +411,32 @@ func TestPinSliceAndMap(t *testing.T) {
 
 	})
 }
+
+func TestInstanceMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidateInstanceMetadataKey works", t, func() {
+		So(ValidateInstanceMetadataKey("a"), ShouldBeNil)
+		So(ValidateInstanceMetadataKey("az_-09"), ShouldBeNil)
+		So(ValidateInstanceMetadataKey(strings.Repeat("z", 400)), ShouldBeNil)
+
+		So(ValidateInstanceMetadataKey(""), ShouldNotBeNil)
+		So(ValidateInstanceMetadataKey(strings.Repeat("z", 401)), ShouldNotBeNil)
+		So(ValidateInstanceMetadataKey("a a"), ShouldNotBeNil)
+		So(ValidateInstanceMetadataKey("A"), ShouldNotBeNil)
+		So(ValidateInstanceMetadataKey("a:a"), ShouldNotBeNil)
+	})
+
+	Convey("ValidateContentType works", t, func() {
+		So(ValidateContentType(""), ShouldBeNil)
+		So(ValidateContentType("text/plain; encoding=utf-8"), ShouldBeNil)
+
+		So(ValidateContentType("zzz zzz"), ShouldNotBeNil)
+		So(ValidateContentType(strings.Repeat("z", 401)), ShouldNotBeNil)
+	})
+
+	Convey("InstanceMetadataFingerprint works", t, func() {
+		fp := InstanceMetadataFingerprint("key", []byte("value"))
+		So(fp, ShouldEqual, "06dd3884aa86b22603764bd7e5b0b41e")
+	})
+}
