@@ -395,6 +395,18 @@ func ValidateContentType(ct string) error {
 	return nil
 }
 
+// ValidateInstanceMetadataFingerprint returns an error if the given string
+// doesn't look like an output of InstanceMetadataFingerprint.
+func ValidateInstanceMetadataFingerprint(fp string) error {
+	if len(fp) != 32 {
+		return fmt.Errorf("bad metadata fingerprint %q: expecting 32 hex chars", fp)
+	}
+	if err := checkIsHex(fp); err != nil {
+		return fmt.Errorf("bad metadata fingerprint %q: %s", fp, err)
+	}
+	return nil
+}
+
 // InstanceMetadataFingerprint calculates a fingerprint of an instance metadata
 // entry.
 //
