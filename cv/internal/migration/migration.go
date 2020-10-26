@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -49,9 +50,12 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 		return
 	}
 
-	cls := 0
-	// TODO(tandrii): grab project ID from auth context.
 	project := "<UNKNOWN>"
+	if i := auth.CurrentIdentity(ctx); i.Kind() == identity.Project {
+		project = i.Value()
+	}
+
+	cls := 0
 	for _, r := range req.Runs {
 		project = r.Attempt.LuciProject
 		cls += len(r.Attempt.GerritChanges)
@@ -81,6 +85,9 @@ func (m *MigrationServer) checkAllowed(ctx context.Context) error {
 	case !yes:
 		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
+		if i := auth.CurrentIdentity(ctx); i.Kind() != identity.Project {
+			logging.Warningf(ctx, "Unusual caller %s", i)
+		}
 		return nil
 	}
 }
