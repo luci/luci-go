@@ -774,12 +774,20 @@ message ListMetadataRequest {
   ObjectRef instance = 2;
   // Metadata keys to limit the listing to or empty to list all metadata.
   repeated string keys = 3;
+
+  // Number of results to return on one page. Ignored for now.
+  int32 page_size = 20;
+  // Value of 'next_page_token' from the previous response.
+  string page_token = 21;
 }
 
 
 message ListMetadataResponse {
   // Discovered metadata ordered by 'attached_ts' (the most recent first).
   repeated InstanceMetadata metadata = 1;
+  // Value to pass as 'page_token' in ListMetadataRequest to resume fetching or
+  // an empty string if there's no more results.
+  string next_page_token = 20;
 }
 
 
