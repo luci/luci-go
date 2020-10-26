@@ -30,3 +30,17 @@ indexes:
   - name: instance_id
   - name: modified_ts
     direction: desc
+
+- kind: InstanceMetadata
+  ancestor: yes
+  properties:
+  - name: attached_ts
+    direction: desc
+
+- kind: InstanceMetadata
+  ancestor: yes
+  properties:
+  - name: key
+  - name: attached_ts
+    direction: desc
+
