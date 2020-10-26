@@ -33,6 +33,24 @@
       "message": "When I look at the example given in the bug: https://ci.chromium.org/ui/p/chromium/builders/try/mac-rel/510703/steps\n\nThe raw log link looks like this: https://logs.chromium.org/v/?s\u003dchromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8865799866429037440%2F%2B%2Fsteps%2Fcompile__with_patch_%2F0%2Fstdout\u0026format\u003draw\n\nDoes your code handle this case?",
       "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eca5cb1b_c7b5cd3d",
+        "filename": "milo/frontend/resultui/src/libs/build_utils_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-10-26T22:57:48Z",
+      "side": 1,
+      "message": "Yes, I think so, for that case, the URL is\nlogdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8865799866429037440/+/steps/compile__with_patch_/0/stdout\n\n(https://screenshot.googleplex.com/8aVc2PJRbYh9gw3)\n\nThis is actually the first test case in the test file.",
+      "parentUuid": "d6bd6408_f4157aa0",
+      "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
