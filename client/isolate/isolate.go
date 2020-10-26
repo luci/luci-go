@@ -48,12 +48,6 @@ func IsValidVariable(variable string) bool {
 	return validVariableMatcher.MatchString(variable)
 }
 
-// Tree to be isolated.
-type Tree struct {
-	Cwd  string
-	Opts ArchiveOptions
-}
-
 // ArchiveOptions for archiving trees.
 type ArchiveOptions struct {
 	Isolate             string              `json:"isolate"`
