@@ -179,14 +179,12 @@ func TestArchive(t *testing.T) {
 		}
 
 		isolatedData := isolated.Isolated{
-			Algo:    "sha-1",
-			Command: []string{"amiga"},
+			Algo: "sha-1",
 			Files: map[string]isolated.File{
 				filepath.Join("base", "bar"):   isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
 				filepath.Join("second", "boz"): isolated.BasicFile("aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", mode, 4),
 			},
-			RelativeCwd: "foo",
-			Version:     isolated.IsolatedFormatVersion,
+			Version: isolated.IsolatedFormatVersion,
 		}
 		if runtime.GOOS != "windows" {
 			isolatedData.Files["link"] = isolated.SymLink(filepath.Join("base", "bar"))

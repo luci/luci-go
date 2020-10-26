@@ -42,6 +42,7 @@ For example, use: isolate run -isolated foo.isolate -- --gtest_filter=Foo.Bar`,
 			r := runRun{}
 			r.commonFlags.Init()
 			r.isolateFlags.Init(&r.Flags)
+			r.Flags.StringVar(&r.relativeCwd, "relative-cwd", ".", "Relative cwd when running isolated.")
 			return &r
 		},
 	}
@@ -50,6 +51,7 @@ For example, use: isolate run -isolated foo.isolate -- --gtest_filter=Foo.Bar`,
 type runRun struct {
 	commonFlags
 	isolateFlags
+	relativeCwd string
 }
 
 func (r *runRun) Parse(a subcommands.Application, args []string) error {
@@ -80,7 +82,7 @@ func (r *runRun) Run(a subcommands.Application, args []string, _ subcommands.Env
 }
 
 func (r *runRun) main(a subcommands.Application, args []string) error {
-	deps, rootDir, isol, err := isolate.ProcessIsolate(&r.ArchiveOptions)
+	deps, rootDir, _, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}
@@ -96,24 +98,22 @@ func (r *runRun) main(a subcommands.Application, args []string) error {
 		if err := recreateTree(outDir, rootDir, deps); err != nil {
 			return errors.Annotate(err, "failed to recreate tree").Err()
 		}
-		cmdAndArgs := append([]string{}, isol.Command...)
-		cmdAndArgs = append(cmdAndArgs, args...)
-		if len(cmdAndArgs) == 0 {
+		if len(args) == 0 {
 			return errors.Reason("command cannot be empty").Err()
 		}
-		cwd := filepath.Clean(filepath.Join(outDir, isol.RelativeCwd))
+		cwd := filepath.Clean(filepath.Join(outDir, r.relativeCwd))
 		// |cwd| should never exist because it is under the temporary directory |outDir|.
 		err = filesystem.MakeDirs(cwd)
 		if err != nil {
 			return errors.Annotate(err, "failed to create cwd=%s", cwd).Err()
 		}
-		log.Printf("Running %v, cwd=%s\n", cmdAndArgs, cwd)
-		cmd := exec.Command(cmdAndArgs[0], cmdAndArgs[1:]...)
+		log.Printf("Running %v, cwd=%s\n", args, cwd)
+		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Dir = cwd
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			return errors.Annotate(err, "failed to run: %v", cmdAndArgs).Err()
+			return errors.Annotate(err, "failed to run: %v", args).Err()
 		}
 		return nil
 	}); err != nil {
