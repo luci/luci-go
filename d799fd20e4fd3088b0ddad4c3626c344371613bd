@@ -73,6 +73,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "753417b2_8b7d8b7a",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T21:58:54Z",
+      "side": 1,
+      "message": "makes sense.",
+      "parentUuid": "66bfe60b_cec6a6be",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 87,
+        "endChar": 5
+      },
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "38f6d1ba_58975ba0",
         "filename": "cipd/appengine/impl/model/metadata.go",
         "patchSetId": 4
