@@ -16,6 +16,23 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/8038/steps",
       "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6bd6408_f4157aa0",
+        "filename": "milo/frontend/resultui/src/libs/build_utils_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-26T22:49:01Z",
+      "side": 1,
+      "message": "When I look at the example given in the bug: https://ci.chromium.org/ui/p/chromium/builders/try/mac-rel/510703/steps\n\nThe raw log link looks like this: https://logs.chromium.org/v/?s\u003dchromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8865799866429037440%2F%2B%2Fsteps%2Fcompile__with_patch_%2F0%2Fstdout\u0026format\u003draw\n\nDoes your code handle this case?",
+      "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
