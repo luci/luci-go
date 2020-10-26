@@ -33,7 +33,6 @@ func TestConditionJson(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should properly support JSON in conditional section of file.`, t, func() {
 		c := condition{Condition: "OS == \"Linux\""}
-		c.Variables.ReadOnly = new(int)
 		c.Variables.Command = []string{"python", "generate", "something"}
 		c.Variables.Files = []string{"generated"}
 		jsonData, err := json.Marshal(&c)
@@ -301,16 +300,6 @@ func TestPythonToGoNonString(t *testing.T) {
 			So(string(left), ShouldResemble, e.left)
 			So(goChunk, ShouldResemble, e.out)
 		}
-	})
-}
-
-func TestVerifyVariables(t *testing.T) {
-	t.Parallel()
-	Convey(`Isolate should properly verify variables.`, t, func() {
-		v := variables{}
-		badRo := -2
-		v.ReadOnly = &badRo
-		So(v.verify(), ShouldNotBeNil)
 	})
 }
 

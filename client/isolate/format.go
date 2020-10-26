@@ -61,7 +61,6 @@ var osPathSeparator = string(os.PathSeparator)
 //          'files': [
 //            ...
 //          ],
-//          'read_only': 0,
 //        },
 //      }],
 //      ...
@@ -133,7 +132,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 // the information unprocessed but filtered for the specific OS.
 //
 // Returns:
-//   command, dependencies, readOnly flag, relDir, error.
+//   command, dependencies, relDir, error.
 //
 // relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (
@@ -494,9 +493,6 @@ func (p *condition) UnmarshalJSON(data []byte) error {
 type variables struct {
 	Command []string `json:"command"`
 	Files   []string `json:"files"`
-	// ReadOnly has 1 as default, according to specs.
-	// Just as Python-isolate also uses None as default, this code uses nil.
-	ReadOnly *int `json:"read_only"`
 }
 
 // variableValue holds a single value of a string or an int,
@@ -677,9 +673,6 @@ func processIsolate(content []byte) (*processedIsolate, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := isolate.Variables.verify(); err != nil {
-		return nil, err
-	}
 	out := &processedIsolate{
 		isolate.Includes,
 		make([]*processedCondition, len(isolate.Conditions)),
@@ -732,7 +725,7 @@ func processCondition(c condition, varsAndValues variablesValuesSet) (*processed
 	if out.equalityValues, err = processConditionAst(out.expr, varsAndValues); err != nil {
 		return nil, err
 	}
-	return out, out.variables.verify()
+	return out, nil
 }
 
 func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[token.Pos]variableValue, error) {
@@ -973,14 +966,7 @@ func pythonToGoString(left []rune) (string, []rune, error) {
 }
 
 func (v *variables) isEmpty() bool {
-	return len(v.Command) == 0 && len(v.Files) == 0 && v.ReadOnly == nil
-}
-
-func (v *variables) verify() error {
-	if v.ReadOnly == nil || (0 <= *v.ReadOnly && *v.ReadOnly <= 2) {
-		return nil
-	}
-	return errors.New("read_only must be 0, 1, 2, or undefined")
+	return len(v.Command) == 0 && len(v.Files) == 0
 }
 
 // configName defines a config as an ordered set of bound and unbound variable values.
