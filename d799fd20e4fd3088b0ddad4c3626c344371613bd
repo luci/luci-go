@@ -47,6 +47,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "66bfe60b_cec6a6be",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T19:54:01Z",
+      "side": 1,
+      "message": "Primarily for metadata attached via RPC explorer (or other \"custom\" API clients) without specifying Content-Type. There\u0027s a very high chance such metadata will be simple strings. Web UI will be displaying only (smallish) text/* metadata as is. It would be confusing to users who don\u0027t read the docs if they attach some text metadata via RPC explorer, but see a binary blob in the web UI.",
+      "parentUuid": "b766f87e_98093a0a",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 87,
+        "endChar": 5
+      },
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "38f6d1ba_58975ba0",
