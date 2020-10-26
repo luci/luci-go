@@ -77,3 +77,12 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
   }
   return null;
 }
+
+// getLogdogRawUrl generates raw link from a logdog:// url
+export function getLogdogRawUrl(logdogURL: string): string | null {
+  let match = /^(logdog:\/\/)([^\/]*)\/(.+)$/.exec(logdogURL);
+  if (!match) {
+    return null;
+  }
+  return `https://${match[2]}/logs/${match[3]}?format=raw`
+}

@@ -23,8 +23,9 @@ import { computed, observable } from 'mobx';
 import '../components/copy_to_clipboard';
 import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
+import { getLogdogRawUrl } from '../libs/build_utils';
 import { displayDuration } from '../libs/time_utils';
-import { ChainableURL, renderMarkdown } from '../libs/utils';
+import { renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
 import './expandable_entry';
@@ -108,7 +109,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
           <a href=${log.view_url} target="_blank">${log.name}</a>
           <a
             style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
-            href=${new ChainableURL(log.view_url).withSearchParam('format', 'raw', true).toString()}
+            href=${getLogdogRawUrl(log.url)}
             target="_blank"
           >[raw]</a>
         </li>
