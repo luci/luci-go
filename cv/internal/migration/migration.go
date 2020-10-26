@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -50,8 +51,10 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 	}
 
 	cls := 0
-	// TODO(tandrii): grab project ID from auth context.
 	project := "<UNKNOWN>"
+	if i := auth.CurrentIdentity(ctx); i.Kind() == identity.Project {
+		project = i.Value()
+	}
 	for _, r := range req.Runs {
 		project = r.Attempt.LuciProject
 		cls += len(r.Attempt.GerritChanges)
