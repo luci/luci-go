@@ -100,6 +100,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1564bbc_a91905c5",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 731,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T21:16:59Z",
+      "side": 1,
+      "message": "On a second thought, this file does mention BQ at all and I prefer to keep it this way. Our BQ tables are not suitable for sharing with everyone, they are primarily for debugging stuff for us. So what is and isn\u0027t exported is not a public API.",
+      "parentUuid": "e142b374_c555e767",
+      "range": {
+        "startLine": 731,
+        "startChar": 53,
+        "endLine": 731,
+        "endChar": 72
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6ac62133_34273a87",
@@ -137,6 +161,30 @@
       "side": 1,
       "message": "Implementing page token right now is hard, since datastore.RunMulti doesn\u0027t support cursors. I was considering to later add a request field \"page_size\" with semantics of \"if 0 or missing - try to fetch everything\". Then page_token can be added in a backward compatible way (old clients will just keep timing out when trying to fetch everything).\n\nI\u0027m afraid that if I add noop page_token right now, then:\n1. It will be ignored.\n2. If it\u0027s not ignored, it is more unused code to implement and test on the client.\n\nI\u0027ll think more about it.",
       "parentUuid": "6ac62133_34273a87",
+      "range": {
+        "startLine": 780,
+        "startChar": 8,
+        "endLine": 780,
+        "endChar": 28
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36067cbd_b6ad62d7",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 780,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T21:16:59Z",
+      "side": 1,
+      "message": "Added page tokens, but not planning to actually implementing them for now.",
+      "parentUuid": "e8e4ab4f_5a4b7c71",
       "range": {
         "startLine": 780,
         "startChar": 8,
