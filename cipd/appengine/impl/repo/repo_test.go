@@ -1940,6 +1940,187 @@ func TestTags(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Instance metadata support.
+
+func TestInstanceMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx, _, as := testutil.TestingContext()
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
+				},
+			},
+		})
+
+		putInst := func(pkg, iid string, pendingProcs, failedProcs []string) *model.Instance {
+			inst := &model.Instance{
+				InstanceID:        iid,
+				Package:           model.PackageKey(ctx, pkg),
+				ProcessorsPending: pendingProcs,
+				ProcessorsFailure: failedProcs,
+			}
+			So(datastore.Put(ctx, &model.Package{Name: pkg}, inst), ShouldBeNil)
+			return inst
+		}
+
+		getMD := func(inst *model.Instance, kv string) *model.InstanceMetadata {
+			split := strings.SplitN(kv, ":", 2)
+			t := &model.InstanceMetadata{
+				Fingerprint: common.InstanceMetadataFingerprint(split[0], []byte(split[1])),
+				Instance:    datastore.KeyForObj(ctx, inst),
+			}
+			if err := datastore.Get(ctx, t); err != datastore.ErrNoSuchEntity {
+				So(err, ShouldBeNil)
+				return t
+			}
+			return nil
+		}
+
+		md := func(kv ...string) []*api.InstanceMetadata {
+			out := make([]*api.InstanceMetadata, len(kv))
+			for i, s := range kv {
+				split := strings.SplitN(s, ":", 2)
+				out[i] = &api.InstanceMetadata{
+					Key:   split[0],
+					Value: []byte(split[1]),
+				}
+			}
+			return out
+		}
+
+		digest := strings.Repeat("a", 40)
+		inst := putInst("a/b/c", digest, nil, nil)
+		objRef := &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: digest,
+		}
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("AttachMetadata happy path", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k:0", "k:1"),
+			})
+			So(err, ShouldBeNil)
+
+			// Attached both.
+			So(getMD(inst, "k:0").AttachedBy, ShouldEqual, "user:writer@example.com")
+			So(getMD(inst, "k:1").AttachedBy, ShouldEqual, "user:writer@example.com")
+		})
+
+		Convey("Bad package", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b//",
+				Instance: objRef,
+				Metadata: md("k:0", "k:1"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'package'")
+		})
+
+		Convey("Bad ObjectRef", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Metadata: md("k:0", "k:1"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'instance'")
+		})
+
+		Convey("Empty metadata list", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "cannot be empty")
+		})
+
+		Convey("Bad metadata key", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("ZZZ:0"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, `invalid metadata key`)
+		})
+
+		Convey("Bad metadata value", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
+		})
+
+		Convey("Bad metadata content type", func() {
+			m := md("k:0")
+			m[0].ContentType = "zzz zzz"
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: m,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, `metadata with key "k" - bad content-type "zzz zzz`)
+		})
+
+		Convey("No access", func() {
+			_, err := impl.AttachMetadata(as("reader@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k:0", "k:1"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "has no required WRITER role")
+		})
+
+		Convey("Missing package", func() {
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c/missing",
+				Instance: objRef,
+				Metadata: md("k:0", "k:1"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Missing instance", func() {
+			missingRef := &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("b", 40),
+			}
+			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: missingRef,
+				Metadata: md("k:0", "k:1"),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Version resolution and instance info fetching.
 
 func TestResolveVersion(t *testing.T) {
