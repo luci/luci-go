@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "78362c61_e9f08643",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 693,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T19:49:52Z",
+      "side": 1,
+      "message": "It is an existing validation regex, I just documented it.",
+      "parentUuid": "d56cf32f_31193414",
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "55650ac6_3a3b14b1",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-10-26T15:09:46Z",
       "side": 1,
       "message": "per next CL, shouldn\u0027t the BQ export conditionality be documented here?",
+      "range": {
+        "startLine": 731,
+        "startChar": 53,
+        "endLine": 731,
+        "endChar": 72
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e142b374_c555e767",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 731,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T19:49:52Z",
+      "side": 1,
+      "message": "I\u0027ll update it.",
+      "parentUuid": "55650ac6_3a3b14b1",
       "range": {
         "startLine": 731,
         "startChar": 53,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8e4ab4f_5a4b7c71",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 780,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T19:49:52Z",
+      "side": 1,
+      "message": "Implementing page token right now is hard, since datastore.RunMulti doesn\u0027t support cursors. I was considering to later add a request field \"page_size\" with semantics of \"if 0 or missing - try to fetch everything\". Then page_token can be added in a backward compatible way (old clients will just keep timing out when trying to fetch everything).\n\nI\u0027m afraid that if I add noop page_token right now, then:\n1. It will be ignored.\n2. If it\u0027s not ignored, it is more unused code to implement and test on the client.\n\nI\u0027ll think more about it.",
+      "parentUuid": "6ac62133_34273a87",
+      "range": {
+        "startLine": 780,
+        "startChar": 8,
+        "endLine": 780,
+        "endChar": 28
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f3dc3390_9e0a6052",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-10-26T15:08:22Z",
       "side": 1,
       "message": "Why do you want to specify this as a contract?",
+      "range": {
+        "startLine": 781,
+        "startChar": 25,
+        "endLine": 781,
+        "endChar": 74
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f46444f_9386f89b",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-26T19:49:52Z",
+      "side": 1,
+      "message": "1. Need to order it somehow... Other responses are ordered by attached_ts already.\n2. For Chrome\u0027s use case, the most recently attached provenance information is the most relevant.",
+      "parentUuid": "f3dc3390_9e0a6052",
       "range": {
         "startLine": 781,
         "startChar": 25,
