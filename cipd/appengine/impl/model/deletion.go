@@ -48,6 +48,7 @@ func DeletePackage(c context.Context, pkg string) error {
 	// various metadata first, and PackageInstance entities second (to make sure
 	// we don't have metadata with dangling pointers to deleted instances).
 	err := deleteEntityKinds(c, pkg, []string{
+		"InstanceMetadata",
 		"InstanceTag",
 		"PackageRef",
 		"ProcessingResult",
@@ -64,6 +65,7 @@ func DeletePackage(c context.Context, pkg string) error {
 	// entities, so it's OK to delete them transactionally.
 	return Txn(c, "DeletePackage", func(c context.Context) error {
 		err := deleteEntityKinds(c, pkg, []string{
+			"InstanceMetadata",
 			"InstanceTag",
 			"PackageRef",
 			"ProcessingResult",

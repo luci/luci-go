@@ -17,7 +17,9 @@ package model
 import (
 	"context"
 	"fmt"
+	"mime"
 	"sort"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -46,6 +48,16 @@ var eventsLog = bqlog.Log{
 	DumpEntriesToLogger: true,
 	DryRun:              appengine.IsDevAppServer(),
 }
+
+// exportedMetadataContentTypes is a list of text-like content types (in
+// addition to "text/*").
+//
+// Metadata entries with such content types will have their values exported to
+// the event log, see ShouldExportMetadataValue.
+var exportedMetadataContentTypes = stringset.NewFromSlice(
+	"application/json",
+	"application/jwt",
+)
 
 // EventsEpoch is used to calculate timestamps used to order entities in the
 // datastore.
@@ -194,6 +206,19 @@ func EmitEvent(c context.Context, e *api.Event) error {
 	ev := Events{}
 	ev.Emit(e)
 	return ev.Flush(c)
+}
+
+// ShouldExportMetadataValue checks the metadata content type against a list of
+// known-good values.
+func ShouldExportMetadataValue(ct string) bool {
+	ct, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		return false
+	}
+	if strings.HasPrefix(ct, "text/") {
+		return true
+	}
+	return exportedMetadataContentTypes.Has(ct)
 }
 
 // FlushEventsToBQ sends all buffered events to BigQuery.

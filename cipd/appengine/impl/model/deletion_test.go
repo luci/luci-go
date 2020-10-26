@@ -36,7 +36,7 @@ func TestDeletePackage(t *testing.T) {
 
 	// No other test is hiting DeletePackage, so its fine to change the global
 	// variable here in this parallel test.
-	deletionBatchSize = 3
+	deletionBatchSize = 7
 
 	Convey("Works", t, func() {
 		ctx, _, _ := testutil.TestingContext()
@@ -63,9 +63,9 @@ func TestDeletePackage(t *testing.T) {
 			return
 		}
 
-		// This will create 20 entities to be deleted. For deletionBatchSize == 3
-		// set above, it means we'll have 6 full batches and one incomplete final
-		// batch, thus covering all important code paths.
+		// This will create 4*X entities to be deleted. For deletionBatchSize == 7
+		// set above, it means we'll have some number of full batches and one
+		// incomplete final batch, thus covering all important code paths.
 		for _, chr := range []string{"a", "b", "c", "d"} {
 			reg, inst, _ := RegisterInstance(ctx, &Instance{
 				InstanceID: strings.Repeat(chr, 40),
@@ -83,6 +83,10 @@ func TestDeletePackage(t *testing.T) {
 				{Key: "k1", Value: chr},
 				{Key: "k2", Value: chr},
 			}), ShouldBeNil)
+			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "k1", Value: []byte(chr)},
+				{Key: "k2", Value: []byte(chr)},
+			}), ShouldBeNil)
 		}
 
 		// Some unrelated instance in a different package to be left alone.
@@ -93,7 +97,7 @@ func TestDeletePackage(t *testing.T) {
 		So(reg, ShouldBeTrue)
 
 		// Before the deletion.
-		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 21)
+		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 29)
 		So(entitiesCount(PackageKey(ctx, "another-pkg")), ShouldEqual, 2)
 
 		So(DeletePackage(ctx, "pkg"), ShouldBeNil)

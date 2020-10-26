@@ -1077,6 +1077,52 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Instance metadata support.
+
+// AttachMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+	if len(r.Metadata) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' - cannot be empty")
+	}
+	for _, m := range r.Metadata {
+		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key - %s", err)
+		}
+		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+		}
+		if err := common.ValidateContentType(m.ContentType); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+		}
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_WRITER); err != nil {
+		return nil, err
+	}
+
+	// Actually attach the metadata. This will also transactionally check the
+	// instance exists and it has passed the processing successfully.
+	inst := &model.Instance{
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.AttachMetadata(c, inst, r.Metadata); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Version resolution and instance info fetching.
 
 // ResolveVersion implements the corresponding RPC method, see the proto doc.
