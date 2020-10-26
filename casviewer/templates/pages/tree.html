@@ -8,21 +8,21 @@
   <thead>
     <th>Name</th>
     <th>Size</th>
-    <th>Hash</th>
+    <th>Digest</th>
   </thead>
   <tbody>
   {{range .Directories}}
     <tr>
       <td><a href="{{ treeURL $.Instance . }}">{{.Name}}/</a></td>
       <td></td>
-      <td><pre class="no-margin">{{.Digest.Hash}}</pre></td>
+      <td><pre class="no-margin">{{.Digest.Hash}}/{{.Digest.SizeBytes}}</pre></td>
     </tr>
   {{end}}
   {{range .Files}}
     <tr>
       <td><a href="{{ getURL $.Instance . }}" target="_blank">{{.Name}}</a></td>
       <td>{{.Digest.SizeBytes | readableBytes}}</td>
-      <td><pre class="no-margin">{{.Digest.Hash}}</pre></td>
+      <td><pre class="no-margin">{{.Digest.Hash}}/{{.Digest.SizeBytes}}</pre></td>
     </tr>
   {{end}}
   <tbody>
