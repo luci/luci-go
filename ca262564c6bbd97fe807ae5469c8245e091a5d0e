@@ -51,6 +51,24 @@
       "parentUuid": "d6bd6408_f4157aa0",
       "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad0204e3_52177520",
+        "filename": "milo/frontend/resultui/src/libs/build_utils_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-26T23:01:20Z",
+      "side": 1,
+      "message": "Ahh, right. So the important bit is we\u0027re using url instead of view_url. LGTM.",
+      "parentUuid": "eca5cb1b_c7b5cd3d",
+      "revId": "ca262564c6bbd97fe807ae5469c8245e091a5d0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
