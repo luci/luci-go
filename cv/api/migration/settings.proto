@@ -29,6 +29,10 @@ message Settings {
     // If a LUCI Project matches any of the regexps,
     // CQDaemon will connect to the above Migration API host.
     repeated string project_regexp = 2;
+
+    // If true and several hosts are configured, all other hosts' responses are
+    // ignored.
+    bool prod = 3;
   }
 
   // CQDaemon doesn't really have a -dev version, therefore to test -dev of CV,
