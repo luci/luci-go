@@ -439,4 +439,11 @@ func TestInstanceMetadata(t *testing.T) {
 		fp := InstanceMetadataFingerprint("key", []byte("value"))
 		So(fp, ShouldEqual, "06dd3884aa86b22603764bd7e5b0b41e")
 	})
+
+	Convey("ValidateInstanceMetadataFingerprint works", t, func() {
+		fp := InstanceMetadataFingerprint("key", []byte("value"))
+		So(ValidateInstanceMetadataFingerprint(fp), ShouldBeNil)
+		So(ValidateInstanceMetadataFingerprint("aaaa"), ShouldNotBeNil)
+		So(ValidateInstanceMetadataFingerprint(strings.Repeat("Z", 32)), ShouldNotBeNil)
+	})
 }

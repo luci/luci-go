@@ -1122,6 +1122,58 @@ func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataReq
 	return &empty.Empty{}, nil
 }
 
+// DetachMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+	if len(r.Metadata) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' - cannot be empty")
+	}
+	for _, m := range r.Metadata {
+		// If have a fingerprint, ignore Key and Value. Otherwise we need them
+		// to calculate the fingerprint on the fly in model.DetachMetadata.
+		if m.Fingerprint != "" {
+			if err := common.ValidateInstanceMetadataFingerprint(m.Fingerprint); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "bad metadata - %s", err)
+			}
+		} else {
+			if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "bad metadata key - %s", err)
+			}
+			if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+			}
+		}
+	}
+
+	// Check ACLs. Require OWNER role for destructive operations.
+	if _, err := impl.checkRole(c, r.Package, api.Role_OWNER); err != nil {
+		return nil, err
+	}
+
+	// Verify the instance exists to return more correct error message.
+	inst := &model.Instance{
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.CheckInstanceExists(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Actually detach the metadata.
+	if err := model.DetachMetadata(c, inst, r.Metadata); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Version resolution and instance info fetching.
 
