@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f94d4c4_0b1ac1a6",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T16:09:41Z",
+      "side": 1,
+      "message": "oh, +8 is because there is a loop on L69 over 4 values, hence +2*4 entities. SGTM!",
+      "range": {
+        "startLine": 100,
+        "startChar": 58,
+        "endLine": 100,
+        "endChar": 59
+      },
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b766f87e_98093a0a",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T16:09:41Z",
+      "side": 1,
+      "message": "tbh, i don\u0027t follow what\u0027s the motivation for doing this.",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 87,
+        "endChar": 5
+      },
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38f6d1ba_58975ba0",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T16:09:41Z",
+      "side": 1,
+      "message": "pedantic me expected \u003e\u003d",
+      "range": {
+        "startLine": 200,
+        "startChar": 11,
+        "endLine": 200,
+        "endChar": 12
+      },
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd240b4d_46d52ce6",
+        "filename": "cipd/appengine/impl/model/metadata_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T16:09:41Z",
+      "side": 1,
+      "message": "how come strings.Repeat(chr, 32768+1) case isn\u0027t covered?! i\u0027m utterly disappointed in non-100% test coverage.",
+      "revId": "d799fd20e4fd3088b0ddad4c3626c344371613bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
