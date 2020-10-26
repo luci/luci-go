@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5f33be1_e6166813",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T15:08:22Z",
+      "side": 1,
+      "message": "sorry for being late.",
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d56cf32f_31193414",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 693,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T15:08:22Z",
+      "side": 1,
+      "message": "checked all existing tags? 😊",
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ac62133_34273a87",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 780,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T15:08:22Z",
+      "side": 1,
+      "message": "what about page tokens? With 512KiB, we can easily get into paging required territory. IMO, better to have page_token today than adding it later.",
+      "range": {
+        "startLine": 780,
+        "startChar": 8,
+        "endLine": 780,
+        "endChar": 28
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3dc3390_9e0a6052",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-26T15:08:22Z",
+      "side": 1,
+      "message": "Why do you want to specify this as a contract?",
+      "range": {
+        "startLine": 781,
+        "startChar": 25,
+        "endLine": 781,
+        "endChar": 74
+      },
+      "revId": "9519857c97575821ff46315eb19fb317c99c0100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
