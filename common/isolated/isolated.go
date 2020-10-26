@@ -73,12 +73,10 @@ func TarFile(d HexDigest, size int64) File {
 
 // Isolated is the data from a JSON serialized .isolated file.
 type Isolated struct {
-	Algo        string          `json:"algo"` // Must be "sha-1"
-	Command     []string        `json:"command,omitempty"`
-	Files       map[string]File `json:"files,omitempty"`
-	Includes    HexDigests      `json:"includes,omitempty"`
-	RelativeCwd string          `json:"relative_cwd,omitempty"`
-	Version     string          `json:"version"`
+	Algo     string          `json:"algo"` // Must be "sha-1"
+	Files    map[string]File `json:"files,omitempty"`
+	Includes HexDigests      `json:"includes,omitempty"`
+	Version  string          `json:"version"`
 }
 
 // New returns a new Isolated with the default Algo and Version.
