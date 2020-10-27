@@ -149,9 +149,8 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	q.PageSize = fixPageSize(q.PageSize)
 	// Determine which subflow - directly query on Builds or on TagIndex.
 	if len(IndexedTags(q.Tags)) != 0 {
-		// TODO(crbug/1090540): test switch-case block after fetchOnTagIndex() is complete.
 		switch res, err := q.fetchOnTagIndex(ctx); {
-		case model.TagIndexIncomplete.In(err) && q.PageToken == "":
+		case model.TagIndexIncomplete.In(err):
 			logging.Warningf(ctx, "Falling back to querying search on builds")
 		case err != nil:
 			return nil, err
