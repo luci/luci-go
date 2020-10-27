@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
@@ -95,12 +94,12 @@ func validateSearch(req *pb.SearchBuildsRequest) error {
 
 // SearchBuilds handles a request to search for builds. Implements pb.BuildsServer.
 func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
-	// TODO(crbug/1090540): remove after verification is done.
-	pyRes, pyErr := verifySearch(ctx, req)
-	if !bbClientErr.In(pyErr) {
-		return pyRes, pyErr
-	}
-	logging.Warningf(ctx, "search verification: errors in py client - %v\n Falling back to Go path.", pyErr)
+	// TODO(crbug/1090540): clean up code after 100% migration in case it may be used later.
+	// pyRes, pyErr := verifySearch(ctx, req)
+	// if !bbClientErr.In(pyErr) {
+	// 	return pyRes, pyErr
+	// }
+	// logging.Warningf(ctx, "search verification: errors in py client - %v\n Falling back to Go path.", pyErr)
 
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
