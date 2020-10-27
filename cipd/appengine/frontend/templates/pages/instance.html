@@ -42,6 +42,45 @@
     </div>
   </div>
 
+  {{if .Metadata}}
+  <div class="row mb-3">
+    <div class="col-sm-12">
+      <h4 class="text-center mb-3">Attached metadata</h4>
+      <table class="table table-sm table-bordered">
+      {{range $md := .Metadata}}
+      <tr>
+        <td class="age-td">{{.Age}}</td>
+        <td class="md-table-key" title="Attached by {{.User}}">
+          <a href="#"
+             title="View"
+             class="metadata-modal-opener"
+             data-toggle="modal"
+             data-target="#view-metadata-modal"
+             data-md-fingerprint="{{.Fingerprint}}"
+             data-md-key="{{.Key}}"
+             data-md-user="{{.User}}"
+             data-md-age="{{.Age}}"
+             data-md-content-type="{{.ContentType}}"
+             data-md-size="{{.Size}}"
+             data-md-is-text="{{.IsText}}"
+             data-md-text-value="{{.TextValue}}">
+          {{.Key}}
+          </a>
+        </td>
+        {{if .IsEmpty}}
+        <td><i style="color: #aaaaaa">no value</i></td>
+        {{else if .IsInlineText}}
+        <td class="user-select-all md-table-value text-truncate">{{.InlineTextValue}}</td>
+        {{else}}
+        <td><i>{{.Size}}, {{.ContentType}}</i></td>
+        {{end}}
+      </tr>
+      {{end}}
+      </table>
+    </div>
+  </div>
+  {{end}}
+
   <div class="row bordered-row">
     <div class="col-sm-6 border-right">
       {{template "tags-table" .Tags}}
@@ -52,5 +91,113 @@
   </div>
 
 </div>
+
+<div class="modal fade" id="view-metadata-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Metadata</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-12">
+              <table class="table table-striped table-sm">
+                <tr>
+                  <td class="info-table-key"><b>Key</b></td>
+                  <td class="user-select-all" id="md-prop-key"></td>
+                </tr>
+                <tr>
+                  <td class="info-table-key"><b>Fingerprint</b></td>
+                  <td class="user-select-all" id="md-prop-fingerprint"></td>
+                </tr>
+                <tr>
+                  <td class="info-table-key"><b>Size</b></td>
+                  <td class="user-select-all" id="md-prop-size"></td>
+                </tr>
+                <tr>
+                  <td class="info-table-key"><b>Content type</b></td>
+                  <td class="user-select-all" id="md-prop-content-type"></td>
+                </tr>
+                <tr>
+                  <td class="info-table-key"><b>Attached by</b></td>
+                  <td class="user-select-all" id="md-prop-user"></td>
+                </tr>
+                <tr>
+                  <td class="info-table-key"><b>Age</b></td>
+                  <td class="user-select-all" id="md-prop-age"></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-sm-12">
+              <pre class="md-modal-value border" id="md-prop-text-value"></pre>
+              <b id="md-bin-value-box">Can't display binary or large data</b>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <p id="md-alert-copied">Copied!</p>
+        <button type="button" class="btn btn-secondary" id="md-button-copy">Copy value to clipboard</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  let modal = document.getElementById("view-metadata-modal");
+
+  modal.addEventListener("show.bs.modal", function(event) {
+    let button = event.relatedTarget;  // button that triggered the modal
+
+    // Copy properties from data-md-* attributes into the form.
+    const props = [
+        "fingerprint",
+        "key",
+        "user",
+        "age",
+        "content-type",
+        "size",
+        "text-value",
+    ];
+    for (const prop of props) {
+      let val = button.getAttribute("data-md-"+prop);
+      this.querySelector("#md-prop-"+prop).innerText = val;
+    }
+
+    let isText = button.getAttribute("data-md-is-text") == "true";
+    if (isText) {
+      // Display the text box and "Copy" button.
+      this.querySelector("#md-prop-text-value").classList.remove("d-none");
+      this.querySelector("#md-bin-value-box").classList.add("d-none");
+      this.querySelector("#md-button-copy").removeAttribute("disabled");
+    } else {
+      // Hide the text box and "Copy" button, show "Binary data" box instead.
+      this.querySelector("#md-prop-text-value").classList.add("d-none");
+      this.querySelector("#md-bin-value-box").classList.remove("d-none");
+      this.querySelector("#md-button-copy").setAttribute("disabled", "");
+    }
+    this.querySelector("#md-alert-copied").classList.add("d-none");
+  });
+
+  document.getElementById("md-button-copy").addEventListener("click", function(event) {
+    let text = modal.querySelector("#md-prop-text-value").innerText;
+    navigator.clipboard.writeText(text).then(function() {
+      modal.querySelector("#md-alert-copied").classList.remove("d-none");
+    }, function(err) {
+      console.log(err);
+    });
+  });
+})();
+</script>
 
 {{end}}
