@@ -222,33 +222,6 @@ func TestConsolidateIsolateSources(t *testing.T) {
 				So(curIso, ShouldBeNil)
 			})
 
-			Convey(`isolate has command`, func() {
-				iso := client.mkIso("some_file", "I am a banana")
-				bareTree := client.pushIso(iso)
-				iso.Command = []string{"super", "bogus", "command"}
-				iso.RelativeCwd = "a/subdir"
-				cmdTree := client.pushIso(iso)
-
-				sw.Task.TaskSlices[0].Properties.CasInputs = cmdTree
-				sw.Task.TaskSlices[1].Properties.CasInputs = cmdTree
-				sw.Task.TaskSlices[1].Properties.ExtraArgs = []string{"--", "awful"}
-
-				So(ConsolidateIsolateSources(ctx, nil, job), ShouldBeNil)
-
-				So(sw.Task.TaskSlices[0].Properties.CasInputs, ShouldResemble, bareTree)
-				So(sw.Task.TaskSlices[0].Properties.Command, ShouldResemble, []string{
-					"super", "bogus", "command",
-				})
-				So(sw.Task.TaskSlices[1].Properties.CasInputs, ShouldResemble, bareTree)
-				So(sw.Task.TaskSlices[1].Properties.Command, ShouldResemble, []string{
-					"super", "bogus", "command", "--", "awful",
-				})
-
-				curIso, err := job.Info().CurrentIsolated()
-				So(err, ShouldBeNil)
-				So(curIso, ShouldResemble, bareTree)
-			})
-
 			Convey(`UserPayload and slices`, func() {
 				job.UserPayload = client.pushIso(client.mkIso(
 					"user_payload", "file contents",

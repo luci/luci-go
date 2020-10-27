@@ -46,30 +46,7 @@ func ConsolidateIsolateSources(ctx context.Context, authClient *http.Client, jd 
 			slc.Properties = &api.TaskProperties{}
 		}
 
-		hasCasInput := slc.Properties.CasInputs != nil
-		if hasCasInput {
-			// extract the cmd/cwd from the isolated, if they're set.
-			//
-			// This is an old feature of swarming/isolated where the isolated file can
-			// contain directives for the swarming task.
-			cmd, cwd, err := extractCmdCwdFromIsolated(ctx, authClient, slc.Properties.CasInputs)
-			if err != nil {
-				return err
-			}
-			if len(cmd) > 0 {
-				slc.Properties.Command = cmd
-				slc.Properties.RelativeCwd = cwd
-				// ExtraArgs is allowed to be set only if the Command is coming from the
-				// isolated. However, now that we're explicitly setting the Command, we
-				// must move ExtraArgs into Command.
-				if len(slc.Properties.ExtraArgs) > 0 {
-					slc.Properties.Command = append(slc.Properties.Command, slc.Properties.ExtraArgs...)
-					slc.Properties.ExtraArgs = nil
-				}
-			}
-		}
-
-		if !hasCasInput && jd.UserPayload == nil {
+		if slc.Properties.CasInputs == nil && jd.UserPayload == nil {
 			continue
 		}
 
@@ -92,39 +69,6 @@ func ConsolidateIsolateSources(ctx context.Context, authClient *http.Client, jd 
 	}
 
 	return nil
-}
-
-func extractCmdCwdFromIsolated(ctx context.Context, authClient *http.Client, rootIso *api.CASTree) (cmd []string, cwd string, err error) {
-	seenIsolateds := map[isolated.HexDigest]struct{}{}
-	queue := isolated.HexDigests{isolated.HexDigest(rootIso.Digest)}
-	isoClient := mkIsoClient(ctx, authClient, rootIso)
-
-	// borrowed from go.chromium.org/luci/client/downloader.
-	//
-	// It's rather silly that there's no library functionality to do this.
-	for len(queue) > 0 {
-		iso := queue[0]
-		if _, ok := seenIsolateds[iso]; ok {
-			err = errors.Reason("loop detected when resolving isolate %q", rootIso).Err()
-			return
-		}
-		seenIsolateds[iso] = struct{}{}
-
-		var isoFile *isolated.Isolated
-		if isoFile, err = fetchIsolated(ctx, isoClient, iso); err != nil {
-			return
-		}
-
-		if len(isoFile.Command) > 0 {
-			cmd = isoFile.Command
-			cwd = isoFile.RelativeCwd
-			break
-		}
-
-		queue = append(isoFile.Includes, queue[1:]...)
-	}
-
-	return
 }
 
 func combineIsolateds(ctx context.Context, arc isoClientIface, isos ...*api.CASTree) (*api.CASTree, error) {
