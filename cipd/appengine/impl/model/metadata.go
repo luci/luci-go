@@ -321,7 +321,7 @@ func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind api.Eve
 	for _, ent := range ents {
 		// Export only valid UTF-8 values of known text-like content types.
 		mdValue := ""
-		if ShouldExportMetadataValue(ent.ContentType) {
+		if IsTextContentType(ent.ContentType) {
 			mdValue = string(ent.Value)
 			if !utf8.ValidString(mdValue) {
 				mdValue = ""
