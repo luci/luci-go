@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4983de00_332f1286",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-27T12:14:37Z",
+      "side": 1,
+      "message": "+Yuanjun who will be working on led/isolate in Q4.",
+      "revId": "f8c28e72c0d29ef47825b311a7185172210ae2df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
