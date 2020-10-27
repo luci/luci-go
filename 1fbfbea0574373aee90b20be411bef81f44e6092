@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9de9e60_1a3bdf4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-27T02:54:27Z",
+      "side": 1,
+      "message": "Demo https://7423-66a7f2e-vadims-add-metadata-dot-chrome-infra-packages-dev.appspot.com/p/infra/tools/cipd/linux-amd64/+/7632db4ca8513743a069c486982996978811727a\n\nThe html/js part is in a write-only style, but it\u0027s not a critical functionality...",
+      "revId": "1fbfbea0574373aee90b20be411bef81f44e6092",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
