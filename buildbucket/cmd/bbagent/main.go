@@ -43,6 +43,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
@@ -276,12 +277,17 @@ func mainImpl() int {
 	// Now that the builds channel has been closed now. Update to bb directly.
 	reportErrToBB := func(err error) {
 		errors.Log(cctx, err)
+		now := timestamppb.New(clock.Now(cctx))
 		_, bbErr := bbclient.UpdateBuild(
 			metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
+					Id:              input.Build.Id,
+					Builder:         input.Build.Builder,
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: err.Error(),
+					UpdateTime:      now,
+					EndTime:         now,
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{
 					Paths: []string{
