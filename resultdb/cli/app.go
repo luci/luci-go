@@ -34,8 +34,7 @@ type Params struct {
 }
 
 var logCfg = gologger.LoggerConfig{
-	Format: `%{message}`,
-	Out:    os.Stderr,
+	Out: os.Stderr,
 }
 
 // application creates the application and configures its subcommands.
