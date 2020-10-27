@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00fec2e8_0a1544b8",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-27T12:27:42Z",
+      "side": 1,
+      "message": "forgot to rename or too much renaming in L52?",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 32
+      },
+      "revId": "87c40bfb16897dca58d269f4040804c2c090a3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6e2d414_bb196ef5",
+        "filename": "cipd/appengine/ui/metas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-27T12:27:42Z",
+      "side": 1,
+      "message": "TIL this doesn\u0027t need manual \n  humanize \"github.com/dustin/go-humanize\"",
+      "range": {
+        "startLine": 23,
+        "startChar": 20,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "87c40bfb16897dca58d269f4040804c2c090a3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
