@@ -51,7 +51,7 @@ func packagePage(c *router.Context, pkg string) error {
 	var instances *api.ListInstancesResponse
 	var siblings *api.ListPrefixResponse
 	var refs *api.ListRefsResponse
-	var meta *metadataBlock
+	var meta *prefixMetadataBlock
 
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
@@ -82,7 +82,7 @@ func packagePage(c *router.Context, pkg string) error {
 		}
 		tasks <- func() error {
 			var err error
-			meta, err = fetchMetadata(c.Context, pkg)
+			meta, err = fetchPrefixMetadata(c.Context, pkg)
 			return err
 		}
 		tasks <- func() error {

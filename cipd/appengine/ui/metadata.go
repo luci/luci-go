@@ -29,8 +29,8 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl"
 )
 
-// metadataBlock is passed to the templates as Metadata arg.
-type metadataBlock struct {
+// prefixMetadataBlock is passed to the templates as Metadata arg.
+type prefixMetadataBlock struct {
 	// CanView is true if the caller is able to see all prefix metadata.
 	CanView bool
 
@@ -54,11 +54,11 @@ type metadataACL struct {
 	PrefixHref string   // link to the corresponding prefix page
 }
 
-// fetchMetadata fetches and formats for UI metadata of the given prefix.
+// fetchPrefixMetadata fetches and formats for UI metadata of the given prefix.
 //
 // It recognizes PermissionDenied errors and falls back to only displaying what
 // roles the caller has instead of the full metadata.
-func fetchMetadata(c context.Context, pfx string) (*metadataBlock, error) {
+func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, error) {
 	meta, err := impl.PublicRepo.GetInheritedPrefixMetadata(c, &api.PrefixRequest{
 		Prefix: pfx,
 	})
@@ -77,7 +77,7 @@ func fetchMetadata(c context.Context, pfx string) (*metadataBlock, error) {
 		groupsURL = url + "/auth/groups/"
 	}
 
-	out := &metadataBlock{CanView: true}
+	out := &prefixMetadataBlock{CanView: true}
 	for _, m := range meta.PerPrefixMetadata {
 		for _, a := range m.Acls {
 			role := strings.Title(strings.ToLower(a.Role.String()))
@@ -127,14 +127,14 @@ func fetchMetadata(c context.Context, pfx string) (*metadataBlock, error) {
 	return out, nil
 }
 
-func fetchCallerRoles(c context.Context, pfx string) (*metadataBlock, error) {
+func fetchCallerRoles(c context.Context, pfx string) (*prefixMetadataBlock, error) {
 	roles, err := impl.PublicRepo.GetRolesInPrefix(c, &api.PrefixRequest{
 		Prefix: pfx,
 	})
 	if err != nil {
 		return nil, err
 	}
-	out := &metadataBlock{
+	out := &prefixMetadataBlock{
 		CanView:     false,
 		CallerRoles: make([]string, len(roles.Roles)),
 	}

@@ -49,11 +49,11 @@ var eventsLog = bqlog.Log{
 	DryRun:              appengine.IsDevAppServer(),
 }
 
-// exportedMetadataContentTypes is a list of text-like content types (in
-// addition to "text/*").
+// textContentTypes is a list of text-like content types (in addition to
+// "text/*").
 //
 // Metadata entries with such content types will have their values exported to
-// the event log, see ShouldExportMetadataValue.
+// the event log, see IsTextContentType.
 var exportedMetadataContentTypes = stringset.NewFromSlice(
 	"application/json",
 	"application/jwt",
@@ -208,9 +208,9 @@ func EmitEvent(c context.Context, e *api.Event) error {
 	return ev.Flush(c)
 }
 
-// ShouldExportMetadataValue checks the metadata content type against a list of
+// IsTextContentType checks the metadata content type against a list of
 // known-good values.
-func ShouldExportMetadataValue(ct string) bool {
+func IsTextContentType(ct string) bool {
 	ct, _, err := mime.ParseMediaType(ct)
 	if err != nil {
 		return false
