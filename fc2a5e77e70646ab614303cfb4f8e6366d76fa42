@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc0d9439_88f1e1c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-27T17:03:30Z",
+      "side": 1,
+      "message": "PTAL. This is a fix for: https://screenshot.googleplex.com/7NiHyxMasRkKgK3",
+      "revId": "fc2a5e77e70646ab614303cfb4f8e6366d76fa42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e005a098_77003897",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-27T17:03:30Z",
+      "side": 1,
+      "message": "Though the doc suggest builder is required: https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/build.proto#129, not sure this is required for UpdateBuild or for ScheduleBuild only.",
+      "revId": "fc2a5e77e70646ab614303cfb4f8e6366d76fa42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
