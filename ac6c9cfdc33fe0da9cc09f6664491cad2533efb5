@@ -34,6 +34,24 @@
       "parentUuid": "ff391bdf_d7761644",
       "revId": "ac6c9cfdc33fe0da9cc09f6664491cad2533efb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d59f4873_42e42cf6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-27T20:53:37Z",
+      "side": 1,
+      "message": "Of course. Here\u0027s what I do\n\n1. Build bbagent binary on your local workstation against the targeted plaform.\n2. use `led get-builder ... | led edit-isolated  \u003e out.json` to isolate the bbagent binary.\n3. Delete bbagent from `cipd_packages` list in out.json so that swarming won\u0027t download that from cipd\n4. led launch\n\n\nAlso, I think `edit-isolated` is mutually exclusive with `edit-recipe-bundle`. If you want to test a recipe change at the same time, you need to use `led edit-isolated` and manually bundle the recipe (i.e. `./recipes.py bundle --destination XXX`) to the `kitchen-checkout` subdir of the tmp isolate dir.",
+      "parentUuid": "94069ab1_457ad08f",
+      "revId": "ac6c9cfdc33fe0da9cc09f6664491cad2533efb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
