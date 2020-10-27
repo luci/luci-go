@@ -17,6 +17,7 @@ package model
 import (
 	"bytes"
 	"context"
+	"sort"
 	"time"
 	"unicode/utf8"
 
@@ -52,6 +53,20 @@ type InstanceMetadata struct {
 
 	AttachedBy string    `gae:"attached_by"` // who added this metadata
 	AttachedTs time.Time `gae:"attached_ts"` // when it was added
+}
+
+// Proto returns cipd.InstanceMetadata proto with information from this entity.
+//
+// Assumes the entity is valid.
+func (md *InstanceMetadata) Proto() *api.InstanceMetadata {
+	return &api.InstanceMetadata{
+		Key:         md.Key,
+		Value:       md.Value,
+		ContentType: md.ContentType,
+		Fingerprint: md.Fingerprint,
+		AttachedBy:  md.AttachedBy,
+		AttachedTs:  google.NewTimestamp(md.AttachedTs),
+	}
 }
 
 // AttachMetadata transactionally attaches metadata to an instance.
@@ -238,6 +253,64 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 			return transient.Tag.Apply(err)
 		}
 		return flushToEventLog(ctx, existing, api.EventKind_INSTANCE_METADATA_DETACHED, inst, who, now)
+	})
+}
+
+// ListMetadata lists all instance metadata.
+//
+// The result is ordered by AttachedTs (the most recent first).
+func ListMetadata(ctx context.Context, inst *Instance) ([]*InstanceMetadata, error) {
+	// Note: 'Order' here is unnecessary, since we sort in memory later anyhow.
+	// But it is here in an anticipation of eventually implementing pagination.
+	q := datastore.NewQuery("InstanceMetadata").
+		Ancestor(datastore.KeyForObj(ctx, inst)).
+		Order("-attached_ts")
+
+	var out []*InstanceMetadata
+	if err := datastore.GetAll(ctx, q, &out); err != nil {
+		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+	}
+	orderByTsAndKey(out)
+
+	return out, nil
+}
+
+// ListMetadataWithKeys lists instance metadata with any of the given keys.
+//
+// The result is ordered by AttachedTs (the most recent first).
+func ListMetadataWithKeys(ctx context.Context, inst *Instance, keys []string) ([]*InstanceMetadata, error) {
+	if len(keys) == 0 {
+		panic("must not be empty")
+	}
+
+	qs := make([]*datastore.Query, len(keys))
+	for i, key := range keys {
+		qs[i] = datastore.NewQuery("InstanceMetadata").
+			Ancestor(datastore.KeyForObj(ctx, inst)).
+			Eq("key", key).
+			Order("-attached_ts")
+	}
+
+	var out []*InstanceMetadata
+	err := datastore.RunMulti(ctx, qs, func(md *InstanceMetadata) {
+		out = append(out, md)
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+	}
+	orderByTsAndKey(out)
+
+	return out, nil
+}
+
+// orderByTsAndKey order entries by (-AttachedTs, Key).
+func orderByTsAndKey(md []*InstanceMetadata) {
+	sort.Slice(md, func(i, j int) bool {
+		l, r := md[i], md[j]
+		if l.AttachedTs.Equal(r.AttachedTs) {
+			return l.Key < r.Key
+		}
+		return l.AttachedTs.After(r.AttachedTs)
 	})
 }
 

@@ -433,6 +433,69 @@ func TestMetadata(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("Listing works", func() {
+			inst := putInst("pkg", digest, nil)
+
+			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("0")},
+				{Key: "b", Value: []byte("0")},
+				{Key: "c", Value: []byte("0")},
+			}), ShouldBeNil)
+
+			tc.Add(time.Second)
+			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("1")},
+				{Key: "b", Value: []byte("1")},
+				{Key: "c", Value: []byte("1")},
+			}), ShouldBeNil)
+
+			tc.Add(time.Second)
+			So(AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				{Key: "a", Value: []byte("2")},
+				{Key: "b", Value: []byte("2")},
+				{Key: "c", Value: []byte("2")},
+			}), ShouldBeNil)
+
+			pairs := func(md []*InstanceMetadata) []string {
+				var out []string
+				for _, m := range md {
+					out = append(out, m.Key+":"+string(m.Value))
+				}
+				return out
+			}
+
+			Convey("ListMetadata", func() {
+				Convey("Some", func() {
+					md, err := ListMetadata(ctx, inst)
+					So(err, ShouldBeNil)
+					So(pairs(md), ShouldResemble, []string{
+						"a:2", "b:2", "c:2", "a:1", "b:1", "c:1", "a:0", "b:0", "c:0",
+					})
+				})
+				Convey("None", func() {
+					inst := putInst("another/pkg", digest, nil)
+					md, err := ListMetadata(ctx, inst)
+					So(err, ShouldBeNil)
+					So(md, ShouldHaveLength, 0)
+				})
+			})
+
+			Convey("ListMetadataWithKeys", func() {
+				Convey("Some", func() {
+					md, err := ListMetadataWithKeys(ctx, inst, []string{"a", "c", "missing"})
+					So(err, ShouldBeNil)
+					So(pairs(md), ShouldResemble, []string{
+						"a:2", "c:2", "a:1", "c:1", "a:0", "c:0",
+					})
+				})
+				Convey("None", func() {
+					md, err := ListMetadataWithKeys(ctx, inst, []string{"missing"})
+					So(err, ShouldBeNil)
+					So(md, ShouldHaveLength, 0)
+				})
+			})
+		})
 	})
 }
 

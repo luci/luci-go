@@ -1174,6 +1174,59 @@ func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataReq
 	return &empty.Empty{}, nil
 }
 
+// ListMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) ListMetadata(c context.Context, r *api.ListMetadataRequest) (resp *api.ListMetadataResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+	for _, k := range r.Keys {
+		if err := common.ValidateInstanceMetadataKey(k); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad metadata key - %s", err)
+		}
+	}
+	if r.PageToken != "" {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'page_token' - not supported yet")
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Verify the instance exists to return more correct error message.
+	inst := &model.Instance{
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.CheckInstanceExists(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Actually list metadata.
+	var md []*model.InstanceMetadata
+	if len(r.Keys) != 0 {
+		md, err = model.ListMetadataWithKeys(c, inst, r.Keys)
+	} else {
+		md, err = model.ListMetadata(c, inst)
+	}
+	if err != nil {
+		return nil, err
+	}
+	resp = &api.ListMetadataResponse{
+		Metadata: make([]*api.InstanceMetadata, len(md)),
+	}
+	for i, m := range md {
+		resp.Metadata[i] = m.Proto()
+	}
+	return resp, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Version resolution and instance info fetching.
 
