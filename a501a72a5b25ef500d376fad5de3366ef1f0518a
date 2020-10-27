@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a11c68c8_db5723ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-27T01:01:41Z",
+      "side": 1,
+      "message": "I am somewhat worried that users will be confused which tags to use. We have 3 kinds of tags in BQ (exported.tags, parent.tags, tags) and this adds a fourth type. \n\nWDYT about either adding proto fields, or continue using TestResult.tags?\nFWIW my original design implied populating TestResult.tags.",
+      "revId": "a501a72a5b25ef500d376fad5de3366ef1f0518a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
