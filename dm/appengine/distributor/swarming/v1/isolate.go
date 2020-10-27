@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 const prevPath = ".dm/previous_execution.json"
@@ -57,18 +55,8 @@ func mkMsgFile(pb proto.Message) ([]byte, *isolated.File) {
 }
 
 func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile *isolated.File) ([]byte, *isolated.File) {
-	cmdReplacer := strings.NewReplacer(
-		"${DM.PREVIOUS.EXECUTION.STATE:PATH}", prevPath,
-		"${DM.QUEST.DATA.DESC:PATH}", descPath,
-		"${DM.HOST}", info.DefaultVersionHostname(c),
-	)
-
 	h := isolated.GetHash(isolatedclient.DefaultNamespace)
 	iso := isolated.New(h)
-	iso.Command = make([]string, len(params.Job.Command))
-	for i, tok := range params.Job.Command {
-		iso.Command[i] = cmdReplacer.Replace(tok)
-	}
 	iso.Includes = make(isolated.HexDigests, len(params.Job.Inputs.Isolated))
 	for i, input := range params.Job.Inputs.Isolated {
 		iso.Includes[i] = isolated.HexDigest(input.Id)
