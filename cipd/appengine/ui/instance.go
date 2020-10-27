@@ -55,6 +55,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 	// Do the rest in parallel. There can be only transient errors returned here,
 	// so collect them all into single Internal error.
 	var desc *api.DescribeInstanceResponse
+	var md *api.ListMetadataResponse
 	var url *api.ObjectURL
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() (err error) {
@@ -64,6 +65,13 @@ func instancePage(c *router.Context, pkg, ver string) error {
 				DescribeRefs:       true,
 				DescribeTags:       true,
 				DescribeProcessors: true,
+			})
+			return
+		}
+		tasks <- func() (err error) {
+			md, err = impl.PublicRepo.ListMetadata(c.Context, &api.ListMetadataRequest{
+				Package:  inst.Package,
+				Instance: inst.Instance,
 			})
 			return
 		}
@@ -99,6 +107,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		"Age":         humanize.RelTime(google.TimeFromProto(inst.RegisteredTs), now, "", ""),
 		"Refs":        refsListing(desc.Refs, pkg, now),
 		"Tags":        tagsListing(desc.Tags, pkg, now),
+		"Metadata":    instanceMetadataListing(md.Metadata, now),
 	})
 	return nil
 }
