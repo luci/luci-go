@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "aba7b1ff_8487240f",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-27T19:37:49Z",
+      "side": 1,
+      "message": "Oops, forgot to rename.",
+      "parentUuid": "00fec2e8_0a1544b8",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 32
+      },
+      "revId": "87c40bfb16897dca58d269f4040804c2c090a3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f6e2d414_bb196ef5",
         "filename": "cipd/appengine/ui/metas.go",
         "patchSetId": 3
@@ -37,6 +61,30 @@
       "writtenOn": "2020-10-27T12:27:42Z",
       "side": 1,
       "message": "TIL this doesn\u0027t need manual \n  humanize \"github.com/dustin/go-humanize\"",
+      "range": {
+        "startLine": 23,
+        "startChar": 20,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "87c40bfb16897dca58d269f4040804c2c090a3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0904af48_7df61b61",
+        "filename": "cipd/appengine/ui/metas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-27T19:37:49Z",
+      "side": 1,
+      "message": "I just use goimports.",
+      "parentUuid": "f6e2d414_bb196ef5",
       "range": {
         "startLine": 23,
         "startChar": 20,
