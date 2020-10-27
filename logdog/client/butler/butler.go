@@ -42,7 +42,9 @@ const (
 	DefaultMaxBufferAge = time.Duration(5 * time.Second)
 
 	// streamBufferSize is the maximum amount of stream data to buffer in memory.
-	streamBufferSize = 1024 * 1024 * 5
+	// TODO(crbug/image): optimize to mitigate butler stalling after processing
+	// ~10MiB of data (with value below of 5MiB).
+	streamBufferSize = 1024 * 1024 * 20
 )
 
 // Config is the set of Butler configuration parameters.
