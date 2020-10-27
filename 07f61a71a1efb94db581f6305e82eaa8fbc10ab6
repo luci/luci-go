@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55aea05c_9341e073",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-27T06:06:42Z",
+      "side": 1,
+      "message": "Python doesn\u0027t 0 the TemplateBuildId. I\u0027m zeroing it here to indicate that it\u0027s a \"complete\" request now, but I didn\u0027t check if this is actually relevant (e.g. may indicate to some monitoring that some of these arguments were derived from an existing build, but I\u0027m not sure if anyone cares about this).",
+      "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
