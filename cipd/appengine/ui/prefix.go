@@ -36,7 +36,7 @@ func prefixListingPage(c *router.Context, pfx string) error {
 	}
 
 	var listing *api.ListPrefixResponse
-	var meta *metadataBlock
+	var meta *prefixMetadataBlock
 
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
@@ -48,7 +48,7 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		}
 		tasks <- func() error {
 			var err error
-			meta, err = fetchMetadata(c.Context, pfx)
+			meta, err = fetchPrefixMetadata(c.Context, pfx)
 			return err
 		}
 	})
