@@ -43,6 +43,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
@@ -280,8 +281,12 @@ func mainImpl() int {
 			metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
+					Id:              input.Build.Id,
+					Builder:         input.Build.Builder,
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: err.Error(),
+					UpdateTime:      timestamppb.New(clock.Now(cctx)),
+					EndTime:         timestamppb.New(clock.Now(cctx)),
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{
 					Paths: []string{
