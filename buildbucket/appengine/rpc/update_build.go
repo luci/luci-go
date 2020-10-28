@@ -186,8 +186,6 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 			return errors.Reason("status: parent %q must be at least STARTED", parent.Name).Err()
 		case !protoutil.IsEnded(step.Status) && parent.Status != pb.Status_STARTED:
 			return errors.Reason("status: for non-terminal status %q, the parent status must be STARTED, but %q", step.Status, parent.Status).Err()
-		case protoutil.IsWorseStepStatus(step.Status, parent.Status):
-			return errors.Reason("status: status %q is worse than parent status %q", step.Status, parent.Status).Err()
 		}
 
 		// The parent's start_time and end_time have been validated already
