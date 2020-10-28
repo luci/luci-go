@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4f666d3f_29f127c4",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-28T04:26:04Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "0a1168cf_6aaf06b8",
+      "range": {
+        "startLine": 235,
+        "startChar": 67,
+        "endLine": 235,
+        "endChar": 75
+      },
+      "revId": "565742035ac310e40b52c61eb15172306eb2e799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "03562f7d_f2961a62",
         "filename": "cipd/client/cipd/json_structs.go",
         "patchSetId": 1
