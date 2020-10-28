@@ -92,6 +92,10 @@ const (
 	// TagAttachTimeout is how long to wait for an instance to be processed when
 	// attaching tags in AttachTagsWhenReady.
 	TagAttachTimeout = 3 * time.Minute
+
+	// MetadataAttachTimeout is how long to wait for an instance to be processed
+	// when attaching metadata in AttachMetadataWhenReady.
+	MetadataAttachTimeout = 3 * time.Minute
 )
 
 // Environment variable definitions
@@ -226,6 +230,9 @@ type Client interface {
 
 	// AttachTagsWhenReady attaches tags to an instance.
 	AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error
+
+	// AttachMetadataWhenReady attaches metadata to an instance.
+	AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) error
 
 	// FetchPackageRefs returns information about all refs defined for a package.
 	//
@@ -1131,6 +1138,53 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		logging.Errorf(ctx, "cipd: failed to attach tags - deadline exceeded")
 	default:
 		logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)
+	}
+	return err
+}
+
+func (client *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) error {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+		return err
+	}
+	if len(md) == 0 {
+		return nil
+	}
+
+	apiMD := make([]*api.InstanceMetadata, len(md))
+	for i, m := range md {
+		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
+			return err
+		}
+		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
+			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
+		}
+		if err := common.ValidateContentType(m.ContentType); err != nil {
+			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
+		}
+		logging.Infof(ctx, "cipd: attaching metadata with key %q", m.Key)
+		apiMD[i] = &api.InstanceMetadata{
+			Key:         m.Key,
+			Value:       m.Value,
+			ContentType: m.ContentType,
+		}
+	}
+
+	err := client.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
+		_, err := client.repo.AttachMetadata(ctx, &api.AttachMetadataRequest{
+			Package:  pin.PackageName,
+			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+			Metadata: apiMD,
+		}, expectedCodes)
+		return err
+	})
+
+	switch err {
+	case nil:
+		logging.Infof(ctx, "cipd: metadata attached")
+	case ErrProcessingTimeout:
+		logging.Errorf(ctx, "cipd: failed to attach metadata - deadline exceeded")
+	default:
+		logging.Errorf(ctx, "cipd: failed to attach metadata - %s", err)
 	}
 	return err
 }

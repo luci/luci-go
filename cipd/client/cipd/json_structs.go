@@ -105,6 +105,36 @@ type RefInfo struct {
 	ModifiedTs UnixTime `json:"modified_ts"`
 }
 
+// Metadata is a metadata entry that can be attached to an instance.
+type Metadata struct {
+	// Key is a lowercase string matching [a-z0-9_\-]{1,400}.
+	Key string `json:"key"`
+	// Value is an arbitrary byte blob smaller than 512 Kb.
+	Value []byte `json:"value,omitempty"`
+	// Optional MIME content type of the metadata value, primarily for UI.
+	ContentType string `json:"content_type,omitempty"`
+}
+
+// MetadataInfo describes an already attached metadata entry.
+type MetadataInfo struct {
+	// Fingerprint identifies this particular metadata entry.
+	//
+	// It is derived from the key+value via common.InstanceMetadataFingerprint.
+	Fingerprint string `json:"fingerprint"`
+
+	// Key is a lowercase string matching [a-z0-9_\-]{1,400}.
+	Key string `json:"key"`
+	// Value is an arbitrary byte blob smaller than 512 Kb.
+	Value []byte `json:"value,omitempty"`
+	// Optional MIME content type of the metadata value, primarily for UI.
+	ContentType string `json:"content_type,omitempty"`
+
+	// AttachedBy is identity of whoever attached this metadata.
+	AttachedBy string `json:"attached_by"`
+	// AttachedTs is when the metadata was attached.
+	AttachedTs UnixTime `json:"attached_ts"`
+}
+
 // InstanceDescription contains extended information about an instance as
 // returned by DescribeInstance.
 type InstanceDescription struct {
@@ -183,6 +213,17 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 		Tag:          common.JoinInstanceTag(t),
 		RegisteredBy: t.AttachedBy,
 		RegisteredTs: UnixTime(google.TimeFromProto(t.AttachedTs)),
+	}
+}
+
+func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
+	return MetadataInfo{
+		Fingerprint: md.Fingerprint,
+		Key:         md.Key,
+		Value:       md.Value,
+		ContentType: md.ContentType,
+		AttachedBy:  md.AttachedBy,
+		AttachedTs:  UnixTime(google.TimeFromProto(md.AttachedTs)),
 	}
 }
 
