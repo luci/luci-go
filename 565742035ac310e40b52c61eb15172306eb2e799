@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a1168cf_6aaf06b8",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T02:09:30Z",
+      "side": 1,
+      "message": "Here are the reasons why I decided to introduce separate structs instead of using proto messages:\n1. For consistency with the existing client API that doesn\u0027t expose proto messages (due to historical reasons, the first version of CIPD protocol was not protobuf based). I believe it\u0027s better to keep everything consistent.\n2. `-json-output` in the CLI uses encoding/json and interface{} for serializing stuff. Proto messages are not easily encodable with encoding/json (they require using protobuf-specific JSON serialization library).",
+      "range": {
+        "startLine": 235,
+        "startChar": 67,
+        "endLine": 235,
+        "endChar": 75
+      },
+      "revId": "565742035ac310e40b52c61eb15172306eb2e799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03562f7d_f2961a62",
+        "filename": "cipd/client/cipd/json_structs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T02:09:30Z",
+      "side": 1,
+      "message": "this is not actually used yet (will be used by ListMetadata)",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 17
+      },
+      "revId": "565742035ac310e40b52c61eb15172306eb2e799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
