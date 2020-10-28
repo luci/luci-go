@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e976d8fa_8630f90c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-28T09:08:02Z",
+      "side": 1,
+      "message": "sorry, nvm.\nThe updated title looks good to me.",
+      "parentUuid": "6259b508_92136977",
+      "range": {
+        "startLine": 7,
+        "startChar": 11,
+        "endLine": 7,
+        "endChar": 29
+      },
+      "revId": "3cde95ada087ca4afa7a6b377bd4aeeeeb72f365",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a2f5786d_971d1e86",
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "For gradual migration of existing usage of -raw-cmd.",
       "parentUuid": "a2f5786d_971d1e86",
+      "range": {
+        "startLine": 257,
+        "startChar": 0,
+        "endLine": 258,
+        "endChar": 180
+      },
+      "revId": "3cde95ada087ca4afa7a6b377bd4aeeeeb72f365",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2282966b_7c454c71",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-10-28T09:08:02Z",
+      "side": 1,
+      "message": "I see.",
+      "parentUuid": "bd9d61e8_c529f1e2",
       "range": {
         "startLine": 257,
         "startChar": 0,
