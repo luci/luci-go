@@ -16,6 +16,24 @@
       "message": "Cool! Could you also try NumCPU()?",
       "revId": "9c4ecda68ec6e9cf4fe1dbfbe3b96b4de6bd4fd4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be8b2e2f_2db20166",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-10-28T09:06:29Z",
+      "side": 1,
+      "message": "changed to use NumCPU, which is 8 for most of our bots.",
+      "parentUuid": "78f6a4de_5910a5f6",
+      "revId": "9c4ecda68ec6e9cf4fe1dbfbe3b96b4de6bd4fd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
