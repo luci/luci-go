@@ -79,15 +79,20 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 }
 
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
+	i := auth.CurrentIdentity(ctx)
+	if i.Kind() == identity.Project {
+		// Only small list of LUCI services is allowed,
+		// we can assume no malicious access, hence this is CQDaemon.
+		return nil
+	}
+	logging.Warningf(ctx, "Unusual caller %s", i)
+
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
 		return status.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
 		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
-		if i := auth.CurrentIdentity(ctx); i.Kind() != identity.Project {
-			logging.Warningf(ctx, "Unusual caller %s", i)
-		}
 		return nil
 	}
 }

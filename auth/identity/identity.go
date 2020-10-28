@@ -99,7 +99,7 @@ func (id Identity) Kind() Kind {
 }
 
 // Value returns a valued encoded in the identity, e.g. for User identity kind
-// it is user's email address.If identity string is invalid returns "anonymous".
+// it is user's email address. If identity string is invalid returns "anonymous".
 func (id Identity) Value() string {
 	chunks := strings.SplitN(string(id), ":", 2)
 	if len(chunks) != 2 {
