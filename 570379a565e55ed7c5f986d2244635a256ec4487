@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cadbfe77_9f8aea68",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T22:33:33Z",
+      "side": 1,
+      "message": "make it a global var so that we don\u0027t allocate memory each time?",
+      "revId": "570379a565e55ed7c5f986d2244635a256ec4487",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
