@@ -25,6 +25,7 @@ import (
 	"unicode"
 
 	"go.chromium.org/luci/common/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 // Entities with more than this many indexed properties will not be saved.
@@ -36,6 +37,7 @@ type structTag struct {
 	isSlice        bool
 	substructCodec *structCodec
 	convert        bool
+	pbConvert      bool
 	metaVal        interface{}
 	isExtra        bool
 	canSet         bool
@@ -143,9 +145,19 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 	}
 
 	doConversion := func(v reflect.Value) (string, bool) {
-		a := v.Addr()
-		if conv, ok := a.Interface().(PropertyConverter); ok {
-			err := conv.FromProperty(p)
+		if conv, ok := v.Addr().Interface().(PropertyConverter); ok {
+			if err := conv.FromProperty(p); err != nil {
+				return err.Error(), true
+			}
+			return "", true
+		}
+		if pm, ok := v.Interface().(proto.Message); ok {
+			data, err := p.Project(PTBytes)
+			if err == nil {
+				pm = pm.ProtoReflect().New().Interface()
+				v.Set(reflect.ValueOf(pm))
+				err = proto.Unmarshal(data.([]byte), pm)
+			}
 			if err != nil {
 				return err.Error(), true
 			}
@@ -279,9 +291,16 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag
 		}
 
 		prop := Property{}
-		if st.convert {
+		switch {
+		case st.convert:
 			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
-		} else {
+		case st.pbConvert:
+			pb := v.Interface().(proto.Message)
+			var blob []byte
+			if blob, err = proto.Marshal(pb); err == nil {
+				prop = MkPropertyNI(blob)
+			}
+		default:
 			err = prop.SetValue(v.Interface(), si)
 		}
 		if err != nil {
@@ -369,6 +388,7 @@ func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 	if st.canSet {
 		f := p.o.Field(idx)
 		if st.convert {
+			// TODO
 			prop, err := f.Addr().Interface().(PropertyConverter).ToProperty()
 			if err != nil {
 				return nil, false
@@ -418,6 +438,7 @@ func (p *structPLS) SetMeta(key string, val interface{}) bool {
 		return false
 	}
 	if st.convert {
+		// TODO.
 		err := p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
 			MkPropertyNI(val))
 		return err == nil
@@ -609,10 +630,17 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				}
 				st.isSlice = ft.Elem().Kind() != reflect.Uint8
 				c.hasSlice = c.hasSlice || st.isSlice
+
 			case reflect.Interface:
 				c.problem = me("field %q has non-concrete interface type %s",
 					f.Name, ft)
 				return
+			case reflect.Ptr:
+				// TODO: constify this.
+				el := reflect.TypeOf((*proto.Message)(nil)).Elem()
+				if ft.Implements(el) {
+					st.pbConvert = true
+				}
 			}
 		}
 
@@ -646,7 +674,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				c.byName[absName] = i
 			}
 		} else {
-			if !st.convert { // check the underlying static type of the field
+			if !st.convert && !st.pbConvert { // check the underlying static type of the field
 				t := ft
 				if st.isSlice {
 					t = t.Elem()

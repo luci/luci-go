@@ -27,9 +27,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/durationpb"
+
+	"go.chromium.org/luci/gae/service/blobstore"
+	"go.chromium.org/luci/gae/service/datastore/internal/testprotos"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/service/blobstore"
 )
 
 var (
@@ -694,6 +701,11 @@ type IDEmbedder struct {
 }
 
 type Simple struct{}
+
+type ProtoEmbedder struct {
+	Num int
+	PB  *testprotos.Msg
+}
 
 type testCase struct {
 	desc       string
@@ -1663,6 +1675,29 @@ var testCases = []testCase{
 		},
 		want: &B2{B: myBlob("rawr")},
 	},
+	{
+		desc: "protos encoding",
+		src: &ProtoEmbedder{Num: 1, PB: &testprotos.Msg{
+			Str: "abcdef",
+			Dur: &durationpb.Duration{Seconds: 251, Nanos: 252},
+		}},
+		want: PropertyMap{
+			// This test is likely to break if protobuf library changes,
+			// but this should be rare.
+			//                        a   b   c    d    e    f           secs          ns
+			"PB":  mpNI([]byte{10, 6, 97, 98, 99, 100, 101, 102, 18, 6, 8, 251, 1, 16, 252, 1}),
+			"Num": mp(1),
+		},
+	},
+	{
+		desc: "protos load/save",
+		src: &ProtoEmbedder{Num: 1, PB: &testprotos.Msg{Str: "abcdef",
+			Dur: &durationpb.Duration{Seconds: 251, Nanos: 252},
+		}},
+		want: &ProtoEmbedder{Num: 1, PB: &testprotos.Msg{Str: "abcdef",
+			Dur: &durationpb.Duration{Seconds: 251, Nanos: 252},
+		}},
+	},
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -1732,9 +1767,15 @@ func TestRoundTrip(t *testing.T) {
 					// Round tripping a time.Time can result in a different time.Location: Local instead of UTC.
 					// We therefore test equality explicitly, instead of relying on reflect.DeepEqual.
 					So(gotT.T.Equal(tc.want.(*T).T), ShouldBeTrue)
-				} else {
-					So(got, ShouldResemble, tc.want)
+					return
 				}
+				if _, ok := tc.want.(*ProtoEmbedder); ok {
+					// ShouldResemble fails on proto-containing structs.
+					diff := cmp.Diff(got, tc.want, protocmp.Transform(), cmpopts.IgnoreUnexported())
+					So(diff, ShouldEqual, "")
+					return
+				}
+				So(got, ShouldResemble, tc.want)
 			})
 		}
 	})
