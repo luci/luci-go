@@ -62,17 +62,6 @@ message Step {
   // If the step has children
   //   status MUST NOT be SCHEDULED.
   //   status MUST be STARTED if status of any child is not terminal.
-  //
-  //   status MUST NOT be "better" than statuses of its children,
-  //   where "better" relation is defined by the following order,
-  //   from good to bad:
-  //     SUCCESS
-  //     FAILURE
-  //     INFRA_FAILURE
-  //     CANCELED
-  //   Note that this defines "better" relation only for some statuses.
-  //   For those statuses where "better" is not defined, this rule does not
-  //   apply.
   Status status = 4;
 
   // Logs produced by the step.
