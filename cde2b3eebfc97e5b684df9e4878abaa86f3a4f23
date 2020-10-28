@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45bc74f2_9c4e4e48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-28T20:07:28Z",
+      "side": 1,
+      "message": "Hi! PTAL first attempt and give me early feedback if something is terribly wrong.\nSee also Robbie\u0027s suggestion here: https://crbug.com/1131703\n\nNote, I don\u0027t intend to land this as is, notably I want to add support for compression on the fly. ",
+      "revId": "cde2b3eebfc97e5b684df9e4878abaa86f3a4f23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
