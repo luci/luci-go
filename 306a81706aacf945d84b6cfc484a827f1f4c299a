@@ -16,6 +16,24 @@
       "message": "Curios: Why is this needed when https://pkg.go.dev/go.chromium.org/luci/gae/service/datastore will index the field automatically if it is not tagged with \"noindex\"?",
       "revId": "306a81706aacf945d84b6cfc484a827f1f4c299a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "317859a0_deaef906",
+        "filename": "cipd/appengine/frontend/index.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T20:13:10Z",
+      "side": 1,
+      "message": "Queries fails without it. I think its because the default index is non-ancestor and not \"desc\".",
+      "parentUuid": "2ec1ac4c_7a38f756",
+      "revId": "306a81706aacf945d84b6cfc484a827f1f4c299a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
