@@ -16,6 +16,24 @@
       "message": "Python doesn\u0027t 0 the TemplateBuildId. I\u0027m zeroing it here to indicate that it\u0027s a \"complete\" request now, but I didn\u0027t check if this is actually relevant (e.g. may indicate to some monitoring that some of these arguments were derived from an existing build, but I\u0027m not sure if anyone cares about this).",
       "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45bc96e1_f4bd0cd2",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-10-28T00:17:04Z",
+      "side": 1,
+      "message": "Ack. yeah, it seems no other parts use the TemplateBuildId except this function and the validation.",
+      "parentUuid": "55aea05c_9341e073",
+      "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
