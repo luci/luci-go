@@ -348,11 +348,9 @@ func TestRegisterInstance(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Setting refs and tags.
+// Setting refs, attaching tags and metadata.
 
-// SetRefWhenReady and AttachTagsWhenReady are tested together since they
-// are very similar.
-func TestSetRefAndAttachTags(t *testing.T) {
+func TestAttachingStuffWhenReady(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func(c C) {
@@ -401,6 +399,26 @@ func TestSetRefAndAttachTags(t *testing.T) {
 			}
 		}
 
+		attachMetadataRPC := func() rpcCall {
+			return rpcCall{
+				method: "AttachMetadata",
+				in: &api.AttachMetadataRequest{
+					Package:  "pkg/name",
+					Instance: objRef,
+					Metadata: []*api.InstanceMetadata{
+						{Key: "k1", Value: []byte("v1"), ContentType: "text/1"},
+						{Key: "k2", Value: []byte("v2"), ContentType: "text/2"},
+					},
+				},
+				out: &empty.Empty{},
+			}
+		}
+
+		cannedMD := []Metadata{
+			{Key: "k1", Value: []byte("v1"), ContentType: "text/1"},
+			{Key: "k2", Value: []byte("v2"), ContentType: "text/2"},
+		}
+
 		Convey("SetRefWhenReady happy path", func() {
 			repo.expect(createRefRPC())
 			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldBeNil)
@@ -409,6 +427,11 @@ func TestSetRefAndAttachTags(t *testing.T) {
 		Convey("AttachTagsWhenReady happy path", func() {
 			repo.expect(attachTagsRPC())
 			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldBeNil)
+		})
+
+		Convey("AttachMetadataWhenReady happy path", func() {
+			repo.expect(attachMetadataRPC())
+			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldBeNil)
 		})
 
 		Convey("SetRefWhenReady timeout", func() {
@@ -425,6 +448,13 @@ func TestSetRefAndAttachTags(t *testing.T) {
 			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldEqual, ErrProcessingTimeout)
 		})
 
+		Convey("AttachMetadataWhenReady timeout", func() {
+			rpc := attachMetadataRPC()
+			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
+			repo.expectMany(rpc)
+			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldEqual, ErrProcessingTimeout)
+		})
+
 		Convey("SetRefWhenReady fatal RPC err", func() {
 			rpc := createRefRPC()
 			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
@@ -437,6 +467,13 @@ func TestSetRefAndAttachTags(t *testing.T) {
 			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
 			repo.expect(rpc)
 			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldErrLike, "boo")
+		})
+
+		Convey("AttachMetadataWhenReady fatal RPC err", func() {
+			rpc := attachMetadataRPC()
+			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
+			repo.expect(rpc)
+			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldErrLike, "boo")
 		})
 
 		Convey("SetRefWhenReady bad pin", func() {
@@ -462,6 +499,34 @@ func TestSetRefAndAttachTags(t *testing.T) {
 		Convey("AttachTagsWhenReady bad tag", func() {
 			So(client.AttachTagsWhenReady(ctx, pin, []string{"good:tag", "bad_tag"}), ShouldErrLike,
 				"doesn't look like a tag")
+		})
+
+		Convey("AttachMetadataWhenReady noop", func() {
+			So(client.AttachMetadataWhenReady(ctx, pin, nil), ShouldBeNil)
+		})
+
+		Convey("AttachMetadataWhenReady bad pin", func() {
+			So(client.AttachMetadataWhenReady(ctx, common.Pin{
+				PackageName: "////",
+			}, cannedMD), ShouldErrLike, "invalid package name")
+		})
+
+		Convey("AttachMetadataWhenReady bad key", func() {
+			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+				{Key: "ZZZ", Value: nil},
+			}), ShouldErrLike, "invalid metadata key")
+		})
+
+		Convey("AttachMetadataWhenReady bad value", func() {
+			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+				{Key: "k", Value: bytes.Repeat([]byte{0}, 512*1024+1)},
+			}), ShouldErrLike, "the metadata value is too long")
+		})
+
+		Convey("AttachMetadataWhenReady bad content type", func() {
+			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
+				{Key: "k", ContentType: "zzz zzz"},
+			}), ShouldErrLike, "bad content-typ")
 		})
 	})
 }
