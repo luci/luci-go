@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f1c8be6_7be12e7c",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-10-28T08:27:14Z",
+      "side": 1,
+      "message": "How about phrasing it like \"DEPRECATED. Please always specify a \u0027--\u0027 with a following command. The command will be run on the bot.\"?",
+      "range": {
+        "startLine": 258,
+        "startChar": 44,
+        "endLine": 258,
+        "endChar": 178
+      },
+      "revId": "e6ad3fe004316a4113bf8f57654e644f50bbc52f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
