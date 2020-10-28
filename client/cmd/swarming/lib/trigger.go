@@ -209,7 +209,6 @@ type triggerRun struct {
 	realm          string
 
 	// Other.
-	rawCmd   bool
 	dumpJSON string
 }
 
@@ -255,7 +254,8 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.realm, "realm", "", "Realm name for this task.")
 
 	// Other.
-	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
+	var rawCmd bool
+	c.Flags.BoolVar(&rawCmd, "raw-cmd", true, "DEPRECATED. Please always specify a '--' with a following command. The command will be run on the bot.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 }
 
@@ -270,10 +270,8 @@ func (c *triggerRun) Parse(args []string) error {
 		return errors.Reason("please at least specify one dimension").Err()
 	}
 
-	if c.rawCmd && len(args) == 0 {
-		return errors.Reason("arguments with -raw-cmd should be passed after -- as command delimiter").Err()
-	} else if !c.rawCmd && len(c.isolated) == 0 {
-		return errors.Reason("please use -isolated to specify hash or -raw-cmd").Err()
+	if len(args) == 0 {
+		return errors.Reason("please specify command after '--'").Err()
 	}
 
 	if len(c.user) == 0 {
@@ -377,16 +375,8 @@ func (c *triggerRun) createTaskSliceForOptionalDimension(properties *swarming.Sw
 	}, nil
 }
 
-func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
-	var commands []string
-	var extraArgs []string
-
-	if c.rawCmd {
-		commands = args
-	} else {
-		extraArgs = args
-	}
 
 	if c.taskName == "" {
 		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
@@ -437,7 +427,6 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Env:                  mapToArray(c.env),
 		EnvPrefixes:          listToStringListPairArray(c.envPrefix),
 		ExecutionTimeoutSecs: c.hardTimeout,
-		ExtraArgs:            extraArgs,
 		GracePeriodSecs:      30,
 		Idempotent:           c.idempotent,
 		InputsRef:            inputsRefs,

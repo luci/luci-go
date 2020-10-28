@@ -229,7 +229,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 		})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "please use -isolated to specify hash or -raw-cmd")
+		So(err, ShouldErrLike, "please specify command after '--'")
 	})
 }
 
@@ -246,7 +246,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 		})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "arguments with -raw-cmd should be passed after -- as command delimiter")
+		So(err, ShouldErrLike, "please specify command after '--'")
 	})
 }
 
@@ -273,7 +273,6 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		c.Init(auth.Options{})
 		c.commonFlags.serverURL = "http://localhost:9050"
 		c.isolateServer = "http://localhost:10050"
-		c.rawCmd = true
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(err, ShouldBeNil)
@@ -284,30 +283,6 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		So(properties.Command, ShouldResemble, []string{"arg1", "arg2"})
 		So(properties.ExtraArgs, ShouldResemble, ([]string)(nil))
 		So(properties.InputsRef, ShouldBeNil)
-	})
-}
-
-func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
-	Convey(`Make sure that processing trigger options handles extra arguments.`, t, func() {
-		c := triggerRun{}
-		c.Init(auth.Options{})
-		c.commonFlags.serverURL = "http://localhost:9050"
-		c.isolateServer = "http://localhost:10050"
-		c.isolated = "1234567890123456789012345678901234567890"
-
-		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
-		So(err, ShouldBeNil)
-		// Setting properties directly on the task is deprecated.
-		So(result.Properties, ShouldBeNil)
-		So(result.TaskSlices, ShouldHaveLength, 1)
-		properties := result.TaskSlices[0].Properties
-		So(properties.Command, ShouldBeNil)
-		So(properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
-		So(properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
-			Isolated:       "1234567890123456789012345678901234567890",
-			Isolatedserver: "http://localhost:10050",
-			Namespace:      "default-gzip",
-		})
 	})
 }
 
