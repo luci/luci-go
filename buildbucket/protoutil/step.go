@@ -61,12 +61,3 @@ func ValidateStepName(stepName string) error {
 	}
 	return nil
 }
-
-// IsWorseStepStatus returns true if lhs is worse than rhs.
-// If either of lhs or rhs is not one of the statuses in StatusPrecedence,
-// this return value is always false.
-func IsWorseStepStatus(lhs, rhs pb.Status) bool {
-	lp, le := statusPrecedences[lhs]
-	rp, re := statusPrecedences[rhs]
-	return le && re && lp > rp
-}
