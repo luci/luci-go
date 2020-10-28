@@ -236,22 +236,6 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		Files:   map[string]isolated.File{},
 		Version: isolated.IsolatedFormatVersion,
 	}
-	if len(cmd) != 0 {
-		os.Stderr.WriteString(`
-WARNING: command / relative_cwd in isolate file will be deprecated around 2020 Q3 or later (crbug.com/1069704).
-`)
-		isol.Command = cmd
-		// Only set RelativeCwd if a command was also specified. This reduce the
-		// noise for Swarming tasks where the command is specified as part of the
-		// Swarming task request and not through the isolated file.
-		if rootDir != isolateDir {
-			relPath, err := filepath.Rel(rootDir, isolateDir)
-			if err != nil {
-				return nil, "", nil, err
-			}
-			isol.RelativeCwd = relPath
-		}
-	}
 	return deps, rootDir, isol, nil
 }
 
