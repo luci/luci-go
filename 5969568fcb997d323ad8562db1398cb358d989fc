@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c1c2c6d_3588f7b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-28T17:40:28Z",
+      "side": 1,
+      "message": "PTAL. I didn\u0027t include search-tag metrics in this CL, because go-tsmon needs a fix to support those.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/metrics.py;l\u003d242-255",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
