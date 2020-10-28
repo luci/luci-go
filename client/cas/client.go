@@ -17,6 +17,7 @@ package cas
 
 import (
 	"context"
+	"runtime"
 	"strings"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -56,7 +57,9 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		client.DialParams{
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
-		}, &client.PerRPCCreds{Creds: creds})
+		}, &client.PerRPCCreds{Creds: creds},
+		// This is for better file write performance on Windows (http://b/171672371#comment6).
+		client.CASConcurrency(runtime.NumCPU()))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
