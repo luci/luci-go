@@ -24,6 +24,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
@@ -194,6 +195,19 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
+
+	ds := client.Durations
+	var dsum time.Duration
+	for _, d := range ds {
+		dsum += d
+	}
+	logger.Infof("min %s, p50 %s, p90 %s, p95 %s, max %s, avg %s",
+		ds[0], ds[len(ds)/2], ds[len(ds)*9/10], ds[len(ds)*19/20],
+		ds[len(ds)-1], dsum/time.Duration(len(ds)))
+
+	for i := 0; i < len(ds) && i < 100; i++ {
+		logger.Infof("%d-th slowest %s", i, ds[len(ds)-i-1])
+	}
 
 	if diskcache != nil {
 		start = time.Now()
