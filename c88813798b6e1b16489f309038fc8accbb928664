@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "deb8e26c_69f108bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-28T04:25:18Z",
+      "side": 1,
+      "message": "Belated stamp and a not-really-important doc comment :)",
+      "revId": "c88813798b6e1b16489f309038fc8accbb928664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56cd7906_3c18268f",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-28T04:25:18Z",
+      "side": 1,
+      "message": "s/Store/Deletes",
+      "range": {
+        "startLine": 236,
+        "startChar": 5,
+        "endLine": 236,
+        "endChar": 10
+      },
+      "revId": "c88813798b6e1b16489f309038fc8accbb928664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
