@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79869935_dfabf7d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T04:07:34Z",
+      "side": 1,
+      "message": "PTAL, tested manually.\n\ncipd CLI code is horror show, I\u0027m just adding more stuff on top of the 💩 pile",
+      "revId": "878aaf4794bb5cf526f3700a3fe6abd535272d3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05265dd4_9f41b2f8",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T04:07:34Z",
+      "side": 1,
+      "message": "Apparently `` is magically transformed by \"flag\" package. The result of this StringVar call is:\n\n  -json-output path\n    \tA path to write operation results to.\n\nIf I remove ``, it would be\n\n  -json-output value\n    \tA path to write operation results to.",
+      "range": {
+        "startLine": 141,
+        "startChar": 56,
+        "endLine": 141,
+        "endChar": 62
+      },
+      "revId": "878aaf4794bb5cf526f3700a3fe6abd535272d3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
