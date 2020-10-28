@@ -60,10 +60,12 @@ var (
 
 	// Parameters for instance metadata key-value validation.
 	metadataKeyMaxLen = 400
-	metadataValMaxLen = 512 * 1024
 	metadataKeyReStr  = `^[a-z0-9_\-]+$`
 	metadataKeyRe     = regexp.MustCompile(metadataKeyReStr)
 )
+
+// MetadataMaxLen is maximum allowed length of an instance metadata entry body.
+const MetadataMaxLen = 512 * 1024
 
 // Pin uniquely identifies an instance of some package.
 type Pin struct {
@@ -373,8 +375,8 @@ func ValidateInstanceMetadataKey(key string) error {
 // ValidateInstanceMetadataLen returns an error if the given length of the
 // metadata payload is too large.
 func ValidateInstanceMetadataLen(l int) error {
-	if l > metadataValMaxLen {
-		return fmt.Errorf("the metadata value is too long, should be <=%d bytes, got %d", metadataValMaxLen, l)
+	if l > MetadataMaxLen {
+		return fmt.Errorf("the metadata value is too long, should be <=%d bytes, got %d", MetadataMaxLen, l)
 	}
 	return nil
 }

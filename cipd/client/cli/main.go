@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -137,7 +138,7 @@ func (c *cipdSubcommand) registerBaseFlags() {
 		c.logConfig.Level = logging.Info
 	}
 
-	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
+	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "A `path` to write operation results to.")
 	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable more logging (deprecated, use -log-level=debug).")
 	c.logConfig.AddFlags(&c.Flags)
 }
@@ -386,16 +387,7 @@ func (opts *clientOptions) makeCIPDClient(ctx context.Context) (cipd.Client, err
 type packageVars map[string]string
 
 func (vars *packageVars) String() string {
-	// String() for empty vars used in -help output.
-	if len(*vars) == 0 {
-		return "key:value"
-	}
-	chunks := make([]string, 0, len(*vars))
-	for k, v := range *vars {
-		chunks = append(chunks, fmt.Sprintf("%s:%s", k, v))
-	}
-	sort.Strings(chunks)
-	return strings.Join(chunks, ", ")
+	return "key:value"
 }
 
 // Set is called by 'flag' package when parsing command line options.
@@ -440,12 +432,12 @@ func (opts *inputOptions) registerFlags(f *flag.FlagSet) {
 	}
 
 	// Interface to accept package definition file.
-	f.StringVar(&opts.packageDef, "pkg-def", "", "*.yaml file that defines what to put into the package.")
-	f.Var(&opts.vars, "pkg-var", "Variables accessible from package definition file.")
+	f.StringVar(&opts.packageDef, "pkg-def", "", "A *.yaml file `path` that defines what to put into the package.")
+	f.Var(&opts.vars, "pkg-var", "A `key:value` with a variable accessible from package definition file (can be used multiple times).")
 
 	// Interface to accept a single directory (alternative to -pkg-def).
-	f.StringVar(&opts.packageName, "name", "", "Package name (unused with -pkg-def).")
-	f.StringVar(&opts.inputDir, "in", "", "Path to a directory with files to package (unused with -pkg-def).")
+	f.StringVar(&opts.packageName, "name", "", "Package `name` (unused with -pkg-def).")
+	f.StringVar(&opts.inputDir, "in", "", "A `path` to a directory with files to package (unused with -pkg-def).")
 	f.Var(&opts.installMode, "install-mode",
 		"How the package should be installed: \"copy\" or \"symlink\" (unused with -pkg-def).")
 	f.BoolVar(&opts.preserveModTime, "preserve-mtime", false,
@@ -553,11 +545,7 @@ func (opts *inputOptions) prepareInput() (builder.Options, error) {
 type refList []string
 
 func (refs *refList) String() string {
-	// String() for empty vars used in -help output.
-	if len(*refs) == 0 {
-		return "ref"
-	}
-	return strings.Join(*refs, " ")
+	return "ref"
 }
 
 // Set is called by 'flag' package when parsing command line options.
@@ -577,7 +565,7 @@ type refsOptions struct {
 }
 
 func (opts *refsOptions) registerFlags(f *flag.FlagSet) {
-	f.Var(&opts.refs, "ref", "A ref to point to the package instance (can be used multiple times).")
+	f.Var(&opts.refs, "ref", "A `ref` to point to the package instance (can be used multiple times).")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -587,11 +575,7 @@ func (opts *refsOptions) registerFlags(f *flag.FlagSet) {
 type tagList []string
 
 func (tags *tagList) String() string {
-	// String() for empty vars used in -help output.
-	if len(*tags) == 0 {
-		return "key:value"
-	}
-	return strings.Join(*tags, " ")
+	return "key:value"
 }
 
 // Set is called by 'flag' package when parsing command line options.
@@ -611,7 +595,175 @@ type tagsOptions struct {
 }
 
 func (opts *tagsOptions) registerFlags(f *flag.FlagSet) {
-	f.Var(&opts.tags, "tag", "A tag to attach to the package instance (can be used multiple times).")
+	f.Var(&opts.tags, "tag", "A `key:value` tag to attach to the package instance (can be used multiple times).")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// metadataOptions mixin.
+
+type metadataFlagValue struct {
+	key         string
+	value       string // either a literal value or a path to read it from
+	contentType string
+}
+
+type metadataList struct {
+	entries   []metadataFlagValue
+	valueKind string // "value" or "path"
+}
+
+func (md *metadataList) String() string {
+	return "key:" + md.valueKind
+}
+
+// Set is called by 'flag' package when parsing command line options.
+func (md *metadataList) Set(value string) error {
+	// Should have form key_with_possible_content_type:value.
+	chunks := strings.SplitN(value, ":", 2)
+	if len(chunks) != 2 {
+		return md.badFormatError()
+	}
+
+	// Extract content-type from within trailing '(...)', if present.
+	key, contentType, value := chunks[0], "", chunks[1]
+	switch l, r := strings.Index(key, "("), strings.LastIndex(key, ")"); {
+	case l == -1 && r == -1:
+		// no content type, this is fine
+	case l != -1 && r != -1 && l < r:
+		// The closing ')' should be the last character.
+		if !strings.HasSuffix(key, ")") {
+			return md.badFormatError()
+		}
+		key, contentType = key[:l], key[l+1:r]
+	default:
+		return md.badFormatError()
+	}
+
+	// Validate everything we can.
+	if err := common.ValidateInstanceMetadataKey(key); err != nil {
+		return commandLineError{err}
+	}
+	if err := common.ValidateContentType(contentType); err != nil {
+		return commandLineError{err}
+	}
+	if md.valueKind == "value" {
+		if err := common.ValidateInstanceMetadataLen(len(value)); err != nil {
+			return commandLineError{err}
+		}
+	}
+
+	md.entries = append(md.entries, metadataFlagValue{
+		key:         key,
+		value:       value,
+		contentType: contentType,
+	})
+	return nil
+}
+
+func (md *metadataList) badFormatError() error {
+	return makeCLIError("should have form key:%s or key(content-type):%s", md.valueKind, md.valueKind)
+}
+
+// metadataOptions defines command line arguments for commands that accept a set
+// of metadata entries.
+type metadataOptions struct {
+	metadata         metadataList
+	metadataFromFile metadataList
+}
+
+func (opts *metadataOptions) registerFlags(f *flag.FlagSet) {
+	opts.metadata.valueKind = "value"
+	f.Var(&opts.metadata, "metadata",
+		"A metadata entry (`key:value` or key(content-type):value) to attach to the package instance (can be used multiple times).")
+
+	opts.metadataFromFile.valueKind = "path"
+	f.Var(&opts.metadataFromFile, "metadata-from-file",
+		"A metadata entry (`key:path` or key(content-type):path) to attach to the package instance (can be used multiple times). The path can be \"-\" to read from stdin.")
+}
+
+func (opts *metadataOptions) load(ctx context.Context) ([]cipd.Metadata, error) {
+	out := make([]cipd.Metadata, 0, len(opts.metadata.entries)+len(opts.metadataFromFile.entries))
+
+	// Convert -metadata to cipd.Metadata entries.
+	for _, md := range opts.metadata.entries {
+		entry := cipd.Metadata{
+			Key:         md.key,
+			Value:       []byte(md.value),
+			ContentType: md.contentType,
+		}
+		// The default content type for -metadata is text/plain (since values are
+		// supplied directly via the command line).
+		if entry.ContentType == "" {
+			entry.ContentType = "text/plain"
+		}
+		out = append(out, entry)
+	}
+
+	// Load -metadata-from-file entries. At most one `-metadata-from-file key:-`
+	// is allowed, we have only one stdin.
+	keyWithStdin := false
+	for _, md := range opts.metadataFromFile.entries {
+		if md.value == "-" {
+			if keyWithStdin {
+				return nil, makeCLIError("at most one -metadata-from-file can use \"-\" as a value")
+			}
+			keyWithStdin = true
+		}
+		entry := cipd.Metadata{
+			Key:         md.key,
+			ContentType: md.contentType,
+		}
+		var err error
+		if entry.Value, err = loadMetadataFromFile(ctx, md.key, md.value); err != nil {
+			return nil, makeCLIError("when loading metadata from %q: %s", md.value, err)
+		}
+		// Guess the content type from the file extension and its body.
+		if entry.ContentType == "" {
+			entry.ContentType = guessMetadataContentType(md.value, entry.Value)
+		}
+		out = append(out, entry)
+	}
+
+	return out, nil
+}
+
+func loadMetadataFromFile(ctx context.Context, key, path string) ([]byte, error) {
+	var file *os.File
+	if path == "-" {
+		logging.Infof(ctx, "Reading metadata %q from the stdin...", key)
+		file = os.Stdin
+	} else {
+		logging.Infof(ctx, "Reading metadata %q from %q...", key, path)
+		var err error
+		file, err = os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+	}
+	// Read at most MetadataMaxLen plus one more byte to detect true EOF.
+	buf := bytes.Buffer{}
+	switch _, err := io.CopyN(&buf, file, common.MetadataMaxLen+1); {
+	case err == nil:
+		// Successfully read more than needed => the file size is too large.
+		return nil, fmt.Errorf("the metadata value is too long, should be <=%d bytes", common.MetadataMaxLen)
+	case err != io.EOF:
+		// Failed with some unexpected read error.
+		return nil, err
+	default:
+		return buf.Bytes(), nil
+	}
+}
+
+func guessMetadataContentType(path string, val []byte) string {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".json":
+		return "application/json"
+	case ".jwt":
+		return "application/jwt"
+	default:
+		return http.DetectContentType(val)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1026,6 +1178,7 @@ func cmdCreate(params Parameters) *subcommands.Command {
 			c.Opts.inputOptions.registerFlags(&c.Flags)
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
+			c.Opts.metadataOptions.registerFlags(&c.Flags)
 			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
@@ -1038,6 +1191,7 @@ type createOpts struct {
 	inputOptions
 	refsOptions
 	tagsOptions
+	metadataOptions
 	clientOptions
 	uploadOptions
 	hashOptions
@@ -1071,11 +1225,12 @@ func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, 
 		return common.Pin{}, err
 	}
 	return registerInstanceFile(ctx, f.Name(), &pin, &registerOpts{
-		refsOptions:   opts.refsOptions,
-		tagsOptions:   opts.tagsOptions,
-		clientOptions: opts.clientOptions,
-		uploadOptions: opts.uploadOptions,
-		hashOptions:   opts.hashOptions,
+		refsOptions:     opts.refsOptions,
+		tagsOptions:     opts.tagsOptions,
+		metadataOptions: opts.metadataOptions,
+		clientOptions:   opts.clientOptions,
+		uploadOptions:   opts.uploadOptions,
+		hashOptions:     opts.hashOptions,
 	})
 }
 
@@ -2010,10 +2165,10 @@ func cmdEditACL(params Parameters) *subcommands.Command {
 			c := &editACLRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
-			c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
-			c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
-			c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
-			c.Flags.Var(&c.revoke, "revoke", "Users or groups to remove from all roles.")
+			c.Flags.Var(&c.owner, "owner", "Users (user:email) or groups (`group:name`) to grant OWNER role.")
+			c.Flags.Var(&c.writer, "writer", "Users (user:email) or groups (`group:name`) to grant WRITER role.")
+			c.Flags.Var(&c.reader, "reader", "Users (user:email) or groups (`group:name`) to grant READER role.")
+			c.Flags.Var(&c.revoke, "revoke", "Users (user:email) or groups (`group:name`) to remove from all roles.")
 			return c
 		},
 	}
@@ -2479,6 +2634,7 @@ func cmdRegister(params Parameters) *subcommands.Command {
 			c.registerBaseFlags()
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
+			c.Opts.metadataOptions.registerFlags(&c.Flags)
 			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
@@ -2490,6 +2646,7 @@ func cmdRegister(params Parameters) *subcommands.Command {
 type registerOpts struct {
 	refsOptions
 	tagsOptions
+	metadataOptions
 	clientOptions
 	uploadOptions
 	hashOptions
@@ -2510,6 +2667,12 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *common.Pin, opts *registerOpts) (common.Pin, error) {
+	// Load metadata, in particular process -metadata-from-file, which may fail.
+	metadata, err := opts.metadataOptions.load(ctx)
+	if err != nil {
+		return common.Pin{}, err
+	}
+
 	src, err := os.Open(instanceFile)
 	if err != nil {
 		return common.Pin{}, err
@@ -2534,6 +2697,10 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	}
 
 	err = client.RegisterInstance(ctx, pin, src, opts.uploadOptions.verificationTimeout)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	err = client.AttachMetadataWhenReady(ctx, pin, metadata)
 	if err != nil {
 		return common.Pin{}, err
 	}
