@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ec1ac4c_7a38f756",
+        "filename": "cipd/appengine/frontend/index.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-28T04:25:43Z",
+      "side": 1,
+      "message": "Curios: Why is this needed when https://pkg.go.dev/go.chromium.org/luci/gae/service/datastore will index the field automatically if it is not tagged with \"noindex\"?",
+      "revId": "306a81706aacf945d84b6cfc484a827f1f4c299a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
