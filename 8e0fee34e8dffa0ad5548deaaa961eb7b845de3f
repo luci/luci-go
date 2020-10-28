@@ -1,0 +1,337 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16c329d9_848d7173",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 110,
+        "startChar": 131,
+        "endLine": 110,
+        "endChar": 152
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d06f616d_199323cb",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "please also link to https://developers.google.com/protocol-buffers/docs/proto3#json\nnot everyone knows how to translate from proto to JSON\n\nalternatively include examples in the proto, to make readers\u0027 life easier",
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c597e4a3_3a572013",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "i think it would be more generic to read the file in \"cli\" package, and pass a parsed proto to sink",
+      "range": {
+        "startLine": 246,
+        "startChar": 2,
+        "endLine": 246,
+        "endChar": 13
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c7661bc6_8db222b0",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/google.golang.org/protobuf@v1.25.0/encoding/protojson",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 35
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1b6c12a_c66ecbf1",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "not obvious what is dirs here.\nlocationTags? locationTags.Dirs?",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 8
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7ce3f1d_e5f6bce0",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "in general, it is not OK to panic because IO failed.\npanics are better for things that are very unlikely to happen\n\nbut see another comment where I suggest to move file reading to another layer",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 67
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "170bc870_77bbb325",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "nit: the code below would be more readable if it was de-intended, BY inverting this condition",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 29
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b96a9359_e5425b89",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "I didn\u0027t understand \"tags tags\" name. Is there a better name?",
+      "range": {
+        "startLine": 122,
+        "startChar": 36,
+        "endLine": 122,
+        "endChar": 44
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8af08f70_2d966e5e",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "if c.locationTags \u003d\u003d nil || tmd.GetLocation().GetFileName() \u003d\u003d \"\"",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 126,
+        "endChar": 56
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9623b2a7_5140fc24",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "nit: would a single if statement with || be simpler?",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 2
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad150d4f_e7d151ed",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "must use `path` package, not filepath, because tmd.Location.FileName must use slashes\n\nsame below",
+      "range": {
+        "startLine": 137,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 16
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea89888c_f0079f59",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "will crash if len(FileName)\u003d\u003d1\n\nsafer: strings.TrimPrefix\n\nalso 2 is magical. We need a constant for \"//\" used consistently in the codebase",
+      "range": {
+        "startLine": 137,
+        "startChar": 42,
+        "endLine": 137,
+        "endChar": 46
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "825ed05d_caf2df8e",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "this means we never check the root?\nI think this check should be before calling path.Dir",
+      "range": {
+        "startLine": 141,
+        "startChar": 1,
+        "endLine": 141,
+        "endChar": 17
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f32f0a7b_f681962b",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "a bit confusing to have a variable with the same name but different type",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 8
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a20a1cb9_6d3a3983",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-28T19:38:20Z",
+      "side": 1,
+      "message": "i am not sure it should go to tmd, as opposed to TestResult.tags",
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
