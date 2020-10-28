@@ -22,6 +22,30 @@
       },
       "revId": "e6ad3fe004316a4113bf8f57654e644f50bbc52f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62959f1d_4064a2a3",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-10-28T08:51:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f1c8be6_7be12e7c",
+      "range": {
+        "startLine": 258,
+        "startChar": 44,
+        "endLine": 258,
+        "endChar": 178
+      },
+      "revId": "e6ad3fe004316a4113bf8f57654e644f50bbc52f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
