@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c298d7ef_f394e0aa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-28T22:44:47Z",
+      "side": 1,
+      "message": "yes it is, see https://chrome-infra-auth.appspot.com/auth/groups/auth-luci-services",
+      "parentUuid": "38810057_2b5e2322",
+      "range": {
+        "startLine": 10,
+        "startChar": 42,
+        "endLine": 12,
+        "endChar": 58
+      },
+      "revId": "e08238e9d275f8d5c1eb8e02c1390639c68bb844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6e82ccaf_095d1cc4",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
