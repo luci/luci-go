@@ -144,8 +144,11 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
 func isRecipientAllowed(c context.Context, recipient string, build *buildbucketpb.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
-	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
-		return true
+	validRecipientSuffixes := []string{"@chromium.org", "@grotations.appspotmail.com", "@google.com"}
+	for _, suffix := range validRecipientSuffixes {
+		if strings.HasSuffix(recipient, suffix) {
+			return true
+		}
 	}
 	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", recipient, build.Id)
 	return false
