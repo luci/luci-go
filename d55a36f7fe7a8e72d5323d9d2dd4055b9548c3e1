@@ -22,6 +22,30 @@
       },
       "revId": "d55a36f7fe7a8e72d5323d9d2dd4055b9548c3e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fa79e50_3239f686",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-28T00:37:13Z",
+      "side": 1,
+      "message": "yep! done.",
+      "parentUuid": "44847d99_e6a8be25",
+      "range": {
+        "startLine": 93,
+        "startChar": 37,
+        "endLine": 93,
+        "endChar": 65
+      },
+      "revId": "d55a36f7fe7a8e72d5323d9d2dd4055b9548c3e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
