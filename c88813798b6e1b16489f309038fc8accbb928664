@@ -39,6 +39,30 @@
       },
       "revId": "c88813798b6e1b16489f309038fc8accbb928664",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52cec041_c0bc9b7b",
+        "filename": "cipd/appengine/impl/model/metadata.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-28T20:12:12Z",
+      "side": 1,
+      "message": "It is \"storing\" changes :P",
+      "parentUuid": "56cd7906_3c18268f",
+      "range": {
+        "startLine": 236,
+        "startChar": 5,
+        "endLine": 236,
+        "endChar": 10
+      },
+      "revId": "c88813798b6e1b16489f309038fc8accbb928664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
