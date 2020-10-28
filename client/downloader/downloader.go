@@ -403,6 +403,13 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 
 		if d.options.Cache == nil {
 			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
+				now := time.Now()
+				defer func() {
+					d := time.Since(now)
+					mu.Lock()
+					Durations = append(Durations, d)
+					mu.Unlock()
+				}()
 				// no cache use case.
 				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 				if err != nil {
@@ -519,6 +526,9 @@ func (d *Downloader) loadOrAddToCache(hash isolated.HexDigest) (*bytes.Buffer, e
 	return &buf, nil
 }
 
+var mu sync.Mutex
+var Durations []time.Duration
+
 func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) {
 	hash := details.Digest
 
@@ -571,6 +581,13 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 
 			// This is to close |f| as early as possible.
 			func() {
+				now := time.Now()
+				defer func() {
+					d := time.Since(now)
+					mu.Lock()
+					Durations = append(Durations, d)
+					mu.Unlock()
+				}()
 				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 				if err != nil {
 					d.addError(tarType, string(hash)+":"+filename, err)

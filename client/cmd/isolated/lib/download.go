@@ -22,8 +22,10 @@ import (
 	"math"
 	"os"
 	"runtime/pprof"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/maruel/subcommands"
 
@@ -198,6 +200,23 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
 	}
+	ds := downloader.Durations
+	sort.Slice(ds, func(i, j int) bool {
+		return ds[i] < ds[j]
+	})
+	var dsum time.Duration
+	for _, d := range ds {
+		dsum += d
+	}
+	logger := logging.Get(ctx)
+	logger.Infof("min %s, p50 %s, p90 %s, p95 %s, max %s, avg %s",
+		ds[0], ds[len(ds)/2], ds[len(ds)*9/10], ds[len(ds)*19/20],
+		ds[len(ds)-1], dsum/time.Duration(len(ds)))
+
+	for i := 0; i < len(ds) && i < 100; i++ {
+		logger.Infof("%d-th slowest %s", i, ds[len(ds)-i-1])
+	}
+
 	if c.outputFiles != "" {
 		filesData := strings.Join(files, "\n")
 		if len(files) > 0 {
