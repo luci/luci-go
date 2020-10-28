@@ -16,6 +16,23 @@
       "message": "PTAL.\n\nwill land after https://crbug.com/1143121 is fixed.",
       "revId": "c0dc2199dd2c16f569acf3b7c17f1ca96a13891d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "672f50b0_5934921a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-28T23:26:41Z",
+      "side": 1,
+      "message": "Could you also update the following proto?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/step.proto;l\u003d66-75;bpv\u003d0;bpt\u003d0",
+      "revId": "c0dc2199dd2c16f569acf3b7c17f1ca96a13891d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
