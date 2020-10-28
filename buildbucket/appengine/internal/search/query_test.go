@@ -223,8 +223,6 @@ func TestMainFetchFlow(t *testing.T) {
 			_, err := query.Fetch(ctx)
 			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
 		})
-
-		// TODO(crbug/1090540): Add more tests after searchBuilds func completed.
 		Convey("Fetch via TagIndex flow", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:user",
@@ -300,6 +298,71 @@ func TestMainFetchFlow(t *testing.T) {
 				},
 			}
 			So(rsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("Fallback to fetchOnBuild flow", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:user",
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_READER,
+							},
+						},
+					},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: pb.Builder{Name: "builder"},
+				},
+			), ShouldBeNil)
+			So(datastore.Put(ctx, &model.TagIndex{
+				ID:         ":10:buildset:1",
+				Incomplete: true,
+				Entries:    nil,
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				BucketID:  "project/bucket",
+				BuilderID: "project/bucket/builder",
+				Tags:      []string{"buildset:1"},
+			}), ShouldBeNil)
+
+			query.Tags = strpair.ParseMap([]string{"buildset:1"})
+			actualRsp, err := query.Fetch(ctx)
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "1",
+							},
+						},
+					},
+				},
+			})
 		})
 	})
 }
