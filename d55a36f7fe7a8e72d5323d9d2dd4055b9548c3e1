@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "44847d99_e6a8be25",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-10-28T00:32:15Z",
+      "side": 1,
+      "message": "Then I guess we can remove this if check and always log as it will always be evaluated to true?",
+      "range": {
+        "startLine": 93,
+        "startChar": 37,
+        "endLine": 93,
+        "endChar": 65
+      },
+      "revId": "d55a36f7fe7a8e72d5323d9d2dd4055b9548c3e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
