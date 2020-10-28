@@ -56,7 +56,10 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		client.DialParams{
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
-		}, &client.PerRPCCreds{Creds: creds})
+		}, &client.PerRPCCreds{Creds: creds},
+		// Lower concurrency is important for better file write performance on Windows.
+		// http://b/171672371#comment6
+		client.CASConcurrency(8))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
