@@ -558,6 +558,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "252d8994_19ec238c",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T16:59:15Z",
+      "side": 1,
+      "message": "Yeah, those perfectly make sense. I will write a separate CL to move all them under appengine/rpc.\n\nI\u0027d like to keep the sequence number generation metric because it\u0027s just a copy of the python metric definition without business logic, and we will likely have to use the same metric def for backward-compatibility.\n\nI will move those under appengine/rpc, and rename all metric objects to be private vars.",
+      "parentUuid": "9b03688e_1cdc2884",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a48d8c2_19c2ac84",
