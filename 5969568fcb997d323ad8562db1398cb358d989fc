@@ -606,6 +606,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f865dc6a_e14a611b",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T17:04:08Z",
+      "side": 1,
+      "message": "acked. I will remove from this CL.",
+      "parentUuid": "0620922d_bcde00e9",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a48d8c2_19c2ac84",
