@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e36e8532_f8bc53c3",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T04:39:30Z",
+      "side": 1,
+      "message": "183 imports: https://source.chromium.org/search?q\u003dgoogle.golang.org%2Fprotobuf%2F\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2F",
+      "parentUuid": "322f80bf_5d3679d4",
+      "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "22a03686_5f5376ab",
