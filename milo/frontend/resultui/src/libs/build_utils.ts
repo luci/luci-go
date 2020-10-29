@@ -80,11 +80,11 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
 
 // getLogdogRawUrl generates raw link from a logdog:// url
 export function getLogdogRawUrl(logdogURL: string): string | null {
-  let match = /^(logdog:\/\/)([^\/]*)\/(.+)$/.exec(logdogURL);
+  const match = /^(logdog:\/\/)([^\/]*)\/(.+)$/.exec(logdogURL);
   if (!match) {
     return null;
   }
-  return `https://${match[2]}/logs/${match[3]}?format=raw`
+  return `https://${match[2]}/logs/${match[3]}?format=raw`;
 }
 
 // stepSucceededRecursive returns true if a step and its descendants succeeded.

@@ -51,14 +51,14 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <div id="load">
           Loading <milo-dot-spinner></milo-dot-spinner>
         </div>
-      `
+      `;
     }
     return html ``;
   }
 
   private renderBuildsetInfo() {
     if (this.buildState.buildPageData == null) {
-      return html``
+      return html``;
     }
     return html`
       <ul>
@@ -72,7 +72,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   private renderRelatedBuildsTable() {
     if (this.buildState.relatedBuildsData == null) {
-      return html``
+      return html``;
     }
     return html`
       <table id="related-builds-table">
