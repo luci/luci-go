@@ -582,6 +582,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0620922d_bcde00e9",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-29T17:02:12Z",
+      "side": 1,
+      "message": "The seq.gen. metric is intenral to buildbucket. We can change/break it at will.",
+      "parentUuid": "252d8994_19ec238c",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a48d8c2_19c2ac84",
