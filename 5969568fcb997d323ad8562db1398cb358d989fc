@@ -60,6 +60,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a14d033e_33f20e57",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Just in case the unit tests in other modules like to ensure that a certain metric is updated in a certain call path? Also, modules should be able to update metrics individually, if necessary.\n\nWDYT?",
+      "parentUuid": "4aa1fe8d_51bfae35",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "aaa2d5d7_f2488018",
         "filename": "buildbucket/appengine/internal/metrics/build.go",
         "patchSetId": 6
@@ -71,6 +89,30 @@
       "writtenOn": "2020-10-29T00:00:23Z",
       "side": 1,
       "message": "strictly speaking not needed for v2 BB, but since you\u0027ve added it already, how about sticking these 3 into separate struct BuildCountLegacy?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 37
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e807789_02a87c94",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Removed as Nodir suggested.",
+      "parentUuid": "aaa2d5d7_f2488018",
       "range": {
         "startLine": 52,
         "startChar": 0,
@@ -94,6 +136,30 @@
       "writtenOn": "2020-10-29T00:39:09Z",
       "side": 1,
       "message": "looks esoteric. Wouldn\u0027t \n\n  BuildCountCreated \u003d metrics.NewCounter(...)\n  BuildCountStarted \u003d metrics.NewCounter(...)\n\nbe simpler and less code and indentation?\n\nsame below\n\nbut also why is it public? seems like all access in other packages is done through BuildCreated(), BuildStarted(), etc",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9a4aa20_c30000fa",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Removed struct. Answered 2nd question in Andrii\u0027s comment.",
+      "parentUuid": "73737d44_c14ce8cf",
       "range": {
         "startLine": 48,
         "startChar": 1,
@@ -150,6 +216,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "476cbe01_4fd41b09",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61255e13_e29ae6c7",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 60
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f366b298_49e0382f",
@@ -167,6 +257,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eebb772d_2c38b050",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f366b298_49e0382f",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "007a848e_4dacb2bd",
@@ -180,6 +288,30 @@
       "writtenOn": "2020-10-29T00:39:09Z",
       "side": 1,
       "message": "userAgent",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 15
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "40721ab9_f7d9397c",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "007a848e_4dacb2bd",
       "range": {
         "startLine": 166,
         "startChar": 5,
@@ -213,6 +345,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "29fb1d16_f0051b3f",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca9bbf8d_99a42b6e",
+      "range": {
+        "startLine": 173,
+        "startChar": 46,
+        "endLine": 173,
+        "endChar": 55
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ffc31fd5_00bc1eda",
@@ -236,6 +392,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b730b7a7_1a095bfe",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "set to \"\"",
+      "parentUuid": "ffc31fd5_00bc1eda",
+      "range": {
+        "startLine": 178,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 41
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f84ca5e3_dc10bcfe",
@@ -249,6 +429,30 @@
       "writtenOn": "2020-10-29T00:39:09Z",
       "side": 1,
       "message": "if we don\u0027t plan to port v1 API to GoBB, then these won\u0027t be used.\ni recommend adding it in the CL when it is needed.",
+      "range": {
+        "startLine": 205,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 0
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c907544_08029566",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "f84ca5e3_dc10bcfe",
       "range": {
         "startLine": 205,
         "startChar": 0,
@@ -284,6 +488,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "dec252cd_946a6fac",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Can you elaborate more on the reasoning? With the same convention, shouldn\u0027t we also move the build metrics to the rpc module where the build events occur?",
+      "parentUuid": "8a085504_3174e18a",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4a48d8c2_19c2ac84",
         "filename": "buildbucket/appengine/internal/metrics/sequence_test.go",
         "patchSetId": 6
@@ -295,6 +523,30 @@
       "writtenOn": "2020-10-29T00:00:23Z",
       "side": 1,
       "message": "Metrics",
+      "range": {
+        "startLine": 28,
+        "startChar": 17,
+        "endLine": 28,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2831909_d8d8a9f1",
+        "filename": "buildbucket/appengine/internal/metrics/sequence_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a48d8c2_19c2ac84",
       "range": {
         "startLine": 28,
         "startChar": 17,
@@ -324,6 +576,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8c9c5daa_9d643188",
+        "filename": "buildbucket/appengine/internal/metrics/sequence_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "When I added this simple test for the search-tag metrics, I found a bug in tsmon and didn\u0027t include the metrics in this CL (find my first comment in this CL). I think such a simple test can still give us a value. \n\nI didn\u0027t add SequenceNumGenerated(). Build*() functions update more than one metric(s) conditionally and have tiny business logic. However, for metrics with a small set of metric fields, I prefer not to have an additional wrapper to update the metrics, because metric.Add()/Set() functions are simple and intuitive enough.\n\nWDYT?",
+      "parentUuid": "7b467892_0d913769",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ddcd6e08_d2b4b0ff",
         "filename": "buildbucket/appengine/model/legacy.go",
         "patchSetId": 6
@@ -335,6 +605,30 @@
       "writtenOn": "2020-10-29T00:39:09Z",
       "side": 1,
       "message": "unnecessary? why not `var LegacyStatus_name \u003d `\n\nsame below",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 5
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d98e50a_05543f2a",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddcd6e08_d2b4b0ff",
       "range": {
         "startLine": 34,
         "startChar": 4,
@@ -358,6 +652,30 @@
       "writtenOn": "2020-10-29T00:39:09Z",
       "side": 1,
       "message": "more efficient:\n\n  LegacyStatus_name \u003d []string {\n    0: ...\n    Scheduled: ...\n }\n\nsame below",
+      "range": {
+        "startLine": 35,
+        "startChar": 20,
+        "endLine": 35,
+        "endChar": 45
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49a4430f_40a3d5a6",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-10-29T03:23:54Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "a48ab55b_5834c7b3",
       "range": {
         "startLine": 35,
         "startChar": 20,
