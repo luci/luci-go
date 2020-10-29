@@ -107,6 +107,157 @@ func TestScheduleBuild(t *testing.T) {
 			So(ret, ShouldBeNil)
 		})
 
+		Convey("critical", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical: pb.Trinary_YES,
+				},
+			}), ShouldBeNil)
+
+			Convey("merge", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Critical:        pb.Trinary_NO,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Critical:        pb.Trinary_NO,
+				})
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical:   pb.Trinary_NO,
+					Properties: &structpb.Struct{},
+				})
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				})
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical:   pb.Trinary_YES,
+					Properties: &structpb.Struct{},
+				})
+			})
+		})
+
+		Convey("exe", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Exe: &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
+					},
+				},
+			}), ShouldBeNil)
+
+			Convey("merge", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Exe:             &pb.Executable{},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Exe:             &pb.Executable{},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Exe:        &pb.Executable{},
+						Properties: &structpb.Struct{},
+					})
+				})
+
+				Convey("non-empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Exe: &pb.Executable{
+							CipdPackage: "package",
+							CipdVersion: "new",
+						},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Exe: &pb.Executable{
+							CipdPackage: "package",
+							CipdVersion: "new",
+						},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Exe: &pb.Executable{
+							CipdPackage: "package",
+							CipdVersion: "new",
+						},
+						Properties: &structpb.Struct{},
+					})
+				})
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				})
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Exe: &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
+					},
+					Properties: &structpb.Struct{},
+				})
+			})
+		})
+
 		Convey("gerrit changes", func() {
 			So(datastore.Put(ctx, &model.Build{
 				Proto: pb.Build{
@@ -128,29 +279,106 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
-			req := &pb.ScheduleBuildRequest{
-				TemplateBuildId: 1,
-			}
-			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
-				TemplateBuildId: 1,
+
+			Convey("merge", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						GerritChanges:   []*pb.GerritChange{},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						GerritChanges:   []*pb.GerritChange{},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						GerritChanges: []*pb.GerritChange{
+							{
+								Host:     "example.com",
+								Project:  "project",
+								Change:   1,
+								Patchset: 1,
+							},
+						},
+						Properties: &structpb.Struct{},
+					})
+				})
+
+				Convey("non-empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						GerritChanges: []*pb.GerritChange{
+							{
+								Host:     "example.com",
+								Project:  "project",
+								Change:   1,
+								Patchset: 2,
+							},
+						},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						GerritChanges: []*pb.GerritChange{
+							{
+								Host:     "example.com",
+								Project:  "project",
+								Change:   1,
+								Patchset: 2,
+							},
+						},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						GerritChanges: []*pb.GerritChange{
+							{
+								Host:     "example.com",
+								Project:  "project",
+								Change:   1,
+								Patchset: 2,
+							},
+						},
+						Properties: &structpb.Struct{},
+					})
+				})
 			})
-			So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				GerritChanges: []*pb.GerritChange{
-					{
-						Host:     "example.com",
-						Project:  "project",
-						Change:   1,
-						Patchset: 1,
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				})
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
-				},
-				Properties: &structpb.Struct{},
+					GerritChanges: []*pb.GerritChange{
+						{
+							Host:     "example.com",
+							Project:  "project",
+							Change:   1,
+							Patchset: 1,
+						},
+					},
+					Properties: &structpb.Struct{},
+				})
 			})
 		})
 
@@ -212,21 +440,69 @@ func TestScheduleBuild(t *testing.T) {
 					ID:    1,
 					Build: datastore.MakeKey(ctx, "Build", 1),
 				}), ShouldBeNil)
-				req := &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
-				}
-				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
+
+				Convey("merge", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
+								},
+							},
+						},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
+								},
+							},
+						},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
+								},
+							},
+						},
+					})
 				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Properties: &structpb.Struct{},
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Properties: &structpb.Struct{},
+					})
 				})
 			})
 
@@ -246,29 +522,100 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
-				req := &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
-				}
-				ret, err := scheduleRequestFromTemplate(ctx, req)
-				So(err, ShouldBeNil)
-				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
+
+				Convey("merge", func() {
+					Convey("empty", func() {
+						req := &pb.ScheduleBuildRequest{
+							TemplateBuildId: 1,
+							Properties:      &structpb.Struct{},
+						}
+						ret, err := scheduleRequestFromTemplate(ctx, req)
+						So(err, ShouldBeNil)
+						So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+							TemplateBuildId: 1,
+							Properties:      &structpb.Struct{},
+						})
+						So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Properties: &structpb.Struct{},
+						})
+					})
+
+					Convey("non-empty", func() {
+						req := &pb.ScheduleBuildRequest{
+							TemplateBuildId: 1,
+							Properties: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"other": {
+										Kind: &structpb.Value_StringValue{
+											StringValue: "other value",
+										},
+									},
+								},
+							},
+						}
+						ret, err := scheduleRequestFromTemplate(ctx, req)
+						So(err, ShouldBeNil)
+						So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+							TemplateBuildId: 1,
+							Properties: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"other": {
+										Kind: &structpb.Value_StringValue{
+											StringValue: "other value",
+										},
+									},
+								},
+							},
+						})
+						So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Properties: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"other": {
+										Kind: &structpb.Value_StringValue{
+											StringValue: "other value",
+										},
+									},
+								},
+							},
+						})
+					})
 				})
-				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Properties: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"input": {
-								Kind: &structpb.Value_StringValue{
-									StringValue: "input value",
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
 								},
 							},
 						},
-					},
+					})
 				})
 			})
 		})
@@ -287,27 +634,96 @@ func TestScheduleBuild(t *testing.T) {
 					"key:value",
 				},
 			}), ShouldBeNil)
-			req := &pb.ScheduleBuildRequest{
-				TemplateBuildId: 1,
-			}
-			ret, err := scheduleRequestFromTemplate(ctx, req)
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
-				TemplateBuildId: 1,
+
+			Convey("merge", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Tags:            []*pb.StringPair{},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Tags:            []*pb.StringPair{},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Properties: &structpb.Struct{},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "key",
+								Value: "value",
+							},
+						},
+					})
+				})
+
+				Convey("non-empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "other",
+								Value: "other",
+							},
+						},
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "other",
+								Value: "other",
+							},
+						},
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Properties: &structpb.Struct{},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "other",
+								Value: "other",
+							},
+						},
+					})
+				})
 			})
-			So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				Properties: &structpb.Struct{},
-				Tags: []*pb.StringPair{
-					{
-						Key:   "key",
-						Value: "value",
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				})
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
-				},
+					Properties: &structpb.Struct{},
+					Tags: []*pb.StringPair{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				})
 			})
 		})
 
