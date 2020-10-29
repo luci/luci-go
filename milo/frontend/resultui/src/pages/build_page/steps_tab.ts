@@ -26,6 +26,7 @@ import '../../components/lazy_list';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeUserConfigs, UserConfigs } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { stepSucceededRecursive } from '../../libs/build_utils';
 import { BuildStatus } from '../../services/buildbucket';
 
 export class StepsTabElement extends MobxLitElement {
@@ -106,8 +107,8 @@ export class StepsTabElement extends MobxLitElement {
       <milo-lazy-list id="main" .growth=${300}>
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status !== BuildStatus.Success || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
-          .expanded=${step.status !== BuildStatus.Success}
+          style=${styleMap({'display': !stepSucceededRecursive(step) || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
+          .expanded=${!stepSucceededRecursive(step)}
           .number=${i + 1}
           .step=${step}
           .prerender=${true}
