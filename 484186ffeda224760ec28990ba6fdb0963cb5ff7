@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df7f87c9_c7dc3e1f",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-29T04:29:22Z",
+      "side": 1,
+      "message": "Keeping it commented out because \"it may be used later\" doesn\u0027t really make sense since you can retrieve any deleted code via git history. That said, I don\u0027t really mind.",
+      "revId": "484186ffeda224760ec28990ba6fdb0963cb5ff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
