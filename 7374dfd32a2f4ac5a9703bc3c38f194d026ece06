@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cd2857c_8ee302ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-29T05:49:48Z",
+      "side": 1,
+      "message": "LGTM once there\u0027s a unit test for the function in build_utils. Adding CR+1 in advance since I\u0027m out tomorrow.",
+      "revId": "7374dfd32a2f4ac5a9703bc3c38f194d026ece06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9fa4c7e8_d939e2bb",
