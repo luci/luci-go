@@ -142,7 +142,7 @@ export class TestResultsTabElement extends MobxLitElement {
         >Don't show again</span>
       </div>
       <hr class="divider">
-    `: html ``
+    `: html ``;
   }
 
   private renderVariants(variants: ReadonlyVariant[]) {
