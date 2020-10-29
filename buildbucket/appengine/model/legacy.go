@@ -97,13 +97,11 @@ const (
 // LegacyCancelationReason is the reason for a canceled legacy build.
 type LegacyCancelationReason int
 
-var (
-	LegacyCancelationReason_name = map[LegacyCancelationReason]string{
-		0:                  "UNSET",
-		ExplicitlyCanceled: "CANCELED_EXPLICITLY",
-		TimeoutCanceled:    "TIMEOUT",
-	}
-)
+var LegacyCancelationReason_name = []string{
+	0:                  "UNSET",
+	ExplicitlyCanceled: "CANCELED_EXPLICITLY",
+	TimeoutCanceled:    "TIMEOUT",
+}
 
 func (r LegacyCancelationReason) String() string {
 	return LegacyCancelationReason_name[r]
