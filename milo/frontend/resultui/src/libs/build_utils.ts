@@ -14,7 +14,7 @@
 
 import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
-import { Link } from '../services/build_page';
+import { Link, StepExt } from '../services/build_page';
 
 export function getURLForBuild(build: Build): string {
   return router.urlForName(
@@ -85,4 +85,17 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
     return null;
   }
   return `https://${match[2]}/logs/${match[3]}?format=raw`
+}
+
+// isStepInteresting returns true if a step is interesting,
+// which means step did not succeed or any descendant steps did not succeed.
+// UI wise, we should expand those steps by default.
+export function isStepInteresting(step: StepExt):boolean {
+  if (step.status != BuildStatus.Success) {
+    return true;
+  }
+  if (!step.children) {
+    return false;
+  }
+  return step.children.map(s => isStepInteresting(s)).reduce((a, s) => a || s, false);
 }

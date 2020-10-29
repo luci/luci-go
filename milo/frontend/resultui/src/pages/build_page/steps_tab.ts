@@ -27,6 +27,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeUserConfigs, UserConfigs } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { BuildStatus } from '../../services/buildbucket';
+import { isStepInteresting } from '../../libs/build_utils';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -106,8 +107,8 @@ export class StepsTabElement extends MobxLitElement {
       <milo-lazy-list id="main" .growth=${300}>
         ${this.buildState.buildPageData?.steps?.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': step.status !== BuildStatus.Success || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
-          .expanded=${step.status !== BuildStatus.Success}
+          style=${styleMap({'display': isStepInteresting(step) || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
+          .expanded=${isStepInteresting(step)}
           .number=${i + 1}
           .step=${step}
           .prerender=${true}

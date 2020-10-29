@@ -28,6 +28,7 @@ import { displayDuration } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
+import { isStepInteresting } from '../libs/build_utils';
 import './expandable_entry';
 import { OnEnterList } from './lazy_list';
 
@@ -118,7 +119,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       ${this.step.children?.map((child, i) => html`
       <milo-build-step-entry
         class="list-entry"
-        .expanded=${child.status !== BuildStatus.Success}
+        .expanded=${isStepInteresting(child)}
         .number=${i + 1}
         .step=${child}
       ></milo-build-step-entry>
