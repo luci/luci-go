@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "322f80bf_5d3679d4",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-29T04:26:19Z",
+      "side": 1,
+      "message": "This is not being used anywhere else in luci-go, and switching to it here says the .vendor directory is empty. Maybe we don\u0027t have it at the right revision in our dependencies in infra/infra.",
+      "parentUuid": "12640d23_480c9e5f",
+      "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "22a03686_5f5376ab",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-10-28T18:15:34Z",
       "side": 1,
       "message": "should this be req.Properties !\u003d nil instead? there is a difference between sending an empty struct and not sending it",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 39
+      },
+      "revId": "07f61a71a1efb94db581f6305e82eaa8fbc10ab6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6759b536_3bee8ed4",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-10-29T04:26:19Z",
+      "side": 1,
+      "message": "I thought Python did something different but it seems to do what you\u0027re saying.",
+      "parentUuid": "22a03686_5f5376ab",
       "range": {
         "startLine": 122,
         "startChar": 4,
