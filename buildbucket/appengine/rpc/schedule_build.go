@@ -18,6 +18,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -112,7 +114,22 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 		Tags:          b.Tags,
 	}
 
-	// TODO(crbug/1042991): Apply overrides.
+	// proto.Merge concatenates repeated fields. Here the desired behavior is replacement,
+	// so clear slices from the return value before merging, if specified in the request.
+	if req.Exe != nil {
+		ret.Exe = nil
+	}
+	if len(req.GerritChanges) > 0 {
+		ret.GerritChanges = nil
+	}
+	if req.Properties != nil {
+		ret.Properties = nil
+	}
+	if len(req.Tags) > 0 {
+		ret.Tags = nil
+	}
+	proto.Merge(ret, req)
+	ret.TemplateBuildId = 0
 	return ret, nil
 }
 
