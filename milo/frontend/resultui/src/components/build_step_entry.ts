@@ -22,8 +22,8 @@ import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
 import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
+import { getLogdogRawUrl, stepSucceededRecursive } from '../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
-import { getLogdogRawUrl } from '../libs/build_utils';
 import { displayDuration } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { BuildStatus } from '../services/buildbucket';
@@ -118,7 +118,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       ${this.step.children?.map((child, i) => html`
       <milo-build-step-entry
         class="list-entry"
-        .expanded=${child.status !== BuildStatus.Success}
+        .expanded=${!stepSucceededRecursive(child)}
         .number=${i + 1}
         .step=${child}
       ></milo-build-step-entry>

@@ -14,7 +14,7 @@
 
 import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
-import { Link } from '../services/build_page';
+import { Link, StepExt } from '../services/build_page';
 
 export function getURLForBuild(build: Build): string {
   return router.urlForName(
@@ -85,4 +85,16 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
     return null;
   }
   return `https://${match[2]}/logs/${match[3]}?format=raw`
+}
+
+// stepSucceededRecursive returns true if a step and its descendants succeeded.
+// UI wise, we should expand those steps by default.
+export function stepSucceededRecursive(step: StepExt):boolean {
+  if (step.status !== BuildStatus.Success) {
+    return false;
+  }
+  if (!step.children) {
+    return true;
+  }
+  return step.children.map(s => stepSucceededRecursive(s)).reduce((a, s) => a && s, true);
 }
