@@ -642,6 +642,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d58c8ceb_885da029",
+        "filename": "buildbucket/appengine/internal/metrics/sequence_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-29T12:37:52Z",
+      "side": 1,
+      "message": "Testing that written code works is worthwhile, so is fixing bug in tsmon package, and so is adding regression test to tsmon, but not here.\n\nwrt SequenceNumGenerated: makes sense + nodir@\u0027s response is convincing to me.",
+      "parentUuid": "8c9c5daa_9d643188",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ddcd6e08_d2b4b0ff",
         "filename": "buildbucket/appengine/model/legacy.go",
         "patchSetId": 6
