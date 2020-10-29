@@ -16,6 +16,29 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/8285/steps\n\nNote: The step stop_goma was hard-coded to be a failure",
       "revId": "7a50d8e44126ccb96351e94a4f7723e8ca37560e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9490834_f50cd4d8",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-10-29T04:45:01Z",
+      "side": 1,
+      "message": "suggestion for clarity: flip the boolean logic here and rename this to something like stepSucceededRecursive, stepAndChildrenSucceeded, or similar?\n\nThe calling code assumes that\u0027s what this function means anyway, so creating a new concept of being \"interesting\" seems potentially confusing. Flipping the boolean logic just lets you avoid the using the awkward term \"non-succeeded\".",
+      "range": {
+        "startLine": 93,
+        "startChar": 16,
+        "endLine": 93,
+        "endChar": 33
+      },
+      "revId": "7a50d8e44126ccb96351e94a4f7723e8ca37560e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
