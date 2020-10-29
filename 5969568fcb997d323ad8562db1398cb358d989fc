@@ -536,6 +536,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9b03688e_1cdc2884",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T04:56:48Z",
+      "side": 1,
+      "message": "in general, this approach doesn\u0027t scale well with the number of metrics, and will accumulate ad-hoc metrics that are used in a single place (e.g. sequence). In general, I have the same concern with \"model\" package which keeps all kinds of entities.\n\nSuppose I create a new package with a very specific purpose, and I need a metric. For consistency, I have to create a metric in metrics package, make it public (available to all other packages) and import it. There are at least two weirdnesses:\n1) I have to import metrics package, in order to import something that is very specific to my package. Why isn\u0027t it in my package to begin with? It is kind of private actually.\n2) If I am a third unrelated package and I look at \"metrics\" package, I see a conglomeration of symbols that do not have much to do with each other. In particular.",
+      "parentUuid": "dec252cd_946a6fac",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4a48d8c2_19c2ac84",
         "filename": "buildbucket/appengine/internal/metrics/sequence_test.go",
         "patchSetId": 6
