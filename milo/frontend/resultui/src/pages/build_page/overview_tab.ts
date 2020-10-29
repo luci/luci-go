@@ -26,7 +26,7 @@ import '../../components/build_step_entry';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
-import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
+import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask, stepSucceededRecursive } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayTimeDiff, displayTimeDiffOpt, displayTimestamp, displayTimestampOpt } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
@@ -196,7 +196,7 @@ export class OverviewTabElement extends MobxLitElement {
     const bpd = this.buildState.buildPageData!;
     const nonSucceededSteps = (bpd.steps || [])
       .map((step, i) => [step, i + 1] as [StepExt, number])
-      .filter(([step, _stepNum]) => step.status !== BuildStatus.Success);
+      .filter(([step, _stepNum]) => !stepSucceededRecursive(step));
 
     return html`
       <div>
