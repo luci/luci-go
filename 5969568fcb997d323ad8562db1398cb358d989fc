@@ -81,6 +81,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "73737d44_c14ce8cf",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "looks esoteric. Wouldn\u0027t \n\n  BuildCountCreated \u003d metrics.NewCounter(...)\n  BuildCountStarted \u003d metrics.NewCounter(...)\n\nbe simpler and less code and indentation?\n\nsame below\n\nbut also why is it public? seems like all access in other packages is done through BuildCreated(), BuildStarted(), etc",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "8f9b48a1_7c5dc12a",
@@ -99,6 +122,161 @@
         "startChar": 3,
         "endLine": 69,
         "endChar": 74
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61255e13_e29ae6c7",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "copied 3 times. and more generally I think there is a pattern. Consider\n\n  func newBuildDurationMetric(name, description string, extraFields ...string) metric.CumulativeDistribution",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 60
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f366b298_49e0382f",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "default: panic(...) ?",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "007a848e_4dacb2bd",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "userAgent",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 15
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca9bbf8d_99a42b6e",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "b.BuilderID string is \"\u003cproject\u003e/\u003cbucket\u003e/\u003cbuilder\u003e\". We need just \u003cbuilder\u003e\n\nsimilar concern with BucketID\n\nsame below",
+      "range": {
+        "startLine": 173,
+        "startChar": 46,
+        "endLine": 173,
+        "endChar": 55
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffc31fd5_00bc1eda",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "aren\u0027t these \"\" given that the build just started?",
+      "range": {
+        "startLine": 178,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 41
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f84ca5e3_dc10bcfe",
+        "filename": "buildbucket/appengine/internal/metrics/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "if we don\u0027t plan to port v1 API to GoBB, then these won\u0027t be used.\ni recommend adding it in the CL when it is needed.",
+      "range": {
+        "startLine": 205,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 0
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a085504_3174e18a",
+        "filename": "buildbucket/appengine/internal/metrics/sequence.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "to me, this is better to be in the package specific to sequence number generation, rather than generic \"metrics\" package\n\nalso consider adding it in the CL where it is used.",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 18
       },
       "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -140,6 +318,52 @@
       "writtenOn": "2020-10-29T00:00:23Z",
       "side": 1,
       "message": "IMO, this test is actually harmful: it gives no value and actually hurts if we decide to change metric in the future.\nBetter test that SeqNumGenDuration is actually correctly mutated when build is created.\n\nFinally, WDYT adding \"SequenceNumGenerated\" method to be consistent with BuildCreated,BuildStarted,etc? Then, it\u0027d make sense to test it.",
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddcd6e08_d2b4b0ff",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "unnecessary? why not `var LegacyStatus_name \u003d `\n\nsame below",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 5
+      },
+      "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a48ab55b_5834c7b3",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-10-29T00:39:09Z",
+      "side": 1,
+      "message": "more efficient:\n\n  LegacyStatus_name \u003d []string {\n    0: ...\n    Scheduled: ...\n }\n\nsame below",
+      "range": {
+        "startLine": 35,
+        "startChar": 20,
+        "endLine": 35,
+        "endChar": 45
+      },
       "revId": "5969568fcb997d323ad8562db1398cb358d989fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
