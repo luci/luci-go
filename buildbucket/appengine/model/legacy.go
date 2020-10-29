@@ -31,8 +31,30 @@ const (
 	Completed
 )
 
+var LegacyStatus_name = []string{
+	0:         "UNSET",
+	Scheduled: "SCHEDULED",
+	Started:   "STARTED",
+	Completed: "COMPLETED",
+}
+
+func (r LegacyStatus) String() string {
+	return LegacyStatus_name[r]
+}
+
 // LegacyResult is the result of a completed legacy build.
 type LegacyResult int
+
+var LegacyResult_name = []string{
+	0:        "UNSET",
+	Success:  "SUCCESS",
+	Failure:  "FAILURE",
+	Canceled: "CANCELED",
+}
+
+func (r LegacyResult) String() string {
+	return LegacyResult_name[r]
+}
 
 const (
 	_ LegacyResult = iota
@@ -48,6 +70,18 @@ const (
 // LegacyFailureReason is the reason for a legacy build failure.
 type LegacyFailureReason int
 
+var LegacyFailureReason_name = []string{
+	0:                      "UNSET",
+	BuildFailure:           "BUILD_FAILURE",
+	BuildbucketFailure:     "BUILDBUCKET_FAILURE",
+	InfraFailure:           "INFRA_FAILURE",
+	InvalidBuildDefinition: "INVALID_BUILD_DEFINITION",
+}
+
+func (r LegacyFailureReason) String() string {
+	return LegacyFailureReason_name[r]
+}
+
 const (
 	_ LegacyFailureReason = iota
 	// BuildFailure means the build itself failed.
@@ -62,6 +96,18 @@ const (
 
 // LegacyCancelationReason is the reason for a canceled legacy build.
 type LegacyCancelationReason int
+
+var (
+	LegacyCancelationReason_name = map[LegacyCancelationReason]string{
+		0:                  "UNSET",
+		ExplicitlyCanceled: "CANCELED_EXPLICITLY",
+		TimeoutCanceled:    "TIMEOUT",
+	}
+)
+
+func (r LegacyCancelationReason) String() string {
+	return LegacyCancelationReason_name[r]
+}
 
 const (
 	_ LegacyCancelationReason = iota
