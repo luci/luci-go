@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f04a938d_83d0aac7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-30T13:31:11Z",
+      "side": 1,
+      "message": "nah, actually, the orignal was reasonable, but description was wrong.\n\nhere is a reland: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2510289",
+      "revId": "045aa5a378fe5fe8d8253acda6d30a90c9c89ed2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
