@@ -198,19 +198,19 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 			break // no pending tasks and no reminders in the datastore, we are done
 		}
 
+		// Blow up if it takes too much time to converge. Note that this is fake
+		// time. Also the limit is much-much higher than expected mean time to
+		// make sure this test doesn't flake.
+		if clock.Now(ctx).Sub(epoch) >= 360*time.Minute { // 360 Sweeps.
+			panic("Looks like the test is stuck")
+		}
+
 		// Submit a bunch of sweep tasks and wait until they (and all their
 		// follow ups) are done.
 		withBrokenDS(func() {
 			disp.Sweep(ctx)
 			sched.Run(ctx, tqtesting.StopWhenDrained())
 		})
-
-		// Blow up if it takes too much time to converge. Note that this is fake
-		// time. Also the limit is much-much higher than expected mean time to
-		// make sure this test doesn't flake.
-		if clock.Now(ctx).Sub(epoch) > 5*time.Hour {
-			panic("Looks like the test is stuck")
-		}
 
 		// Launch the next sweep a bit later. This is the only ticking clock in
 		// the simulation. It is needed because we use "real" time when checking
