@@ -1,0 +1,129 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "968533cd_1a63a0d5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "Optionally tag this as Bug: 1123642 since other related CLs are tagged with this bug.",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "317d3620_595fe7ec",
+        "filename": "cv/internal/gerrit/gobmap/internal/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "Now we have nested internal directories; if I understand correctly, this means that only package gobmap/ can import from this package, other packages inside of cv/internal/ will still not be able to import?\n\nWould it also be possible/reasonable to keep this inside package \"gobmap\", but with the lowercase name gobWatchMap so it\u0027s private to the package?",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 16
+      },
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5a8dbda_4c04df80",
+        "filename": "cv/internal/gerrit/gobmap/internal/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "Is there a conflict if the field name is the same as a type name in the current package namespace? Even if not, would it be clearer to call this something else? Since it\u0027s internal and the type name is there, even a very short name like Map would also be OK IMO.",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2106bcf_c30d9df7",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "Nit: Add a little bit of documentation, e.g.\n\nRefSpecGroupMap is used to map git refs to config group names.\n\nA ref is mapped to the first group in `groups` for which any `include` pattern matches, and no `exclude` pattern matches.",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0175548a_c307833d",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "If you add a comment: this is a config group name.",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43b0a2b5_a41c8244",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "You could put TODO(qyearsley) or TODO(bugnumber).",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c78f79fd_1443e72c",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T18:12:00Z",
+      "side": 1,
+      "message": "If you add a comment: These are regular expressions, e.g. \"refs/heads/.+\"",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
