@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bef3af52_ed14949d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-30T19:13:28Z",
+      "side": 1,
+      "message": "There\u0027s one issue with compressed fields. Imagine you want to load an entity, update its (non-proto) field and store it back. It will uselessly decompress/compress back proto fields burning CPU. Python doesn\u0027t have this problem, since it decompresses on a field access (not when loading). Not sure how to avoid that. If go had generics, we could have `field *Compressed[Message]`, alas...\n\nSo I feel \"compressed\" is a foot gun.\n\n(Haven\u0027t looked at the CL yet).",
+      "revId": "7051a998303473d89dc46e8899350082d58d11ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
