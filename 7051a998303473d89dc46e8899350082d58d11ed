@@ -52,6 +52,24 @@
       "parentUuid": "5d35ba91_f984c0b8",
       "revId": "7051a998303473d89dc46e8899350082d58d11ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "481a4fab_7b751f3d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-30T23:41:58Z",
+      "side": 1,
+      "message": "Done:\n * default \u003d nocompress\n * compress \u003d fastest speed\n\n\u003e Another option is to keep small-ish fields (e.g. \u003c64Kb) uncompressed and switch to compression only when they grow large.\n\nI\u0027m leaving it off for now, but it\u0027s certainly feasible in the future.\nIf you insist, I can send 2nd CL, as this one is already largish.",
+      "parentUuid": "8b282261_4a15478a",
+      "revId": "7051a998303473d89dc46e8899350082d58d11ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
