@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "186b40e4_9b7d1520",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-30T15:54:49Z",
+      "side": 1,
+      "message": "PTAL, only 300 functional lines.\nI have no idea what GetMeta and SetMeta are for, but I supported it since it was easy.",
+      "revId": "a1f6148a6fcfded09ffdcc094694b4f640d29808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
