@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e96de70_aaed989b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-10-30T13:40:01Z",
+      "side": 1,
+      "message": "Do you mean you saw the failure without this CL?",
+      "revId": "8358494b20a6b91aa5fc0c8e3e95c1e8bec464e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
