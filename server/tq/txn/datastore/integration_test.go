@@ -208,7 +208,7 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 		// Blow up if it takes too much time to converge. Note that this is fake
 		// time. Also the limit is much-much higher than expected mean time to
 		// make sure this test doesn't flake.
-		if clock.Now(ctx).Sub(epoch) > 10*time.Hour {
+		if clock.Now(ctx).Sub(epoch) > 5*time.Hour {
 			panic("Looks like the test is stuck")
 		}
 
