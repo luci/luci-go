@@ -20,23 +20,43 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
-func TestGobMap(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	t.Parallel()
 
 	Convey("Update", t, func() {
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 
 		Convey("not implemented", func() {
+			So(datastore.Put(ctx, &internal.GobWatchMap{
+				ID:      "tbd",
+				Project: "test",
+				RefSpecGroupMap: &internal.RefSpecGroupMap{
+					Groups: []*internal.RefSpecGroupMap_Group{
+						{Name: "abc"},
+					},
+				},
+			}), ShouldBeNil)
 			So(
 				Update(ctx, "project-foo"),
 				ShouldErrLike, "not implemented")
+
+			i := internal.GobWatchMap{ID: "tbd"}
+			So(datastore.Get(ctx, &i), ShouldBeNil)
+			So(len(i.RefSpecGroupMap.GetGroups()), ShouldEqual, 1)
 		})
 	})
+}
+
+func TestLookup(t *testing.T) {
+	t.Parallel()
 
 	Convey("Lookup", t, func() {
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 
 		Convey("not implemented", func() {
 			ids, err := Lookup(
