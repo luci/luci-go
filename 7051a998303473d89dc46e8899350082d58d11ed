@@ -16,6 +16,24 @@
       "message": "There\u0027s one issue with compressed fields. Imagine you want to load an entity, update its (non-proto) field and store it back. It will uselessly decompress/compress back proto fields burning CPU. Python doesn\u0027t have this problem, since it decompresses on a field access (not when loading). Not sure how to avoid that. If go had generics, we could have `field *Compressed[Message]`, alas...\n\nSo I feel \"compressed\" is a foot gun.\n\n(Haven\u0027t looked at the CL yet).",
       "revId": "7051a998303473d89dc46e8899350082d58d11ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d35ba91_f984c0b8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-10-30T19:45:04Z",
+      "side": 1,
+      "message": "TBH, after I saw how this ORM works, I\u0027m utterly horrified at wasted CPU cycles. As you may know, I\u0027m a big fan of https://capnproto.org/ by Kenton Varda (protobuf2 designer/maintainer). But I digress.\n\nWhat you say also applies to non-compressed fields. We already marshal/unmarshal protos via proto-gae generator regardless of the need. So, I think it won\u0027t make things much worse as things are pretty bad already.\n\nHowever, you made me think that perhaps default should be no compression, but can be opted in for. WDYT?",
+      "parentUuid": "bef3af52_ed14949d",
+      "revId": "7051a998303473d89dc46e8899350082d58d11ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
