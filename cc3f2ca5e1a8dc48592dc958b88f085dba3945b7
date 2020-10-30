@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83333548_7ed7c122",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-10-30T17:57:34Z",
+      "side": 1,
+      "message": "LGTM to submit (along with the one above on the stack) once your CL adding support to the datastore library is committed",
+      "revId": "cc3f2ca5e1a8dc48592dc958b88f085dba3945b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
