@@ -34,6 +34,24 @@
       "parentUuid": "bef3af52_ed14949d",
       "revId": "7051a998303473d89dc46e8899350082d58d11ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b282261_4a15478a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-10-30T19:50:55Z",
+      "side": 1,
+      "message": "\u003e TBH, after I saw how this ORM works, I\u0027m utterly horrified at wasted CPU cycles. As you may know, I\u0027m a big fan of https://capnproto.org/ by Kenton Varda (protobuf2 designer/maintainer). But I digress.\n\u003e \n\u003e What you say also applies to non-compressed fields. We already marshal/unmarshal protos via proto-gae generator regardless of the need. So, I think it won\u0027t make things much worse as things are pretty bad already.\n\nWell, zlib is notably more CPU intensive compare to standard marshalling.\n\n\u003e \n\u003e However, you made me think that perhaps default should be no compression, but can be opted in for. WDYT?\n\nDefinitely. Also maybe use fast compression speed, it still usually compresses protos good enough. Another option is to keep small-ish fields (e.g. \u003c64Kb) uncompressed and switch to compression only when they grow large.",
+      "parentUuid": "5d35ba91_f984c0b8",
+      "revId": "7051a998303473d89dc46e8899350082d58d11ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
