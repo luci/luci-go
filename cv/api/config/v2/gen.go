@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:generate cproto
-//go:generate proto-gae -type SubmitOptions -type ConfigGroup
 
 // Package config contains the CQ config schema.
 package config
