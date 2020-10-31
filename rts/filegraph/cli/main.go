@@ -18,12 +18,18 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
+
+	"go.chromium.org/luci/rts/filegraph"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 var logCfg = gologger.LoggerConfig{
@@ -60,4 +66,46 @@ func Main() {
 	}
 
 	os.Exit(subcommands.Run(app, fixflagpos.FixSubcommands(os.Args[1:])))
+}
+
+// filesToPaths converts file paths to graph node paths.
+// If the files belong to different git repositories, returns an error.
+func filesToPaths(filePaths ...string) (repoDir string, paths []filegraph.Name, err error) {
+	if repoDir, err = ensureSameRepo(filePaths...); err != nil {
+		return
+	}
+
+	prefix := filepath.ToSlash(filepath.Clean(repoDir))
+
+	paths = make([]filegraph.Name, len(filePaths))
+	for i, f := range filePaths {
+		if f, err = filepath.Abs(f); err != nil {
+			return
+		}
+		f = filepath.Clean(f)
+		f = filepath.ToSlash(f)
+		rel := strings.TrimPrefix(f, prefix)
+		rel = strings.Trim(rel, "/")
+		paths[i] = filegraph.ParseName(rel)
+	}
+	return
+}
+
+// ensureSameRepo ensures that all files belong to the same git repository
+// and returns an absolute path to the .git directory.
+func ensureSameRepo(files ...string) (repoDir string, err error) {
+	if len(files) == 0 {
+		return "", errors.New("no files")
+	}
+	for _, f := range files {
+		switch rd, err := git.RepoDir(f); {
+		case err != nil:
+			return "", err
+		case repoDir == "":
+			repoDir = rd
+		case repoDir != rd:
+			return "", errors.Reason("%q and %q reside in different git repositories", files[0], f).Err()
+		}
+	}
+	return repoDir, nil
 }

@@ -15,9 +15,16 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/rts/filegraph"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 var cmdQuery = &subcommands.Command{
@@ -36,14 +43,47 @@ var cmdQuery = &subcommands.Command{
 	`),
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
+		r.Flags.BoolVar(&r.printDirs, "print-dirs", false, "print directories too")
 		return r
 	},
 }
 
 type queryRun struct {
 	baseCommandRun
+	printDirs bool
 }
 
 func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	panic("not implemented")
+	ctx := cli.GetContext(a, r, env)
+	if len(args) == 0 {
+		return 0
+	}
+
+	repoDir, paths, err := filesToPaths(args...)
+	if err != nil {
+		return r.done(err)
+	}
+
+	graph, err := git.Read(ctx, repoDir)
+	if err != nil {
+		return r.done(err)
+	}
+
+	q := filegraph.Query{
+		Sources: make([]filegraph.Node, len(paths)),
+	}
+	for i, p := range paths {
+		n := graph.Node(p)
+		if n == nil {
+			return r.done(errors.Reason("node %q not found", p).Err())
+		}
+		q.Sources[i] = n
+	}
+
+	return r.done(q.Run(func(res *filegraph.ShortestPath) error {
+		if r.printDirs || res.Node.IsFile() {
+			fmt.Printf("%.2f %s\n", res.Distance, res.Node.Name())
+		}
+		return nil
+	}))
 }
