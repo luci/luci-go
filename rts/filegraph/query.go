@@ -15,6 +15,8 @@
 package filegraph
 
 import (
+	"container/heap"
+
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -43,6 +45,93 @@ var ErrStop = errors.New("stop the iteration")
 //
 // If the callback returns ErrStop, then the iteration stops.
 func (q *Query) Run(g Graph, callback func(result *Result) error) error {
-	// TODO(1136280): implement.
-	panic("not implemented")
+	// This function implements Dijstra's algorithm.
+
+	// A min-heap of nodes ordered by distance.
+	h := resultHeap{}
+
+	// A hash map, where
+	// - the key is a node
+	// - the value is a shortest distance from any of the roots to the node.
+	//   May shrink as the algorithm runs.
+	dist := map[Node]float64{}
+
+	// Add all roots to h and dist.
+	for _, n := range q.Roots {
+		if n == nil {
+			return errors.Reason("one of the roots is nil").Err()
+		}
+		if _, ok := dist[n]; !ok {
+			h = append(h, &Result{Node: n})
+			dist[n] = 0
+		}
+	}
+	heap.Init(&h)
+
+	// A set of nodes that have been reported via callback.
+	// This is needed because we might add the same node to the heap multiple
+	// times when a shorter distance is discovered.
+	reported := map[Node]struct{}{}
+
+	for len(h) > 0 {
+		cur := heap.Pop(&h).(*Result)
+
+		if _, ok := reported[cur.Node]; ok {
+			continue
+		}
+		reported[cur.Node] = struct{}{}
+		if err := callback(cur); err != nil {
+			if err == ErrStop {
+				err = nil
+			}
+			return err
+		}
+
+		consider := func(other Node, distFromCur float64) {
+			newDist := cur.Distance + distFromCur
+			if curDist, ok := dist[other]; !ok || newDist < curDist {
+				dist[other] = newDist
+				heap.Push(&h, &Result{
+					Prev:     cur,
+					Node:     other,
+					Distance: newDist,
+				})
+			}
+		}
+
+		cur.Node.Adjacent(func(adj Node, relRel float64) error {
+			consider(adj, relRel)
+			return nil
+		})
+
+		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()
+	}
+	return nil
+}
+
+// A resultHeap implements heap.Interface and holds Results.
+type resultHeap []*Result
+
+func (h resultHeap) Len() int { return len(h) }
+
+func (h resultHeap) Less(i, j int) bool {
+	return h[i].Distance > h[j].Distance
+}
+
+func (h resultHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *resultHeap) Push(x interface{}) {
+	item := x.(*Result)
+	*h = append(*h, item)
+}
+
+func (h *resultHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil // avoid memory leak
+	*h = old[0 : n-1]
+	return item
 }
