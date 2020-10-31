@@ -47,6 +47,7 @@ func main() {
 		},
 		Commands: []*subcommands.Command{
 			cmdPresubmitHistory(&authOpt),
+			cmdEval(),
 
 			{}, // a separator
 			authcli.SubcommandLogin(authOpt, "auth-login", false),
