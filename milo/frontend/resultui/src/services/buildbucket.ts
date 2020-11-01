@@ -29,7 +29,7 @@ export const enum Trinary {
 export interface GetBuildRequest {
   readonly id: string;
   readonly builder?: BuilderID;
-  readonly build_number?: number;
+  readonly buildNumber?: number;
   readonly fields?: string;
 }
 
@@ -48,14 +48,14 @@ export interface Build {
   readonly id: string;
   readonly builder: BuilderID;
   readonly number: string;
-  readonly created_by: string;
-  readonly canceled_by: string;
-  readonly create_time: Timestamp;
-  readonly start_time?: Timestamp;
-  readonly end_time?: Timestamp;
-  readonly update_time: Timestamp;
+  readonly createdBy: string;
+  readonly canceledBy: string;
+  readonly createTime: Timestamp;
+  readonly startTime?: Timestamp;
+  readonly endTime?: Timestamp;
+  readonly updateTime: Timestamp;
   readonly status: BuildStatus;
-  readonly summary_markdown?: string;
+  readonly summaryMarkdown?: string;
   readonly input: BuildInput;
   readonly output: BuildOutput;
   readonly steps?: Step[];
@@ -76,8 +76,8 @@ export enum BuildStatus {
 
 export interface BuildInput {
   readonly properties: {[key: string]: unknown};
-  readonly gitiles_commit?: GitilesCommit;
-  readonly gerrit_changes?: GerritChange[];
+  readonly gitilesCommit?: GitilesCommit;
+  readonly gerritChanges?: GerritChange[];
   readonly experiments?: string[];
 }
 
@@ -98,37 +98,37 @@ export interface GerritChange {
 
 export interface BuildOutput {
   readonly properties: {[key: string]: unknown};
-  readonly gitiles_commit: GitilesCommit;
+  readonly gitilesCommit: GitilesCommit;
   readonly logs: Log[];
 }
 
 export interface Log {
   readonly name: string;
-  readonly view_url: string;
+  readonly viewUrl: string;
   readonly url: string;
 }
 
 export interface Step {
   readonly name: string;
-  readonly start_time: Timestamp;
-  readonly end_time?: Timestamp;
+  readonly startTime: Timestamp;
+  readonly endTime?: Timestamp;
   readonly status: BuildStatus;
   readonly logs?: Log[];
-  readonly summary_markdown?: string;
+  readonly summaryMarkdown?: string;
 }
 
 export interface BuildInfra {
   readonly buildbucket: BuildInfraBuildbucket;
   readonly swarming: BuildInfraSwarming;
-  readonly log_dog: BuildInfraLogDog;
+  readonly logdog: BuildInfraLogDog;
   readonly recipe: BuildInfraRecipe;
   readonly resultdb?: BuildInfraResultdb;
 }
 
 export interface BuildInfraBuildbucket {
-  readonly service_config_revision: string;
-  readonly requested_properties: {[key: string]: unknown};
-  readonly requested_dimensions: RequestedDimension[];
+  readonly serviceConfigRevision: string;
+  readonly requestedProperties: {[key: string]: unknown};
+  readonly requestedDimensions: RequestedDimension[];
   readonly hostname: string;
 }
 
@@ -140,12 +140,12 @@ export interface RequestedDimension {
 
 export interface BuildInfraSwarming {
   readonly hostname: string;
-  readonly task_id?: string;
-  readonly parent_run_id: string;
-  readonly task_service_account: string;
+  readonly taskId?: string;
+  readonly parentRunId: string;
+  readonly taskServiceAccount: string;
   readonly priority: number;
-  readonly task_dimensions: readonly RequestedDimension[];
-  readonly bot_dimensions?: StringPair[];
+  readonly taskDimensions: readonly RequestedDimension[];
+  readonly botDimensions?: StringPair[];
   readonly caches: readonly BuildInfraSwarmingCacheEntry[];
   readonly containment: Containment;
 }
@@ -158,7 +158,7 @@ export interface StringPair {
 export interface BuildInfraSwarmingCacheEntry {
   readonly name: string;
   readonly path: string;
-  readonly wait_for_warm_cache: string;
+  readonly waitForWarmCache: string;
   readonly envVar: string;
 }
 
@@ -173,7 +173,7 @@ export interface BuildInfraLogDog {
 }
 
 export interface BuildInfraRecipe {
-  readonly cipd_package: string;
+  readonly cipdPackage: string;
   readonly name: string;
 }
 
@@ -183,19 +183,19 @@ export interface BuildInfraResultdb {
 }
 
 export interface Executable {
-  readonly cipd_package: string;
-  readonly cipd_version: string;
+  readonly cipdPackage: string;
+  readonly cipdVersion: string;
   readonly cmd: readonly string[];
 }
 
 export interface PermittedActionsRequest {
-  readonly resource_kind: string;
-  readonly resource_ids: readonly string[];
+  readonly resourceKind: string;
+  readonly resourceIds: readonly string[];
 }
 
 export interface PermittedActionsResponse {
   readonly permitted: ResourcePermissions;
-  readonly validity_duration: string;
+  readonly validityDuration: string;
 }
 
 export interface ResourcePermissions {
@@ -204,18 +204,18 @@ export interface ResourcePermissions {
 
 export interface CancelBuildRequest {
   id: string;
-  summary_markdown: string;
+  summaryMarkdown: string;
   fields?: string;
 }
 
 export interface ScheduleBuildRequest {
-  request_id?: string;
-  template_build_id?: string;
+  requestId?: string;
+  templateBuildId?: string;
   builder?: BuilderID;
   experiments?: {[key: string]: boolean};
   properties?: {};
-  gitiles_commit?: GitilesCommit;
-  gerrit_changes?: GerritChange[];
+  gitilesCommit?: GitilesCommit;
+  gerritChanges?: GerritChange[];
   tags?: StringPair[];
   dimensions?: RequestedDimension[];
   priority?: string;
@@ -224,7 +224,7 @@ export interface ScheduleBuildRequest {
   critical?: Trinary;
   exe?: Executable;
   swarming?: {
-    parent_run_id: string;
+    parentRunId: string;
   };
 }
 

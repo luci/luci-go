@@ -87,12 +87,12 @@ export class BuildState {
     if (!this.appState.milo || !this.buildPageData) {
       return async function*() { await Promise.race([]); };
     }
-    if (!this.buildPageData.input.gitiles_commit) {
+    if (!this.buildPageData.input.gitilesCommit) {
       return async function*() {};
     }
 
     let req: QueryBlamelistRequest = {
-      gitiles_commit: this.buildPageData.input.gitiles_commit,
+      gitilesCommit: this.buildPageData.input.gitilesCommit,
       builder: this.buildPageData.builder,
     };
     const milo = this.appState.milo;
@@ -100,9 +100,9 @@ export class BuildState {
       let res: QueryBlamelistResponse;
       do {
         res = await milo.queryBlamelist(req);
-        req = {...req, page_token: res.next_page_token};
+        req = {...req, pageToken: res.nextPageToken};
         yield res;
-      } while (res.next_page_token);
+      } while (res.nextPageToken);
     }
     return iter.teeAsync(streamBlamelist());
   }

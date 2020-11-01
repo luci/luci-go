@@ -175,15 +175,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       </i>
       ${(() => { switch (bpd.status) {
       case BuildStatus.Scheduled:
-        return `since ${displayTimestamp(bpd.create_time)}`;
+        return `since ${displayTimestamp(bpd.createTime)}`;
       case BuildStatus.Started:
-        return `since ${displayTimestamp(bpd.start_time!)}`;
+        return `since ${displayTimestamp(bpd.startTime!)}`;
       case BuildStatus.Canceled:
-        return `after ${displayTimeDiff(bpd.create_time, bpd.end_time!)}`;
+        return `after ${displayTimeDiff(bpd.createTime, bpd.endTime!)}`;
       case BuildStatus.Failure:
       case BuildStatus.InfraFailure:
       case BuildStatus.Success:
-        return `after ${displayTimeDiff(bpd.start_time || bpd.create_time, bpd.end_time!)}`;
+        return `after ${displayTimeDiff(bpd.startTime || bpd.createTime, bpd.endTime!)}`;
       default:
         return '';
       }})()}

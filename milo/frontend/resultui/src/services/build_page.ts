@@ -16,8 +16,29 @@
 // TODO(crbug/1108200): Replace this file with direct queries to services.
 
 import jsonbigint from 'json-bigint';
+import camelCase from 'lodash-es/camelCase';
+import isArray from 'lodash-es/isArray';
+import isObject from 'lodash-es/isObject';
+import reduce from 'lodash-es/reduce';
 
 import { Build, BuilderID, Step } from './buildbucket';
+
+/**
+ * Converts the keys in an object to camelCase recursively.
+ */
+function camelCaseRecursive<T>(obj: T): T {
+  if (!isObject(obj)) {
+    return obj as T;
+  } else if (isArray(obj)) {
+    return obj.map((v) => camelCaseRecursive(v)) as unknown as T;
+  }
+  return reduce(obj, (r, v, k) => {
+    return {
+      ...r,
+      [camelCase(k)]: camelCaseRecursive(v),
+    };
+  }, {}) as T;
+}
 
 export interface GetBuildPageDataRequest {
   builder: BuilderID;
@@ -32,22 +53,22 @@ export interface GetBuildPageDataRequest {
  */
 export interface BuildPageData extends Build {
   now: string;
-  build_bug_link: string;
-  buildbucket_host: string;
-  can_cancel: boolean;
-  can_retry: boolean;
+  buildBugLink: string;
+  buildbucketHost: string;
+  canCancel: boolean;
+  canRetry: boolean;
 
-  commit_link_html: string;
+  commitLinkHtml: string;
   summary?: string[];
-  recipe_link: Link;
-  buildbucket_link: Link;
-  build_sets: string[];
-  buildset_links: string[];
+  recipeLink: Link;
+  buildbucketLink: Link;
+  buildSets: string[];
+  buildsetLinks: string[];
   steps?: StepExt[];
-  human_status: string;
-  input_properties: Property[];
-  output_properties: Property[];
-  builder_link: Link;
+  humanStatus: string;
+  inputProperties: Property[];
+  outputProperties: Property[];
+  builderLink: Link;
   link: Link;
   banners: Logo[];
   timeline: string;
@@ -73,7 +94,7 @@ export interface Interval {
 export interface Link {
   label: string;
   url: string;
-  aria_label?: string;
+  ariaLabel?: string;
   img?: string;
   alt?: string;
   alias?: boolean;
@@ -91,7 +112,7 @@ export interface Logo extends LogoBase {
 
 export interface RelatedBuildsData {
   build: Build;
-  related_builds: Build[];
+  relatedBuilds: Build[];
 }
 
 /**
@@ -108,7 +129,7 @@ export class BuildPageService {
       {headers: {'Authorization': `Bearer ${this.accessToken}`}},
     );
     const buildPageDataText = await res.text();
-    const buildPageData = jsonbigint.parse(buildPageDataText, this.reviver);
+    const buildPageData = camelCaseRecursive(jsonbigint.parse(buildPageDataText, this.reviver));
     return buildPageData as BuildPageData;
   }
 
@@ -119,7 +140,7 @@ export class BuildPageService {
       {headers: {'Authorization': `Bearer ${this.accessToken}`}},
     );
     const relatedBuildsDataText = await res.text();
-    const relatedBuildsData = jsonbigint.parse(relatedBuildsDataText, this.reviver);
+    const relatedBuildsData = camelCaseRecursive(jsonbigint.parse(relatedBuildsDataText, this.reviver));
     return relatedBuildsData as RelatedBuildsData;
   }
 }
