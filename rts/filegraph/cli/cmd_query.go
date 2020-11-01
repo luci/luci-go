@@ -15,9 +15,16 @@
 package cli
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci-broken-again/common/system/signals"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
+
+	"go.chromium.org/luci/rts/filegraph"
 )
 
 var cmdQuery = &subcommands.Command{
@@ -36,14 +43,39 @@ var cmdQuery = &subcommands.Command{
 	`),
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
+		r.Flags.BoolVar(&r.printDirs, "print-dirs", false, "print directories too")
 		return r
 	},
 }
 
 type queryRun struct {
 	baseCommandRun
+	gitGraph
+	printDirs bool
 }
 
 func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	panic("not implemented")
+	if len(args) == 0 {
+		return 0
+	}
+
+	// Cancel the context on interrupt.
+	ctx := cli.GetContext(a, r, env)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)
+
+	nodes, err := r.loadNodes(ctx, args...)
+	if err != nil {
+		return r.done(err)
+	}
+
+	q := filegraph.Query{Sources: nodes}
+	q.Run(func(sp *filegraph.ShortestPath) bool {
+		if r.printDirs || sp.Node.IsFile() {
+			fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
+		}
+		return ctx.Err() == nil
+	})
+	return 0
 }
