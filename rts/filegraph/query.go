@@ -99,9 +99,9 @@ func (q *Query) Run(callback func(*ShortestPath) bool) {
 			}
 		}
 
-		cur.Node.Adjacent(func(adj Node, relRel float64) bool {
+		cur.Node.Adjacent(func(adj Node, relRel float64) error {
 			consider(adj, relRel)
-			return true
+			return nil
 		})
 
 		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()

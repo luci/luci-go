@@ -14,11 +14,6 @@
 
 package filegraph
 
-import (
-	"path"
-	"strings"
-)
-
 // Graph is a directed weighted graph of files.
 // The weight of edge (x, y) represents how much y is relevant to x.
 type Graph interface {
@@ -36,28 +31,8 @@ type Node interface {
 	// IsFile returns true if the node is a file, as opposed to a directory.
 	IsFile() bool
 
-	// Adjacent calls the given function for each direct successor.
-	// If the function returns false, then iteration stops.
-	Adjacent(func(successor Node, distance float64) bool)
-}
-
-// Name is a name of a Node.
-// The name components are base names of nodes from the root to the node,
-// e.g. ["a", "b", "c"] represents "a/b/c".
-// A name without components means root.
-type Name []string
-
-// ParseName parses a slash-separatd relative path.
-// It is the opposite of (Name).String().
-func ParseName(slashSeparated string) Name {
-	if slashSeparated == "" {
-		return nil
-	}
-	return Name(strings.Split(slashSeparated, "/"))
-}
-
-// String returns a slash-separated name, e.g. ["a/b/c"] => "a/b/c".
-// It is the opposite of ParseName().
-func (n Name) String() string {
-	return path.Join(n...)
+	// Adjacent calls the given function for each adjacent node.
+	// Respects the direction: distance represents the distance from the current
+	// node to n.
+	Adjacent(func(n Node, distance float64) error) error
 }
