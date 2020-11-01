@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b64a2d9d_8d907289",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "968533cd_1a63a0d5",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "317d3620_595fe7ec",
@@ -31,6 +49,30 @@
       "writtenOn": "2020-10-30T18:12:00Z",
       "side": 1,
       "message": "Now we have nested internal directories; if I understand correctly, this means that only package gobmap/ can import from this package, other packages inside of cv/internal/ will still not be able to import?\n\nWould it also be possible/reasonable to keep this inside package \"gobmap\", but with the lowercase name gobWatchMap so it\u0027s private to the package?",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 16
+      },
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a641fd3_8abc7f52",
+        "filename": "cv/internal/gerrit/gobmap/internal/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "\u003e Now we have nested internal directories; if I understand correctly, this means that only package gobmap/ can import from this package, other packages inside of cv/internal/ will still not be able to import?\n\nYes and yes.\nRecursive encapsulation is a good thing!\n\n \n\u003e Would it also be possible/reasonable to keep this inside package \"gobmap\", but with the lowercase name gobWatchMap so it\u0027s private to the package?\n\nThat\u0027s a good question! I don\u0027t know any reason. Changed to private and tests still work, so I think it\u0027s fine.",
+      "parentUuid": "317d3620_595fe7ec",
       "range": {
         "startLine": 15,
         "startChar": 0,
@@ -58,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be7c0b98_679c3194",
+        "filename": "cv/internal/gerrit/gobmap/internal/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "Not a problem, but agree about confusion. Changed to \"Groups\", since it\u0027s not really a map.",
+      "parentUuid": "d5a8dbda_4c04df80",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b2106bcf_c30d9df7",
@@ -71,6 +131,24 @@
       "writtenOn": "2020-10-30T18:12:00Z",
       "side": 1,
       "message": "Nit: Add a little bit of documentation, e.g.\n\nRefSpecGroupMap is used to map git refs to config group names.\n\nA ref is mapped to the first group in `groups` for which any `include` pattern matches, and no `exclude` pattern matches.",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0afbbe08_3a8eb104",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2106bcf_c30d9df7",
       "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -92,6 +170,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "88653c15_797836a9",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0175548a_c307833d",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43b0a2b5_a41c8244",
@@ -109,6 +205,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5b8b3f6_d27ede9a",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43b0a2b5_a41c8244",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c78f79fd_1443e72c",
@@ -122,6 +236,24 @@
       "writtenOn": "2020-10-30T18:12:00Z",
       "side": 1,
       "message": "If you add a comment: These are regular expressions, e.g. \"refs/heads/.+\"",
+      "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c1dcdd3_a0701b85",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-01T23:23:35Z",
+      "side": 1,
+      "message": "explained semantics but pointed the reader to the source of truth in api/config/v2/cq.proto. Keeping both up-to-date isn\u0027t worthwhile.",
+      "parentUuid": "c78f79fd_1443e72c",
       "revId": "3df96a166cae7b1af9851665b02ab380ac0a3cdc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
