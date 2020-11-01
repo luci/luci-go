@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"os"
@@ -24,8 +25,10 @@ import (
 
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/rts/filegraph"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 type gitGraph struct {
@@ -81,9 +84,41 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 
 // loadSyncedGraph loads a file graph for g.ref in the the given repo, syncs to
 // the latest commits in the ref, and caches the result on the file system.
-func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoRoot string) error {
-	// TODO(crbug.com/1136280): implement.
-	panic("not implemented")
+func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
+	gitDir, err := execGit(repoDir, "rev-parse", "--absolute-git-dir")
+	if err != nil {
+		return err
+	}
+	gf := git.GraphFile{
+		Name: filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
+	}
+
+	// Read the cache.
+	switch err := gf.Read(); {
+	case os.IsNotExist(err):
+		logging.Infof(ctx, "populating cache; this may take minutes...")
+	case err != nil:
+		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
+	}
+
+	// Fallback from main to master if needed.
+	till := g.ref
+	if g.ref == "refs/heads/main" {
+		if _, err := execGit(repoDir, "rev-parse", g.ref, "--"); err != nil {
+			if !strings.Contains(err.Error(), "bad revision") {
+				return err
+			}
+			till = "refs/heads/main"
+		}
+	}
+
+	// Read the new commits.
+	if err := gf.Sync(ctx, repoDir, till); err != nil {
+		return err
+	}
+
+	g.graph = &gf.Graph
+	return nil
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
@@ -117,9 +152,11 @@ func execGit(fileName string, args ...string) (out string, err error) {
 
 	args = append([]string{"-C", dir}, args...)
 	cmd := exec.Command("git", args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	outBytes, err := cmd.Output()
 	out = strings.TrimSuffix(string(outBytes), "\n")
-	return out, errors.Annotate(err, "git %q failed; output: %q", args, out).Err()
+	return out, errors.Annotate(err, "git %q failed; output: %q", args, stderr.Bytes()).Err()
 }
 
 // dirFromPath returns fileName as is if it points to a dir, otherwise returns
