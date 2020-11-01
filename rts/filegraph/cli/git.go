@@ -81,7 +81,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 
 // loadSyncedGraph loads a file graph for g.ref in the the given repo, syncs to
 // the latest commits in the ref, and caches the result on the file system.
-func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
+func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoRoot string) error {
 	// TODO(crbug.com/1136280): implement.
 	panic("not implemented")
 }
