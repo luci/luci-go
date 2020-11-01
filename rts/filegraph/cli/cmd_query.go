@@ -1,0 +1,50 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cli
+
+import (
+	"github.com/maruel/subcommands"
+
+	"go.chromium.org/luci/common/data/text"
+)
+
+var cmdQuery = &subcommands.Command{
+	UsageLine: `query [flags] [FILE [FILE...]]`,
+	ShortDesc: "print graph files in the descending order of distance",
+	LongDesc: text.Doc(`
+		Print graph files in the descending order of distance from the given one(s).
+
+		All FILEs must be in the same git repository.
+
+		Prints files in the order from closest to farthest.
+		Each line has format "<distance> <filename>",
+		where the filename is slash-separated and relative to the repo root, e.g.
+		"foo/bar.cpp".
+		Does not print unreachable files.
+	`),
+	CommandRun: func() subcommands.CommandRun {
+		r := &queryRun{}
+		return r
+	},
+}
+
+type queryRun struct {
+	baseCommandRun
+}
+
+func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	// TODO(1136280): implement.
+	panic("not implemented")
+}
