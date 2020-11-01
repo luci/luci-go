@@ -61,17 +61,17 @@ export function getURLForGerritChange(change: GerritChange): string {
 }
 
 export function getURLForSwarmingTask(swarming: BuildInfraSwarming): string {
-  return `https://${swarming.hostname}/task?id=${swarming.task_id}&o=true&w=true`;
+  return `https://${swarming.hostname}/task?id=${swarming.taskId}&o=true&w=true`;
 }
 
 // getBotLink generates a link to a swarming bot.
 export function getBotLink(swarming: BuildInfraSwarming): Link | null {
-  for (const dim of swarming.bot_dimensions || []) {
+  for (const dim of swarming.botDimensions || []) {
     if (dim.key === 'id') {
       return {
         label: dim.value,
         url: `https://${swarming.hostname}/bot?id=${dim.value}`,
-        aria_label: `swarming bot ${dim.value}`,
+        ariaLabel: `swarming bot ${dim.value}`,
       };
     }
   }
