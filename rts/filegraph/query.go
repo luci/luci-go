@@ -14,6 +14,8 @@
 
 package filegraph
 
+import "container/heap"
+
 // Query finds shortest paths from any of Query.Sources to other nodes,
 // producing a shortest-path tree
 // (https://en.wikipedia.org/wiki/Shortest-path_tree).
@@ -27,6 +29,8 @@ type Query struct {
 	// TODO(crbug.com/1136280): add Backwards
 	// TODO(crbug.com/1136280): add MaxDistance
 	// TODO(crbug.com/1136280): add SilbingDistance
+
+	heap spHeap
 }
 
 // ShortestPath represents the shortest path from one of sources to a node.
@@ -47,6 +51,80 @@ type ShortestPath struct {
 //
 // If the callback returns false, then the iteration stops.
 func (q *Query) Run(callback func(*ShortestPath) bool) {
-	// TODO(crbug.com/1136280): implement.
-	panic("not implemented")
+	// This function implements Dijkstra's algorithm.
+
+	q.heap = q.heap[:0]
+
+	// Maps from a node to the shortest distance. Distance shrink over time.
+	dist := map[Node]float64{}
+
+	// Add all sources to q.heap and dist.
+	for _, n := range q.Sources {
+		if n == nil {
+			panic("one of the sources is nil")
+		}
+		if _, ok := dist[n]; !ok {
+			q.heap = append(q.heap, &ShortestPath{Node: n})
+			dist[n] = 0
+		}
+	}
+
+	for len(q.heap) > 0 {
+		cur := heap.Pop(&q.heap).(*ShortestPath)
+		if cur.Distance > dist[cur.Node] {
+			// A better one was already reported.
+			continue
+		}
+
+		if !callback(cur) {
+			return
+		}
+
+		consider := func(other Node, distFromCur float64) bool {
+			newDist := cur.Distance + distFromCur
+			if curDist, ok := dist[other]; !ok || newDist < curDist {
+				dist[other] = newDist
+				// If heap already contains the node, we cannot efficiently reduce
+				// its distance. Instead we push a new entry, and the previous (worse)
+				// one will be filtered out later.
+				heap.Push(&q.heap, &ShortestPath{
+					Prev:     cur,
+					Node:     other,
+					Distance: newDist,
+				})
+			}
+			return true
+		}
+
+		cur.Node.Adjacent(consider)
+
+		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()
+	}
+}
+
+// spHeap implements heap.Interface for ShortestPath, with ascending distance.
+type spHeap []*ShortestPath
+
+func (h spHeap) Len() int { return len(h) }
+
+func (h spHeap) Less(i, j int) bool {
+	return h[i].Distance < h[j].Distance
+}
+
+func (h spHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *spHeap) Push(x interface{}) {
+	item := x.(*ShortestPath)
+	*h = append(*h, item)
+}
+
+func (h *spHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil // avoid memory leak
+	*h = old[0 : n-1]
+	return item
 }
