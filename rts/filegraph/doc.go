@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package filegraph implements a directed weighted graph of files, where the
-// weight of edge (x, y), called distance, represents how much y is relevant
+// Package filegraph implements a directed weighted graph of files.
+// The weight of edge (x, y), called distance, represents how much y is relevant
 // to x. Such graph provides distance between any two files, and can order files
 // by distance from/to a given file.
 package filegraph
