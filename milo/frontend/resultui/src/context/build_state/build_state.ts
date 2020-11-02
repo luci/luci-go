@@ -20,7 +20,6 @@ import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { BuildExt } from '../../models/build_ext';
 import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
-import { RelatedBuildsData } from '../../services/build_page';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
@@ -67,22 +66,36 @@ export class BuildState {
   }
 
   @computed({keepAlive: true})
-  get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
-    // Since response can be different when queried at different time,
-    // establish a dependency on timestamp.
-    this.timestamp;  // tslint:disable-line: no-unused-expression
-    if (!this.appState.buildPageService || !this.build) {
-      return fromPromise(new Promise(() => {}));
-    }
-    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.build.id));
+  get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+    if (!this.build) { return fromPromise(new Promise(() => {})); }
+    const buildsPromises = this.build.buildSets
+      .filter((b) => !b.startsWith('commit/git/'))
+      .map((b) => this.appState.buildsService!.searchBuilds({
+        predicate: {tags: [{key: 'buildset', value: b}]},
+        fields: 'builds.*.id,builds.*.builder,builds.*.number,builds.*.create_time,builds.*.start_time,builds.*.end_time,builds.*.update_time,builds.*.status,builds.*.summary_markdown',
+        pageSize: 1000,
+      }).then((res) => res.builds));
+    return fromPromise(Promise.all(buildsPromises).then((buildArrays) => {
+      const relatedBuilds: Build[] = [];
+      const seenBuildIds = new Set<string>();
+      for (const builds of buildArrays) {
+        for (const build of builds){
+          if (seenBuildIds.has(build.id)) {
+            continue;
+          }
+          relatedBuilds.push(build);
+        }
+      }
+      return relatedBuilds;
+    }));
   }
 
   @computed
-  get relatedBuildsData(): RelatedBuildsData | null {
-    if (this.relatedBuildsDataReq.state !== FULFILLED) {
+  get relatedBuilds(): readonly BuildExt[] | null {
+    if (this.relatedBuildReq.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildsDataReq.value;
+    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
   @computed({keepAlive: true})
