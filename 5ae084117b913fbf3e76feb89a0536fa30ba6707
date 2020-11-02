@@ -46,6 +46,30 @@
       },
       "revId": "5ae084117b913fbf3e76feb89a0536fa30ba6707",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d1c58ad_1f84c87d",
+        "filename": "rts/filegraph/cli/cmd_query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:28:50Z",
+      "side": 1,
+      "message": "nah, i\u0027m not sure any more. The doc.go says \"order by distance from/to a given file.\"",
+      "parentUuid": "dbc1f832_7f7ed6c7",
+      "range": {
+        "startLine": 24,
+        "startChar": 27,
+        "endLine": 24,
+        "endChar": 31
+      },
+      "revId": "5ae084117b913fbf3e76feb89a0536fa30ba6707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
