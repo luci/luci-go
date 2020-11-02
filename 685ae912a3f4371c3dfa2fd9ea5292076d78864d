@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fde73de7_b237cdcb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T20:48:06Z",
+      "side": 1,
+      "message": "I think this will help diagnose the symptom of similar incidents in the future. The output of this can support my theory, even if I make a patch for the cause of the slow runs on Windows bots.",
+      "parentUuid": "578f289f_4dafde89",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b1590703_aeda2db2",
@@ -66,6 +84,30 @@
       "writtenOn": "2020-11-02T20:14:20Z",
       "side": 1,
       "message": "terminate :\u003d make(chan struct{})\n...\nclose(terminate)\n\nsimpler and more efficient",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 246,
+        "endChar": 20
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "406734b1_edb9d40e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T20:48:06Z",
+      "side": 1,
+      "message": "`terminated \u003c- true` is to ensure that the goroutine is not in process of invoking printSummary(). close(channel) doesn\u0027t block the caller.\n\nI moved L247 to L256, as you suggested, but I still like to keep it a boolean channel to ensure that the final summary gets printed out before runTestCmd() returns to the caller. If this defer() simply closes the channel, it\u0027s possible that the sink process terminates before the goroutine prints the summary.",
+      "parentUuid": "b1590703_aeda2db2",
       "range": {
         "startLine": 244,
         "startChar": 0,
@@ -93,6 +135,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e693ab3_ad847ae6",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T20:48:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8211bb87_6de6602e",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b065d324_1de1db3c",
@@ -116,6 +176,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f22970ac_674e3eba",
+        "filename": "resultdb/cli/sink_stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T20:48:06Z",
+      "side": 1,
+      "message": "I increased this constant to 100 years. With -1, one more comparison operator needs to be executed in L84 and L85. It will increase the chance of having to retry atomic.CompareAnsSwap().",
+      "parentUuid": "b065d324_1de1db3c",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 50
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08608683_94187d74",
@@ -129,6 +213,30 @@
       "writtenOn": "2020-11-02T20:14:20Z",
       "side": 1,
       "message": "log\n\nsince it does logging, rather than fmt.Print or something like that",
+      "range": {
+        "startLine": 125,
+        "startChar": 20,
+        "endLine": 125,
+        "endChar": 25
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0857e06_ac58f351",
+        "filename": "resultdb/cli/sink_stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T20:48:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08608683_94187d74",
       "range": {
         "startLine": 125,
         "startChar": 20,
