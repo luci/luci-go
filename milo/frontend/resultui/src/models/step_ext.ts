@@ -17,7 +17,6 @@
 import { DateTime } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
-import { datetimeFromTimestamp } from '../libs/time_utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
 /**
@@ -43,8 +42,8 @@ export class StepExt {
     }
 
     this.name = step.name;
-    this.startTime = datetimeFromTimestamp(step.startTime);
-    this.endTime = step.endTime ? datetimeFromTimestamp(step.endTime): null;
+    this.startTime = DateTime.fromISO(step.startTime);
+    this.endTime = step.endTime ? DateTime.fromISO(step.endTime): null;
     this.status = step.status;
     this.logs = step.logs;
     this.summaryMarkdown = step.summaryMarkdown;
