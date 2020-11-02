@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { ChainableURL, compareBigInt, padBigInt } from './utils';
+import { ChainableURL, compareBigInt } from './utils';
 
 describe('utils', () => {
   describe('ChainableURL', () => {
@@ -50,18 +50,6 @@ describe('utils', () => {
           .toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=newVal1&key2=newVal2&key3=val3&key3=val3');
       });
-    });
-  });
-
-  describe('padBigInt', () => {
-    it('can pad big integers with zeros', async () => {
-      assert.strictEqual(padBigInt('1234567890123456789', 20), '01234567890123456789');
-      assert.strictEqual(padBigInt('1234567890126456789', 22), '0001234567890126456789');
-    });
-
-    it('does not over pad big integers with zeros', async () => {
-      assert.strictEqual(padBigInt('1234567890123456789', 19), '1234567890123456789');
-      assert.strictEqual(padBigInt('1234567890126456789', 18), '1234567890126456789');
     });
   });
 
