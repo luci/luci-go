@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/filesystem"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -221,8 +223,11 @@ func TestNew(t *testing.T) {
 		So(c.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
 		So(c.GetUsed(), ShouldHaveLength, 1)
 	})
+}
 
-	Convey(`AddFileWithoutValidation`, t, func() {
+func TestAddFilesWithoutValidationBatch(t *testing.T) {
+	t.Parallel()
+	Convey(`AddFilesWithoutValidationBatch`, t, func() {
 		dir := t.TempDir()
 		cache := filepath.Join(dir, "cache")
 		h := isolated.GetHash(isolatedclient.DefaultNamespace)
@@ -236,18 +241,35 @@ func TestNew(t *testing.T) {
 
 		empty := filepath.Join(dir, "empty")
 		So(ioutil.WriteFile(empty, nil, 0600), ShouldBeNil)
-
 		emptyHash := isolated.HashBytes(h, nil)
 
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		outputs := []*tree.Output{
+			{
+				Path: empty,
+				Digest: digest.Digest{
+					Hash: string(emptyHash),
+				},
+			},
+		}
+
+		So(c.AddFilesWithoutValidationBatch(outputs), ShouldBeNil)
 
 		So(c.Touch(emptyHash), ShouldBeTrue)
 
 		// Adding already existing file is fine.
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		So(c.AddFilesWithoutValidationBatch(outputs), ShouldBeNil)
 
 		empty2 := filepath.Join(dir, "empty2")
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
-		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
+		outputs = []*tree.Output{
+			{
+				Path: empty2,
+				Digest: digest.Digest{
+					Hash: string(emptyHash),
+				},
+			},
+		}
+
+		So(c.AddFilesWithoutValidationBatch(outputs), ShouldBeNil)
 	})
 }
