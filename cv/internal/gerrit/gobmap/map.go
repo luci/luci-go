@@ -18,21 +18,22 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// GobWatchMap contains config groups for a particular LUCI project and
+// gobWatchMap contains config groups for a particular LUCI project and
 // host/repo combination.
 //
-// GobWatchMap entities are stored with a parent key of the form
-// (GobWatchMapParent, host/repo), so that all GobWatchMap entities with a
+// gobWatchMap entities are stored with a parent key of the form
+// (GobWatchMapParent, host/repo), so that all gobWatchMap entities with a
 // particular host/repo can be fetched with an ancestor query; the goal
 // is to have fast reads by host/repo.
 //
-// The GobWatchMap entities as a whole store data used to lookup which
+// The gobWatchMap entities as a whole store data used to lookup which
 // host/repo/ref maps to which config group, and the map is updated when a
 // project config is updated.
-type GobWatchMap struct {
+type gobWatchMap struct {
 
 	// The ID of this GobWatchMap, which contains (host, repo, project).
 	ID string `gae:"$id"`
@@ -46,14 +47,8 @@ type GobWatchMap struct {
 	// GobWatchMapParent key. This parent has an ID of the form "host/repo".
 	Parent *datastore.Key `gae:"$parent"`
 
-	// Each config group has a name, and a list of include ref regexps and
-	// exclude ref regexps. The config group that's returned is the first one
-	// where the ref matches an include ref regexp but does not match any
-	// exclude ref regexp.
-	//
-	// We need the ref regexps to determine which group matches, and we need
-	// the group name to construct a config group ID.
-	// TODO(qyearsley): Add RefSpecGroupMap when it's checked in.
+	// Groups keeps config groups of a LUCI project applicable to this host/repo.
+	Groups *internal.Groups
 
 	// ConfigHash is the hash of latest CV config file imported from LUCI Config;
 	// this is updated based on ProjectConfig entity.
@@ -100,7 +95,9 @@ func Lookup(ctx context.Context, host, repo, ref string) ([]ProjectConfigGroupID
 	// TODO(qyearsley): Implement:
 	// 1. Fetch all GobWatchMap entities for the given host and repo.
 	//    This should be done with a ancestor query for a host/repo.
-	// 2. For each entity, inspect the RefSpecMapGroup to determine
-	//    which configs apply.
+	// 2. For each entity, which represents 1 host/repo/LUCI_project, inspect
+	//    the gobWatchMap.Groups to determine which configs apply.
+	//    If several config groups of a LUCI project match, then all fallback
+	//    groups are ignored.
 	return nil, errors.New("not implemented")
 }
