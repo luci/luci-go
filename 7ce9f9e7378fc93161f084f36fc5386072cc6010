@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4833/related-builds",
       "revId": "7ce9f9e7378fc93161f084f36fc5386072cc6010",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70cd8e79_68f5701b",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T23:19:18Z",
+      "side": 1,
+      "message": "Suggest we take ownership of this since hinoka@ is long-gone from Chops.\n\nIf this filter is still the right thing to do, let\u0027s keep the comment and just remove \"HACK(hinoka):\".",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "7ce9f9e7378fc93161f084f36fc5386072cc6010",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
