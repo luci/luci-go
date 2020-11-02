@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "578f289f_4dafde89",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2020-11-02T20:23:40Z",
+      "side": 1,
+      "message": "Anything that silently blocks tasks from finishing should have some indication as to what it\u0027s doing/how long it\u0027s taking.",
+      "parentUuid": "b6a08557_6182558e",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b1590703_aeda2db2",
