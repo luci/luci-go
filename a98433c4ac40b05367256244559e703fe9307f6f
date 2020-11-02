@@ -16,6 +16,70 @@
       "message": "Demo: https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4835/overview",
       "revId": "a98433c4ac40b05367256244559e703fe9307f6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65e48d1f_7f6b5747",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T07:10:23Z",
+      "side": 1,
+      "message": "Nice, feels pretty fast.",
+      "parentUuid": "f0d06428_e1c29e44",
+      "revId": "a98433c4ac40b05367256244559e703fe9307f6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0da54bc_61ea0c49",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T07:10:23Z",
+      "side": 1,
+      "message": "are there now unused methods in time_utils we can delete? e.g. displayTimeDiff, datetimeFromTimestamp",
+      "range": {
+        "startLine": 31,
+        "startChar": 65,
+        "endLine": 31,
+        "endChar": 75
+      },
+      "revId": "a98433c4ac40b05367256244559e703fe9307f6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5d85219_ef0e398c",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T07:10:23Z",
+      "side": 1,
+      "message": "s/resultdb/buildbucket/",
+      "range": {
+        "startLine": 18,
+        "startChar": 50,
+        "endLine": 18,
+        "endChar": 58
+      },
+      "revId": "a98433c4ac40b05367256244559e703fe9307f6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
