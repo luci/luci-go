@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Link } from '../models/link';
 import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
-import { Link } from '../services/build_page';
 
 export function getURLForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
   return router.urlForName(
