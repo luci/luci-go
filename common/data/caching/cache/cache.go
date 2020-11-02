@@ -26,10 +26,12 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/filesystem"
+	"golang.org/x/sync/errgroup"
 )
 
 // Cache is a cache of objects holding content in disk.
@@ -233,42 +235,69 @@ func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
 // But this doesn't do any content validation.
 //
 // TODO(tikuta): make one function and control the behavior by option?
-func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
-	fi, err := os.Stat(src)
-	if err != nil {
-		return errors.Annotate(err, "failed to get stat").Err()
-	}
-
+func (d *Cache) AddFilesWithoutValidationBatch(outputs []*tree.Output) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	dest := d.itemPath(digest)
-	if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
-		terr := func() error {
-			if runtime.GOOS == "darwin" {
-				// TODO(crbug.com/1140864): Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
-				if cerr := filesystem.Copy(dest, src, fi.Mode()); cerr != nil {
-					err = errors.Annotate(err, "fallback copy failed: %v", cerr).Err()
-				} else {
-					return nil
+
+	var eg errgroup.Group
+
+	// guard d.lru in go routine.
+	var mu sync.Mutex
+
+	// restrict IO operation concurrency.
+	ioCh := make(chan struct{}, runtime.NumCPU())
+
+	for _, output := range outputs {
+		output := output
+		ioCh <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ioCh }()
+
+			digest := isolated.HexDigest(output.Digest.Hash)
+			dest := d.itemPath(digest)
+			src := output.Path
+			var mode os.FileMode = 0600
+			if output.IsExecutable {
+				mode = 0700
+			}
+			if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
+				terr := func() error {
+					if runtime.GOOS == "darwin" {
+						// TODO(crbug.com/1140864): Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
+						if cerr := filesystem.Copy(dest, src, mode); cerr != nil {
+							err = errors.Annotate(err, "fallback copy failed: %v", cerr).Err()
+						} else {
+							return nil
+						}
+					}
+
+					return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+				}()
+				if terr != nil {
+					return terr
 				}
 			}
 
-			return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
-		}()
-		if terr != nil {
-			return terr
-		}
+			mu.Lock()
+			d.lru.pushFront(digest, units.Size(output.Digest.Size))
+			mu.Unlock()
+			return nil
+		})
 	}
 
-	d.lru.pushFront(digest, units.Size(fi.Size()))
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
 	if err := d.respectPolicies(); err != nil {
-		d.lru.pop(digest)
 		return err
 	}
 
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
-	d.added = append(d.added, fi.Size())
+	for _, output := range outputs {
+		d.added = append(d.added, output.Digest.Size)
+	}
 	return nil
 }
 

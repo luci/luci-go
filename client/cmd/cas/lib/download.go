@@ -207,11 +207,8 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			return outputs[i].Path < outputs[j].Path
 		})
 
-		for _, output := range outputs {
-			if err := diskcache.AddFileWithoutValidation(
-				isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
-				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
-			}
+		if err := diskcache.AddFilesWithoutValidationBatch(outputs); err != nil {
+			return errors.Annotate(err, "failed to add cache").Err()
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
 	}
