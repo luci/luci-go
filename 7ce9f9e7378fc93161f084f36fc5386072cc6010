@@ -39,6 +39,30 @@
       },
       "revId": "7ce9f9e7378fc93161f084f36fc5386072cc6010",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ef961ff_e7afb877",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T23:39:18Z",
+      "side": 1,
+      "message": "It is still correct. Removed HACK(hinoka).",
+      "parentUuid": "70cd8e79_68f5701b",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "7ce9f9e7378fc93161f084f36fc5386072cc6010",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
