@@ -16,10 +16,16 @@ package cache
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/isolated"
@@ -250,4 +256,98 @@ func TestNew(t *testing.T) {
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
+}
+
+func benchmarkCopy(b *testing.B, sz int) {
+	tmp, err := ioutil.TempDir(os.TempDir(), "")
+	if err != nil {
+		b.Fatalf("filaed to create dir: %v", err)
+	}
+	r := rand.New(rand.NewSource(0))
+
+	buf := make([]byte, sz)
+	if _, err := r.Read(buf); err != nil {
+		b.Fatalf("failed to read: %v", err)
+	}
+	src := filepath.Join(tmp, "src")
+	if err := ioutil.WriteFile(src, buf, 0600); err != nil {
+		b.Fatalf("failed to write: %v", err)
+	}
+
+	dst := filepath.Join(tmp, "dst")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := filesystem.Copy(dst, src, 0600); err != nil {
+			b.Fatalf("failed: %v", err)
+		}
+		b.StopTimer()
+		os.Remove(dst)
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCopy(b *testing.B) {
+	for _, i := range []int{0, 8, 64, 512, 4096, 32768, 65536, 131072, 262144} {
+		b.Run(fmt.Sprintf("files %d", i), func(b *testing.B) {
+			benchmarkCopy(b, i)
+		})
+	}
+}
+
+func panicIfErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func benchmarkLink(b *testing.B, n int) {
+	tmp, err := ioutil.TempDir(os.TempDir(), "")
+	if err != nil {
+		b.Fatalf("filaed to create dir: %v", err)
+	}
+
+	src := filepath.Join(tmp, "src")
+	dst := filepath.Join(tmp, "dst")
+
+	panicIfErr(os.MkdirAll(src, 0700))
+	panicIfErr(os.MkdirAll(dst, 0700))
+
+	for i := 0; i < 16*16; i += 1 {
+		panicIfErr(os.MkdirAll(filepath.Join(dst, fmt.Sprintf("%02x", i)), 0700))
+	}
+
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		panicIfErr(ioutil.WriteFile(filepath.Join(src, s), []byte(s), 0600))
+	}
+
+	ioCh := make(chan struct{}, n)
+	var wg sync.WaitGroup
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		i := i
+		ioCh <- struct{}{}
+		wg.Add(1)
+		go func() {
+			defer func() { <-ioCh }()
+			defer wg.Done()
+			s := strconv.Itoa(i)
+			sum := sha256.Sum256([]byte(s))
+			hexsum := hex.EncodeToString(sum[:])
+			h := filepath.Join(dst, hexsum[:2], hexsum[2:])
+			panicIfErr(os.Link(filepath.Join(src, s), h))
+		}()
+	}
+	wg.Wait()
+
+	b.StopTimer()
+}
+
+func BenchmarkLink(b *testing.B) {
+	for i := 1; i <= 16; i *= 2 {
+		b.Run(fmt.Sprintf("%d", i), func(b *testing.B) {
+			benchmarkLink(b, i)
+		})
+	}
 }
