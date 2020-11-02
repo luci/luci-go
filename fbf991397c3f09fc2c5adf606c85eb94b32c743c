@@ -22,6 +22,30 @@
       },
       "revId": "fbf991397c3f09fc2c5adf606c85eb94b32c743c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d906f0e5_26dfb8bb",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-02T21:59:27Z",
+      "side": 1,
+      "message": "Moved to L258.\nIt was to explain the reason of having to print the summary not only at the end of the run, but also every 5 mins.\n\n\u003e\u003e what will happen if the sink process is killed when the tests are still running?\nIf the sink process receives SIGINT or SIGTERM, then it kills the test process first and then exit.\n\nIf the sink process gets killed with SIGKILL, it is possible that only the sink process is killed. I may need to set a process group to handle such a situation. I will investigate and write a patch out of this CL.\n\nAFAIK, Swarming sends SIGTERM/SIGINT at most a small number of times, and then SIGKILL if the process doesn\u0027t terminate within a given time period.",
+      "parentUuid": "a062fcab_da580dd4",
+      "range": {
+        "startLine": 250,
+        "startChar": 39,
+        "endLine": 251,
+        "endChar": 19
+      },
+      "revId": "fbf991397c3f09fc2c5adf606c85eb94b32c743c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
