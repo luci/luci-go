@@ -39,24 +39,11 @@ export class ChainableURL extends URL {
 }
 
 /**
- * Add '0' to the front of `num` until its length reaches `len`.
- * @param num a string representing an unsigned integer.
- * @param targetLen target length of the output string.
- */
-export function padBigInt(num: string, targetLen: number): string {
-  let pre = '';
-  for (let i = 0; i < targetLen - num.length; ++i) {
-    pre += '0';
-  }
-  return pre + num;
-}
-
-/**
  * Compares the size of two big unsigned integers represented by strings.
  */
 export function compareBigInt(num1: string, num2: string): number {
   const maxLen = Math.max(num1.length, num2.length);
-  num1 = padBigInt(num1, maxLen);
-  num2 = padBigInt(num2, maxLen);
+  num1 = num1.padStart(maxLen, '0');
+  num2 = num2.padStart(maxLen, '0');
   return num1.localeCompare(num2);
 }
