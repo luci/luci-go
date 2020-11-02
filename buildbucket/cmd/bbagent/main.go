@@ -133,7 +133,7 @@ func mainImpl() int {
 	}
 
 	cctx = setResultDBContext(cctx, input.Build, secrets)
-	prepareInputBuild(input.Build)
+	prepareInputBuild(cctx, input.Build)
 
 	opts := &host.Options{
 		BaseBuild:      input.Build,
@@ -291,7 +291,11 @@ func mainImpl() int {
 	return 0
 }
 
-func prepareInputBuild(build *bbpb.Build) {
+func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
+	// mark started
+	build.Status = bbpb.Status_STARTED
+	now := timestamppb.New(clock.Now(ctx))
+	build.StartTime, build.UpdateTime = now, now
 	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
 	// for the top level user stdout/stderr streams.
 	//
