@@ -109,7 +109,7 @@ export class OverviewTabElement extends MobxLitElement {
         project: build.builder.project,
         bucket: build.builder.bucket,
         builder: build.builder.builder,
-        build_num_or_id: build.number,
+        build_num_or_id: build.number ? build.number.toString() : `b${build.id}`,
       }),
     });
   }

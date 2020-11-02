@@ -47,9 +47,9 @@ export interface Timestamp {
 export interface Build {
   readonly id: string;
   readonly builder: BuilderID;
-  readonly number: string;
+  readonly number?: number;
   readonly createdBy: string;
-  readonly canceledBy: string;
+  readonly canceledBy?: string;
   readonly createTime: Timestamp;
   readonly startTime?: Timestamp;
   readonly endTime?: Timestamp;
