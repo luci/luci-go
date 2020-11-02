@@ -21,7 +21,7 @@ import isArray from 'lodash-es/isArray';
 import isObject from 'lodash-es/isObject';
 import reduce from 'lodash-es/reduce';
 
-import { Build, BuilderID, Step } from './buildbucket';
+import { Build } from './buildbucket';
 
 /**
  * Converts the keys in an object to camelCase recursively.
@@ -40,57 +40,6 @@ function camelCaseRecursive<T>(obj: T): T {
   }, {}) as T;
 }
 
-export interface GetBuildPageDataRequest {
-  builder: BuilderID;
-  buildNumOrId: string;
-}
-
-/**
- * BuildPageData is the type definition of the JSON returned from
- * /p/${project}/builders/${bucket}/${builder}/${build_id_or_number}/data
- *
- * Fields that are not intended to be used in the frontend are excluded.
- */
-export interface BuildPageData extends Build {
-  now: string;
-  buildBugLink: string;
-  buildbucketHost: string;
-  canCancel: boolean;
-  canRetry: boolean;
-
-  commitLinkHtml: string;
-  summary?: string[];
-  recipeLink: Link;
-  buildbucketLink: Link;
-  buildSets: string[];
-  buildsetLinks: string[];
-  steps?: StepExt[];
-  humanStatus: string;
-  inputProperties: Property[];
-  outputProperties: Property[];
-  builderLink: Link;
-  link: Link;
-  banners: Logo[];
-  timeline: string;
-}
-
-export interface Property {
-  name: string;
-  value: string;
-}
-
-export interface StepExt extends Step {
-  children?: StepExt[];
-  collapsed: boolean;
-  interval: Interval;
-}
-
-export interface Interval {
-  start: string;
-  end: string;
-  now: string;
-}
-
 export interface Link {
   label: string;
   url: string;
@@ -98,16 +47,6 @@ export interface Link {
   img?: string;
   alt?: string;
   alias?: boolean;
-}
-
-export interface LogoBase {
-  img: string;
-  alt: string;
-}
-
-export interface Logo extends LogoBase {
-  subtitle: string;
-  count: number;
 }
 
 export interface RelatedBuildsData {
@@ -122,16 +61,6 @@ export class BuildPageService {
   constructor(private accessToken: string) {}
   // tslint:disable-next-line: ban-types
   private reviver = (k: string, v: unknown) => k === 'id'?  (v as Object).toString() : v;
-
-  async getBuildPageData(req: GetBuildPageDataRequest): Promise<BuildPageData> {
-    const res = await fetch(
-      `/p/${req.builder.project}/builders/${req.builder.bucket}/${req.builder.builder}/${req.buildNumOrId}/data`,
-      {headers: {'Authorization': `Bearer ${this.accessToken}`}},
-    );
-    const buildPageDataText = await res.text();
-    const buildPageData = camelCaseRecursive(jsonbigint.parse(buildPageDataText, this.reviver));
-    return buildPageData as BuildPageData;
-  }
 
   async getRelatedBuilds(bbId: string): Promise<RelatedBuildsData> {
     const fetchUrl = `/related_builds/${bbId}`;

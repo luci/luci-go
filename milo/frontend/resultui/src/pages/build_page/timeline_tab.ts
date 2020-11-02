@@ -15,12 +15,15 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
+import escape from 'lodash-es/escape';
+import { DateTime } from 'luxon';
 import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { displayDuration } from '../../libs/time_utils';
 
 export class TimelineTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -47,23 +50,13 @@ export class TimelineTabElement extends MobxLitElement {
   }
 
   private renderTimeline() {
-    if (this.buildState.buildPageData === null || !this.rendered) {
+    if (this.buildState.build === null || !this.rendered) {
       return;
     }
 
     const container = this.shadowRoot!.getElementById('timeline')!;
-    function groupTemplater(group: { data: { label: string; duration: string; statusClassName: string} }): string {
-      return `
-        <div class="group-title ${group.data.statusClassName}">
-          <span class="title">${group.data.label}</span>
-          <span class="duration">( ${group.data.duration} )</span>
-        </div>
-      `;
-    }
-
     const options = {
       clickToUse: false,
-      groupTemplate: groupTemplater,
       multiselect: false,
       orientation: {
         axis: 'both',
@@ -73,22 +66,36 @@ export class TimelineTabElement extends MobxLitElement {
     };
 
     // Create a Timeline
-    const timelineData = JSON.parse(this.buildState.buildPageData!.timeline);
     const timeline = new Timeline(
       container,
-      new DataSet(timelineData.items),
-      new DataSet(timelineData.groups),
+      new DataSet(this.buildState.build.steps.map((step, i) => ({
+        className: `status-${step.status}`,
+        content: '',
+        id: i.toString(),
+        group: i.toString(),
+        start: step.startTime.toMillis(),
+        end: (step.endTime || new DateTime()).toMillis(),
+        type: 'range',
+      }))),
+      new DataSet(this.buildState.build.steps.map((step, i) => ({
+        id: i.toString(),
+        content: `
+          <div class="group-title status-${step.status}">
+            <span class="title">${escape(step.name)}</span>
+            <span class="duration">( ${displayDuration(step.duration)} )</span>
+          </div>
+        `,
+      }))),
       options,
     );
 
     timeline.on('select', (props) => {
-      const item = timelineData.items[props.items[0]];
-      if (!item) {
+      const step = this.buildState.build!.steps[props.items[0]];
+      const viewUrl = step.logs?.[0].viewUrl;
+      if (!viewUrl) {
         return;
       }
-      if (item.data && item.data.logUrl) {
-        window.open(item.data.logUrl, '_blank');
-      }
+      window.open(viewUrl, '_blank');
     });
   }
 

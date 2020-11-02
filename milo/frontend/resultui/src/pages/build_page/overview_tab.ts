@@ -26,13 +26,13 @@ import '../../components/build_step_entry';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
-import { getBotLink, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask, stepSucceededRecursive } from '../../libs/build_utils';
+import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { displayTimeDiff, displayTimeDiffOpt, displayTimestamp, displayTimestampOpt } from '../../libs/time_utils';
+import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
+import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
 import { BuildStatus } from '../../services/buildbucket';
-import { StepExt } from '../../services/build_page';
 
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -47,7 +47,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderStatusTime() {
-    const bpd = this.buildState.buildPageData!;
+    const bpd = this.buildState.build!;
 
     return html`
       <div id="status">
@@ -57,15 +57,15 @@ export class OverviewTabElement extends MobxLitElement {
         </i>
         ${(() => { switch (bpd.status) {
         case BuildStatus.Scheduled:
-          return `since ${displayTimestamp(bpd.createTime)}`;
+          return `since ${bpd.createTime.toFormat(DEFAULT_TIME_FORMAT)}`;
         case BuildStatus.Started:
-          return `since ${displayTimestamp(bpd.startTime!)}`;
+          return `since ${bpd.startTime!.toFormat(DEFAULT_TIME_FORMAT)}`;
         case BuildStatus.Canceled:
-          return `after ${displayTimeDiff(bpd.createTime, bpd.endTime!)} by ${bpd.canceledBy}`;
+          return `after ${displayDuration(bpd.endTime!.diff(bpd.createTime))} by ${bpd.canceledBy}`;
         case BuildStatus.Failure:
         case BuildStatus.InfraFailure:
         case BuildStatus.Success:
-          return `after ${displayTimeDiff(bpd.startTime || bpd.createTime, bpd.endTime!)}`;
+          return `after ${displayDuration(bpd.endTime!.diff(bpd.startTime || bpd.createTime))}`;
         default:
           return '';
         }})()}
@@ -80,7 +80,7 @@ export class OverviewTabElement extends MobxLitElement {
     if (!this.buildState.isCanary) {
       return html``;
     }
-    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.buildState.buildPageData!.status) === -1) {
+    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.buildState.build!.status) === -1) {
       return html``;
     }
     return html`
@@ -94,7 +94,7 @@ export class OverviewTabElement extends MobxLitElement {
 
   private async cancelBuild(reason: string) {
     await this.appState.buildsService!.cancelBuild({
-      id: this.buildState.buildPageData!.id,
+      id: this.buildState.build!.id,
       summaryMarkdown: reason,
     });
     this.buildState.refresh();
@@ -102,20 +102,13 @@ export class OverviewTabElement extends MobxLitElement {
 
   private async retryBuild() {
     const build = await this.appState.buildsService!.scheduleBuild({
-      templateBuildId: this.buildState.buildPageData!.id,
+      templateBuildId: this.buildState.build!.id,
     });
-    Router.go({
-      pathname: router.urlForName('build', {
-        project: build.builder.project,
-        bucket: build.builder.bucket,
-        builder: build.builder.builder,
-        build_num_or_id: build.number ? build.number.toString() : `b${build.id}`,
-      }),
-    });
+    Router.go(getURLForBuild(build));
   }
 
   private renderSummary() {
-    const bpd = this.buildState.buildPageData!;
+    const bpd = this.buildState.build!;
     if (bpd.summaryMarkdown) {
       return html`
         <div id="summary-html">
@@ -136,7 +129,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInput() {
-    const input = this.buildState.buildPageData?.input;
+    const input = this.buildState.build?.input;
     if (!input) {
       return html``;
     }
@@ -169,13 +162,13 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInfra() {
-    const bpd = this.buildState.buildPageData!;
+    const bpd = this.buildState.build!;
     const botLink = bpd.infra?.swarming ? getBotLink(bpd.infra.swarming) : null;
     return html`
       <div>
         <h3>Infra</h3>
         <table>
-          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucketLink} target="_blank"></td></tr>
+          <tr><td>Buildbucket ID:</td><td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, bpd.id)} target="_blank"></td></tr>
           ${bpd.infra?.swarming ? html`
           <tr>
             <td>Swarming Task:</td>
@@ -193,10 +186,10 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderSteps() {
-    const bpd = this.buildState.buildPageData!;
-    const nonSucceededSteps = (bpd.steps || [])
+    const bpd = this.buildState.build!;
+    const nonSucceededSteps = (bpd.rootSteps || [])
       .map((step, i) => [step, i + 1] as [StepExt, number])
-      .filter(([step, _stepNum]) => !stepSucceededRecursive(step));
+      .filter(([step, _stepNum]) => !step.succeededRecursively);
 
     return html`
       <div>
@@ -221,24 +214,24 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderTiming() {
-    const bpd = this.buildState.buildPageData!;
+    const bpd = this.buildState.build!;
 
     return html`
       <div>
         <h3>Timing</h3>
         <table>
-          <tr><td>Create:</td><td>${displayTimestamp(bpd.createTime)}</td></tr>
-          <tr><td>Start:</td><td>${displayTimestampOpt(bpd.startTime) || 'N/A'}</td></tr>
-          <tr><td>End:</td><td>${displayTimestampOpt(bpd.endTime) || 'N/A'}</td></tr>
-          <tr><td>Pending:</td><td>${displayTimeDiffOpt(bpd.createTime, bpd.startTime) || 'N/A'}</td></tr>
-          <tr><td>Execution:</td><td>${displayTimeDiffOpt(bpd.startTime, bpd.endTime) || 'N/A'}</td></tr>
+          <tr><td>Create:</td><td>${bpd.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
+          <tr><td>Start:</td><td>${bpd.startTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
+          <tr><td>End:</td><td>${bpd.endTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
+          <tr><td>Pending:</td><td>${bpd.pendingDuration && displayDuration(bpd.pendingDuration) || 'N/A'}</td></tr>
+          <tr><td>Execution:</td><td>${bpd.executionDuration && displayDuration(bpd.executionDuration) || 'N/A'}</td></tr>
         </table>
       </div>
     `;
   }
 
   private renderTags() {
-    const tags = this.buildState.buildPageData?.tags;
+    const tags = this.buildState.build?.tags;
     if (!tags) {
       return html``;
     }
@@ -278,7 +271,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   protected render() {
-    const bpd = this.buildState.buildPageData;
+    const bpd = this.buildState.build;
     if (!bpd) {
       return html``;
     }

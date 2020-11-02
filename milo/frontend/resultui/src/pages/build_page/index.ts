@@ -26,7 +26,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state/build_s
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { displayTimeDiff, displayTimestamp } from '../../libs/time_utils';
+import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 
@@ -76,8 +76,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   private disposers: Array<() => void> = [];
 
   @computed private get faviconUrl() {
-    if (this.buildState.buildPageData) {
-      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.buildPageData.status]}-32.png`;
+    if (this.buildState.build) {
+      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.build.status]}-32.png`;
     }
     return `/static/common/favicon/milo-32.png`;
   }
@@ -88,7 +88,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     this.buildState.buildNumOrId = this.buildNumOrId;
 
     this.disposers.push(autorun(() => {
-      const bpd = this.buildState.buildPageData;
+      const bpd = this.buildState.build;
       if (!bpd) {
         return;
       }
@@ -160,30 +160,30 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   @computed private get statusBarColor() {
-    const bpd = this.buildState.buildPageData;
-    return bpd ? BUILD_STATUS_COLOR_MAP[bpd.status] : 'var(--active-color)';
+    const build = this.buildState.build;
+    return build ? BUILD_STATUS_COLOR_MAP[build.status] : 'var(--active-color)';
   }
 
   private renderBuildStatus() {
-    const bpd = this.buildState.buildPageData;
-    if (!bpd) {
+    const build = this.buildState.build;
+    if (!build) {
       return html``;
     }
     return html`
-      <i class="status ${BUILD_STATUS_CLASS_MAP[bpd.status]}">
-        ${BUILD_STATUS_DISPLAY_MAP[bpd.status] || 'unknown status'}
+      <i class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
+        ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown status'}
       </i>
-      ${(() => { switch (bpd.status) {
+      ${(() => { switch (build.status) {
       case BuildStatus.Scheduled:
-        return `since ${displayTimestamp(bpd.createTime)}`;
+        return `since ${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}`;
       case BuildStatus.Started:
-        return `since ${displayTimestamp(bpd.startTime!)}`;
+        return `since ${build.startTime!.toFormat(DEFAULT_TIME_FORMAT)}`;
       case BuildStatus.Canceled:
-        return `after ${displayTimeDiff(bpd.createTime, bpd.endTime!)}`;
+        return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
       case BuildStatus.Failure:
       case BuildStatus.InfraFailure:
       case BuildStatus.Success:
-        return `after ${displayTimeDiff(bpd.startTime || bpd.createTime, bpd.endTime!)}`;
+        return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
       default:
         return '';
       }})()}
@@ -209,7 +209,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       </div>
       <milo-status-bar
         .components=${[{color: this.statusBarColor, weight: 1}]}
-        .loading=${this.buildState.buildPageDataReq.state === 'pending'}
+        .loading=${this.buildState.buildReq.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
         .tabs=${this.tabDefs}
