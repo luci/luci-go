@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08433207_7737e1c7",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T23:59:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b65e4886_cec79146",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "c87fd6e7f7be386fa14d89085a84bc978754598c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c3c3089e_21d90011",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-02T19:17:45Z",
       "side": 1,
       "message": "One alternate way to do this would be for there to be a field in Groups: `Group fallback \u003d 2;`. Would this be more complex to set up?\n\nThis is also fine as is.",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "c87fd6e7f7be386fa14d89085a84bc978754598c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "128ce3fa_48685684",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T23:59:14Z",
+      "side": 1,
+      "message": "But code will be more complicated, I think, but more importantly,  we should get rid of fallback and rely on order of groups instead.",
+      "parentUuid": "c3c3089e_21d90011",
       "range": {
         "startLine": 39,
         "startChar": 0,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "27b24a04_263da65d",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T23:59:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "82799639_faf656e3",
+      "range": {
+        "startLine": 98,
+        "startChar": 24,
+        "endLine": 98,
+        "endChar": 55
+      },
+      "revId": "c87fd6e7f7be386fa14d89085a84bc978754598c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "021daf4c_c1cb2d08",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-11-02T19:17:45Z",
       "side": 1,
       "message": "If several match, then the first one is used, right?\n\nAnd if any match, then fallback is ignored, but if none match then fallback is used?",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 26
+      },
+      "revId": "c87fd6e7f7be386fa14d89085a84bc978754598c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86716664_9b1b3c94",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T23:59:14Z",
+      "side": 1,
+      "message": "no and no.\n\nFor code here, my comment in code above is accurate.\n\n\nToday, in CQDaemon:\nIf 0 or 1 match, obvious.\nIf 2 match AND 1 is fallback, choose the other one (ie ignore fallback group)\nElse: CL isn\u0027t considered (this is similar if 2 *projects* watch the same ref\n\n\nNote that if 2 different LUCI projects, managed by 2 diff CQDaemon processes, each watch the same host/repo/ref,\nthen each Daemon will be processing the CL from such a ref.\n\n\nSo, in the CV, we\u0027ll do better:\ngobmap.Lookup() returns set(\n  select_groups(project) for project in luci_projects\n)\n\nwhere select_groups(project) takes care of fallback the same way as individual CQDaemon.\n\n\n\nThe caller of \n   groups :\u003d gobmap.Lookup()\nwill then proceed iff len(groups) \u003d\u003d 1.\nIf len() \u003d\u003d 2, then it\u0027ll emit errors, and I guess the error will be different depending on whether groups are from the same or different LUCI project.",
+      "parentUuid": "021daf4c_c1cb2d08",
       "range": {
         "startLine": 100,
         "startChar": 0,
