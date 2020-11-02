@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "30463565_90ff8130",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-02T17:08:12Z",
+      "side": 1,
+      "message": "Background: BBAgent keeps sending updated build.proto stream to logdog while the build is running and also send the same build to Buildbucket via `UpdateBuild`. You can view both build in Milo:\n1. Raw Logdog build.proto stream: https://ci.chromium.org/raw/build/logs.chromium.org/infra/buildbucket/cr-buildbucket.appspot.com/8864760327556957808/+/build.proto?server\u003dchrome-swarming.appspot.com\n2. Buildbucket build: https://ci.chromium.org/p/infra/builders/try/infra-try-trusty-64/b8864760327556957808\n\nThose two build are mostly the same but some build updates only happen in Buildbucket(e.g. the `start_time` in this change). I believe Buildbucket updates it as soon as it gets notified by Swarming that the build has started. However, BBagent itself never sets this field before (you can see that in the sample build that the start_time is missing for prod build) since no one is really looking at the logdog view.",
+      "parentUuid": "5af8444c_01641cf3",
+      "revId": "82cf33e66f3718529bbc908755e2e165017013a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "96a464cc_a63088a7",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
