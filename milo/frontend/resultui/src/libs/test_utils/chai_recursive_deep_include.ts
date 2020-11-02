@@ -35,7 +35,7 @@ declare global {
 
 export const chaiRecursiveDeepInclude: Chai.ChaiPlugin = (chai) => {
   chai.assert.recursiveDeepInclude = (actual, expected, msg) => {
-    chai.assert.deepInclude(deepStripNotIn(actual, expected), expected, msg);
+    chai.assert.deepEqual(deepStripNotIn(actual, expected), expected, msg);
   };
 };
 
