@@ -21,9 +21,10 @@ import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
-import { displayTimeDiffOpt, displayTimestamp } from '../../libs/time_utils';
+import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
+import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
-import { Build, BuildStatus } from '../../services/buildbucket';
+import { BuildExt } from '../../models/build_ext';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -46,7 +47,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderLoadingBar() {
-    if (this.buildState.buildPageData == null || this.buildState.relatedBuildsData == null) {
+    if (this.buildState.build == null || this.buildState.relatedBuildsData == null) {
       return html`
         <div id="load">
           Loading <milo-dot-spinner></milo-dot-spinner>
@@ -57,13 +58,13 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderBuildsetInfo() {
-    if (this.buildState.buildPageData == null) {
+    if (this.buildState.build == null) {
       return html``;
     }
     return html`
       <ul>
       ${repeat(
-        this.buildState.buildPageData.buildSets,
+        this.buildState.build.buildSets,
         (item, _) => html`<li>${item}</li>`,
       )}
       </ul>
@@ -89,29 +90,29 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         </tr>
         ${repeat(
           this.buildState.relatedBuildsData.relatedBuilds,
-          (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild),
+          (relatedBuild, _) => this.renderRelatedBuildRow(new BuildExt(relatedBuild)),
         )}
       </table>
     `;
   }
 
-  private renderRelatedBuildRow(build: Build) {
+  private renderRelatedBuildRow(build: BuildExt) {
     return html `
       <tr>
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
         <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
-        <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
-        <td>${displayTimestamp(build.createTime)}</td>
-        <td>${displayTimeDiffOpt(build.createTime, build.startTime) || 'N/A'}</td>
-        <td>${displayTimeDiffOpt(build.startTime, build.endTime) || 'N/A'}</td>
+        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${getDisplayNameForStatus(build.status)}</td>
+        <td>${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td>
+        <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
+        <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td>
         <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
       </tr>
     `;
   }
 
-  private renderBuildLink(build: Build) {
+  private renderBuildLink(build: BuildExt) {
     const display = build.number ? build.number : build.id;
     return html`<a href=${getURLForBuild(build)}>${display}</a>`;
   }
@@ -124,28 +125,28 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       vertical-align: middle;
       text-align: center;
     }
-    #related-builds-table td{
+    #related-builds-table td {
       padding: 0.1em 1em 0.1em 1em;
     }
-    .status.Success {
+    .status.success {
       background-color: #8d4;
       border-color: #4f8530;
     }
-    .status.Failure {
+    .status.failure {
       background-color: #e88;
       border-color: #a77272;
       border-style: solid;
     }
-    .status.InfraFailure {
+    .status.infra-failure {
       background-color: #c6c;
       border-color: #aca0b3;
       color: #ffffff;
     }
-    .status.Started {
+    .status.started {
       background-color: #fd3;
       border-color: #c5c56d;
     }
-    .status.Canceled {
+    .status.canceled {
       background-color: #8ef;
       border-color: #00d8fc;
     }
