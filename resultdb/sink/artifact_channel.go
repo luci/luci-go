@@ -20,6 +20,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -81,6 +82,12 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
+
+	start := clock.Now(ctx)
+	defer func() {
+		c.cfg.Watcher.ArtifactChannelDrained(ctx, clock.Since(ctx, start))
+	}()
+
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
@@ -102,4 +109,5 @@ func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
 			}
 		}
 	}
+	return
 }
