@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "17367efb_c3161894",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 28
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "095db3db_c2fc2e73",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 18
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "636bd38f_cc2c5814",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-02T14:41:54Z",
       "side": 1,
       "message": "represented",
+      "range": {
+        "startLine": 14,
+        "startChar": 22,
+        "endLine": 14,
+        "endChar": 23
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "105d5476_7edc4875",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 28
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "636bd38f_cc2c5814",
       "range": {
         "startLine": 14,
         "startChar": 22,
@@ -93,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cbb524c_07fa1f6b",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "yes, incorporated",
+      "parentUuid": "3299c0d9_d6e31839",
+      "range": {
+        "startLine": 99,
+        "startChar": 56,
+        "endLine": 99,
+        "endChar": 70
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20e9fbee_80921b24",
@@ -116,6 +188,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d3388c5_e2cc7672",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20e9fbee_80921b24",
+      "range": {
+        "startLine": 110,
+        "startChar": 13,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc87d0c0_aa795536",
@@ -129,6 +225,30 @@
       "writtenOn": "2020-11-02T14:41:54Z",
       "side": 1,
       "message": "I find reading such calls weird sinc all args are strings and it\u0027s hard to guess correctly one which is which,\n\n  func execGit(context string) (func (args ...string) (out string, err error)){\n    return func (args ...string) (out string, err error){\n       \u003csame code as before\u003e\n    }\n  }\n\ns.t. calls are\n\n  execGit(cwd)(\"arg1\", ...) ?",
+      "range": {
+        "startLine": 131,
+        "startChar": 13,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0afc65b6_8c9b5d6f",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done, but it is somewhat weird",
+      "parentUuid": "bc87d0c0_aa795536",
       "range": {
         "startLine": 131,
         "startChar": 13,
@@ -185,6 +305,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01cf945b_1947c233",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9547e104_60a37b7f",
+      "range": {
+        "startLine": 149,
+        "startChar": 32,
+        "endLine": 149,
+        "endChar": 37
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d99b06e3_3751f901",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63a8cdc9_d77055ad",
+      "range": {
+        "startLine": 149,
+        "startChar": 44,
+        "endLine": 149,
+        "endChar": 50
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d2eda19a_bc526dbf",
@@ -198,6 +366,30 @@
       "writtenOn": "2020-11-02T14:41:54Z",
       "side": 1,
       "message": "FYI: you can make it 10-1000x faster (and avoid wasting SSD erase cycles on your laptop) if you use RAM-backed filesystem, e.g. /dev/shm/ on Linux. No idea about Win and I don\u0027t see anything ready-made mount on Macs (https://apple.stackexchange.com/questions/193883/to-have-ram-based-filesystem-in-osx)",
+      "range": {
+        "startLine": 38,
+        "startChar": 15,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e4008fc_7667d869",
+        "filename": "rts/filegraph/cli/git_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "ack. will think about it if a we have more tests like this",
+      "parentUuid": "d2eda19a_bc526dbf",
       "range": {
         "startLine": 38,
         "startChar": 15,
@@ -231,6 +423,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "df14b95e_c434ae0f",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58793046_2c9ccc75",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 65
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bf0fdac3_5e3fdd8d",
@@ -244,6 +460,30 @@
       "writtenOn": "2020-11-02T14:41:54Z",
       "side": 1,
       "message": "readability of Adjacent(false, ...) and Adjacent(true, ...) is poor.\nI recommend instead\n  Incoming(...) and Outgoing(...)\n\nor with named constants\n  Adjacent(Outgoing, ...) Adjacent(Incoming, ...)",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8ced1e6_e900b6e2",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "renamed to Outgoing and removed outgoingEdges bool. Will add Incoming when it is used",
+      "parentUuid": "bf0fdac3_5e3fdd8d",
       "range": {
         "startLine": 43,
         "startChar": 4,
@@ -277,6 +517,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ece38357_1893b4e8",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "913a4286_ef6215ae",
+      "range": {
+        "startLine": 45,
+        "startChar": 74,
+        "endLine": 45,
+        "endChar": 78
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e30424a7_df5d23a5",
@@ -290,6 +554,30 @@
       "writtenOn": "2020-11-02T14:41:54Z",
       "side": 1,
       "message": "ditto nit: (stop bool) for clearer documentation",
+      "range": {
+        "startLine": 49,
+        "startChar": 49,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34cc9389_8c4d1a5b",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T22:17:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e30424a7_df5d23a5",
       "range": {
         "startLine": 49,
         "startChar": 49,
