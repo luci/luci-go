@@ -69,6 +69,7 @@ func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 		Invocation:       "invocations/u-foo-1587421194_893166206",
 		invocationID:     "u-foo-1587421194_893166206",
 		UpdateToken:      "UpdateToken-ABC",
+		Watcher:          &DummyEventListener{},
 	}
 }
 
