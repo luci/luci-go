@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "a58e5aca_70c07a04",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "\"compress\"?\n\nAlso maybe \"deflate\" to indicate the algorithm? Note that ResultDB uses zstd, since it is presumably more efficient for this use case (it also supports multicore compression/decompression). See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/resultdb/internal/spanutil/compression.go The implementation in klauspost also reuses buffers across calls, leading to less GC overhead.\n\nI think if we don\u0027t care about interoperability with Python code, we should consider using something more modern than deflate.",
+      "range": {
+        "startLine": 15,
+        "startChar": 53,
+        "endLine": 16,
+        "endChar": 43
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "f348d99b_3c962ecc",
@@ -14,6 +37,224 @@
       "writtenOn": "2020-11-02T13:53:20Z",
       "side": 1,
       "message": "ping?",
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08082d14_c4a251e5",
+        "filename": "gae/service/datastore/pls_impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "nit: third party imports in a separate block",
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a70bc438_ef8b65bd",
+        "filename": "gae/service/datastore/pls_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 710,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "can you add a test for `[]*testprotos.Msg`? \n\nAnd also \n\n  type Outer struct {\n   Inner Inner\n  }\n\n  type Inner struct {\n    Msg *testprotos.Msg\n  }\n\nAnd\n\n  type Outer struct {\n   Inner []Inner\n  }\n\n  type Inner struct {\n    Msg *testprotos.Msg\n  }",
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9a5ebf3_69708193",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "I wonder why zlib and not raw deflate? Also see my comment about about using a more modern format.",
+      "range": {
+        "startLine": 19,
+        "startChar": 11,
+        "endLine": 19,
+        "endChar": 15
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d18e42c_3cafc2a3",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "This part I have a bad feeling about.\n\nAs we discussed few weeks ago, an ideal approach would be to use a datastore field metadata that Python datastore library uses. It exists in raw Datastore API, but not exposed via Go libraries. Then we don\u0027t need \"legacy\". Just need to make sure this field is not deprecated out of existence...",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 55
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8b94509_017df171",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "Note that groups existing in the new Go protobuf library, at least when using protoreflect or dynamicpb.",
+      "range": {
+        "startLine": 57,
+        "startChar": 42,
+        "endLine": 57,
+        "endChar": 53
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b248547b_15168276",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "But protobuf deserializer will still choke on it trying to deserialize the message. What is the purpose of avoiding accidental overlap?",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 55
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2944e6d_4470bf55",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "nit: imo nocompress should be first, it is more \"fundamental\"",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 37
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de8751ca_95d4c615",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "nit: `case \"\", \"nocompress\"`",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 19
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be10d50d_7da2608d",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "nit: extract into a separate function",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 3
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4d16776_cbca17f5",
+        "filename": "gae/service/datastore/reflect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-02T22:32:35Z",
+      "side": 1,
+      "message": "what the heck... I figured, but still.",
+      "range": {
+        "startLine": 35,
+        "startChar": 27,
+        "endLine": 35,
+        "endChar": 71
+      },
       "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
