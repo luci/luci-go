@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0d06428_e1c29e44",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T06:45:35Z",
+      "side": 1,
+      "message": "Demo: https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4835/overview",
+      "revId": "a98433c4ac40b05367256244559e703fe9307f6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
