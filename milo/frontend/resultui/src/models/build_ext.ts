@@ -16,7 +16,7 @@ import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
 import { Build, BuilderID, BuildInfra, BuildInput, BuildOutput, BuildStatus, Executable, StringPair } from '../services/buildbucket';
-import { Link } from '../services/build_page';
+import { Link } from './link';
 import { StepExt } from './step_ext';
 
 /**

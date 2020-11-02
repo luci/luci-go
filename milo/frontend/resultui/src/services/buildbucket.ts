@@ -33,6 +33,33 @@ export interface GetBuildRequest {
   readonly fields?: string;
 }
 
+export interface SearchBuildsRequest {
+  readonly predicate: BuildPredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+  readonly fields?: string;
+}
+
+export interface SearchBuildsResponse {
+  readonly builds: readonly Build[];
+  readonly nextPageToken?: string;
+}
+
+export interface BuildPredicate {
+  readonly builderId?: BuilderID;
+  readonly status?: BuildStatus;
+  readonly gerritChanges?: readonly GerritChange[];
+  readonly createdBy?: string;
+  readonly tags?: readonly StringPair[];
+  readonly build?: BuildRange;
+  readonly experiments?: readonly string[];
+}
+
+export interface BuildRange {
+  readonly startBuildId: string;
+  readonly endBuildId: string;
+}
+
 export interface BuilderID {
   readonly project: string;
   readonly bucket: string;
@@ -242,6 +269,13 @@ export class BuildsService {
       'GetBuild',
       req,
     ) as Build;
+  }
+
+  async searchBuilds(req: SearchBuildsRequest) {
+    return await this.call(
+      'SearchBuilds',
+      req,
+    ) as SearchBuildsResponse;
   }
 
   async cancelBuild(req: CancelBuildRequest) {
