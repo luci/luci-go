@@ -238,7 +238,28 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
 		CoerceNegativeDuration:     r.coerceNegativeDuration,
+		Watcher:                    newSinkStats(),
 	}
+
+	terminated := make(chan bool)
+	defer func() {
+		terminated <- true
+		cfg.Watcher.(*sinkStats).printSummary(ctx)
+	}()
+
+	// print the summary every 5 minutes. If a test run takes too long, the sink process
+	// may get killed.
+	go func() {
+		for {
+			select {
+			case <-terminated:
+				return
+			case <-time.After(5 * time.Minute):
+				cfg.Watcher.(*sinkStats).printSummary(ctx)
+			}
+		}
+	}()
+
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
 		if err != nil {
