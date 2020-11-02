@@ -16,6 +16,23 @@
       "message": "The version with 50% traffic in Go has run for a few days and all looks good. I think we can turn on 100% traffic in Go on next Monday.",
       "revId": "b11068279b3640c34dcb27a2f2408ac69d0819ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e957c27f_3f22ee32",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T13:52:07Z",
+      "side": 1,
+      "message": "🎉",
+      "revId": "b11068279b3640c34dcb27a2f2408ac69d0819ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
