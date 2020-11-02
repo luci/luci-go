@@ -15,8 +15,11 @@
 package cli
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,14 +28,16 @@ import (
 
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/rts/filegraph"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref   string
-	graph filegraph.Graph
+	ref string
+	git.Graph
 }
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
@@ -84,7 +89,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 		}
 
 		// Load the node.
-		node := g.graph.Node(name)
+		node := g.Node(name)
 		if node == nil {
 			return nil, errors.Reason("node %q not found", name).Err()
 		}
@@ -97,8 +102,71 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 // loadSyncedGraph loads a file graph for g.ref in the the given repo, syncs to
 // the latest commit in the ref, and caches the result on the file system.
 func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
-	// TODO(crbug.com/1136280): implement.
-	panic("not implemented")
+	gitDir, err := execGit(repoDir, "rev-parse", "--absolute-git-dir")
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(
+		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
+		os.O_RDWR|os.O_CREATE,
+		0777,
+	)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Read the cache.
+	switch err := g.Read(bufio.NewReader(f)); {
+	case os.IsNotExist(err):
+		logging.Infof(ctx, "populating cache; this may take minutes...")
+	case err != nil:
+		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
+	}
+
+	// Fallback from main to master if needed.
+	tillRev := g.ref
+	if g.ref == "refs/heads/main" {
+		if _, err := execGit(repoDir, "rev-parse", g.ref, "--"); err != nil {
+			if !strings.Contains(err.Error(), "bad revision") {
+				return err
+			}
+			tillRev = "refs/heads/main"
+		}
+	}
+
+	write := func() error {
+		if _, err := f.Seek(0, 0); err != nil {
+			return err
+		}
+		return g.Write(f)
+	}
+
+	// Read the new commits.
+	processed := 0
+	dirty := false
+	err = g.Sync(ctx, repoDir, tillRev, func() error {
+		dirty = true
+
+		processed++
+		if processed%10000 == 0 {
+			if err := write(); err != nil {
+				logging.Errorf(ctx, "failed to save cache: %s", err)
+			}
+			fmt.Printf("processed %d commits\n", processed)
+			dirty = false
+		}
+		return nil
+	})
+	switch {
+	case err != nil:
+		return err
+	case dirty:
+		return write()
+	default:
+		return nil
+	}
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
@@ -141,9 +209,11 @@ func execGit(context string, args ...string) (out string, err error) {
 
 	args = append([]string{"-C", dir}, args...)
 	cmd := exec.Command(exe, args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	outBytes, err := cmd.Output()
 	out = strings.TrimSuffix(string(outBytes), "\n")
-	return out, errors.Annotate(err, "git %q failed; output: %q", args, out).Err()
+	return out, errors.Annotate(err, "git %q failed; output: %q", args, stderr.Bytes()).Err()
 }
 
 // dirFromPath returns fileName as is if it points to a dir, otherwise returns
