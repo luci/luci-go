@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c478938_30266072",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T01:51:26Z",
+      "side": 1,
+      "message": "This comment could perhaps be more specific/accurate. This doesn\u0027t extend Step in the object-oriented sense; really it contains all of the fields of Step plus some helper methods and properties.",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 62
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abb87ccf_d0f93dd8",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T01:51:26Z",
+      "side": 1,
+      "message": "This variable name is confusing to me; a stored timestamp called \"now\" seems like it would be out-of-date almost immediately.\n\nSuggest either thinking of a better name or at least add a comment that \"now\" means \"the time the page was rendered\".\n\nAs a side note, do we ever expect to update this value? (e.g. if we want to start showing real-time updates on steps in progress?)",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 14
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d71da11_f583479a",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T01:51:26Z",
+      "side": 1,
+      "message": "nit: \"all of its descendants\"",
+      "range": {
+        "startLine": 59,
+        "startChar": 38,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ea27694_4874659f",
+        "filename": "milo/frontend/resultui/src/models/step_ext_test.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-02T01:51:26Z",
+      "side": 1,
+      "message": "for completeness, suggest adding a test with a succeeded parent and succeeded children",
+      "range": {
+        "startLine": 68,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 7
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
