@@ -18,8 +18,9 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
-import { BuilderID } from '../../services/buildbucket';
-import { BuildPageData, RelatedBuildsData } from '../../services/build_page';
+import { BuildExt } from '../../models/build_ext';
+import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
+import { RelatedBuildsData } from '../../services/build_page';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
@@ -35,8 +36,8 @@ export class BuildState {
   constructor(private appState: AppState) {}
 
   @computed
-  get buildPageDataReq(): IPromiseBasedObservable<BuildPageData> {
-    if (!this.appState.buildPageService || !this.builder || this.buildNumOrId === undefined) {
+  get buildReq(): IPromiseBasedObservable<Build> {
+    if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(new Promise(() => {}));
@@ -44,23 +45,25 @@ export class BuildState {
     // Since response can be different when queried at different time,
     // establish a dependency on timestamp.
     this.timestamp;  // tslint:disable-line: no-unused-expression
-    return fromPromise(this.appState.buildPageService.getBuildPageData({
-      builder: this.builder,
-      buildNumOrId: this.buildNumOrId,
-    }));
+
+    const req: GetBuildRequest = this.buildNumOrId.startsWith('b')
+      ? {id: this.buildNumOrId.slice(1), fields: '*'}
+      : {builder: this.builder, buildNumber: Number(this.buildNumOrId), fields: '*'};
+
+    return fromPromise(this.appState.buildsService.getBuild(req));
   }
 
   @computed
-  get buildPageData(): BuildPageData | null {
-    if (this.buildPageDataReq.state !== FULFILLED) {
+  get build(): BuildExt | null {
+    if (this.buildReq.state !== FULFILLED) {
       return null;
     }
-    return this.buildPageDataReq.value;
+    return new BuildExt(this.buildReq.value);
   }
 
   @computed
   get isCanary(): boolean {
-    return Boolean(this.buildPageData?.input.experiments?.includes('luci.non_production'));
+    return Boolean(this.build?.input.experiments?.includes('luci.non_production'));
   }
 
   @computed({keepAlive: true})
@@ -68,10 +71,10 @@ export class BuildState {
     // Since response can be different when queried at different time,
     // establish a dependency on timestamp.
     this.timestamp;  // tslint:disable-line: no-unused-expression
-    if (!this.appState.buildPageService || !this.buildPageData) {
+    if (!this.appState.buildPageService || !this.build) {
       return fromPromise(new Promise(() => {}));
     }
-    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.buildPageData!.id));
+    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.build.id));
   }
 
   @computed
@@ -84,16 +87,16 @@ export class BuildState {
 
   @computed({keepAlive: true})
   get queryBlamelistResIterFn() {
-    if (!this.appState.milo || !this.buildPageData) {
+    if (!this.appState.milo || !this.build) {
       return async function*() { await Promise.race([]); };
     }
-    if (!this.buildPageData.input.gitilesCommit) {
+    if (!this.build.input.gitilesCommit) {
       return async function*() {};
     }
 
     let req: QueryBlamelistRequest = {
-      gitilesCommit: this.buildPageData.input.gitilesCommit,
-      builder: this.buildPageData.builder,
+      gitilesCommit: this.build.input.gitilesCommit,
+      builder: this.build.builder,
     };
     const milo = this.appState.milo;
     async function* streamBlamelist() {

@@ -19,10 +19,9 @@ import { StepExt } from './step_ext';
 
 describe('StepExt', () => {
   function createStep(name: string, status = BuildStatus.Success) {
-    const startTime = {seconds: 100, nanos: 0};
     return new StepExt({
       name,
-      startTime,
+      startTime: '2020-11-01T21:43:03.351951Z',
       status,
     });
   }

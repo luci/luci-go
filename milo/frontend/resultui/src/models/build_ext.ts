@@ -15,7 +15,6 @@
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
-import { datetimeFromTimestamp } from '../libs/time_utils';
 import { Build, BuilderID, BuildInfra, BuildInput, BuildOutput, BuildStatus, Executable, StringPair } from '../services/buildbucket';
 import { Link } from '../services/build_page';
 import { StepExt } from './step_ext';
@@ -54,10 +53,10 @@ export class BuildExt {
     this.number = build.number;
     this.createdBy = build.createdBy;
     this.canceledBy = build.canceledBy;
-    this.createTime = datetimeFromTimestamp(build.createTime);
-    this.startTime = build.startTime ? datetimeFromTimestamp(build.startTime) : null;
-    this.endTime = build.endTime ? datetimeFromTimestamp(build.endTime) : null;
-    this.updateTime = datetimeFromTimestamp(build.updateTime);
+    this.createTime = DateTime.fromISO(build.createTime);
+    this.startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
+    this.endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
+    this.updateTime = DateTime.fromISO(build.updateTime);
     this.status = build.status;
     this.summaryMarkdown = build.summaryMarkdown;
     this.input = build.input;

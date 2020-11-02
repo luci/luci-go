@@ -15,7 +15,7 @@
 import { assert } from 'chai';
 
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
-import { Build } from '../services/buildbucket';
+import { Build, Step } from '../services/buildbucket';
 import { BuildExt } from './build_ext';
 import { StepExt } from './step_ext';
 
@@ -23,12 +23,10 @@ chai.use(chaiRecursiveDeepInclude);
 
 describe('BuildExt', () => {
   it('should build step-tree correctly', async () => {
-    const time = {seconds: 1000, nanos: 0};
+    const time = '2020-11-01T21:43:03.351951Z';
     const build = new BuildExt({
-      createTime: time,
-      updateTime: time,
       steps: [
-        {name: 'root1', startTime: time},
+        {name: 'root1', startTime: time} as Step,
         {name: 'root2', startTime: time},
         {name: 'root2|parent1', startTime: time},
         {name: 'root2|parent1|child1', startTime: time},
@@ -38,7 +36,7 @@ describe('BuildExt', () => {
         {name: 'root3|parent2', startTime: time},
         {name: 'root3|parent2|child1', startTime: time},
         {name: 'root3|parent2|child2', startTime: time},
-      ],
+      ] as readonly Step[],
     } as Build);
 
     assert.recursiveDeepInclude(build.rootSteps, [

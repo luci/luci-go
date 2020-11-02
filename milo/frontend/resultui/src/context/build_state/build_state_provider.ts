@@ -34,9 +34,9 @@ export class BuildStateProviderElement extends MobxLitElement {
       () => this.buildState = new BuildState(this.appState),
     ));
     this.disposers.push(when(
-      () => this.buildState.buildPageDataReq.state === REJECTED,
+      () => this.buildState.buildReq.state === REJECTED,
       () => this.dispatchEvent(new ErrorEvent('error', {
-        message: this.buildState.buildPageDataReq.value.toString(),
+        message: this.buildState.buildReq.value.toString(),
         composed: true,
         bubbles: true,
       })),

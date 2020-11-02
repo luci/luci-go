@@ -14,9 +14,7 @@
 
 import { assert } from 'chai';
 
-import { BuildStatus } from '../services/buildbucket';
-import { StepExt } from '../services/build_page';
-import { getBuildbucketLink, getLogdogRawUrl, stepSucceededRecursive } from './build_utils';
+import { getBuildbucketLink, getLogdogRawUrl } from './build_utils';
 
 
 describe('Build Utils Tests', () => {
@@ -39,34 +37,6 @@ describe('Build Utils Tests', () => {
     it('should get correct Buildbucket url', async () => {
       const buildbucketLink = getBuildbucketLink('cr-buildbucket-dev.appspot.com', '123');
       assert.strictEqual(buildbucketLink.url, 'https://cr-buildbucket-dev.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request=%7B%22id%22%3A%22123%22%7D');
-    });
-  });
-
-  describe('stepSucceededRecursive', () => {
-    const createStep = (status: BuildStatus) => {
-      return {
-        status,
-        collapsed: false,
-        name: '',
-        interval: { start: '', end: '', now: ''},
-        startTime: {seconds: 0, nanos: 0},
-      } as StepExt;
-    };
-    it('succeeded step with no children should return true', async () => {
-      const step = createStep(BuildStatus.Success);
-      assert.isTrue(stepSucceededRecursive(step));
-    });
-    it('failed step with no children should return false', async () => {
-      const step = createStep(BuildStatus.Failure);
-      assert.isFalse(stepSucceededRecursive(step));
-    });
-    it('succeeded step with failed child should return false', async () => {
-      const step = createStep(BuildStatus.Success);
-      step.children = [
-        createStep(BuildStatus.Success),
-        createStep(BuildStatus.Failure),
-      ];
-      assert.isFalse(stepSucceededRecursive(step));
     });
   });
 });

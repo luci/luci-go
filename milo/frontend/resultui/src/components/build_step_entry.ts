@@ -17,17 +17,15 @@ import '@material/mwc-icon';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
 import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
-import { getLogdogRawUrl, stepSucceededRecursive } from '../libs/build_utils';
+import { getLogdogRawUrl } from '../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
-import { BuildStatus } from '../services/buildbucket';
-import { StepExt } from '../services/build_page';
+import { StepExt } from '../models/step_ext';
 import './expandable_entry';
 import { OnEnterList } from './lazy_list';
 
@@ -68,20 +66,6 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     this.prerender = false;
   }
 
-  @computed private get shortName() {
-    if (!this.step.name) {
-      return 'ERROR: Empty Name';
-    }
-    return this.step.name.split('|').pop();
-  }
-
-  @computed private get duration() {
-    const start = DateTime.fromISO(this.step.interval.start);
-    const end = DateTime.fromISO(this.step.interval.end);
-    const now = DateTime.fromISO(this.step.interval.now);
-    return this.step.status === BuildStatus.Started ? now.diff(start) : end.diff(start);
-  }
-
   @computed private get header() {
     return this.step.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
   }
@@ -118,7 +102,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       ${this.step.children?.map((child, i) => html`
       <milo-build-step-entry
         class="list-entry"
-        .expanded=${!stepSucceededRecursive(child)}
+        .expanded=${!child.succeededRecursively}
         .number=${i + 1}
         .step=${child}
       ></milo-build-step-entry>
@@ -142,14 +126,14 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
             class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
             title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
           >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
-          <b>${this.number}. ${this.shortName}</b>
+          <b>${this.number}. ${this.step.selfName}</b>
           <milo-copy-to-clipboard
-            .textToCopy=${this.shortName}
+            .textToCopy=${this.step.name}
             title="Copy the step name."
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.header)}</span>
-          <span id="duration">${displayDuration(this.duration)}</span>
+          <span id="duration">${displayDuration(this.step.duration)}</span>
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
