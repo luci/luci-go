@@ -67,6 +67,6 @@ export function displayDuration(duration: Duration) {
   return parts.join(' ');
 }
 
-function datetimeFromTimestamp(t: Timestamp): DateTime {
+export function datetimeFromTimestamp(t: Timestamp): DateTime {
   return DateTime.fromMillis(t.seconds * 1000 + t.nanos / 1000000);
 }
