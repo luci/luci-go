@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -75,6 +76,12 @@ func (c *testResultChannel) closeAndDrain(ctx context.Context) {
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
+
+	start := clock.Now(ctx)
+	defer func() {
+		c.cfg.Watcher.TestResultChannelDrained(ctx, clock.Since(ctx, start))
+	}()
+
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
