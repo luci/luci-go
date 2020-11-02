@@ -14,10 +14,7 @@
 
 import { assert } from 'chai';
 
-import { BuildStatus } from '../services/buildbucket';
-import { StepExt } from '../services/build_page';
-import { getLogdogRawUrl, stepSucceededRecursive } from './build_utils';
-
+import { getLogdogRawUrl } from './build_utils';
 
 describe('Build Utils Tests', () => {
   describe('Get Logdog URL', () => {
@@ -32,33 +29,6 @@ describe('Build Utils Tests', () => {
     it('should return null for invalid url', async () => {
       const logdogURL = 'http://notvalidurl.com';
       assert.isNull(getLogdogRawUrl(logdogURL));
-    });
-  });
-  describe('stepSucceededRecursive', () => {
-    const createStep = (status: BuildStatus) => {
-      return {
-        status,
-        collapsed: false,
-        name: '',
-        interval: { start: '', end: '', now: ''},
-        startTime: {seconds: 0, nanos: 0},
-      } as StepExt;
-    };
-    it('succeeded step with no children should return true', async () => {
-      const step = createStep(BuildStatus.Success);
-      assert.isTrue(stepSucceededRecursive(step));
-    });
-    it('failed step with no children should return false', async () => {
-      const step = createStep(BuildStatus.Failure);
-      assert.isFalse(stepSucceededRecursive(step));
-    });
-    it('succeeded step with failed child should return false', async () => {
-      const step = createStep(BuildStatus.Success);
-      step.children = [
-        createStep(BuildStatus.Success),
-        createStep(BuildStatus.Failure),
-      ];
-      assert.isFalse(stepSucceededRecursive(step));
     });
   });
 });
