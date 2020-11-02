@@ -16,7 +16,7 @@ import { assert } from 'chai';
 
 import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from '../services/build_page';
-import { getLogdogRawUrl, stepSucceededRecursive } from './build_utils';
+import { getBuildbucketLink, getLogdogRawUrl, stepSucceededRecursive } from './build_utils';
 
 
 describe('Build Utils Tests', () => {
@@ -34,6 +34,14 @@ describe('Build Utils Tests', () => {
       assert.isNull(getLogdogRawUrl(logdogURL));
     });
   });
+
+  describe('Get Buildbucket Link', () => {
+    it('should get correct Buildbucket url', async () => {
+      const buildbucketLink = getBuildbucketLink('cr-buildbucket-dev.appspot.com', '123');
+      assert.strictEqual(buildbucketLink.url, 'https://cr-buildbucket-dev.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request=%7B%22id%22%3A%22123%22%7D');
+    });
+  });
+
   describe('stepSucceededRecursive', () => {
     const createStep = (status: BuildStatus) => {
       return {

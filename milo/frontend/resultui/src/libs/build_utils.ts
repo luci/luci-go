@@ -78,6 +78,21 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
   return null;
 }
 
+// getBuildbucketLink generates a link to a buildbucket RPC explorer page for
+// the given build.
+export function getBuildbucketLink(buildbucketHost: string, buildId: string): Link {
+  return {
+    label: buildId,
+    url: `https://${buildbucketHost}/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?${new URLSearchParams([[
+      'request',
+      JSON.stringify({
+        id: buildId,
+      }),
+    ]]).toString()}`,
+    ariaLabel: 'Buildbucket RPC explorer for build',
+  };
+}
+
 // getLogdogRawUrl generates raw link from a logdog:// url
 export function getLogdogRawUrl(logdogURL: string): string | null {
   const match = /^(logdog:\/\/)([^\/]*)\/(.+)$/.exec(logdogURL);
