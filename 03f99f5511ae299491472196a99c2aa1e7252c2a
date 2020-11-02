@@ -22,6 +22,30 @@
       },
       "revId": "03f99f5511ae299491472196a99c2aa1e7252c2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2566e5d_7da70b2a",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T22:45:47Z",
+      "side": 1,
+      "message": "Not very hot.\nI\u0027m not aware of any build with massive number of related builds.",
+      "parentUuid": "e2bc2cc8_6f2c27c7",
+      "range": {
+        "startLine": 57,
+        "startChar": 16,
+        "endLine": 57,
+        "endChar": 29
+      },
+      "revId": "03f99f5511ae299491472196a99c2aa1e7252c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
