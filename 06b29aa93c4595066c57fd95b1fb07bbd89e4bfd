@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44b6dc90_b50264d3",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T23:25:08Z",
+      "side": 1,
+      "message": "Thanks. Didn\u0027t know that existed.",
+      "parentUuid": "f399a8a4_3df5cae0",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "06b29aa93c4595066c57fd95b1fb07bbd89e4bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9bef78d_4577cb5c",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-02T23:01:26Z",
       "side": 1,
       "message": "if this is just for build ids, do we ever actually expect build ids with leading zeroes? if we know there aren\u0027t any, the comparison function could be much simpler and faster.\n\nif (num1.length \u003d\u003d num2.length) {\n  return num1.localeCompare(num2);\n}\nreturn num1.length - num2.length;",
+      "range": {
+        "startLine": 80,
+        "startChar": 8,
+        "endLine": 80,
+        "endChar": 51
+      },
+      "revId": "06b29aa93c4595066c57fd95b1fb07bbd89e4bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29e39310_e538b363",
+        "filename": "milo/frontend/resultui/src/libs/utils_test.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T23:25:08Z",
+      "side": 1,
+      "message": "You are right. I\u0027ll replace this in a later CL.",
+      "parentUuid": "b9bef78d_4577cb5c",
       "range": {
         "startLine": 80,
         "startChar": 8,
