@@ -132,19 +132,8 @@ func mainImpl() int {
 		}
 	}
 
-	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
-		// For buildbucket builds, buildbucket creates the invocations and saves the
-		// info in build proto.
-		// Then bbagent uses the info from build proto to set resultdb
-		// parameters in the luci context.
-		cctx, err = setResultDBContext(cctx, input.Build)
-		check(err)
-	} else {
-		// For led builds, swarming creates the invocations and sets resultdb
-		// parameters in luci context.
-		// Then bbagent gets the parameters from luci context and updates build proto.
-		setResultDBFromContext(cctx, input.Build)
-	}
+	cctx = setResultDBContext(cctx, input.Build, secrets)
+	prepareInputBuild(input.Build)
 
 	opts := &host.Options{
 		BaseBuild:      input.Build,
@@ -173,21 +162,6 @@ func mainImpl() int {
 		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
 	}
 	exeArgs[0] = exePath
-
-	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
-	// for the top level user stdout/stderr streams.
-	//
-	// Really, `invoke.Start` is the one that knows how to arrange the
-	// Output.Logs, but host.Run makes a copy of this build immediately. Find
-	// a way to set these up nicely (maybe have opts.BaseBuild be a function
-	// returning an immutable bbpb.Build?).
-	input.Build.Output = &bbpb.Build_Output{
-		Logs: []*bbpb.Log{
-			{Name: "stdout", Url: "stdout"},
-			{Name: "stderr", Url: "stderr"},
-		},
-	}
-	populateSwarmingInfoFromEnv(input.Build, environ.System())
 
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
@@ -315,6 +289,24 @@ func mainImpl() int {
 		return 1
 	}
 	return 0
+}
+
+func prepareInputBuild(build *bbpb.Build) {
+	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
+	// for the top level user stdout/stderr streams.
+	//
+	// Really, `invoke.Start` is the one that knows how to arrange the
+	// Output.Logs, but host.Run makes a copy of this build immediately. Find
+	// a way to set these up nicely (maybe have opts.BaseBuild be a function
+	// returning an immutable bbpb.Build?).
+	build.Output = &bbpb.Build_Output{
+		Logs: []*bbpb.Log{
+			{Name: "stdout", Url: "stdout"},
+			{Name: "stderr", Url: "stderr"},
+		},
+	}
+	populateSwarmingInfoFromEnv(build, environ.System())
+	return
 }
 
 // Returns min(1% of the remaining time towards current soft deadline,
