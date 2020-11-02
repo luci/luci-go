@@ -36,7 +36,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @computed
   private get repoUrl() {
-    const gitilesCommit = this.buildState.buildPageData!.input.gitiles_commit!;
+    const gitilesCommit = this.buildState.buildPageData!.input.gitilesCommit!;
     return `https://${gitilesCommit!.host}/${gitilesCommit.project}`;
   }
 
@@ -65,7 +65,7 @@ export class BlamelistTabElement extends MobxLitElement {
       this.endOfPage = true;
     } else {
       this.commits = this.commits.concat(iter.value.commits);
-      this.endOfPage = !iter.value.next_page_token;
+      this.endOfPage = !iter.value.nextPageToken;
     }
     this.isLoading = false;
   }
@@ -76,7 +76,7 @@ export class BlamelistTabElement extends MobxLitElement {
   }
 
   protected render() {
-    if (this.buildState.buildPageData && !this.buildState.buildPageData.input.gitiles_commit) {
+    if (this.buildState.buildPageData && !this.buildState.buildPageData.input.gitilesCommit) {
       return html`
         <div id="no-blamelist">
           Blamelist is not available because the build has no associated gitiles commit.<br>

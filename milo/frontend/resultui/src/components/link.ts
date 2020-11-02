@@ -29,7 +29,7 @@ export class LinkElement extends LitElement {
   protected render() {
     return html`
       <a href=${this.link.url}
-        aria-label=${this.link.aria_label}
+        aria-label=${this.link.ariaLabel}
         title=${this.link.img ? '' : this.link.alt}
         target=${this.target || ''}
       >

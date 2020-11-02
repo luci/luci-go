@@ -63,7 +63,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`
       <ul>
       ${repeat(
-        this.buildState.buildPageData.build_sets,
+        this.buildState.buildPageData.buildSets,
         (item, _) => html`<li>${item}</li>`,
       )}
       </ul>
@@ -88,7 +88,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
           <th>Summary</th>
         </tr>
         ${repeat(
-          this.buildState.relatedBuildsData.related_builds,
+          this.buildState.relatedBuildsData.relatedBuilds,
           (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild),
         )}
       </table>
@@ -103,10 +103,10 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
-        <td>${displayTimestamp(build.create_time)}</td>
-        <td>${displayTimeDiffOpt(build.create_time, build.start_time) || 'N/A'}</td>
-        <td>${displayTimeDiffOpt(build.start_time, build.end_time) || 'N/A'}</td>
-        <td>${renderMarkdown(build.summary_markdown || '')}</td>
+        <td>${displayTimestamp(build.createTime)}</td>
+        <td>${displayTimeDiffOpt(build.createTime, build.startTime) || 'N/A'}</td>
+        <td>${displayTimeDiffOpt(build.startTime, build.endTime) || 'N/A'}</td>
+        <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
       </tr>
     `;
   }

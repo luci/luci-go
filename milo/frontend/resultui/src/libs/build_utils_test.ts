@@ -41,7 +41,7 @@ describe('Build Utils Tests', () => {
         collapsed: false,
         name: '',
         interval: { start: '', end: '', now: ''},
-        start_time: {seconds: 0, nanos: 0},
+        startTime: {seconds: 0, nanos: 0},
       } as StepExt;
     };
     it('succeeded step with no children should return true', async () => {

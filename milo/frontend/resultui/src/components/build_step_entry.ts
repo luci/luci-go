@@ -83,11 +83,11 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
   }
 
   @computed private get header() {
-    return this.step.summary_markdown?.split(/\<br\/?\>/i)[0] || '';
+    return this.step.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
   }
 
   @computed private get summary() {
-    return this.step.summary_markdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
+    return this.step.summaryMarkdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
   }
 
   @computed private get logs() {
@@ -106,7 +106,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
         ${this.logs.map((log) => html`
         <li>
-          <a href=${log.view_url} target="_blank">${log.name}</a>
+          <a href=${log.viewUrl} target="_blank">${log.name}</a>
           <a
             style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
             href=${getLogdogRawUrl(log.url)}

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
+
 import { BuilderID, GitilesCommit } from './buildbucket';
 
 /**
@@ -22,10 +23,10 @@ import { BuilderID, GitilesCommit } from './buildbucket';
  */
 
 export interface QueryBlamelistRequest {
-  readonly gitiles_commit: GitilesCommit;
+  readonly gitilesCommit: GitilesCommit;
   readonly builder: BuilderID;
-  readonly page_size?: number;
-  readonly page_token?: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
 }
 
 export interface CommitUser {
@@ -35,21 +36,21 @@ export interface CommitUser {
 }
 
 export const enum CommitTreeDiffChangeType {
-  Add = 0,
-  Copy = 1,
-  Delete = 2,
-  Modify = 3,
-  Rename = 4,
+  Add = 'ADD',
+  Copy = 'COPY',
+  Delete = 'DELETE',
+  Modify = 'MODIFY',
+  Rename = 'RENAME',
 }
 
 export interface CommitTreeDiff {
   readonly type: CommitTreeDiffChangeType;
-  readonly old_id: string;
-  readonly old_mode: number;
-  readonly old_path: string;
-  readonly new_id: string;
-  readonly new_mode: number;
-  readonly new_path: string;
+  readonly oldId: string;
+  readonly oldMode: number;
+  readonly oldPath: string;
+  readonly newId: string;
+  readonly newMode: number;
+  readonly newPath: string;
 }
 
 export interface GitCommit {
@@ -59,12 +60,12 @@ export interface GitCommit {
   readonly author: CommitUser;
   readonly committer: CommitUser;
   readonly message: string;
-  readonly tree_diff: CommitTreeDiff[];
+  readonly treeDiff: CommitTreeDiff[];
 }
 
 export interface QueryBlamelistResponse {
   readonly commits: GitCommit[];
-  readonly next_page_token?: string;
+  readonly nextPageToken?: string;
 }
 
 const SERVICE = 'luci.milo.v1.MiloInternal';

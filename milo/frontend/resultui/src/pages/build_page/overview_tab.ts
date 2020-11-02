@@ -57,19 +57,19 @@ export class OverviewTabElement extends MobxLitElement {
         </i>
         ${(() => { switch (bpd.status) {
         case BuildStatus.Scheduled:
-          return `since ${displayTimestamp(bpd.create_time)}`;
+          return `since ${displayTimestamp(bpd.createTime)}`;
         case BuildStatus.Started:
-          return `since ${displayTimestamp(bpd.start_time!)}`;
+          return `since ${displayTimestamp(bpd.startTime!)}`;
         case BuildStatus.Canceled:
-          return `after ${displayTimeDiff(bpd.create_time, bpd.end_time!)} by ${bpd.canceled_by}`;
+          return `after ${displayTimeDiff(bpd.createTime, bpd.endTime!)} by ${bpd.canceledBy}`;
         case BuildStatus.Failure:
         case BuildStatus.InfraFailure:
         case BuildStatus.Success:
-          return `after ${displayTimeDiff(bpd.start_time || bpd.create_time, bpd.end_time!)}`;
+          return `after ${displayTimeDiff(bpd.startTime || bpd.createTime, bpd.endTime!)}`;
         default:
           return '';
         }})()}
-        ${bpd.end_time ?
+        ${bpd.endTime ?
           html`<mwc-button dense unelevated @click=${() => this.showRetryDialog = true}>Retry</mwc-button>` :
           html`<mwc-button dense unelevated @click=${() => this.showCancelDialog = true}>Cancel</mwc-button>`}
       </div>
@@ -95,14 +95,14 @@ export class OverviewTabElement extends MobxLitElement {
   private async cancelBuild(reason: string) {
     await this.appState.buildsService!.cancelBuild({
       id: this.buildState.buildPageData!.id,
-      summary_markdown: reason,
+      summaryMarkdown: reason,
     });
     this.buildState.refresh();
   }
 
   private async retryBuild() {
     const build = await this.appState.buildsService!.scheduleBuild({
-      template_build_id: this.buildState.buildPageData!.id,
+      templateBuildId: this.buildState.buildPageData!.id,
     });
     Router.go({
       pathname: router.urlForName('build', {
@@ -116,10 +116,10 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderSummary() {
     const bpd = this.buildState.buildPageData!;
-    if (bpd.summary_markdown) {
+    if (bpd.summaryMarkdown) {
       return html`
         <div id="summary-html">
-          ${renderMarkdown(bpd.summary_markdown)}
+          ${renderMarkdown(bpd.summaryMarkdown)}
         </div>
       `;
     }
@@ -144,16 +144,16 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Input</h3>
         <table>
-          ${input.gitiles_commit ? html`
+          ${input.gitilesCommit ? html`
             <tr>
               <td>Revision:</td>
               <td>
-                <a href=${getURLForGitilesCommit(input.gitiles_commit)} target="_blank">${input.gitiles_commit.id}</a>
-                ${input.gitiles_commit.position ? `CP #${input.gitiles_commit.position}` : ''}
+                <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
+                ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
               </td>
             </tr>
           ` : ''}
-          ${(input.gerrit_changes || []).map((gc) => html`
+          ${(input.gerritChanges || []).map((gc) => html`
             <tr>
               <td>Patch:</td>
               <td>
@@ -175,18 +175,18 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Infra</h3>
         <table>
-          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucket_link} target="_blank"></td></tr>
+          <tr><td>Buildbucket ID:</td><td><milo-link .link=${bpd.buildbucketLink} target="_blank"></td></tr>
           ${bpd.infra?.swarming ? html`
           <tr>
             <td>Swarming Task:</td>
-            <td>${bpd.infra.swarming.task_id ? html`<a href=${getURLForSwarmingTask(bpd.infra.swarming)}>${bpd.infra.swarming.task_id}</a>`: 'N/A'}</td>
+            <td>${bpd.infra.swarming.taskId ? html`<a href=${getURLForSwarmingTask(bpd.infra.swarming)}>${bpd.infra.swarming.taskId}</a>`: 'N/A'}</td>
           </tr>
           <tr>
             <td>Bot:</td>
             <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
           </tr>
           ` : ''}
-          <tr><td>Recipe:</td><td><milo-link .link=${bpd.recipe_link} target="_blank"></milo-link></td></tr>
+          <tr><td>Recipe:</td><td><milo-link .link=${bpd.recipeLink} target="_blank"></milo-link></td></tr>
         </table>
       </div>
     `;
@@ -227,11 +227,11 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Timing</h3>
         <table>
-          <tr><td>Create:</td><td>${displayTimestamp(bpd.create_time)}</td></tr>
-          <tr><td>Start:</td><td>${displayTimestampOpt(bpd.start_time) || 'N/A'}</td></tr>
-          <tr><td>End:</td><td>${displayTimestampOpt(bpd.end_time) || 'N/A'}</td></tr>
-          <tr><td>Pending:</td><td>${displayTimeDiffOpt(bpd.create_time, bpd.start_time) || 'N/A'}</td></tr>
-          <tr><td>Execution:</td><td>${displayTimeDiffOpt(bpd.start_time, bpd.end_time) || 'N/A'}</td></tr>
+          <tr><td>Create:</td><td>${displayTimestamp(bpd.createTime)}</td></tr>
+          <tr><td>Start:</td><td>${displayTimestampOpt(bpd.startTime) || 'N/A'}</td></tr>
+          <tr><td>End:</td><td>${displayTimestampOpt(bpd.endTime) || 'N/A'}</td></tr>
+          <tr><td>Pending:</td><td>${displayTimeDiffOpt(bpd.createTime, bpd.startTime) || 'N/A'}</td></tr>
+          <tr><td>Execution:</td><td>${displayTimeDiffOpt(bpd.startTime, bpd.endTime) || 'N/A'}</td></tr>
         </table>
       </div>
     `;
