@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "334888a2_653ab851",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T08:36:04Z",
+      "side": 1,
+      "message": "this doesn\u0027t seem right. This should be `n`, and then we don\u0027t need ioCh.\notherwise we create too many goroutines.",
+      "range": {
+        "startLine": 328,
+        "startChar": 17,
+        "endLine": 328,
+        "endChar": 21
+      },
+      "revId": "b21946c329972aa04b9e5e0d5b3290237a25e9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
