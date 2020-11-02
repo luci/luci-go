@@ -16,6 +16,109 @@
       "message": "This CL adds modules for printing the run-time stats of a sink run. PTAL.\nHere is the output of sample runs.\nhttps://paste.googleplex.com/6466241809088512\n",
       "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6a08557_6182558e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T20:14:20Z",
+      "side": 1,
+      "message": "started to leave comments, do we really need all of this complexity checked-in just to resolve this on-off issue? could you debug it by sshing onto a windows machine, or use led to ship a locally-built rdb binary to a windows machine?",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1590703_aeda2db2",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T20:14:20Z",
+      "side": 1,
+      "message": "terminate :\u003d make(chan struct{})\n...\nclose(terminate)\n\nsimpler and more efficient",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 246,
+        "endChar": 20
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8211bb87_6de6602e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T20:14:20Z",
+      "side": 1,
+      "message": "i think having\n  cfg.Watcher.(*sinkStats).printSummary(ctx)\nhere instead of in L247 would make the code cleaner.",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b065d324_1de1db3c",
+        "filename": "resultdb/cli/sink_stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T20:14:20Z",
+      "side": 1,
+      "message": "i think if this gets printed, this would be very surprising to folks who don\u0027t know about this code.\nwhy not -1 or something like that?",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 50
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08608683_94187d74",
+        "filename": "resultdb/cli/sink_stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-02T20:14:20Z",
+      "side": 1,
+      "message": "log\n\nsince it does logging, rather than fmt.Print or something like that",
+      "range": {
+        "startLine": 125,
+        "startChar": 20,
+        "endLine": 125,
+        "endChar": 25
+      },
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
