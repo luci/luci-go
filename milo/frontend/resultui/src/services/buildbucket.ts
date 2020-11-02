@@ -15,19 +15,19 @@
 import { PrpcClient } from '@chopsui/prpc-client';
 
 /**
- * Manually coded type definition and classes for resultdb service.
+ * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
- * source: https://chromium.googlesource.com/infra/luci/luci-go/+/ea9b54c38d87a4813576454fac9ac868bab8d9bc/buildbucket/proto/builder_service.proto
+ * source: https://chromium.googlesource.com/infra/luci/luci-go/+/ea9b54c38d87a4813576454fac9ac868bab8d9bc/buildbucket/proto/builds_service.proto
  */
 
 export const enum Trinary {
-  Unset = 0,
-  Yes = 1,
-  No = 2,
+  Unset = 'UNSET',
+  Yes = 'YES',
+  No = 'NO',
 }
 
 export interface GetBuildRequest {
-  readonly id: string;
+  readonly id?: string;
   readonly builder?: BuilderID;
   readonly buildNumber?: number;
   readonly fields?: string;
@@ -50,28 +50,28 @@ export interface Build {
   readonly number?: number;
   readonly createdBy: string;
   readonly canceledBy?: string;
-  readonly createTime: Timestamp;
-  readonly startTime?: Timestamp;
-  readonly endTime?: Timestamp;
-  readonly updateTime: Timestamp;
+  readonly createTime: string;
+  readonly startTime?: string;
+  readonly endTime?: string;
+  readonly updateTime: string;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string;
   readonly input: BuildInput;
   readonly output: BuildOutput;
-  readonly steps?: Step[];
+  readonly steps?: readonly Step[];
   readonly infra?: BuildInfra;
-  readonly tags: StringPair[];
+  readonly tags: readonly StringPair[];
   readonly exe: Executable;
 }
 
 // This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25
 export enum BuildStatus {
-  Scheduled = 1,
-  Started = 2,
-  Success = 12,
-  Failure = 20,
-  InfraFailure = 36,
-  Canceled = 68,
+  Scheduled = 'SCHEDULED',
+  Started = 'STARTED',
+  Success = 'SUCCESS',
+  Failure = 'FAILURE',
+  InfraFailure = 'INFRA_FAILURE',
+  Canceled = 'CANCELED',
 }
 
 export interface BuildInput {
@@ -110,8 +110,8 @@ export interface Log {
 
 export interface Step {
   readonly name: string;
-  readonly startTime: Timestamp;
-  readonly endTime?: Timestamp;
+  readonly startTime: string;
+  readonly endTime?: string;
   readonly status: BuildStatus;
   readonly logs?: Log[];
   readonly summaryMarkdown?: string;
@@ -141,7 +141,7 @@ export interface RequestedDimension {
 export interface BuildInfraSwarming {
   readonly hostname: string;
   readonly taskId?: string;
-  readonly parentRunId: string;
+  readonly parentRunId?: string;
   readonly taskServiceAccount: string;
   readonly priority: number;
   readonly taskDimensions: readonly RequestedDimension[];
@@ -235,6 +235,13 @@ export class BuildsService {
 
   constructor(readonly host: string, accessToken: string) {
     this.prpcClient = new PrpcClient({host, accessToken});
+  }
+
+  async getBuild(req: GetBuildRequest) {
+    return await this.call(
+      'GetBuild',
+      req,
+    ) as Build;
   }
 
   async cancelBuild(req: CancelBuildRequest) {
