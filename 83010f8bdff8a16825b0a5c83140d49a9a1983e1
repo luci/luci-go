@@ -1,0 +1,303 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "095db3db_c2fc2e73",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 28
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "duped",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 18
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "636bd38f_cc2c5814",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 28
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "represented",
+      "range": {
+        "startLine": 14,
+        "startChar": 22,
+        "endLine": 14,
+        "endChar": 23
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea2f0a9e_1157cd33",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "👍 i didn\u0027t expect less 😊",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3299c0d9_d6e31839",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "is this local path to local checkout of a git repo?",
+      "range": {
+        "startLine": 99,
+        "startChar": 56,
+        "endLine": 99,
+        "endChar": 70
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20e9fbee_80921b24",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "qq: what\u0027s the O(len(files))? is it typical diff of a CL or smth else?\n\nasking because for 100+ files, it\u0027d probably be faster to first compute \n \n dirs \u003d set(map(dirFromPath, files))\n\nand then maybe query git concurrently.",
+      "range": {
+        "startLine": 110,
+        "startChar": 13,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc87d0c0_aa795536",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "I find reading such calls weird sinc all args are strings and it\u0027s hard to guess correctly one which is which,\n\n  func execGit(context string) (func (args ...string) (out string, err error)){\n    return func (args ...string) (out string, err error){\n       \u003csame code as before\u003e\n    }\n  }\n\ns.t. calls are\n\n  execGit(cwd)(\"arg1\", ...) ?",
+      "range": {
+        "startLine": 131,
+        "startChar": 13,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63a8cdc9_d77055ad",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "this sounds like a symlink, but don\u0027t you mean \"if it is a dir\"?",
+      "range": {
+        "startLine": 149,
+        "startChar": 44,
+        "endLine": 149,
+        "endChar": 50
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9547e104_60a37b7f",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 149,
+        "startChar": 32,
+        "endLine": 149,
+        "endChar": 37
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2eda19a_bc526dbf",
+        "filename": "rts/filegraph/cli/git_test.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "FYI: you can make it 10-1000x faster (and avoid wasting SSD erase cycles on your laptop) if you use RAM-backed filesystem, e.g. /dev/shm/ on Linux. No idea about Win and I don\u0027t see anything ready-made mount on Macs (https://apple.stackexchange.com/questions/193883/to-have-ram-based-filesystem-in-osx)",
+      "range": {
+        "startLine": 38,
+        "startChar": 15,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58793046_2c9ccc75",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "pedantic: determinism *usually* doesn\u0027t guarantee the above equality of references, e.g.\n  return \u0026node{nmae: name}\nis deemed determinsitic by most since they ignore the location of the object is the heap. \n\n\nmaybe you meant that:\n// Idempotent: calling many times with the same name return the same Node object",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 65
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf0fdac3_5e3fdd8d",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "readability of Adjacent(false, ...) and Adjacent(true, ...) is poor.\nI recommend instead\n  Incoming(...) and Outgoing(...)\n\nor with named constants\n  Adjacent(Outgoing, ...) Adjacent(Incoming, ...)",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "913a4286_ef6215ae",
+        "filename": "rts/filegraph/graph.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "nit: (stop bool)",
+      "range": {
+        "startLine": 45,
+        "startChar": 74,
+        "endLine": 45,
+        "endChar": 78
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e30424a7_df5d23a5",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-02T14:41:54Z",
+      "side": 1,
+      "message": "ditto nit: (stop bool) for clearer documentation",
+      "range": {
+        "startLine": 49,
+        "startChar": 49,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "83010f8bdff8a16825b0a5c83140d49a9a1983e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
