@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6d03b9a_cb4e94a4",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T02:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c478938_30266072",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 62
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "abb87ccf_d0f93dd8",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-02T01:51:26Z",
       "side": 1,
       "message": "This variable name is confusing to me; a stored timestamp called \"now\" seems like it would be out-of-date almost immediately.\n\nSuggest either thinking of a better name or at least add a comment that \"now\" means \"the time the page was rendered\".\n\nAs a side note, do we ever expect to update this value? (e.g. if we want to start showing real-time updates on steps in progress?)",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 14
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b34665cb_77b7c647",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T02:16:44Z",
+      "side": 1,
+      "message": "renamed to renderTime.\n\n\u003e (e.g. if we want to start showing real-time updates on steps in progress?)\nYes. Also, taking renderTime from parameters makes the constructor pure.",
+      "parentUuid": "abb87ccf_d0f93dd8",
       "range": {
         "startLine": 37,
         "startChar": 11,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b032585e_cd5ce24b",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T02:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d71da11_f583479a",
+      "range": {
+        "startLine": 59,
+        "startChar": 38,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3ea27694_4874659f",
@@ -83,6 +155,30 @@
       "writtenOn": "2020-11-02T01:51:26Z",
       "side": 1,
       "message": "for completeness, suggest adding a test with a succeeded parent and succeeded children",
+      "range": {
+        "startLine": 68,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 7
+      },
+      "revId": "73850d74c926944ff535e419275deda37b792be6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "20345be8_d87a3ce4",
+        "filename": "milo/frontend/resultui/src/models/step_ext_test.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T02:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ea27694_4874659f",
       "range": {
         "startLine": 68,
         "startChar": 4,
