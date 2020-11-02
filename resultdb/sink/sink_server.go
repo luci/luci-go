@@ -21,6 +21,7 @@ import (
 	"path"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -40,11 +41,11 @@ var zeroDuration = ptypes.DurationProto(0)
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
-	cfg           ServerConfig
-	ac            *artifactChannel
-	tc            *testResultChannel
-	resultIDBase  string
-	resultCounter uint32
+	cfg                ServerConfig
+	ac                 *artifactChannel
+	tc                 *testResultChannel
+	resultIDBase       string
+	resultIDGenCounter uint32
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
@@ -115,15 +116,29 @@ func authTokenPrelude(authToken string) func(context.Context, string, proto.Mess
 }
 
 // ReportTestResults implement sinkpb.SinkServer.
-func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
-	now := clock.Now(ctx).UTC()
+func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (resp *sinkpb.ReportTestResultsResponse, err error) {
+	start := clock.Now(ctx)
+	var acStart, tcStart time.Time
+	nArt := 0
+
+	defer func() {
+		s.cfg.Watcher.TestResultsReceived(
+			ctx,
+			// how long it took to enqueue the artifacts into the channel.
+			tcStart.Sub(acStart),
+			// how long it took to enqueue the test results into the channel.
+			clock.Since(ctx, tcStart),
+			// how long it took to process a given request in total.
+			clock.Since(ctx, start),
+			nArt, len(in.TestResults), err)
+	}()
 
 	for _, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
 
 		// assign a random, unique ID if resultID omitted.
 		if tr.ResultId == "" {
-			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
+			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultIDGenCounter, 1))
 		}
 		if tr.GetTestLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.GetTestLocation().GetFileName(), "//") {
 			// path.Join converts the leading double slashes to a single slash, add a slash to keep the double slashes.
@@ -133,6 +148,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			// path.Join converts the leading double slashes to a single slash, add a slash to keep the double slashes.
 			tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestMetadata.Location.FileName)
 		}
+		nArt += len(tr.GetArtifacts())
 		for _, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 		}
@@ -148,11 +164,13 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			}
 		}
 
-		if err := validateTestResult(now, tr); err != nil {
+		if err := validateTestResult(start.UTC(), tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
+	acStart = clock.Now(ctx)
 	s.ac.schedule(in.TestResults...)
+	tcStart = clock.Now(ctx)
 	s.tc.schedule(in.TestResults...)
 
 	// TODO(1017288) - set `TestResultNames` in the response

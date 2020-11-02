@@ -238,7 +238,12 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
 		CoerceNegativeDuration:     r.coerceNegativeDuration,
+		Watcher:                    newSinkStats(),
 	}
+	defer func() {
+		cfg.Watcher.(*sinkStats).printSummary(ctx)
+	}()
+
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
 		if err != nil {

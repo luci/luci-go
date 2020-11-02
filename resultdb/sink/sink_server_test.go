@@ -36,7 +36,7 @@ import (
 func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
 	sink, err := newSinkServer(ctx, cfg)
 	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDBase = "foo"
-	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultCounter = 100
+	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDGenCounter = 100
 	So(err, ShouldBeNil)
 
 	req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}

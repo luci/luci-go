@@ -26,6 +26,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -123,6 +124,9 @@ type ServerConfig struct {
 	// If true, the API will coerce negative durations to 0.
 	// If false, the API will return an error for negative durations.
 	CoerceNegativeDuration bool
+
+	// Watcher listens to Sink events.
+	Watcher EventListener
 }
 
 // Validate validates all the config fields.
@@ -198,6 +202,10 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	// parse the name to extract ID repeatedly.
 	cfg.invocationID, _ = pbutil.ParseInvocationName(cfg.Invocation)
 
+	if cfg.Watcher == nil {
+		cfg.Watcher = &DummyEventListener{}
+	}
+
 	s := &Server{
 		cfg:   cfg,
 		doneC: make(chan struct{}),
@@ -236,6 +244,11 @@ func (s *Server) Err() error {
 // exported into it. If callback finishes, Run will stop the server and return the error
 // callback returned.
 func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, ServerConfig) error) (err error) {
+	start := clock.Now(ctx)
+	defer func() {
+		cfg.Watcher.RunFinished(ctx, clock.Since(ctx, start), err)
+	}()
+
 	s, err := NewServer(ctx, cfg)
 	if err != nil {
 		return err
@@ -299,7 +312,6 @@ func (s *Server) Start(ctx context.Context) error {
 	prpc := &prpc.Server{Authenticator: prpc.NoAuthentication}
 	prpc.InstallHandlers(routes, router.MiddlewareChain{})
 	sinkpb.RegisterSinkServer(prpc, ss)
-
 	go func() {
 		defer func() {
 			// close SinkServer to complete all the outgoing requests before closing doneC
@@ -338,6 +350,11 @@ func (s *Server) Start(ctx context.Context) error {
 // the provided context expires before the shutdown is complete, Shutdown returns
 // the context's error.
 func (s *Server) Shutdown(ctx context.Context) (err error) {
+	start := clock.Now(ctx)
+	defer func() {
+		s.cfg.Watcher.ServerShutdown(ctx, clock.Since(ctx, start), err)
+	}()
+
 	logging.Infof(ctx, "SinkServer: shutdown started")
 	defer func() {
 		msg := "successfully"
@@ -407,7 +424,12 @@ func genAuthToken(ctx context.Context) (string, error) {
 // This function is used to ensure that the SinkServer is ready for serving traffic.
 // It returns to the caller, if the context times out, it reached the maximum allowed
 // retry count (10), or a non-error reponse was returned from the SinkServer.
-func (s *Server) warmUp(ctx context.Context) error {
+func (s *Server) warmUp(ctx context.Context) (err error) {
+	start := clock.Now(ctx)
+	defer func() {
+		s.cfg.Watcher.ServerWarmedUp(ctx, clock.Since(ctx, start), err)
+	}()
+
 	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
 		Host:    s.cfg.Address,
 		Options: &prpc.Options{Insecure: true},
