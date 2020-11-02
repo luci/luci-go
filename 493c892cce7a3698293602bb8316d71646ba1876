@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "460824e4_58c874de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T23:44:11Z",
+      "side": 1,
+      "message": "also changed the implementation of the sort",
+      "revId": "493c892cce7a3698293602bb8316d71646ba1876",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84ceb601_3c8d662b",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T23:44:11Z",
+      "side": 1,
+      "message": "not sure if I should expand this to a full function instead of using a shorthand like this.",
+      "revId": "493c892cce7a3698293602bb8316d71646ba1876",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
