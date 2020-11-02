@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4063a10_2c780427",
+        "filename": "milo/frontend/resultui/src/libs/test_utils/chai_recursive_deep_include.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-02T04:08:25Z",
+      "side": 0,
+      "message": "When the first argument (`actual`) is an array, deepInclude try to find the 2nd argument (`expected`) in the array.\nThis is not what we want.\nUse deepEqual instead. Since all the additional properties in `actual` is striped away, this should work as intended.",
+      "revId": "06839dd4fcde2582b5932866eabc3f5418325fdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
