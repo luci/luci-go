@@ -66,14 +66,6 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     this.prerender = false;
   }
 
-  @computed private get header() {
-    return this.step.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
-  }
-
-  @computed private get summary() {
-    return this.step.summaryMarkdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
-  }
-
   @computed private get logs() {
     const logs = this.step.logs || [];
     return this.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
@@ -84,8 +76,8 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       return html``;
     }
     return html`
-      <div id="summary" style=${styleMap({display: this.summary ? '' : 'none'})}>
-        ${renderMarkdown(this.summary)}
+      <div id="summary" style=${styleMap({display: this.step.summary ? '' : 'none'})}>
+        ${renderMarkdown(this.step.summary)}
       </div>
       <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
         ${this.logs.map((log) => html`
@@ -132,7 +124,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
             title="Copy the step name."
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
-          <span id="header-markdown">${renderMarkdown(this.header)}</span>
+          <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
           <span id="duration">${displayDuration(this.step.duration)}</span>
         </span>
         <div slot="content">${this.renderContent()}</div>
