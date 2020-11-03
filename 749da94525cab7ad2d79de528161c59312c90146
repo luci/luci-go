@@ -70,6 +70,24 @@
       "parentUuid": "6a6c410f_0458bf51",
       "revId": "749da94525cab7ad2d79de528161c59312c90146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16887c97_1a239f67",
+        "filename": "rts/cmd/filegraph/main.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-03T00:25:52Z",
+      "side": 1,
+      "message": "No it\u0027s fine. I only half remember standard Go structure but I do remember cmd/ is synonymous with entrypoints, and this is the only cmd/ file so what you said about it being the only entrypoint makes sense now.\n\nI guess I was wondering why they were in separate packages, but your explanation makes sense.",
+      "parentUuid": "2b93b6c0_9ed02416",
+      "revId": "749da94525cab7ad2d79de528161c59312c90146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
