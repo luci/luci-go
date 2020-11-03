@@ -168,10 +168,6 @@
       <div class="main-status">{{ .BuildPage.HumanStatus }}{{ if eq .BuildPage.Status.String "CANCELED" }} (by {{ or .BuildPage.CanceledBy "UNKNOWN"}}){{ end }}</div>
       {{ with .BuildPage.SummaryMarkdown }}
         {{ . | renderMarkdown }}
-      {{ else }}
-        {{ range .BuildPage.Summary }}
-          {{ . }}<br>
-        {{ end }}
       {{ end }}
     </div>
 
