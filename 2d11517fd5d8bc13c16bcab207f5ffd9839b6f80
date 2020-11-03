@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4e01b74_c64040bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-03T01:17:50Z",
+      "side": 1,
+      "message": "Can you explain the rationale for this change?",
+      "range": {
+        "startLine": 11,
+        "startChar": 48,
+        "endLine": 12,
+        "endChar": 45
+      },
+      "revId": "2d11517fd5d8bc13c16bcab207f5ffd9839b6f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
