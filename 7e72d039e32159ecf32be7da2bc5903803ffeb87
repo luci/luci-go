@@ -16,6 +16,121 @@
       "message": "+Sana -- see the long comment.",
       "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88bbc254_89e9bd5c",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-03T20:53:31Z",
+      "side": 1,
+      "message": "zstd",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 11
+      },
+      "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ae8160e_c611d56c",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-03T20:53:31Z",
+      "side": 1,
+      "message": "... or unrecognized compression scheme",
+      "range": {
+        "startLine": 70,
+        "startChar": 40,
+        "endLine": 70,
+        "endChar": 71
+      },
+      "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4aff35d_37aaccbe",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-03T20:53:31Z",
+      "side": 1,
+      "message": "nit: make it last, it is very unusual to have default as not last",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 31
+      },
+      "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c33bc69b_a95bb79d",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-03T20:53:31Z",
+      "side": 1,
+      "message": "nit: 1",
+      "range": {
+        "startLine": 140,
+        "startChar": 15,
+        "endLine": 140,
+        "endChar": 24
+      },
+      "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0921460_a28c52a5",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-03T20:53:31Z",
+      "side": 1,
+      "message": "nit: nil",
+      "range": {
+        "startLine": 142,
+        "startChar": 58,
+        "endLine": 142,
+        "endChar": 66
+      },
+      "revId": "7e72d039e32159ecf32be7da2bc5903803ffeb87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
