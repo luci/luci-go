@@ -16,6 +16,40 @@
       "message": "PTAL",
       "revId": "4502b6ced884ddbb8ec24d2c2eb60c8bf67c886a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39952e82_a5403f6c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 31
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-03T02:17:09Z",
+      "side": 1,
+      "message": "Very nice!",
+      "revId": "4502b6ced884ddbb8ec24d2c2eb60c8bf67c886a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "baa8dbeb_bce1f9ba",
+        "filename": "rts/filegraph/cli/cmd_query.go",
+        "patchSetId": 31
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-03T02:17:09Z",
+      "side": 1,
+      "message": "Is a MaxDistance flag planned for the future?",
+      "revId": "4502b6ced884ddbb8ec24d2c2eb60c8bf67c886a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
