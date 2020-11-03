@@ -52,6 +52,24 @@
       "parentUuid": "8b185022_00b80836",
       "revId": "749da94525cab7ad2d79de528161c59312c90146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b93b6c0_9ed02416",
+        "filename": "rts/cmd/filegraph/main.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:20:28Z",
+      "side": 1,
+      "message": "this is the only entry point into CLI.\n\nmaybe you are asking why there is a separate package \"cli\" and the main package is here. It might have been the force of habit. Sometimes there are some options that we pass from here to \"cli\" package, that we don\u0027t want to hardcode in \"cli\" package, but OK to hardcode in \"main\" package.\n\nI am OK merging \"cli\" package into \"main\" if you prefer.",
+      "parentUuid": "6a6c410f_0458bf51",
+      "revId": "749da94525cab7ad2d79de528161c59312c90146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
