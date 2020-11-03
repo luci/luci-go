@@ -24,21 +24,36 @@ import (
 	"sync"
 	"unicode"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 )
 
 // Entities with more than this many indexed properties will not be saved.
 const maxIndexedProperties = 20000
 
+type convertMethod byte
+
+const (
+	convertDefault convertMethod = iota
+	// field implements PropertyConverter
+	convertProp
+	// field implements proto.Message
+	convertProto
+)
+
 type structTag struct {
 	name           string
 	idxSetting     IndexSetting
 	isSlice        bool
 	substructCodec *structCodec
-	convert        bool
-	metaVal        interface{}
-	isExtra        bool
-	canSet         bool
+	convertMethod  convertMethod
+
+	metaVal interface{}
+	isExtra bool
+	canSet  bool
+
+	protoOption protoOption
 }
 
 type structCodec struct {
@@ -115,6 +130,7 @@ func (p *structPLS) Load(propMap PropertyMap) error {
 
 func loadInner(codec *structCodec, structValue reflect.Value, index int, name string, p Property, requireSlice bool) string {
 	var v reflect.Value
+	var protoOption protoOption
 	// Traverse a struct's struct-typed fields.
 	for {
 		fieldIndex, ok := codec.byName[name]
@@ -125,6 +141,7 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 
 		st := codec.byIndex[fieldIndex]
 		if st.substructCodec == nil {
+			protoOption = st.protoOption
 			break
 		}
 
@@ -143,10 +160,14 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 	}
 
 	doConversion := func(v reflect.Value) (string, bool) {
-		a := v.Addr()
-		if conv, ok := a.Interface().(PropertyConverter); ok {
-			err := conv.FromProperty(p)
-			if err != nil {
+		if _, ok := v.Interface().(proto.Message); ok {
+			if err := protoFromProperty(v, p, protoOption); err != nil {
+				return err.Error(), true
+			}
+			return "", true
+		}
+		if conv, ok := v.Addr().Interface().(PropertyConverter); ok {
+			if err := conv.FromProperty(p); err != nil {
 				return err.Error(), true
 			}
 			return "", true
@@ -279,10 +300,15 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag
 		}
 
 		prop := Property{}
-		if st.convert {
+		switch st.convertMethod {
+		case convertProp:
 			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
-		} else {
+		case convertProto:
+			prop, err = protoToProperty(v.Interface().(proto.Message), st.protoOption)
+		case convertDefault:
 			err = prop.SetValue(v.Interface(), si)
+		default:
+			panic(fmt.Errorf("unknown convertMethod: %d", st.convertMethod))
 		}
 		if err != nil {
 			return err
@@ -368,8 +394,15 @@ func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 	val := st.metaVal
 	if st.canSet {
 		f := p.o.Field(idx)
-		if st.convert {
+		switch st.convertMethod {
+		case convertProp:
 			prop, err := f.Addr().Interface().(PropertyConverter).ToProperty()
+			if err != nil {
+				return nil, false
+			}
+			return prop.Value(), true
+		case convertProto:
+			prop, err := protoToProperty(f.Interface().(proto.Message), st.protoOption)
 			if err != nil {
 				return nil, false
 			}
@@ -417,9 +450,13 @@ func (p *structPLS) SetMeta(key string, val interface{}) bool {
 	if !st.canSet {
 		return false
 	}
-	if st.convert {
+	switch st.convertMethod {
+	case convertProp:
 		err := p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
 			MkPropertyNI(val))
+		return err == nil
+	case convertProto:
+		err := protoFromProperty(p.o.Field(idx), MkPropertyNI(val), st.protoOption)
 		return err == nil
 	}
 
@@ -558,7 +595,32 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			c.bySpecial["extra"] = i
 			continue
 		}
-		st.convert = reflect.PtrTo(ft).Implements(typeOfPropertyConverter)
+
+		switch {
+		case reflect.PtrTo(ft).Implements(typeOfPropertyConverter):
+			st.convertMethod = convertProp
+		case ft.Implements(typeofProtoMessage):
+			st.convertMethod = convertProto
+			st.idxSetting = NoIndex
+			switch opts {
+			case "": // default.
+				st.protoOption = protoOption("nocompress")
+			case "zstd", "nocompress", "legacy":
+				st.protoOption = protoOption(opts)
+			// This package historically ignored unsupported options. However, it is
+			// expected that some variations of compression algo will be added in the
+			// future. Therefore, explicitly disallow all other options.
+			case "noindex":
+				c.problem = me("noindex option is redundant and not allowed with proto.Message %q", f.Name)
+				return
+			default:
+				c.problem = me("unsupported option %q for proto.Message %q", opts, f.Name)
+				return
+			}
+		default:
+			st.convertMethod = convertDefault
+		}
+
 		switch {
 		case name == "":
 			if !f.Anonymous {
@@ -571,7 +633,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				return
 			}
 			c.byMeta[name] = i
-			if !st.convert {
+			if st.convertMethod == convertDefault {
 				mv, err := convertMeta(opts, ft)
 				if err != nil {
 					c.problem = me("meta field %q has bad type: %s", "$"+name, err)
@@ -595,7 +657,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		}
 
 		substructType := reflect.Type(nil)
-		if !st.convert {
+		if st.convertMethod == convertDefault {
 			switch ft.Kind() {
 			case reflect.Struct:
 				if ft != typeOfTime && ft != typeOfGeoPoint {
@@ -603,12 +665,13 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				}
 			case reflect.Slice:
 				if reflect.PtrTo(ft.Elem()).Implements(typeOfPropertyConverter) {
-					st.convert = true
+					st.convertMethod = convertProp
 				} else if ft.Elem().Kind() == reflect.Struct {
 					substructType = ft.Elem()
 				}
 				st.isSlice = ft.Elem().Kind() != reflect.Uint8
 				c.hasSlice = c.hasSlice || st.isSlice
+
 			case reflect.Interface:
 				c.problem = me("field %q has non-concrete interface type %s",
 					f.Name, ft)
@@ -646,7 +709,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				c.byName[absName] = i
 			}
 		} else {
-			if !st.convert { // check the underlying static type of the field
+			if st.convertMethod == convertDefault { // check the underlying static type of the field
 				t := ft
 				if st.isSlice {
 					t = t.Elem()
@@ -665,6 +728,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			c.byName[name] = i
 		}
 		st.name = name
+
 		if opts == "noindex" {
 			st.idxSetting = NoIndex
 		}
