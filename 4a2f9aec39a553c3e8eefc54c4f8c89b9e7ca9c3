@@ -229,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "970725b4_2b6597b1",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T20:02:11Z",
+      "side": 1,
+      "message": "+sana.",
+      "parentUuid": "5c1c377e_91778af0",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 55
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "b8b94509_017df171",
