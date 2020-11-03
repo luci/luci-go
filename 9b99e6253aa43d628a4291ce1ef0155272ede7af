@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f40fd7f_432d0a0f",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "measuring how long does this take is the important part, but it is not done in this CL",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 86
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4025eded_dfd5f842",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "printing how many pending artifacts is in the queue would help",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "205977e6_d78c93f1",
+        "filename": "resultdb/sink/events.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "i don\u0027t know if we really need this abstraction (which is a lot of complexity)\nThis package could just implement that stat aggregation that we need and log it",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9845b398_d23fe8b1",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "why not just logging.Debugf",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1400e801_f5b9acdf",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "this would be 0 most of the time, and non-zero if we have saturated the queue.\nthe number of pending items in the queue would provide more information,\ne.g. 0 doesn\u0027t tell us how close we are to saturation",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 27
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50252e95_f1ea0e27",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "same comments as in artifact_channel.go",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

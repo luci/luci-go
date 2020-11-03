@@ -109,6 +109,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c5693704_796008d1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T00:16:04Z",
+      "side": 1,
+      "message": "left some comments for things that are needed. I would really focus on those, maybe create a separate CL focused on those (this CL is trying to do a lot of things, IMO too much).\n\nin particular, I think Watcher/EventListener is a premature generalization: https://wiki.c2.com/?PrematureGeneralizationIsEvil",
+      "parentUuid": "13a33120_d326c725",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1590703_aeda2db2",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
