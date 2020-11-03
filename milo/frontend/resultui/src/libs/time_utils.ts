@@ -12,36 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DateTime, Duration } from 'luxon';
-
-import { Timestamp } from '../services/buildbucket';
+import { Duration } from 'luxon';
 
 export const DEFAULT_TIME_FORMAT = 'ccc, HH:mm:ss MMM dd yyyy ZZZZ';
-
-export function displayTimestamp(t: Timestamp): string {
-  const d = datetimeFromTimestamp(t);
-  return d.toFormat(DEFAULT_TIME_FORMAT);
-}
-
-export function displayTimestampOpt(t?: Timestamp): string | null {
-  if (!t) {
-    return null;
-  }
-  return displayTimestamp(t);
-}
-
-export function displayTimeDiff(beginTime: Timestamp, endTime: Timestamp): string {
-  const bd = datetimeFromTimestamp(beginTime);
-  const ed = datetimeFromTimestamp(endTime);
-  return displayDuration(ed.diff(bd));
-}
-
-export function displayTimeDiffOpt(beginTime?: Timestamp, endTime?: Timestamp): string | null {
-  if (!beginTime || !endTime) {
-    return null;
-  }
-  return displayTimeDiff(beginTime, endTime);
-}
 
 export function displayDuration(duration: Duration) {
   const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
@@ -65,8 +38,4 @@ export function displayDuration(duration: Duration) {
     parts.push(Math.floor(shifted.milliseconds) + ' ms');
   }
   return parts.join(' ');
-}
-
-export function datetimeFromTimestamp(t: Timestamp): DateTime {
-  return DateTime.fromMillis(t.seconds * 1000 + t.nanos / 1000000);
 }

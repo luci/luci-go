@@ -15,7 +15,6 @@
 package frontend
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -63,72 +62,6 @@ func handleLUCIBuild(c *router.Context) error {
 
 	bp, err := buildbucket.GetBuildPage(c, br, blamelistOpt)
 	return renderBuild(c, bp, err)
-}
-
-// handleLUCIBuildData renders the data of the build needed to render a build
-// page.
-// TODO(crbug.com/1108200): once all the build page data fetching code are moved
-// to ResultUI, delete this.
-func handleLUCIBuildData(c *router.Context) error {
-	bid := &buildbucketpb.BuilderID{
-		Project: c.Params.ByName("project"),
-		Bucket:  c.Params.ByName("bucket"),
-		Builder: c.Params.ByName("builder"),
-	}
-	numberOrID := c.Params.ByName("numberOrId")
-	br, err := prepareGetBuildRequest(bid, numberOrID)
-	if err != nil {
-		return err
-	}
-	bp, err := buildbucket.GetBuildPage(c, br, buildbucket.NoBlamelist)
-	if err != nil {
-		return err
-	}
-	bpd := ui.BuildPageData{
-		BuildPage:               bp,
-		CommitLinkHTML:          bp.CommitLinkHTML(),
-		Summary:                 bp.Summary(),
-		RecipeLink:              bp.RecipeLink(),
-		BuildbucketLink:         bp.BuildbucketLink(),
-		BuildSets:               bp.BuildSets(),
-		BuildSetLinks:           bp.BuildSetLinks(),
-		Steps:                   bp.Steps(),
-		HumanStatus:             bp.HumanStatus(),
-		ShouldShowCanaryWarning: bp.ShouldShowCanaryWarning(),
-		InputProperties:         bp.InputProperties(),
-		OutputProperties:        bp.OutputProperties(),
-		BuilderLink:             bp.BuilderLink(),
-		Link:                    bp.Link(),
-		Banners:                 bp.Banners(),
-		Timeline:                bp.Timeline(),
-	}
-
-	if err := json.NewEncoder(c.Writer).Encode(bpd); err != nil {
-		logging.Errorf(c.Context, "Failed to JSON encode output - %s", err)
-		return err
-	}
-	c.Writer.Header().Add("Content-Type", "application/json")
-	c.Writer.WriteHeader(http.StatusOK)
-	return nil
-}
-
-// handleLUCIRelatedBuilds returns related builds to a given build ID.
-// TODO (crbug.com/1112224): convert this to pRPC.
-func handleLUCIRelatedBuilds(c *router.Context) error {
-	logging.Infof(c.Context, "Inside handleLUCIRelatedBuilds")
-	rbt, err := getRelatedBuilds(c)
-	if err != nil {
-		return err
-	}
-
-	if err := json.NewEncoder(c.Writer).Encode(rbt); err != nil {
-		logging.Errorf(c.Context, "Failed to JSON encode output - %s", err)
-		return err
-	}
-
-	c.Writer.Header().Add("Content-Type", "application/json")
-	c.Writer.WriteHeader(http.StatusOK)
-	return nil
 }
 
 // renderBuild is a shortcut for rendering build or returning err if it is not nil.
