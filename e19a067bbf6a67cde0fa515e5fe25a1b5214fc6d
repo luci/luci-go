@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d871e518_3aed4e84",
+        "filename": "milo/frontend/resultui/src/models/build_ext.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-03T02:47:49Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d235",
+      "revId": "e19a067bbf6a67cde0fa515e5fe25a1b5214fc6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
