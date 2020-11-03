@@ -60,11 +60,6 @@ export class BuildState {
     return new BuildExt(this.buildReq.value);
   }
 
-  @computed
-  get isCanary(): boolean {
-    return Boolean(this.build?.input.experiments?.includes('luci.non_production'));
-  }
-
   @computed({keepAlive: true})
   get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {

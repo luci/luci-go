@@ -77,7 +77,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderCanaryWarning() {
-    if (!this.buildState.isCanary) {
+    if (!this.buildState.build?.isCanary) {
       return html``;
     }
     if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.buildState.build!.status) === -1) {

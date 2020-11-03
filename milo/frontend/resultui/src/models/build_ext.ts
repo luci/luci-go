@@ -80,6 +80,11 @@ export class BuildExt {
     this.rootSteps = rootSteps;
   }
 
+  @computed
+  get isCanary(): boolean {
+    return Boolean(this.input.experiments?.includes('luci.non_production'));
+  }
+
   @computed get buildSets(): string[] {
     return this.tags
       .filter((tag) => tag.key === 'buildset')
