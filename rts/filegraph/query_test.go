@@ -105,21 +105,21 @@ func TestQuery(t *testing.T) {
 
 			sps := g.query("//a")
 			So(sps, ShouldResemble, map[string]*ShortestPath{
-				"//a": &ShortestPath{
+				"//a": {
 					Node:     g.node("//a"),
 					Distance: 0,
 				},
-				"//b/1": &ShortestPath{
+				"//b/1": {
 					Prev:     sps["//a"],
 					Node:     g.node("//b/1"),
 					Distance: 1,
 				},
-				"//b/2": &ShortestPath{
+				"//b/2": {
 					Prev:     sps["//a"],
 					Node:     g.node("//b/2"),
 					Distance: 2,
 				},
-				"//c": &ShortestPath{
+				"//c": {
 					Prev:     sps["//b/1"],
 					Node:     g.node("//c"),
 					Distance: 4,
