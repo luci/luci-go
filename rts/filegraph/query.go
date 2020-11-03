@@ -51,7 +51,7 @@ type ShortestPath struct {
 // sources, starting from the sources themselves.
 //
 // If the callback returns false, then the iteration stops.
-func (q *Query) Run(callback func(*ShortestPath) (stop bool)) {
+func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 	// This function implements Dijkstra's algorithm.
 
 	q.heap = q.heap[:0]
