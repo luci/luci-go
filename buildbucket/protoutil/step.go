@@ -18,22 +18,10 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
-
-	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // StepNameSep is the separator between each node in step names.
 const StepNameSep = "|"
-
-// statusPrecedences is a set of step statuses with the precedences.
-// The smaller the precedence value is, the better the status is.
-// See https://chromium.googlesource.com/infra/luci/luci-go/+/a38cde76483f9c6f6ad6b2dff42f8411691273b8/buildbucket/proto/step.proto#58
-var statusPrecedences = map[pb.Status]int{
-	pb.Status_SUCCESS:       0, // best
-	pb.Status_FAILURE:       1,
-	pb.Status_INFRA_FAILURE: 2,
-	pb.Status_CANCELED:      3, // worst
-}
 
 // ParentStepName returns the name of the parent step.
 //
@@ -60,13 +48,4 @@ func ValidateStepName(stepName string) error {
 		}
 	}
 	return nil
-}
-
-// IsWorseStepStatus returns true if lhs is worse than rhs.
-// If either of lhs or rhs is not one of the statuses in StatusPrecedence,
-// this return value is always false.
-func IsWorseStepStatus(lhs, rhs pb.Status) bool {
-	lp, le := statusPrecedences[lhs]
-	rp, re := statusPrecedences[rhs]
-	return le && re && lp > rp
 }

@@ -277,12 +277,6 @@ func TestValidateStep(t *testing.T) {
 				So(validateStep(step, parent), ShouldErrLike, "the parent status must be STARTED")
 			})
 
-			Convey("child status is worse", func() {
-				setST(pb.Status_FAILURE, pb.Status_SUCCESS)
-				setTS(t, t, t, t)
-				So(validateStep(step, parent), ShouldErrLike, "worse than parent status")
-			})
-
 			Convey("child status is better", func() {
 				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
 				setTS(t, t, t, t)
