@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "60797011_36b56095",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "Yes, and I considered measuring the latency, but didn\u0027t.\n\nThe numbers will tell us the upload performance but it won\u0027t tell us how much delay it added to the total execution time. Even if uploads were slow at a time, it could be covered up if # of artifacts were small, compared # of test results. artifactDrainDuration will tell us how much delay added to the total execution time due to slow artifact uploads.\n\nEven if we wanted to instrument the performance of artifact uploads, we would want to track the performance for each of the file-size buckets. Otherwise, we would track the upload performance of big and small artifacts together, and we can possibly experience red-herring from flaky-tests if certain test failures produce large artifacts. Also, we would want percentile, and possibly a moving window.\n\nIn short, if we wanted to find how much artifact uploads slowed a given test run, measuring the execution of artifact channel draining is sufficient and more accurate.\nIf we wanted to monitor the performance of artifact uploads, we\u0027d probably want tsmon or something similar.",
+      "parentUuid": "7f40fd7f_432d0a0f",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 86
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4025eded_dfd5f842",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 8
@@ -37,6 +61,24 @@
       "writtenOn": "2020-11-03T00:16:04Z",
       "side": 1,
       "message": "printing how many pending artifacts is in the queue would help",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cd2d7e9_599a59ef",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "Yes, and I happened to ask iannucci@ if common/sync/dispatcher/buffer.go:Stats can be exposed.\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/sync/dispatcher/buffer/buffer.go;l\u003d33-51\n\nI thought I filed a bug for the it, but cannot find it. ;)\nI will file a new bug.",
+      "parentUuid": "4025eded_dfd5f842",
       "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -54,6 +96,30 @@
       "writtenOn": "2020-11-03T00:16:04Z",
       "side": 1,
       "message": "i don\u0027t know if we really need this abstraction (which is a lot of complexity)\nThis package could just implement that stat aggregation that we need and log it",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54f09936_6e3bea47",
+        "filename": "resultdb/sink/events.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "answered in the first comment.",
+      "parentUuid": "205977e6_d78c93f1",
       "range": {
         "startLine": 24,
         "startChar": 5,
@@ -83,6 +149,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8aeb6504_57780d8c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "As I mentioned in another comment, I was afraid that the field defs of sinkStats{} were biased to the usage of rdb-stream only. Of course, the field def of shutdownDuration would probably remain the same, but those stat fields for request latencies would not.\n\nThus, I moved the implementations of the storage to cli/sink_stats.go, but kept this sink package agnostic to the detail storage implementation.",
+      "parentUuid": "9845b398_d23fe8b1",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1400e801_f5b9acdf",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 8
@@ -106,6 +190,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5bce890b_9dbbffdb",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "Yes, the number of pending items will tell us how close the queue is to saturation. However, it won\u0027t tell us how much time sink blocked the request due to the queue saturation.\n\nThe fields and events defined in this CL are mainly to measure how much overhead rdb-stream adds to test-runs. If the \n\nIn my sample runs, blink_web_tests happened to spend over 2 secs, in total, to enqueue test results.\n: https://paste.googleplex.com/6466241809088512",
+      "parentUuid": "1400e801_f5b9acdf",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 27
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "50252e95_f1ea0e27",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 8
@@ -117,6 +225,24 @@
       "writtenOn": "2020-11-03T00:16:04Z",
       "side": 1,
       "message": "same comments as in artifact_channel.go",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d486accd_7a9ea7bd",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "Answered in the comments for artifact_channel.",
+      "parentUuid": "50252e95_f1ea0e27",
       "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

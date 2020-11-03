@@ -127,6 +127,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2d362c30_cfef3e2f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-03T01:32:21Z",
+      "side": 1,
+      "message": "The intent is to decouple SinkServer from rdb-stream as much as possible.\n\nThe definitions and usages of the fields in sinkStats{} are biased to `rdb stream`. sinkStats{} assume that the stat numbers of a sink run should be small enough to be sotred in int64 and uint32 vars. Also, it assumes that it\u0027s for a single test run.\n\nLet\u0027s say that a sink package was used in a long-running daemonized process with sink.NewServer(). It would have to implement an own EventListener, as the field defs of sinkStats{} wouldn\u0027t be suitable, especially those tracking total number and latencies of req/art/tr reported.\n\nI can understand that EventListener seems to be a premature generalization, if we assume that rdb-stream will remain the only application spawning SinkServer{}. Yes, I bet that it\u0027s going to be probably true. However, the APIs under sink package pretend that it\u0027s generic for general use cases, and doesn\u0027t limit its usages to rdb-stream only. If it\u0027s only for rdb-stream, it wouldn\u0027t have to expose any of sink.NewServer(), sink.Start(), sink.Err(), etc..\n\nDefining this interface didn\u0027t increase the complexity of the code included in this CL. Even if I remove this interface, I\u0027d simply relocate sink_stats.go to sink package. This would need a module to define the storage and logic to retain the collected.",
+      "parentUuid": "c5693704_796008d1",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1590703_aeda2db2",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
