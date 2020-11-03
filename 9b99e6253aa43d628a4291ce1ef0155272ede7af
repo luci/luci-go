@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "01fce1c5_b2eaa474",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:05:12Z",
+      "side": 1,
+      "message": "I am OK with artifactDrainDuration and it appears generic enough to be logged in the generic part of the code. If the concern is verbosity, logging.Debugf would help. We\u0027d pass -verbose only if there is a problem.",
+      "parentUuid": "60797011_36b56095",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 86
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4025eded_dfd5f842",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 8
@@ -79,6 +103,24 @@
       "side": 1,
       "message": "Yes, and I happened to ask iannucci@ if common/sync/dispatcher/buffer.go:Stats can be exposed.\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/sync/dispatcher/buffer/buffer.go;l\u003d33-51\n\nI thought I filed a bug for the it, but cannot find it. ;)\nI will file a new bug.",
       "parentUuid": "4025eded_dfd5f842",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b74f51e0_36f54abf",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:05:12Z",
+      "side": 1,
+      "message": "Robbie is OOO in Q4. You might have to implement it yourself",
+      "parentUuid": "5cd2d7e9_599a59ef",
       "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -167,6 +209,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e9f0cbf0_78c6e12a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:05:12Z",
+      "side": 1,
+      "message": "why do we need any sinkStats{} for the purpose of just logging how long did it take to shutdown the server?\n\n\tstart :\u003d clock.Now(ctx)\n\tdefer func() {\n\t\tlogging.Debugf(ctx, \"Shutdown took %s\", clock.Since(ctx, start), err)\n\t}()\n\n?",
+      "parentUuid": "8aeb6504_57780d8c",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1400e801_f5b9acdf",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 8
@@ -202,6 +262,30 @@
       "side": 1,
       "message": "Yes, the number of pending items will tell us how close the queue is to saturation. However, it won\u0027t tell us how much time sink blocked the request due to the queue saturation.\n\nThe fields and events defined in this CL are mainly to measure how much overhead rdb-stream adds to test-runs. If the \n\nIn my sample runs, blink_web_tests happened to spend over 2 secs, in total, to enqueue test results.\n: https://paste.googleplex.com/6466241809088512",
       "parentUuid": "1400e801_f5b9acdf",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 27
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee5146cb_e7a7135a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:05:12Z",
+      "side": 1,
+      "message": "isn\u0027t this a generic problem? what host of SinkServer wouldn\u0027t want to know how much delay ReportTestResults adds?",
+      "parentUuid": "5bce890b_9dbbffdb",
       "range": {
         "startLine": 130,
         "startChar": 3,

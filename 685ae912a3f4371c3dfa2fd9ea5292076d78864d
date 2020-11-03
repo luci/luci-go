@@ -145,6 +145,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "77ad7217_89d9b7ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:05:12Z",
+      "side": 1,
+      "message": "defining an interface is a significant increase of API surface and liability. It adds a new layer of indirection, which I don\u0027t see as necessary.\n\nre int32 vs uint32. Is the argument that saving 32*3\u003d96 bits justifies creating a layer of indirection? I am sorry, but I disagree.\n\nI think if the CL is scoped down only to things that are needed permanently, it will turn out that any host of SinkServer will need this. Specifically, Ben\u0027s point is that if we are closing SinkServer, but it is still doing something, any host (not only rdb-stream) would want SinkServer to report what it is waiting for. That problem is generic.",
+      "parentUuid": "2d362c30_cfef3e2f",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1590703_aeda2db2",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
