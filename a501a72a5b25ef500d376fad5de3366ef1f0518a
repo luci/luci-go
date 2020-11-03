@@ -16,6 +16,24 @@
       "message": "I am somewhat worried that users will be confused which tags to use. We have 3 kinds of tags in BQ (exported.tags, parent.tags, tags) and this adds a fourth type. \n\nWDYT about either adding proto fields, or continue using TestResult.tags?\nFWIW my original design implied populating TestResult.tags.",
       "revId": "a501a72a5b25ef500d376fad5de3366ef1f0518a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e073257_de268b91",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-03T21:36:16Z",
+      "side": 1,
+      "message": "Adding proto fields - I prefer this, the reason I didn\u0027t do it is that if dirmd adds more tags in the future, we\u0027ll have to change sink to add them. But maybe the possibility of adding new tags in dirmd is small so we don\u0027t need to have that concern?\n\nusing TestResult.tags - this will be future proof, but then it seems not so necessary to have test_metadata any more.\n\nThe other idea: WDYT if we name it location_based_tags? Will that be less confusing?",
+      "parentUuid": "a11c68c8_db5723ed",
+      "revId": "a501a72a5b25ef500d376fad5de3366ef1f0518a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
