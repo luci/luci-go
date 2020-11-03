@@ -103,23 +103,6 @@ export class BuildExt {
     };
   }
 
-  @computed get summary(): string[] {
-    const summary: string[] = [];
-    for (const step of this.steps) {
-      const name = step.name.split('|').pop();
-      if (name === 'Failure reason') {
-        continue;
-      }
-      if (step.status === BuildStatus.InfraFailure) {
-        summary.push(`Infra Failure ${step.name}`);
-      }
-      if (step.status === BuildStatus.Failure) {
-        summary.push(`Failure ${step.name}`);
-      }
-    }
-    return summary;
-  }
-
   @computed get pendingDuration(): Duration {
     return (this.startTime || this.renderTime.get()).diff(this.createTime);
   }

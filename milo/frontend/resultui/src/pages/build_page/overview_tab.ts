@@ -109,23 +109,15 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderSummary() {
     const build = this.buildState.build!;
-    if (build.summaryMarkdown) {
-      return html`
-        <div id="summary-html">
-          ${renderMarkdown(build.summaryMarkdown)}
-        </div>
-      `;
+    if (!build.summaryMarkdown) {
+      return html``;
     }
 
-    if (build.summary.length !== 0) {
-      return html`
-        <div id="summary-html">
-          ${build.summary.map((summary) => html`${summary}<br>`)}
-        </div>
-      `;
-    }
-
-    return html``;
+    return html`
+      <div id="summary-html">
+        ${renderMarkdown(build.summaryMarkdown)}
+      </div>
+    `;
   }
 
   private renderInput() {
