@@ -27,9 +27,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/durationpb"
+
+	"go.chromium.org/luci/gae/service/blobstore"
+	"go.chromium.org/luci/gae/service/datastore/internal/testprotos"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/service/blobstore"
 )
 
 var (
@@ -694,6 +701,53 @@ type IDEmbedder struct {
 }
 
 type Simple struct{}
+
+// protoEmbedder should be implemented by all proto-containing structs to
+// specific comparison in TestRoundTrip.
+type protoEmbedder interface {
+	embedsProtos()
+}
+
+type WithProtoDefault struct {
+	Kind string `gae:"$kind,WithProto"`
+
+	Msg *testprotos.Msg
+}
+
+type WithProtoCompress struct {
+	Kind string `gae:"$kind,WithProto"`
+
+	Msg *testprotos.Msg `gae:",zstd"`
+}
+
+type WithProtoLegacy struct {
+	Kind string `gae:"$kind,WithProto"`
+
+	Msg *testprotos.Msg `gae:",legacy"`
+}
+
+type WithProtoOmitted struct {
+	Omitted *testprotos.Msg `gae:"-"`
+}
+
+type WithProtoMeta struct {
+	Msg *testprotos.Msg `gae:"$what"`
+}
+
+type WithProtoIndirect struct {
+	Inner WithProtoDefault
+}
+type WithProtoIndirectSlice struct {
+	Inner []WithProtoDefault
+}
+
+func (*WithProtoDefault) embedsProtos()       {}
+func (*WithProtoCompress) embedsProtos()      {}
+func (*WithProtoLegacy) embedsProtos()        {}
+func (*WithProtoOmitted) embedsProtos()       {}
+func (*WithProtoMeta) embedsProtos()          {}
+func (*WithProtoIndirect) embedsProtos()      {}
+func (*WithProtoIndirectSlice) embedsProtos() {}
 
 type testCase struct {
 	desc       string
@@ -1663,6 +1717,161 @@ var testCases = []testCase{
 		},
 		want: &B2{B: myBlob("rawr")},
 	},
+	{
+		desc: "protos encoding: default is nocompression",
+		src:  &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+		want: PropertyMap{
+			"Msg": mpNI([]byte{
+				protoBinOptNoCompress, // no compression varint
+				// data
+				10, 20, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
+			}),
+		},
+	},
+	{
+		desc: "protos encoding: default is nocompression: save/load",
+		src: &WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		want: &WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+	},
+	{
+		desc: "protos encoding: compression",
+		src:  &WithProtoCompress{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+		want: PropertyMap{
+			"Msg": mpNI([]byte{
+				protoBinOptZSTD,
+				// compressed data
+				40, 181, 47, 253, 4, 0, 85, 0, 0, 24, 10, 20, 97, 1, 84, 3, 2, 16, 4, 246, 66, 60, 172,
+			}),
+		},
+	},
+	{
+		desc: "protos encoding: compression: save/load",
+		src:  &WithProtoCompress{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+		want: &WithProtoCompress{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+	},
+	{
+		desc: "protos encoding: interop save/load zstd -> plain ",
+		src: &WithProtoCompress{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		want: &WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+	},
+	{
+		desc: "protos encoding: interop save/load uncompress -> ztd",
+		src: &WithProtoCompress{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		want: &WithProtoCompress{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+	},
+	{
+		desc: "protos encoding: legacy",
+		src:  &WithProtoLegacy{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+		want: PropertyMap{
+			"Msg": mpNI([]byte{
+				// just data
+				10, 20, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
+			}),
+		},
+	},
+	{
+		desc: "protos encoding: legacy: save/load",
+		src:  &WithProtoLegacy{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+		want: &WithProtoLegacy{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
+	},
+	{
+		desc: "protos encoding: no interop: read as legacy",
+		src: &WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		want: &WithProtoLegacy{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		loadErr: `gae: cannot load field "Msg" into a "datastore.WithProtoLegacy`,
+	},
+	{
+		desc: "protos encoding: no interop: read as modern",
+		src: &WithProtoLegacy{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		want: &WithProtoCompress{
+			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
+		},
+		loadErr: `gae: cannot load field "Msg" into a "datastore.WithProtoCompress`,
+	},
+	{
+		desc: "protos encoding: - (skip) option is respected",
+		src:  &WithProtoOmitted{Omitted: &testprotos.Msg{Str: "skipped"}},
+		want: &WithProtoOmitted{Omitted: nil},
+	},
+	{
+		desc: "protos are always no index",
+		src: &struct {
+			Redundant *testprotos.Msg `gae:",noindex"`
+		}{},
+		plsErr: `noindex option is redundant and not allowed with proto.Message "Redundant"`,
+	},
+	{
+		desc: "protos with unexpected option",
+		src: &struct {
+			Wrong *testprotos.Msg `gae:",wrong"`
+		}{},
+		plsErr: `unsupported option "wrong" for proto.Message "Wrong"`,
+	},
+	{
+		desc:   "protos: slice not supported, use repeated instead",
+		src:    &struct{ Slice []*testprotos.Msg }{Slice: []*testprotos.Msg{{Str: "skipped"}}},
+		plsErr: `field "Slice" has invalid type: []*testprotos.Msg`,
+	},
+	{
+		desc: "protos: embed struct with protos",
+		src: &WithProtoIndirect{Inner: WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abc"},
+		}},
+		want: PropertyMap{
+			"Inner.Msg": mpNI([]byte{protoBinOptNoCompress, 10, 3, 97, 98, 99}),
+		},
+	},
+	{
+		desc: "protos: embed struct with protos: save/load",
+		src: &WithProtoIndirect{Inner: WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abc"},
+		}},
+		want: &WithProtoIndirect{Inner: WithProtoDefault{
+			Msg: &testprotos.Msg{Str: "abc"},
+		}},
+	},
+	{
+		desc: "protos: embed slice of struct with protos",
+		src: &WithProtoIndirectSlice{Inner: []WithProtoDefault{
+			{Msg: &testprotos.Msg{Str: "abc"}},
+			{Msg: &testprotos.Msg{Str: "xyz"}},
+		}},
+		want: PropertyMap{
+			"Inner.Msg": PropertySlice{
+				mpNI([]byte{protoBinOptNoCompress, 10, 3, 97, 98, 99}),
+				mpNI([]byte{protoBinOptNoCompress, 10, 3, 120, 121, 122}),
+			},
+		},
+	},
+	{
+		desc: "protos: embed slice of struct with protos: save/load",
+		src: &WithProtoIndirectSlice{Inner: []WithProtoDefault{
+			{Msg: &testprotos.Msg{Str: "abc"}},
+			{Msg: &testprotos.Msg{Str: "xyz"}},
+		}},
+		want: &WithProtoIndirectSlice{Inner: []WithProtoDefault{
+			{Msg: &testprotos.Msg{Str: "abc"}},
+			{Msg: &testprotos.Msg{Str: "xyz"}},
+		}},
+	},
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -1732,9 +1941,15 @@ func TestRoundTrip(t *testing.T) {
 					// Round tripping a time.Time can result in a different time.Location: Local instead of UTC.
 					// We therefore test equality explicitly, instead of relying on reflect.DeepEqual.
 					So(gotT.T.Equal(tc.want.(*T).T), ShouldBeTrue)
-				} else {
-					So(got, ShouldResemble, tc.want)
+					return
 				}
+				if _, ok := tc.want.(protoEmbedder); ok {
+					// ShouldResemble fails on proto-containing structs.
+					diff := cmp.Diff(got, tc.want, protocmp.Transform(), cmpopts.IgnoreUnexported())
+					So(diff, ShouldEqual, "")
+					return
+				}
+				So(got, ShouldResemble, tc.want)
 			})
 		}
 	})
@@ -1783,6 +1998,7 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 			So(mgs.SetMeta("id", int64(200)), ShouldBeTrue)
 			So(o.ID, ShouldEqual, 200)
+
 		})
 
 		Convey("assigning to unsassiagnable fields returns !ok", func() {
@@ -1790,6 +2006,18 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 			So(mgs.SetMeta("kind", "hi"), ShouldBeFalse)
 			So(mgs.SetMeta("noob", "hi"), ShouldBeFalse)
+		})
+
+		Convey("protos get/set", func() {
+			p := &WithProtoMeta{}
+			So(getMGS(p).SetMeta("what", []byte{
+				protoBinOptZSTD,
+				40, 181, 47, 253, 4, 0, 49, 0, 0, 10, 4, 97, 97, 97, 97, 115, 247, 182, 146}),
+				ShouldBeTrue)
+			So(p.Msg.GetStr(), ShouldEqual, "aaaa")
+			val, ok := getMGS(p).GetMeta("what")
+			So(ok, ShouldBeTrue)
+			So(val, ShouldResemble, []byte{protoBinOptNoCompress, 10, 4, 97, 97, 97, 97})
 		})
 
 		Convey("unsigned int meta fields work", func() {
