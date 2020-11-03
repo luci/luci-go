@@ -71,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f71b903_a6cfe7b7",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T12:33:27Z",
+      "side": 1,
+      "message": "np. It wasn\u0027t clear that query will be re-used.",
+      "parentUuid": "49aa233f_1db9ae8a",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 20
+      },
+      "revId": "24c7d76767fd0f69d3df3ec9a6a21e83e578278c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "943793f6_216ca2fd",
@@ -149,6 +173,24 @@
       "side": 1,
       "message": "the size of the map is usually much larger than # of sources.\nbut I move it to the struct so that we reuse the allocated map",
       "parentUuid": "0a48a821_f86bbacb",
+      "revId": "24c7d76767fd0f69d3df3ec9a6a21e83e578278c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14762cdb_7ae55d20",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T12:33:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2ba9bf10_69e5a782",
       "revId": "24c7d76767fd0f69d3df3ec9a6a21e83e578278c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
