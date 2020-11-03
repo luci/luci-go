@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5d144a4_d348935e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "The thing that makes me feel a little weird about this name is mainly that we normally treat \"changelist\" as a single word (e.g. https://moma.corp.google.com/glossary/term/11fzf40d63), so I would expect it to be called \"changelist\", although the package name is already \"changelist\". I wonder if you could call it \"changelist\" even though that\u0027s the same as the package name?\n\nBut either way, no big deal, it\u0027s internal to this package and you already have a comment explaining it.",
+      "range": {
+        "startLine": 12,
+        "startChar": 14,
+        "endLine": 12,
+        "endChar": 24
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69cac357_d524308c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "LGTM with questions/nits",
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8135ee3a_7c080189",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "To clarify, is the reason for keeping separate internal and external ID and having a mapping because we may want to support non-Gerrit CLs in the future?",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 22
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d53c98e_b3eb403d",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "I suppose this is a change number, e.g. 2515619?\n\nNot sure if it\u0027s worth noting, \"gerrit/host/number\" is different from a form that would be directly used with Gerrit:\nhttps://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a967f37_242dd5fa",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "The meaning of this is clear to us, but in case any readers are new to CV/Gerrit, maybe add a parenthetical (no code changes)?",
+      "range": {
+        "startLine": 65,
+        "startChar": 13,
+        "endLine": 65,
+        "endChar": 23
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d6eeb62_00274328",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "Nit: Possible rephrasing:\n  except in the case of a very old CL which is",
+      "range": {
+        "startLine": 105,
+        "startChar": 40,
+        "endLine": 105,
+        "endChar": 71
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9958555_8177632e",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T18:31:35Z",
+      "side": 1,
+      "message": "Nit: Could also use //",
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
