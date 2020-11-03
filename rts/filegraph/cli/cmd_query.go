@@ -15,9 +15,15 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
+
+	"go.chromium.org/luci/rts/filegraph"
 )
 
 var cmdQuery = &subcommands.Command{
@@ -36,15 +42,38 @@ var cmdQuery = &subcommands.Command{
 	`),
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
+		r.git.RegisterFlags(&r.Flags)
+		r.Flags.BoolVar(&r.printDirs, "print-dirs", false, "print directories too")
 		return r
 	},
 }
 
 type queryRun struct {
 	baseCommandRun
+	git       gitGraph
+	printDirs bool
 }
 
 func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	// TODO(crbug.com/1136280): implement.
-	panic("not implemented")
+	ctx := cli.GetContext(a, r, env)
+	if err := r.git.Validate(); err != nil {
+		return r.done(err)
+	}
+	if len(args) == 0 {
+		return r.done(errors.New("expected filenames as positional arguments"))
+	}
+
+	nodes, err := r.git.loadSyncedNodes(ctx, args...)
+	if err != nil {
+		return r.done(err)
+	}
+
+	q := filegraph.Query{Sources: nodes}
+	q.Run(func(sp *filegraph.ShortestPath) bool {
+		if r.printDirs || sp.Node.IsFile() {
+			fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
+		}
+		return ctx.Err() == nil
+	})
+	return 0
 }
