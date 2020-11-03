@@ -34,6 +34,24 @@
       "parentUuid": "c999ad1a_d0d2ceaf",
       "revId": "749da94525cab7ad2d79de528161c59312c90146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a6c410f_0458bf51",
+        "filename": "rts/cmd/filegraph/main.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-03T00:17:46Z",
+      "side": 1,
+      "message": "But it wraps the filegraph CLI, right? Or put another way, it\u0027s another entrypoint to the filegraph CLI? I\u0027m just wondering why you decided to add it.",
+      "parentUuid": "8b185022_00b80836",
+      "revId": "749da94525cab7ad2d79de528161c59312c90146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
