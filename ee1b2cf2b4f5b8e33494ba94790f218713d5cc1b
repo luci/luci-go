@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1a503d5_f5a8be5c",
+        "filename": "cv/internal/gerrit/gobmap/internal/gen.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-03T06:32:25Z",
+      "side": 1,
+      "message": "2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "ee1b2cf2b4f5b8e33494ba94790f218713d5cc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "710fae41_9993935e",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-03T06:32:25Z",
+      "side": 1,
+      "message": "maybe cv.gobmap?",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 17
+      },
+      "revId": "ee1b2cf2b4f5b8e33494ba94790f218713d5cc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "96053f54_3e6ede14",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-03T06:32:25Z",
+      "side": 1,
+      "message": "I think you\u0027ll also need the index of the ConfgGroup so that you can compute ProjectConfigGroupKey before partner teams provide valid for all their ConfigGroups?",
+      "revId": "ee1b2cf2b4f5b8e33494ba94790f218713d5cc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
