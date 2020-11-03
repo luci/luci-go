@@ -50,6 +50,24 @@
       "message": "Is a MaxDistance flag planned for the future?",
       "revId": "4502b6ced884ddbb8ec24d2c2eb60c8bf67c886a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "295b211f_3e4209ad",
+        "filename": "rts/filegraph/cli/cmd_query.go",
+        "patchSetId": 31
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-03T02:32:17Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "baa8dbeb_bce1f9ba",
+      "revId": "4502b6ced884ddbb8ec24d2c2eb60c8bf67c886a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
