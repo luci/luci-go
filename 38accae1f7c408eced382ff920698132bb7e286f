@@ -88,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c53fff8_6c31cd76",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T23:41:27Z",
+      "side": 1,
+      "message": "Got it. Optionally you could mention this in a short comment in this file.",
+      "parentUuid": "9c744cc5_8f2b4ed5",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 22
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2d53c98e_b3eb403d",
@@ -135,6 +159,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1fa8c3d_9f07f9d2",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T23:41:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "114c9928_56e5d41e",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3a967f37_242dd5fa",
@@ -172,6 +220,30 @@
       "side": 1,
       "message": "we\u0027ll have a function to decide this, which will have the documentation. OTOH, writing it here is bound to get outdated.",
       "parentUuid": "3a967f37_242dd5fa",
+      "range": {
+        "startLine": 65,
+        "startChar": 13,
+        "endLine": 65,
+        "endChar": 23
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f56bf9d5_687a75a3",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-03T23:41:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7349b929_9f9edf17",
       "range": {
         "startLine": 65,
         "startChar": 13,
