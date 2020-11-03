@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "976662db_4fe55ffe",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "s/zlib/zstd + copy-pasta from spanutil.",
+      "parentUuid": "a58e5aca_70c07a04",
+      "range": {
+        "startLine": 15,
+        "startChar": 53,
+        "endLine": 16,
+        "endChar": 43
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f348d99b_3c962ecc",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 7
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe0ce378_627e2486",
+        "filename": "gae/service/datastore/pls_impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08082d14_c4a251e5",
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a70bc438_ef8b65bd",
@@ -77,6 +119,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "140d0f49_6ca672d7",
+        "filename": "gae/service/datastore/pls_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 710,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "Done. Note that I intentionally didn\u0027t support the []*protos since adding `repeated` to the .proto file is better than having a property slice (since one shoudn\u0027t index on protos anyway).",
+      "parentUuid": "a70bc438_ef8b65bd",
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d9a5ebf3_69708193",
         "filename": "gae/service/datastore/protos.go",
         "patchSetId": 7
@@ -88,6 +148,30 @@
       "writtenOn": "2020-11-02T22:32:35Z",
       "side": 1,
       "message": "I wonder why zlib and not raw deflate? Also see my comment about about using a more modern format.",
+      "range": {
+        "startLine": 19,
+        "startChar": 11,
+        "endLine": 19,
+        "endChar": 15
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0cce0d16_ef12ed85",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9a5ebf3_69708193",
       "range": {
         "startLine": 19,
         "startChar": 11,
@@ -121,6 +205,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c1c377e_91778af0",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "I also don\u0027t like this, but I like it better than proto-gae and manual proto reading.\n\nI don\u0027t see how we can realize the \"ideal\". Here is what I know:\n\n\nFirst, [1] There are meaning and meaning_uri fields in datastore proto and they are used by ndb library [2] to:\na) for compressed, set meaning_uri to \"zlib\" string.\nb) for non-compressed, meaning_uri isn\u0027t set, but type is BYTESTRING (if indexed) or BLOB (if not indexed).\n\nSecond, `meaning` field is still exposed in proto [3] compiled for cloud Go, but meaning_uri is gone.\n\nThird, Go cloud client for datastore[4] doesn\u0027t expose protos on Get, only native Property type is available, just like in luci/gae wrapper.\n\n\nSo, while in theory we can talk to DS raw protos, this would mean forking Datastore Go client, and I don\u0027t think this is justified.\n\nFinally, I realized that I can\u0027t add \"legacy_compress\" because I can\u0027t write Python(ndb)-compatible structures from Go. I can, however, guess on the fly when reading based on zlib header that protos are compressed. But anyways, I don\u0027t have a use-case. \n\n\n[1] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/service/datastore/internal/protos/datastore/datastore_v3.proto?q\u003d%22optional%20Meaning%20meaning%22\u0026ss\u003dchromium%2Finfra%2Finfra\n[2] https://chromium.googlesource.com/external/googleappengine/python/+/3b4e135a03ddf2132df0c0c8d3f7cdc9eaa8c34b/google/appengine/ext/ndb/model.py#1581 (internal codesearch http://shortn/_BzsfJl0fni)\n[3] https://github.com/googleapis/googleapis/blob/c570f55ea7b64aeced41818609e7b24f0d242bdb/google/datastore/v1/entity.proto#L125\n[4] https://pkg.go.dev/cloud.google.com/go/datastore#Property",
+      "parentUuid": "0d18e42c_3cafc2a3",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 55
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "b8b94509_017df171",
@@ -134,6 +242,30 @@
       "writtenOn": "2020-11-02T22:32:35Z",
       "side": 1,
       "message": "Note that groups existing in the new Go protobuf library, at least when using protoreflect or dynamicpb.",
+      "range": {
+        "startLine": 57,
+        "startChar": 42,
+        "endLine": 57,
+        "endChar": 53
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be8e85ca_a0f00bce",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "true, but switched to End, now i\u0027m almost certain 😊",
+      "parentUuid": "b8b94509_017df171",
       "range": {
         "startLine": 57,
         "startChar": 42,
@@ -169,6 +301,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8e2cf323_eb68d0c9",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "agree that it\u0027ll likely choke regardless of what first value is, but there can be messages that would be happily deserialized. OTOH, with GroupEnd in latest patchset, I think the aren\u0027t any such messages. So, I prefer certainty.",
+      "parentUuid": "b248547b_15168276",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 55
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f2944e6d_4470bf55",
         "filename": "gae/service/datastore/protos.go",
         "patchSetId": 7
@@ -180,6 +336,30 @@
       "writtenOn": "2020-11-02T22:32:35Z",
       "side": 1,
       "message": "nit: imo nocompress should be first, it is more \"fundamental\"",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 37
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a004b6b4_9ba3556d",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2944e6d_4470bf55",
       "range": {
         "startLine": 66,
         "startChar": 0,
@@ -213,6 +393,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bb0aaf6_ecb15ee4",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de8751ca_95d4c615",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 19
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be10d50d_7da2608d",
@@ -226,6 +430,30 @@
       "writtenOn": "2020-11-02T22:32:35Z",
       "side": 1,
       "message": "nit: extract into a separate function",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 3
+      },
+      "revId": "4a2f9aec39a553c3e8eefc54c4f8c89b9e7ca9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6080c9d7_d9ad7ac1",
+        "filename": "gae/service/datastore/protos.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T18:11:41Z",
+      "side": 1,
+      "message": "no longer needed.",
+      "parentUuid": "be10d50d_7da2608d",
       "range": {
         "startLine": 95,
         "startChar": 2,
