@@ -68,4 +68,12 @@ export class StepExt {
   @computed get duration() {
     return (this.endTime || this.renderTime.get()).diff(this.startTime);
   }
+
+  @computed get header() {
+    return this.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
+  }
+
+  @computed get summary() {
+    return this.summaryMarkdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
+  }
 }
