@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9c744cc5_8f2b4ed5",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T19:10:46Z",
+      "side": 1,
+      "message": "No. See design doc \"On identifying \u0026 storing CLs in CV\".\ntl;dr using 8 byte int64 saves CPU, RAM \u0026 Space.",
+      "parentUuid": "8135ee3a_7c080189",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 22
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2d53c98e_b3eb403d",
         "filename": "cv/internal/changelist/model.go",
         "patchSetId": 3
@@ -77,6 +101,30 @@
       "writtenOn": "2020-11-03T18:31:35Z",
       "side": 1,
       "message": "I suppose this is a change number, e.g. 2515619?\n\nNot sure if it\u0027s worth noting, \"gerrit/host/number\" is different from a form that would be directly used with Gerrit:\nhttps://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "114c9928_56e5d41e",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T19:10:46Z",
+      "side": 1,
+      "message": "yes, number and yes different. I think the only thing that matters is having 1:1 relationship between ID and actual CL.\n\nalso, fyi: \"myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940\" format isn\u0027t guaranteed to be unique in Gerrit",
+      "parentUuid": "2d53c98e_b3eb403d",
       "range": {
         "startLine": 41,
         "startChar": 24,
@@ -112,6 +160,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7349b929_9f9edf17",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T19:10:46Z",
+      "side": 1,
+      "message": "we\u0027ll have a function to decide this, which will have the documentation. OTOH, writing it here is bound to get outdated.",
+      "parentUuid": "3a967f37_242dd5fa",
+      "range": {
+        "startLine": 65,
+        "startChar": 13,
+        "endLine": 65,
+        "endChar": 23
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0d6eeb62_00274328",
         "filename": "cv/internal/changelist/model.go",
         "patchSetId": 3
@@ -123,6 +195,30 @@
       "writtenOn": "2020-11-03T18:31:35Z",
       "side": 1,
       "message": "Nit: Possible rephrasing:\n  except in the case of a very old CL which is",
+      "range": {
+        "startLine": 105,
+        "startChar": 40,
+        "endLine": 105,
+        "endChar": 71
+      },
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95132097_7888ac24",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T19:10:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d6eeb62_00274328",
       "range": {
         "startLine": 105,
         "startChar": 40,
@@ -146,6 +242,24 @@
       "writtenOn": "2020-11-03T18:31:35Z",
       "side": 1,
       "message": "Nit: Could also use //",
+      "revId": "38accae1f7c408eced382ff920698132bb7e286f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72ab1ba0_297a899e",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-03T19:10:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9958555_8177632e",
       "revId": "38accae1f7c408eced382ff920698132bb7e286f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
