@@ -20,7 +20,6 @@ import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { BuildExt } from '../../models/build_ext';
 import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
-import { RelatedBuildsData } from '../../services/build_page';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
@@ -67,22 +66,46 @@ export class BuildState {
   }
 
   @computed({keepAlive: true})
-  get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
-    // Since response can be different when queried at different time,
-    // establish a dependency on timestamp.
-    this.timestamp;  // tslint:disable-line: no-unused-expression
-    if (!this.appState.buildPageService || !this.build) {
+  get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+    if (!this.build) {
       return fromPromise(new Promise(() => {}));
     }
-    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.build.id));
+
+    const buildsPromises = this.build.buildSets
+      // Remove the commit/git/ buildsets because we know they're redundant with
+      // the commit/gitiles/ buildsets, and we don't need to ask Buildbucket
+      // twice.
+      .filter((b) => !b.startsWith('commit/git/'))
+      .map((b) => this.appState.buildsService!.searchBuilds({
+        predicate: {tags: [{key: 'buildset', value: b}]},
+        fields: '*',
+        pageSize: 1000,
+      }).then((res) => res.builds));
+
+    return fromPromise(Promise.all(buildsPromises).then((buildArrays) => {
+      const buildMap = new Map<string, Build>();
+      for (const builds of buildArrays) {
+        for (const build of builds){
+          // Filter out duplicate builds by overwriting them.
+          buildMap.set(build.id, build);
+        }
+      }
+      return [...buildMap.values()]
+        .sort((b1, b2) => {
+          if (b1.id.length === b2.id.length) {
+            return b1.id.localeCompare(b2.id);
+          }
+          return b1.id.length - b2.id.length;
+        });
+    }));
   }
 
   @computed
-  get relatedBuildsData(): RelatedBuildsData | null {
-    if (this.relatedBuildsDataReq.state !== FULFILLED) {
+  get relatedBuilds(): readonly BuildExt[] | null {
+    if (this.relatedBuildReq.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildsDataReq.value;
+    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
   @computed({keepAlive: true})

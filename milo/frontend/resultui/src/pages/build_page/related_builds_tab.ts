@@ -47,7 +47,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderLoadingBar() {
-    if (this.buildState.build == null || this.buildState.relatedBuildsData == null) {
+    if (this.buildState.relatedBuilds === null) {
       return html`
         <div id="load">
           Loading <milo-dot-spinner></milo-dot-spinner>
@@ -58,7 +58,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderBuildsetInfo() {
-    if (this.buildState.build == null) {
+    if (this.buildState.build === null) {
       return html``;
     }
     return html`
@@ -72,7 +72,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderRelatedBuildsTable() {
-    if (this.buildState.relatedBuildsData == null) {
+    if (this.buildState.relatedBuilds === null) {
       return html``;
     }
     return html`
@@ -89,8 +89,8 @@ export class RelatedBuildsTabElement extends MobxLitElement {
           <th>Summary</th>
         </tr>
         ${repeat(
-          this.buildState.relatedBuildsData.relatedBuilds,
-          (relatedBuild, _) => this.renderRelatedBuildRow(new BuildExt(relatedBuild)),
+          this.buildState.relatedBuilds,
+          (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild),
         )}
       </table>
     `;

@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { ChainableURL, compareBigInt } from './utils';
+import { ChainableURL } from './utils';
 
 describe('utils', () => {
   describe('ChainableURL', () => {
@@ -50,25 +50,6 @@ describe('utils', () => {
           .toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=newVal1&key2=newVal2&key3=val3&key3=val3');
       });
-    });
-  });
-
-  describe('compareBigInt', () => {
-    it('can compare big integers', async () => {
-      assert.isTrue(compareBigInt('1234567890123456789', '1234567890123456789') === 0);
-      assert.isTrue(compareBigInt('1234567890123456789', '1234567890123456799') < 0);
-      assert.isTrue(compareBigInt('1234567890123456789', '1234567890123456788') > 0);
-    });
-
-    it('can compare big integers of different lengths', async () => {
-      assert.isTrue(compareBigInt('4567890123456789', '2234567890123456789') < 0);
-      assert.isTrue(compareBigInt('2234567890123456789', '234567890123456789') > 0);
-    });
-
-    it('can compare big integers with leading zeros', async () => {
-      assert.isTrue(compareBigInt('01234567890123456789', '00001234567890123456789') === 0);
-      assert.isTrue(compareBigInt('00000004567890123456789', '2234567890123456789') < 0);
-      assert.isTrue(compareBigInt('2234567890123456789', '00000000234567890123456789') > 0);
     });
   });
 });
