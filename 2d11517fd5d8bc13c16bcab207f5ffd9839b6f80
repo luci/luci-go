@@ -22,6 +22,30 @@
       },
       "revId": "2d11517fd5d8bc13c16bcab207f5ffd9839b6f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55d3ef95_967c0613",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-03T01:22:04Z",
+      "side": 1,
+      "message": "Recipe should be responsible of producing SummaryMarkdown.\n\nFrom go/luci-dev-chat\n```\nYiwei Zhang:\nRecipe engine supports emitting SummaryMarkdown.\n\nI\u0027m not sure if there\u0027s anyone relies on this feature to quickly figure out which step has failed.\n\nanyhow, if we do want this logic, I think this should live in recipe engine instead of Milo\n\nso I think you can delete it in milo\n```",
+      "parentUuid": "c4e01b74_c64040bb",
+      "range": {
+        "startLine": 11,
+        "startChar": 48,
+        "endLine": 12,
+        "endChar": 45
+      },
+      "revId": "2d11517fd5d8bc13c16bcab207f5ffd9839b6f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
