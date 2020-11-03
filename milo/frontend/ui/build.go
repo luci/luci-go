@@ -163,25 +163,6 @@ func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
 	}
 }
 
-// Summary returns a summary of failures in the build.
-// TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
-func (b *Build) Summary() (result []string) {
-	for _, step := range b.Steps {
-		parts := strings.Split(step.Name, "|")
-		name := parts[len(parts)-1]
-		if name == "Failure reason" {
-			continue
-		}
-		switch step.Status {
-		case buildbucketpb.Status_INFRA_FAILURE:
-			result = append(result, "Infra Failure "+name)
-		case buildbucketpb.Status_FAILURE:
-			result = append(result, "Failure "+name)
-		}
-	}
-	return
-}
-
 // ChangeLinks returns a slice of links to build input gerrit changes.
 func (b *Build) ChangeLinks() []*Link {
 	changes := b.GetInput().GetGerritChanges()
