@@ -128,6 +128,24 @@
       "parentUuid": "96053f54_3e6ede14",
       "revId": "ee1b2cf2b4f5b8e33494ba94790f218713d5cc1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66e0851b_9ea616b1",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-04T19:19:10Z",
+      "side": 1,
+      "message": "sgtm. That\u0027s a good idea.",
+      "parentUuid": "72b5f1af_9203a885",
+      "revId": "ee1b2cf2b4f5b8e33494ba94790f218713d5cc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
