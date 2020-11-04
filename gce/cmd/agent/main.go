@@ -18,6 +18,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"text/template"
 
@@ -26,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -63,15 +65,18 @@ func getMetadata(c context.Context) *metadata.Client {
 }
 
 // newInstances returns a new instances.InstancesClient.
-func newInstances(c context.Context, acc, host string) instances.InstancesClient {
+func newInstances(c context.Context, acc, host string) (instances.InstancesClient, error) {
+	info, err := version.GetCurrentVersion()
+	if err != nil {
+		return nil, err
+	}
 	options := prpc.DefaultOptions()
-	// TODO(tandrii): report CIPD package version.
-	options.UserAgent = "gce-agent, v1"
+	options.UserAgent = fmt.Sprintf("gce-agent, instanceID=%q", info.InstanceID)
 	return instances.NewInstancesPRPCClient(&prpc.Client{
 		C:       client.NewClient(getMetadata(c), acc),
 		Host:    host,
 		Options: options,
-	})
+	}), nil
 }
 
 // cmdRunBase is the base struct all subcommands should embed.
