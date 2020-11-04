@@ -245,6 +245,24 @@
       "parentUuid": "eff43b4f_702df563",
       "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c9f2c93_1e04abce",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-04T21:20:14Z",
+      "side": 1,
+      "message": "Ahh yes I see.\nReading through the man pages and playing with it a bit, I get a sense that git rev-parse --verify is a more canonical way to do that.",
+      "parentUuid": "a94b7bbc_3d7f99df",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
