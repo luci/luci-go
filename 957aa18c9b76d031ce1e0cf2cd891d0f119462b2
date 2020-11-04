@@ -16,6 +16,23 @@
       "message": "Forgot to add you. This CL was TBRed",
       "revId": "957aa18c9b76d031ce1e0cf2cd891d0f119462b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dbe9367_c59aa595",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-04T18:30:27Z",
+      "side": 1,
+      "message": "failure is indeed weird.",
+      "revId": "957aa18c9b76d031ce1e0cf2cd891d0f119462b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
