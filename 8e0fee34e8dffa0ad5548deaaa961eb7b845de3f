@@ -41,6 +41,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cec251e_f8c6c8a0",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16c329d9_848d7173",
+      "range": {
+        "startLine": 110,
+        "startChar": 131,
+        "endLine": 110,
+        "endChar": 152
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4db5dc7f_586edd7b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d06f616d_199323cb",
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c597e4a3_3a572013",
@@ -87,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b869437e_eeb706da",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7661bc6_8db222b0",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 35
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a1b6c12a_c66ecbf1",
@@ -100,6 +166,30 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "not obvious what is dirs here.\nlocationTags? locationTags.Dirs?",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 8
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2caaae39_ee6ab897",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "a1b6c12a_c66ecbf1",
       "range": {
         "startLine": 52,
         "startChar": 4,
@@ -133,6 +223,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eeb2bfe2_72fb97c4",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7ce3f1d_e5f6bce0",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 67
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "170bc870_77bbb325",
@@ -146,6 +260,30 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "nit: the code below would be more readable if it was de-intended, BY inverting this condition",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 29
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ac87ac3_c32deff8",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "170bc870_77bbb325",
       "range": {
         "startLine": 83,
         "startChar": 1,
@@ -181,6 +319,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5f522cfd_03ebdb16",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "How about setTestTags?",
+      "parentUuid": "b96a9359_e5425b89",
+      "range": {
+        "startLine": 122,
+        "startChar": 36,
+        "endLine": 122,
+        "endChar": 44
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8af08f70_2d966e5e",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
@@ -192,6 +354,30 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "if c.locationTags \u003d\u003d nil || tmd.GetLocation().GetFileName() \u003d\u003d \"\"",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 126,
+        "endChar": 56
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e6ff220_606fe838",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8af08f70_2d966e5e",
       "range": {
         "startLine": 123,
         "startChar": 2,
@@ -215,6 +401,30 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "nit: would a single if statement with || be simpler?",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 2
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98430246_1b92dd22",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9623b2a7_5140fc24",
       "range": {
         "startLine": 130,
         "startChar": 1,
@@ -271,6 +481,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08545e74_a49db061",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea89888c_f0079f59",
+      "range": {
+        "startLine": 137,
+        "startChar": 42,
+        "endLine": 137,
+        "endChar": 46
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07e5d92f_6c4fcae2",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad150d4f_e7d151ed",
+      "range": {
+        "startLine": 137,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 16
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "825ed05d_caf2df8e",
@@ -284,6 +542,30 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "this means we never check the root?\nI think this check should be before calling path.Dir",
+      "range": {
+        "startLine": 141,
+        "startChar": 1,
+        "endLine": 141,
+        "endChar": 17
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fd6edb5_20b018bf",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "825ed05d_caf2df8e",
       "range": {
         "startLine": 141,
         "startChar": 1,
@@ -317,6 +599,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6e47380_830584f3",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f32f0a7b_f681962b",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 8
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a20a1cb9_6d3a3983",
@@ -330,6 +636,24 @@
       "writtenOn": "2020-10-28T19:38:20Z",
       "side": 1,
       "message": "i am not sure it should go to tmd, as opposed to TestResult.tags",
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6f9f593_a6edf26d",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-04T06:11:47Z",
+      "side": 1,
+      "message": "This comment has not been addressed because of the ongoing discussion in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2496442",
+      "parentUuid": "a20a1cb9_6d3a3983",
       "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
