@@ -184,6 +184,24 @@
       "parentUuid": "3f899fbe_bf2b5fa5",
       "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af7de69a_aa8eb1bd",
+        "filename": "rts/filegraph/git/graph_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-04T21:27:32Z",
+      "side": 1,
+      "message": "Never knew that! Learned a lot from you about Go already.",
+      "parentUuid": "1f841698_14fa5e35",
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
