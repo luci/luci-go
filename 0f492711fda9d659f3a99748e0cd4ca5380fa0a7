@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0e5f3c0_281eced7",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:04:36Z",
+      "side": 1,
+      "message": "yes! Thanks!",
+      "parentUuid": "9f43b63f_b7a3588e",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "430e649e_678b1d9a",
@@ -106,6 +124,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5438bd59_3d965589",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:04:36Z",
+      "side": 1,
+      "message": "Thanks for the catch! done\n\nno need to check err !\u003d nil because errors.Annotate() already does this",
+      "parentUuid": "954ddc94_61bd39e3",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7616f4fc_5bd01483",
@@ -119,6 +155,24 @@
       "writtenOn": "2020-11-04T20:27:01Z",
       "side": 1,
       "message": "I like the name \"repoDir\" for this variable, like in the loadSyncedGraph params. Context is an overloaded term. Wdyt?",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db0fcc7b_f88fa129",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:04:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7616f4fc_5bd01483",
       "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -140,6 +194,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ef441ad_2d41beb6",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:04:36Z",
+      "side": 1,
+      "message": "added a comment to explain",
+      "parentUuid": "5f56df5a_3672e466",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eff43b4f_702df563",
@@ -153,6 +225,24 @@
       "writtenOn": "2020-11-04T20:27:01Z",
       "side": 1,
       "message": "My git says nothing about \"bad revision\". It says \"unknown revision\".",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a94b7bbc_3d7f99df",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:04:36Z",
+      "side": 1,
+      "message": "did you pass -- ?\n\nit says \"unknown revision\" to me if I don\u0027t pass --",
+      "parentUuid": "eff43b4f_702df563",
       "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
