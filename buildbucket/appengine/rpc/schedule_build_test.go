@@ -107,6 +107,124 @@ func TestScheduleBuild(t *testing.T) {
 			So(ret, ShouldBeNil)
 		})
 
+		Convey("canary", func() {
+			Convey("false default", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary: false,
+					},
+				}), ShouldBeNil)
+
+				Convey("merge", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Canary:          pb.Trinary_YES,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Canary:          pb.Trinary_YES,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary:       pb.Trinary_YES,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
+					})
+				})
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
+					})
+				})
+			})
+
+			Convey("true default", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary: true,
+					},
+				}), ShouldBeNil)
+
+				Convey("merge", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Canary:          pb.Trinary_NO,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+						Canary:          pb.Trinary_NO,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
+					})
+				})
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					}
+					ret, err := scheduleRequestFromTemplate(ctx, req)
+					So(err, ShouldBeNil)
+					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						TemplateBuildId: 1,
+					})
+					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Canary:       pb.Trinary_YES,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
+					})
+				})
+			})
+		})
+
 		Convey("critical", func() {
 			So(datastore.Put(ctx, &model.Build{
 				Proto: pb.Build{
@@ -137,8 +255,10 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Critical:   pb.Trinary_NO,
-					Properties: &structpb.Struct{},
+					Canary:       pb.Trinary_NO,
+					Critical:     pb.Trinary_NO,
+					Experimental: pb.Trinary_NO,
+					Properties:   &structpb.Struct{},
 				})
 			})
 
@@ -157,8 +277,10 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Critical:   pb.Trinary_YES,
-					Properties: &structpb.Struct{},
+					Canary:       pb.Trinary_NO,
+					Critical:     pb.Trinary_YES,
+					Experimental: pb.Trinary_NO,
+					Properties:   &structpb.Struct{},
 				})
 			})
 		})
@@ -197,8 +319,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Exe:        &pb.Executable{},
-						Properties: &structpb.Struct{},
+						Canary:       pb.Trinary_NO,
+						Exe:          &pb.Executable{},
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
 					})
 				})
 
@@ -225,11 +349,13 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Canary: pb.Trinary_NO,
 						Exe: &pb.Executable{
 							CipdPackage: "package",
 							CipdVersion: "new",
 						},
-						Properties: &structpb.Struct{},
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
 					})
 				})
 			})
@@ -249,11 +375,13 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Canary: pb.Trinary_NO,
 					Exe: &pb.Executable{
 						CipdPackage: "package",
 						CipdVersion: "version",
 					},
-					Properties: &structpb.Struct{},
+					Experimental: pb.Trinary_NO,
+					Properties:   &structpb.Struct{},
 				})
 			})
 		})
@@ -298,6 +426,8 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
 						GerritChanges: []*pb.GerritChange{
 							{
 								Host:     "example.com",
@@ -341,6 +471,8 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
 						GerritChanges: []*pb.GerritChange{
 							{
 								Host:     "example.com",
@@ -369,6 +501,8 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Canary:       pb.Trinary_NO,
+					Experimental: pb.Trinary_NO,
 					GerritChanges: []*pb.GerritChange{
 						{
 							Host:     "example.com",
@@ -414,6 +548,8 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
+				Canary:       pb.Trinary_NO,
+				Experimental: pb.Trinary_NO,
 				GitilesCommit: &pb.GitilesCommit{
 					Host:    "example.com",
 					Project: "project",
@@ -474,6 +610,8 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"input": {
@@ -501,7 +639,9 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Properties: &structpb.Struct{},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
 					})
 				})
 			})
@@ -541,7 +681,9 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
-							Properties: &structpb.Struct{},
+							Canary:       pb.Trinary_NO,
+							Experimental: pb.Trinary_NO,
+							Properties:   &structpb.Struct{},
 						})
 					})
 
@@ -578,6 +720,8 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
+							Canary:       pb.Trinary_NO,
+							Experimental: pb.Trinary_NO,
 							Properties: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
 									"other": {
@@ -606,6 +750,8 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"input": {
@@ -653,7 +799,9 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Properties: &structpb.Struct{},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "key",
@@ -690,7 +838,9 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Properties: &structpb.Struct{},
+						Canary:       pb.Trinary_NO,
+						Experimental: pb.Trinary_NO,
+						Properties:   &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "other",
@@ -716,7 +866,9 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Properties: &structpb.Struct{},
+					Canary:       pb.Trinary_NO,
+					Experimental: pb.Trinary_NO,
+					Properties:   &structpb.Struct{},
 					Tags: []*pb.StringPair{
 						{
 							Key:   "key",
@@ -752,7 +904,9 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Properties: &structpb.Struct{},
+				Canary:       pb.Trinary_NO,
+				Experimental: pb.Trinary_NO,
+				Properties:   &structpb.Struct{},
 			})
 		})
 	})

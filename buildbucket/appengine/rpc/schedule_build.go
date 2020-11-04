@@ -73,8 +73,10 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 var templateBuildMask = mask.MustFromReadMask(
 	&pb.Build{},
 	"builder",
+	"canary",
 	"critical",
 	"exe",
+	"input.experimental",
 	"input.gerrit_changes",
 	"input.gitiles_commit",
 	"input.properties",
@@ -103,15 +105,23 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	}
 
 	ret := &pb.ScheduleBuildRequest{
-		Builder: b.Builder,
-		// TODO(crbug/1042991): Set Canary and Experimental.
-		// Canary, Experimental need to convert bool -> trinary. Python seems to do it wrong.
+		Builder:       b.Builder,
 		Critical:      b.Critical,
 		Exe:           b.Exe,
 		GerritChanges: b.Input.GerritChanges,
 		GitilesCommit: b.Input.GitilesCommit,
 		Properties:    b.Input.Properties,
 		Tags:          b.Tags,
+	}
+
+	// Convert bool to the corresponding pb.Trinary values.
+	ret.Canary = pb.Trinary_NO
+	ret.Experimental = pb.Trinary_NO
+	if b.Canary {
+		ret.Canary = pb.Trinary_YES
+	}
+	if b.Input.Experimental {
+		ret.Experimental = pb.Trinary_YES
 	}
 
 	// proto.Merge concatenates repeated fields. Here the desired behavior is replacement,
