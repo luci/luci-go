@@ -106,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cb707e0_37854bae",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T17:43:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c597e4a3_3a572013",
+      "range": {
+        "startLine": 246,
+        "startChar": 2,
+        "endLine": 246,
+        "endChar": 13
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c7661bc6_8db222b0",
@@ -331,6 +355,30 @@
       "side": 1,
       "message": "How about setTestTags?",
       "parentUuid": "b96a9359_e5425b89",
+      "range": {
+        "startLine": 122,
+        "startChar": 36,
+        "endLine": 122,
+        "endChar": 44
+      },
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ab830ac_dc0ac194",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T17:43:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f522cfd_03ebdb16",
       "range": {
         "startLine": 122,
         "startChar": 36,
