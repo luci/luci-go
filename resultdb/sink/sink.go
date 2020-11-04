@@ -123,6 +123,9 @@ type ServerConfig struct {
 	// If true, the API will coerce negative durations to 0.
 	// If false, the API will return an error for negative durations.
 	CoerceNegativeDuration bool
+
+	// LocationTags is a map from a directory to its metadata.
+	LocationTags *sinkpb.LocationTags
 }
 
 // Validate validates all the config fields.
