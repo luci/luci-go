@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a253dd6a_588101ea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-11-04T08:09:30Z",
+      "side": 1,
+      "message": "pb.Trinary_UNSET \u003d 0, YES \u003d 1, NO \u003d 2. Therefore in Python I believe that True is handled correctly, since it has the same numeric value as YES, but if the template build has Canary and Experimental as False, it will be incorrectly converted to UNSET in the request. Propose fixing it here.",
+      "revId": "31bf2b7f02396116a45df76eb78fd449cddd2f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
