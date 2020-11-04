@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "23426af2_c538d1cd",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:08:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be788bb8_4e1f3083",
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f8082af5_482cfdf1",
@@ -52,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f057e33a_4ce2fdaf",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:08:10Z",
+      "side": 1,
+      "message": "thanks done",
+      "parentUuid": "f8082af5_482cfdf1",
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f899fbe_bf2b5fa5",
@@ -65,6 +101,24 @@
       "writtenOn": "2020-11-04T21:02:46Z",
       "side": 1,
       "message": "empty* graph",
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f841698_14fa5e35",
+        "filename": "rts/filegraph/git/graph_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T21:08:10Z",
+      "side": 1,
+      "message": "renamed to \"zero value\" (which is what I meant).\n\"zero value\" is an established term in Golang, so I am referring to that specifically https://tour.golang.org/basics/12\nhttps://dave.cheney.net/2013/01/19/what-is-the-zero-value-and-why-is-it-useful",
+      "parentUuid": "3f899fbe_bf2b5fa5",
       "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
