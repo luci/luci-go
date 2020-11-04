@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/gce/api/instances/v1"
 )
@@ -59,16 +58,22 @@ func (cmd *connectCmd) validateFlags(c context.Context) error {
 // Run runs the command to connect to a Swarming server.
 func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	c := cli.GetContext(app, cmd, env)
-	if err := cmd.validateFlags(c); err != nil {
-		logging.Errorf(c, "%s", err.Error())
+	if err := cmd.run(c, args, env); err != nil {
+		errors.Log(c, err)
 		return 1
+	}
+	return 0
+}
+
+func (cmd *connectCmd) run(c context.Context, args []string, env subcommands.Env) error {
+	if err := cmd.validateFlags(c); err != nil {
+		return err
 	}
 	if cmd.server == ":metadata" {
 		meta := getMetadata(c)
 		srv, err := meta.Get("instance/attributes/swarming-server")
 		if err != nil {
-			logging.Errorf(c, "%s", err.Error())
-			return 1
+			return err
 		}
 		cmd.server = srv
 	}
@@ -76,14 +81,12 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 		meta := getMetadata(c)
 		name, err := meta.InstanceName()
 		if err != nil {
-			logging.Errorf(c, "%s", err.Error())
-			return 1
+			return err
 		}
 		if cmd.provider == ":metadata" {
 			cmd.provider, err = meta.Get("instance/attributes/provider")
 			if err != nil {
-				logging.Errorf(c, "%s", err.Error())
-				return 1
+				return err
 			}
 		}
 		prov := newInstances(c, cmd.serviceAccount, cmd.provider)
@@ -91,8 +94,7 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 			Hostname: name,
 		})
 		if err != nil {
-			logging.Errorf(c, "%s", err.Error())
-			return 1
+			return err
 		}
 		cmd.server = inst.Swarming
 	}
@@ -100,10 +102,9 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 	swr := getSwarming(c)
 	swr.server = cmd.server
 	if err := swr.Configure(c, cmd.dir, cmd.user, cmd.python); err != nil {
-		logging.Errorf(c, "%s", err.Error())
-		return 1
+		return err
 	}
-	return 0
+	return nil
 }
 
 // defaultFlagPython returns the default python that runs Swarming bot process.
