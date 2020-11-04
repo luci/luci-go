@@ -70,6 +70,24 @@
       "parentUuid": "08b23e4a_2277d10d",
       "revId": "a501a72a5b25ef500d376fad5de3366ef1f0518a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be955e8f_22744e5e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T17:36:07Z",
+      "side": 1,
+      "message": "\u003e \u003e \u003e Adding proto fields - I prefer this, the reason I didn\u0027t do it is that if dirmd adds more tags in the future, we\u0027ll have to change sink to add them. But maybe the possibility of adding new tags in dirmd is small so we don\u0027t need to have that concern?\n\u003e \u003e \n\u003e \u003e hard to tell. I am worried that if someone needs this and we don\u0027t have cycles to do this, users won\u0027t benefit from [the work we do today] and will look for another solution. \n\u003e \u003e \n\u003e \u003e \u003e \n\u003e \u003e \u003e using TestResult.tags - this will be future proof, but then it seems not so necessary to have test_metadata any more.\n\u003e \u003e \n\u003e \u003e Could you elaborate? we still need test_location, test_name and might need category.\n\u003e \n\u003e That\u0027s right, but those will be the only fields in test_metadata. And test_name is still in TestResult.tags right now, so test_name in test_metadata is not being used by anyone.\n\nI am not sure I understand the point you are making. Are you saying test_metadata won\u0027t be used later? We plan to remove TestResults.test_location, move test name from tags to TestMetadata.name, and add category.\n\n\u003e \n\u003e \u003e \n\u003e \u003e \u003e \n\u003e \u003e \u003e The other idea: WDYT if we name it location_based_tags? Will that be less confusing?\n\u003e \u003e \n\u003e \u003e I think it would be a layering violation. It exposes where these tags came from, so clients code will get coupled with that.\n\u003e \n\u003e Then test_tags?\n\nlocation_based_tags sounds better, but the original problem is still not solved:\n\n\"\"\"I am somewhat worried that users will be confused which tags to use. We have 3 kinds of tags in BQ (exported.tags, parent.tags, tags) and this adds a fourth type.\"\"\" \n\n?",
+      "parentUuid": "917f9ead_5e100273",
+      "revId": "a501a72a5b25ef500d376fad5de3366ef1f0518a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
