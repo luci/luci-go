@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65533f63_778dc3c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2020-11-04T14:13:51Z",
+      "side": 1,
+      "message": "Rubber-stamp. Note that I\u0027m not an ideal reviewer here as I don\u0027t know this code.",
+      "revId": "a01b289a70c2cff1b61d64ac04f2cece5ad187bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
