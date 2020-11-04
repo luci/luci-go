@@ -166,6 +166,7 @@ func getByID(c context.Context, id string) (*instances.Instance, error) {
 // May be called by VMs.
 func getByHostname(c context.Context, hostname string) (*instances.Instance, error) {
 	if vmtoken.Has(c) && vmtoken.Hostname(c) != hostname {
+		logging.Warningf(c, "VM %q trying to get host %q", vmtoken.Hostname(c), hostname)
 		return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
 	}
 	var vms []*model.VM
@@ -176,6 +177,7 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
 	case len(vms) == 0:
 		if vmtoken.Has(c) {
+			logging.Warningf(c, "no VMs found by hostname %q", hostname)
 			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
 		}
 		return nil, status.Errorf(codes.NotFound, "no VM found with hostname %q", hostname)
