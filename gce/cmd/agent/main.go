@@ -64,9 +64,13 @@ func getMetadata(c context.Context) *metadata.Client {
 
 // newInstances returns a new instances.InstancesClient.
 func newInstances(c context.Context, acc, host string) instances.InstancesClient {
+	options := prpc.DefaultOptions()
+	// TODO(tandrii): report CIPD package version.
+	options.UserAgent = "gce-agent, v1"
 	return instances.NewInstancesPRPCClient(&prpc.Client{
-		C:    client.NewClient(getMetadata(c), acc),
-		Host: host,
+		C:       client.NewClient(getMetadata(c), acc),
+		Host:    host,
+		Options: options,
 	})
 }
 
