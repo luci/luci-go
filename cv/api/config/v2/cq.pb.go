@@ -21,11 +21,10 @@
 package config
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
 	_ "go.chromium.org/luci/common/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -36,10 +35,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // A boolean with an "unset" default value.
 type Toggle int32
@@ -317,7 +312,7 @@ type SubmitOptions struct {
 	// See max_burst for more info.
 	//
 	// Must be >0 to take effect. Requires max_burst to be set, too.
-	BurstDelay *duration.Duration `protobuf:"bytes,2,opt,name=burst_delay,json=burstDelay,proto3" json:"burst_delay,omitempty"`
+	BurstDelay *durationpb.Duration `protobuf:"bytes,2,opt,name=burst_delay,json=burstDelay,proto3" json:"burst_delay,omitempty"`
 }
 
 func (x *SubmitOptions) Reset() {
@@ -359,7 +354,7 @@ func (x *SubmitOptions) GetMaxBurst() int32 {
 	return 0
 }
 
-func (x *SubmitOptions) GetBurstDelay() *duration.Duration {
+func (x *SubmitOptions) GetBurstDelay() *durationpb.Duration {
 	if x != nil {
 		return x.BurstDelay
 	}
@@ -530,7 +525,7 @@ type CombineCLs struct {
 	// Additional implication is that a standalone CL w/o any other relations to
 	// other CLs will need to wait this much time before CQ would start processing
 	// it (i.e., before it triggers first tryjob).
-	StabilizationDelay *duration.Duration `protobuf:"bytes,1,opt,name=stabilization_delay,json=stabilizationDelay,proto3" json:"stabilization_delay,omitempty"`
+	StabilizationDelay *durationpb.Duration `protobuf:"bytes,1,opt,name=stabilization_delay,json=stabilizationDelay,proto3" json:"stabilization_delay,omitempty"`
 }
 
 func (x *CombineCLs) Reset() {
@@ -565,7 +560,7 @@ func (*CombineCLs) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_api_config_v2_cq_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *CombineCLs) GetStabilizationDelay() *duration.Duration {
+func (x *CombineCLs) GetStabilizationDelay() *durationpb.Duration {
 	if x != nil {
 		return x.StabilizationDelay
 	}
@@ -1912,7 +1907,7 @@ var file_go_chromium_org_luci_cv_api_config_v2_cq_proto_goTypes = []interface{}{
 	(*Verifiers_Tryjob_EquivalentBuilder)(nil), // 16: cq.config.Verifiers.Tryjob.EquivalentBuilder
 	(*Verifiers_Tryjob_IncludableBuilder)(nil), // 17: cq.config.Verifiers.Tryjob.IncludableBuilder
 	(*Verifiers_Tryjob_RetryConfig)(nil),       // 18: cq.config.Verifiers.Tryjob.RetryConfig
-	(*duration.Duration)(nil),                  // 19: google.protobuf.Duration
+	(*durationpb.Duration)(nil),                // 19: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_cv_api_config_v2_cq_proto_depIdxs = []int32{
 	4,  // 0: cq.config.Config.submit_options:type_name -> cq.config.SubmitOptions
