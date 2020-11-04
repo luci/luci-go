@@ -1,0 +1,49 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.gobmap;
+
+option go_package = "go.chromium.org/luci/cv/internal/gerrit/gobmap/internal;internal";
+
+
+// Groups keeps config groups of a single LUCI project relevant to a specific
+// Git repository (aka Gerrit project).
+//
+// For now, this message is just a wrapper for a list of groups as they appear
+// in LUCI Project's CV config file. In the future, this can optimized into
+// treap-like structure based on known ref prefix if there are 100+ ref specs
+// for the same repo.
+message Groups {
+  repeated Group groups = 1;
+}
+
+// Group represents one config group applied to just 1 Git repository.
+//
+// For full documentation, see ConfigGroup of api/config/v2/cq.proto.
+message Group {
+  // Config group name.
+  string name = 1;
+  // If set, this ConfigGroup will be selected if no other ConfigGroup matches
+  // refspec. At most 1 group will have this set (this is validated before
+  // config is injected).
+  bool fallback = 2;
+
+  // Regular expressions to include/exclude a ref from config group.
+  // Config group is applicable iff ref matches at least 1 include and
+  // doesn't match any exclude regexps.
+  repeated string include = 11;
+  repeated string exclude = 12;
+}
