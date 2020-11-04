@@ -16,6 +16,29 @@
       "message": "pb.Trinary_UNSET \u003d 0, YES \u003d 1, NO \u003d 2. Therefore in Python I believe that True is handled correctly, since it has the same numeric value as YES, but if the template build has Canary and Experimental as False, it will be incorrectly converted to UNSET in the request. Propose fixing it here.",
       "revId": "31bf2b7f02396116a45df76eb78fd449cddd2f06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9e9d394_f6efce22",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-04T17:52:54Z",
+      "side": 1,
+      "message": "is this intentionally not in the struct literal above?",
+      "range": {
+        "startLine": 118,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 33
+      },
+      "revId": "31bf2b7f02396116a45df76eb78fd449cddd2f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
