@@ -37,6 +37,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "430e649e_678b1d9a",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-04T20:47:03Z",
+      "side": 1,
+      "message": "pretty sure you accidentally deleted: \n \n  if err :\u003d write(); err !\u003d nil {\n    return errors.Annotate(...  \n  }",
+      "revId": "0f492711fda9d659f3a99748e0cd4ca5380fa0a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7616f4fc_5bd01483",
         "filename": "rts/filegraph/cli/git.go",
         "patchSetId": 4
