@@ -1,0 +1,40 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+
+// represents the ChangeEvent generated when there is any change for the asset
+message ChangeEvent {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Event"
+        pattern: "events/{event}"
+    };
+    string name = 1;
+    // The string representation of the changed (multi-component) field paths,
+    // See explanation of the field path here:
+    // https://github.com/protocolbuffers/protobuf/blob/50e03cdde3ef1fc7e9674db0a98ee1dea93f6fb2/src/google/protobuf/field_mask.proto#L43
+    // machine.serial_number, chromeos_machine.model, dut.config.peripherals.wifi.wificell,
+    // peripheral_requirement.min
+    string event_label = 2;
+    // The string representation of the changed item, e.g.
+    // machine.serial_number: from "" => A
+    // chromeos_machine.model: from modelA => modelB
+    // dut.config.peripherals.wifi.wificell: from false => true
+    // periphral_requirement.min: from 1 => 3
+    string old_value = 3;
+    string new_value = 4;
+    // Record the last update timestamp of this Event (In UTC timezone)
+    google.protobuf.Timestamp update_time = 5 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+    string user_email = 6;
+    string comment = 7;
+}

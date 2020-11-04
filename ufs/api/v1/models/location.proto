@@ -1,0 +1,83 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+
+// Location of the asset(Rack/Machine) in the lab
+// For Browser machine, lab and rack are the only field to fill in.
+// The fine-grained location is mainly for OS machine as we care about rack, row, shelf.
+message Location {
+    reserved 1;
+    reserved "lab";
+    // Each lab has many aisles.
+    // This field refers to the aisle number/name in the lab.
+    string aisle = 2;
+    // Each aisle has many rows.
+    // This field refers to the row number/name in the aisle.
+    string row = 3;
+    // Each row has many racks.
+    // This field refers to the rack number/name in the row.
+    string rack = 4 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Rack"
+    }];
+    // The position of the rack in the row.
+    string rack_number = 5;
+    // Each rack has many shelves.
+    // This field refers to the shelf number/name in the rack.
+    string shelf = 6;
+    // Each shelf has many positions where assets can be placed.
+    // This field refers to the position number/name in the shelf
+    string position = 7;
+
+    // A string descriptor representing location. This can be to
+    // store barcode values for location or user defined names.
+    string barcode_name = 8;
+
+    // Different zones in the chrome org. Required.
+    Zone zone = 9;
+}
+
+// Lab refers to the different Labs under chrome org
+// More labs to be added later if needed
+// Next tag: 12
+enum Lab {
+    LAB_UNSPECIFIED = 0;
+    LAB_CHROME_ATLANTA = 1;
+    LAB_CHROMEOS_SANTIAM = 2;
+    LAB_CHROMEOS_DESTINY = 3;
+    LAB_CHROMEOS_PROMETHEUS = 4;
+    LAB_CHROMEOS_ATLANTIS = 5;
+    LAB_CHROMEOS_LINDAVISTA = 6;
+    LAB_DATACENTER_ATL97 = 7;
+    LAB_DATACENTER_IAD97 = 8;
+    LAB_DATACENTER_MTV96 = 9;
+    LAB_DATACENTER_MTV97 = 10;
+    LAB_DATACENTER_FUCHSIA = 11;
+}
+
+// Zone refers to the different network zones under chrome org
+enum Zone {
+    ZONE_UNSPECIFIED = 0;
+    ZONE_ATLANTA = 1; // "atl" Building ? Room ?
+    ZONE_CHROMEOS1 = 2; // "chromeos1" // US-MTV-1600 // Santiam
+    ZONE_CHROMEOS2 = 3; // "chromeos2" // US-MTV-2081 // Atlantis
+    ZONE_CHROMEOS3 = 4; // "chromeos3" // US-MTV-946 // Lindavista
+    ZONE_CHROMEOS4 = 5; // "chromeos4" // US-MTV-2081 // Destiny
+    ZONE_CHROMEOS5 = 6; // "chromeos5" // US-MTV-946 // Lindavista
+    ZONE_CHROMEOS6 = 7; // "chromeos6" // US-MTV-2081 // Prometheus
+    ZONE_CHROMEOS7 = 8; // "chromeos7" // US-MTV-946 // Lindavista
+    ZONE_CHROMEOS15 = 10; // "chromeos15" // US-MTV-946 // Lindavista
+    ZONE_ATL97 = 11; // "atl97" //  US-ATL-MET1 // Room ?
+    ZONE_IAD97 = 12; // "iad97" // Building ? Room ?
+    ZONE_MTV96 = 13; // "mtv96" // US-MTV-41 // 1-1M0
+    ZONE_MTV97 = 14; // "mtv97" // US-MTV-1950 // 1-144
+    ZONE_FUCHSIA = 15; // "lab01" // Building ? Room ?
+    ZONE_CROS_GOOGLER_DESK = 16; // "desk" // For cros assets given to googlers
+}

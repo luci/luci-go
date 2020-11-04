@@ -1,0 +1,96 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+
+message RackLSEPrototype {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/RackLSEPrototype"
+        pattern: "rackLSEPrototypes/{rackLSEPrototype}"
+    };
+    // A unique name for the RackLSEPrototype.
+    // The format will be rackLSEPrototypes/XXX
+    string name = 1;
+    repeated PeripheralRequirement peripheral_requirements = 2;
+    // Record the last update timestamp of this RackLSEPrototype (In UTC timezone)
+    google.protobuf.Timestamp update_time = 3 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // tags user can attach for easy querying/search
+    repeated string tags = 4;
+}
+
+message MachineLSEPrototype {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/MachineLSEPrototype"
+        pattern: "machineLSEPrototypes/{machineLSEPrototype}"
+    };
+    // A unique name for the MachineLSEPrototype.
+    // The format will be machineLSEPrototypes/XXX
+    string name = 1;
+    // peripheral_requirements.peripheral_type must be unique.
+    repeated PeripheralRequirement peripheral_requirements = 2;
+    // Indicates the Rack Unit capacity of this setup, corresponding
+    // to a Rack’s Rack Unit capacity.
+    int32 occupied_capacity_ru = 3;
+    // Record the last update timestamp of this MachineLSEPrototype (In UTC timezone)
+    google.protobuf.Timestamp update_time = 4 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    repeated VirtualRequirement virtual_requirements = 5;
+
+    // tags user can attach for easy querying/search
+    repeated string tags = 6;
+}
+
+// The requirement for peripherals of a LSE. Usually it’s predefined
+// by the designer of the test and lab, e.g. a test needs 2 cameras, 1 rpm,
+// 1 servo, and a labstation.
+// We probably also record cables as ChromeOS ACS lab wants to track the cable
+// usage also.
+message PeripheralRequirement {
+    // It refers to the peripheral type that a LSE needs. The common use cases
+    // include: kvm, switch, servo, rpm, labstation, camera, ...
+    PeripheralType peripheral_type = 1;
+    // The minimum/maximum number of the peripherals that needed by a LSE, e.g.
+    // A test needs 1-3 bluetooth bt peers to be set up.
+    int32 min = 2;
+    int32 max = 3;
+}
+
+message VirtualRequirement {
+    VirtualType virtual_type = 1;
+    // The minimum/maximum number of the vms that can be setup.
+    int32 min = 2;
+    int32 max = 3;
+}
+
+// The supported peripheral type in LSE definition. The list is not completed
+// as we have many special setups in ChromeOS high-touch labs. Will add them later
+// when it comes to use.
+enum PeripheralType {
+    PERIPHERAL_TYPE_UNSPECIFIED = 0;
+    PERIPHERAL_TYPE_SERVO = 1;
+    PERIPHERAL_TYPE_LABSTATION = 2;
+    PERIPHERAL_TYPE_RPM = 3;
+    PERIPHERAL_TYPE_KVM = 4;
+    PERIPHERAL_TYPE_SWITCH = 5;
+    PERIPHERAL_TYPE_BLUETOOTH_BTPEERS = 6;
+    PERIPHERAL_TYPE_WIFICELL = 7;
+    PERIPHERAL_TYPE_CAMERA = 8;
+}
+
+// The supported virtual type in LSE definition.
+enum VirtualType {
+    VIRTUAL_TYPE_UNSPECIFIED = 0;
+    VIRTUAL_TYPE_VM = 1;
+}

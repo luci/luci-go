@@ -1,0 +1,115 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.bigquery;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/bigquery;apibq";
+
+import "go.chromium.org/luci/ufs/api/v1/models/asset.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/change_event.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chrome_platform.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/lse_prototype.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/machine.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/machine_lse.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/network.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/rack.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/rack_lse.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+message ChangeEventRow {
+    models.ChangeEvent change_event = 1;
+}
+
+message ChromePlatformRow {
+    models.ChromePlatform platform = 1;
+    bool delete = 2;
+}
+
+message VlanRow {
+    models.Vlan vlan = 1;
+    bool delete = 2;
+}
+
+message MachineRow {
+    models.Machine machine = 1;
+    bool delete = 2;
+}
+
+message RackRow {
+    models.Rack rack = 1;
+    bool delete = 2;
+}
+
+message AssetRow {
+    models.asset asset = 1;
+    bool delete = 2;
+}
+
+message RackLSEPrototypeRow {
+    models.RackLSEPrototype rack_lse_prototype = 1;
+    bool delete = 2;
+}
+
+message MachineLSEPrototypeRow {
+    models.MachineLSEPrototype machine_lse_prototype = 1;
+    bool delete = 2;
+}
+
+message MachineLSERow {
+    models.MachineLSE machine_lse = 1;
+    bool delete = 2;
+}
+
+message VMRow {
+    models.VM vm = 1;
+    bool delete = 2;
+}
+
+
+message RackLSERow {
+    models.RackLSE rack_lse = 1;
+    bool delete = 2;
+}
+
+message StateRecordRow {
+    models.StateRecord state_record = 1;
+    bool delete = 2;
+}
+
+message KVMRow {
+    models.KVM kvm = 1;
+    bool delete = 2;
+}
+
+message RPMRow {
+    models.RPM rpm = 1;
+    bool delete = 2;
+}
+
+message SwitchRow {
+    models.Switch switch = 1;
+    bool delete = 2;
+}
+
+message DracRow {
+    models.Drac drac = 1;
+    bool delete = 2;
+}
+
+message NicRow {
+    models.Nic nic = 1;
+    bool delete = 2;
+}
+
+message DHCPConfigRow {
+    models.DHCPConfig dhcp_config = 1;
+    bool delete = 2;
+}
+
+message IPRow {
+    models.IP ip = 1;
+}

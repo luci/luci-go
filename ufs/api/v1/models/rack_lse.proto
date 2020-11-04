@@ -1,0 +1,80 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+
+// RackLSE is the Rack Lab Setup Environment.
+// It refers to the entity in the lab which has Rack(s) associated with it.
+// It also has other components associated with it like switches, kvms, rpms.
+message RackLSE {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/RackLSE"
+        pattern: "rackLSEs/{rackLSE}"
+    };
+    // A unique random generated string
+    // The format will be rackLSEs/XXX
+    string name = 1;
+    // The prototype that this rack LSE should follow. System will use this
+    // prototype to detect if the LSE is completed or valid.
+    string rack_lse_prototype = 2 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/RackLSEProtoType"
+        },
+        (google.api.field_behavior) = REQUIRED
+    ];
+    oneof lse {
+        ChromeBrowserRackLSE chrome_browser_rack_lse = 3;
+        ChromeOSRackLSE chromeos_rack_lse = 4;
+    }
+    // The racks that this LSE is linked to. No rack is linked if it's NULL.
+    repeated string racks = 5 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Rack"
+    }];
+    // Record the last update timestamp of this RackLSE (In UTC timezone)
+    google.protobuf.Timestamp update_time = 6 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// ChromeBrowserRackLSE refers to the entity which has
+// kvms and rpms connected to it in Chrome Browser lab
+message ChromeBrowserRackLSE {
+    // KVMs in the rack, they're the attached kvms' names, which are the same as their hostnames
+    repeated string kvms = 1 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/KVM"
+        },
+        deprecated = true
+    ];
+    // Switches in the rack.
+    repeated string switches = 2 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Switch"
+        },
+        deprecated = true
+    ];
+}
+
+// ChromeOSRackLSE refers to the entity which has
+// switches and rpms connected to it in Chrome OS lab
+message ChromeOSRackLSE {
+    // RPMs in the rack
+    repeated string rpms = 1 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/RPM"
+    }];
+    // KVMs in the rack
+    repeated string kvms = 2 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/KVM"
+    }];
+    repeated string switches = 3 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Switch"
+    }];
+}

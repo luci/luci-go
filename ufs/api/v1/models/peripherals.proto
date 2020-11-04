@@ -1,0 +1,233 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+message KVM {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/KVM"
+        pattern: "kvms/{kvm}"
+    };
+    // Unique serial_number or asset tag
+    // The format will be kvms/{kvm}
+    string name = 1;
+    string mac_address = 2;
+    // Should match one of the predefined Chrome Platforms.
+    // Refers to ChromePlatform name
+    string chrome_platform = 3 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/ChromePlatform"
+    }];
+    int32 capacity_port = 4;
+    // Record the last update timestamp of this KVM (In UTC timezone)
+    google.protobuf.Timestamp update_time = 5 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+
+    reserved 6;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 7 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        }
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 8;
+
+    reserved 9;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 10 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // A description of this kvm.
+    string description = 11;
+
+    // State of the kvm
+    State resource_state = 12;
+}
+
+// Refer to one port of a given KVM
+message KVMInterface {
+    // Refers to KVM name
+    string kvm = 1 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/KVM"
+    }];
+    reserved 2;
+    reserved "port";
+    string port_name = 3;
+}
+
+message RPM {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/RPM"
+        pattern: "rpms/{rpm}"
+    };
+    // Unique serial_number or asset tag
+    // The format will be rpms/{rpm}
+    string name = 1;
+    string mac_address = 2;
+    int32 capacity_port = 3;
+    // Just for record here, can be added later if needed
+    // To be recorded: model, manufacturer, amperage, voltage
+        // Record the last update timestamp of this RPM (In UTC timezone)
+    google.protobuf.Timestamp update_time = 4 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+
+    reserved 5;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 6 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        }
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 7;
+
+    // State of the rpm
+    reserved 9;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 10 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // State of the rpm
+    State resource_state = 11;
+}
+
+// Refer to one port of a given RPM
+message RPMInterface {
+    // Refers to RPM name
+    string rpm = 1 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/RPM"
+    }];
+    reserved 2;
+    reserved "port";
+    string port_name = 3;
+}
+
+message Switch {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Switch"
+        pattern: "switches/{switch}"
+    };
+    // Unique serial_number or asset tag
+    // The format will be switches/{switch}
+    string name = 1;
+    int32 capacity_port = 2;
+    // Switch can have a mac address and remotely controlled, but it’s hard to
+    // get the mac_address for it and we don’t use it for now.
+    // Commenting here as we don’t forget this if we’re able/want to track
+    // its mac_address.
+    // More info can be recorded for switch if available, e.g.
+    // model, manufacturer
+
+    // Record the last update timestamp of this Switch (In UTC timezone)
+    google.protobuf.Timestamp update_time = 3 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+    // Usually describe the model of the switch
+    string description = 4;
+
+    reserved 5;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 6 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        }
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 7;
+
+    reserved 8;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 9 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // State of the switch
+    State resource_state = 10;
+}
+
+// Refer to one port of a given switch
+message SwitchInterface {
+    // Refers to Switch name
+    string switch = 1 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Switch"
+    }];
+    reserved 2;
+    reserved "port";
+    string port_name = 3;
+}
+
+message Drac {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Drac"
+        pattern: "machines/{machine}/dracs/{drac}"
+    };
+    // Unique serial_number or asset tag
+    // The format will be dracs/{drac}
+    string name = 1;
+    string display_name = 2;
+    string mac_address = 3;
+    SwitchInterface switch_interface = 4;
+    string password = 5;
+
+    // Record the last update timestamp of this Drac (In UTC timezone)
+    google.protobuf.Timestamp update_time = 6 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // Refers to Machine name
+    string machine = 7 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Machine"
+        }
+    ];
+
+    reserved 8;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 9 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        },
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 10;
+
+    reserved 11;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 12 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // State of the drac
+    State resource_state = 13;
+}

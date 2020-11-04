@@ -1,0 +1,64 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.lab;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab;ufspb";
+
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/device/config_id.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/chromeos_device_id.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/servo.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/manufacturing/config_id.proto";
+
+// Next Tag: 7
+message ChromeOSDevice {
+  // A unique ID for chromeos device, a randomly generated uuid or AssetTag.
+  ChromeOSDeviceID id = 1;
+  string serial_number = 2;
+  manufacturing.ConfigID manufacturing_id = 3;
+  // Device config identifiers.
+  // These values will be extracted from DUT and joinable to device config.
+  device.ConfigId device_config_id = 4;
+
+  oneof device {
+    DeviceUnderTest dut = 5;
+    Labstation labstation = 6;
+  };
+}
+
+// Next Tag: 5
+message DeviceUnderTest{
+  string hostname = 1;
+  Peripherals peripherals = 2;
+
+  // critical_pools are pool labels that the builders are dependent on, and
+  // that the cros-infra team is responsible for managing explicitly. All other
+  // pool labels used for adhoc labeling of DUTs go into self_serve_pools.
+  // TO BE DELETED
+  enum DUTPool {
+    DUT_POOL_INVALID = 0;
+    DUT_POOL_CQ = 1;
+    DUT_POOL_BVT = 2;
+    DUT_POOL_SUITES = 3;
+    DUT_POOL_CTS = 4;
+    DUT_POOL_CTS_PERBUILD = 5;
+    DUT_POOL_CONTINUOUS = 6;
+    DUT_POOL_ARC_PRESUBMIT = 7;
+    DUT_POOL_QUOTA = 8;
+  }
+  repeated DUTPool critical_pools = 3;
+
+  repeated string pools = 4;
+}
+
+// Next Tag: 5
+message Labstation {
+  string hostname = 1;
+  repeated Servo servos = 2;
+  RPM rpm = 3;
+  repeated string pools = 4;
+}

@@ -1,0 +1,40 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/location.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/assetinfo.proto";
+
+// Asset stores location and some basic info about the asset
+message asset {
+  option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Asset"
+        pattern: "assets/{asset}"
+    };
+  string name = 1; // Asset tag or an unique identifier for the asset
+  AssetType type = 2; // DUT, servo, labstation, etc,.
+  string model = 3; // Model of the asset
+  Location location = 4; // Last known location of the asset
+  AssetInfo info = 5; // Some info about the asset
+  // Record the last update timestamp of this asset (In UTC timezone)
+  google.protobuf.Timestamp update_time = 6 [
+      (google.api.field_behavior) = OUTPUT_ONLY];
+  string realm = 7; // ACL info of the asset
+}
+
+// AssetType determines the type of asset
+enum AssetType {
+  UNDEFINED = 0;
+  DUT = 1;
+  SERVO = 2;
+  LABSTATION = 3;
+}

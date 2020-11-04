@@ -1,0 +1,70 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/location.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+// Rack refers to the racks which are placed in
+// Chrome Browser lab and Chrome OS lab. Machines and Pheripherals
+// are placed in the Racks.
+message Rack {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Rack"
+        pattern: "racks/{rack}"
+    };
+   // Unique (fake probably) asset tag
+   // The format will be racks/XXX
+   string name = 1;
+   Location location = 2;
+   // Indicates the Rack Unit capacity of the rack.
+   int32 capacity_ru = 3;
+   oneof rack {
+       ChromeBrowserRack chrome_browser_rack = 4;
+       ChromeOSRack chromeos_rack = 5;
+   };
+    // Record the last update timestamp of this Rack (In UTC timezone)
+    google.protobuf.Timestamp update_time = 6 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+   // Record the ACL info of the rack
+   string realm = 7;
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 8;
+
+    reserved 9;
+    reserved "state";
+
+    // A description of this rack.
+    string description = 11;
+
+    // State of the rack
+    State resource_state = 12;
+}
+
+// ChromeBrowserRack refers to the rack in Chrome Browser lab
+message ChromeBrowserRack {
+    reserved 1;
+    reserved "rpms";
+    reserved 2;
+    reserved "kvms";
+    reserved 3;
+    reserved "switches";
+    repeated RPM rpm_objects = 4;
+    repeated KVM kvm_objects = 5;
+    repeated Switch switch_objects = 6;
+}
+
+// ChromeOSRack refers to the rack in Chrome Browser lab
+message ChromeOSRack {
+}

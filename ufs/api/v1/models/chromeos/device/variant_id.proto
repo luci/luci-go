@@ -1,0 +1,15 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.device;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/device;ufspb";
+
+// Globally unique identifier.
+message VariantId {
+  // Required. Source: 'mosys platform sku', aka Device-SKU.
+  string value = 1;
+}

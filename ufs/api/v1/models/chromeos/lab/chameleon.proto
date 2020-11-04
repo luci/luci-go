@@ -1,0 +1,29 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.lab;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab;ufspb";
+
+// NEXT TAG: 4
+message Chameleon {
+  reserved 1;
+  repeated ChameleonType chameleon_peripherals = 3;
+  // Indicate if there's audio_board in the chameleon.
+  bool audio_board = 2;
+}
+
+enum ChameleonType {
+  CHAMELEON_TYPE_INVALID = 0;
+  CHAMELEON_TYPE_BT_HID = 1;
+  CHAMELEON_TYPE_DP = 2;
+  CHAMELEON_TYPE_DP_HDMI = 3;
+  CHAMELEON_TYPE_VGA = 4;
+  CHAMELEON_TYPE_HDMI = 5;
+  CHAMELEON_TYPE_BT_BLE_HID = 6;
+  CHAMELEON_TYPE_BT_A2DP_SINK = 7;
+  CHAMELEON_TYPE_BT_PEER = 8;
+}

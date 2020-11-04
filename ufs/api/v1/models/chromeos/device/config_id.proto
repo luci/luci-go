@@ -1,0 +1,31 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.device;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/device;ufspb";
+
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/device/platform_id.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/device/model_id.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/device/brand_id.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/device/variant_id.proto";
+
+// These are the globally unique identifiers that determine what set of
+// configuration data is used for a given device.
+message ConfigId {
+
+  // Required. 
+  PlatformId platform_id = 1;
+
+  // Required.
+  ModelId model_id = 2;
+
+  // Required.
+  VariantId variant_id = 3;
+
+  // Required.
+  BrandId brand_id = 4;
+}

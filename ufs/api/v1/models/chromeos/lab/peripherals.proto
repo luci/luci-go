@@ -1,0 +1,135 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.lab;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab;ufspb";
+
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/chameleon.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/servo.proto";
+
+// This proto defines setup labels in lab config of a DUT.
+
+// Peripherals of device. Next Tag: 14
+message Peripherals {
+  Servo servo = 1;
+  Chameleon chameleon = 2;
+  RPM rpm = 3;
+  // refer to cameras that connected to the device.
+  repeated Camera connected_camera = 4;
+  Audio audio = 5;
+  Wifi wifi = 6;
+  Touch touch = 7;
+  // e.g: "att", "verizon",.. It's a manual label set by lab, varies dut by dut.
+  string carrier = 8;
+  // Indicate if the device is setup in a steady and controllable camera box environment for camera test automation.
+  // http://go/cros-camera-box
+  bool camerabox = 9;
+  // Indicate if the device is setup in a chaos environment. It's a special settings for running wifi interop tests.
+  bool chaos = 10;
+  // Indicate the cables that connect audio, printer to the device in ACS lab.
+  repeated Cable cable = 11;
+  // Incompatible upgraded type from bool camerabox=9.
+  Camerabox camerabox_info = 12;
+  bool smart_usbhub = 13;
+}
+
+// Remote power management info.
+// Next Tag: 3
+message RPM {
+  string powerunit_name = 1;
+  string powerunit_outlet = 2;
+}
+
+// Next Tag: 3
+enum CameraType {
+  CAMERA_INVALID = 0;
+  // camera Huddly GO
+  CAMERA_HUDDLY = 1;
+  // camera Logitech PTZ Pro 2
+  CAMERA_PTZPRO2 = 2;
+}
+
+// Next Tag: 2
+message Camera {
+  CameraType camera_type = 1;
+}
+
+enum CableType {
+  CABLE_INVALID = 0;
+  CABLE_AUDIOJACK = 1;
+  CABLE_USBAUDIO = 2;
+  CABLE_USBPRINTING = 3;
+  CABLE_HDMIAUDIO = 4;
+}
+
+message Cable {
+  CableType type = 1;
+}
+
+// Next Tag: 3
+message Audio {
+  // Indicate if the DUT is housed in an audio box to record / replay audio
+  // for audio testing.
+  bool audio_box = 1;
+  // Indicate if the DUT is connected to Atrus speakermic
+  bool atrus = 2;
+}
+
+// Next Tag: 4
+message Wifi {
+  // Indicate if the device is inside a hermetic wifi cell.
+  bool wificell = 1;
+
+  // DUT's WiFi antenna's connection.
+  // Next Tag: 3
+  enum AntennaConnection {
+    CONN_UNKNOWN = 0;
+    // WIFI antenna is connected conductively.
+    CONN_CONDUCTIVE = 1;
+    // WIFI antenna is connected over-the-air.
+    CONN_OTA = 2;
+  }
+  AntennaConnection antenna_conn = 2;
+
+  enum Router {
+    ROUTER_UNSPECIFIED = 0;
+    ROUTER_802_11AX = 1;
+  }
+  // Indicate if the device is in a pre-setup environment with 802.11ax routers.
+  // crbug.com/1044786
+  Router router = 3;
+}
+
+// Next Tag: 2
+message Touch {
+  // Has touch monitor mimo.
+  bool mimo = 1;
+}
+
+// Next Tag: 3
+message Camerabox {
+  // Facing of DUT's camera to be tested whose FOV should cover chart tablet's screen.
+  // Next Tag: 3
+  enum Facing {
+    FACING_UNKNOWN = 0;
+    // DUT's back camera is facing to chart tablet.
+    FACING_BACK = 1;
+    // DUT's front camera is facing to chart tablet.
+    FACING_FRONT = 2;
+  }
+  // Light provision of camerabox, if LED is present or not.
+  // Next Tag: 3
+  enum Light {
+    LIGHT_UNKNOWN = 0;
+    // Camerabox has LED light provisioned.
+    LIGHT_LED = 1;
+    // Camerabox do not have LED light provision.
+    LIGHT_NOLED = 2;
+  }
+  Facing facing = 1;
+  Light light = 2;
+}

@@ -1,0 +1,124 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/location.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/network.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+// Machine refers to the devices or bare metal servers
+// which serves the tests directly.
+message Machine {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Machine"
+        pattern: "machines/{machine}"
+    };
+    // A unique name for the machine.
+    //   * AssetTag for ChromeOS machine (device)
+    //   * Serial number for Chrome machine for now (server) (Ideally it should be assetTag once it’s ready)
+    // The format will be machines/asset:XXX or machines/sn:XXX
+    string name = 1;
+    // serial_number of the machine.
+    string serial_number = 2;
+
+    // Location details of where the machine is placed
+    Location location = 3;
+    oneof device {
+        // Chrome Browser Machine
+        ChromeBrowserMachine chrome_browser_machine = 4;
+        // Chrome OS Machine. The registration system will subscribe to the HaRT system,
+        // and automatically get it using Machine name once a machine gets recorded.
+        ChromeOSMachine chromeos_machine = 5 [
+                (google.api.field_behavior) = OUTPUT_ONLY];
+    };
+    // Record the last update timestamp of this machine (In UTC timezone)
+    google.protobuf.Timestamp update_time = 6 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+    // Record the ACL info of the machine
+    string realm = 7;
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 8;
+
+    reserved 9;
+    reserved "state";
+
+    // State of the machine
+    State resource_state = 10;
+}
+
+// ChromeBrowserMachine refers to bare metal servers in Chrome Browser lab
+message ChromeBrowserMachine {
+    // Descriptive name of Chrome Machine
+    string display_name = 1;
+    // Should match one of the predefined Chrome Platforms.
+    // Refers to ChromePlatform name
+    string chrome_platform = 2 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/ChromePlatform"
+    }];
+
+    reserved 3;
+    reserved "nic";
+
+    reserved 10;
+    reserved "nics";
+
+    // Interface of its connected devices.
+    KVMInterface kvm_interface = 4;
+    RPMInterface rpm_interface = 5;
+
+    reserved 6;
+    reserved "network_device_interface";
+
+    reserved 7;
+    reserved "drac";
+
+    // Usually it's a buganizer bug.
+    string deployment_ticket = 8;
+    // Can be covered by deployment_ticket
+    string description = 9;
+    repeated Nic nic_objects = 11;
+    Drac drac_object = 12;
+}
+
+// ChromeOSMachine refers duts and servers in Chrome OS lab
+message ChromeOSMachine {
+    // All infos come from the HaRT system.
+    // used by referencing device config.
+    string reference_board = 1;
+    // used by ChromeOS build system.
+    string build_target = 2;
+    string model = 3;
+    // Chromebook, labstation, servo, …
+    ChromeOSDeviceType device_type = 4;
+    // Used internally, Different boards/models could share the same name.
+    string google_code_name = 5;
+    // HaRT doesn't guarantee its existence.
+    string mac_address = 6;
+    string sku = 7;
+    // Phase of the device [PVT, EVT, etc,.] if available.
+    string phase = 8;
+    // Cost center associated with the asset.
+    string cost_center = 9;
+    // The manufacturing ID for a given DUT
+    string hwid = 10;
+}
+
+// ChromeOSDeviceType refers to the different types of
+// device/machine in the Chrome OS lab
+enum ChromeOSDeviceType {
+    CHROME_OS_DEVICE_TYPE_UNSPECIFIED = 0;
+    DEVICE_CHROMEBOOK = 1;
+    DEVICE_LABSTATION = 2;
+    DEVICE_SERVO = 3;
+}

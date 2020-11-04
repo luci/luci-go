@@ -1,0 +1,221 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// This proto definition describes the lab setup environment (LSE) for machine
+// in UFS.
+// See go/ufs-design for details of LSE.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chromeos/lab/device.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+// MachineLSE is the Machine Lab Setup Environment.
+// It refers to the entity in the lab which has Machine(s) associated
+// with it. It also has other components associated with it.
+//
+// Next tag: 18
+message MachineLSE {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/MachineLSE"
+        pattern: "machineLSEs/{machineLSE}"
+    };
+    // This is the unique hostname of the MachineLSE
+    // The format will be machineLSEs/XXX
+    string name = 1;
+    // The prototype that this machine LSE should follow. System will use this
+    // prototype to detect if the LSE is completed or valid.
+    string machine_lse_prototype = 2 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/MachineLSEProtoType"
+        },
+        (google.api.field_behavior) = REQUIRED
+    ];
+    // The hostname is also recorded in DHCP configs
+    string hostname = 3 [
+        (google.api.field_behavior) = REQUIRED
+    ];
+
+    oneof lse {
+        ChromeBrowserMachineLSE chrome_browser_machine_lse = 4;
+        ChromeOSMachineLSE chromeos_machine_lse = 5;
+    }
+    // The machines that this LSE is linked to. No machine is linked if it's empty.
+    // A machine cannot be linked to multiple LSEs (no use case for now).
+    repeated string machines = 6 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Machine"
+        }
+    ];
+    // Record the last update timestamp of this MachineLSE (In UTC timezone)
+    google.protobuf.Timestamp update_time = 7 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // The nic used to associate with the hostname, as one machine/host may contain multiple nics.
+    string nic = 8 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+    // It refers to which vlan the host is in.
+    // Please note that user can also specify it for auto-assigning a host's IP.
+    string vlan = 18 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Vlan"
+        },
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+    // It refers to which ip the host is assigned to.
+    // Please note that user can also specify it for assigning ip.
+    string ip = 19 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    reserved 9;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 10 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        },
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // Refer to the manufacturer name of the attached machine for the host
+    string manufacturer = 11 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 12;
+
+    reserved 13;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 14 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // The deployment ticket associated with this host.
+    string deployment_ticket = 15;
+    // A description of this host.
+    string description = 16;
+
+    // State of the host resource
+    State resource_state = 17;
+}
+
+// ChromeBrowserMachineLSE refers to the entity
+// which hosts the vms in Chrome Browser lab
+message ChromeBrowserMachineLSE {
+   // Indicate if VM is needed to set up
+   // number of vms on the host
+   repeated VM vms = 1;
+   // The allowed vm slots for this browser machine, usually it's manually set based on sysadmin's judgement.
+   int32 vm_capacity = 2;
+   // Indicate the os version of the machine itself.
+   OSVersion os_version = 3;
+   // The virtual datacenter VMs deployed on this host belong to.
+   string virtual_datacenter = 4;
+}
+
+message VM {
+    // A unique vm name
+    string name = 1;
+    OSVersion os_version = 2;
+    string mac_address = 3;
+    string hostname = 4;
+    string vlan = 5 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Vlan"
+        },
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+    // It refers to which ip the vm is assigned to.
+    // Please note that user can also specify it for assigning ip.
+    string ip = 15 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    reserved 6;
+    reserved "lab";
+
+    string machine_lse_id = 7 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/MachineLSE"
+        }
+    ];
+    reserved 8;
+    reserved "state";
+    // Record the last update timestamp of this VM (In UTC timezone)
+    google.protobuf.Timestamp update_time = 9 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 10;
+
+    // Refers to Zone
+    string zone = 11 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+    // A description of this vm.
+    string description = 12;
+
+    // State of the vm resource
+    State resource_state = 13;
+
+    // The deployment ticket associated with this vm.
+    string deployment_ticket = 14;
+}
+
+// OSVersion refers to the version of Operating System
+// for machines running in Chrome Browser lab
+message OSVersion {
+   string value = 1;
+   string description = 2;
+   string image = 3;
+}
+
+// ChromeOSMachineLSE refers to the entity in Chrome OS lab
+// which can be a Device(DUT, test Bed or Labstation) or a server
+message ChromeOSMachineLSE {
+   oneof chromeos_lse {
+        ChromeOSDeviceLSE dut = 1 [deprecated = true];
+        ChromeOSServerLSE server = 2 [deprecated = true];
+        ChromeOSDeviceLSE device_lse = 3;
+        ChromeOSServerLSE server_lse = 4;
+   }
+}
+
+// ChromeOSDeviceLSE refers to the entity in Chrome OS lab
+// which is a DUT, test Bed or a Labstation
+message ChromeOSDeviceLSE {
+    chromeos.lab.DeviceUnderTest config = 1 [deprecated = true];
+    RPMInterface rpm_interface = 2;
+    SwitchInterface network_device_interface = 3;
+    oneof device {
+        chromeos.lab.DeviceUnderTest dut = 4;
+        chromeos.lab.Labstation labstation = 5;
+    };
+}
+
+// ChromeOSServerLSE refers to the entity in Chrome OS lab
+// which is a server. Servers serve as different roles, e.g. devservers,
+// for caching chromeos images, and drones, for running GKE pods to
+// maintain the swarming bots that maps to the real chromeos devices.
+message ChromeOSServerLSE {
+   // The vlan that this server is going to serve
+   string supported_restricted_vlan = 1 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Vlan"
+    }];
+    int32 service_port = 2;
+}

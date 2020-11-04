@@ -1,0 +1,49 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Copied from https://source.corp.google.com/piper///depot/google3/java/com/google/chrome/crosbuilds/backend/hartapi/proto/pubsub/assetinfo/assetinfo.proto
+// and edited
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+message AssetInfo {
+  string asset_tag = 1;
+  string serial_number = 2;
+  string cost_center = 3;
+  string google_code_name = 4;
+  string model = 5;
+  string build_target = 6;
+  string reference_board = 7;
+  string ethernet_mac_address = 8;
+  string sku = 9;
+  string phase = 10;
+}
+
+message AssetInfoRequest {
+  // Required. Asset tag(s) to lookup.
+  repeated string asset_tags = 1;
+}
+
+message AssetInfoResponse {
+  // Indicator of whether the request call succeed or not.
+  RequestStatus request_status = 1;
+  // A list of asset info retrieved from Hart.
+  repeated AssetInfo assets = 2;
+  // A list of asset tags not found in Corporate Asset Management platform.
+  repeated string missing_asset_tags = 3;
+  // A list of asset tags whose part number not found in Hart.
+  repeated string failed_asset_tags = 4;
+}
+
+//TODO(anushruth): Use 0 as Undefined inline with https://google.aip.dev/126
+enum RequestStatus {
+  OK = 0;
+  INVALID_MESSAGE = 1;
+  SERVER_ERROR = 2;
+  NO_ASSET_TAG = 3;
+  NO_GPN = 4;
+}

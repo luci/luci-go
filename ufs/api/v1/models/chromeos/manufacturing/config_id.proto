@@ -1,0 +1,14 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models.chromeos.manufacturing;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models/chromeos/manufacturing;ufspb";
+
+message ConfigID {
+  // The ID that uniquely identifies the hardware configuration of a Chrome OS device.
+  string value = 1;
+}

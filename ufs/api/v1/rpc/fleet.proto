@@ -1,0 +1,1744 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.rpc;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/rpc;ufspb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/rpc/status.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/asset.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/machine.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/rack.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/chrome_platform.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/machine_lse.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/rack_lse.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/network.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/lse_prototype.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+
+service Fleet {
+  // CreateChromePlatform creates a new chromePlatform.
+  rpc CreateChromePlatform(CreateChromePlatformRequest) returns (models.ChromePlatform);
+
+  // Update updates the chromePlatform
+  rpc UpdateChromePlatform(UpdateChromePlatformRequest) returns (models.ChromePlatform);
+
+  // Get retrieves the details of the chromePlatform
+  rpc GetChromePlatform(GetChromePlatformRequest) returns (models.ChromePlatform);
+
+  // List gets all the chromePlatforms
+  rpc ListChromePlatforms(ListChromePlatformsRequest) returns (ListChromePlatformsResponse);
+
+  // Delete delete the chromePlatform
+  rpc DeleteChromePlatform(DeleteChromePlatformRequest) returns (google.protobuf.Empty);
+
+  // ImportChromePlatforms imports chrome platforms.
+  rpc ImportChromePlatforms(ImportChromePlatformsRequest) returns (google.rpc.Status);
+
+  // List all the chrome osversions.
+  rpc ListOSVersions(ListOSVersionsRequest) returns (ListOSVersionsResponse);
+
+  // ImportOSVersions imports the OS versions.
+  rpc ImportOSVersions(ImportOSVersionsRequest) returns (google.rpc.Status);
+
+  // CreateMachineLSEPrototype creates a new MachineLSEPrototype.
+  rpc CreateMachineLSEPrototype(CreateMachineLSEPrototypeRequest) returns (models.MachineLSEPrototype);
+
+  // Update updates the MachineLSEPrototype
+  rpc UpdateMachineLSEPrototype(UpdateMachineLSEPrototypeRequest) returns (models.MachineLSEPrototype);
+
+  // Get retrieves the details of the MachineLSEPrototype
+  rpc GetMachineLSEPrototype(GetMachineLSEPrototypeRequest) returns (models.MachineLSEPrototype);
+
+  // List gets all the MachineLSEPrototypes
+  rpc ListMachineLSEPrototypes(ListMachineLSEPrototypesRequest) returns (ListMachineLSEPrototypesResponse);
+
+  // Delete delete the MachineLSEPrototype
+  rpc DeleteMachineLSEPrototype(DeleteMachineLSEPrototypeRequest) returns (google.protobuf.Empty);
+
+  // CreateRackLSEPrototype creates a new RackLSEPrototype.
+  rpc CreateRackLSEPrototype(CreateRackLSEPrototypeRequest) returns (models.RackLSEPrototype);
+
+  // Update updates the RackLSEPrototype
+  rpc UpdateRackLSEPrototype(UpdateRackLSEPrototypeRequest) returns (models.RackLSEPrototype);
+
+  // Get retrieves the details of the RackLSEPrototype
+  rpc GetRackLSEPrototype(GetRackLSEPrototypeRequest) returns (models.RackLSEPrototype);
+
+  // List gets all the RackLSEPrototypes
+  rpc ListRackLSEPrototypes(ListRackLSEPrototypesRequest) returns (ListRackLSEPrototypesResponse);
+
+  // Delete delete the RackLSEPrototype
+  rpc DeleteRackLSEPrototype(DeleteRackLSEPrototypeRequest) returns (google.protobuf.Empty);
+
+  // MachineRegistration creates a new machine/nics/drac.
+  rpc MachineRegistration(MachineRegistrationRequest) returns (models.Machine);
+
+  // Update updates the machine
+  rpc UpdateMachine(UpdateMachineRequest) returns (models.Machine);
+
+  // Get retrieves the details of the machine
+  rpc GetMachine(GetMachineRequest) returns (models.Machine);
+
+  // List gets all the machines
+  rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
+
+  // Delete delete the machine
+  rpc DeleteMachine(DeleteMachineRequest) returns (google.protobuf.Empty);
+
+  // Import machines from sources
+  //
+  // This doesn't return google.longrunning.Operation as the corresponding
+  // package is not imported into chops go package.
+  rpc ImportMachines(ImportMachinesRequest) returns (google.rpc.Status);
+
+  // Rename rename the machine
+  rpc RenameMachine(RenameMachineRequest) returns (models.Machine);
+
+  // RackRegistration creates a new rack/kvms/rpms/switches
+  rpc RackRegistration(RackRegistrationRequest) returns (models.Rack);
+
+  // Update updates the rack
+  rpc UpdateRack(UpdateRackRequest) returns (models.Rack);
+
+  // Get retrieves the details of the rack
+  rpc GetRack(GetRackRequest) returns (models.Rack);
+
+  // List gets all the racks
+  rpc ListRacks(ListRacksRequest) returns (ListRacksResponse);
+
+  // Delete delete the rack
+  rpc DeleteRack(DeleteRackRequest) returns (google.protobuf.Empty);
+
+  // CreateMachineLSE creates a new machineLSE
+  rpc CreateMachineLSE(CreateMachineLSERequest) returns (models.MachineLSE);
+
+  // Update updates the machineLSE
+  rpc UpdateMachineLSE(UpdateMachineLSERequest) returns (models.MachineLSE);
+
+  // Get retrieves the details of the machineLSE
+  rpc GetMachineLSE(GetMachineLSERequest) returns (models.MachineLSE);
+
+  // List gets all the machineLSEs
+  rpc ListMachineLSEs(ListMachineLSEsRequest) returns (ListMachineLSEsResponse);
+
+  // Delete delete the machineLSE
+  rpc DeleteMachineLSE(DeleteMachineLSERequest) returns (google.protobuf.Empty);
+
+  // ImportMachineLSEs imports machine LSEs & all related infos.
+  rpc ImportMachineLSEs(ImportMachineLSEsRequest) returns (google.rpc.Status);
+
+  // ImportOSMachineLSEs imports ChromeOS machine LSEs & all related infos if needed.
+  rpc ImportOSMachineLSEs(ImportOSMachineLSEsRequest) returns (google.rpc.Status);
+
+  // CreateRackLSE creates a new rackLSE
+  rpc CreateRackLSE(CreateRackLSERequest) returns (models.RackLSE);
+
+  // Update updates the rackLSE
+  rpc UpdateRackLSE(UpdateRackLSERequest) returns (models.RackLSE);
+
+  // Get retrieves the details of the rackLSE
+  rpc GetRackLSE(GetRackLSERequest) returns (models.RackLSE);
+
+  // List gets all the rackLSEs
+  rpc ListRackLSEs(ListRackLSEsRequest) returns (ListRackLSEsResponse);
+
+  // Delete delete the rackLSE
+  rpc DeleteRackLSE(DeleteRackLSERequest) returns (google.protobuf.Empty);
+
+  // CreateNic creates a new nic
+  rpc CreateNic(CreateNicRequest) returns (models.Nic);
+
+  // Update updates the nic
+  rpc UpdateNic(UpdateNicRequest) returns (models.Nic);
+
+  // Get retrieves the details of the nic
+  rpc GetNic(GetNicRequest) returns (models.Nic);
+
+  // List gets all the nics
+  rpc ListNics(ListNicsRequest) returns (ListNicsResponse);
+
+  // Delete delete the nic
+  rpc DeleteNic(DeleteNicRequest) returns (google.protobuf.Empty);
+
+  // ImportNics imports nics info.
+  rpc ImportNics(ImportNicsRequest) returns (google.rpc.Status);
+
+  // Rename rename the nic
+  rpc RenameNic(RenameNicRequest) returns (models.Nic);
+
+  // ImportDatacenters imports datacenter & its related info, including kvm & switch.
+  rpc ImportDatacenters(ImportDatacentersRequest) returns (google.rpc.Status);
+
+  // CreateKVM creates a new KVM
+  rpc CreateKVM(CreateKVMRequest) returns (models.KVM);
+
+  // Update updates the KVM
+  rpc UpdateKVM(UpdateKVMRequest) returns (models.KVM);
+
+  // Get retrieves the details of the KVM
+  rpc GetKVM(GetKVMRequest) returns (models.KVM);
+
+  // List gets all the KVMs
+  rpc ListKVMs(ListKVMsRequest) returns (ListKVMsResponse);
+
+  // Delete delete the KVM
+  rpc DeleteKVM(DeleteKVMRequest) returns (google.protobuf.Empty);
+
+  // CreateRPM creates a new RPM
+  rpc CreateRPM(CreateRPMRequest) returns (models.RPM);
+
+  // Update updates the RPM
+  rpc UpdateRPM(UpdateRPMRequest) returns (models.RPM);
+
+  // Get retrieves the details of the RPM
+  rpc GetRPM(GetRPMRequest) returns (models.RPM);
+
+  // List gets all the RPMs
+  rpc ListRPMs(ListRPMsRequest) returns (ListRPMsResponse);
+
+  // Delete delete the RPM
+  rpc DeleteRPM(DeleteRPMRequest) returns (google.protobuf.Empty);
+
+  // CreateDrac creates a new drac
+  rpc CreateDrac(CreateDracRequest) returns (models.Drac);
+
+  // Update updates the drac
+  rpc UpdateDrac(UpdateDracRequest) returns (models.Drac);
+
+  // Get retrieves the details of the drac
+  rpc GetDrac(GetDracRequest) returns (models.Drac);
+
+  // List gets all the dracs
+  rpc ListDracs(ListDracsRequest) returns (ListDracsResponse);
+
+  // Delete delete the drac
+  rpc DeleteDrac(DeleteDracRequest) returns (google.protobuf.Empty);
+
+  // CreateSwitch creates a new switch
+  rpc CreateSwitch(CreateSwitchRequest) returns (models.Switch);
+
+  // Update updates the switch
+  rpc UpdateSwitch(UpdateSwitchRequest) returns (models.Switch);
+
+  // Get retrieves the details of the switch
+  rpc GetSwitch(GetSwitchRequest) returns (models.Switch);
+
+  // List gets all the switches
+  rpc ListSwitches(ListSwitchesRequest) returns (ListSwitchesResponse);
+
+  // Delete delete the switch
+  rpc DeleteSwitch(DeleteSwitchRequest) returns (google.protobuf.Empty);
+
+  // Rename rename the switch
+  rpc RenameSwitch(RenameSwitchRequest) returns (models.Switch);
+
+  // CreateVlan creates a new vlan
+  rpc CreateVlan(CreateVlanRequest) returns (models.Vlan);
+
+  // Update updates the vlan
+  rpc UpdateVlan(UpdateVlanRequest) returns (models.Vlan);
+
+  // Get retrieves the details of the vlan
+  rpc GetVlan(GetVlanRequest) returns (models.Vlan);
+
+  // List gets all the vlans
+  rpc ListVlans(ListVlansRequest) returns (ListVlansResponse);
+
+  // Delete delete the vlan
+  rpc DeleteVlan(DeleteVlanRequest) returns (google.protobuf.Empty);
+
+  // ImportVlans imports vlans & all IP-related infos.
+  rpc ImportVlans(ImportVlansRequest) returns (google.rpc.Status);
+
+  // ImportOSVlans imports the ChromeOS vlans, ips, and dhcp configs.
+  rpc ImportOSVlans(ImportOSVlansRequest) returns (google.rpc.Status);
+
+  // ImportStates imports states of all objects.
+  rpc ImportStates(ImportStatesRequest) returns (google.rpc.Status);
+
+  // UpdateState updates the state for a resource.
+  // If the state doesn't exist before, it will create the state record for the resource.
+  rpc UpdateState(UpdateStateRequest) returns (models.StateRecord);
+
+  // GetState retrieves the state of a resource.
+  rpc GetState(GetStateRequest) returns (models.StateRecord);
+
+  // GetDHCPConfig retrieves a dhcp record.
+  rpc GetDHCPConfig(GetDHCPConfigRequest) returns (models.DHCPConfig);
+
+  // CreateVM creates a new VM
+  rpc CreateVM(CreateVMRequest) returns (models.VM);
+
+  // UpdateVM updates a VM
+  rpc UpdateVM(UpdateVMRequest) returns (models.VM);
+
+  // DeleteVM delete a VM
+  rpc DeleteVM(DeleteVMRequest) returns (google.protobuf.Empty);
+
+  // GetVM retrieves the details of the VM
+  rpc GetVM(GetVMRequest) returns (models.VM);
+
+  // List gets all the machineLSEs
+  rpc ListVMs(ListVMsRequest) returns (ListVMsResponse);
+
+  // CreateAsset creates a new asset
+  rpc CreateAsset(CreateAssetRequest) returns (models.asset);
+
+  // BatchGetKVMs retrieves a batch of kvms
+  rpc BatchGetKVMs(BatchGetKVMsRequest) returns (BatchGetKVMsResponse);
+
+  // BatchGetDHCPConfigs retrieves a batch of dhcp records.
+  rpc BatchGetDHCPConfigs(BatchGetDHCPConfigsRequest) returns (BatchGetDHCPConfigsResponse);
+
+  // BatchGetMachineLSEs retrieves a batch of machineLSEs
+  rpc BatchGetMachineLSEs(BatchGetMachineLSEsRequest) returns (BatchGetMachineLSEsResponse);
+
+  // BatchGetMachines retrieves a batch of machines
+  rpc BatchGetMachines(BatchGetMachinesRequest) returns (BatchGetMachinesResponse);
+
+  // BatchGetSwitches retrieves a batch of switches
+  rpc BatchGetSwitches(BatchGetSwitchesRequest) returns (BatchGetSwitchesResponse);
+
+  // BatchGetRPMs retrieves a batch of rpms
+  rpc BatchGetRPMs(BatchGetRPMsRequest) returns (BatchGetRPMsResponse);
+
+  // BatchGetDracs retrieves a batch of dracs
+  rpc BatchGetDracs(BatchGetDracsRequest) returns (BatchGetDracsResponse);
+
+  // BatchGetNics retrieves a batch of nics
+  rpc BatchGetNics(BatchGetNicsRequest) returns (BatchGetNicsResponse);
+
+  // BatchGetVMs retrieves a batch of vms
+  rpc BatchGetVMs(BatchGetVMsRequest) returns (BatchGetVMsResponse);
+
+  // BatchGetVlans retrieves a batch of vlans
+  rpc BatchGetVlans(BatchGetVlansRequest) returns (BatchGetVlansResponse);
+
+  // BatchGetRacks retrieves a batch of racks
+  rpc BatchGetRacks(BatchGetRacksRequest) returns (BatchGetRacksResponse);
+
+  // BatchGetChromePlatforms retrieves a batch of chrome platforms
+  rpc BatchGetChromePlatforms(BatchGetChromePlatformsRequest) returns (BatchGetChromePlatformsResponse);
+
+  // BatchGetMachineLSEPrototypes retrieves a batch of machine lse prototypes
+  rpc BatchGetMachineLSEPrototypes(BatchGetMachineLSEPrototypesRequest) returns (BatchGetMachineLSEPrototypesResponse);
+
+  // BatchGetRackLSEPrototypes retrieves a batch of rack lse prototypes
+  rpc BatchGetRackLSEPrototypes(BatchGetRackLSEPrototypesRequest) returns (BatchGetRackLSEPrototypesResponse);
+}
+
+message CreateVMRequest {
+  // The vm to create.
+  models.VM vm = 1 [(google.api.field_behavior) = REQUIRED];
+
+  reserved 2;
+  reserved "machineLSE_id";
+
+  NetworkOption network_option = 3;
+}
+
+message UpdateVMRequest {
+  // The VM to update.
+  models.VM vm = 1 [(google.api.field_behavior) = REQUIRED];
+
+  reserved 2;
+  reserved "machineLSE_id";
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 3;
+
+  // The network option to set the VM
+  NetworkOption network_option = 4;
+
+  reserved 5;
+  reserved "state";
+}
+
+message GetVMRequest {
+  // The name of the VM to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/VM" }
+  ];
+}
+
+message DeleteVMRequest {
+  // The name of the VM to delete.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/VM" }
+  ];
+}
+
+message ListVMsRequest {
+  // The maximum number of vlans to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 vms will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListVMs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListVlans` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListVMsResponse {
+  // The vms from datastore.
+  repeated models.VM vms = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message GetDHCPConfigRequest {
+  // The hostname to retrieve the dhcp config.
+  string hostname = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+// Contains the required information for creating a ChromePlatform represented in
+// the database.
+message CreateChromePlatformRequest {
+  // The chromePlatform to create.
+  models.ChromePlatform chromePlatform = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the ChromePlatform, which will become the final component of
+  // the ChromePlatform's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string chromePlatform_id = 2;
+}
+
+message UpdateChromePlatformRequest {
+  // The chromePlatform to update.
+  models.ChromePlatform chromePlatform = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetChromePlatformRequest {
+  // The name of the chromePlatform to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/ChromePlatform" }
+  ];
+}
+
+message ListChromePlatformsRequest {
+  // The maximum number of chromePlatforms to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 chromePlatforms will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListChromePlatforms` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListChromePlatforms` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListChromePlatformsResponse {
+  // The chromePlatforms from datastore.
+  repeated models.ChromePlatform chromePlatforms = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteChromePlatformRequest {
+  // The name of the ChromePlatform to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/ChromePlatform" }
+  ];
+}
+
+message ImportChromePlatformsRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message ImportChromePlatformsResponse {
+  repeated ChromePlatformResult passed = 1;
+  repeated ChromePlatformResult failed = 2;
+}
+
+message ChromePlatformResult {
+  models.ChromePlatform platform = 1;
+  string error_msg = 2;
+}
+
+message ImportOSVersionsRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message ListOSVersionsRequest {
+  // The maximum number of OSVersion to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 OSVersion will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListOSVersion` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListOSVersion` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListOSVersionsResponse {
+  // The os versions for browser lab from datastore.
+  repeated models.OSVersion os_version = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Contains the required information for creating a MachineLSEPrototype represented in
+// the database.
+message CreateMachineLSEPrototypeRequest {
+  // The MachineLSEPrototype to create.
+  models.MachineLSEPrototype machineLSEPrototype = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the MachineLSEPrototype, which will become the final component of
+  // the MachineLSEPrototype's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string machineLSEPrototype_id = 2;
+}
+
+message UpdateMachineLSEPrototypeRequest {
+  // The MachineLSEPrototype to update.
+  models.MachineLSEPrototype machineLSEPrototype = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetMachineLSEPrototypeRequest {
+  // The name of the MachineLSEPrototype to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/MachineLSEPrototype" }
+  ];
+}
+
+message ListMachineLSEPrototypesRequest {
+  // The maximum number of MachineLSEPrototypes to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 MachineLSEPrototypes will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListMachineLSEPrototypes` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListMachineLSEPrototypes` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListMachineLSEPrototypesResponse {
+  // The MachineLSEPrototypes from datastore.
+  repeated models.MachineLSEPrototype machineLSEPrototypes = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteMachineLSEPrototypeRequest {
+  // The name of the MachineLSEPrototype to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/MachineLSEPrototype" }
+  ];
+}
+
+// Contains the required information for creating a RackLSEPrototype represented in
+// the database.
+message CreateRackLSEPrototypeRequest {
+  // The RackLSEPrototype to create.
+  models.RackLSEPrototype rackLSEPrototype = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the RackLSEPrototype, which will become the final component of
+  // the RackLSEPrototype's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string rackLSEPrototype_id = 2;
+}
+
+message UpdateRackLSEPrototypeRequest {
+  // The RackLSEPrototype to update.
+  models.RackLSEPrototype rackLSEPrototype = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetRackLSEPrototypeRequest {
+  // The name of the RackLSEPrototype to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RackLSEPrototype" }
+  ];
+}
+
+message ListRackLSEPrototypesRequest {
+  // The maximum number of RackLSEPrototypes to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 RackLSEPrototypes will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListRackLSEPrototypes` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListRackLSEPrototypes` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListRackLSEPrototypesResponse {
+  // The RackLSEPrototypes from datastore.
+  repeated models.RackLSEPrototype rackLSEPrototypes = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteRackLSEPrototypeRequest {
+  // The name of the RackLSEPrototype to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RackLSEPrototype" }
+  ];
+}
+
+// Contains the required information for creating machine/nics/drac represented in
+// the database.
+message MachineRegistrationRequest {
+  // The machine to create.
+  models.Machine machine = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateMachineRequest {
+  // The machine to update.
+  models.Machine machine = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetMachineRequest {
+  // The name of the machine to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Machine" }
+  ];
+}
+
+message ListMachinesRequest {
+  // The maximum number of machines to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 machines will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListMachines` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListMachines` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListMachinesResponse {
+  // The machines from datastore.
+  repeated models.Machine machines = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteMachineRequest {
+  // The name of the Machine to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Machine" }
+  ];
+}
+
+message ImportMachinesRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message RenameMachineRequest {
+  // The name of the Machine to rename
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Machine" }
+  ];
+
+  // The new name of the Machine
+  string new_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Machine" }
+  ];
+}
+
+message MachineDBSource {
+  string host = 1;
+}
+
+message ConfigSource {
+  // Empty config_service means it's local file.
+  string config_service_name = 1;
+  string file_name = 2;
+}
+
+// Contains the required information for creating a Rack represented in
+// the database.
+message CreateRackRequest {
+  // The rack to create.
+  models.Rack rack = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the Rack, which will become the final component of
+  // the Rack's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string rack_id = 2;
+}
+
+message UpdateRackRequest {
+  // The rack to update.
+  models.Rack rack = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetRackRequest {
+  // The name of the rack to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Rack" }
+  ];
+}
+
+message ListRacksRequest {
+  // The maximum number of racks to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 racks will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListRacks` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListRacks` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListRacksResponse {
+  // The racks from datastore.
+  repeated models.Rack racks = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteRackRequest {
+  // The name of the Rack to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Rack" }
+  ];
+}
+
+// Contains the required information for creating a MachineLSE represented in
+// the database.
+message CreateMachineLSERequest {
+  // The machineLSE to create.
+  models.MachineLSE machineLSE = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the MachineLSE, which will become the final component of
+  // the MachineLSE's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+  string machineLSE_id = 2;
+
+  reserved 3;
+  reserved "machines";
+
+  NetworkOption network_option = 4;
+}
+
+message UpdateMachineLSERequest {
+  // The machineLSE to update.
+  models.MachineLSE machineLSE = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "machines";
+
+  // mapping of the name to the corresponding network options.
+  map<string, NetworkOption> network_options = 4;
+
+  reserved 5;
+  reserved "states";
+}
+
+message GetMachineLSERequest {
+  // The name of the machineLSE to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/MachineLSE" }
+  ];
+}
+
+message ListMachineLSEsRequest {
+  // The maximum number of machineLSEs to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 machineLSEs will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListMachineLSEs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListMachineLSEs` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListMachineLSEsResponse {
+  // The machineLSEs from datastore.
+  repeated models.MachineLSE machineLSEs = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteMachineLSERequest {
+  // The name of the MachineLSE to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/MachineLSE" }
+  ];
+}
+
+message ImportMachineLSEsRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message ImportOSMachineLSEsRequest {
+  oneof source {
+    // Continue to use machine_db_source to specify any service host for consistency
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+// Contains the required information for creating a RackLSE represented in
+// the database.
+message CreateRackLSERequest {
+  // The rackLSE to create.
+  models.RackLSE rackLSE = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the RackLSE, which will become the final component of
+  // the RackLSE's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string rackLSE_id = 2;
+}
+
+message UpdateRackLSERequest {
+  // The rackLSE to update.
+  models.RackLSE rackLSE = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetRackLSERequest {
+  // The name of the rackLSE to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RackLSE" }
+  ];
+}
+
+message ListRackLSEsRequest {
+  // The maximum number of rackLSEs to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 rackLSEs will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListRackLSEs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListRackLSEs` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListRackLSEsResponse {
+  // The rackLSEs from datastore.
+  repeated models.RackLSE rackLSEs = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteRackLSERequest {
+  // The name of the RackLSE to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RackLSE" }
+  ];
+}
+
+// Contains the required information for creating a Nic represented in
+// the database.
+message CreateNicRequest {
+  // The nic to create.
+  models.Nic nic = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the Nic, which will become the final component of
+  // the Nic's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string nic_id = 2;
+
+  reserved 3;
+  reserved "machine";
+}
+
+message UpdateNicRequest {
+  // The nic to update.
+  models.Nic nic = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "machine";
+}
+
+message GetNicRequest {
+  // The name of the nic to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Nic" }
+  ];
+}
+
+message ListNicsRequest {
+  // The maximum number of nics to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 nics will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListNics` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListNics` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListNicsResponse {
+  // The nics from datastore.
+  repeated models.Nic nics = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteNicRequest {
+  // The name of the Nic to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Nic" }
+  ];
+}
+
+message ImportNicsRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message RenameNicRequest {
+  // The name of the Nic to rename
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Nic" }
+  ];
+
+  // The new name of the Nic
+  string new_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Nic" }
+  ];
+}
+
+message RenameSwitchRequest {
+  // The name of the Switch to rename
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Switch" }
+  ];
+
+  // The new name of the Switch
+  string new_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Switch" }
+  ];
+}
+
+message ImportDatacentersRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+// Contains the required information for creating a KVM represented in
+// the database.
+message CreateKVMRequest {
+  // The KVM to create.
+  models.KVM KVM = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the KVM, which will become the final component of
+  // the KVM's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string KVM_id = 2;
+
+  reserved 3;
+  reserved "rack";
+}
+
+message UpdateKVMRequest {
+  // The KVM to update.
+  models.KVM KVM = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "rack";
+
+  NetworkOption network_option = 4;
+}
+
+message GetKVMRequest {
+  // The name of the KVM to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/KVM" }
+  ];
+}
+
+message ListKVMsRequest {
+  // The maximum number of KVMs to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 KVMs will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListKVMs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListKVMs` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListKVMsResponse {
+  // The KVMs from datastore.
+  repeated models.KVM KVMs = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteKVMRequest {
+  // The name of the KVM to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/KVM" }
+  ];
+}
+
+// Contains the required information for creating a RPM represented in
+// the database.
+message CreateRPMRequest {
+  // The RPM to create.
+  models.RPM RPM = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the RPM, which will become the final component of
+  // the RPM's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string RPM_id = 2;
+}
+
+message UpdateRPMRequest {
+  // The RPM to update.
+  models.RPM RPM = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message GetRPMRequest {
+  // The name of the RPM to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RPM" }
+  ];
+}
+
+message ListRPMsRequest {
+  // The maximum number of RPMs to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 RPMs will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListRPMs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListRPMs` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListRPMsResponse {
+  // The RPMs from datastore.
+  repeated models.RPM RPMs = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteRPMRequest {
+  // The name of the RPM to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/RPM" }
+  ];
+}
+
+// Contains the required information for creating a Drac represented in
+// the database.
+message CreateDracRequest {
+  // The drac to create.
+  models.Drac drac = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the Drac, which will become the final component of
+  // the Drac's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string drac_id = 2;
+
+  reserved 3;
+  reserved "machine";
+}
+
+message UpdateDracRequest {
+  // The drac to update.
+  models.Drac drac = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "machine";
+
+  NetworkOption network_option = 4;
+}
+
+message GetDracRequest {
+  // The name of the drac to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Drac" }
+  ];
+}
+
+message ListDracsRequest {
+  // The maximum number of dracs to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 dracs will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListDracs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListDracs` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListDracsResponse {
+  // The dracs from datastore.
+  repeated models.Drac dracs = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteDracRequest {
+  // The name of the Drac to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Drac" }
+  ];
+}
+
+// Contains the required information for creating a Switch represented in
+// the database.
+message CreateSwitchRequest {
+  // The switch to create.
+  models.Switch switch = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the Switch, which will become the final component of
+  // the Switch's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string switch_id = 2;
+
+  reserved 3;
+  reserved "rack";
+}
+
+message UpdateSwitchRequest {
+  // The switch to update.
+  models.Switch switch = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "rack";
+}
+
+message GetSwitchRequest {
+  // The name of the switch to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Switch" }
+  ];
+}
+
+message ListSwitchesRequest {
+  // The maximum number of switches to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 switches will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListSwitches` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListSwitches` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListSwitchesResponse {
+  // The switches from datastore.
+  repeated models.Switch switches = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteSwitchRequest {
+  // The name of the Switch to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Switch" }
+  ];
+}
+
+// Contains the required information for creating a Vlan represented in
+// the database.
+message CreateVlanRequest {
+  // The vlan to create.
+  models.Vlan vlan = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the Vlan, which will become the final component of
+  // the Vlan's resource name.
+  //
+  // This value should follow the regex "^[a-zA-Z0-9-)(_:.]{3,63}$" (3-63 characters,
+  // contains only ASCII letters, numbers, dash and underscore.
+   string vlan_id = 2;
+}
+
+message UpdateVlanRequest {
+  // The vlan to update.
+  models.Vlan vlan = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  reserved 3;
+  reserved "state";
+}
+
+message GetVlanRequest {
+  // The name of the vlan to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Vlan" }
+  ];
+}
+
+message ListVlansRequest {
+  // The maximum number of vlans to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 vlans will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListVlans` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListVlans` must match
+  // the call that provided the page token.
+  string page_token = 2;
+
+  // filter takes the filtering condition
+  string filter = 3;
+
+  // if this is true, only keys will be returned else the entire object
+  // will be returned. By setting this to true, the list call be will faster.
+  bool keysOnly = 4;
+}
+
+message ListVlansResponse {
+  // The vlans from datastore.
+  repeated models.Vlan vlans = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message DeleteVlanRequest {
+  // The name of the Vlan to delete
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "unified-fleet-system.appspot.com/Vlan" }
+  ];
+}
+
+message ImportVlansRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message ImportOSVlansRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message ImportStatesRequest {
+  oneof source {
+    MachineDBSource machine_db_source = 1;
+    ConfigSource config_source = 2;
+  }
+}
+
+message GetStateRequest {
+  // The name of the resource to retrieve the state.
+  string resource_name = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message UpdateStateRequest {
+  // The state record to update.
+  models.StateRecord state = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message RackRegistrationRequest {
+  // The rack to create.
+  models.Rack rack = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message NetworkOption {
+  // The vlan to setup the network configurations
+  string vlan = 1 [
+      (google.api.resource_reference) = {
+          type: "unified-fleet-system.appspot.com/Vlan"
+      }
+  ];
+  // Specifying nic name for automatically assign IP
+  string nic = 2 [
+    (google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Nic"
+    }
+  ];
+  // Delete the existing network configurations if existing
+  bool delete = 3;
+
+  // The user-specified ip, if it's setup, other options will be ignored.
+  string ip = 4;
+}
+
+message CreateAssetRequest {
+  // The asset to register
+  models.asset asset = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message BatchGetKVMsRequest {
+  // The parent resource shared by all kvms being retrieved.
+  string parent = 1;
+  // The names of the kvms to retrieve.
+  // Format: kvms/{kvm}
+  repeated string names = 2;
+}
+
+message BatchGetKVMsResponse {
+  // The KVMs from datastore.
+  repeated models.KVM KVMs = 1;
+}
+
+message BatchGetDHCPConfigsRequest {
+  // The parent resource shared by all dhcp configs being retrieved.
+  string parent = 1;
+  // The hostnames of the dhcp configs to retrieve.
+  repeated string names = 2;
+}
+
+message BatchGetDHCPConfigsResponse {
+  // The KVMs from datastore.
+  repeated models.DHCPConfig dhcp_configs = 1;
+}
+
+message BatchGetMachineLSEsRequest {
+  // The parent resource shared by all machine lses being retrieved.
+  string parent = 1;
+  // The names of the machine lses to retrieve.
+  // Format: machinelses/{name}
+  repeated string names = 2;
+}
+
+message BatchGetMachineLSEsResponse {
+  // The Machine lses from datastore.
+  repeated models.MachineLSE machine_lses = 1;
+}
+
+message BatchGetMachinesRequest {
+  // The parent resource shared by all machines being retrieved.
+  string parent = 1;
+  // The names of the machines to retrieve.
+  // Format: machines/{name}
+  repeated string names = 2;
+}
+
+message BatchGetMachinesResponse {
+  // The machines from datastore.
+  repeated models.Machine machines = 1;
+}
+
+message BatchGetSwitchesRequest {
+  // The parent resource shared by all switches being retrieved.
+  string parent = 1;
+  // The names of the switches to retrieve.
+  // Format: switches/{name}
+  repeated string names = 2;
+}
+
+message BatchGetSwitchesResponse {
+  // The switches from datastore.
+  repeated models.Switch switches = 1;
+}
+
+message BatchGetRPMsRequest {
+  // The parent resource shared by all rpms being retrieved.
+  string parent = 1;
+  // The names of the rpms to retrieve.
+  // Format: rpms/{name}
+  repeated string names = 2;
+}
+
+message BatchGetRPMsResponse {
+  // The rpms from datastore.
+  repeated models.RPM rpms = 1;
+}
+
+
+message BatchGetDracsRequest {
+  // The parent resource shared by all dracs being retrieved.
+  string parent = 1;
+  // The names of the dracs to retrieve.
+  // Format: dracs/{name}
+  repeated string names = 2;
+}
+
+message BatchGetDracsResponse {
+  // The dracs from datastore.
+  repeated models.Drac dracs = 1;
+}
+
+message BatchGetNicsRequest {
+  // The parent resource shared by all nics being retrieved.
+  string parent = 1;
+  // The names of the nics to retrieve.
+  // Format: nics/{name}
+  repeated string names = 2;
+}
+
+message BatchGetNicsResponse {
+  // The nics from datastore.
+  repeated models.Nic nics = 1;
+}
+
+message BatchGetVMsRequest {
+  // The parent resource shared by all vms being retrieved.
+  string parent = 1;
+  // The names of the vms to retrieve.
+  // Format: vms/{name}
+  repeated string names = 2;
+}
+
+message BatchGetVMsResponse {
+  // The vms from datastore.
+  repeated models.VM vms = 1;
+}
+
+message BatchGetVlansRequest {
+  // The parent resource shared by all vlans being retrieved.
+  string parent = 1;
+  // The names of the vlans to retrieve.
+  // Format: vlans/{name}
+  repeated string names = 2;
+}
+
+message BatchGetVlansResponse {
+  // The vlans from datastore.
+  repeated models.Vlan vlans = 1;
+}
+
+message BatchGetRacksRequest {
+  // The parent resource shared by all racks being retrieved.
+  string parent = 1;
+  // The names of the racks to retrieve.
+  // Format: racks/{name}
+  repeated string names = 2;
+}
+
+message BatchGetRacksResponse {
+  // The racks from datastore.
+  repeated models.Rack racks = 1;
+}
+
+message BatchGetChromePlatformsRequest {
+  // The parent resource shared by all chrome platforms being retrieved.
+  string parent = 1;
+  // The names of the chrome platforms to retrieve.
+  // Format: chromeplatforms/{name}
+  repeated string names = 2;
+}
+
+message BatchGetChromePlatformsResponse {
+  // The chrome platforms from datastore.
+  repeated models.ChromePlatform chrome_platforms = 1;
+}
+
+message BatchGetMachineLSEPrototypesRequest {
+  // The parent resource shared by all machine lse prototypes being retrieved.
+  string parent = 1;
+  // The names of the machine lse prototypes to retrieve.
+  // Format: machineLSEPrototypes/{name}
+  repeated string names = 2;
+}
+
+message BatchGetMachineLSEPrototypesResponse {
+  // The machine lse prototypes from datastore.
+  repeated models.MachineLSEPrototype machine_lse_prototypes = 1;
+}
+
+message BatchGetRackLSEPrototypesRequest {
+  // The parent resource shared by all rack lse prototypes being retrieved.
+  string parent = 1;
+  // The names of the rack lse prototypes to retrieve.
+  // Format: rackLSEPrototypes/{name}
+  repeated string names = 2;
+}
+
+message BatchGetRackLSEPrototypesResponse {
+  // The rack lse prototypes from datastore.
+  repeated models.RackLSEPrototype rack_lse_prototypes = 1;
+}

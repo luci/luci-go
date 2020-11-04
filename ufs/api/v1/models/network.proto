@@ -1,0 +1,144 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/peripherals.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/state.proto";
+import "go.chromium.org/luci/ufs/api/v1/models/location.proto";
+
+message Nic {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Nic"
+        pattern: "nics/{nic}"
+    };
+    // Unique serial_number or asset tag
+    // The format will be nics/XXX
+    string name = 1;
+    string mac_address = 2;
+    // Record the last update timestamp of this machine (In UTC timezone)
+    google.protobuf.Timestamp update_time = 3 [
+            (google.api.field_behavior) = OUTPUT_ONLY];
+
+    SwitchInterface switch_interface = 4;
+
+    // Refers to Machine name
+    string machine = 5 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Machine"
+        }
+    ];
+
+    reserved 6;
+    reserved "lab";
+
+    // Refers to Rack name
+    string rack = 7 [
+        (google.api.resource_reference) = {
+            type: "unified-fleet-system.appspot.com/Rack"
+        },
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // tags user can attach for easy querying/searching
+    repeated string tags = 8;
+
+    reserved 9;
+    reserved "state";
+
+    // Refers to Zone
+    string zone = 10 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+    // State of the nic
+    State resource_state = 11;
+}
+
+message Vlan {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/Vlan"
+        pattern: "vlans/{vlan}"
+    };
+    // Unique name for the Vlan
+    // The format will be vlans/XXX
+    string name = 1;
+    // The format will be subnet/CIDR.
+    string vlan_address = 2;
+    // The number of IPs that in this vlan
+    int32 capacity_ip = 3;
+    // Record the last update timestamp of this Vlan (In UTC timezone)
+    google.protobuf.Timestamp update_time = 4 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // The description of the vlan.
+    string description = 5;
+
+    reserved 6;
+    reserved "state";
+
+    // The ips that cannot be used by normal host in this vlan.
+    // By default, the first 10 and last 1 ip in the vlan is automatically reserved.
+    // No need to specify them here.
+    repeated string reserved_ips = 7;
+
+    // Define the free ip range of this vlan that can be automatically assigned.
+    // Any ips between the two ips are regarded as available ips.
+    // Any ips that not in this range will be marked as reserved.
+    // If they're empty, it means no ips in this vlan can be used as dhcp configs.
+    // The format of the ip ranges are ipv4 string format, e.g. 192.168.1.23.
+    // User can update reserved_ips to remove some of the available ips in the free range.
+    string free_start_ipv4Str = 11;
+    string free_end_ipv4Str = 12;
+
+
+    // State of the vlan
+    State resource_state = 8;
+
+    // vlan_number is same as the vlan name without prefix(browser/atl/cros)
+    string vlan_number = 9 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    // The zone that this vlan serves. One vlan can serve multiple zones.
+    repeated Zone zones = 10;
+
+    // Record the ACL info of the vlan
+    string realm = 13;
+}
+
+message DHCPConfig {
+    string mac_address = 1;
+    string hostname = 2;
+    string ip = 3;
+    google.protobuf.Timestamp update_time = 4 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+    string vlan = 5 [(google.api.resource_reference) = {
+        type: "unified-fleet-system.appspot.com/Vlan"
+    }];
+}
+
+// Message contains all dhcp configs.
+message AllDHCPConfigs {
+    repeated DHCPConfig configs = 1;
+}
+
+// IP is an intermediate record object, not an object to be exposed by API.
+message IP {
+    string id = 1;
+    // can be converted to and from the string ip address
+    uint32 ipv4 = 2;
+    string vlan = 3;
+    bool occupied = 4;
+    // store the string ip address
+    string ipv4_str = 5;
+    // Indicate if this IP is reserved (cannot be auto-assigned to any host)
+    bool reserve = 6;
+}

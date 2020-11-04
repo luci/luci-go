@@ -1,0 +1,35 @@
+// Copyright 2020 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package luci.ufs.api.v1.models;
+
+option go_package = "go.chromium.org/luci/ufs/api/v1/models;ufspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/resource.proto";
+import "go.chromium.org/luci/grpc/proto/google/api/field_behavior.proto";
+
+// ChromePlatform refers to static configs defined by Chrome Browser lab
+// for their machines
+message ChromePlatform {
+    option (google.api.resource) = {
+        type: "unified-fleet-system.appspot.com/ChromePlatform"
+        pattern: "chromePlatforms/{chromePlatform}"
+    };
+    // The format will be chromePlatforms/XXX
+    string name = 1;
+    string manufacturer = 2;
+    string description = 3;
+    // Record the last update timestamp of this ChromePlatform (In UTC timezone)
+    google.protobuf.Timestamp update_time = 4 [
+        (google.api.field_behavior) = OUTPUT_ONLY];
+
+    reserved 5;
+    reserved "vm_capacity";
+
+    // tags user can attach for easy querying/search
+    repeated string tags = 6;
+}
