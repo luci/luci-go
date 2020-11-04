@@ -227,6 +227,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c81344d7_7168f0da",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-04T02:48:32Z",
+      "side": 1,
+      "message": "One of the main intents for sinkStats{} is to print a summary of the delays in a single log, so that readers can and easily and quickly understand the overhead.\n\n```\nSummary of rdb-stream\n- Total runtime: \"1.014337462s\"\n- Total Overhead: \"502.850538ms\"\n  |- warmUpDuration: ...\n  |- shutdownDuration: ...\n        |- artDrainDruation: ...\n        |- trDrainDuration: ...\n  |- reqPrcessingLatency: ...\n \n- Req latency breakdown (total/min/max)\n  |- time taken to process ReportTestResults ...\n  |- time taken to enqueue Artifacts ...\n  |- time taken to enqueue TestResults ...\n \n- # of reports\n  |- total # of requests: 2\n  |- total # of artifacts: 0\n  |- total # of test results: 1\n```\n\nTo me, the intended audiences of this summary log is not myself, but the browser and infra engineers who will happen to look at SwarmingTask logs to find the cause of regressions on tests performance.\n\nIf it was for myself only and to trace the cause of a particular symptom only, then yes you are right. We don\u0027t need most of the fields in sinkStats{}, except those for nTR, nArt, total/min/max latencies.\n\nHowever, I added extra fields to store values for run/shutdown/draining durations so that they can be printed in a single log line with a more human friendly format. If you think theses add unnecessary complexity, then I can remove.\n\nWDYT?",
+      "parentUuid": "e9f0cbf0_78c6e12a",
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1400e801_f5b9acdf",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 8
@@ -286,6 +304,30 @@
       "side": 1,
       "message": "isn\u0027t this a generic problem? what host of SinkServer wouldn\u0027t want to know how much delay ReportTestResults adds?",
       "parentUuid": "5bce890b_9dbbffdb",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 27
+      },
+      "revId": "9b99e6253aa43d628a4291ce1ef0155272ede7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8331f714_cc96433f",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-04T02:48:32Z",
+      "side": 1,
+      "message": "I\u0027m not sure if we are on the same page.\n\nIIUC, you are suggesting to report # of pending items, instead of the time elapsed. Logging # of pending items won\u0027t tell us how much delay ReportTestResults added. # of pending items won\u0027t give us how soon ReportTestResults() will start adding delays, either.\n\nIf a queue was saturated, the goroutine would be blocked in L171 or L173. If it was unblocked, the queue is no longer saturated. When this function logs # of pending items on exit, the number is probably smaller than the max allowed items of the queue. # of pending items on the queue won\u0027t tell us how much delay was added in the particular ReportTestResults() session.\n\nPlease LMK if I totally missed your point.",
+      "parentUuid": "ee5146cb_e7a7135a",
       "range": {
         "startLine": 130,
         "startChar": 3,
