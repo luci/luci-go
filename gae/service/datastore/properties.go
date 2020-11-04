@@ -853,7 +853,7 @@ type PropertyData interface {
 	// Slice returns a PropertySlice representation of this PropertyData.
 	//
 	// The returned PropertySlice is a clone of the original data. Consequently,
-	// Consequently, Property-modifying methods such as SetValue should NOT be
+	// Property-modifying methods such as SetValue should NOT be
 	// called on the results.
 	Slice() PropertySlice
 

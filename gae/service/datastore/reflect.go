@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/gae/service/blobstore"
 )
 
@@ -30,6 +32,7 @@ var (
 	typeOfKey               = reflect.TypeOf((*Key)(nil))
 	typeOfPropertyConverter = reflect.TypeOf((*PropertyConverter)(nil)).Elem()
 	typeOfPropertyLoadSaver = reflect.TypeOf((*PropertyLoadSaver)(nil)).Elem()
+	typeofProtoMessage      = reflect.TypeOf((*proto.Message)(nil)).Elem()
 	typeOfMetaGetterSetter  = reflect.TypeOf((*MetaGetterSetter)(nil)).Elem()
 	typeOfString            = reflect.TypeOf("")
 	typeOfTime              = reflect.TypeOf(time.Time{})
