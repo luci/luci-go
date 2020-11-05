@@ -288,6 +288,23 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
+		Convey(`duplicate bigqueryExports`, func() {
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+					Realm:    "chromium:ci",
+					BigqueryExports: []*pb.BigQueryExport{
+						{Project: "project", Dataset: "dataset", Table: "table", TestResults: &pb.BigQueryExport_TestResults{}},
+						{Project: "project", Dataset: "dataset", Table: "table", TestResults: &pb.BigQueryExport_TestResults{}},
+					},
+				},
+			}, now)
+			So(err, ShouldErrLike, `bigquery_export[1]: more than one BigQueryExport`)
+		})
+
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
