@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "089bbe38_48c53bf0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "And gob encoding didn\u0027t work because it doesn\u0027t support recursion, either, right?",
+      "range": {
+        "startLine": 11,
+        "startChar": 15,
+        "endLine": 11,
+        "endChar": 23
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "686477c8_7463c560",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "(curious) how many nodes/edges? Also, what was pb structure? \n  Graph{[]Node}\n  Node{name, commits, []Edge}\n  Edge{commits,to_node_index}\n?\nOr did you write each Node as a frame, similar to how you cached Gerrit data?",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e55692d_7a5e420c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "Hm, I don\u0027t think we want to encourage manually rolled out serialization, though your code is nice \u0026 clean.\n\nHowever, I also think it\u0027s quite fragile when pieces of data are to be added or removed, at least based on my experience before Google where I wrote a lot of such code.\n\nI\u0027ve left a suggestion, if you\u0027ve tried it already and it\u0027s still slow, then this code is LGTM.",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f684a2a4_38977b0e",
+        "filename": "rts/filegraph/git/read_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "I\u0027d love to see 1-2 roundtrip tests for reading written graph:\n  test(g):\n    s \u003d write(g)\n    g2 \u003d read(s)\n    assert g \u003d\u003d g2",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5da3aa5_784b9d77",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "have you considered the following:\n\n 1. enumerating **all** nodes w/o any IO, sorting children for determinism,\n 2. then in order of increasing node index, spit out the node and its edges at once?\n     2.1. I think spitting out node as individually serialized pb.Node message would be fast and would avoid the need to write \u0026\u0026 test manual serialization.",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "daa46c40_01bc91fe",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "i don\u0027t follow.  Don\u0027t you have to sort children s.t. output is deterministic?",
+      "range": {
+        "startLine": 128,
+        "startChar": 4,
+        "endLine": 128,
+        "endChar": 36
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "059844cf_7b83626b",
+        "filename": "rts/filegraph/git/write_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T13:55:30Z",
+      "side": 1,
+      "message": "did I miss test for !textMode?",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
