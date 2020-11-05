@@ -89,7 +89,10 @@ func (cmd *connectCmd) run(c context.Context, args []string, env subcommands.Env
 				return err
 			}
 		}
-		prov := newInstances(c, cmd.serviceAccount, cmd.provider)
+		prov, err := newInstances(c, cmd.serviceAccount, cmd.provider)
+		if err != nil {
+			return err
+		}
 		inst, err := prov.Get(c, &instances.GetRequest{
 			Hostname: name,
 		})
