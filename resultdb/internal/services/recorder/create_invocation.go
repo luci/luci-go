@@ -94,7 +94,29 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	if len(inv.GetBigqueryExports()) > 1 {
+		inv.BigqueryExports = deduplicateBQExports(inv.GetBigqueryExports())
+	}
+
 	return nil
+}
+
+// deduplicateBQExports deduplicates BigQueryExports in the slice by their
+// string serialization.
+// This was added to prevent situations like crbug.com/1145735.
+// Although the original problem has been fixed, it still makes sense to check
+// to avoid conflicts inserting duplicate rows in bq which could lead to an
+// outage.
+func deduplicateBQExports(in []*pb.BigQueryExport) []*pb.BigQueryExport {
+	ret := make([]*pb.BigQueryExport, 0, len(in))
+	bqxs := map[string]*pb.BigQueryExport{}
+	for _, bqx := range in {
+		bqxs[bqx.String()] = bqx
+	}
+	for _, v := range bqxs {
+		ret = append(ret, v)
+	}
+	return ret
 }
 
 func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
