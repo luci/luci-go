@@ -1819,7 +1819,7 @@ func (c *setRefRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 
 	ctx := cli.GetContext(a, c, env)
-	return c.doneWithPins(setRefOrTag(ctx, &setRefOrTagArgs{
+	return c.doneWithPins(visitPins(ctx, &visitPinsArgs{
 		clientOptions: c.clientOptions,
 		packagePrefix: pkgPrefix,
 		version:       c.version,
@@ -1834,7 +1834,7 @@ func (c *setRefRun) Run(a subcommands.Application, args []string, env subcommand
 	}))
 }
 
-type setRefOrTagArgs struct {
+type visitPinsArgs struct {
 	clientOptions
 
 	packagePrefix string
@@ -1843,7 +1843,7 @@ type setRefOrTagArgs struct {
 	updatePin func(client cipd.Client, pin common.Pin) error
 }
 
-func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) {
+func visitPins(ctx context.Context, args *visitPinsArgs) ([]pinInfo, error) {
 	client, err := args.clientOptions.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
@@ -1893,7 +1893,7 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 
 func cmdSetTag(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "set-tag <package or package prefix> -tag=key:value [options]",
+		UsageLine: "set-tag <package or package prefix> -tag key:value [options]",
 		ShortDesc: "tags package of a specific version",
 		LongDesc:  "Tags package of a specific version",
 		CommandRun: func() subcommands.CommandRun {
@@ -1902,7 +1902,7 @@ func cmdSetTag(params Parameters) *subcommands.Command {
 			c.tagsOptions.registerFlags(&c.Flags)
 			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>",
-				"Package version to resolve. Could also be itself a tag or ref")
+				"Package version to resolve. Could also be a tag or a ref.")
 			return c
 		},
 	}
@@ -1929,12 +1929,70 @@ func (c *setTagRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 
 	ctx := cli.GetContext(a, c, env)
-	return c.done(setRefOrTag(ctx, &setRefOrTagArgs{
+	return c.done(visitPins(ctx, &visitPinsArgs{
 		clientOptions: c.clientOptions,
 		packagePrefix: pkgPrefix,
 		version:       c.version,
 		updatePin: func(client cipd.Client, pin common.Pin) error {
 			return client.AttachTagsWhenReady(ctx, pin, c.tags)
+		},
+	}))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 'set-metadata' subcommand.
+
+func cmdSetMetadata(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "set-metadata <package or package prefix> -metadata key:value -metadata-from-file key:path [options]",
+		ShortDesc: "attaches metadata to an instance",
+		LongDesc:  "Attaches metadata to an instance",
+		CommandRun: func() subcommands.CommandRun {
+			c := &setMetadataRun{}
+			c.registerBaseFlags()
+			c.metadataOptions.registerFlags(&c.Flags)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Flags.StringVar(&c.version, "version", "<version>",
+				"Package version to resolve. Could also be a tag or a ref.")
+			return c
+		},
+	}
+}
+
+type setMetadataRun struct {
+	cipdSubcommand
+	metadataOptions
+	clientOptions
+
+	version string
+}
+
+func (c *setMetadataRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+
+	ctx := cli.GetContext(a, c, env)
+
+	md, err := c.metadataOptions.load(ctx)
+	if err == nil && len(md) == 0 {
+		err = makeCLIError("at least one -metadata or -metadata-from-file must be provided")
+	}
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	pkgPrefix, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	return c.doneWithPins(visitPins(ctx, &visitPinsArgs{
+		clientOptions: c.clientOptions,
+		packagePrefix: pkgPrefix,
+		version:       c.version,
+		updatePin: func(client cipd.Client, pin common.Pin) error {
+			return client.AttachMetadataWhenReady(ctx, pin, md)
 		},
 	}))
 }
@@ -3172,6 +3230,7 @@ func GetApplication(params Parameters) *cli.Application {
 			cmdCreate(params),
 			cmdSetRef(params),
 			cmdSetTag(params),
+			cmdSetMetadata(params),
 
 			// High level local write commands.
 			{},
