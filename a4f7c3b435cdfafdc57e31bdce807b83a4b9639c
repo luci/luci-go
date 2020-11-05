@@ -66,6 +66,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a1179958_f0383c5a",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-05T18:33:50Z",
+      "side": 1,
+      "message": "Will this also include the non-immediate Dep changes?",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b23270af_a3c520e5",
         "filename": "cv/internal/changelist/clpb/storage.proto",
         "patchSetId": 2
@@ -77,6 +94,23 @@
       "writtenOn": "2020-11-05T18:12:22Z",
       "side": 1,
       "message": "Nit: without scheme, e.g. \"something-review.googlesource.com\".",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75bf6b51_31925138",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-05T18:33:50Z",
+      "side": 1,
+      "message": "gae noindex tag? Or is it by default true for non-indexable field?",
       "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
