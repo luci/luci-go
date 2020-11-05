@@ -364,6 +364,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		Versions:            opts.versions,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
+		PluginsContext:      ctx,
 		LoginInstructions:   "run `cipd auth-login` to login or relogin",
 	}
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
@@ -1092,6 +1093,7 @@ func resolveEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOpt
 	if err != nil {
 		return nil, nil, err
 	}
+	defer client.Close(ctx)
 
 	out := ensure.VersionsFile{}
 	mu := sync.Mutex{}
@@ -1301,6 +1303,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 	if err != nil {
 		return nil, nil, err
 	}
+	defer client.Close(ctx)
 
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
@@ -1546,6 +1549,8 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	return performBatchOperation(ctx, batchOperation{
 		client:        client,
 		packagePrefix: packagePrefix,
@@ -1599,6 +1604,7 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
 
 	pin, err := client.ResolveVersion(ctx, pkg, version)
 	if err != nil {
@@ -1680,6 +1686,7 @@ func listInstances(ctx context.Context, pkg string, limit int, clientOpts client
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
 
 	// TODO(vadimsh): The backend currently doesn't support retrieving
 	// per-instance refs when listing instances. Instead we fetch ALL refs in
@@ -1848,6 +1855,7 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
 
 	// Do not touch anything if some packages do not have requested version. So
 	// resolve versions first and only then move refs.
@@ -1987,6 +1995,8 @@ func listPackages(ctx context.Context, path string, recursive, showHidden bool, 
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	packages, err := client.ListPackages(ctx, path, recursive, showHidden)
 	if err != nil {
 		return nil, err
@@ -2045,6 +2055,8 @@ func searchInstances(ctx context.Context, packageName string, tags []string, cli
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	pins, err := client.SearchInstances(ctx, packageName, tags)
 	if err != nil {
 		return nil, err
@@ -2101,6 +2113,8 @@ func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) 
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	acls, err := client.FetchACL(ctx, packagePath)
 	if err != nil {
 		return nil, err
@@ -2226,6 +2240,8 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 	if err != nil {
 		return err
 	}
+	defer client.Close(ctx)
+
 	err = client.ModifyACL(ctx, packagePath, changes)
 	if err != nil {
 		return err
@@ -2299,6 +2315,7 @@ func checkACL(ctx context.Context, packagePath string, roles []string, clientOpt
 	if err != nil {
 		return false, err
 	}
+	defer client.Close(ctx)
 
 	actualRoles, err := client.FetchRoles(ctx, packagePath)
 	if err != nil {
@@ -2499,6 +2516,8 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 	if err != nil {
 		return common.Pin{}, err
 	}
+	defer client.Close(ctx)
+
 	pin, err := client.ResolveVersion(ctx, packageName, version)
 	if err != nil {
 		return common.Pin{}, err
@@ -2695,6 +2714,7 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	if err != nil {
 		return common.Pin{}, err
 	}
+	defer client.Close(ctx)
 
 	err = client.RegisterInstance(ctx, pin, src, opts.uploadOptions.verificationTimeout)
 	if err != nil {
@@ -2854,6 +2874,7 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 	if err != nil {
 		return c.done(nil, err)
 	}
+	defer client.Close(ctx)
 
 	if c.check {
 		if c.version != "" {
@@ -3057,6 +3078,8 @@ func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Action
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	actions, err := client.CheckDeployment(ctx, cipd.CheckIntegrity)
 	if err != nil {
 		return nil, err
@@ -3110,6 +3133,8 @@ func repairDeployment(ctx context.Context, clientOpts clientOptions, maxThreads 
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close(ctx)
+
 	return client.RepairDeployment(ctx, cipd.CheckIntegrity, maxThreads)
 }
 
@@ -3146,6 +3171,10 @@ func GetApplication(params Parameters) *cli.Application {
 				Advanced: true,
 				ShortDesc: "Number of worker threads for extracting packages. " +
 					"If 0, uses CPU count. (-max-threads, if given and not 1, takes precedence.)",
+			},
+			cipd.EnvAdmissionPlugin: {
+				Advanced:  true,
+				ShortDesc: "JSON-encoded list with a command line of a deployment admission plugin.",
 			},
 		},
 

@@ -1468,6 +1468,7 @@ func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient
 	opts, cas, repo, storage := mockedClientOpts(c)
 	client, err := NewClient(opts)
 	c.So(err, ShouldBeNil)
+	c.Reset(func() { client.Close(context.Background()) })
 	impl := client.(*clientImpl)
 	return impl, cas, repo, storage
 }
