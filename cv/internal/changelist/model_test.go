@@ -28,11 +28,11 @@ import (
 func TestGobMap(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExternalID", t, func() {
+	Convey("CL", t, func() {
 		ctx := memory.Use(context.Background())
 
 		eid, err := GobID("x-review.example.com", 12)
-		Convey("GobID", func() {
+		Convey("Gerrit ExternalID", func() {
 			So(err, ShouldBeNil)
 			_, err := GobID("https://example.com", 12)
 			So(err, ShouldErrLike, "invalid host")
@@ -54,6 +54,8 @@ func TestGobMap(t *testing.T) {
 				So(cl.ExternalID, ShouldResemble, eid)
 				// ID must be autoset to non-0 value.
 				So(cl.ID, ShouldNotEqual, 0)
+				So(cl.EVersion, ShouldEqual, 1)
+
 				So(cl.Patchset, ShouldEqual, 10)
 			})
 
@@ -65,6 +67,7 @@ func TestGobMap(t *testing.T) {
 				// TODO(tandrii): s/will contain/contain.
 				So(cl2.ID, ShouldEqual, cl.ID)
 				So(cl2.ExternalID, ShouldEqual, eid)
+				So(cl2.EVersion, ShouldEqual, 1)
 				So(cl2.UpdateTime, ShouldEqual, cl.UpdateTime)
 				So(cl2.Patchset, ShouldEqual, cl.Patchset)
 			})
@@ -76,6 +79,7 @@ func TestGobMap(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(cl3.ID, ShouldEqual, cl.ID)
 				So(cl3.ExternalID, ShouldResemble, eid)
+				So(cl3.EVersion, ShouldEqual, 1)
 				So(cl3.UpdateTime, ShouldEqual, cl.UpdateTime)
 				So(cl3.Patchset, ShouldNotEqual, 999)
 			})
@@ -90,6 +94,47 @@ func TestGobMap(t *testing.T) {
 				Convey("delete is now noop", func() {
 					err := Delete(ctx, cl.ID)
 					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("update", func() {
+				Convey("not exists", func() {
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return Update(ctx, cl.ID+12123, func(*CL) (shouldUpdate bool) {
+							panic("must not be called")
+						})
+					}, nil)
+					So(err, ShouldResemble, datastore.ErrNoSuchEntity)
+				})
+
+				Convey("skipped", func() {
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return Update(ctx, cl.ID, func(innerCL *CL) (shouldUpdate bool) {
+							innerCL.Patchset++
+							return false
+						})
+					}, nil)
+					So(err, ShouldBeNil)
+
+					cl2 := CL{ID: cl.ID}
+					So(datastore.Get(ctx, &cl2), ShouldBeNil)
+					So(cl2.EVersion, ShouldEqual, cl.EVersion)
+					So(cl2.Patchset, ShouldEqual, cl.Patchset)
+				})
+
+				Convey("works", func() {
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return Update(ctx, cl.ID, func(innerCL *CL) (shouldUpdate bool) {
+							innerCL.Patchset++
+							return true
+						})
+					}, nil)
+					So(err, ShouldBeNil)
+
+					cl2 := CL{ID: cl.ID}
+					So(datastore.Get(ctx, &cl2), ShouldBeNil)
+					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
+					So(cl2.Patchset, ShouldEqual, cl.Patchset+1)
 				})
 			})
 		})
