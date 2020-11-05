@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
@@ -94,6 +96,25 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	if len(inv.GetBigqueryExports()) > 1 {
+		if err := checkDuplicateBQExports(inv.GetBigqueryExports()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// checkDuplicateBQExports verifies that there's at most one BigQueryExport per
+// project/database/table combination.
+func checkDuplicateBQExports(in []*pb.BigQueryExport) error {
+	tables := stringset.New(0)
+	for i, bqx := range in {
+		table := fmt.Sprintf("%s/%s/%s", bqx.GetProject(), bqx.GetDataset(), bqx.GetTable())
+		if !tables.Add(table) {
+			return errors.Reason("bigquery_export[%d]: more than one BigQueryExport defined for %s", i, table).Err()
+		}
+	}
 	return nil
 }
 
