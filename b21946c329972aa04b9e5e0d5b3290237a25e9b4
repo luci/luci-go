@@ -46,6 +46,30 @@
       },
       "revId": "b21946c329972aa04b9e5e0d5b3290237a25e9b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d623a6a_781cb499",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T05:22:03Z",
+      "side": 1,
+      "message": "yes, it is more about contention of goroutines",
+      "parentUuid": "7f839eda_3397e431",
+      "range": {
+        "startLine": 328,
+        "startChar": 17,
+        "endLine": 328,
+        "endChar": 21
+      },
+      "revId": "b21946c329972aa04b9e5e0d5b3290237a25e9b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
