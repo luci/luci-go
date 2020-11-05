@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b5732a4_7aac4d73",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:12:22Z",
+      "side": 1,
+      "message": "What about changes to other fields? Is external_update_time always bumped for changes to any fields, or not bumped if files etc. change?",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "109b424b_dfd4e183",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:12:22Z",
+      "side": 1,
+      "message": "Nit: space",
+      "range": {
+        "startLine": 80,
+        "startChar": 19,
+        "endLine": 80,
+        "endChar": 21
+      },
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff3d05c3_daae33bf",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:12:22Z",
+      "side": 1,
+      "message": "always",
+      "range": {
+        "startLine": 81,
+        "startChar": 38,
+        "endLine": 81,
+        "endChar": 45
+      },
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b23270af_a3c520e5",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:12:22Z",
+      "side": 1,
+      "message": "Nit: without scheme, e.g. \"something-review.googlesource.com\".",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
