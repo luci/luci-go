@@ -1235,6 +1235,73 @@ func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'attach' subcommand.
+
+func cmdAttach(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "attach <package or package prefix> -metadata key:value -metadata-from-file key:path -tag key:value -ref name [options]",
+		ShortDesc: "attaches tags, metadata and points refs to an instance",
+		LongDesc: `Attaches tags, metadata and points refs to an instance.
+
+Note that this operation is not atomic. It attaches metadata first, then tags,
+then moves refs one by one. Reattaching already attached data is not an error
+though, so a failed operation can be safely retried.
+`,
+		CommandRun: func() subcommands.CommandRun {
+			c := &attachRun{}
+			c.registerBaseFlags()
+			c.refsOptions.registerFlags(&c.Flags)
+			c.tagsOptions.registerFlags(&c.Flags)
+			c.metadataOptions.registerFlags(&c.Flags)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Flags.StringVar(&c.version, "version", "<version>",
+				"Package version to resolve. Could also be a tag or a ref.")
+			return c
+		},
+	}
+}
+
+type attachRun struct {
+	cipdSubcommand
+	refsOptions
+	tagsOptions
+	metadataOptions
+	clientOptions
+
+	version string
+}
+
+func (c *attachRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+
+	ctx := cli.GetContext(a, c, env)
+
+	md, err := c.metadataOptions.load(ctx)
+	if err != nil {
+		return c.done(nil, err)
+	}
+	if len(c.refs) == 0 && len(c.tags) == 0 && len(md) == 0 {
+		return c.done(nil, makeCLIError("no -tags, -refs or -metadata is provided"))
+	}
+
+	pkgPrefix, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	return c.doneWithPins(visitPins(ctx, &visitPinsArgs{
+		clientOptions: c.clientOptions,
+		packagePrefix: pkgPrefix,
+		version:       c.version,
+		updatePin: func(client cipd.Client, pin common.Pin) error {
+			return attachAndMove(ctx, client, pin, md, c.tags, c.refs)
+		},
+	}))
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // 'ensure' subcommand.
 
 func cmdEnsure(params Parameters) *subcommands.Command {
@@ -2758,22 +2825,26 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	if err != nil {
 		return common.Pin{}, err
 	}
-	err = client.AttachMetadataWhenReady(ctx, pin, metadata)
+	err = attachAndMove(ctx, client, pin, metadata, opts.tags, opts.refs)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	err = client.AttachTagsWhenReady(ctx, pin, opts.tagsOptions.tags)
-	if err != nil {
-		return common.Pin{}, err
+	return pin, nil
+}
+
+func attachAndMove(ctx context.Context, client cipd.Client, pin common.Pin, md []cipd.Metadata, tags tagList, refs refList) error {
+	if err := client.AttachMetadataWhenReady(ctx, pin, md); err != nil {
+		return err
 	}
-	for _, ref := range opts.refsOptions.refs {
-		err = client.SetRefWhenReady(ctx, ref, pin)
-		if err != nil {
-			return common.Pin{}, err
+	if err := client.AttachTagsWhenReady(ctx, pin, tags); err != nil {
+		return err
+	}
+	for _, ref := range refs {
+		if err := client.SetRefWhenReady(ctx, ref, pin); err != nil {
+			return err
 		}
 	}
-
-	return pin, nil
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3228,6 +3299,7 @@ func GetApplication(params Parameters) *cli.Application {
 			// High level remote write commands.
 			{},
 			cmdCreate(params),
+			cmdAttach(params),
 			cmdSetRef(params),
 			cmdSetTag(params),
 			cmdSetMetadata(params),
