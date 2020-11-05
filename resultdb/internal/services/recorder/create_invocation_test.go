@@ -288,6 +288,52 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
+		Convey(`duplicate bigqueryExports`, func() {
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+
+			req := &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+					Realm:    "chromium:ci",
+					BigqueryExports: []*pb.BigQueryExport{
+						{
+							Project: "project",
+							Dataset: "dataset",
+							Table:   "table",
+							TestResults: &pb.BigQueryExport_TestResults{
+								Predicate: &pb.TestResultPredicate{
+									Variant: &pb.VariantPredicate{
+										Predicate: &pb.VariantPredicate_Contains{
+											Contains: pbutil.Variant("key", "value"),
+										},
+									},
+								},
+							},
+						}, {
+							Project: "project",
+							Dataset: "dataset",
+							Table:   "table",
+							TestResults: &pb.BigQueryExport_TestResults{
+								Predicate: &pb.TestResultPredicate{
+									Variant: &pb.VariantPredicate{
+										Predicate: &pb.VariantPredicate_Contains{
+											Contains: pbutil.Variant("key", "value"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(req.Invocation.BigqueryExports, ShouldHaveLength, 2)
+			err := validateCreateInvocationRequest(req, now)
+			So(err, ShouldBeNil)
+			So(req.Invocation.BigqueryExports, ShouldHaveLength, 1)
+		})
+
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
