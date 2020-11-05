@@ -16,6 +16,40 @@
       "message": "this should be loud InvalidArgument, rather than silent coercing of the input",
       "revId": "50b83fd5cbea1e5a90dd4eeeeb192479bf240f9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24f8b7c9_335041db",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T09:37:42Z",
+      "side": 1,
+      "message": "i cannot imagine a use case where the user would need two exports to the same table, i think we could require that (project, dataset, table) are unique in a given invocation.\n\nthe we don\u0027t need inefficient bqx.String()",
+      "revId": "50b83fd5cbea1e5a90dd4eeeeb192479bf240f9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45fb51a6_45d1efa1",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T09:37:42Z",
+      "side": 1,
+      "message": "this itereation is non-deterministic, but doesn\u0027t matter if we only do validation",
+      "revId": "50b83fd5cbea1e5a90dd4eeeeb192479bf240f9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
