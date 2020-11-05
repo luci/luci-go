@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "13c5d3f0_1e252ab0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T18:17:33Z",
+      "side": 1,
+      "message": "i didn\u0027t consider gob, but I am worried about reflection, which is slow. In this regard, protobuf and gob are same.",
+      "parentUuid": "089bbe38_48c53bf0",
+      "range": {
+        "startLine": 11,
+        "startChar": 15,
+        "endLine": 11,
+        "endChar": 23
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "686477c8_7463c560",
         "filename": "/COMMIT_MSG",
         "patchSetId": 12
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-05T13:55:30Z",
       "side": 1,
       "message": "(curious) how many nodes/edges? Also, what was pb structure? \n  Graph{[]Node}\n  Node{name, commits, []Edge}\n  Edge{commits,to_node_index}\n?\nOr did you write each Node as a frame, similar to how you cached Gerrit data?",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "268b5160_7fd29a38",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T18:17:33Z",
+      "side": 1,
+      "message": "here is the impl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1907446/1/tools/filegraph/file.go\n\nit uses framed Node, but didn\u0027t use protbuf for edges (that was way too slow, I ditched it fast).\n\nI will report the number of edges back to you when I implement Sync.",
+      "parentUuid": "686477c8_7463c560",
       "range": {
         "startLine": 12,
         "startChar": 12,
@@ -60,6 +108,24 @@
       "writtenOn": "2020-11-05T13:55:30Z",
       "side": 1,
       "message": "Hm, I don\u0027t think we want to encourage manually rolled out serialization, though your code is nice \u0026 clean.\n\nHowever, I also think it\u0027s quite fragile when pieces of data are to be added or removed, at least based on my experience before Google where I wrote a lot of such code.\n\nI\u0027ve left a suggestion, if you\u0027ve tried it already and it\u0027s still slow, then this code is LGTM.",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea9e4914_ceb8c964",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T18:17:33Z",
+      "side": 1,
+      "message": "I will implement Sync(), run it through src.git log, reconstruct the graph, save it on the file system and see how fast the program can load it back. The original implementation with protobufs [1] took 5s (while dijkstra was under 1s).\n\n[1]: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1907446/1/tools/filegraph/file.go",
+      "parentUuid": "1e55692d_7a5e420c",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -100,6 +166,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "60298498_67388ee2",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T18:17:33Z",
+      "side": 1,
+      "message": "I will try that. What is intriguing here is that while reading, I can allocate all nodes at once, by doing make([]Node, n). Note that Node here is not a pointer.",
+      "parentUuid": "c5da3aa5_784b9d77",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "daa46c40_01bc91fe",
         "filename": "rts/filegraph/git/write.go",
         "patchSetId": 12
@@ -134,6 +218,24 @@
       "writtenOn": "2020-11-05T13:55:30Z",
       "side": 1,
       "message": "did I miss test for !textMode?",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc8702f0_197c0e3a",
+        "filename": "rts/filegraph/git/write_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T18:17:33Z",
+      "side": 1,
+      "message": "textMode was created only for testing. Will add a comment.\nthe amount of non-text code is very small and can be tested manually",
+      "parentUuid": "059844cf_7b83626b",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
