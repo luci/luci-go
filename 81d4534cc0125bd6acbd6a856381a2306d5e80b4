@@ -22,6 +22,30 @@
       },
       "revId": "81d4534cc0125bd6acbd6a856381a2306d5e80b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22bb694c_94f3705d",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1947,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-05T22:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2cc0df8b_281f44a8",
+      "range": {
+        "startLine": 1947,
+        "startChar": 74,
+        "endLine": 1947,
+        "endChar": 75
+      },
+      "revId": "81d4534cc0125bd6acbd6a856381a2306d5e80b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
