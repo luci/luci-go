@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3bc19cb_6c180435",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-05T21:50:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1968997_de05d99a",
+      "range": {
+        "startLine": 110,
+        "startChar": 10,
+        "endLine": 110,
+        "endChar": 28
+      },
+      "revId": "eaba3798ee9edb4511c2888a968c553a05f35a40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c74a4589_4d26ba9a",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-05T21:00:17Z",
       "side": 1,
       "message": "nit: if use stringset, it gets simpler\n\n  if !tables.Add(table) { \n     return\n  }",
+      "range": {
+        "startLine": 113,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 49
+      },
+      "revId": "eaba3798ee9edb4511c2888a968c553a05f35a40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8708fc1d_5f6edc4c",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-05T21:50:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c74a4589_4d26ba9a",
       "range": {
         "startLine": 113,
         "startChar": 2,
