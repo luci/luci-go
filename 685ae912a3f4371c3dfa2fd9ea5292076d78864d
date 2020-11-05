@@ -163,6 +163,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "34f85d28_9f90604f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T05:21:21Z",
+      "side": 1,
+      "message": "we spoke offline.\nwill wait for a new patchset",
+      "parentUuid": "77ad7217_89d9b7ae",
+      "revId": "685ae912a3f4371c3dfa2fd9ea5292076d78864d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1590703_aeda2db2",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
