@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ca81c0a_3bc36895",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "I keep forgetting that protobuf does reflection. Grrrr.",
+      "parentUuid": "13c5d3f0_1e252ab0",
+      "range": {
+        "startLine": 11,
+        "startChar": 15,
+        "endLine": 11,
+        "endChar": 23
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "686477c8_7463c560",
@@ -97,6 +121,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4d96e379_ae3806ab",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "268b5160_7fd29a38",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e55692d_7a5e420c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 12
@@ -126,6 +174,41 @@
       "side": 1,
       "message": "I will implement Sync(), run it through src.git log, reconstruct the graph, save it on the file system and see how fast the program can load it back. The original implementation with protobufs [1] took 5s (while dijkstra was under 1s).\n\n[1]: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1907446/1/tools/filegraph/file.go",
       "parentUuid": "1e55692d_7a5e420c",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6c41be3_d29eaebc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "lgtm, eager to see sync.",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f00c57c2_3696dd4c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ea9e4914_ceb8c964",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -184,6 +267,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "097ab4c7_08da7cd5",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "true.",
+      "parentUuid": "60298498_67388ee2",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "daa46c40_01bc91fe",
         "filename": "rts/filegraph/git/write.go",
         "patchSetId": 12
@@ -236,6 +337,24 @@
       "side": 1,
       "message": "textMode was created only for testing. Will add a comment.\nthe amount of non-text code is very small and can be tested manually",
       "parentUuid": "059844cf_7b83626b",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d3fac3a_7ad55020",
+        "filename": "rts/filegraph/git/write_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-05T19:28:42Z",
+      "side": 1,
+      "message": "ok.",
+      "parentUuid": "fc8702f0_197c0e3a",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
