@@ -15,6 +15,8 @@
 package cli
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"os"
@@ -26,15 +28,17 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/rts/filegraph"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref   string
-	graph filegraph.Graph
+	ref string
+	git.Graph
 }
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
@@ -86,7 +90,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 		}
 
 		// Load the node.
-		node := g.graph.Node(name)
+		node := g.Node(name)
 		if node == nil {
 			return nil, errors.Reason("node %q not found", name).Err()
 		}
@@ -100,8 +104,83 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
 func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
-	// TODO(crbug.com/1136280): implement.
-	panic("not implemented")
+	gitDir, err := execGit(repoDir)("rev-parse", "--absolute-git-dir")
+	if err != nil {
+		return err
+	}
+
+	// Read/write the graph from/to a file under .git directory, named after the ref.
+	f, err := os.OpenFile(
+		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
+		os.O_RDWR|os.O_CREATE,
+		0777,
+	)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Read the cache.
+	switch err := g.Read(bufio.NewReader(f)); {
+	case os.IsNotExist(err):
+		logging.Infof(ctx, "populating cache; this may take minutes...")
+	case err != nil:
+		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
+	}
+
+	// Fallback from main to master if needed.
+	tillRev := g.ref
+	if g.ref == "refs/heads/main" {
+		switch exists, err := refExists(repoDir, g.ref); {
+		case err != nil:
+			return err
+		case !exists:
+			tillRev = "refs/heads/master"
+		}
+	}
+
+	write := func() error {
+		// Write the graph to the beginning of the file.
+		if _, err := f.Seek(0, 0); err != nil {
+			return err
+		}
+		if err := g.Write(f); err != nil {
+			return err
+		}
+
+		// Truncate to the current length.
+		curLen, err := f.Seek(0, 1)
+		if err != nil {
+			return err
+		}
+		return f.Truncate(curLen)
+	}
+
+	// Sync the graph with new commits.
+	processed := 0
+	dirty := false
+	err = g.Sync(ctx, repoDir, tillRev, func() error {
+		dirty = true
+
+		processed++
+		if processed%10000 == 0 {
+			if err := write(); err != nil {
+				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+			}
+			dirty = false
+			logging.Infof(ctx, "processed %d commits", processed)
+		}
+		return nil
+	})
+	switch {
+	case err != nil:
+		return err
+	case dirty:
+		err = write()
+		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+	default:
+		return nil
+	}
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
@@ -150,6 +229,19 @@ func ensureSameRepo(files ...string) (repoDir string, err error) {
 	return repoDir, err
 }
 
+func refExists(repoDir, ref string) (bool, error) {
+	// Pass -- so that git knows that the argument after rev-parse is a ref
+	// and not a file path.
+	switch _, err := execGit(repoDir)("rev-parse", ref, "--"); {
+	case err == nil:
+		return true, nil
+	case strings.Contains(err.Error(), "bad revision"):
+		return false, nil
+	default:
+		return false, err
+	}
+}
+
 // execGit returns a function that executes a git command and returns its
 // standard output.
 // The context must be a path to an existing file or directory.
@@ -168,9 +260,11 @@ func execGit(context string) func(args ...string) (out string, err error) {
 		}
 		args = append([]string{"-C", dir}, args...)
 		cmd := exec.Command(exe, args...)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
 		outBytes, err := cmd.Output()
 		out := strings.TrimSuffix(string(outBytes), "\n")
-		return out, errors.Annotate(err, "git %q failed; output: %q", args, out).Err()
+		return out, errors.Annotate(err, "git %q failed; output: %q", args, stderr.Bytes()).Err()
 	}
 }
 
