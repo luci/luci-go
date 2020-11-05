@@ -55,6 +55,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a7d5e9e1_dc979adc",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-05T20:15:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3ac620e_522371e7",
+      "revId": "50b83fd5cbea1e5a90dd4eeeeb192479bf240f9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "45fb51a6_45d1efa1",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 1
