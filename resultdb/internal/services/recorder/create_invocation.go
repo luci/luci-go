@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -94,6 +95,26 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	if len(inv.GetBigqueryExports()) > 1 {
+		if err := checkDuplicateBQExports(inv.GetBigqueryExports()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// checkDuplicateBQExports verifies that there's at most one BigQueryExport per
+// project/database/table combination.
+func checkDuplicateBQExports(in []*pb.BigQueryExport) error {
+	tables := map[string]bool{}
+	for i, bqx := range in {
+		table := fmt.Sprintf("%s/%s/%s", bqx.GetProject(), bqx.GetDataset(), bqx.GetTable())
+		if _, duplicated := tables[table]; duplicated {
+			return errors.Reason("bigquery_export[%d]: more than one BigQueryExport defined for %s", i, table).Err()
+		}
+		tables[table] = true
+	}
 	return nil
 }
 
