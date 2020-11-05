@@ -26,7 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -37,7 +36,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -243,7 +241,6 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 			"IncludedInvocationId": includedID,
 		}))
 	}
-	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check origin invocation state again.
