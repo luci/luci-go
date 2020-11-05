@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4ffcbbb_7047c27c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T21:01:53Z",
+      "side": 1,
+      "message": "ah, i see\n\nbut regardless, Andrii convinced me to try other approaches, which requires me to implement Sync. This means I *will* measure the performance of this implementation before I commit this, and will update this CL message :)\n\nstay tuned",
+      "parentUuid": "ab4bb532_7cee4242",
+      "revId": "5ae406a2a1568ceadf7d6eaaa0b8faaed581c08c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "8ff48322_cc3751cd",
