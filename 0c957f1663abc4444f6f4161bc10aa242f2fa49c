@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "058f6926_be013e4c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:06:20Z",
+      "side": 1,
+      "message": "LGTM with suggested comment",
+      "revId": "0c957f1663abc4444f6f4161bc10aa242f2fa49c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f27baa3e_d083ebba",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:06:20Z",
+      "side": 1,
+      "message": "I would note that shouldUpdate actually mutates cl, and this is where the updating actually happens. I think this is worth noting because shouldUpdate sounds like a pure function that just returns true or false but does nothing else.",
+      "revId": "0c957f1663abc4444f6f4161bc10aa242f2fa49c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6fc2f363_e3860080",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-05T18:06:20Z",
+      "side": 1,
+      "message": "If the datastore Put returns nil, then error.Annotate returns nil too right?",
+      "revId": "0c957f1663abc4444f6f4161bc10aa242f2fa49c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
