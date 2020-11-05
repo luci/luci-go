@@ -50,12 +50,8 @@ func GobID(host string, change int64) (ExternalID, error) {
 	return ExternalID(fmt.Sprintf("gerrit/%s/%d", host, change)), nil
 }
 
-// changeList is a CL entity in Datastore.
-//
-// It's named changeList rather than `CL` to avoid exporting it
-// and yet avoid confusion between type/var names in typical code like
-//    var cl changeList
-type changeList struct {
+// CL is a CL entity in Datastore.
+type CL struct {
 	_kind  string                `gae:"$kind,CL"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
@@ -94,10 +90,10 @@ type clMap struct {
 	InternalID CLID `gae:",noindex"` // int64. Indexed in CL entities.
 }
 
-// get reads a CL from datastore.
+// Get reads a CL from datastore.
 //
 // Returns datastore.ErrNoSuchEntity if it doesn't exist.
-func (eid ExternalID) get(ctx context.Context) (*changeList, error) {
+func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
 	m := clMap{ExternalID: eid}
 	switch err := datastore.Get(ctx, &m); {
 	case err == datastore.ErrNoSuchEntity:
@@ -105,7 +101,7 @@ func (eid ExternalID) get(ctx context.Context) (*changeList, error) {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load CLMap").Tag(transient.Tag).Err()
 	}
-	cl := &changeList{ID: m.InternalID}
+	cl := &CL{ID: m.InternalID}
 	switch err := datastore.Get(ctx, cl); {
 	case err == datastore.ErrNoSuchEntity:
 		// This should not happen in practice except in the case of a very old CL
@@ -121,7 +117,7 @@ func (eid ExternalID) get(ctx context.Context) (*changeList, error) {
 	return cl, nil
 }
 
-// getOrInsert reads a CL from datastore, creating a new one if not exists yet.
+// GetOrInsert reads a CL from datastore, creating a new one if not exists yet.
 //
 // populate is called within a transaction to populate fields of a new entity.
 // It should be a fast function.
@@ -129,25 +125,25 @@ func (eid ExternalID) get(ctx context.Context) (*changeList, error) {
 // Warning:
 //  * populate may be called several times since transaction can be retried.
 //  * cl.ExternalID and cl.ID must not be changed by populate.
-func (eid ExternalID) getOrInsert(ctx context.Context, populate func(cl *changeList)) (*changeList, error) {
+func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*CL, error) {
 	// Fast path without transaction.
-	if cl, err := eid.get(ctx); err != datastore.ErrNoSuchEntity {
+	if cl, err := eid.Get(ctx); err != datastore.ErrNoSuchEntity {
 		return cl, err
 	}
-	var cl *changeList
+	var cl *CL
 	m := clMap{ExternalID: eid}
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		switch err := datastore.Get(ctx, &m); {
 		case err == nil:
 			// Has just been created by someone else.
-			cl = &changeList{ID: m.InternalID}
+			cl = &CL{ID: m.InternalID}
 			return datastore.Get(ctx, cl)
 		case err != datastore.ErrNoSuchEntity:
 			return err
 		}
 
 		// Create new entry by writing both entities atomically.
-		cl = &changeList{
+		cl = &CL{
 			ID:         0, // autogenerate by Datastore
 			ExternalID: eid,
 			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
@@ -178,7 +174,7 @@ func (eid ExternalID) getOrInsert(ctx context.Context, populate func(cl *changeL
 // concurrently with Delete may return temporary error, but on retry they would
 // return ErrNoSuchEntity.
 func Delete(ctx context.Context, id CLID) error {
-	cl := changeList{ID: id}
+	cl := CL{ID: id}
 	switch err := datastore.Get(ctx, &cl); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil // Nothing to do.
