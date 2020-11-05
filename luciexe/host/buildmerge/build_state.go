@@ -119,9 +119,11 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 					return errors.Annotate(
 						err, "step[%q].logs[%q].Url = %q", step.Name, log.Name, log.Url).Err()
 				}
-
 				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, url)
 			}
+		}
+		for _, log := range parsedBuild.GetOutput().GetLogs() {
+			log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, types.StreamName(log.Url))
 		}
 		return nil
 	}()
