@@ -39,12 +39,12 @@ func TestGobMap(t *testing.T) {
 		})
 
 		Convey("get not exists", func() {
-			_, err := eid.get(ctx)
+			_, err := eid.Get(ctx)
 			So(err, ShouldResemble, datastore.ErrNoSuchEntity)
 		})
 
 		Convey("create", func() {
-			cl, err := eid.getOrInsert(ctx, func(cl *changeList) {
+			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
 				cl.Patchset = 10
 				cl.MinEquivalentPatchset = 5
 			})
@@ -58,7 +58,7 @@ func TestGobMap(t *testing.T) {
 			})
 
 			Convey("get exists", func() {
-				cl2, err := eid.get(ctx)
+				cl2, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
 				// Can't use ShouldResemble on cl, cl2 because they will contain proto
 				// data soon.
@@ -70,7 +70,7 @@ func TestGobMap(t *testing.T) {
 			})
 
 			Convey("getOrInsert already exists", func() {
-				cl3, err := eid.getOrInsert(ctx, func(cl *changeList) {
+				cl3, err := eid.GetOrInsert(ctx, func(cl *CL) {
 					cl.Patchset = 999
 				})
 				So(err, ShouldBeNil)
@@ -83,7 +83,7 @@ func TestGobMap(t *testing.T) {
 			Convey("delete works", func() {
 				err := Delete(ctx, cl.ID)
 				So(err, ShouldBeNil)
-				_, err = eid.get(ctx)
+				_, err = eid.Get(ctx)
 				So(err, ShouldResemble, datastore.ErrNoSuchEntity)
 				So(datastore.Get(ctx, cl), ShouldResemble, datastore.ErrNoSuchEntity)
 
