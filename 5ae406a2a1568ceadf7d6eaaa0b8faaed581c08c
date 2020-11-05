@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "eba26aa6_e79bf9a4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T05:38:05Z",
+      "side": 1,
+      "message": "to have a full graph, I need implementation of Sync() to reconstruct the graph got chromium/src git log. For that I need to port my original implementation of Sync() to the code I am uploading. My original impl does not look the same as the code you see, e.g. everything was in a single package, since it was experimental: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1907446\n\nonce I rebase that onto this codebase, we will see how faster this is",
+      "parentUuid": "2aeee540_da54a5d0",
+      "revId": "5ae406a2a1568ceadf7d6eaaa0b8faaed581c08c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8ff48322_cc3751cd",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 9
@@ -65,6 +83,24 @@
       "writtenOn": "2020-11-05T01:08:03Z",
       "side": 1,
       "message": "I\u0027d add \u0027and * means \"0 or more\"\u0027",
+      "revId": "5ae406a2a1568ceadf7d6eaaa0b8faaed581c08c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a36184f_f6b07315",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-05T05:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1db3c1b_acfaf07d",
       "revId": "5ae406a2a1568ceadf7d6eaaa0b8faaed581c08c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
