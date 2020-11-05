@@ -207,6 +207,12 @@ func TestBuildState(t *testing.T) {
 							}},
 						},
 					},
+					Output: &bbpb.Build_Output{
+						Logs: []*bbpb.Log{{
+							Name: "stderr",
+							Url:  "stderr",
+						}},
+					},
 				}))
 				wait()
 
@@ -226,6 +232,13 @@ func TestBuildState(t *testing.T) {
 							},
 						},
 						UpdateTime: now,
+						Output: &bbpb.Build_Output{
+							Logs: []*bbpb.Log{{
+								Name:    "stderr",
+								Url:     "url://ns/stderr",
+								ViewUrl: "view://ns/stderr",
+							}},
+						},
 					},
 				})
 
@@ -261,6 +274,13 @@ func TestBuildState(t *testing.T) {
 							},
 							UpdateTime: now,
 							EndTime:    now,
+							Output: &bbpb.Build_Output{
+								Logs: []*bbpb.Log{{
+									Name:    "stderr",
+									Url:     "url://ns/stderr",
+									ViewUrl: "view://ns/stderr",
+								}},
+							},
 						},
 					})
 				})
@@ -292,6 +312,13 @@ func TestBuildState(t *testing.T) {
 							},
 							EndTime:    now,
 							UpdateTime: now,
+							Output: &bbpb.Build_Output{
+								Logs: []*bbpb.Log{{
+									Name:    "stderr",
+									Url:     "url://ns/stderr",
+									ViewUrl: "view://ns/stderr",
+								}},
+							},
 						},
 					})
 				})
