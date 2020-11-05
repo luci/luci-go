@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48319415_96ce89fd",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-05T04:58:36Z",
+      "side": 1,
+      "message": "It is easier to integrate with cipd.Client this way. It will enqueue all checks after processing the ensure file (before actually installing anything) and then will check them right before downloading stuff. That way admission checks happen in parallel with package fetching/installs and the code still looks relatively OK.",
+      "range": {
+        "startLine": 166,
+        "startChar": 3,
+        "endLine": 166,
+        "endChar": 20
+      },
+      "revId": "e57e1332a84cadd3856fc2b75b792a0671bad6ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
