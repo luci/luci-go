@@ -26,7 +26,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/protobuf/proto"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
@@ -38,7 +37,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/formats"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -221,12 +219,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		}
 
 		deriver := newTestDeriverServer()
-		deriver.InvBQTable = &pb.BigQueryExport{
-			Project:     "project",
-			Dataset:     "dataset",
-			Table:       "table",
-			TestResults: &pb.BigQueryExport_TestResults{},
-		}
 
 		Convey(`inserts a new invocation`, func() {
 			req.SwarmingTask.Id = "completed-task0"
@@ -277,17 +269,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
-			// Read InvocationTask to confirm it's added.
-			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.Name).RowID()))
-			var payload []byte
-			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
-				"Payload": &payload,
-			})
-			bqExports := &pb.BigQueryExport{}
-			err = proto.Unmarshal(payload, bqExports)
-			So(err, ShouldBeNil)
-			So(bqExports, ShouldResembleProto, deriver.InvBQTable)
-
 			// Query artifacts to make sure it's saved.
 			sq := &artifacts.Query{
 				InvocationIDs:       invIDs,
@@ -335,17 +316,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
-
-			// Read InvocationTask to confirm it's added for origin1 task.
-			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.IncludedInvocations[0]).RowID()))
-			var payload []byte
-			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
-				"Payload": &payload,
-			})
-			bqExports := &pb.BigQueryExport{}
-			err = proto.Unmarshal(payload, bqExports)
-			So(err, ShouldBeNil)
-			So(bqExports, ShouldResembleProto, deriver.InvBQTable)
 		})
 	})
 }
