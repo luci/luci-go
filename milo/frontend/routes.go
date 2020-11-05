@@ -82,7 +82,16 @@ func Run(templatePath string) {
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
-	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
+
+	buildPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+		shouldShowNewBuildPage := getShowNewBuildPagePrefCookie(c)
+		if shouldShowNewBuildPage {
+			redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId", http.StatusFound)(c)
+		} else {
+			next(c)
+		}
+	}).ExtendFrom(optionalProjectMW)
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
