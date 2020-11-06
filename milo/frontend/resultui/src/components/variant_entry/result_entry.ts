@@ -17,7 +17,7 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { computedFn, fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
@@ -71,14 +71,42 @@ export class ResultEntryElement extends MobxLitElement {
     };
   }
 
-  private renderSummaryHtml() {
-    if (!this.testResult.summaryHtml) {
-      return html``;
-    }
+  artifactContentRes = computedFn((fetchUrl: string): IPromiseBasedObservable<string> => {
+    return fromPromise(fetch(fetchUrl).then((res) => res.text()));
+  });
 
+  artifactContent = computedFn((fetchUrl: string): string => {
+    const contentRes = this.artifactContentRes(fetchUrl);
+    return contentRes.state === 'fulfilled' ? contentRes.value : '';
+  });
+
+  @computed private get summaryHtml(): string {
+    if (!this.testResult.summaryHtml) {
+      return '';
+    }
+    const domParser = new DOMParser();
+    const parsed = domParser.parseFromString(this.testResult.summaryHtml, 'text/html');
+    // We only care about artifact-text for now
+    const eles = parsed.body.getElementsByTagName('artifact-text');
+    if (eles.length === 0) {
+      return this.testResult.summaryHtml;
+    }
+    for (let i = 0; i < eles.length; i++) {
+      const artifactID = eles[i].getAttribute('artifact-id');
+      const artifact = this.artifacts.find((a) => a.artifactId === artifactID);
+      const content = artifact ? this.artifactContent(artifact.fetchUrl!) : '';
+      const para = document.createElement('pre');
+      const textNode = document.createTextNode(content);
+      para.appendChild(textNode);
+      eles[i].replaceWith(para);
+    }
+    return parsed.body.innerHTML;
+  }
+
+  private renderSummaryHtml() {
     return html`
       <div id="summary-html">
-        ${sanitizeHTML(this.testResult.summaryHtml)}
+        ${sanitizeHTML(this.summaryHtml)}
       </div>
     `;
   }
