@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f30dde2_1e7631f8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-06T00:19:08Z",
+      "side": 1,
+      "message": "I think this is better.",
+      "parentUuid": "4582ec47_c2f6d13d",
+      "range": {
+        "startLine": 7,
+        "startChar": 7,
+        "endLine": 10,
+        "endChar": 28
+      },
+      "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "5f7481a8_ac0cbd0e",
@@ -96,6 +120,24 @@
       "side": 1,
       "message": "The cookie API is weird. But this line doesn\u0027t override other cookies.\nIt only set/override \"showNewBuildPagePref\".\nI was surprised when I leant this.\nhttps://developer.mozilla.org/en-US/docs/Web/API/Document/cookie",
       "parentUuid": "2f5e12e8_57956ad4",
+      "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14e31b9e_0c60a57f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-06T00:19:08Z",
+      "side": 1,
+      "message": "I see.",
+      "parentUuid": "00a04585_2e618069",
       "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
