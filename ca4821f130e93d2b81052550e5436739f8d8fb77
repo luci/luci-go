@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f404d1e8_34e74d6a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-06T02:54:02Z",
+      "side": 1,
+      "message": "Just curious, how will we use the log?",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69ed8ae7_f587be7d",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-06T02:54:02Z",
+      "side": 1,
+      "message": "Should we also log the traffic that go directly to new build page (rather than redirection)?",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
