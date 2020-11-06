@@ -16,6 +16,293 @@
       "message": "Hi, can you help to review it ?  thanks.\n\n(I\u0027ve tested and it works in Dev.)",
       "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a1761ec_4963252e",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "simpler: (^|_)([A-Za-z])",
+      "range": {
+        "startLine": 32,
+        "startChar": 28,
+        "endLine": 32,
+        "endChar": 51
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d291dfd_a1762297",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "this compiles the expression every time\nplease create a global variable\n\n-\n\nbut reading the code below, we probably don\u0027t need this func",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 53
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b349ce75_246e8c2c",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "simpler: strings.TrimPrefix(s, \"_\")",
+      "range": {
+        "startLine": 35,
+        "startChar": 26,
+        "endLine": 35,
+        "endChar": 57
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22a174dd_ce8c6343",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "simpler: len(req.GetRequests()) \u003d\u003d 0",
+      "range": {
+        "startLine": 42,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5be22dc4_7ef70763",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "simpler: pyBatchReq :\u003d \u0026pb.BatchRequest{}\n\n[]*pb.BatchRequest_Request{} creates an empty slice which will be immediately discarded on the first append()",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85073415_c0e2a10e",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "reflection is expensive. The more typical way to deal with oneofs in go is a type-switch, e.g.\n\n  sendToPython :\u003d false\n  switch r.Request.(type) {\n  case *BatchRequest_Request_ScheduleBuild, BatchRequest_Request_CancelBuild:\n    sendToPython \u003d true    \n  }\n\nsame below",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 20
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7291144f_3ad95e32",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "what if it something else?",
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12d8cd96_7948bdd6",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "nit: space after //",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 7
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad735371_bafeb7cb",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "why does it create a new buildsService?",
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8e26afe_4f094249",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "reflection should generally be avoided, and this doesn\u0027t look robust / not Go idimatic.\ni recommend type-switch like above",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c9dd700_55f045d1",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "this isn\u0027t a bad request though. we should return the error as is, and it will result in an internal error",
+      "range": {
+        "startLine": 89,
+        "startChar": 23,
+        "endLine": 89,
+        "endChar": 33
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7203e9f3_3509de12",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "nit: command and line break",
+      "range": {
+        "startLine": 92,
+        "startChar": 71,
+        "endLine": 92,
+        "endChar": 72
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32f533ed_aa606ba0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:31:43Z",
+      "side": 1,
+      "message": "with type witch, you don\u0027t have to do type cast\n  switch res :\u003d response.Response.(type) { \n  case *pb.BatchResponse_Response_GetBuild:\n    // here res.Build is of type *pb.Build",
+      "range": {
+        "startLine": 101,
+        "startChar": 62,
+        "endLine": 101,
+        "endChar": 83
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
