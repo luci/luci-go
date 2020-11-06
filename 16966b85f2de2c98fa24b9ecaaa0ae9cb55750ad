@@ -145,6 +145,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2e9e53f2_bf191998",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T23:42:17Z",
+      "side": 1,
+      "message": "372261 nodes and 20512806 edges",
+      "parentUuid": "4d96e379_ae3806ab",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e55692d_7a5e420c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 12
@@ -248,6 +272,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cdf3a05_02551744",
+        "filename": "rts/filegraph/git/read_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T23:42:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fc51da4_0b4e4497",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5da3aa5_784b9d77",
@@ -301,6 +343,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "67f74c6c_b27059dc",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T23:42:17Z",
+      "side": 1,
+      "message": "for ease of review, I will land this CL and try this idea on top of that.",
+      "parentUuid": "097ab4c7_08da7cd5",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "daa46c40_01bc91fe",
@@ -314,6 +374,30 @@
       "writtenOn": "2020-11-05T13:55:30Z",
       "side": 1,
       "message": "i don\u0027t follow.  Don\u0027t you have to sort children s.t. output is deterministic?",
+      "range": {
+        "startLine": 128,
+        "startChar": 4,
+        "endLine": 128,
+        "endChar": 36
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f27cd019_830c4503",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T23:42:17Z",
+      "side": 1,
+      "message": "yes, but if we provide the index of the \"from\" node, but the order doesn\u0027t have to be deterministic.",
+      "parentUuid": "daa46c40_01bc91fe",
       "range": {
         "startLine": 128,
         "startChar": 4,
@@ -373,6 +457,24 @@
       "side": 1,
       "message": "ok.",
       "parentUuid": "fc8702f0_197c0e3a",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bc6fb84_96033871",
+        "filename": "rts/filegraph/git/write_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T23:42:17Z",
+      "side": 1,
+      "message": "now that I have read-write test, the non-text-mode is also tested",
+      "parentUuid": "7d3fac3a_7ad55020",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
