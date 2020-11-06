@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "4582ec47_c2f6d13d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-06T00:12:55Z",
+      "side": 1,
+      "message": "How about changing the text to \"switch to the new build page\"?",
+      "parentUuid": "473a9a82_8fe090c1",
+      "range": {
+        "startLine": 7,
+        "startChar": 7,
+        "endLine": 10,
+        "endChar": 28
+      },
+      "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "5f7481a8_ac0cbd0e",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-11-05T23:29:48Z",
       "side": 1,
       "message": "Would this replace existing cookie (maybe we don\u0027t have now but we may have in the future)? Should we add this to existing cookies instead?",
+      "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00a04585_2e618069",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-06T00:12:55Z",
+      "side": 1,
+      "message": "The cookie API is weird. But this line doesn\u0027t override other cookies.\nIt only set/override \"showNewBuildPagePref\".\nI was surprised when I leant this.\nhttps://developer.mozilla.org/en-US/docs/Web/API/Document/cookie",
+      "parentUuid": "2f5e12e8_57956ad4",
       "revId": "30c87e768fd2c3a03e48625dbbe2a3f5ca41aa37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
