@@ -203,6 +203,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "187e8ba7_0966a396",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T19:47:20Z",
+      "side": 1,
+      "message": "TBH, original reason is that Gerrit gives transitive GitDeps as part of 1 API call, but getting transitive deps via CQ-Depend requires fetching each intermediate CL description. So, I cached/stored everything I got to avoid extra calls to GoB in the future. Here, I\u0027m just copy-pasting CQDaemon approach.\n\n\nNow, in terms how the deps are used **today**, the non-immediate GerritGitDeps aren\u0027t actually useful, and probably harmful as they increase the number of edges in the graph. So, this I\u0027ll keep in mind when constructing graph of CLs in Project manager and each of the run. That said, I probably won\u0027t do it immediately in CV to avoid accidental breakage.\n\n\nCaveat: CQDaemon doesn\u0027t care about how patches are actually applied on bots, but I think that\u0027s big oversight:\n (1) CrOS effectively cherry picks every CL in submission order. \n (2) bot_update: takes the (only) CL, loads its patch_ref and rebases it on top of HEAD \n   (2a) it has a mode w/o rebase, useful to preserve line numbers in Tricium\n (3) Fuchsia and others - I don\u0027t know\n\n(1) and (2) are actually very different. For (1), only immediate GitDeps matter.\nFor (2) all GitDeps matter.\n\nNote that (2) applied on a chain \u003cbsae\u003e \u003c- A1 \u003c- B1 \u003c- C1 would always apply exactly A1,B1,C1. Even if B got a new patchset B2.\nOTOH, (1) would apply latest patchsets at the time of CQ run started, e.g. A1,B2,C1 may be applied.\n\n\nDid this help or confuse you completely? 😊",
+      "parentUuid": "15b909c5_a7ed1b3e",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b23270af_a3c520e5",
         "filename": "cv/internal/changelist/clpb/storage.proto",
         "patchSetId": 2
