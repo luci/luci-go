@@ -17,13 +17,11 @@
 package isolated
 
 import (
+	"compress/zlib"
 	"crypto"
 	"io"
 	"io/ioutil"
 	"strings"
-
-	// TODO(golang.org/issues/41420): switch back to "compress/zlib" once the issue is fixed.
-	"github.com/klauspost/compress/zlib"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to
