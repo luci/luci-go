@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/changelist/clpb"
 )
 
 // CLID is a unique ID of a CL used internally in CV.
@@ -64,6 +66,11 @@ type CL struct {
 	// See Update() function.
 	EVersion int `gae:",noindex"`
 
+	// Snapshot is latest known state of a CL.
+	// It may and often is behind the source of truth -- the code reveview site
+	// (e.g. Gerrit).
+	Snapshot *clpb.Snapshot
+
 	// Patchset is incremental number of the latest patchset (aka revision).
 	Patchset int `gae:",noindex"`
 	// MinEquivalentPatchset is the smallest and hence the earliest patchset
@@ -78,6 +85,7 @@ type CL struct {
 	//
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
+
 	// TODO(tandrii): implement deletion of the oldest entities via additional
 	// indexed field based on UpdateTime but with entropy in the lowest bits to
 	// avoid hotspots.
