@@ -35,6 +35,28 @@ const (
 )
 
 // Maps from directory paths to extra tags to attach to TestResults.
+// When converted to JSON format, it will look like below:
+//{
+//  "repos": {
+//    "https://chromium.googlesource.com/chromium/src" : {
+//      "dirs": {
+//        ".": {
+//          "tags": {
+//            "monorail_project": "chromium"
+//          }
+//        },
+//        "foo": {
+//          "tags": {
+//            "monorail_project": "chromium",
+//            "monorail_component": "Monorail>Component",
+//            "teamEmail": "team_email@chromium.org",
+//            "os": "WINDOWS"
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
 type LocationTags struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

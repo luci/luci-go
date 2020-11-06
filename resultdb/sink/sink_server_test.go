@@ -179,6 +179,39 @@ func TestReportTestResults(t *testing.T) {
 			check(ctx, cfg, tr, expected)
 		})
 
+		Convey("with ServerConfig.LocationTags", func() {
+			cfg.LocationTags = &sinkpb.LocationTags{
+				Repos: map[string]*sinkpb.LocationTags_Repo{
+					"https://chromium.googlesource.com/chromium/src": {
+						Dirs: map[string]*sinkpb.LocationTags_Dir{
+							"artifact_dir": {
+								Tags: map[string]string{
+									"monorail_project":   "chromium",
+									"monorail_component": "Monorail>Component",
+									"teamEmail":          "team_email@chromium.org",
+									"os":                 "WINDOWS",
+								},
+							},
+						},
+					},
+				},
+			}
+			tr.TestMetadata = &pb.TestMetadata{
+				Name: "name",
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "//artifact_dir/a_test.cc",
+				},
+			}
+			expected.Tags = pbutil.StringPairs(
+				"k1", "v1",
+				"monorail_component", "Monorail>Component",
+				"monorail_project", "chromium",
+				"os", "WINDOWS",
+				"teamEmail", "team_email@chromium.org")
+			check(ctx, cfg, tr, expected)
+		})
+
 		Convey("returns an error if artifacts are invalid", func() {
 			sink, err := newSinkServer(ctx, cfg)
 			So(err, ShouldBeNil)
