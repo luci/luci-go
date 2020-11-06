@@ -74,6 +74,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/admission"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -103,6 +105,7 @@ const (
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
+	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
 )
 
 var (
@@ -134,7 +137,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.4.1"
+	UserAgent = "cipd 2.4.2"
 )
 
 func init() {
@@ -161,6 +164,11 @@ type DescribeInstanceOpts struct {
 
 // Client provides high-level CIPD client interface. Thread safe.
 type Client interface {
+	// Close terminates plugins started by the client.
+	//
+	// Should be used to cleanly shutdown the client when using plugins.
+	Close(ctx context.Context)
+
 	// BeginBatch makes the client enter into a "batch mode".
 	//
 	// In this mode various cleanup and cache updates, usually performed right
@@ -262,6 +270,9 @@ type Client interface {
 	//
 	// Deploys to the given subdir under the site root (see ClientOptions.Root).
 	// It doesn't check whether the instance is already deployed.
+	//
+	// Ensures this package is allowed to be installed by querying a deployment
+	// admission plugin if it was configured.
 	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error
 
 	// ListPackages returns a list packages and prefixes under the given prefix.
@@ -362,6 +373,16 @@ type ClientOptions struct {
 	// LoginInstructions is appended to "permission denied" error messages.
 	LoginInstructions string
 
+	// PluginsContext is used for asynchronous logging from plugins.
+	//
+	// If not set, all logs from plugins will be ignored.
+	PluginsContext context.Context
+
+	// AdmissionPlugin is the deployment admission plugin command line (if any).
+	//
+	// Will be started lazily when needed.
+	AdmissionPlugin []string
+
 	// Mocks used by tests.
 	casMock     api.StorageClient
 	repoMock    api.RepositoryClient
@@ -386,6 +407,13 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
+	if len(opts.AdmissionPlugin) == 0 {
+		if v := getEnv(EnvAdmissionPlugin); v != "" {
+			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
+				return fmt.Errorf("bad %s: not a valid JSON - %q", EnvAdmissionPlugin, v)
+			}
+		}
+	}
 	return nil
 }
 
@@ -399,6 +427,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
+	}
+	if opts.PluginsContext == nil {
+		opts.PluginsContext = context.Background()
 	}
 
 	// Validate and normalize service URL.
@@ -448,13 +479,23 @@ func NewClient(opts ClientOptions) (Client, error) {
 		}
 	}
 
-	return &clientImpl{
+	client := &clientImpl{
 		ClientOptions: opts,
 		cas:           cas,
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
-	}, nil
+	}
+
+	if len(opts.AdmissionPlugin) != 0 {
+		client.pluginsAdmission = admission.NewPlugin(
+			opts.PluginsContext,
+			&client.pluginsHost,
+			opts.AdmissionPlugin,
+		)
+	}
+
+	return client, nil
 }
 
 // MaybeUpdateClient will update the client binary at clientExe (given as
@@ -483,6 +524,8 @@ func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, c
 	if err != nil {
 		return common.Pin{}, err
 	}
+	defer client.Close(ctx)
+
 	impl := client.(*clientImpl)
 
 	fs := fs.NewFileSystem(opts.Root, filepath.Join(opts.CacheDir, "trash"))
@@ -519,6 +562,10 @@ type clientImpl struct {
 	// instanceCache is a file-system based cache of instances.
 	instanceCache     *internal.InstanceCache
 	instanceCacheInit sync.Once
+
+	// Plugins system.
+	pluginsHost      plugin.Host
+	pluginsAdmission *admission.Plugin // nil if disabled
 }
 
 type batchAwareOp int
@@ -526,12 +573,14 @@ type batchAwareOp int
 const (
 	batchAwareOpSaveTagCache batchAwareOp = iota
 	batchAwareOpCleanupTrash
+	batchAwareOpClearAdmissionCache
 )
 
 // See https://golang.org/ref/spec#Method_expressions
 var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
-	batchAwareOpSaveTagCache: (*clientImpl).saveTagCache,
-	batchAwareOpCleanupTrash: (*clientImpl).cleanupTrash,
+	batchAwareOpSaveTagCache:        (*clientImpl).saveTagCache,
+	batchAwareOpCleanupTrash:        (*clientImpl).cleanupTrash,
+	batchAwareOpClearAdmissionCache: (*clientImpl).clearAdmissionCache,
 }
 
 func (client *clientImpl) saveTagCache(ctx context.Context) {
@@ -544,6 +593,12 @@ func (client *clientImpl) saveTagCache(ctx context.Context) {
 
 func (client *clientImpl) cleanupTrash(ctx context.Context) {
 	client.deployer.CleanupTrash(ctx)
+}
+
+func (client *clientImpl) clearAdmissionCache(ctx context.Context) {
+	if client.pluginsAdmission != nil {
+		client.pluginsAdmission.ClearCache()
+	}
 }
 
 // getTagCache lazy-initializes tagCache and returns it.
@@ -582,6 +637,13 @@ func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.Instan
 		logging.Infof(ctx, "cipd: using instance cache at %q", path)
 	})
 	return client.instanceCache
+}
+
+func (client *clientImpl) Close(ctx context.Context) {
+	if client.pluginsAdmission != nil {
+		client.pluginsAdmission.Close(ctx)
+	}
+	client.pluginsHost.Close(ctx)
 }
 
 func (client *clientImpl) BeginBatch(ctx context.Context) {
@@ -1518,6 +1580,15 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return err
 	}
+
+	if client.pluginsAdmission != nil {
+		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
+		err := client.pluginsAdmission.CheckAdmission(client.ServiceURL, pin).Wait(ctx)
+		if err != nil {
+			return errors.Annotate(err, "not admitted for deployment").Err()
+		}
+	}
+
 	return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
 		_, err := client.deployer.DeployInstance(ctx, subdir, instance, maxThreads)
 		return err
@@ -1563,6 +1634,25 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 			logging.Infof(ctx, "Dry run, not actually doing anything.")
 		}
 		return
+	}
+
+	// Enqueue deployment admission checks if have the plugin enabled. They will
+	// be consulted later in FetchAndDeployInstance. This is just an optimization
+	// to do checks in parallel with fetching and installing.
+	if client.pluginsAdmission != nil {
+		aMap.LoopOrdered(func(subdir string, actions *Actions) {
+			for _, p := range actions.ToInstall {
+				client.pluginsAdmission.CheckAdmission(client.ServiceURL, p)
+			}
+			for _, pair := range actions.ToUpdate {
+				client.pluginsAdmission.CheckAdmission(client.ServiceURL, pair.To)
+			}
+			for _, broken := range actions.ToRepair {
+				if broken.RepairPlan.NeedsReinstall {
+					client.pluginsAdmission.CheckAdmission(client.ServiceURL, broken.Pin)
+				}
+			}
+		})
 	}
 
 	hasErrors := false
