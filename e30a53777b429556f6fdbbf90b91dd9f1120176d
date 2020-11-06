@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4cb0568_4eb8381c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "lgtm % with minor comments.",
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b98f10c3_2a47aa21",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 77,
+        "startChar": 23,
+        "endLine": 77,
+        "endChar": 24
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bcc5213_5f717d37",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "this smells, but I don\u0027t know any better way to do it in canonical Golang (dispatcher.Channel is my solution 😄)",
+      "range": {
+        "startLine": 132,
+        "startChar": 39,
+        "endLine": 132,
+        "endChar": 61
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f382965_9ccf98ce",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "free?",
+      "range": {
+        "startLine": 204,
+        "startChar": 45,
+        "endLine": 204,
+        "endChar": 50
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "73f0d2c2_0ee577da",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 219,
+        "endChar": 50
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43d71c0f_888d6c01",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "nit: didn\u0027t you mean Binary (as opposed to TEXT and JSON)",
+      "range": {
+        "startLine": 227,
+        "startChar": 4,
+        "endLine": 227,
+        "endChar": 9
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28ee721f_793beaad",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "CIPD processes",
+      "range": {
+        "startLine": 234,
+        "startChar": 54,
+        "endLine": 234,
+        "endChar": 63
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ace7ec7_05f9b620",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "nit: i think this is more like \"salt\", not a random generator seed.",
+      "range": {
+        "startLine": 236,
+        "startChar": 26,
+        "endLine": 236,
+        "endChar": 30
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48e0b530_d67876a8",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "Is draining p.pending strictly necessary? I currently don\u0027t see why it\u0027d be so.",
+      "range": {
+        "startLine": 253,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 3
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36abd8d5_b0fd4779",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "you mean errAborted?",
+      "range": {
+        "startLine": 341,
+        "startChar": 11,
+        "endLine": 341,
+        "endChar": 51
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ec99fc8_8e77ac17",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T20:39:10Z",
+      "side": 1,
+      "message": "this is what\u0027s supposed to happen normally when everything has been resolved, right?",
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
