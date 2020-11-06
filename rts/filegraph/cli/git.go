@@ -144,7 +144,11 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		if _, err := f.Seek(0, 0); err != nil {
 			return err
 		}
-		if err := g.Write(f); err != nil {
+		bufW := bufio.NewWriter(f)
+		if err := g.Write(bufW); err != nil {
+			return err
+		}
+		if err := bufW.Flush(); err != nil {
 			return err
 		}
 
