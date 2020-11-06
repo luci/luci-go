@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae17261b_dae204ee",
+        "filename": "cipd/client/cipd/plugin/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T01:58:35Z",
+      "side": 1,
+      "message": "nit: s/ticket/tickets/g\nI keep forgetting that metadata gives []string, so this code looked like you are taking first byte of a ticket.",
+      "range": {
+        "startLine": 252,
+        "startChar": 33,
+        "endLine": 252,
+        "endChar": 36
+      },
+      "revId": "ca8e3e3febbd8295ba6cbfb48e614474c8dc7899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7be8771_41704c67",
+        "filename": "cipd/client/cipd/plugin/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T01:58:35Z",
+      "side": 1,
+      "message": "clever",
+      "revId": "ca8e3e3febbd8295ba6cbfb48e614474c8dc7899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e3fd971_ed226432",
+        "filename": "cipd/client/cipd/plugin/plugin_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T01:58:35Z",
+      "side": 1,
+      "message": "I was just about to suggest to do this, but of course you did it already. 👍",
+      "range": {
+        "startLine": 57,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 2
+      },
+      "revId": "ca8e3e3febbd8295ba6cbfb48e614474c8dc7899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
