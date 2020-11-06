@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8bd15e45_db753778",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T06:40:25Z",
+      "side": 1,
+      "message": "omit",
+      "range": {
+        "startLine": 185,
+        "startChar": 55,
+        "endLine": 185,
+        "endChar": 80
+      },
+      "revId": "b6f81414b54f8a8638819c0e86e57291100d5fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ffc8bba_b4949982",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T06:40:25Z",
+      "side": 1,
+      "message": "omit",
+      "range": {
+        "startLine": 187,
+        "startChar": 23,
+        "endLine": 187,
+        "endChar": 47
+      },
+      "revId": "b6f81414b54f8a8638819c0e86e57291100d5fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca00e5d6_bd0e87d6",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T06:40:25Z",
+      "side": 1,
+      "message": "a bit hard to read. consider\n\n  expected.Tags \u003d pbutil.StringPairs(\n    \"k1\", \"v1\", \n    \"monorail_component\", \"Monorail\u003eComponent\",\n    \"monorail_project\", \"chromium\", \n    \"os\", \"WINDOWS\",\n    \"teamEmail\", \"team_email@chromium.org\")",
+      "range": {
+        "startLine": 206,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 43
+      },
+      "revId": "b6f81414b54f8a8638819c0e86e57291100d5fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
