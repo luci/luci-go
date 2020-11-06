@@ -33,6 +33,24 @@
       "message": "lgtm but:\n\n1. Is it possible to teach bbagent not to do overlapping UpdateBuild calls? It\u0027s kind of useless.\n2. Maybe we need to add a sequence number or something to UpdateBuild and make the server reject out-of-order calls?",
       "revId": "c2ac520580f4836b1709be1a67310368d3727d9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0403cf11_2d627146",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-06T18:21:58Z",
+      "side": 1,
+      "message": "1. Technically, BBAgent is not doing overlapping UpdateBuild call because it sends build through a dispatcher channel with the max batch size \u0026 max leased item set to 1 [1]. However, what\u0027s unfortunate here is that because we have a shorter timeout in BBagent, Buildbucket server side may get overlapping requests. With this change, theoretically, there shouldn\u0027t be any overlapping requests from bbagent anymore, unless the AppEngine instance allows request continue to process after 60s cap.\n2. Yes a sequence number kind of thing should be the ultimate fix for this bug as the current change will only work under the assumption that AppEngine has a hard timeout on 60s. tandrii@ has already proposed a solution in https://crbug.com/1116249#c28\n\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/cmd/bbagent/build_client.go;l\u003d101-102;drc\u003d8bb1b9a5547ac55f099d52b9739971dd0a6461bc",
+      "parentUuid": "7d39ea79_828d73e2",
+      "revId": "c2ac520580f4836b1709be1a67310368d3727d9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
