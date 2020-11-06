@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -80,7 +79,7 @@ func getBuildsSubMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = commonPostlude(ctx, methodName, rsp, err)
-	if methodName == "GetBuild" || methodName == "SearchBuilds" {
+	if methodName == "GetBuild" || methodName == "SearchBuilds" || methodName == "Batch" {
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
@@ -93,11 +92,6 @@ type Builds struct {
 
 // Ensure Builds implements projects.ProjectsServer.
 var _ pb.BuildsServer = &Builds{}
-
-// Batch handles a batch request. Implements pb.BuildsServer.
-func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
 
 // NewBuilds returns a new pb.BuildsServer.
 func NewBuilds() pb.BuildsServer {
