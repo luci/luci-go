@@ -17,6 +17,8 @@ package sink
 import (
 	"context"
 	"fmt"
+	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -71,7 +73,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 }
 
 func (c *testResultChannel) closeAndDrain(ctx context.Context) {
-	// annonuce that it is in the process of closeAndDrain.
+	// announce that it is in the process of closeAndDrain.
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
@@ -92,13 +94,45 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
+// setTestTags sets the test tags in tr by looking for the directory of
+// tr.TestMetadata.Location.FileName in the location tags file.
+func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
+	if c.cfg.LocationTags == nil || tr.TestMetadata.GetLocation().GetFileName() == "" {
+		return
+	}
+	repo, ok := c.cfg.LocationTags.Repos[tr.TestMetadata.Location.Repo]
+	if !ok || len(repo.GetDirs()) == 0 {
+		return
+	}
+	// fileName must start with "//" and it has been validated.
+	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
+
+	// Start from the directory of the file, then try upper directories if not
+	// found.
+	for {
+		if d, ok := repo.Dirs[dir]; ok {
+			for k, v := range d.Tags {
+				tr.Tags = append(tr.Tags, pbutil.StringPair(k, v))
+			}
+			return
+		}
+		if dir == "." {
+			// Have reached the root.
+			return
+		}
+		dir = path.Dir(dir)
+	}
+}
+
 func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	// retried batch?
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
+			c.setTestTags(tr)
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
+
 			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
