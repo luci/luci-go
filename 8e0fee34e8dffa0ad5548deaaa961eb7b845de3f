@@ -704,6 +704,24 @@
       "parentUuid": "a20a1cb9_6d3a3983",
       "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3201eda5_f3781e8d",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-06T05:59:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6f9f593_a6edf26d",
+      "revId": "8e0fee34e8dffa0ad5548deaaa961eb7b845de3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
