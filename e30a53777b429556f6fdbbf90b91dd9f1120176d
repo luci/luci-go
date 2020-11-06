@@ -444,6 +444,24 @@
       "parentUuid": "4071fe59_436e3f57",
       "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e2d030e_25a0645f",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T22:24:23Z",
+      "side": 1,
+      "message": "Added a comment.",
+      "parentUuid": "983eeb8b_b85b46ac",
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
