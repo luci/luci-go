@@ -1,0 +1,64 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd.plugin;
+
+option go_package = "go.chromium.org/luci/cipd/client/cipd/plugin/protocol";
+
+import "google/rpc/status.proto";
+import "google/protobuf/empty.proto";
+
+import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
+
+
+// Admissions service is available to deployment admission plugins.
+//
+// They control what CIPD packages are allowed to be deployed. The admission
+// plugin must call ListAdmissions as soon as it connects, and for each incoming
+// Admission message eventually make ResolveAdmission RPC. It should abort as
+// soon as ListAdmissions stream ends for whatever reason (in particular is
+// should not try to call ListAdmissions again).
+service Admissions {
+  // ListAdmissions returns a stream of admission requests to process.
+  rpc ListAdmissions(ListAdmissionsRequest) returns (stream Admission);
+  // ResolveAdmission submits a decision on an admission request.
+  rpc ResolveAdmission(ResolveAdmissionRequest) returns (google.protobuf.Empty);
+}
+
+
+// ListAdmissionsRequest carries arguments for ListAdmissions RPC.
+message ListAdmissionsRequest {
+  int32 protocol_version = 1; // currently should be 1
+  string plugin_version = 2;  // arbitrary string for logs
+}
+
+
+// Admission is sent by CIPD client when it attempts to install a package.
+//
+// The plugin may allow or forbid this via ResolveAdmission RPC.
+message Admission {
+  string admission_id = 1;      // an opaque ID identifies this request
+  string service_url = 2;       // https:// address of the CIPD backend
+  string package = 3;           // a package being installed
+  cipd.ObjectRef instance = 4;  // a concrete package instance being installed
+}
+
+
+// ResolveAdmissionRequest carries a judgment on some Admission.
+message ResolveAdmissionRequest {
+  string admission_id = 1;      // same as in the corresponding Admission
+  google.rpc.Status status = 2; // not OK if the deployment is denied
+}
