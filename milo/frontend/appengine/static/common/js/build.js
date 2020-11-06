@@ -55,6 +55,11 @@ $(document).ready(function() {
     setCookie('stepDisplayPref', selectedOption);
   }
 
+  $('#new-build-page-link').on('click', () => {
+    setCookie('showNewBuildPagePref', true);
+    return true;
+  });
+
   displayPrefChanged($('input[name="hider"]:checked').val());
   $('input[name="hider"]').change(function() {displayPrefChanged($(this).val())});
 

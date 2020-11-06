@@ -204,7 +204,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <span>${this.buildNumOrId}</span>
         </div>
         <div class="delimiter"></div>
-        <a href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)}>To legacy build page</a>
+        <a
+          @click=${() => document.cookie = 'showNewBuildPagePref=false; expires=${new Date(2100, 0).toUTCString()}; path=/'}
+          href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)}
+        >Switch to the legacy build page</a>
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
