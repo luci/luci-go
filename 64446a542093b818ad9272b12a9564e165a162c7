@@ -46,6 +46,30 @@
       },
       "revId": "64446a542093b818ad9272b12a9564e165a162c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e649469_7e4bceb1",
+        "filename": "cipd/client/cipd/plugin/protocol/admission.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T17:09:31Z",
+      "side": 1,
+      "message": "ACK.",
+      "parentUuid": "8403ae1e_9e7e4c62",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 54
+      },
+      "revId": "64446a542093b818ad9272b12a9564e165a162c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
