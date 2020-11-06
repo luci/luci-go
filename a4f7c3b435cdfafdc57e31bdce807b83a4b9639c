@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f12016c1_485a9b2b",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-06T17:38:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "096f34ae_97f322bb",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "109b424b_dfd4e183",
@@ -214,6 +232,24 @@
       "side": 1,
       "message": "Scheme isn\u0027t part of a host.\nNote that in cq config I chose (badly, in retrospect) to use Gerrit URL.",
       "parentUuid": "b23270af_a3c520e5",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2871f13_68f6d0c5",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-06T17:38:20Z",
+      "side": 1,
+      "message": "That\u0027s true, so calling it host should be clear enough.\n\nI\u0027ve been confused in the past about this though, so since then I usually add extra info.",
+      "parentUuid": "11439417_4bc7f5ce",
       "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
