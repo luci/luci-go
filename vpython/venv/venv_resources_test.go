@@ -366,6 +366,7 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 	if err != nil {
 		return errors.Annotate(err, "failed to create CIPD client").Err()
 	}
+	defer client.Close(ctx)
 
 	pin, err := client.ResolveVersion(ctx, pkg, version)
 	if err != nil {

@@ -111,6 +111,7 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 	if err != nil {
 		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
+	defer client.Close(c)
 
 	// Start a CIPD client batch.
 	client.BeginBatch(c)
@@ -155,6 +156,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 	if err != nil {
 		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
+	defer client.Close(c)
 
 	// Start a CIPD client batch.
 	client.BeginBatch(c)
@@ -185,6 +187,7 @@ func (pl *PackageLoader) Verify(c context.Context, sp *vpython.Spec, tags []*vpy
 	if err != nil {
 		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
+	defer client.Close(c)
 
 	client.BeginBatch(c)
 	defer client.EndBatch(c)
