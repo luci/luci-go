@@ -1,0 +1,48 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd.plugin;
+
+option go_package = "go.chromium.org/luci/cipd/client/cipd/plugin/protocol";
+
+import "google/protobuf/empty.proto";
+
+
+// Host is implemented by the main CIPD client process.
+//
+// It exposes RPC shared by all plugin kinds. RPCs specific to a particular
+// plugin kinds are exposed via separate services.
+service Host {
+  // Log adds a logging message to the CIPD client logging output.
+  rpc Log(LogRequest) returns (google.protobuf.Empty);
+}
+
+
+// Handshake is sent in a compact (no new lines) JSONPB encoding over stdin from
+// the plugin host (e.g. CIPD client) to the plugin process.
+//
+// It instructs the plugin how to connect and authenticate to the host.
+message Handshake {
+  int32 port = 1;     // localhost TCP port to connect to
+  string ticket = 2;  // a secret string to send as x-plugin-ticket metadata
+}
+
+
+// LogRequest results in a logging line in the CIPD client log.
+message LogRequest {
+  string severity = 1;  // "debug", info", "warning", "error"
+  string message = 2;
+}
