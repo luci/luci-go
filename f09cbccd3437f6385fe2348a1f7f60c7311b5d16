@@ -16,6 +16,24 @@
       "message": "remove added files?",
       "revId": "f09cbccd3437f6385fe2348a1f7f60c7311b5d16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eaffadca_f0d1b790",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-06T05:15:10Z",
+      "side": 1,
+      "message": "Yeah, that was accidental",
+      "parentUuid": "6b389e82_f30d43af",
+      "revId": "f09cbccd3437f6385fe2348a1f7f60c7311b5d16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
