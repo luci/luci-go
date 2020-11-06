@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09a92d1e_dd4ab900",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-06T20:48:10Z",
+      "side": 1,
+      "message": "Apologies for the delay, I wrote a benchmark and found a bug (goroutine leak). Then broke the benchmark into it\u0027s own CL (https://crrev.com/c/2523652). I will land this now.",
+      "revId": "fec27b094a18ba78a42a2718b0c032c35c046d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
