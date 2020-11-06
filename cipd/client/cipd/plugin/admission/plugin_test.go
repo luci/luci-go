@@ -150,7 +150,10 @@ func TestPlugin(t *testing.T) {
 
 			// Makes a new one now.
 			anotherGood := plug.CheckAdmission("https://good", testPin("a/b"))
-			So(anotherGood, ShouldNotEqual, good)
+			// Note: ShouldNotEqual triggers false race condition warning because
+			// GoConvey tries to read more than it should. We just want to compare
+			// pointers.
+			So(anotherGood != good, ShouldBeTrue)
 			So(anotherGood.Wait(ctx), ShouldBeNil)
 
 			// A bit of a stress testing.
