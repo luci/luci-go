@@ -167,6 +167,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "15b909c5_a7ed1b3e",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-06T17:23:59Z",
+      "side": 1,
+      "message": "Let me clarify. I think my question is that it looks like we store transitive deps for git child-parent relationship but not for soft deps (i.e. CQ-DEPEND) and why?\n\nIs it because for hard deps, we need to make sure all deps including the transitive ones is landed before CV tries to land this change, however, for soft deps, CV just need to check the direct deps and that\u0027s enough?",
+      "parentUuid": "b1aa304a_0c77982e",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b23270af_a3c520e5",
         "filename": "cv/internal/changelist/clpb/storage.proto",
         "patchSetId": 2
