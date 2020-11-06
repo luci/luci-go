@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "096f34ae_97f322bb",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T16:54:33Z",
+      "side": 1,
+      "message": "any fields.\n\nRemoved the confusing doc.",
+      "parentUuid": "4b5732a4_7aac4d73",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "109b424b_dfd4e183",
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-05T18:12:22Z",
       "side": 1,
       "message": "Nit: space",
+      "range": {
+        "startLine": 80,
+        "startChar": 19,
+        "endLine": 80,
+        "endChar": 21
+      },
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "203ef61d_e04a70ae",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T16:54:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "109b424b_dfd4e183",
       "range": {
         "startLine": 80,
         "startChar": 19,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "15b7eb50_34b72a33",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T16:54:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff3d05c3_daae33bf",
+      "range": {
+        "startLine": 81,
+        "startChar": 38,
+        "endLine": 81,
+        "endChar": 45
+      },
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a1179958_f0383c5a",
@@ -83,6 +149,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b1aa304a_0c77982e",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T16:54:33Z",
+      "side": 1,
+      "message": "No. but i\u0027m not sure what you are asking:\n   not \"non-immediate\" in the Git-parent sense -\u003e NO, \n       because I don\u0027t use Soft dep for to store Git parent-\u003echild relationship.\n   \"non-immediate\" in a sense of \"transitive\" deps -\u003e also NO\n       If this CL has \"CQ-Depend: 123\" and CL 123 has \"CQ-Depend: 456\", the 456 won\u0027t be in the list of SoftDeps of this CL.",
+      "parentUuid": "a1179958_f0383c5a",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b23270af_a3c520e5",
         "filename": "cv/internal/changelist/clpb/storage.proto",
         "patchSetId": 2
@@ -94,6 +178,24 @@
       "writtenOn": "2020-11-05T18:12:22Z",
       "side": 1,
       "message": "Nit: without scheme, e.g. \"something-review.googlesource.com\".",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11439417_4bc7f5ce",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T16:54:33Z",
+      "side": 1,
+      "message": "Scheme isn\u0027t part of a host.\nNote that in cq config I chose (badly, in retrospect) to use Gerrit URL.",
+      "parentUuid": "b23270af_a3c520e5",
       "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
