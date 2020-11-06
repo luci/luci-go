@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -46,6 +48,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/sink"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
@@ -105,6 +108,10 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, all negative durations will be coerced to 0.
 				If false, test results with negative durations will be rejected.
 			`))
+			r.Flags.StringVar(&r.locTagsFile, "location-tags-file", "", text.Doc(`
+				Path to the file that contains test location tags in JSON format. See
+				https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/proto/v1/location_tag.proto.
+			`))
 			return r
 		},
 	}
@@ -124,6 +131,7 @@ type streamRun struct {
 	tags                   strpair.Map
 	pbTags                 []*pb.StringPair
 	coerceNegativeDuration bool
+	locTagsFile            string
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -224,6 +232,10 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	locationTags, err := r.getLocationTags()
+	if err != nil {
+		return errors.Annotate(err, "get location tags").Err()
+	}
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 
 	cfg := sink.ServerConfig{
@@ -238,6 +250,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		TestLocationBase:           r.testTestLocationBase,
 		BaseTags:                   pbutil.FromStrpairMap(r.tags),
 		CoerceNegativeDuration:     r.coerceNegativeDuration,
+		LocationTags:               locationTags,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
@@ -255,6 +268,21 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		}
 		return cmd.Wait()
 	})
+}
+
+func (r *streamRun) getLocationTags() (*sinkpb.LocationTags, error) {
+	if r.locTagsFile == "" {
+		return nil, nil
+	}
+	f, err := ioutil.ReadFile(r.locTagsFile)
+	if err != nil {
+		return nil, err
+	}
+	locationTags := &sinkpb.LocationTags{}
+	if err = protojson.Unmarshal(f, locationTags); err != nil {
+		return nil, err
+	}
+	return locationTags, nil
 }
 
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
