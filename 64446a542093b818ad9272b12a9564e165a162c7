@@ -22,6 +22,30 @@
       },
       "revId": "64446a542093b818ad9272b12a9564e165a162c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8403ae1e_9e7e4c62",
+        "filename": "cipd/client/cipd/plugin/protocol/admission.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T02:19:14Z",
+      "side": 1,
+      "message": "I want a clean way to \"break\" old plugins if we introduce some incompatible changes. Adapting to plugins version is a possibility, but I\u0027m not actually planning on doing it.",
+      "parentUuid": "befd188a_fe3b25ee",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 54
+      },
+      "revId": "64446a542093b818ad9272b12a9564e165a162c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
