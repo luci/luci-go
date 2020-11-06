@@ -426,6 +426,24 @@
       "parentUuid": "4ec99fc8_8e77ac17",
       "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "983eeb8b_b85b46ac",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-06T22:08:31Z",
+      "side": 1,
+      "message": "yeah, this makes sense. Do you think you can explain termination path somewhere by copy-psating this comment into code?\nI can\u0027t think of the best place to put it.",
+      "parentUuid": "4071fe59_436e3f57",
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
