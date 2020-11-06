@@ -86,8 +86,10 @@ func Run(templatePath string) {
 	buildPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 		shouldShowNewBuildPage := getShowNewBuildPagePrefCookie(c)
 		if shouldShowNewBuildPage {
+			logging.Infof(c.Context, "redirecting to the new build page")
 			redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId", http.StatusFound)(c)
 		} else {
+			logging.Infof(c.Context, "continuing to the old build page")
 			next(c)
 		}
 	}).ExtendFrom(optionalProjectMW)
