@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -93,11 +92,6 @@ type Builds struct {
 
 // Ensure Builds implements projects.ProjectsServer.
 var _ pb.BuildsServer = &Builds{}
-
-// Batch handles a batch request. Implements pb.BuildsServer.
-func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
 
 // NewBuilds returns a new pb.BuildsServer.
 func NewBuilds() pb.BuildsServer {
