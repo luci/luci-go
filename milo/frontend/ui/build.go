@@ -619,12 +619,14 @@ var (
 		template.New("optIn").
 			Parse(`
 				<div id="opt-in-banner">
-					Try the new build page
-					{{if .Number}}
-					<a href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/{{.Number}}">here</a>!
-					{{else}}
-					<a href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/b{{.Id}}">here</a>!
-					{{end}}
+					<a
+						id="new-build-page-link"
+						{{if .Number}}
+							href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/{{.Number}}"
+						{{else}}
+							href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/b{{.Id}}"
+						{{end}}
+					>Switch to the new build page!</a>
 				</div>`))
 )
 
