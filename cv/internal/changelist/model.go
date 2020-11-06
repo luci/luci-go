@@ -60,6 +60,10 @@ type CL struct {
 	// ExternalID must not be modified once entity is created.
 	ExternalID ExternalID `gae:",noindex"` // string. Indexed in CLMap entities.
 
+	// EVersion is entity version. Every update should increment it by 1.
+	// See Update() function.
+	EVersion int `gae:",noindex"`
+
 	// Patchset is incremental number of the latest patchset (aka revision).
 	Patchset int `gae:",noindex"`
 	// MinEquivalentPatchset is the smallest and hence the earliest patchset
@@ -147,10 +151,11 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 			ID:         0, // autogenerate by Datastore
 			ExternalID: eid,
 			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+			EVersion:   1,
 		}
 		populate(cl)
-		if cl.ID != 0 || cl.ExternalID != eid {
-			panic(errors.New("populate changed ID or ExternalID, but must not do this."))
+		if cl.ID != 0 || cl.ExternalID != eid || cl.EVersion != 1 {
+			panic(errors.New("populate changed ID or ExternalID or EVersion, but must not do this."))
 		}
 
 		if err := datastore.Put(ctx, cl); err != nil {
@@ -190,4 +195,24 @@ func Delete(ctx context.Context, id CLID) error {
 		return errors.Annotate(err, "failed to getOrInsert a CL").Tag(transient.Tag).Err()
 	}
 	return nil
+}
+
+// Update updates a CL entity in a transaction context.
+func Update(ctx context.Context, id CLID, mutate func(*CL) (update bool)) error {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic("must be called in transaction context")
+	}
+	cl := &CL{ID: id}
+	switch err := datastore.Get(ctx, cl); {
+	case err == datastore.ErrNoSuchEntity:
+		return err
+	case err != nil:
+		return errors.Annotate(err, "failed to read CL entity").Tag(transient.Tag).Err()
+	}
+	ev := cl.EVersion
+	if !mutate(cl) {
+		return nil
+	}
+	cl.EVersion = ev + 1
+	return errors.Annotate(datastore.Put(ctx, cl), "failed to save CL entity").Tag(transient.Tag).Err()
 }
