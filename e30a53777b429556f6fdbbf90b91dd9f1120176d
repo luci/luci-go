@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d3707049_f1d72ccd",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b98f10c3_2a47aa21",
+      "range": {
+        "startLine": 77,
+        "startChar": 23,
+        "endLine": 77,
+        "endChar": 24
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6bcc5213_5f717d37",
         "filename": "cipd/client/cipd/plugin/admission/host.go",
         "patchSetId": 4
@@ -77,6 +101,30 @@
       "writtenOn": "2020-11-06T20:39:10Z",
       "side": 1,
       "message": "free?",
+      "range": {
+        "startLine": 204,
+        "startChar": 45,
+        "endLine": 204,
+        "endChar": 50
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84af10f9_3d0dd4cf",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f382965_9ccf98ce",
       "range": {
         "startLine": 204,
         "startChar": 45,
@@ -133,6 +181,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "63f5b5f4_1c4f4fa8",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "I usually use \"proto serialization\" synonymous to \"binary proto marshalling\". Added clarification.",
+      "parentUuid": "43d71c0f_888d6c01",
+      "range": {
+        "startLine": 227,
+        "startChar": 4,
+        "endLine": 227,
+        "endChar": 9
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "28ee721f_793beaad",
@@ -146,6 +218,30 @@
       "writtenOn": "2020-11-06T20:39:10Z",
       "side": 1,
       "message": "CIPD processes",
+      "range": {
+        "startLine": 234,
+        "startChar": 54,
+        "endLine": 234,
+        "endChar": 63
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b40be20c_e6fe17bf",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28ee721f_793beaad",
       "range": {
         "startLine": 234,
         "startChar": 54,
@@ -179,6 +275,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06055bec_698d1ca8",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ace7ec7_05f9b620",
+      "range": {
+        "startLine": 236,
+        "startChar": 26,
+        "endLine": 236,
+        "endChar": 30
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "48e0b530_d67876a8",
@@ -192,6 +312,30 @@
       "writtenOn": "2020-11-06T20:39:10Z",
       "side": 1,
       "message": "Is draining p.pending strictly necessary? I currently don\u0027t see why it\u0027d be so.",
+      "range": {
+        "startLine": 253,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 3
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cea3cc88_fce0b34b",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "It is not strictly necessary, but it will free some memory if there is a pending queue of requests and no connected plugin (e.g. it crashed).",
+      "parentUuid": "48e0b530_d67876a8",
       "range": {
         "startLine": 253,
         "startChar": 2,
@@ -225,6 +369,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "42eea69b_adc4765d",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "Yes, clarified.",
+      "parentUuid": "36abd8d5_b0fd4779",
+      "range": {
+        "startLine": 341,
+        "startChar": 11,
+        "endLine": 341,
+        "endChar": 51
+      },
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4ec99fc8_8e77ac17",
@@ -238,6 +406,24 @@
       "writtenOn": "2020-11-06T20:39:10Z",
       "side": 1,
       "message": "this is what\u0027s supposed to happen normally when everything has been resolved, right?",
+      "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4071fe59_436e3f57",
+        "filename": "cipd/client/cipd/plugin/admission/host.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T21:56:23Z",
+      "side": 1,
+      "message": "There are two concurrent termination paths, it is one of them.\n\nOnce the host decides to stop, it:\n1. Replies with codes.Aborted to ListAdmissions.\n2. Closes plugin\u0027s stdin.\n\n(2) can potentially win the race, which will end up in the plugin canceling ListAdmissions on its own before receiving codes.Aborted (it manifests as \u0027ctx\u0027 in dequeue here being canceled).\n\nThe termination path that uses stdin is a more general one and works for any kind of plugin. The path (1) exists because it just handles all potential edge cases (i.e. there\u0027s probably a way to get rid of it, but it will make code more complicated).",
+      "parentUuid": "4ec99fc8_8e77ac17",
       "revId": "e30a53777b429556f6fdbbf90b91dd9f1120176d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
