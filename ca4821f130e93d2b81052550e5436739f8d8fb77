@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa5d229f_6d150f8a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-06T05:41:23Z",
+      "side": 1,
+      "message": "firs tof all, all milo appengine logs are always being exported [1] to bigquery table \t\nluci-milo:build_logs.appengine_googleapis_com_request_log_20201106\n(don\u0027t ask me why the dataset is called \"build_logs\". It makes no sense)\nBigQuery is much faster.\n\n[1]: https://screenshot.googleplex.com/4DYUoxVNK6LGHUa\n\n--\n\nsecondly, i am not sure you need this CL. Both cases can be detected with SQL:\n- if it is a new page, then the entry would have the old URL and status would be 302\n- if it is the page, the URL would be new",
+      "parentUuid": "1a627d73_e68191a8",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "69ed8ae7_f587be7d",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 1
