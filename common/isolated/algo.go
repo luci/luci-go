@@ -17,12 +17,11 @@
 package isolated
 
 import (
+	"compress/zlib"
 	"crypto"
 	"io"
 	"io/ioutil"
 	"strings"
-
-	"github.com/klauspost/compress/zlib"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to

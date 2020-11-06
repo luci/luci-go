@@ -68,7 +68,7 @@ func (c *commonFlags) createIsolatedClient(ctx context.Context, opts CommandOpti
 		authCl = opts.AuthClient
 	} else {
 		// Don't enforce authentication by using OptionalLogin mode. This is
-		// needed for IP whitelisted bots: they have NO credentials to send.
+		// needed for IP-allowed bots: they have NO credentials to send.
 		authCl, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 		if err != nil {
 			return
@@ -86,8 +86,7 @@ func (c *commonFlags) createIsolatedClient(ctx context.Context, opts CommandOpti
 	if opts.AnonClient != nil {
 		isolOpts = append(isolOpts, isolatedclient.WithAnonymousClient(opts.AnonClient))
 	}
-	isolCl = c.isolatedFlags.NewClient(isolOpts...)
-	return
+	return c.isolatedFlags.NewClient(isolOpts...)
 }
 
 // CommandOptions is used to initialize an isolated command.
