@@ -154,22 +154,9 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 			b.Data[0] = nil
 		}
 
-		var timeout time.Duration
-		if final {
-			timeout = 5 * time.Minute
-		} else {
-			// Scale the timeout by the number of steps present, bounding it between
-			// 2s and 1m (only the final status gets > 1m timeout, which is probably
-			// futile anyway, since this RPC is currently serviced by an AppEngine
-			// frontend instance which is capped at a 60s request time).
-			timeout = time.Duration(len(req.Build.GetSteps())) * (50 * time.Millisecond)
-			if timeout < (2 * time.Second) {
-				timeout = 2 * time.Second
-			} else if timeout > time.Minute {
-				timeout = time.Minute
-			}
-		}
-		tctx, cancel := clock.WithTimeout(ctx, timeout)
+		// This RPC is currently served by an AppEngine frontend instance which
+		// is capped at a 60s request time.
+		tctx, cancel := clock.WithTimeout(ctx, 60*time.Second+500*time.Millisecond)
 		defer cancel()
 
 		_, err := client.UpdateBuild(tctx, req)
