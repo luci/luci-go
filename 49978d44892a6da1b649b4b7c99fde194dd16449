@@ -33,6 +33,24 @@
       "message": "did you search for makeCIPDClient everywhere to add defer client.Close()?",
       "revId": "49978d44892a6da1b649b4b7c99fde194dd16449",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2292eec_412a99f8",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2314,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T20:27:14Z",
+      "side": 1,
+      "message": "Yes, for consistency. Strictly speaking it is not absolutely necessary.",
+      "parentUuid": "c1dc461f_4a7c630c",
+      "revId": "49978d44892a6da1b649b4b7c99fde194dd16449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
