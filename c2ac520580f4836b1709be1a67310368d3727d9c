@@ -16,6 +16,23 @@
       "message": "PTAL, thank u",
       "revId": "c2ac520580f4836b1709be1a67310368d3727d9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d39ea79_828d73e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-06T06:35:50Z",
+      "side": 1,
+      "message": "lgtm but:\n\n1. Is it possible to teach bbagent not to do overlapping UpdateBuild calls? It\u0027s kind of useless.\n2. Maybe we need to add a sequence number or something to UpdateBuild and make the server reject out-of-order calls?",
+      "revId": "c2ac520580f4836b1709be1a67310368d3727d9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
