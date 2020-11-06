@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d8180313_02b7081f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-06T03:50:35Z",
+      "side": 1,
+      "message": "We can filter the logs in the GCP log viewer and compare the numbers of entries to each endpoint.",
+      "parentUuid": "f404d1e8_34e74d6a",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "69ed8ae7_f587be7d",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 1
@@ -31,6 +49,24 @@
       "writtenOn": "2020-11-06T02:54:02Z",
       "side": 1,
       "message": "Should we also log the traffic that go directly to new build page (rather than redirection)?",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cda64e3e_4850edb7",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-06T03:50:35Z",
+      "side": 1,
+      "message": "That is a bit difficult because the new build page isn\u0027t handled by go code and can be cached.\nHandle that in the go code will make it slower.\nWe can add a custom endpoint and call it from the browser when visiting if we want\nto capture all the visits.\nWDYT?",
+      "parentUuid": "69ed8ae7_f587be7d",
       "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
