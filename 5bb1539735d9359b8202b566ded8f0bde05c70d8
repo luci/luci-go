@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "822d07d2_f2a18aa8",
         "filename": "/PATCHSET_LEVEL",
@@ -14,10 +15,10 @@
       "side": 1,
       "message": "PTAL",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8b867ed3_b7c6bd48",
         "filename": "/PATCHSET_LEVEL",
@@ -31,10 +32,10 @@
       "side": 1,
       "message": "LGTM with nits",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "fb5088e8_da8ddbcd",
         "filename": "cv/appengine/internal/config/store.go",
@@ -48,10 +49,10 @@
       "side": 1,
       "message": "imo, no need to index. And same for Updated.",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "3164bb10_6592f1d1",
         "filename": "cv/appengine/internal/config/store.go",
@@ -66,10 +67,10 @@
       "message": "eh.. added it back. Removed them right before upload this patchset, somehow my brain is telling me they need to be indexed for clean up.",
       "parentUuid": "fb5088e8_da8ddbcd",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "8e560765_86f971b6",
         "filename": "cv/appengine/internal/config/store.go",
@@ -83,10 +84,10 @@
       "side": 1,
       "message": "i\u0027d document what hash it is here, since it\u0027s important, as changing hashing algo may lead to weird results.\nsha2?",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "493b3e8f_1cefe5a4",
         "filename": "cv/appengine/internal/config/store.go",
@@ -101,10 +102,28 @@
       "message": "I actually use the ContentHash returned from LUCI Config. I\u0027m digging into details to see how it is computed. I was actually debating between using the ContentHash from LUCI Config and hashing by ourselves before. I picked the former for simplicity, but the latter one will gave us more control and not coupling it from implementation in LUCI Config. WDYT?\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/interface.go;l\u003d36-37;drc\u003d1fac7eaf1ca957f249547201ce2819253e050a67",
       "parentUuid": "8e560765_86f971b6",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "256f4fa4_06f29c8e",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "let\u0027s hash ourselves, as LUCI Config may change in the future.\nAlso, let\u0027s prefix the kind of hash into the resulting string. Costs only 5 bytes, but makes migration trivial:\n\n  sha2:\u003chash\u003e[:16]\n\ne.g. \n  sha2:deadbeefbdeadbeef\n\n(8 bytes (aka 16 chars) of entropy suffices)",
+      "parentUuid": "493b3e8f_1cefe5a4",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "e288ac4f_f24cab25",
         "filename": "cv/appengine/internal/config/store.go",
@@ -124,10 +143,10 @@
         "endChar": 32
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "7c0380b4_6d2c0be4",
         "filename": "cv/appengine/internal/config/store.go",
@@ -148,10 +167,10 @@
         "endChar": 32
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "c2ee0aa8_095b0700",
         "filename": "cv/appengine/internal/config/store.go",
@@ -172,10 +191,10 @@
         "endChar": 32
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "761bf7d8_880ae2b0",
         "filename": "cv/appengine/internal/config/store.go",
@@ -195,10 +214,10 @@
         "endChar": 18
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "12e2540a_24b229ad",
         "filename": "cv/appengine/internal/config/store.go",
@@ -219,10 +238,10 @@
         "endChar": 18
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "4c7141b9_9f7cc707",
         "filename": "cv/appengine/internal/config/store.go",
@@ -242,10 +261,10 @@
         "endChar": 7
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "34b6e3d7_46bb30ea",
         "filename": "cv/appengine/internal/config/store.go",
@@ -266,10 +285,10 @@
         "endChar": 7
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "9080e8d4_08872d2a",
         "filename": "cv/appengine/internal/config/store.go",
@@ -289,10 +308,34 @@
         "endChar": 61
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff22895f_6cb18125",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "will ocmment on new patchset.",
+      "parentUuid": "9080e8d4_08872d2a",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 61
+      },
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "64dd5ea5_00e2fdf8",
         "filename": "cv/appengine/internal/config/store.go",
@@ -312,10 +355,10 @@
         "endChar": 16
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "9b20b124_df02a457",
         "filename": "cv/appengine/internal/config/store.go",
@@ -336,10 +379,10 @@
         "endChar": 16
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8ef8c206_705f9474",
         "filename": "cv/appengine/internal/config/store.go",
@@ -360,10 +403,10 @@
         "endChar": 16
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "07321a0e_e3a97009",
         "filename": "cv/appengine/internal/config/store.go",
@@ -377,10 +420,10 @@
       "side": 1,
       "message": "Vadim convinced me recently that multierrors are vary rarely useful, especially due to invalid tag search of transiency (can\u0027t find reference right now, it\u0027s somewhere in my or his server/tq CLs).\n\nAnyways, here there is no usefulness at all -- if it errored out, we\u0027d need to retry everything from scratch anyhow.",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "14b0efc7_de7110cd",
         "filename": "cv/appengine/internal/config/store.go",
@@ -395,10 +438,10 @@
       "message": "Good point! Done.",
       "parentUuid": "07321a0e_e3a97009",
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "ce33b5a4_6a72e522",
         "filename": "cv/appengine/internal/config/store.go",
@@ -418,10 +461,10 @@
         "endChar": 37
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "4ec36470_f843b042",
         "filename": "cv/appengine/internal/config/store.go",
@@ -442,10 +485,10 @@
         "endChar": 37
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "9a65dfef_4ede9faf",
         "filename": "cv/appengine/internal/config/store.go",
@@ -465,10 +508,10 @@
         "endChar": 48
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "66d220f0_2a58319f",
         "filename": "cv/appengine/internal/config/store.go",
@@ -489,8 +532,7 @@
         "endChar": 48
       },
       "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

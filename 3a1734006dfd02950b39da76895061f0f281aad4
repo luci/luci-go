@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "dd3f613c_2092b980",
         "filename": "/PATCHSET_LEVEL",
@@ -14,10 +15,27 @@
       "side": 1,
       "message": "BTW still LGTM to me although there are remaining nits from Andrii.",
       "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4336d4af_8340009d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "all right, let\u0027s continue here once you have time, Yiwei!",
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
       "key": {
         "uuid": "d239d987_7f26e84b",
         "filename": "cv/appengine/internal/config/store.go",
@@ -31,8 +49,203 @@
       "side": 1,
       "message": "Just an observation; some projects alias this as \"ds\". I personally prefer keeping this as \"datastore\", so I like this as-is.",
       "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e706ebf_123f4d5b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "i kept datastore in my code, though I admit I hate typing it but I\u0027m trying to teach my editor to help me.",
+      "parentUuid": "d239d987_7f26e84b",
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40141f17_7652fbdf",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "was",
+      "range": {
+        "startLine": 45,
+        "startChar": 64,
+        "endLine": 45,
+        "endChar": 66
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02bfcf4d_4fe2a87b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "mind changing to EVersion?",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 8
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27064ad8_3a519c55",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "I\u0027ve just realized that this will needlessly duplicate ConfigHash from above N times. Right?\nIf so, let\u0027s store only only ConfigGroup.Name (or generated version of it).\nWe can easily provide utility function GetConfigGroupIDs to re-create this on demand.",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 48
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4318ef0a_c391ca3f",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "nit: consider this formatting for ease of glancing through docs\n\n// ConfigGroupID is the ID for ConfigGroup Entity.\n// \n// It is in the format of \"hash/name\".\n// `hash` corresponds to the `ConfigHash` field in the containing\n// `ProjectConfig`.\n// `name` is the value of `ConfigGroup.Name` if specified.\n// If not provided (Name in ConfigGroup is optional as of Sep. 2020. See:\n// crbug/1063508), use \"index_i\" as name instead where `i` is the index\n// (0-based) of this ConfigGroup in the config.",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 47
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "726ffbcc_1552cd65",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "let\u0027s make it \"#%d\". This will be unique for sure because # isn\u0027t an allowed char in CQ config name.",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 30
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1b88a6b_9ff74142",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "currently",
+      "range": {
+        "startLine": 109,
+        "startChar": 21,
+        "endLine": 109,
+        "endChar": 22
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ddb9036_f8a6a02c",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "now you can make it a pointer 😊",
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76a2cded_f2f91917",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-07T00:58:22Z",
+      "side": 1,
+      "message": "and this will get simpler with pointers",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 3
+      },
+      "revId": "3a1734006dfd02950b39da76895061f0f281aad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
