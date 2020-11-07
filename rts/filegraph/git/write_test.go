@@ -46,6 +46,7 @@ func TestWrite(t *testing.T) {
 				"",   // commit hash
 				"0",  // number of root commits
 				"0",  // number of root children
+				"0",  // total number of edges
 				"0",  // number of root edges
 			)
 		})
@@ -80,6 +81,8 @@ func TestWrite(t *testing.T) {
 				"foo", // name of a root child
 				"1",   // number of foo commits
 				"0",   // number of foo children
+
+				"2", // total number of edges
 
 				"0", // number of root edges
 

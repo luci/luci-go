@@ -100,7 +100,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 	return nodes, nil
 }
 
-// loadSyncedGraph loads a file graph for g.ref in the the given repo, syncs to
+// loadSyncedGraph loads a file graph for g.ref in the given repo, syncs to
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
 func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
