@@ -1,0 +1,112 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.clpb;
+
+option go_package = "go.chromium.org/luci/cv/internal/changelist/clpb;clpb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
+
+// Snapshot stores a snapshot of CL info as seen by CV at a certain time.
+//
+// When stored in CL entity, represents latest known Gerrit data.
+// When stored in RunCL entity, represents data pertaining to a fixed patchset.
+message Snapshot {
+  // The timestamp from external system.
+  // Used to determine if re-querying external system is needed.
+  google.protobuf.Timestamp external_update_time = 1;
+
+  // Resolved dependencies of a CL.
+  repeated Dep deps = 2;
+
+  // CL-kind specific data.
+  oneof kind {
+    Gerrit gerrit = 11;
+  }
+}
+
+enum DepKind {
+  DEP_KIND_UNSPECIFIED = 0;
+  // Dep MUST be patched in / submitted before the dependent CL.
+  HARD = 1;
+  // Dep SHOULD be patched in / submitted before the dependent CL,
+  // but doesn't have to be.
+  SOFT = 2;
+}
+
+message Dep {
+  // CLID is internal CV ID of a CL which is the dependency.
+  int64 clid = 1;
+  DepKind kind = 2;
+}
+
+message Gerrit {
+  // Info contains all revisions, but non-current revisions will not have all
+  // the fields populated.
+  //
+  // Exact fields TODO.
+  gerrit.ChangeInfo info = 1;
+
+  // Files are filenames touched in the current revision.
+  //
+  // It's derived frm gerrit.ListFilesResponse, see
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files.
+  repeated string files = 2;
+
+  // Git dependencies of the current revision.
+  repeated GerritGitDep git_deps = 3;
+
+  // Free-form dependencies. Currently, sourced from CQ-Depend footers.
+  // In the future, this may be derived from Gerrit hashtags, topics, or other
+  // mechanisms.
+  repeated GerritSoftDep soft_deps = 4;
+}
+
+// GerritGitDep is a dependency discovered via Git child->parent chain for one Gerrit CL.
+message GerritGitDep {
+  // Host is omitted because it's always the same as that of the CL.
+
+  // Gerrit Change number.
+  int32 change = 1;
+
+  // Immediate is set iff this dep is an immediate parent of the Gerrit CL.
+  //
+  // Immediate dep must be submitted before its child.
+  // Non-immediate CLs don't necessarily have to be submitted before:
+  //   for example, for a chain <base> <- A1 <- B1 <- C1 <- D1
+  //   D1's deps are [A,B,C] but only C is immediate, and 1 stands for patchset.
+  //   Developer may then swap B,C without re-uploading D (say, to avoid
+  //   patchset churn), resulting in a new logical chain:
+  //      <base> <- A1 <- C2 <- B2
+  //                   \
+  //                    <- B1 <- C1 <- D1
+  //
+  //   In this case, Gerrit's related changes for D1 will still return A1,B1,C1,
+  //   which CV interprets as C must be landed before D, while B and A should
+  //   be landed before D.
+  //
+  // TODO(tandrii): this is replicating existing CQDaemon logic. I think
+  // it'd be reasonable to treat all (A,B,C) as MUST BE submitted before D.
+  bool immediate = 2;
+}
+
+message GerritSoftDep {
+  // Gerrit host.
+  string host = 1;
+  // Gerrit change number.
+  int32 change = 2;
+}

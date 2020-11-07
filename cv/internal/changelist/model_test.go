@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist/clpb"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -126,6 +128,11 @@ func TestGobMap(t *testing.T) {
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return Update(ctx, cl.ID, func(innerCL *CL) (shouldUpdate bool) {
 							innerCL.Patchset++
+							innerCL.Snapshot = &clpb.Snapshot{
+								Kind: &clpb.Snapshot_Gerrit{Gerrit: &clpb.Gerrit{
+									Files: []string{"a.cpp", "b/c.py"},
+								}},
+							}
 							return true
 						})
 					}, nil)
@@ -135,6 +142,7 @@ func TestGobMap(t *testing.T) {
 					So(datastore.Get(ctx, &cl2), ShouldBeNil)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Patchset, ShouldEqual, cl.Patchset+1)
+					So(cl2.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "b/c.py"})
 				})
 			})
 		})
