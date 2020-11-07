@@ -41,6 +41,12 @@ type reader struct {
 	// ordered are the nodes in the order as they appear in the reader.
 	ordered []*node
 	buf     []byte
+
+	// edgeBuf is a single giant slice of edges.
+	// When reading edges of a node, they are allocated from this slice.
+	// The the edgeBuf[:cap(edgeBuf)] is the total allocated memory,
+	// whereas edgeBuf[len(edgeBuf):] is the available one.
+	edgeBuf []edge
 }
 
 func (r *reader) readGraph(g *Graph) error {
@@ -71,6 +77,15 @@ func (r *reader) readGraph(g *Graph) error {
 	if err := r.readNode(&g.root); err != nil {
 		return errors.Annotate(err, "failed to read nodes").Err()
 	}
+
+	// Read the total number of edges.
+	totalEdges, err := r.readInt()
+	if err != nil {
+		return errors.Annotate(err, "failed to read the total number of edges").Err()
+	}
+
+	// Allocate a giant slice for all edges that we are about to read.
+	r.edgeBuf = make([]edge, 0, totalEdges)
 
 	// Read the edges.
 	for _, n := range r.ordered {
@@ -132,8 +147,12 @@ func (r *reader) readEdges(n *node) error {
 		return nil
 	}
 
+	// Allocate the edge slice from the buffer.
+	n.edges = r.edgeBuf[len(r.edgeBuf) : len(r.edgeBuf)+count]
+	n.edgesCOW = true
+	r.edgeBuf = r.edgeBuf[:len(r.edgeBuf)+count] // shift the cursor
+
 	// Read the edges.
-	n.edges = make([]edge, count)
 	for i := range n.edges {
 		switch index, err := r.readInt(); {
 		case err != nil:
