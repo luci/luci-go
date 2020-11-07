@@ -46,6 +46,7 @@ func TestRead(t *testing.T) {
 				"",   // commit hash
 				"0",  // number of root commits
 				"0",  // number of root children
+				"0",  // total number of edges
 				"0",  // number of root edges
 			)
 			So(g.Commit, ShouldResemble, "")
@@ -69,6 +70,8 @@ func TestRead(t *testing.T) {
 				"1",   // number of foo commits
 				"0",   // number of foo children
 
+				"2", // total number of edges
+
 				"0", // number of root edges
 
 				"1", // number of bar edges
@@ -85,16 +88,18 @@ func TestRead(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"foo": {
-						name:    "//foo",
-						commits: 1,
+						name:     "//foo",
+						commits:  1,
+						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["bar"],
 							commonCommits: 1,
 						}},
 					},
 					"bar": {
-						name:    "//bar",
-						commits: 2,
+						name:     "//bar",
+						commits:  2,
+						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["foo"],
 							commonCommits: 1,
@@ -120,6 +125,8 @@ func TestRead(t *testing.T) {
 				"foo", // name of a dir child
 				"1",   // number of foo commits
 				"0",   // number of foo children
+
+				"0", // total number of edges
 
 				"0", // number of root edges
 				"0", // number of dir edges

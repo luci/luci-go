@@ -47,6 +47,8 @@ type node struct {
 	// Note: this data structure is optimized for the Dijkstra's algorithm
 	// and loading from disk. None of them need random-access.
 	edges []edge
+	// copyEdgesOnAppend indicates that edges must be copied before appending.
+	copyEdgesOnAppend bool
 
 	// children are files and subdirectories of the current node, which itself
 	// is a directory.
@@ -97,6 +99,19 @@ func (n *node) Outgoing(callback func(other filegraph.Node, distance float64) (k
 		if !callback(e.to, distance) {
 			return
 		}
+	}
+}
+
+// visit calls callback for each node in the subtree rooted at n.
+// If the callback returns false for a node, then its descendants are not
+// visited.
+func (n *node) visit(callback func(*node) bool) {
+	if !callback(n) {
+		return
+	}
+
+	for _, child := range n.children {
+		child.visit(callback)
 	}
 }
 

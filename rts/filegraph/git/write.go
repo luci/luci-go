@@ -30,7 +30,7 @@ const magicHeader = 54
 // It is the opposite of (*Graph).Read().
 //
 // Spec:
-//  graph = header version git-commit-hash root root-edges
+//  graph = header version git-commit-hash root total-number-of-edges root-edges
 //  header = 54
 //  version = 0
 //
@@ -62,8 +62,9 @@ type writer struct {
 	// lines.
 	textMode bool
 
-	varintBuf [binary.MaxVarintLen64]byte
-	indices   map[*node]int
+	varintBuf  [binary.MaxVarintLen64]byte
+	indices    map[*node]int
+	totalEdges int
 }
 
 func (w *writer) writeGraph(g *Graph) error {
@@ -88,16 +89,18 @@ func (w *writer) writeGraph(g *Graph) error {
 		return err
 	}
 
+	// Write the total number of edges.
+	if err := w.writeInt(w.totalEdges); err != nil {
+		return err
+	}
+
 	// Write edges.
 	return w.writeEdges(&g.root)
 }
 
 func (w *writer) writeNode(n *node) error {
 	w.indices[n] = len(w.indices)
-
-	// TODO(nodir): consider not writing the number of
-	// commits if this is a directory, since today only
-	// individual files can have commits.
+	w.totalEdges += len(n.edges)
 
 	// Write the number of commits.
 	if err := w.writeInt(n.commits); err != nil {
