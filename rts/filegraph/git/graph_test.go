@@ -62,6 +62,55 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
+		Convey(`ensureNode`, func() {
+			Convey("//foo/bar", func() {
+				g := &Graph{}
+				bar := g.ensureNode("//foo/bar")
+				So(bar, ShouldNotBeNil)
+				So(bar.name, ShouldEqual, "//foo/bar")
+				So(g.node("//foo/bar"), ShouldEqual, bar)
+
+				foo := g.node("//foo")
+				So(foo, ShouldNotBeNil)
+				So(foo.name, ShouldEqual, "//foo")
+				So(foo.children["bar"], ShouldEqual, bar)
+			})
+
+			Convey("already exists", func() {
+				g := &Graph{}
+				So(g.ensureNode("//foo/bar"), ShouldEqual, g.ensureNode("//foo/bar"))
+			})
+
+			Convey("//", func() {
+				g := &Graph{}
+				root := g.ensureNode("//")
+				So(root, ShouldEqual, &g.root)
+			})
+		})
+
+		Convey(`remove`, func() {
+			Convey(`Single child`, func() {
+				g := &Graph{}
+				c := g.ensureNode("//a/b/c")
+				So(g.remove("//a/b/c"), ShouldEqual, c)
+				So(g.node("//a"), ShouldBeNil)
+			})
+
+			Convey(`Two children`, func() {
+				g := &Graph{}
+				c1 := g.ensureNode("//a/b/c1")
+				c2 := g.ensureNode("//a/b/c2")
+				So(g.remove("//a/b/c1"), ShouldEqual, c1)
+				So(g.node("//a/b/c2"), ShouldEqual, c2)
+			})
+
+			Convey(`not found`, func() {
+				g := &Graph{}
+				g.ensureNode("//a/b/c")
+				So(g.remove("//a/b/x"), ShouldBeNil)
+			})
+		})
+
 		Convey(`sortedChildKeys()`, func() {
 			node := &node{
 				children: map[string]*node{
@@ -70,6 +119,31 @@ func TestGraph(t *testing.T) {
 				},
 			}
 			So(node.sortedChildKeys(), ShouldResemble, []string{"bar", "foo"})
+		})
+
+		Convey(`removeEdge`, func() {
+			Convey(`Works`, func() {
+				ns := make([]node, 4)
+				ns[0].edges = []edge{
+					{to: &ns[1]},
+					{to: &ns[2]},
+					{to: &ns[3]},
+				}
+				So(ns[0].removeEdge(&ns[2]), ShouldBeTrue)
+				So(ns[0].edges, ShouldResemble, []edge{
+					{to: &ns[1]},
+					{to: &ns[3]},
+				})
+			})
+
+			Convey(`not found`, func() {
+				ns := make([]node, 4)
+				ns[0].edges = []edge{
+					{to: &ns[1]},
+					{to: &ns[2]},
+				}
+				So(ns[0].removeEdge(&ns[3]), ShouldBeFalse)
+			})
 		})
 
 		Convey(`Outgoing`, func() {
@@ -100,6 +174,19 @@ func TestGraph(t *testing.T) {
 			})
 			Convey("//", func() {
 				So(splitName("//"), ShouldResemble, []string(nil))
+			})
+		})
+
+		Convey(`baseName`, func() {
+			Convey(`//foo/bar/qux`, func() {
+				parent, base := baseName("//foo/bar/qux")
+				So(parent, ShouldEqual, "//foo/bar")
+				So(base, ShouldEqual, "qux")
+			})
+			Convey(`//foo`, func() {
+				parent, base := baseName("//foo")
+				So(parent, ShouldEqual, "//")
+				So(base, ShouldEqual, "foo")
 			})
 		})
 	})

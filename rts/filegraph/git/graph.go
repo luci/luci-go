@@ -15,6 +15,7 @@
 package git
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -83,6 +84,76 @@ func (g *Graph) node(name string) *node {
 	return cur
 }
 
+// ensureNode creates the node if it doesn't exist, and returns it.
+// Creates the node's ancestors if needed.
+// Assumes the name is valid.
+func (g *Graph) ensureNode(name string) *node {
+	if name == "//" {
+		return &g.root
+	}
+
+	cur := &g.root
+
+	child := func(baseName, name string) *node {
+		if child := cur.children[baseName]; child != nil {
+			return child
+		}
+
+		child := &node{name: name}
+		if cur.children == nil {
+			cur.children = make(map[string]*node, 1)
+		}
+		cur.children[baseName] = child
+		return child
+	}
+
+	// Note: this loop does not allocate new strings.
+	startAt := 2 // skip "//" prefix
+	for {
+		sep := strings.Index(name[startAt:], "/")
+		if sep == -1 {
+			return child(name[startAt:], name)
+		}
+		sep += startAt
+
+		cur = child(name[startAt:sep], name[:sep])
+		startAt = sep + 1
+	}
+}
+
+// remove removes a descendant by its name.
+// Returns the removed node, or nil if nothing was removed.
+//
+// If a removed node is the only child, then its parent is removed too,
+// unless the parent is root.
+// This rule applies recursively.
+func (g *Graph) remove(name string) *node {
+	if name == "//" {
+		panic("the root canot be removed")
+	}
+
+	var remove func(n *node, relName []string) *node
+	remove = func(n *node, relName []string) *node {
+		switch child := n.children[relName[0]]; {
+		case child == nil:
+			return nil
+
+		case len(relName) == 1:
+			delete(n.children, relName[0])
+			return child
+
+		default:
+			removed := remove(child, relName[1:])
+			if removed != nil && len(child.children) == 0 {
+				delete(n.children, relName[0])
+			}
+			return removed
+		}
+	}
+
+	return remove(&g.root, splitName(name))
+}
+
 func (n *node) Name() string {
 	return n.name
 }
@@ -127,6 +198,19 @@ func (n *node) sortedChildKeys() []string {
 	return keys
 }
 
+// removeEdge removes an edge to the specified node.
+// Returns false if the edge is not found.
+func (n *node) removeEdge(to *node) bool {
+	for i := range n.edges {
+		if n.edges[i].to == to {
+			copy(n.edges[i:], n.edges[i+1:])
+			n.edges = n.edges[:len(n.edges)-1]
+			return true
+		}
+	}
+	return false
+}
+
 // splitName splits a node name into components,
 // e.g. "//foo/bar.cc" -> ["foo", "bar.cc"].
 func splitName(name string) []string {
@@ -135,4 +219,21 @@ func splitName(name string) []string {
 		return nil
 	}
 	return strings.Split(name, "/")
+}
+
+// baseName returns the base namd and the full name of the parent.
+// Returns ("//", "") if name is the root.
+// Panics if name is invalid.
+func baseName(name string) (parent, base string) {
+	slash := strings.LastIndexAny(name, "/")
+	if slash == -1 {
+		panic(fmt.Sprintf("no slash in %q", name))
+	}
+
+	parent = name[:slash]
+	base = name[slash+1:]
+	if parent == "/" {
+		parent = "//"
+	}
+	return
 }

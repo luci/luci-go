@@ -21,7 +21,7 @@
 // modified together.
 //
 //  Distance(x, y) = -log2(P({c | c ∈ gitCommits  ∧  {x, y} ⊂ c.files}))
-//    for Ω = {c | c ∈ gitCommits  ∧  x ∈ c.files}
+//    for Ω = {c | c ∈ gitCommits  ∧  x ∈ c.files  ∧  |c.files| > 1}
 //
 // or in English, distance from x to y is -log2 of the probability that y
 // appeared in an x's commit.
