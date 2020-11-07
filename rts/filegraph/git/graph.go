@@ -15,11 +15,13 @@
 package git
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"strings"
 	"sync"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/rts/filegraph"
 )
 
@@ -83,6 +85,122 @@ func (g *Graph) node(name string) *node {
 	return cur
 }
 
+// ensureNode creates the node if it doesn't exist, and returns it.
+// Creates the node's ancestors if needed.
+// Assumes the name is valid.
+func (g *Graph) ensureNode(name string) *node {
+	if name == "//" {
+		return &g.root
+	}
+
+	cur := &g.root
+
+	child := func(baseName, name string) *node {
+		if ret, ok := cur.children[baseName]; ok {
+			return ret
+		}
+
+		ret := &node{name: name}
+		if cur.children == nil {
+			cur.children = map[string]*node{}
+		}
+		cur.children[baseName] = ret
+		return ret
+	}
+
+	startAt := 2 // skip the "//" prefix
+	for {
+		sep := strings.Index(name[startAt:], "/")
+		if sep == -1 {
+			return child(name[startAt:], name)
+		}
+		sep += startAt
+
+		// Note: no string allocations for the full name.
+		cur = child(name[startAt:sep], name[:sep])
+		startAt = sep + 1
+	}
+}
+
+// remove removes a node by its name.
+// Returns the removed node, or nil if nothing was removed.
+// Panics on the attempt to remove the root.
+//
+// If a removed node is the only child and its parent is not the root,
+// then the parent is removed too. This rule applies recursively.
+func (g *Graph) remove(name string) *node {
+	if name == "//" {
+		panic("the root canot be removed")
+	}
+
+	var remove func(n *node, relName []string) *node
+	remove = func(n *node, relName []string) *node {
+		switch child, ok := n.children[relName[0]]; {
+		case !ok:
+			return nil
+
+		case len(relName) == 1:
+			delete(n.children, relName[0])
+			return child
+
+		default:
+			removed := remove(child, relName[1:])
+			// Delete the now-empty parent as well.
+			if removed != nil && len(child.children) == 0 {
+				delete(n.children, relName[0])
+			}
+			return removed
+		}
+	}
+
+	return remove(&g.root, splitName(name))
+}
+
+// moveFile moves a file and returns it. If newName is empty, removes the file.
+// Assumes the names are valid.
+// If the returned error is non-nil, then the graph might have been mutated.
+func (g *Graph) moveFile(oldName, newName string) (*node, error) {
+	if oldName == "//" {
+		return nil, errors.Reason("// cannot be moved").Err()
+	}
+
+	// Remove the node from the old parent.
+	file := g.remove(oldName)
+	switch {
+	case file == nil:
+		return nil, errors.Reason("not found").Err()
+	case len(file.children) > 0:
+		return nil, errors.Reason("expected %q to be a file, but it is a dir", oldName).Err()
+	}
+
+	if newName == "" {
+		// newName being empty means the file must be removed, as opposed to moved.
+		// Remove all incoming edges.
+		for _, e := range file.edges {
+			if !e.to.removeEdge(file) {
+				// This should never happen because an outgoing edge exists if and only
+				// if the counterpart incoming edge exists.
+				panic(fmt.Sprintf("edge %q -> %q exists, but its counterpart does not", file.name, e.to.name))
+			}
+		}
+		return file, nil
+	}
+
+	// Attach the node to the new parent.
+	newParentName, newBaseName := baseName(newName)
+	newParent := g.ensureNode(newParentName)
+	switch {
+	case newParent.children == nil:
+		newParent.children = map[string]*node{}
+	case newParent.children[newBaseName] != nil:
+		return nil, errors.Reason("%q already exists", newName).Err()
+	}
+
+	file.name = newName
+	newParent.children[newBaseName] = file
+	return file, nil
+}
+
 func (n *node) Name() string {
 	return n.name
 }
@@ -127,6 +245,31 @@ func (n *node) sortedChildKeys() []string {
 	return keys
 }
 
+// removeEdge removes an edge to the specified node.
+// Returns false if the edge is not found.
+func (n *node) removeEdge(to *node) bool {
+	for i := range n.edges {
+		if n.edges[i].to == to {
+			copy(n.edges[i:], n.edges[i+1:])
+			n.edges = n.edges[:len(n.edges)-1]
+			return true
+		}
+	}
+	return false
+}
+
+// prepareToAppendEdges copies n.edges if n.copyEdgesOnAppend is true.
+func (n *node) prepareToAppendEdges() {
+	if !n.copyEdgesOnAppend {
+		return
+	}
+
+	n.copyEdgesOnAppend = false
+	edges := make([]edge, len(n.edges))
+	copy(edges, n.edges)
+	n.edges = edges
+}
+
 // splitName splits a node name into components,
 // e.g. "//foo/bar.cc" -> ["foo", "bar.cc"].
 func splitName(name string) []string {
@@ -135,4 +278,22 @@ func splitName(name string) []string {
 		return nil
 	}
 	return strings.Split(name, "/")
+}
+
+// baseName returns the base name and the full name of the parent,
+// e.g. "//a/b/c" -> ("//a/b", "c").
+// If name is "//", returns ("//", "").
+// Panics if name is invalid.
+func baseName(name string) (parent, base string) {
+	slash := strings.LastIndexAny(name, "/")
+	if slash == -1 {
+		panic(fmt.Sprintf("no slash in %q", name))
+	}
+
+	parent = name[:slash]
+	base = name[slash+1:]
+	if parent == "/" {
+		parent = "//"
+	}
+	return
 }
