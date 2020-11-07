@@ -193,6 +193,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f45401b1_efc6262e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-07T00:41:52Z",
+      "side": 1,
+      "message": "note that in Sync() I will be mutating those slices, so I\u0027d need to store an additional bit indicating that, if I need to mutate the slice, I should create a new one.\n\nthis also means that giant slice would stay in memory as long as there is at least one reference to it, but this should be fine because most nodes shouldn\u0027t mutated.\n\nwill experiment! Thanks for the idea.",
+      "parentUuid": "f2ac0af1_b99b96cc",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e55692d_7a5e420c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 12
