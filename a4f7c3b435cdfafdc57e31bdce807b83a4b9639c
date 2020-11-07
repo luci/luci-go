@@ -219,6 +219,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc465065_387261e4",
+        "filename": "cv/internal/changelist/clpb/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-07T00:42:11Z",
+      "side": 1,
+      "message": "That helps:) Thanks for the detailed explanation. Good to know how patches are applied on bots for different project.",
+      "parentUuid": "187e8ba7_0966a396",
+      "revId": "a4f7c3b435cdfafdc57e31bdce807b83a4b9639c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b23270af_a3c520e5",
