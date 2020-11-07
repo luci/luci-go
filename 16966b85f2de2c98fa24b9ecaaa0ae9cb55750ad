@@ -241,6 +241,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3d46297e_77d684a2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-07T03:40:18Z",
+      "side": 1,
+      "message": "it helped! https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2523918",
+      "parentUuid": "7500d553_ba1a43b7",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e55692d_7a5e420c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 12
@@ -447,6 +471,24 @@
       "side": 1,
       "message": "one more upside for node not being a pointer is that Go compiler can calculate its pointer a simple (start_ptr + i * sizeof(Node)),\nwhich may speed up edge reading, too.",
       "parentUuid": "67f74c6c_b27059dc",
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bdb8f78_78860d35",
+        "filename": "rts/filegraph/git/write.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-07T03:40:18Z",
+      "side": 1,
+      "message": "i didn\u0027t notice difference in loading time. \nthe time seems to be dominated by edges.\n\nlocality of nodes *might* help in traversal though. idk",
+      "parentUuid": "0351f152_0c1ac16e",
       "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
