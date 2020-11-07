@@ -217,6 +217,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7500d553_ba1a43b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-07T02:55:18Z",
+      "side": 1,
+      "message": "err, right you mentioned COW yourself.",
+      "parentUuid": "f45401b1_efc6262e",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "16966b85f2de2c98fa24b9ecaaa0ae9cb55750ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e55692d_7a5e420c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 12
