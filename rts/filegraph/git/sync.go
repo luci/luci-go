@@ -14,12 +14,157 @@
 
 package git
 
-import "context"
+import (
+	"context"
+	"fmt"
+
+	"go.chromium.org/luci/common/errors"
+)
 
 // Sync synchronizes the graph with commits in g.Commit..tillRev.
 //
 // If the callback is not nil, it is called after each commit is processed.
+//
+// If the returned error is non-nil, then the graph might have been mutated.
 func (g *Graph) Sync(ctx context.Context, repoDir, tillRev string, callback func() error) error {
-	// TODO(crbug.com/1136280): implement.
+	g.ensureInitialized()
+	s := syncer{g: g}
+	// TODO(crbug.com/1136280): handle multi-parent commits correctly.
+	return readLog(ctx, repoDir, g.Commit, tillRev, func(c commit) error {
+		if err := s.apply(c.Files); err != nil {
+			return err
+		}
+		g.Commit = c.Hash
+
+		if callback != nil {
+			return callback()
+		}
+		return nil
+	})
+}
+
+// syncer updates the graph according to git commits.
+type syncer struct {
+	g *Graph
+}
+
+// apply update the graph accordingly to the file changes.
+func (s *syncer) apply(fileChanges []fileChange) error {
+	files := make([]*node, 0, len(fileChanges))
+	for _, c := range fileChanges {
+		name := "//" + c.Path
+
+		switch c.Status {
+		case 'D':
+			// The file was deleted.
+			if _, err := s.moveFile(name, ""); err != nil {
+				return err
+			}
+
+		case 'R':
+			// The file was renamed.
+			newFile, err := s.moveFile(name, "//"+c.Path2)
+			if err != nil {
+				return err
+			}
+			files = append(files, newFile)
+
+		// TODO(nodir): consider handling 'C' more intelligently.
+
+		default:
+			files = append(files, s.g.ensureNode(name))
+		}
+	}
+
+	if len(files) == 1 {
+		// Skip this commit. It provides no signal about file relatedness.
+		return nil
+	}
+
+	// TODO(nodir): improve this significantly.
+	// Commits with a large number of modified files do not provide a strong
+	// signal about file relatedness. Examples: a large directory was moved,
+	// or a symbol was renamed in many files.
+	// The loop below is O(N^2), so large number of files take a long time to
+	// process. Skip such commits for now.
+	// Ideally come up with a formula, so that the weight added by a commit
+	// goes down as the number of modified files goes up.
+	if len(files) > 100 {
+		return nil
+	}
+
+	for _, file := range files {
+		file.commits++
+
+		otherFiles := make(map[*node]struct{}, len(files)-1)
+		for _, f := range files {
+			if f != file {
+				otherFiles[f] = struct{}{}
+			}
+		}
+
+		// Increment the commit count in file's edges that point to any other.
+		for i := range file.edges {
+			to := file.edges[i].to
+			if _, ok := otherFiles[to]; ok {
+				delete(otherFiles, to) // mark it as processed by removing from the set.
+				file.edges[i].commonCommits++
+			}
+		}
+
+		// Add the missing edges.
+		if len(otherFiles) > 0 {
+			file.prepareToAppendEdges()
+			for to := range otherFiles {
+				file.edges = append(file.edges, edge{to: to, commonCommits: 1})
+			}
+		}
+	}
+
 	return nil
+}
+
+// moveFile moves a file and returns it. If newName is empty, removes the file.
+// Assumes the names are valid.
+// If the returned error is non-nil, then the graph might have been mutated.
+func (s *syncer) moveFile(oldName, newName string) (*node, error) {
+	if oldName == "//" {
+		return nil, errors.Reason("// cannot be moved").Err()
+	}
+
+	// Remove the node from the old parent.
+	file := s.g.remove(oldName)
+	switch {
+	case file == nil:
+		return nil, errors.Reason("not found").Err()
+	case len(file.children) > 0:
+		return nil, errors.Reason("expected %q to be a file, but it is a dir", oldName).Err()
+	}
+
+	if newName == "" {
+		// newName being empty means the file must be removed, as opposed to moved.
+		// Remove all incoming edges.
+		for _, e := range file.edges {
+			if !e.to.removeEdge(file) {
+				// This should never happen because an outgoing edge exists if and only
+				// if the counterpart incoming edge exists.
+				panic(fmt.Sprintf("edge %q -> %q exists, but its counterpart does not", file.name, e.to.name))
+			}
+		}
+		return file, nil
+	}
+
+	// Attach the node to the new parent.
+	newParentName, newBaseName := baseName(newName)
+	newParent := s.g.ensureNode(newParentName)
+	switch {
+	case newParent.children == nil:
+		newParent.children = map[string]*node{}
+	case newParent.children[newBaseName] != nil:
+		return nil, errors.Reason("%q already exists", newName).Err()
+	}
+
+	file.name = newName
+	newParent.children[newBaseName] = file
+	return file, nil
 }
