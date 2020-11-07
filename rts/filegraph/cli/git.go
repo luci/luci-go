@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,20 +38,30 @@ import (
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref string
+	ref           string
+	maxCommitSize int
 	git.Graph
 }
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&g.ref, "ref", "refs/heads/main", text.Doc(`
-		load the file graph for this git ref.
+		Load the file graph for this git ref.
 		For refs/heads/main, refs/heads/master is read if main doesn't exist.
+	`))
+	fs.IntVar(&g.maxCommitSize, "max-commit-size", 100, text.Doc(`
+		Maximum number of files touched by a commit.
+		Commits that exceed this limit are ignored.
+		The rationale is that large commits provide a weak signal of file
+		relatedness and are expensive to process, O(N^2).
 	`))
 }
 
 func (g *gitGraph) Validate() error {
 	if !strings.HasPrefix(g.ref, "refs/") {
 		return errors.Reason("-ref %q doesn't start with refs/", g.ref).Err()
+	}
+	if g.maxCommitSize < 0 {
+		return errors.Reason("-max-commit-size must be non-negative", g.ref).Err()
 	}
 	return nil
 }
@@ -104,6 +115,8 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
 func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
+	// TODO(nodir): split this function. It is too large.
+
 	gitDir, err := execGit(repoDir)("rev-parse", "--absolute-git-dir")
 	if err != nil {
 		return err
@@ -111,7 +124,7 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 
 	// Read/write the graph from/to a file under .git directory, named after the ref.
 	f, err := os.OpenFile(
-		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
+		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), fmt.Sprintf("fg.max-commit-%d.v0", g.maxCommitSize)),
 		os.O_RDWR|os.O_CREATE,
 		0777,
 	)
@@ -126,17 +139,6 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		logging.Infof(ctx, "populating cache; this may take minutes...")
 	case err != nil:
 		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
-	}
-
-	// Fallback from main to master if needed.
-	tillRev := g.ref
-	if g.ref == "refs/heads/main" {
-		switch exists, err := refExists(repoDir, g.ref); {
-		case err != nil:
-			return err
-		case !exists:
-			tillRev = "refs/heads/master"
-		}
 	}
 
 	write := func() error {
@@ -160,27 +162,42 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		return f.Truncate(curLen)
 	}
 
-	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Sync(ctx, repoDir, tillRev, func() error {
-		dirty = true
-
-		processed++
-		if processed%10000 == 0 {
-			if err := write(); err != nil {
-				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+	sync := &git.Sync{
+		RepoDir:       repoDir,
+		Rev:           g.ref,
+		MaxCommitSize: g.maxCommitSize,
+		Callback: func() error {
+			dirty = true
+			processed++
+			if processed%10000 == 0 {
+				if err := write(); err != nil {
+					return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+				}
+				dirty = false
+				logging.Infof(ctx, "processed %d commits", processed)
 			}
-			dirty = false
-			logging.Infof(ctx, "processed %d commits", processed)
+			return nil
+		},
+	}
+
+	// Fallback from main to master if needed.
+	if sync.Rev == "refs/heads/main" {
+		switch exists, err := refExists(repoDir, g.ref); {
+		case err != nil:
+			return err
+		case !exists:
+			sync.Rev = "refs/heads/master"
 		}
-		return nil
-	})
-	switch {
+	}
+
+	// Sync the graph with new commits.
+	switch err := sync.Update(ctx, &g.Graph); {
 	case err != nil:
 		return err
 	case dirty:
-		err = write()
+		err := write()
 		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
 	default:
 		return nil
