@@ -121,11 +121,13 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	defer f.Close()
 
 	// Read the cache.
-	switch err := g.Read(bufio.NewReader(f)); {
+	switch err := g.Graph.Read(bufio.NewReader(f)); {
 	case os.IsNotExist(err):
 		logging.Infof(ctx, "populating cache; this may take minutes...")
 	case err != nil:
-		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
+		logging.Warningf(ctx, "cache is corrupted: %s\npopulating cache; this may take minutes...", err)
+		// Reset the graph state.
+		g.Graph = git.Graph{}
 	}
 
 	// Fallback from main to master if needed.
