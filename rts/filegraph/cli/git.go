@@ -104,6 +104,8 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
 func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
+	// TODO(nodir): split this function. It is too large.
+
 	gitDir, err := execGit(repoDir)("rev-parse", "--absolute-git-dir")
 	if err != nil {
 		return err
@@ -128,17 +130,6 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
 	}
 
-	// Fallback from main to master if needed.
-	tillRev := g.ref
-	if g.ref == "refs/heads/main" {
-		switch exists, err := refExists(repoDir, g.ref); {
-		case err != nil:
-			return err
-		case !exists:
-			tillRev = "refs/heads/master"
-		}
-	}
-
 	write := func() error {
 		// Write the graph to the beginning of the file.
 		if _, err := f.Seek(0, 0); err != nil {
@@ -160,27 +151,42 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		return f.Truncate(curLen)
 	}
 
-	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Sync(ctx, repoDir, tillRev, func() error {
-		dirty = true
+	sync := &git.Sync{
+		RepoDir: repoDir,
+		Rev:     g.ref,
+		Callback: func() error {
+			dirty = true
 
-		processed++
-		if processed%10000 == 0 {
-			if err := write(); err != nil {
-				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+			processed++
+			if processed%10000 == 0 {
+				if err := write(); err != nil {
+					return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+				}
+				dirty = false
+				logging.Infof(ctx, "processed %d commits", processed)
 			}
-			dirty = false
-			logging.Infof(ctx, "processed %d commits", processed)
+			return nil
+		},
+	}
+
+	// Fallback from main to master if needed.
+	if sync.Rev == "refs/heads/main" {
+		switch exists, err := refExists(repoDir, g.ref); {
+		case err != nil:
+			return err
+		case !exists:
+			sync.Rev = "refs/heads/master"
 		}
-		return nil
-	})
-	switch {
+	}
+
+	// Sync the graph with new commits.
+	switch err := sync.Update(ctx, &g.Graph); {
 	case err != nil:
 		return err
 	case dirty:
-		err = write()
+		err := write()
 		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
 	default:
 		return nil
