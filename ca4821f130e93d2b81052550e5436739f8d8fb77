@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "448f9f1e_e286eef6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-08T22:36:09Z",
+      "side": 1,
+      "message": "secondly, i am not sure you need this CL. Both cases can be detected with SQL:\n\nif it is a new page, then the entry would have the old URL and status would be 302\nif it is the page, the URL would be new\n\n\u003e You are right. Abandoning this CL.",
+      "parentUuid": "fa5d229f_6d150f8a",
+      "revId": "ca4821f130e93d2b81052550e5436739f8d8fb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "69ed8ae7_f587be7d",
