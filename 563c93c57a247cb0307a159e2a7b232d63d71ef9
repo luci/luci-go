@@ -16,6 +16,23 @@
       "message": "As there are no invocation with the artifact-text tag, I need to hard code it in the code\n\u0027Artifact: \u003cartifact-text artifact-id\u003d\"actual_text\" /\u003e\u0027\n\nDemo:\nhttps://nqmtuan-dot-luci-milo-dev.appspot.com/ui/inv/task-chromium-swarm.appspot.com-4e077136a786e711-batch-11/test-results",
       "revId": "563c93c57a247cb0307a159e2a7b232d63d71ef9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6d52e1e_136e0a75",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-08T22:42:59Z",
+      "side": 1,
+      "message": "Is it possible to implement this as a custom element and allow this custom element when sanitising HTML?\nIf possible, I think that will be a much cleaner implementation.\n",
+      "revId": "563c93c57a247cb0307a159e2a7b232d63d71ef9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
