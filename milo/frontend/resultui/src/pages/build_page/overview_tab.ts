@@ -230,11 +230,12 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <div>
         <h3>Tags</h3>
-        <table>
+        <div id="tags">
           ${tags.map((tag) => html`
-          <tr><td>${tag.key}:</td><td>${tag.value}</td></tr>
+          <div class="key">${tag.key}:</div>
+          <div class="value">${tag.value}</div>
           `)}
-        </table>
+        </div>
       </div>
     `;
   }
@@ -243,6 +244,7 @@ export class OverviewTabElement extends MobxLitElement {
     const editorOptions = {
       mode: 'ace/mode/json',
       readOnly: true,
+      highlightActiveLine: false,
       showPrintMargin: false,
       scrollPastEnd: false,
       fontSize: 12,
@@ -299,7 +301,7 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       <div id="main">
-        <div>
+        <div class="first-column">
           ${this.renderStatusTime()}
           ${this.renderCanaryWarning()}
           ${this.renderSummary()}
@@ -309,7 +311,7 @@ export class OverviewTabElement extends MobxLitElement {
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
         </div>
-        <div>
+        <div class="second-column">
           ${this.renderTags()}
           ${this.renderProperties('Input Properties', build.input.properties)}
           ${this.renderProperties('Output Properties', build.output.properties)}
@@ -319,12 +321,21 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   static styles = css`
-    #main > div > * {
+    #main {
       margin: 5px 24px;
     }
-    #main > div {
-      float: left;
-      min-width: 600px;
+    @media screen and (min-width: 1500px) {
+      #main {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-gap: 20px;
+      }
+      .first-column {
+        max-width: 900px;
+      }
+      .second-column {
+        overflow: hidden;
+      }
     }
 
     #status {
@@ -369,6 +380,24 @@ export class OverviewTabElement extends MobxLitElement {
     #summary-html {
       background-color: var(--block-background-color);
       padding: 5px;
+      clear: both;
+      overflow-wrap: break-word;
+    }
+
+    #tags {
+      display: grid;
+      grid-template-columns: auto 1fr;
+    }
+    #tags div {
+      clear: both;
+      overflow-wrap: anywhere;
+    }
+    #tags .value {
+      margin-left: 5px;
+    }
+    #tags>div {
+      margin-top: 1px;
+      margin-bottom: 1px;
     }
 
     .list-entry {
@@ -376,7 +405,8 @@ export class OverviewTabElement extends MobxLitElement {
     }
 
     milo-ace-editor {
-      width: 800px;
+      min-width: 600px;
+      max-width: 1000px;
     }
   `;
 }

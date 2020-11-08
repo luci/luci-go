@@ -181,6 +181,8 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     #summary {
       background-color: var(--block-background-color);
       padding: 5px;
+      clear: both;
+      overflow-wrap: break-word;
     }
 
     #summary > p:first-child {
@@ -194,6 +196,8 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     #log-links {
       margin: 3px 0;
       padding-inline-start: 28px;
+      clear: both;
+      overflow-wrap: break-word;
     }
 
     #log-links>li:nth-child(odd) {
