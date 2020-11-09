@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a688d17_22825940",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-09T20:07:56Z",
+      "side": 1,
+      "message": "Side question: Why the TokenType for PSSA is \"Bearer\" and that for legacy .netrc is \"Basic\"?",
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01be4000_ec01264c",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-09T20:07:56Z",
+      "side": 1,
+      "message": "nit: Similar to how `exec` is tested, may be this could be a package var instead of a property of factory struct?",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 89
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34d99711_9bd97254",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-09T20:07:56Z",
+      "side": 1,
+      "message": "It looks like mutex is protecting access to f.legacyCache only. So do we really need RLock and RUnlock for accessing pssaBlocklist?",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 19
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
