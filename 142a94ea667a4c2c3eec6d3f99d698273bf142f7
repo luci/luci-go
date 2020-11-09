@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca86bdcf_a1b852fc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-09T07:35:30Z",
+      "side": 1,
+      "message": "Just a nit from me. I\u0027ll let Weiwei approve this design since he has more experience.",
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77dcf309_2e1b2dba",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-09T07:35:30Z",
+      "side": 1,
+      "message": "nit: remove \"diff\"",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 31
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
