@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a801ac1_ac6e0fe2",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T22:19:53Z",
+      "side": 1,
+      "message": "This is not needed and even a bit harmful (the resulting URL will be \"/internal/tasks/config/refresh-project-config/refresh-project-config). There\u0027s a suitable default prefix already.",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 65
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "0c4f1898_d8265646",
