@@ -1,0 +1,285 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c4f1898_d8265646",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "probably fine to start with, but I think half of this config should be in main() {registration, prefix and queue bindings, which don\u0027t affect this package logic).",
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc62f1ec_8ea3d083",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 50,
+        "startChar": 48,
+        "endLine": 50,
+        "endChar": 50
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6d5eb7c_9d49ab39",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "having",
+      "range": {
+        "startLine": 57,
+        "startChar": 54,
+        "endLine": 57,
+        "endChar": 58
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca9c4a2f_2740a200",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "parallel.WorkPool(32, ...\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/sync/parallel/workPool.go;l\u003d29?q\u003dparallel.Workpool\n\n\nI think we have ~50 projects these days.",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 51
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "668750e6_9848d982",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "tl;dr Remove dedup.\n\nCurrent code will effectively reduce project refresh to at most 1 / hour due to dedup (there is ~1h dedup window for recently executed task), so this needs a time component truncated to say nearest future minute.",
+      "range": {
+        "startLine": 72,
+        "startChar": 21,
+        "endLine": 72,
+        "endChar": 29
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "453a4d18_eedac46e",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "not useful, since tasks don\u0027t really depend on project name.\nConsider:\n  \"failed to submit refresh tasks for %d out of %d projects\", failedCount, len(projectsToRefresh))\n\nand you can use atomic op Int32 to increment failedCount from concurrent code.",
+      "range": {
+        "startLine": 82,
+        "startChar": 73,
+        "endLine": 82,
+        "endChar": 87
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "277fdc84_739c26b2",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "doesn\u0027t",
+      "range": {
+        "startLine": 90,
+        "startChar": 57,
+        "endLine": 90,
+        "endChar": 62
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86d95782_3643df53",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "This will do a lot of work on every call even though configs mostly don\u0027t change.\nThink about ways to avoid expensive fetching of config data and writing it to datastore if it\u0027s not necessary.\n\nIdeas:\n* ask LUCI Config first for config *revision*. If it\u0027s the same as stored in ProjectConfig entity, quick exit. No transactions required. Strictly speaking, we can even use config hash (as computed by luci config) to do even less work.\n\n* before writing config group to datastore, check if datastore already contains the entity. Since these are idempotent, allows to skip work.",
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c9d1c39_3c672e0a",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "👍 but also 😭 this is still with us.",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 64
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c97c4d8f_8f27c377",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "In this case, it\u0027s definitely ErrNoSuchEntity, no unwrapping needed.",
+      "range": {
+        "startLine": 154,
+        "startChar": 19,
+        "endLine": 154,
+        "endChar": 52
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3af9be23_45bdfe33",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "This should be done outside of a transaction:\n * amount of data written can eventually be \u003e10MiB (trans limit)\n * op is idempotent and won\u0027t affect any other ops (by design 👍). Making it atomic gives us nothing.\n * but costs us by increasing chance of failure: suppose we have 2 big config groups. Failing to write 2nd one, will undo the write of the first.",
+      "range": {
+        "startLine": 155,
+        "startChar": 14,
+        "endLine": 155,
+        "endChar": 31
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7704ab2_5e106d88",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "at design time, i thought this would depend on whether project is being enabled (ie datastore.IsErrNoSuchEntity(err)) or config is merely updated. I don\u0027t know if it\u0027s actually necessary. I\u0027ll code Projectmanager and then we\u0027ll see.",
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a432a09_76f9ac86",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T22:07:12Z",
+      "side": 1,
+      "message": "it\u0027d be better not to overwrite existing entity, but merely amend:\n\npc.Version +\u003d1\npc.UpdatedTime \u003d ..\npc.Enabled \u003d false\n\nThen adding new Field won\u0027t require updating *this* code.\n\nAlso, because I kept forgetting UpdatedTime, I decided to use mutate() / populate() to do this for me (see https://crrev.com/c/2526308/2/cv/internal/changelist/model.go). In this code, with just 2 places, it\u0027s probably fine.",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 2
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
