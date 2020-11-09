@@ -37,9 +37,11 @@ import (
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref string
-	git.Graph
+	ref   string
+	graph *git.Graph
 }
+
+// graphFile is a file that stores a git-based file graph.
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&g.ref, "ref", "refs/heads/main", text.Doc(`
@@ -90,7 +92,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 		}
 
 		// Load the node.
-		node := g.Node(name)
+		node := g.graph.Node(name)
 		if node == nil {
 			return nil, errors.Reason("node %q not found", name).Err()
 		}
@@ -110,7 +112,8 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	}
 
 	// Read/write the graph from/to a file under .git directory, named after the ref.
-	f, err := os.OpenFile(
+	store := graphStore{}
+	store.File, err = os.OpenFile(
 		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
 		os.O_RDWR|os.O_CREATE,
 		0777,
@@ -118,15 +121,7 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-
-	// Read the cache.
-	switch err := g.Read(bufio.NewReader(f)); {
-	case os.IsNotExist(err):
-		logging.Infof(ctx, "populating cache; this may take minutes...")
-	case err != nil:
-		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
-	}
+	defer store.Close()
 
 	// Fallback from main to master if needed.
 	tillRev := g.ref
@@ -139,37 +134,37 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		}
 	}
 
-	write := func() error {
-		// Write the graph to the beginning of the file.
-		if _, err := f.Seek(0, 0); err != nil {
-			return err
-		}
-		bufW := bufio.NewWriter(f)
-		if err := g.Write(bufW); err != nil {
-			return err
-		}
-		if err := bufW.Flush(); err != nil {
-			return err
-		}
+	if err := store.LoadSynced(ctx, repoDir, tillRev); err != nil {
+		return errors.Annotate(err, "failed to load the graph").Err()
+	}
 
-		// Truncate to the current length.
-		curLen, err := f.Seek(0, 1)
-		if err != nil {
-			return err
-		}
-		return f.Truncate(curLen)
+	g.graph = &store.Graph
+	return nil
+}
+
+// graphStore stores a git-based file graph.
+type graphStore struct {
+	git.Graph
+	*os.File
+}
+
+// LoadSynced loads a synchronized graph.
+func (s *graphStore) LoadSynced(ctx context.Context, repoDir, rev string) error {
+	// Read the cache.
+	if err := s.tryReadingCache(ctx); err != nil {
+		return err
 	}
 
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Sync(ctx, repoDir, tillRev, func() error {
+	err := s.Graph.Sync(ctx, repoDir, rev, func() error {
 		dirty = true
 
 		processed++
 		if processed%10000 == 0 {
-			if err := write(); err != nil {
-				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+			if err := s.write(); err != nil {
+				return errors.Annotate(err, "failed to write the graph to %q", s.Name()).Err()
 			}
 			dirty = false
 			logging.Infof(ctx, "processed %d commits", processed)
@@ -180,11 +175,59 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	case err != nil:
 		return err
 	case dirty:
-		err = write()
-		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
-	default:
+		if err = s.write(); err != nil {
+			return errors.Annotate(err, "failed to write the graph to %q", s.Name()).Err()
+		}
+	}
+	return nil
+}
+
+// tryReadingCache tries to read the graph from the file.
+// On a non-fatal error, logs the error and clears f.Graph.
+func (s *graphStore) tryReadingCache(ctx context.Context) error {
+	// Check length.
+	switch n, err := s.fileLen(); {
+	case err != nil:
+		return errors.Annotate(err, "failed to read file length").Err()
+	case n == 0:
+		// The file is empty => cache miss.
 		return nil
 	}
+
+	// Read the cache.
+	if err := s.Graph.Read(bufio.NewReader(s.File)); err != nil {
+		logging.Warningf(ctx, "cache is corrupted: %s\npopulating cache; this may take minutes...", err)
+		// Reset the graph state.
+		s.Graph = git.Graph{}
+	}
+
+	return nil
+}
+
+// write writes the graph to the file.
+func (s *graphStore) write() error {
+	// Write the graph to the beginning of the file.
+	if _, err := s.Seek(0, 0); err != nil {
+		return err
+	}
+	bufW := bufio.NewWriter(s.File)
+	if err := s.Graph.Write(bufW); err != nil {
+		return err
+	}
+	if err := bufW.Flush(); err != nil {
+		return err
+	}
+
+	// Truncate to the current length.
+	curLen, err := s.fileLen()
+	if err != nil {
+		return err
+	}
+	return s.Truncate(curLen)
+}
+
+func (s *graphStore) fileLen() (int64, error) {
+	return s.Seek(0, 1)
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
