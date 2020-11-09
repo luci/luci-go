@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "877c5cce_8c2ba8d5",
+        "filename": "cv/internal/gerrit/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:54:06Z",
+      "side": 1,
+      "message": "added 1 liner for gerritpb.GerritClient.\n\nThe implementation is in next CL (see UseProd)",
+      "parentUuid": "9760837a_1d0191b4",
+      "range": {
+        "startLine": 26,
+        "startChar": 29,
+        "endLine": 26,
+        "endChar": 40
+      },
+      "revId": "006e144aa63c0997652db998ad0f0fa8122440a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "780853cf_0fa79b00",
         "filename": "cv/internal/gerrit/client.go",
         "patchSetId": 4
@@ -77,6 +101,30 @@
       "writtenOn": "2020-11-09T19:03:35Z",
       "side": 1,
       "message": "chromium",
+      "range": {
+        "startLine": 34,
+        "startChar": 23,
+        "endLine": 34,
+        "endChar": 30
+      },
+      "revId": "006e144aa63c0997652db998ad0f0fa8122440a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0401cd78_3e2c041f",
+        "filename": "cv/internal/gerrit/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:54:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b62bdc8b_0cc52932",
       "range": {
         "startLine": 34,
         "startChar": 23,
