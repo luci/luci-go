@@ -17,14 +17,16 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { computedFn, fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import '../../context/artifact/artifact_provider';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import '../expandable_entry';
 import './image_diff_artifact';
+import './text_artifact';
 import './text_diff_artifact';
 
 /**
@@ -60,6 +62,10 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
 
+  @computed private get artifactsMapping() {
+    return new Map(this.artifacts.map(obj => [obj.artifactId, obj]));
+  }
+
   @computed private get textDiffArtifact() {
     return this.artifacts.find((a) => a.artifactId === 'text_diff');
   }
@@ -71,15 +77,32 @@ export class ResultEntryElement extends MobxLitElement {
     };
   }
 
+  artifactContentRes = computedFn((fetchUrl: string): IPromiseBasedObservable<string> => {
+    return fromPromise(fetch(fetchUrl).then((res) => res.text()));
+  });
+
+  artifactContent = computedFn((fetchUrl: string): string => {
+    const contentRes = this.artifactContentRes(fetchUrl);
+    return contentRes.state === 'fulfilled' ? contentRes.value : '';
+  });
+
   private renderSummaryHtml() {
-    if (!this.testResult.summaryHtml) {
+    if (!this.testResult.summaryHtml.includes('artifact-text')) {
+      return html`
+      <div id="summary-html">
+          ${sanitizeHTML(this.testResult.summaryHtml)}
+      </div>
+      `;
+    }
+    if (this.artifactsRes.state !== 'fulfilled') {
       return html``;
     }
-
     return html`
-      <div id="summary-html">
+    <div id="summary-html">
+      <milo-artifact-provider .artifacts=${this.artifactsMapping}>
         ${sanitizeHTML(this.testResult.summaryHtml)}
-      </div>
+      </milo-artifact-provider
+    </div>
     `;
   }
 
