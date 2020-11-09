@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5de01f9_38bc8690",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T16:37:34Z",
+      "side": 1,
+      "message": "Vadim, please take a look at auth.go from auth stack expert perspective.",
+      "revId": "134fa6c4034fdee0969aa8ab15ca4e80917c9908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
