@@ -114,6 +114,30 @@
       },
       "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36004a21_68d00b21",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T22:31:48Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "61219c6e_90255056",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
