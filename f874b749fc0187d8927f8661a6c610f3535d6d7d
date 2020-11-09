@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f35e7da_e90a0021",
+        "filename": "cv/internal/gerrit/equi.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:04:20Z",
+      "side": 1,
+      "message": "Go always initializes values to their so-called \"zero value\". For ints, it\u0027s 0.\n\nBut, the above doesn\u0027t matter:\nby **default** if a Go func returns non-nil error, then other returned values must be ignored.\nHence, this func can return \"-123, 42, \u003cnon-nil-error\u003e\" and still be correct.",
+      "parentUuid": "247e08c3_748633bd",
+      "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "277bbdf8_1d62a13d",
@@ -49,6 +67,24 @@
       "side": 1,
       "message": "That\u0027s a good question.\n\nAFAIK Gerrit *should* always give revisions with no gaps, but I\u0027m not sure whether it\u0027s guaranteed. IMO it\u0027d probably be OK to not check this although it\u0027s an assumption that\u0027s worth noting",
       "parentUuid": "277bbdf8_1d62a13d",
+      "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0b154ad_7deb6611",
+        "filename": "cv/internal/gerrit/equi.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:04:20Z",
+      "side": 1,
+      "message": "Glad you asked! Actually, I coded defensively s.t. consecutive patchset numbers aren\u0027t required, only monotonically inreasing.\n\nrevs[i+1] here means **next** patchset in a sorted list, not revision with .Number (aka patchset) equal to (i+1)",
+      "parentUuid": "78230317_51bfd4dd",
       "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
