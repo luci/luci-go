@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "defaebd1_25ea5866",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-09T18:59:17Z",
+      "side": 1,
+      "message": "But it may fail (and return error), in which case we want to retry, right?",
+      "range": {
+        "startLine": 173,
+        "startChar": 18,
+        "endLine": 173,
+        "endChar": 25
+      },
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "46de7aa7_f3d2bdc6",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-09T18:59:17Z",
+      "side": 1,
+      "message": "(Side question; Is RND an acronym here, e.g. does it stand for random number distribution? If not, I guess you could phrase it as \"use a single random number source...\")",
+      "range": {
+        "startLine": 186,
+        "startChar": 18,
+        "endLine": 186,
+        "endChar": 21
+      },
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56adb039_5dd4a3f5",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-09T18:59:17Z",
+      "side": 1,
+      "message": "Could you explain a little more what this test case is testing (and how)?\n\nIf I understand it, the the point is that when lots of updates are done simultaneously for the same CL snapshot, and datastore fails sometimes, the snapshot will be updated after some number of retries. Since there\u0027s a retry loop in this test where UpdateSnapshot is called repeatedly, this also suggests that in production UpdateSnapshot should be called in a retry loop, right?",
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
