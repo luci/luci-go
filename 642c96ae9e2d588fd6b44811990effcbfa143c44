@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6618f8d_42ee7924",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:36:34Z",
+      "side": 1,
+      "message": "Yes, the use case is finding a CLID of a dependency.",
+      "parentUuid": "6fd55737_a7f36483",
+      "range": {
+        "startLine": 17,
+        "startChar": 41,
+        "endLine": 17,
+        "endChar": 52
+      },
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "defaebd1_25ea5866",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-09T18:59:17Z",
       "side": 1,
       "message": "But it may fail (and return error), in which case we want to retry, right?",
+      "range": {
+        "startLine": 173,
+        "startChar": 18,
+        "endLine": 173,
+        "endChar": 25
+      },
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2aed3d2_0602fc82",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:36:34Z",
+      "side": 1,
+      "message": "Ensures is a guarantee provided in case of err !\u003d nil, like most Go functions. wrt retry, answered in model_test file comment.",
+      "parentUuid": "defaebd1_25ea5866",
       "range": {
         "startLine": 173,
         "startChar": 18,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "35c81016_1f03ea16",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:36:34Z",
+      "side": 1,
+      "message": "this is copy-pasta from Vadim\u0027s code 😄",
+      "parentUuid": "46de7aa7_f3d2bdc6",
+      "range": {
+        "startLine": 186,
+        "startChar": 18,
+        "endLine": 186,
+        "endChar": 21
+      },
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "56adb039_5dd4a3f5",
@@ -83,6 +155,24 @@
       "writtenOn": "2020-11-09T18:59:17Z",
       "side": 1,
       "message": "Could you explain a little more what this test case is testing (and how)?\n\nIf I understand it, the the point is that when lots of updates are done simultaneously for the same CL snapshot, and datastore fails sometimes, the snapshot will be updated after some number of retries. Since there\u0027s a retry loop in this test where UpdateSnapshot is called repeatedly, this also suggests that in production UpdateSnapshot should be called in a retry loop, right?",
+      "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c25a07f1_ffe2fe43",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-09T19:36:34Z",
+      "side": 1,
+      "message": "It\u0027s testing guarantees of UpdateSnapshot. I\u0027ve added commnets, see diff.\n\n\u003e in production UpdateSnapshot should be called in a retry loop\n\n1. RunInTransaction already retries by default on txn commit errors. Here goes your first level loop.\n2. CV code won\u0027t loop over UpdateSnapshot directly, as we don\u0027t expect high failure rate. And if we see high failure rate, it\u0027s either datastore outage OR we have too much contention on CL entity (\u003d\u003e design problem).\n3. But, the TQ task which polls Gerrit and does UpdateSnapshot (CL soon to come) is auto-retriable by Cloud TQ.",
+      "parentUuid": "56adb039_5dd4a3f5",
       "revId": "642c96ae9e2d588fd6b44811990effcbfa143c44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
