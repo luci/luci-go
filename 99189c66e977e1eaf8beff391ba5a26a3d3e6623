@@ -67,6 +67,29 @@
       "message": "This is not type checked.\nCan we change it to something like this?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/resultui/src/context/build_state/build_state.ts;l\u003d137",
       "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6471f69b_f3d43192",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T22:24:39Z",
+      "side": 1,
+      "message": "I wonder, is this protected from javascript injections? What if `content` is \"\u003c/pre\u003e\u003cscript\u003estealAllYourData()\u003c/script\u003e\"?",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
