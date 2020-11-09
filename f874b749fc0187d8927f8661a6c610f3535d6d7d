@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "277bbdf8_1d62a13d",
+        "filename": "cv/internal/gerrit/equi.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-09T18:21:54Z",
+      "side": 1,
+      "message": "I think another assumption here is that the PatchSet number for revisions in `revs` are consecutive i.e. ([currentPatchSetNumber..1]). Not sure if it is guaranteed in gerrit response. Do you think it\u0027s worth checking validating that before computing `minEquiPatchset`.",
+      "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
