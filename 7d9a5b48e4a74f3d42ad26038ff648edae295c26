@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "63e78614_3fcc3ad3",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T20:18:09Z",
+      "side": 1,
+      "message": "You can use https://godoc.org/go.chromium.org/luci/server/caching/layered instead of rolling your own. E.g. see https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/auth/signing/info.go;l\u003d35?q\u003dlayered.Cache\u0026ss\u003dchromium%2Finfra%2Finfra\n\nOr https://godoc.org/go.chromium.org/luci/common/data/caching/lru#Cache if you don\u0027t care about caching across processes.",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "01be4000_ec01264c",
         "filename": "cv/internal/gerrit/auth.go",
         "patchSetId": 4
@@ -59,6 +82,52 @@
         "startChar": 0,
         "endLine": 108,
         "endChar": 19
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1b923f3_534c1fc4",
+        "filename": "cv/internal/gerrit/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T20:18:09Z",
+      "side": 1,
+      "message": "chromium",
+      "range": {
+        "startLine": 34,
+        "startChar": 23,
+        "endLine": 34,
+        "endChar": 30
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf26546e_43201b55",
+        "filename": "cv/internal/gerrit/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-09T20:18:09Z",
+      "side": 1,
+      "message": "nit: UseClientFactory(newFactory().makeClient)",
+      "range": {
+        "startLine": 43,
+        "startChar": 8,
+        "endLine": 43,
+        "endChar": 70
       },
       "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
