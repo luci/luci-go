@@ -172,3 +172,8 @@ type netrcToken struct {
 	GerritHost  string `gae:"$id"`
 	AccessToken string `gae:",noindex"`
 }
+
+func SaveLegacyNetrcToken(ctx context.Context, host, token string) error {
+	err := datastore.Put(ctx, &netrcToken{host, token})
+	return errors.Annotate(err, "failed to save legacy netrc token").Err()
+}
