@@ -120,14 +120,6 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	}
 	defer f.Close()
 
-	// Read the cache.
-	switch err := g.Read(bufio.NewReader(f)); {
-	case os.IsNotExist(err):
-		logging.Infof(ctx, "populating cache; this may take minutes...")
-	case err != nil:
-		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
-	}
-
 	// Fallback from main to master if needed.
 	tillRev := g.ref
 	if g.ref == "refs/heads/main" {
@@ -139,36 +131,19 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		}
 	}
 
-	write := func() error {
-		// Write the graph to the beginning of the file.
-		if _, err := f.Seek(0, 0); err != nil {
-			return err
-		}
-		bufW := bufio.NewWriter(f)
-		if err := g.Write(bufW); err != nil {
-			return err
-		}
-		if err := bufW.Flush(); err != nil {
-			return err
-		}
-
-		// Truncate to the current length.
-		curLen, err := f.Seek(0, 1)
-		if err != nil {
-			return err
-		}
-		return f.Truncate(curLen)
+	if err := g.tryReadingCache(ctx, f); err != nil {
+		return err
 	}
 
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Sync(ctx, repoDir, tillRev, func() error {
+	err = g.Graph.Sync(ctx, repoDir, tillRev, func() error {
 		dirty = true
 
 		processed++
 		if processed%10000 == 0 {
-			if err := write(); err != nil {
+			if err := g.writeCache(f); err != nil {
 				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
 			}
 			dirty = false
@@ -180,11 +155,55 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	case err != nil:
 		return err
 	case dirty:
-		err = write()
-		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
-	default:
+		if err := g.writeCache(f); err != nil {
+			return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+		}
+	}
+	return nil
+}
+
+// tryReadingCache tries to read the graph from the cache file.
+// On a non-fatal error, logs the error and clears g.Graph.
+func (g *gitGraph) tryReadingCache(ctx context.Context, f *os.File) error {
+	// Check for cache-miss based on the file length.
+	switch n, err := f.Seek(0, 1); {
+	case err != nil:
+		return errors.Annotate(err, "failed to read file length").Err()
+	case n == 0:
+		// The file is empty => cache miss.
 		return nil
 	}
+
+	// Read the cache.
+	if err := g.Graph.Read(bufio.NewReader(f)); err != nil {
+		logging.Warningf(ctx, "cache is corrupted: %s\npopulating cache; this may take minutes...", err)
+		// Reset the graph state.
+		g.Graph = git.Graph{}
+	}
+
+	return nil
+}
+
+// writeCache writes the graph to the cache file.
+func (g *gitGraph) writeCache(f *os.File) error {
+	// Write the graph to the beginning of the file.
+	if _, err := f.Seek(0, 0); err != nil {
+		return err
+	}
+	bufW := bufio.NewWriter(f)
+	if err := g.Graph.Write(bufW); err != nil {
+		return err
+	}
+	if err := bufW.Flush(); err != nil {
+		return err
+	}
+
+	// Truncate to the current length.
+	curLen, err := f.Seek(0, 1)
+	if err != nil {
+		return err
+	}
+	return f.Truncate(curLen)
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
