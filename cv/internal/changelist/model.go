@@ -74,8 +74,9 @@ type CL struct {
 	// Patchset is incremental number of the latest patchset (aka revision).
 	Patchset int `gae:",noindex"`
 	// MinEquivalentPatchset is the smallest and hence the earliest patchset
-	// which is equivalent to the latest one.
-	// TODO(tandrii): link to function computing it.
+	// which is code-wise equivalent to the latest one.
+	//
+	// See gerrit.EquivalentPatchsetRange function for details.
 	//
 	// CV tracks this to determine which prior tryjobs can be re-used and which
 	// can be canceled.
