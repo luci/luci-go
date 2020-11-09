@@ -15,6 +15,7 @@
 package git
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -83,19 +84,74 @@ func (g *Graph) node(name string) *node {
 	return cur
 }
 
+// ensureNode creates the node if it doesn't exist, and returns it.
+// Creates the node's ancestors if needed.
+// Assumes the name is valid.
+func (g *Graph) ensureNode(name string) *node {
+	if name == "//" {
+		return &g.root
+	}
+
+	cur := &g.root
+
+	child := func(baseName, name string) *node {
+		if ret, ok := cur.children[baseName]; ok {
+			return ret
+		}
+
+		ret := &node{name: name}
+		if cur.children == nil {
+			cur.children = map[string]*node{}
+		}
+		cur.children[baseName] = ret
+		return ret
+	}
+
+	startAt := 2 // skip the "//" prefix
+	for {
+		sep := strings.Index(name[startAt:], "/")
+		if sep == -1 {
+			return child(name[startAt:], name)
+		}
+		sep += startAt
+
+		// Note: no string allocations for the full name.
+		cur = child(name[startAt:sep], name[:sep])
+		startAt = sep + 1
+	}
+}
+
+func (n *node) ensureAlias(to *node) {
+	for i := range n.edges {
+		if n.edges[i].to == to {
+			n.edges[i].commonCommits = 0
+			return
+		}
+	}
+
+	n.prepareToAppendEdges()
+	n.edges = append(n.edges, edge{to: to})
+}
+
 func (n *node) Name() string {
 	return n.name
 }
 
 func (n *node) IsFile() bool {
+	
 	return len(n.children) == 0 && n.name != "//"
 }
 
 func (n *node) Outgoing(callback func(other filegraph.Node, distance float64) (keepGoing bool)) {
 	for _, e := range n.edges {
-		// TODO(nodir): consider using multiplication in filegraph.Query instead of
-		// calling log2, because the latter is expensive.
-		distance := -math.Log2(float64(e.commonCommits) / float64(n.commits))
+		distance := 0.0
+		if e.commonCommits == 0 {
+			// e.to is alias of n. The distance is 0.
+		} else {
+			// TODO(nodir): consider using multiplication in filegraph.Query instead of
+			// calling log2, because the latter is expensive.
+			distance = -math.Log2(float64(e.commonCommits) / float64(n.commits))
+		}
 		if !callback(e.to, distance) {
 			return
 		}
@@ -127,6 +183,31 @@ func (n *node) sortedChildKeys() []string {
 	return keys
 }
 
+// removeEdge removes an edge to the specified node.
+// Returns false if the edge is not found.
+func (n *node) removeEdge(to *node) bool {
+	for i := range n.edges {
+		if n.edges[i].to == to {
+			copy(n.edges[i:], n.edges[i+1:])
+			n.edges = n.edges[:len(n.edges)-1]
+			return true
+		}
+	}
+	return false
+}
+
+// prepareToAppendEdges copies n.edges if n.copyEdgesOnAppend is true.
+func (n *node) prepareToAppendEdges() {
+	if !n.copyEdgesOnAppend {
+		return
+	}
+
+	n.copyEdgesOnAppend = false
+	edges := make([]edge, len(n.edges))
+	copy(edges, n.edges)
+	n.edges = edges
+}
+
 // splitName splits a node name into components,
 // e.g. "//foo/bar.cc" -> ["foo", "bar.cc"].
 func splitName(name string) []string {
@@ -135,4 +216,22 @@ func splitName(name string) []string {
 		return nil
 	}
 	return strings.Split(name, "/")
+}
+
+// baseName returns the base name and the full name of the parent,
+// e.g. "//a/b/c" -> ("//a/b", "c").
+// If name is "//", returns ("//", "").
+// Panics if name is invalid.
+func baseName(name string) (parent, base string) {
+	slash := strings.LastIndexAny(name, "/")
+	if slash == -1 {
+		panic(fmt.Sprintf("no slash in %q", name))
+	}
+
+	parent = name[:slash]
+	base = name[slash+1:]
+	if parent == "/" {
+		parent = "//"
+	}
+	return
 }
