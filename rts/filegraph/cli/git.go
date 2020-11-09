@@ -37,8 +37,13 @@ import (
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref string
+	ref   string
+	graph *git.Graph
+}
+
+type graphFile struct {
 	git.Graph
+	file *os.File
 }
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
@@ -90,7 +95,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 		}
 
 		// Load the node.
-		node := g.Node(name)
+		node := g.graph.Node(name)
 		if node == nil {
 			return nil, errors.Reason("node %q not found", name).Err()
 		}
@@ -110,7 +115,8 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	}
 
 	// Read/write the graph from/to a file under .git directory, named after the ref.
-	f, err := os.OpenFile(
+	f := graphFile{}
+	f.file, err = os.OpenFile(
 		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
 		os.O_RDWR|os.O_CREATE,
 		0777,
@@ -118,14 +124,10 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.file.Close()
 
-	// Read the cache.
-	switch err := g.Read(bufio.NewReader(f)); {
-	case os.IsNotExist(err):
-		logging.Infof(ctx, "populating cache; this may take minutes...")
-	case err != nil:
-		logging.Warningf(ctx, "cache is corrupted; populating cache; this may take minutes...")
+	if err := f.tryReading(ctx); err != nil {
+		return err
 	}
 
 	// Fallback from main to master if needed.
@@ -139,37 +141,16 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		}
 	}
 
-	write := func() error {
-		// Write the graph to the beginning of the file.
-		if _, err := f.Seek(0, 0); err != nil {
-			return err
-		}
-		bufW := bufio.NewWriter(f)
-		if err := g.Write(bufW); err != nil {
-			return err
-		}
-		if err := bufW.Flush(); err != nil {
-			return err
-		}
-
-		// Truncate to the current length.
-		curLen, err := f.Seek(0, 1)
-		if err != nil {
-			return err
-		}
-		return f.Truncate(curLen)
-	}
-
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Sync(ctx, repoDir, tillRev, func() error {
+	err = g.graph.Sync(ctx, repoDir, tillRev, func() error {
 		dirty = true
 
 		processed++
 		if processed%10000 == 0 {
-			if err := write(); err != nil {
-				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+			if err := f.write(); err != nil {
+				return errors.Annotate(err, "failed to write the graph to %q", f.file.Name()).Err()
 			}
 			dirty = false
 			logging.Infof(ctx, "processed %d commits", processed)
@@ -180,11 +161,57 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	case err != nil:
 		return err
 	case dirty:
-		err = write()
-		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+		g.graph = &f.Graph
+		err = f.write()
+		return errors.Annotate(err, "failed to write the graph to %q", f.file.Name()).Err()
 	default:
 		return nil
 	}
+}
+
+func (f *graphFile) tryReading(ctx context.Context) error {
+	// Check length.
+	switch n, err := f.Len(); {
+	case err != nil:
+		return err
+	case n == 0:
+		// Cache miss.
+		return nil
+	}
+
+	// Read the cache.
+	if err := f.Read(bufio.NewReader(f.file)); err != nil {
+		logging.Warningf(ctx, "cache is corrupted: %s\npopulating cache; this may take minutes...", err)
+		// Reset the graph state.
+		f.Graph = git.Graph{}
+	}
+
+	return nil
+}
+
+func (f *graphFile) write() error {
+	// Write the graph to the beginning of the file.
+	if _, err := f.file.Seek(0, 0); err != nil {
+		return err
+	}
+	bufW := bufio.NewWriter(f.file)
+	if err := f.Write(bufW); err != nil {
+		return err
+	}
+	if err := bufW.Flush(); err != nil {
+		return err
+	}
+
+	// Truncate to the current length.
+	curLen, err := f.Len()
+	if err != nil {
+		return err
+	}
+	return f.file.Truncate(curLen)
+}
+
+func (f *graphFile) Len() (int64, error) {
+	return f.file.Seek(0, 1)
 }
 
 // ensureSameRepo ensures that all files belong to the same git repository
