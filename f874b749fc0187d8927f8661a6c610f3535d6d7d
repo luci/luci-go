@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "247e08c3_748633bd",
+        "filename": "cv/internal/gerrit/equi.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-09T18:26:00Z",
+      "side": 1,
+      "message": "Just a Go question: the return type is declared to use minEquiPatchset and currentPatchset but they aren\u0027t initialized yet, I guess they\u0027ll be 0?",
+      "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "277bbdf8_1d62a13d",
@@ -14,6 +31,24 @@
       "writtenOn": "2020-11-09T18:21:54Z",
       "side": 1,
       "message": "I think another assumption here is that the PatchSet number for revisions in `revs` are consecutive i.e. ([currentPatchSetNumber..1]). Not sure if it is guaranteed in gerrit response. Do you think it\u0027s worth checking validating that before computing `minEquiPatchset`.",
+      "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78230317_51bfd4dd",
+        "filename": "cv/internal/gerrit/equi.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-09T18:26:00Z",
+      "side": 1,
+      "message": "That\u0027s a good question.\n\nAFAIK Gerrit *should* always give revisions with no gaps, but I\u0027m not sure whether it\u0027s guaranteed. IMO it\u0027d probably be OK to not check this although it\u0027s an assumption that\u0027s worth noting",
+      "parentUuid": "277bbdf8_1d62a13d",
       "revId": "f874b749fc0187d8927f8661a6c610f3535d6d7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
