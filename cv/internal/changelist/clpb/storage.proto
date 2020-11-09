@@ -33,6 +33,17 @@ message Snapshot {
   // Resolved dependencies of a CL.
   repeated Dep deps = 2;
 
+  // Patchset is incremental number of the latest patchset (aka revision).
+  int32 patchset = 3;
+  // MinEquivalentPatchset is the smallest and hence the earliest patchset
+  // which is code-wise equivalent to the latest one.
+  //
+  // See gerrit.EquivalentPatchsetRange function for details.
+  //
+  // CV tracks this to determine which prior tryjobs can be re-used and which
+  // can be canceled.
+  int32 min_equivalent_patchset = 4;
+
   // CL-kind specific data.
   oneof kind {
     Gerrit gerrit = 11;

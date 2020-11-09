@@ -71,17 +71,6 @@ type CL struct {
 	// (e.g. Gerrit).
 	Snapshot *clpb.Snapshot
 
-	// Patchset is incremental number of the latest patchset (aka revision).
-	Patchset int `gae:",noindex"`
-	// MinEquivalentPatchset is the smallest and hence the earliest patchset
-	// which is code-wise equivalent to the latest one.
-	//
-	// See gerrit.EquivalentPatchsetRange function for details.
-	//
-	// CV tracks this to determine which prior tryjobs can be re-used and which
-	// can be canceled.
-	MinEquivalentPatchset int `gae:",noindex"`
-
 	// UpdateTime is exact time of when this entity was last updated.
 	//
 	// It's not indexed to avoid hot areas in the index.
@@ -112,22 +101,9 @@ func (eid ExternalID) Get(ctx context.Context) (*CL, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, err
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to load CLMap").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to get CLMap").Tag(transient.Tag).Err()
 	}
-	cl := &CL{ID: m.InternalID}
-	switch err := datastore.Get(ctx, cl); {
-	case err == datastore.ErrNoSuchEntity:
-		// This should not happen in practice except in the case of a very old CL
-		// which is being deleted due to retention policy. Log error but return it
-		// as transient as it's expected that CLMap entity would be removed soon,
-		// and so a retry would be produce proper datastore.ErrNoSuchEntity error.
-		msg := fmt.Sprintf("unexpectedly failed to load CL#%d given existing CLMap%q", m.InternalID, eid)
-		logging.Errorf(ctx, msg)
-		return nil, errors.Reason(msg).Tag(transient.Tag).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
-	}
-	return cl, nil
+	return getExisting(ctx, m.InternalID, eid)
 }
 
 // GetOrInsert reads a CL from datastore, creating a new one if not exists yet.
@@ -145,36 +121,24 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 	}
 	var cl *CL
 	m := clMap{ExternalID: eid}
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch err := datastore.Get(ctx, &m); {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		cl = nil
+		switch err = datastore.Get(ctx, &m); {
 		case err == nil:
 			// Has just been created by someone else.
-			cl = &CL{ID: m.InternalID}
-			return datastore.Get(ctx, cl)
+			return nil
 		case err != datastore.ErrNoSuchEntity:
 			return err
 		}
-
-		// Create new entry by writing both entities atomically.
-		cl = &CL{
-			ID:         0, // autogenerate by Datastore
-			ExternalID: eid,
-			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
-			EVersion:   1,
-		}
-		populate(cl)
-		if cl.ID != 0 || cl.ExternalID != eid || cl.EVersion != 1 {
-			panic(errors.New("populate changed ID or ExternalID or EVersion, but must not do this."))
-		}
-
-		if err := datastore.Put(ctx, cl); err != nil {
-			return err
-		}
-		m.InternalID = cl.ID
-		return datastore.Put(ctx, &m)
+		cl, err = insert(ctx, eid, populate)
+		return
 	}, nil)
-	if err != nil {
+
+	switch {
+	case err != nil:
 		return nil, errors.Annotate(err, "failed to getOrInsert a CL").Tag(transient.Tag).Err()
+	case cl == nil:
+		return getExisting(ctx, m.InternalID, eid)
 	}
 	return cl, nil
 }
@@ -193,7 +157,7 @@ func Delete(ctx context.Context, id CLID) error {
 	case err == datastore.ErrNoSuchEntity:
 		return nil // Nothing to do.
 	case err != nil:
-		return errors.Annotate(err, "failed to read CL entity").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to get a CL").Tag(transient.Tag).Err()
 	}
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -201,27 +165,117 @@ func Delete(ctx context.Context, id CLID) error {
 		return datastore.Delete(ctx, &cl, &m)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to getOrInsert a CL").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to delete a CL").Tag(transient.Tag).Err()
 	}
 	return nil
 }
 
-// Update updates a CL entity in a transaction context.
-func Update(ctx context.Context, id CLID, mutate func(*CL) (update bool)) error {
+// UpdateSnapshot ensures that CL entity contains a snapshot at least as
+// recent as the given one.
+//
+// Either ExternalID or a known CLID must be provided.
+//
+// If CLID is not known and CL for provided ExternalID doesn't exist,
+// then a new CL is created with the given snapshot.
+// Otherwise, an existing CL entity is updated iff provided snapshot
+// is newer as measured by ExternalUpdateTime.
+//
+// TODO(tandrii): emit notification events.
+func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *clpb.Snapshot) error {
+	if eid == "" && knownCLID == 0 {
+		panic("either ExternalID or known CLID must be provided")
+	}
+
+	newExternalTS := snapshot.ExternalUpdateTime.AsTime()
+
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		if knownCLID == 0 {
+			m := clMap{ExternalID: eid}
+			switch err := datastore.Get(ctx, &m); {
+			case err == datastore.ErrNoSuchEntity:
+				// Insert new entity.
+				_, err = insert(ctx, eid, func(cl *CL) { cl.Snapshot = snapshot })
+				return err
+			case err != nil:
+				return errors.Annotate(err, "failed to get CLMap entity").Tag(transient.Tag).Err()
+			}
+			knownCLID = m.InternalID
+		}
+		cl, err := getExisting(ctx, knownCLID, eid)
+		if err != nil {
+			return err
+		}
+		// Update exsting entity.
+		return update(ctx, cl, func(cl *CL) bool {
+			savedExternalTS := cl.Snapshot.GetExternalUpdateTime().AsTime()
+			if !savedExternalTS.IsZero() && newExternalTS.Before(savedExternalTS) {
+				return false // skip update.
+			}
+			cl.Snapshot = snapshot
+			return true
+		})
+	}, nil)
+	return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
+}
+
+func getExisting(ctx context.Context, clid CLID, eid ExternalID) (*CL, error) {
+	cl := &CL{ID: clid}
+	switch err := datastore.Get(ctx, cl); {
+	case err == datastore.ErrNoSuchEntity:
+		// This should not happen in practice except in the case of a very old CL
+		// which is being deleted due to retention policy. Log error but return it
+		// as transient as it's expected that CLMap entity would be removed soon,
+		// and so a retry would be produce proper datastore.ErrNoSuchEntity error.
+		msg := fmt.Sprintf("unexpectedly failed to get CL#%d given existing CLMap%q", clid, eid)
+		logging.Errorf(ctx, msg)
+		return nil, errors.Reason(msg).Tag(transient.Tag).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to get CL").Tag(transient.Tag).Err()
+	}
+	return cl, nil
+}
+
+// insert creates new CL entity for given external ID.
+//
+// Must be called after verifying that such CLMap record doesn't exist.
+func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in transaction context")
 	}
-	cl := &CL{ID: id}
-	switch err := datastore.Get(ctx, cl); {
-	case err == datastore.ErrNoSuchEntity:
-		return err
-	case err != nil:
-		return errors.Annotate(err, "failed to read CL entity").Tag(transient.Tag).Err()
+	// Create new CL and CLMap entry atomically.
+	cl := &CL{
+		ID:         0, // autogenerate by Datastore
+		ExternalID: eid,
+		EVersion:   1,
 	}
-	ev := cl.EVersion
-	if !mutate(cl) {
+	populate(cl)
+	if cl.ID != 0 || cl.ExternalID != eid || cl.EVersion != 1 {
+		panic(errors.New("populate changed ID or ExternalID or EVersion, but must not do this."))
+	}
+	cl.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+
+	if err := datastore.Put(ctx, cl); err != nil {
+		return nil, errors.Annotate(err, "failed to save CL entity").Tag(transient.Tag).Err()
+	}
+	if err := datastore.Put(ctx, &clMap{ExternalID: eid, InternalID: cl.ID}); err != nil {
+		return nil, errors.Annotate(err, "failed to save CLMap entity").Tag(transient.Tag).Err()
+	}
+	return cl, nil
+}
+
+func update(ctx context.Context, justRead *CL, mut func(*CL) (update bool)) error {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic("must be called in transaction context")
+	}
+
+	before := *justRead // shallow copy, avoiding cloning Snapshot.
+	if !mut(justRead) {
 		return nil
 	}
-	cl.EVersion = ev + 1
-	return errors.Annotate(datastore.Put(ctx, cl), "failed to save CL entity").Tag(transient.Tag).Err()
+	justRead.EVersion = before.EVersion + 1
+	justRead.UpdateTime = clock.Now(ctx).UTC()
+	if err := datastore.Put(ctx, justRead); err != nil {
+		return errors.Annotate(err, "failed to put CL entity").Tag(transient.Tag).Err()
+	}
+	return nil
 }
