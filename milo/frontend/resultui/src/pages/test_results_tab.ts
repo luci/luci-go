@@ -27,7 +27,7 @@ import '../components/test_nav_tree';
 import '../components/variant_entry';
 import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
+import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
 import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
 
@@ -36,7 +36,7 @@ import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
  */
 export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
-  @observable.ref userConfigs!: UserConfigs;
+  @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
@@ -131,14 +131,17 @@ export class TestResultsTabElement extends MobxLitElement {
 
   private renderIntegrationHint() {
     const state = this.invocationState;
-    return this.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading? html `
+    return this.configsStore.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading? html `
       <div class="list-entry">
         Don't see results of your test framework here?
         This might be because they are not integrated with ResultDB yet.
         Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
         <span
           id="hide-hint"
-          @click=${() => this.userConfigs.hints.showResultDbIntegrationHint = false}
+          @click=${() => {
+            this.configsStore.userConfigs.hints.showResultDbIntegrationHint = false;
+            this.configsStore.save();
+          }}
         >Don't show again</span>
       </div>
       <hr class="divider">
@@ -301,7 +304,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
 customElement('milo-test-results-tab')(
   consumeInvocationState(
-    consumeUserConfigs(
+    consumeConfigsStore(
       consumeAppState(TestResultsTabElement),
     ),
   ),

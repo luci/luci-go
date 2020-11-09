@@ -24,13 +24,13 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import '../../components/lazy_list';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeUserConfigs, UserConfigs } from '../../context/app_state/user_configs';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { BuildStatus } from '../../services/buildbucket';
 
 export class StepsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
-  @observable.ref userConfigs!: UserConfigs;
+  @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
 
   connectedCallback() {
@@ -38,12 +38,16 @@ export class StepsTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'steps';
   }
 
+  @computed private get stepsConfig() {
+    return this.configsStore.userConfigs.steps;
+  }
+
   @computed private get loaded() {
     return this.buildState.build !== null;
   }
 
   @computed private get noDisplayedStep() {
-    if (this.userConfigs.steps.showSucceededSteps) {
+    if (this.stepsConfig.showSucceededSteps) {
       return !this.buildState.build?.rootSteps?.length;
     }
     return !this.buildState.build?.rootSteps?.find((s) => s.status !== BuildStatus.Success);
@@ -66,8 +70,11 @@ export class StepsTabElement extends MobxLitElement {
             <input
               id="succeeded"
               type="checkbox"
-              ?checked=${this.userConfigs.steps.showSucceededSteps}
-              @change=${(e: MouseEvent) => this.userConfigs.steps.showSucceededSteps = (e.target as HTMLInputElement).checked}
+              ?checked=${this.stepsConfig.showSucceededSteps}
+              @change=${(e: MouseEvent) => {
+                this.stepsConfig.showSucceededSteps = (e.target as HTMLInputElement).checked;
+                this.configsStore.save();
+              }}
             >
             <label for="succeeded" style="color: var(--success-color);">Succeeded</label>
           </div>
@@ -83,8 +90,11 @@ export class StepsTabElement extends MobxLitElement {
             <input
               id="debug-logs-filter"
               type="checkbox"
-              ?checked=${this.userConfigs.steps.showDebugLogs}
-              @change=${(e: MouseEvent) => this.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked}
+              ?checked=${this.stepsConfig.showDebugLogs}
+              @change=${(e: MouseEvent) => {
+                this.stepsConfig.showDebugLogs = (e.target as HTMLInputElement).checked;
+                this.configsStore.save();
+              }}
             >
             <label for="debug-logs-filter">Debug</label>
           </div>
@@ -106,7 +116,7 @@ export class StepsTabElement extends MobxLitElement {
       <milo-lazy-list id="main" .growth=${300}>
         ${this.buildState.build?.rootSteps.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': !step.succeededRecursively || this.userConfigs.steps.showSucceededSteps ? '' : 'none'})}
+          style=${styleMap({'display': !step.succeededRecursively || this.stepsConfig.showSucceededSteps ? '' : 'none'})}
           .expanded=${!step.succeededRecursively}
           .number=${i + 1}
           .step=${step}
@@ -117,7 +127,7 @@ export class StepsTabElement extends MobxLitElement {
           class="list-entry"
           style=${styleMap({'display': this.loaded && this.noDisplayedStep ? '' : 'none'})}
         >
-          ${this.userConfigs.steps.showSucceededSteps ? 'No steps.' : 'All steps succeeded.'}
+          ${this.stepsConfig.showSucceededSteps ? 'No steps.' : 'All steps succeeded.'}
         </div>
         <div id="load" class="list-entry" style=${styleMap({display: this.loaded ? 'none' : ''})}>
           Loading <milo-dot-spinner></milo-dot-spinner>
@@ -180,7 +190,7 @@ export class StepsTabElement extends MobxLitElement {
 
 customElement('milo-steps-tab')(
   consumeBuildState(
-    consumeUserConfigs(
+    consumeConfigsStore(
       consumeAppState(StepsTabElement),
     ),
   ),

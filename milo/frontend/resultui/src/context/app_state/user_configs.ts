@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import merge from 'lodash-es/merge';
-import { observable, reaction } from 'mobx';
+import { observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../../libs/context';
 
@@ -53,21 +53,15 @@ export class UserConfigsStore {
 
   @observable readonly userConfigs = merge<{}, UserConfigs>({}, DEFAULT_USER_CONFIGS);
 
-  private disposer = () => {};
-
-  init() {
+  constructor() {
     const storedConfigsStr = window.localStorage.getItem(UserConfigsStore.KEY) || '{}';
     merge(this.userConfigs, JSON.parse(storedConfigsStr));
-    this.disposer = reaction(
-      () => JSON.stringify(this.userConfigs),
-      (configsStr) => window.localStorage.setItem(UserConfigsStore.KEY, configsStr),
-    );
   }
 
-  dispose() {
-    this.disposer();
+  save() {
+    window.localStorage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
   }
 }
 
-export const consumeUserConfigs = consumeContext<'userConfigs', UserConfigs>('userConfigs');
-export const provideUserConfigs = provideContext<'userConfigs', UserConfigs>('userConfigs');
+export const consumeConfigsStore = consumeContext<'configsStore', UserConfigsStore>('configsStore');
+export const provideConfigsStore = provideContext<'configsStore', UserConfigsStore>('configsStore');
