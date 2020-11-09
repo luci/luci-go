@@ -33,6 +33,24 @@
       "message": "Is it possible to implement this as a custom element and allow this custom element when sanitising HTML?\nIf possible, I think that will be a much cleaner implementation.\n",
       "revId": "563c93c57a247cb0307a159e2a7b232d63d71ef9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a9ed318_071ab29b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T06:57:07Z",
+      "side": 1,
+      "message": "I created \u003cartifact-text\u003e custom element",
+      "parentUuid": "b6d52e1e_136e0a75",
+      "revId": "563c93c57a247cb0307a159e2a7b232d63d71ef9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
