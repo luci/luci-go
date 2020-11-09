@@ -16,6 +16,57 @@
       "message": "upload new patchset?",
       "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a14ddcc3_9efb8ce8",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-09T22:21:26Z",
+      "side": 1,
+      "message": "Do we still need artifactContent and artifactContentRes?",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9adc7ae8_8b62c2d0",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-09T22:21:26Z",
+      "side": 1,
+      "message": "I think we don\u0027t need this condition.\nWrapping the content in milo-artifact-provider when there\u0027s no text-artifact doesn\u0027t cause any harm.",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bab1951d_a4fe1718",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-09T22:21:26Z",
+      "side": 1,
+      "message": "This is not type checked.\nCan we change it to something like this?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/resultui/src/context/build_state/build_state.ts;l\u003d137",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
