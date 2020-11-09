@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
-import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
+import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 
 export interface TestFilter {
   showExpected: boolean;
@@ -30,11 +30,11 @@ export interface TestFilter {
  * changed.
  */
 @customElement('milo-test-filter')
-@consumeUserConfigs
+@consumeConfigsStore
 export class TestFilterElement extends MobxLitElement {
-  @observable.ref userConfigs!: UserConfigs;
+  @observable.ref configsStore!: UserConfigsStore;
 
-  @computed private get testFilters() { return this.userConfigs.tests; }
+  @computed private get testFilters() { return this.configsStore.userConfigs.tests; }
 
   protected render() {
     return html`
@@ -47,7 +47,10 @@ export class TestFilterElement extends MobxLitElement {
         <input
           type="checkbox"
           id="expected"
-          @change=${(v: MouseEvent) => this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked}
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
           ?checked=${this.testFilters.showExpectedVariant}
         >
       <label for="expected" style="color: var(--success-color);">Expected</label>
@@ -56,7 +59,10 @@ export class TestFilterElement extends MobxLitElement {
         <input
           type="checkbox"
           id="exonerated"
-          @change=${(v: MouseEvent) => this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked}
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
           ?checked=${this.testFilters.showExoneratedVariant}
         >
         <label for="exonerated" style="color: var(--exonerated-color);">Exonerated</label>
@@ -65,7 +71,10 @@ export class TestFilterElement extends MobxLitElement {
         <input
           type="checkbox"
           id="flaky"
-          @change=${(v: MouseEvent) => this.testFilters.showFlakyVariant = (v.target as HTMLInputElement).checked}
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showFlakyVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
           ?checked=${this.testFilters.showFlakyVariant}
         >
         <label for="flaky" style="color: var(--warning-color);">Flaky</label>

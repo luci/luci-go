@@ -20,7 +20,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
-import { consumeUserConfigs, UserConfigs } from '../context/app_state/user_configs';
+import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { getLogdogRawUrl } from '../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration } from '../libs/time_utils';
@@ -33,9 +33,9 @@ import { OnEnterList } from './lazy_list';
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
-@consumeUserConfigs
+@consumeConfigsStore
 export class BuildStepEntryElement extends MobxLitElement implements OnEnterList {
-  @observable.ref userConfigs!: UserConfigs;
+  @observable.ref configsStore!: UserConfigsStore;
 
   @observable.ref number = 0;
   @observable.ref step!: StepExt;
@@ -68,7 +68,9 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
   @computed private get logs() {
     const logs = this.step.logs || [];
-    return this.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
+    return this.configsStore.userConfigs.steps.showDebugLogs
+      ? logs
+      : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   private renderContent() {
