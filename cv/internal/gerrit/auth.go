@@ -57,7 +57,6 @@ import (
 //
 // TODO(tandrii): move hardcoded projects blocklist in CQDaemon to LUCI
 // config for both CV and CQDaemon to agree on source of truth.
-// TODO(tandrii): expose legacy per-host credentials to CV via MigrationAPI.
 type factory struct {
 	legacyCache   *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
 	pssaBlocklist stringset.Set
@@ -158,4 +157,10 @@ func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*o
 type netrcToken struct {
 	GerritHost  string `gae:"$id"`
 	AccessToken string `gae:",noindex"`
+}
+
+// SaveLegacyNetrcToken creates or updates legacy netrc token.
+func SaveLegacyNetrcToken(ctx context.Context, host, token string) error {
+	err := datastore.Put(ctx, &netrcToken{host, token})
+	return errors.Annotate(err, "failed to save legacy netrc token").Err()
 }

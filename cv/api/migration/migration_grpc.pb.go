@@ -25,6 +25,9 @@ type MigrationClient interface {
 	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
+	// CQDaemon.
+	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type migrationClient struct {
@@ -53,6 +56,15 @@ func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinis
 	return out, nil
 }
 
+func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/migration.Migration/ReportUsedNetrc", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigrationServer is the server API for Migration service.
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
@@ -64,6 +76,9 @@ type MigrationServer interface {
 	ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error)
+	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
+	// CQDaemon.
+	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedMigrationServer()
 }
 
@@ -76,6 +91,9 @@ func (UnimplementedMigrationServer) ReportRuns(context.Context, *ReportRunsReque
 }
 func (UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
+}
+func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
 }
 func (UnimplementedMigrationServer) mustEmbedUnimplementedMigrationServer() {}
 
@@ -126,6 +144,24 @@ func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportUsedNetrcRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).ReportUsedNetrc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/ReportUsedNetrc",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).ReportUsedNetrc(ctx, req.(*ReportUsedNetrcRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Migration_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "migration.Migration",
 	HandlerType: (*MigrationServer)(nil),
@@ -137,6 +173,10 @@ var _Migration_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportFinishedRun",
 			Handler:    _Migration_ReportFinishedRun_Handler,
+		},
+		{
+			MethodName: "ReportUsedNetrc",
+			Handler:    _Migration_ReportUsedNetrc_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
