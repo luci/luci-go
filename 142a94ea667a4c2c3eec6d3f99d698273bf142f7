@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "025fcd66_8fd7aa98",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-09T20:45:48Z",
+      "side": 1,
+      "message": "looks like this will cause a slowdown in cases when artifact-embedding is used (can we fix it?), and is the reason for the two code paths (L90-96 vs L101-105). Can we make this fast and reduce the two code paths to one?\n\nis it possible to make the artifact map observable, so that TextArtifact can subscribe to its changes? Or maybe replace Map with a function \n  (artifactID: string) \u003d\u003e Promise\u003cArtifact\u003e\n?",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 5
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11aa8588_2be73659",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-09T20:45:48Z",
+      "side": 1,
+      "message": "r\u003e",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77dcf309_2e1b2dba",
         "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
         "patchSetId": 4
@@ -36,6 +82,29 @@
         "startChar": 3,
         "endLine": 24,
         "endChar": 31
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed514605_5b06a7e3",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-09T20:45:48Z",
+      "side": 1,
+      "message": "is that OK that the tag is called artifact-text, but this is called TextArtifact?\nwould you prefer \u003ctext-artifact\u003e?",
+      "range": {
+        "startLine": 28,
+        "startChar": 13,
+        "endLine": 28,
+        "endChar": 32
       },
       "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
