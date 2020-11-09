@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "57ac9200_1e79b54f",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T21:56:47Z",
+      "side": 1,
+      "message": "I realized that I don\u0027t need the first code path. The map is a computed value, so \u003ctext-artifact\u003e will be updated when the value change.",
+      "parentUuid": "025fcd66_8fd7aa98",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 5
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11aa8588_2be73659",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-09T20:45:48Z",
       "side": 1,
       "message": "r\u003e",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63d07658_1d0ea7c9",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T21:56:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11aa8588_2be73659",
       "range": {
         "startLine": 104,
         "startChar": 29,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ed70068_5c1bc014",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T21:56:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77dcf309_2e1b2dba",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 31
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ed514605_5b06a7e3",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-11-09T20:45:48Z",
       "side": 1,
       "message": "is that OK that the tag is called artifact-text, but this is called TextArtifact?\nwould you prefer \u003ctext-artifact\u003e?",
+      "range": {
+        "startLine": 28,
+        "startChar": 13,
+        "endLine": 28,
+        "endChar": 32
+      },
+      "revId": "142a94ea667a4c2c3eec6d3f99d698273bf142f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e624f3d_5aecee57",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T21:56:47Z",
+      "side": 1,
+      "message": "I think \u003ctext-artifact\u003e sounds more natural. I will change it to \u003ctext-artifact\u003e.",
+      "parentUuid": "ed514605_5b06a7e3",
       "range": {
         "startLine": 28,
         "startChar": 13,
