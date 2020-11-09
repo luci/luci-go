@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb8c82e4_cc145840",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T23:23:42Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "a14ddcc3_9efb8ce8",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9adc7ae8_8b62c2d0",
@@ -52,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "15ddda00_4a3c4cd2",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T23:23:42Z",
+      "side": 1,
+      "message": "I removed it and only leave the second code path",
+      "parentUuid": "9adc7ae8_8b62c2d0",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bab1951d_a4fe1718",
@@ -65,6 +101,24 @@
       "writtenOn": "2020-11-09T22:21:26Z",
       "side": 1,
       "message": "This is not type checked.\nCan we change it to something like this?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/resultui/src/context/build_state/build_state.ts;l\u003d137",
+      "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9cb9ca9_5f043b2b",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-09T23:23:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bab1951d_a4fe1718",
       "revId": "99189c66e977e1eaf8beff391ba5a26a3d3e6623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
