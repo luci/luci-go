@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13f96583_cd894b03",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-09T20:54:36Z",
+      "side": 1,
+      "message": "in https://chromium-swarm.appspot.com/task?id\u003d4fb08787cdef7f10\nI see BenchmarkLink/16-8\ndoes this mean it creates 8 files? This doesn\u0027t look statistically significant?",
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
