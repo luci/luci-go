@@ -21,10 +21,9 @@
 package bigquery
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -35,10 +34,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 type Mode int32
 
@@ -399,9 +394,9 @@ type Attempt struct {
 	// same.
 	EquivalentClGroupKey string `protobuf:"bytes,4,opt,name=equivalent_cl_group_key,json=equivalentClGroupKey,proto3" json:"equivalent_cl_group_key,omitempty"`
 	// The time when the Attempt started (trigger time of the last CL triggered).
-	StartTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The time when the Attempt ended (released by CQ).
-	EndTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Gerrit changes, with specific patchsets, in this Attempt.
 	// There should be one or more.
 	GerritChanges []*GerritChange `protobuf:"bytes,7,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
@@ -496,14 +491,14 @@ func (x *Attempt) GetEquivalentClGroupKey() string {
 	return ""
 }
 
-func (x *Attempt) GetStartTime() *timestamp.Timestamp {
+func (x *Attempt) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *Attempt) GetEndTime() *timestamp.Timestamp {
+func (x *Attempt) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
@@ -566,7 +561,7 @@ type GerritChange struct {
 	// patchset above.
 	EarliestEquivalentPatchset int64 `protobuf:"varint,5,opt,name=earliest_equivalent_patchset,json=earliestEquivalentPatchset,proto3" json:"earliest_equivalent_patchset,omitempty"`
 	// The time that the CQ was triggered for this CL in this Attempt.
-	TriggerTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=trigger_time,json=triggerTime,proto3" json:"trigger_time,omitempty"`
+	TriggerTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=trigger_time,json=triggerTime,proto3" json:"trigger_time,omitempty"`
 	// CQ Mode for this CL, e.g. dry run or full run.
 	Mode Mode `protobuf:"varint,7,opt,name=mode,proto3,enum=bigquery.Mode" json:"mode,omitempty"`
 	// Whether CQ tried to submit this change and the result of the operation.
@@ -640,7 +635,7 @@ func (x *GerritChange) GetEarliestEquivalentPatchset() int64 {
 	return 0
 }
 
-func (x *GerritChange) GetTriggerTime() *timestamp.Timestamp {
+func (x *GerritChange) GetTriggerTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.TriggerTime
 	}
@@ -889,7 +884,7 @@ var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_goTypes = []inter
 	(*Attempt)(nil),                // 5: bigquery.Attempt
 	(*GerritChange)(nil),           // 6: bigquery.GerritChange
 	(*Build)(nil),                  // 7: bigquery.Build
-	(*timestamp.Timestamp)(nil),    // 8: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),  // 8: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_depIdxs = []int32{
 	8,  // 0: bigquery.Attempt.start_time:type_name -> google.protobuf.Timestamp
