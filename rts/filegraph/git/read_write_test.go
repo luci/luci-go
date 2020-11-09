@@ -37,6 +37,10 @@ func TestReadWrite(t *testing.T) {
 			err = r.readGraph(g2)
 			So(err, ShouldBeNil)
 
+			g2.root.visit(func(n *node) bool {
+				n.copyEdgesOnAppend = false
+				return true
+			})
 			So(g, ShouldResemble, g2)
 		}
 
