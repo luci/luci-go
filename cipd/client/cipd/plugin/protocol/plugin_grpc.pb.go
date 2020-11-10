@@ -20,6 +20,15 @@ const _ = grpc.SupportPackageIsVersion7
 type HostClient interface {
 	// Log adds a logging message to the CIPD client logging output.
 	Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Lists metadata entries attached to a package instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	//
+	// Returns one page of the results. Use `next_page_token` to fetch the next
+	// page. The last page has `next_page_token` empty.
+	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error)
 }
 
 type hostClient struct {
@@ -39,12 +48,30 @@ func (c *hostClient) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallO
 	return out, nil
 }
 
+func (c *hostClient) ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error) {
+	out := new(ListMetadataResponse)
+	err := c.cc.Invoke(ctx, "/cipd.plugin.Host/ListMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HostServer is the server API for Host service.
 // All implementations must embed UnimplementedHostServer
 // for forward compatibility
 type HostServer interface {
 	// Log adds a logging message to the CIPD client logging output.
 	Log(context.Context, *LogRequest) (*empty.Empty, error)
+	// Lists metadata entries attached to a package instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	//
+	// Returns one page of the results. Use `next_page_token` to fetch the next
+	// page. The last page has `next_page_token` empty.
+	ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error)
 	mustEmbedUnimplementedHostServer()
 }
 
@@ -54,6 +81,9 @@ type UnimplementedHostServer struct {
 
 func (UnimplementedHostServer) Log(context.Context, *LogRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
+}
+func (UnimplementedHostServer) ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMetadata not implemented")
 }
 func (UnimplementedHostServer) mustEmbedUnimplementedHostServer() {}
 
@@ -86,6 +116,24 @@ func _Host_Log_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Host_ListMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostServer).ListMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.plugin.Host/ListMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostServer).ListMetadata(ctx, req.(*ListMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Host_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.plugin.Host",
 	HandlerType: (*HostServer)(nil),
@@ -93,6 +141,10 @@ var _Host_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Log",
 			Handler:    _Host_Log_Handler,
+		},
+		{
+			MethodName: "ListMetadata",
+			Handler:    _Host_ListMetadata_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -20,6 +20,9 @@ option go_package = "go.chromium.org/luci/cipd/client/cipd/plugin/protocol";
 
 import "google/protobuf/empty.proto";
 
+import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
+import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
+
 
 // Host is implemented by the main CIPD client process.
 //
@@ -28,6 +31,16 @@ import "google/protobuf/empty.proto";
 service Host {
   // Log adds a logging message to the CIPD client logging output.
   rpc Log(LogRequest) returns (google.protobuf.Empty);
+
+  // Lists metadata entries attached to a package instance.
+  //
+  // Either returns all metadata or only entries with requested keys. The list
+  // is sorted by the registration time of metadata entries (the most recent
+  // first).
+  //
+  // Returns one page of the results. Use `next_page_token` to fetch the next
+  // page. The last page has `next_page_token` empty.
+  rpc ListMetadata(ListMetadataRequest) returns (ListMetadataResponse);
 }
 
 
@@ -45,4 +58,30 @@ message Handshake {
 message LogRequest {
   string severity = 1;  // "debug", info", "warning", "error"
   string message = 2;
+}
+
+
+// ListMetadataRequest contains arguments for ListMetadata RPC.
+message ListMetadataRequest {
+  // URL ("https://...") of the CIPD backend that hosts the package.
+  string service_url = 1;
+  // The package that holds the instance we list metadata of.
+  string package = 2;
+  // The instance to list metadata of.
+  cipd.ObjectRef instance = 3;
+  // Metadata keys to limit the listing to or empty to list all metadata.
+  repeated string keys = 4;
+  // Maximum number of results to return on one page.
+  int32 page_size = 20;
+  // Value of 'next_page_token' from the previous response.
+  string page_token = 21;
+}
+
+
+// ListMetadataResponse contains one page of results.
+message ListMetadataResponse {
+  // Discovered metadata ordered by 'attached_ts' (the most recent first).
+  repeated cipd.InstanceMetadata metadata = 1;
+  // Not empty if potentially have more metadata, can be passed to ListMetadata.
+  string next_page_token = 20;
 }
