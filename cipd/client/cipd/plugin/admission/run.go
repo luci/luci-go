@@ -19,11 +19,13 @@ import (
 	"io"
 	"sync"
 
-	"go.chromium.org/luci/cipd/client/cipd/plugin"
-	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
 
 // protocolVersion will change if we have backward-incompatible changes.
@@ -32,8 +34,25 @@ const protocolVersion = 1
 // Handler handles one admission request.
 //
 // Called in a separate internal goroutine. It should return a grpc status
-// error.
-type Handler func(ctx context.Context, req *protocol.Admission) error
+// error. To decide it can use the given `info` to fetch additional data about
+// the package instance.
+type Handler func(ctx context.Context, req *protocol.Admission, info InstanceInfo) error
+
+// InstanceInfo fetches additional information about a package instance being
+// checked for admission by the handler.
+type InstanceInfo interface {
+	// VisitMetadata visits metadata entries attached to the package instance.
+	//
+	// Either visits all metadata or only entries with requested keys. Visits
+	// entries in order of their registration time (the most recent first).
+	// Fetches them in pages of `pageSize`. If `pageSize` is negative or zero,
+	// uses some default size.
+	//
+	// Calls `cb` for each visited entry until all entries are successfully
+	// visited or the callback returns false. Returns an error if the RPC to
+	// the CIPD backend fails.
+	VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *api.InstanceMetadata) bool) error
+}
 
 // RunPlugin executes the run loop of an admission plugin.
 //
@@ -78,7 +97,10 @@ func RunPlugin(ctx context.Context, stdin io.ReadCloser, version string, handler
 					})
 				}()
 
-				err = handler(ctx, admission)
+				err = handler(ctx, admission, &infoImpl{
+					host:      protocol.NewHostClient(conn),
+					admission: admission,
+				})
 			}()
 		}
 
@@ -91,4 +113,40 @@ func isAborting(code codes.Code) bool {
 	return code == codes.Aborted ||
 		code == codes.Canceled ||
 		code == codes.Unavailable
+}
+
+// infoImpl implements InstanceInfo.
+type infoImpl struct {
+	host      protocol.HostClient
+	admission *protocol.Admission
+}
+
+func (v *infoImpl) VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *api.InstanceMetadata) bool) error {
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	pageToken := ""
+
+	for {
+		resp, err := v.host.ListMetadata(ctx, &protocol.ListMetadataRequest{
+			ServiceUrl: v.admission.ServiceUrl,
+			Package:    v.admission.Package,
+			Instance:   v.admission.Instance,
+			Keys:       keys,
+			PageSize:   int32(pageSize),
+			PageToken:  pageToken,
+		})
+		if err != nil {
+			return err
+		}
+		for _, md := range resp.Metadata {
+			if !cb(md) {
+				return nil
+			}
+		}
+		if resp.NextPageToken == "" {
+			return nil
+		}
+		pageToken = resp.NextPageToken
+	}
 }
