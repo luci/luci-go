@@ -52,6 +52,24 @@
       "parentUuid": "563a3fa8_369691df",
       "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8682ecf_22f22dc9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-10T03:27:31Z",
+      "side": 1,
+      "message": "I think Joey raised a valid point. I just wonder if the ticking clock will create the impression for the users that the page is auto-updated. I think I slightly prefer the non-ticking version.",
+      "parentUuid": "df071a3f_d1677179",
+      "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
