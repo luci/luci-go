@@ -14,12 +14,26 @@
 
 package git
 
-import "context"
+import (
+	"context"
+)
 
-// Sync synchronizes the graph with commits in g.Commit..tillRev.
-//
-// If the callback is not nil, it is called after each commit is processed.
-func (g *Graph) Sync(ctx context.Context, repoDir, tillRev string, callback func() error) error {
-	// TODO(crbug.com/1136280): implement.
-	return nil
+type commit struct {
+	Hash  string
+	Files []fileChange
+}
+
+type fileChange struct {
+	// Status is the file change type: 'A', 'C', 'D', 'R', 'M', etc.
+	// For more info, see --diff-filter in https://git-scm.com/docs/git-diff
+	Status byte
+	Path   string
+	Path2  string // populated if Status is 'R'
+}
+
+// readLog calls the callback for each commit reachable from `rev` and not
+// reachable from `exclude`.
+func readLog(ctx context.Context, repoDir, exclude, rev string, callback func(commit) error) error {
+	// TODO(crbug.com/1136280): implement
+	panic("not implemented")
 }
