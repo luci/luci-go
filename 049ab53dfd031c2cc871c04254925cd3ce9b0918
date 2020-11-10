@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dab1eb43_3d12330b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T18:04:31Z",
+      "side": 1,
+      "message": "fine for now, but wouldn\u0027t we want to remove them eventually? I think some kind of decay function to make older relations less potent.",
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e95c46c_ba997c50",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T18:04:31Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 39,
+        "startChar": 15,
+        "endLine": 39,
+        "endChar": 23
+      },
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69f91288_b0073098",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T18:04:31Z",
+      "side": 1,
+      "message": "lgtm % musings on the future.",
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "007ac304_627cbab5",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T18:04:31Z",
+      "side": 1,
+      "message": "btw, food for thought: have you tried sorted list of (sub, *node)?\n + less RAM\n ++ reading from file skips on hashing entirely.\n + insertion should be faster for \u003c10 elements\n \u003d insertion should be competitive for \u003c50 elements\n - binary-search selection should be quick\n\nIf it works better, with extra complexity, we can store just []*node and compute `sub` on the fly.",
+      "range": {
+        "startLine": 72,
+        "startChar": 10,
+        "endLine": 72,
+        "endChar": 26
+      },
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
