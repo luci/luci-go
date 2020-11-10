@@ -34,6 +34,24 @@
       "parentUuid": "13f96583_cd894b03",
       "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4c4b572_f548ba17",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T02:23:15Z",
+      "side": 1,
+      "message": "ok. so looks like we are creating 16 files? This doesn\u0027t sound statistically significant. should we create b.N*100 or b.N*1000 files?",
+      "parentUuid": "297555c7_b39b40ea",
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
