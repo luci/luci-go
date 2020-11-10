@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b87efa18_f58a9e81",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-10T20:30:37Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4973/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
+      "revId": "9b6a11e58c13e6df1d3ad926cb2831dcb5e2e2dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
