@@ -22,6 +22,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import '../../components/ace_editor';
+import '../../components/autorun';
 import '../../components/build_step_entry';
 import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
@@ -215,8 +216,22 @@ export class OverviewTabElement extends MobxLitElement {
           <tr><td>Create:</td><td>${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
           <tr><td>Start:</td><td>${build.startTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
           <tr><td>End:</td><td>${build.endTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
-          <tr><td>Pending:</td><td>${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}</td></tr>
-          <tr><td>Execution:</td><td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td></tr>
+          <tr>
+            <td>Pending:</td>
+            <td>
+              <milo-autorun
+                .renderFn=${() => html`${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}`}
+              ></milo-autorun>
+            </td>
+          </tr>
+          <tr>
+            <td>Execution:</td>
+            <td>
+              <milo-autorun
+                .renderFn=${() => html`${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}`}
+              ></milo-autorun>
+            </td>
+          </tr>
         </table>
       </div>
     `;

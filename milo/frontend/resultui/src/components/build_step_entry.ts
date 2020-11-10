@@ -26,6 +26,7 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP
 import { displayDuration } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { StepExt } from '../models/step_ext';
+import './autorun';
 import './expandable_entry';
 import { OnEnterList } from './lazy_list';
 
@@ -127,7 +128,11 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
-          <span id="duration">${displayDuration(this.step.duration)}</span>
+          <span id="duration">
+            <milo-autorun
+              .renderFn=${() => html`${displayDuration(this.step.duration)}`}
+            ></milo-autorun>
+          </span>
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
