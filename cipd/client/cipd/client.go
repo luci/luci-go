@@ -487,6 +487,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		deployer:      deployer.New(opts.Root),
 		pluginsHost: plugin.Host{
 			ServiceURL: opts.ServiceURL,
+			Repository: repo,
 		},
 	}
 
