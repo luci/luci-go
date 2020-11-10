@@ -371,7 +371,8 @@ type perRPCCreds struct {
 
 func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	// Don't transfer tokens in clear text.
-	if err := credentials.CheckSecurityLevel(ctx, credentials.PrivacyAndIntegrity); err != nil {
+	ri, _ := credentials.RequestInfoFromContext(ctx)
+	if err := credentials.CheckSecurityLevel(ri.AuthInfo, credentials.PrivacyAndIntegrity); err != nil {
 		return nil, errors.Annotate(err, "can't use per RPC credentials").Err()
 	}
 
