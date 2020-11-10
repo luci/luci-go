@@ -15,7 +15,13 @@
 package git
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"io"
+	"os/exec"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 type commit struct {
@@ -35,7 +41,283 @@ type fileChange struct {
 // readLog calls the callback for each commit reachable from `rev` and not
 // reachable from `exclude`. The order of commits is "reversed", i.e. ancestors
 // first.
-func readLog(ctx context.Context, repoDir, exclude, rev string, callback func(commit) error) error {
-	// TODO(crbug.com/1136280): implement
-	panic("not implemented")
+func readLog(ctx context.Context, repoDir, exclude, rev string, callback func(commit) error) (err error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Run git-log.
+	revRange := rev
+	if exclude != "" {
+		revRange = exclude + ".." + rev
+	}
+	cmd := exec.CommandContext(ctx,
+		"git",
+		"-C", repoDir,
+		"log",
+		"--format=format:%H %P",
+		"--raw",
+		"-z",
+		"--reverse",
+		revRange,
+	)
+
+	// Setup stdout and stderr.
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+
+	if err := cmd.Start(); err != nil {
+		return errors.Annotate(err, "failed to start git-log").Err()
+	}
+	defer func() {
+		cancel()
+		werr := cmd.Wait()
+		if err == nil && werr != nil {
+			err = errors.Reason("git log failed: %s\nstderr: %s", werr, stderr).Err()
+		}
+	}()
+
+	parser := &logParser{r: bufio.NewReader(stdout)}
+	return parser.ReadCommits(callback)
+}
+
+// logParser parses a git log formatted as
+//   --format=format:"%H %P" --raw --z
+type logParser struct {
+	r *bufio.Reader
+
+	// hashBuf is used to read commit hash.
+	hashBuf [40]byte
+
+	// sep is the separator byte.
+	// git-log with -z flag uses 0 as the separator.
+	// Can be changed to something else for the convenience of testing.
+	sep byte
+}
+
+// ReadCommits calls the callback for each read commit,
+// until the input is exhausted or the callback returns a non-nil error.
+func (r *logParser) ReadCommits(callback func(commit) error) error {
+	// Parse commits until io.EOF.
+	for {
+		c, err := r.ReadCommit()
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return err
+		}
+
+		if err := callback(c); err != nil {
+			return err
+		}
+
+		// If there is another commit, then the next byte is a separator.
+		switch commitFollows, err := r.readIf(r.sep); {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return err
+		case !commitFollows:
+			return nil
+		}
+	}
+}
+
+// ReadCommit reads one commit.
+func (r *logParser) ReadCommit() (commit, error) {
+	c := commit{}
+
+	// Read the commit hash.
+	var err error
+	if c.Hash, err = r.readHash(); err != nil {
+		return c, err
+	}
+
+	// Read the unconditional space between %H and %P.
+	if err := r.expect(' '); err != nil {
+		return c, err
+	}
+
+	// Read the parent hashes.
+	if c.ParentHashes, err = r.readParentHashes(); err != nil {
+		return c, errors.Annotate(err, "failed to read parent hashes").Err()
+	}
+
+	// Read the files.
+	switch filesFollow, err := r.readIf('\n'); {
+	case err != nil:
+		return c, err
+	case filesFollow:
+		if c.Files, err = r.readFileChanges(); err != nil {
+			return c, errors.Annotate(err, "failed to read file changes").Err()
+		}
+	}
+
+	return c, nil
+}
+
+// readParentHashes reads all parent hashes.
+// A parent hash always follows a ' '.
+func (r *logParser) readParentHashes() (hashes []string, err error) {
+	for {
+		switch b, err := r.peek(); {
+		case err != nil:
+			return nil, err
+
+		case b == r.sep:
+			return hashes, nil
+
+		default:
+			parent, err := r.readHash()
+			if err != nil {
+				return hashes, err
+			}
+			hashes = append(hashes, parent)
+		}
+
+		if nextFollows, err := r.readIf(' '); err != nil || !nextFollows {
+			return hashes, err
+		}
+	}
+}
+
+// readFileChanges reads all file changes.
+// A file change always follows a '\n'.
+func (r *logParser) readFileChanges() (changes []fileChange, err error) {
+	err = r.repeatWhile(':', func() error {
+		fc, err := r.readFileChange()
+		if err == nil {
+			changes = append(changes, fc)
+		}
+		return err
+	})
+	return
+}
+
+// repeatWhile repeatedly calls the callback if the peeked byte matches the
+// header. When the callback is called, the header is already read.
+func (r *logParser) repeatWhile(header byte, callback func() error) error {
+	for {
+		if match, err := r.readIf(header); err != nil || !match {
+			return err
+		}
+
+		if err := callback(); err != nil {
+			return err
+		}
+	}
+}
+
+func (r *logParser) readFileChange() (fc fileChange, err error) {
+	// Format doc: https://git-scm.com/docs/git-diff#_raw_output_format
+
+	// Skip 4 sub-blocks separated by space.
+	for i := 0; i < 4; i++ {
+		if _, err = r.readString(' '); err != nil {
+			return
+		}
+	}
+
+	// Read status
+	var status string
+	if status, err = r.readString(r.sep); err != nil {
+		return
+	}
+	// For renames, it might look like R90. We need only the first char.
+	fc.Status = status[0]
+
+	if fc.Path, err = r.readString(r.sep); err != nil {
+		return
+	}
+
+	// If status is a rename or copy, then read the second path.
+	if fc.Status == 'R' || fc.Status == 'C' {
+		if fc.Path2, err = r.readString(r.sep); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+// readHash reads exactly 40 characters as hash.
+// Returns a non-nil error if it does not look like a hex hash.
+func (r *logParser) readHash() (string, error) {
+	if _, err := io.ReadFull(r.r, r.hashBuf[:]); err != nil {
+		return "", err
+	}
+	ret := string(r.hashBuf[:])
+	if !lookLikeHash(ret) {
+		return "", errors.Reason("expected a hash; got %q", ret).Err()
+	}
+	return ret, nil
+}
+
+// readString reads a string until the delimiter.
+// The returned string does not include the delimeter.
+func (r *logParser) readString(delim byte) (string, error) {
+	ret, err := r.r.ReadString(delim)
+	if err != nil {
+		return "", err
+	}
+
+	ret = ret[:len(ret)-1]
+	return ret, nil
+}
+
+// readif reads one byte and returns (true, nil) if the next byte is expected.
+// If it is unexpected, returns (false, nil) without advancing cursor.
+func (r *logParser) readIf(expected byte) (match bool, err error) {
+	switch actual, err := r.r.ReadByte(); {
+	case err == io.EOF:
+		// Not a match.
+		return false, nil
+	case err != nil:
+		return false, err
+	case actual == expected:
+		return true, nil
+	default:
+		return false, r.r.UnreadByte()
+	}
+}
+
+func (r *logParser) expect(expected byte) error {
+	// Assert NUL
+	switch actual, err := r.r.ReadByte(); {
+	case err != nil:
+		return err
+	case actual != expected:
+		return errors.Reason("expected %d byte, got %d", expected, actual).Err()
+	default:
+		return nil
+	}
+}
+
+func (r *logParser) peek() (byte, error) {
+	ret, err := r.r.ReadByte()
+	if err == nil {
+		err = r.r.UnreadByte()
+	}
+	return ret, err
+}
+
+func lookLikeHash(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case c >= '0' && c <= '9':
+			// yes
+		case c >= 'a' && c <= 'f':
+			// yes
+		default:
+			return false
+		}
+	}
+	return true
 }
