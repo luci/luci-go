@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4973/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
       "revId": "9b6a11e58c13e6df1d3ad926cb2831dcb5e2e2dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8646ad0a_550a8ef8",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-10T23:40:35Z",
+      "side": 1,
+      "message": "I think this might be a bug? When I go to the blamelist tab, everything is expanded at first. So the first press of \u0027x\u0027 does nothing.",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 74,
+        "endChar": 41
+      },
+      "revId": "9b6a11e58c13e6df1d3ad926cb2831dcb5e2e2dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
