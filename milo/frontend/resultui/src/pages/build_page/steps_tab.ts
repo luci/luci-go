@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import '../../components/build_step_entry';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
@@ -33,9 +33,39 @@ export class StepsTabElement extends MobxLitElement {
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
 
+  private disposer = () => {};
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
+
+    // Update filters to match the querystring without saving them.
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('succeeded')) {
+      this.stepsConfig.showSucceededSteps = searchParams.get('succeeded') === 'true';
+    }
+    if (searchParams.has('debug')) {
+      this.stepsConfig.showDebugLogs = searchParams.get('debug') === 'true';
+    }
+
+    // Update the querystring when filters are updated.
+    this.disposer = reaction(
+      () => {
+        const newSearchParams = new URLSearchParams({
+          succeeded: String(this.stepsConfig.showSucceededSteps),
+          debug: String(this.stepsConfig.showSucceededSteps),
+        });
+        return newSearchParams.toString();
+      },
+      (newQueryStr) => {
+        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${newQueryStr}`;
+        window.history.pushState({path: newUrl}, '', newUrl);
+      },
+      {fireImmediately: true},
+    );
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.disposer();
   }
 
   @computed private get stepsConfig() {
