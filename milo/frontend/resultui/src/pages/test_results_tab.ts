@@ -82,6 +82,34 @@ export class TestResultsTabElement extends MobxLitElement {
       },
       {fireImmediately: true},
     ));
+
+    // Update filters to match the querystring without saving them.
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('expected')) {
+      this.configsStore.userConfigs.tests.showExpectedVariant = searchParams.get('expected') === 'true';
+    }
+    if (searchParams.has('exonerated')) {
+      this.configsStore.userConfigs.tests.showExoneratedVariant = searchParams.get('exonerated') === 'true';
+    }
+    if (searchParams.has('flaky')) {
+      this.configsStore.userConfigs.tests.showFlakyVariant = searchParams.get('flaky') === 'true';
+    }
+    // Update the querystring when filters are updated.
+    this.disposers.push(reaction(
+      () => {
+        const newSearchParams = new URLSearchParams({
+          expected: String(this.configsStore.userConfigs.tests.showExpectedVariant),
+          exonerated: String(this.configsStore.userConfigs.tests.showExoneratedVariant),
+          flaky: String(this.configsStore.userConfigs.tests.showFlakyVariant),
+        });
+        return newSearchParams.toString();
+      },
+      (newQueryStr) => {
+        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${newQueryStr}`;
+        window.history.pushState({path: newUrl}, '', newUrl);
+      },
+      {fireImmediately: true},
+    ));
   }
   disconnectedCallback() {
     super.disconnectedCallback();
