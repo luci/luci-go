@@ -5,6 +5,7 @@ package protocol
 import (
 	context "context"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	v1 "go.chromium.org/luci/cipd/api/cipd/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,6 +21,12 @@ const _ = grpc.SupportPackageIsVersion7
 type HostClient interface {
 	// Log adds a logging message to the CIPD client logging output.
 	Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Lists metadata entries attached to a package instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (Host_ListMetadataClient, error)
 }
 
 type hostClient struct {
@@ -39,12 +46,50 @@ func (c *hostClient) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallO
 	return out, nil
 }
 
+func (c *hostClient) ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (Host_ListMetadataClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Host_serviceDesc.Streams[0], "/cipd.plugin.Host/ListMetadata", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &hostListMetadataClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Host_ListMetadataClient interface {
+	Recv() (*v1.InstanceMetadata, error)
+	grpc.ClientStream
+}
+
+type hostListMetadataClient struct {
+	grpc.ClientStream
+}
+
+func (x *hostListMetadataClient) Recv() (*v1.InstanceMetadata, error) {
+	m := new(v1.InstanceMetadata)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // HostServer is the server API for Host service.
 // All implementations must embed UnimplementedHostServer
 // for forward compatibility
 type HostServer interface {
 	// Log adds a logging message to the CIPD client logging output.
 	Log(context.Context, *LogRequest) (*empty.Empty, error)
+	// Lists metadata entries attached to a package instance.
+	//
+	// Either returns all metadata or only entries with requested keys. The list
+	// is sorted by the registration time of metadata entries (the most recent
+	// first).
+	ListMetadata(*ListMetadataRequest, Host_ListMetadataServer) error
 	mustEmbedUnimplementedHostServer()
 }
 
@@ -54,6 +99,9 @@ type UnimplementedHostServer struct {
 
 func (UnimplementedHostServer) Log(context.Context, *LogRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
+}
+func (UnimplementedHostServer) ListMetadata(*ListMetadataRequest, Host_ListMetadataServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListMetadata not implemented")
 }
 func (UnimplementedHostServer) mustEmbedUnimplementedHostServer() {}
 
@@ -86,6 +134,27 @@ func _Host_Log_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Host_ListMetadata_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListMetadataRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(HostServer).ListMetadata(m, &hostListMetadataServer{stream})
+}
+
+type Host_ListMetadataServer interface {
+	Send(*v1.InstanceMetadata) error
+	grpc.ServerStream
+}
+
+type hostListMetadataServer struct {
+	grpc.ServerStream
+}
+
+func (x *hostListMetadataServer) Send(m *v1.InstanceMetadata) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _Host_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.plugin.Host",
 	HandlerType: (*HostServer)(nil),
@@ -95,6 +164,12 @@ var _Host_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Host_Log_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ListMetadata",
+			Handler:       _Host_ListMetadata_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "go.chromium.org/luci/cipd/client/cipd/plugin/protocol/plugin.proto",
 }
