@@ -31,7 +31,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -301,7 +300,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to buildCASInputSpec").Err()
 		}
-		rootDg, chks, _, err := tree.ComputeMerkleTree(execRoot, is, chunker.DefaultChunkSize, fmCache)
+		rootDg, chks, _, err := cl.ComputeMerkleTree(execRoot, is, chunker.DefaultChunkSize, fmCache)
 		rootDgs = append(rootDgs, rootDg)
 		chunkers = append(chunkers, chks...)
 	}
