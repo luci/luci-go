@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce914fdb_0b069dfc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1404667
+      },
+      "writtenOn": "2020-11-10T23:56:20Z",
+      "side": 1,
+      "message": "Attaching the attestation at the time of admission makes complete sense. What do you think of attaching a BCID signed attestation to the package that can be used to do local policy enforcement w/o having to call BCID service.\n\nThen the flow will be,\n1. CIPD package built and provenance generated\n2. Called BCID to verify the provenance\n3. If policy is met, BCID returns a signed token (valid for 6 months? build horizon) to be attached to the package.\n\nThen downloader flow will be\n1. Resolve a requested package to an iid\n2. Check if BCID signed token is attached, and verify signature\n3. download if everything looks good.\n\nThen we would not be calling BCID whenever we use a CIPD package.",
+      "parentUuid": "6935be2b_7192e5d1",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f238176_7b4f8db9",
