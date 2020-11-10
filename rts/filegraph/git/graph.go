@@ -87,10 +87,6 @@ func (n *node) Name() string {
 	return n.name
 }
 
-func (n *node) IsFile() bool {
-	return len(n.children) == 0 && n.name != "//"
-}
-
 func (n *node) Outgoing(callback func(other filegraph.Node, distance float64) (keepGoing bool)) {
 	for _, e := range n.edges {
 		// TODO(nodir): consider using multiplication in filegraph.Query instead of
