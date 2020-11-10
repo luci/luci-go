@@ -88,6 +88,29 @@
       "parentUuid": "522ec37d_f5daf003",
       "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d227e374_b2a65649",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-11-10T07:52:29Z",
+      "side": 1,
+      "message": "Is this a part of time calculation?",
+      "range": {
+        "startLine": 341,
+        "startChar": 0,
+        "endLine": 342,
+        "endChar": 40
+      },
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
