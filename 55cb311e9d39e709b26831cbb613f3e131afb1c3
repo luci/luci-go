@@ -34,6 +34,24 @@
       "parentUuid": "8b0bb75f_15636598",
       "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df071a3f_d1677179",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-10T03:05:00Z",
+      "side": 1,
+      "message": "\u003e Does the whole page update to indicate that?\nNo it doesn\u0027t. Until we have some sort of push notification implemented, users will need to refresh manually.\nThe page itself will refresh about every 10 mins however, when OAuth token is refreshed.",
+      "parentUuid": "563a3fa8_369691df",
+      "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
