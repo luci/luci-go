@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6f571a1_000ff154",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T21:38:47Z",
+      "side": 1,
+      "message": "ptal again, simpler. Thanks, Vadim!",
+      "revId": "f08f9bb98f369ff0c774a65cbd48a168c35d124f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a56d52f7_5663b8ac",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T21:38:47Z",
+      "side": 1,
+      "message": "no longer confident 😞",
+      "range": {
+        "startLine": 73,
+        "startChar": 31,
+        "endLine": 73,
+        "endChar": 41
+      },
+      "revId": "f08f9bb98f369ff0c774a65cbd48a168c35d124f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
