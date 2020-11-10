@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a61083f5_eced416c",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/text_artifact.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:05:30Z",
+      "side": 1,
+      "message": "FWIU means that artifact content may get injected after summary got rendered.\nIf the artifact is large, it will take time to fetch it, so there will be a delay between [incomplete summary is displayed] and [full summary is displayed].\n\nwithout an indication that something is being loaded, this can be confusing. Can we add such an indication?",
+      "revId": "b9a08560fa7c640099577a71e6d294dfe168591a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
