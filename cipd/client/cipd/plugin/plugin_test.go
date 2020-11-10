@@ -124,7 +124,7 @@ func TestPlugins(t *testing.T) {
 	defer cancel()
 
 	Convey("With a host", t, func() {
-		host := &Host{}
+		host := &Host{ServiceURL: "https://example.com"}
 		defer host.Close(ctx)
 
 		Convey("Plugin wrong command line", func() {

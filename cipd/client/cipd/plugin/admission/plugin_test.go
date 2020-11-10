@@ -40,6 +40,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+const exampleHost = "https://example.com"
+
 func TestMain(m *testing.M) {
 	isPluginProc := len(os.Args) >= 1 && strings.HasPrefix(os.Args[1], "PLUGIN_")
 	if isPluginProc {
@@ -70,9 +72,13 @@ func pluginMain(ctx context.Context, mode string) error {
 	return RunPlugin(ctx, os.Stdin, "some version", func(ctx context.Context, req *protocol.Admission) error {
 		cur := atomic.AddInt32(&count, 1)
 
+		if req.ServiceUrl != exampleHost {
+			return status.Errorf(codes.FailedPrecondition, "unexpected host")
+		}
+
 		switch mode {
 		case "PLUGIN_NORMAL_REPLY":
-			if req.ServiceUrl == "https://good" {
+			if strings.HasPrefix(req.Package, "good/") {
 				return nil
 			}
 			logging.Infof(ctx, "Rejecting %s:%s:%s", req.ServiceUrl, req.Package, common.ObjectRefToInstanceID(req.Instance))
@@ -117,18 +123,20 @@ func TestPlugin(t *testing.T) {
 	defer cancel()
 
 	Convey("With a host", t, func() {
-		host := &plugin.Host{}
+		host := &plugin.Host{
+			ServiceURL: exampleHost,
+		}
 		defer host.Close(ctx)
 
 		Convey("Happy path", func() {
 			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_NORMAL_REPLY"})
 			defer plug.Close(ctx)
 
-			good := plug.CheckAdmission("https://good", testPin("a/b"))
-			bad := plug.CheckAdmission("https://bad", testPin("a/b"))
+			good := plug.CheckAdmission(testPin("good/a/b"))
+			bad := plug.CheckAdmission(testPin("bad/a/b"))
 
 			// Reuses pending requests.
-			dup := plug.CheckAdmission("https://good", testPin("a/b"))
+			dup := plug.CheckAdmission(testPin("good/a/b"))
 			So(dup, ShouldEqual, good)
 
 			// Wait until completion.
@@ -142,14 +150,14 @@ func TestPlugin(t *testing.T) {
 			So(bad.Wait(ctx), ShouldEqual, err)
 
 			// Reuses finished requests.
-			dup = plug.CheckAdmission("https://good", testPin("a/b"))
+			dup = plug.CheckAdmission(testPin("good/a/b"))
 			So(dup, ShouldEqual, good)
 
 			// "Forget" resolved promises.
 			plug.ClearCache()
 
 			// Makes a new one now.
-			anotherGood := plug.CheckAdmission("https://good", testPin("a/b"))
+			anotherGood := plug.CheckAdmission(testPin("good/a/b"))
 			// Note: ShouldNotEqual triggers false race condition warning because
 			// GoConvey tries to read more than it should. We just want to compare
 			// pointers.
@@ -159,7 +167,7 @@ func TestPlugin(t *testing.T) {
 			// A bit of a stress testing.
 			promises := make([]*Promise, 1000)
 			for i := range promises {
-				promises[i] = plug.CheckAdmission("https://good", testPin(fmt.Sprintf("pkg/%d", i)))
+				promises[i] = plug.CheckAdmission(testPin(fmt.Sprintf("good/pkg/%d", i)))
 			}
 			for _, p := range promises {
 				if err := p.Wait(ctx); err != nil {
@@ -170,13 +178,13 @@ func TestPlugin(t *testing.T) {
 			plug.Close(ctx)
 
 			// Rejects all requests right away if closed.
-			p := plug.CheckAdmission("https://good", testPin("a/b/c/d/e"))
+			p := plug.CheckAdmission(testPin("good/a/b/c/d/e"))
 			So(p.Wait(ctx), ShouldEqual, ErrAborted)
 		})
 
 		Convey("Closing right after starting", func() {
 			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_BLOCK_REQUEST"})
-			p := plug.CheckAdmission("https://url", testPin("a/b"))
+			p := plug.CheckAdmission(testPin("good/a/b"))
 			plug.Close(ctx)
 
 			// The exact error depends on how far we progressed before the plugin
@@ -192,13 +200,13 @@ func TestPlugin(t *testing.T) {
 			defer plug.Close(ctx)
 
 			Convey("Timeout", func() {
-				p := plug.CheckAdmission("https://url", testPin("a/b"))
+				p := plug.CheckAdmission(testPin("good/a/b"))
 				So(p.Wait(ctx), ShouldNotBeNil)
 				So(ctx.Err(), ShouldBeNil)
 			})
 
 			Convey("Closing while waiting", func() {
-				p := plug.CheckAdmission("https://url", testPin("a/b"))
+				p := plug.CheckAdmission(testPin("good/a/b"))
 				plug.Close(ctx)
 				So(p.Wait(ctx), ShouldNotBeNil)
 				So(ctx.Err(), ShouldBeNil)
@@ -209,7 +217,7 @@ func TestPlugin(t *testing.T) {
 			plug := NewPlugin(ctx, host, []string{"doesnt_exist"})
 			defer plug.Close(ctx)
 
-			p := plug.CheckAdmission("https://good", testPin("a/b"))
+			p := plug.CheckAdmission(testPin("good/a/b"))
 			So(p.Wait(ctx), ShouldNotBeNil)
 			So(ctx.Err(), ShouldBeNil)
 		})
@@ -219,7 +227,7 @@ func TestPlugin(t *testing.T) {
 			plug.protocolVersion = 666
 			defer plug.Close(ctx)
 
-			p := plug.CheckAdmission("https://good", testPin("a/b"))
+			p := plug.CheckAdmission(testPin("good/a/b"))
 			So(p.Wait(ctx), ShouldNotBeNil)
 			So(ctx.Err(), ShouldBeNil)
 		})
@@ -228,7 +236,7 @@ func TestPlugin(t *testing.T) {
 			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_CRASHING_WHEN_CONNECTING"})
 			defer plug.Close(ctx)
 
-			p := plug.CheckAdmission("https://url", testPin("a/b"))
+			p := plug.CheckAdmission(testPin("good/a/b"))
 			So(p.Wait(ctx), ShouldNotBeNil)
 			So(ctx.Err(), ShouldBeNil)
 		})
@@ -237,10 +245,10 @@ func TestPlugin(t *testing.T) {
 			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_CRASH_ON_SECOND_REQUEST"})
 			defer plug.Close(ctx)
 
-			p1 := plug.CheckAdmission("https://url", testPin("a/b/1"))
+			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
 			So(p1.Wait(ctx), ShouldBeNil)
 
-			p2 := plug.CheckAdmission("https://url", testPin("a/b/2"))
+			p2 := plug.CheckAdmission(testPin("good/a/b/2"))
 			So(p2.Wait(ctx), ShouldNotBeNil)
 		})
 
@@ -248,11 +256,11 @@ func TestPlugin(t *testing.T) {
 			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_BLOCK_ALL_BUT_FIRST"})
 			defer plug.Close(ctx)
 
-			p1 := plug.CheckAdmission("https://url", testPin("a/b/1"))
+			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
 			So(p1.Wait(ctx), ShouldBeNil)
 
-			p2 := plug.CheckAdmission("https://url", testPin("a/b/2"))
-			p3 := plug.CheckAdmission("https://url", testPin("a/b/3"))
+			p2 := plug.CheckAdmission(testPin("good/a/b/2"))
+			p3 := plug.CheckAdmission(testPin("good/a/b/3"))
 
 			plug.Close(ctx)
 

@@ -47,6 +47,8 @@ var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
 
 // Host launches plugin subprocesses and accepts connections from them.
 type Host struct {
+	ServiceURL string // URL of the CIPD repository ("https://...") used by the client
+
 	m       sync.Mutex          // protects all fields below
 	plugins map[string]*Process // all launched plugins, per their RPC ticket
 	srv     *grpc.Server        // non-nil if the gRPC server has started
