@@ -24,7 +24,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -121,18 +120,19 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
-	start := time.Now()
-	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
-	if err != nil {
-		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
-	}
-	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
-
 	client, err := newCasClient(ctx, c.casFlags.Instance, c.parsedAuthOpts, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}
 	defer client.Close()
+
+	start := time.Now()
+
+	rootDg, chunkers, _, err := client.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
+	if err != nil {
+		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+	}
+	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	start = time.Now()
 	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
