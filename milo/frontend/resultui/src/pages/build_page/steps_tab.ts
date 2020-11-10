@@ -52,7 +52,7 @@ export class StepsTabElement extends MobxLitElement {
       () => {
         const newSearchParams = new URLSearchParams({
           succeeded: String(this.stepsConfig.showSucceededSteps),
-          debug: String(this.stepsConfig.showSucceededSteps),
+          debug: String(this.stepsConfig.showDebugLogs),
         });
         return newSearchParams.toString();
       },
