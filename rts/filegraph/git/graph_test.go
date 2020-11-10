@@ -31,7 +31,6 @@ func TestGraph(t *testing.T) {
 			root := g.Node("//")
 			So(root, ShouldNotBeNil)
 			So(root.Name(), ShouldEqual, "//")
-			So(root.IsFile(), ShouldBeFalse)
 		})
 
 		Convey(`node()`, func() {

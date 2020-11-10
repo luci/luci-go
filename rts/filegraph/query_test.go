@@ -61,10 +61,6 @@ func (n *testNode) Name() string {
 	return n.name
 }
 
-func (n *testNode) IsFile() bool {
-	return true
-}
-
 func (n *testNode) Outgoing(callback func(successor Node, distance float64) bool) {
 	for other, dist := range n.edges {
 		if !callback(other, dist) {

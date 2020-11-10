@@ -43,15 +43,13 @@ var cmdQuery = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
 		r.git.RegisterFlags(&r.Flags)
-		r.Flags.BoolVar(&r.printDirs, "print-dirs", false, "print directories too")
 		return r
 	},
 }
 
 type queryRun struct {
 	baseCommandRun
-	git       gitGraph
-	printDirs bool
+	git gitGraph
 }
 
 func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -70,9 +68,7 @@ func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands
 
 	q := filegraph.Query{Sources: nodes}
 	q.Run(func(sp *filegraph.ShortestPath) bool {
-		if r.printDirs || sp.Node.IsFile() {
-			fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
-		}
+		fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
 		return ctx.Err() == nil
 	})
 	return 0
