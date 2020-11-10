@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e78b599_19751d6b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T05:36:44Z",
+      "side": 1,
+      "message": "Example output: https://paste.googleplex.com/4856472547622912\n\nI believe this should be sufficient to cover the CIPD part of the provenance checks implementation prototype. Packages now can have arbitrary metadata attached to them and the CIPD client can invoke an externally supplied plugin to check the metadata before deploying a package. I assume the `admission` binary in infra will be such a plugin (some subcommand of it perhaps).\n\nNote that this implementation doesn\u0027t cache anything. It calls the plugin each time it wants to unzip a package (even if it grabbed it from the local cache). It also doesn\u0027t cache any fetched metadata, so there always be RPCs to the backend. I think it should OK for now since we are far from deploying this thing at scale. My hope is that by implementing a full end-to-end prototype we\u0027ll get better understanding of possible bottelnecks and places where caching might help. It is also not clear now where the caching should live (e.g. somewhere in the CIPD client or, perhaps, `admission` binary should maintain its own local cache of resolutions).\n\nOnce this lands and deployed I intend to switch working on other non-CIPD stuff for the rest of the quarter. Let me know if you think some other big chunk of the CIPD-side logic is missing.",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "813057df_c04326cb",
+        "filename": "cipd/client/testing/admission_plugin_demo.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T05:36:44Z",
+      "side": 1,
+      "message": "See https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2527897/2/cipd/client/cipd/plugin/admission/example/main.go",
+      "range": {
+        "startLine": 69,
+        "startChar": 20,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
