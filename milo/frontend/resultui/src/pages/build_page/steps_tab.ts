@@ -89,7 +89,7 @@ export class StepsTabElement extends MobxLitElement {
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
       .forEach((e) => e.toggleAllSteps(expand));
   }
-  toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
+  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
   protected render() {
     return html`
@@ -130,7 +130,7 @@ export class StepsTabElement extends MobxLitElement {
           </div>
         </div>
         <span></span>
-        <milo-hotkey key="x" .handle=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button
             class="action-button"
             dense unelevated
@@ -143,7 +143,12 @@ export class StepsTabElement extends MobxLitElement {
           >Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <milo-lazy-list id="main" .growth=${300}>
+      <milo-hotkey
+        key="space,shift+space,up,down,pageup,pagedown"
+        style="display: none;"
+        .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
+      ></milo-hotkey>
+      <milo-lazy-list id="main" .growth=${300} tabindex="-1">
         ${this.buildState.build?.rootSteps.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': !step.succeededRecursively || this.stepsConfig.showSucceededSteps ? '' : 'none'})}
@@ -175,7 +180,7 @@ export class StepsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: auto auto auto 1fr auto auto;
+      grid-template-columns: auto auto auto 1fr auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;
@@ -203,6 +208,7 @@ export class StepsTabElement extends MobxLitElement {
       padding-top: 5px;
       padding-left: 10px;
       border-top: 1px solid var(--divider-color);
+      outline: none;
     }
     milo-build-step-entry {
       margin-bottom: 2px;
