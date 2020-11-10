@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6935be2b_7192e5d1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T23:37:49Z",
+      "side": 1,
+      "message": "There are ACLs to control who can upload packages. But one of the goals of the BCID stuff is to make sure that even if the CIPD backend is compromised, it doesn\u0027t affect production machines that fetch packages (at most it can lead to a denial of service).\n\nSo we assume that normally only production builders upload packages, but it is possible someone else might upload a package too (either due to lax ACLs or CIPD backend compromise). Such packages won\u0027t be deployable because they won\u0027t have a valid BCID attestation. Presumably we\u0027ll have some monitoring for number of packages rejected during installation due to BCID policy violations.\n\nIf we can trust CIPD backend completely, there\u0027s little sense in doing signing and attaching attestations:\n1. Give production package builders a dedicated service account.\n2. Grant only this account upload access, so only production builders can upload packages.\n3. Problem solved. If a package exists on the backend, it was uploaded by the production builder and can be trusted.",
+      "parentUuid": "f3ef773f_99a4d470",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f238176_7b4f8db9",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-10T18:58:06Z",
       "side": 1,
       "message": "nit: quote for shell characters in path",
+      "range": {
+        "startLine": 50,
+        "startChar": 9,
+        "endLine": 50,
+        "endChar": 11
+      },
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a9b985b_e920e597",
+        "filename": "cipd/client/testing/admission_plugin_demo.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T23:37:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f238176_7b4f8db9",
       "range": {
         "startLine": 50,
         "startChar": 9,
