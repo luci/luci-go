@@ -121,16 +121,16 @@ func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
 	}
 
 	// Read/write the graph from/to a file under .git directory, named after the ref.
-	f, err := os.OpenFile(
-		filepath.Join(
-			gitDir,
-			"filegraph",
-			filepath.FromSlash(g.ref),
-			fmt.Sprintf("fg.max-commit-size-%d.v0", g.maxCommitSize),
-		),
-		os.O_RDWR|os.O_CREATE,
-		0777,
+	fileName := filepath.Join(
+		gitDir,
+		"filegraph",
+		filepath.FromSlash(g.ref),
+		fmt.Sprintf("fg.max-commit-size-%d.v0", g.maxCommitSize),
 	)
+	if err := os.MkdirAll(filepath.Dir(fileName), 0777); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		return err
 	}
