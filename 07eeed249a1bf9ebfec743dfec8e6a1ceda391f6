@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "07eeed249a1bf9ebfec743dfec8e6a1ceda391f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c611a2be_3cdf11bd",
+        "filename": "cipd/client/cipd/plugin/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T17:01:38Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "07eeed249a1bf9ebfec743dfec8e6a1ceda391f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
