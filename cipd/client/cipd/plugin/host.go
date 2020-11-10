@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
 
@@ -47,7 +48,8 @@ var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
 
 // Host launches plugin subprocesses and accepts connections from them.
 type Host struct {
-	ServiceURL string // URL of the CIPD repository ("https://...") used by the client
+	ServiceURL string           // URL of the CIPD repository ("https://...") used by the client
+	Repository RepositoryClient // a subset of api.RepositoryClient available to plugins
 
 	m       sync.Mutex          // protects all fields below
 	plugins map[string]*Process // all launched plugins, per their RPC ticket
@@ -56,6 +58,12 @@ type Host struct {
 	port    int                 // a localhost TCP port the server is listening on
 
 	testServeErr error // non-nil in tests to simulate srv.Serve error
+}
+
+// RepositoryClient is a subset of api.RepositoryClient available to plugins.
+type RepositoryClient interface {
+	// Lists metadata entries attached to an instance.
+	ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error)
 }
 
 // Controller lives in the host process and manages communication with a plugin.
@@ -267,6 +275,33 @@ func (h *Host) pluginForRPC(ctx context.Context) (*Process, error) {
 	return nil, status.Errorf(codes.PermissionDenied, "invalid ticket in the request")
 }
 
+// listMetadata implements Host.ListMetadata RPC.
+func (h *Host) listMetadata(ctx context.Context, req *protocol.ListMetadataRequest) (*protocol.ListMetadataResponse, error) {
+	switch {
+	case h.Repository == nil:
+		return nil, status.Errorf(codes.Unimplemented, "the RepositoryClient implementation is not provided")
+	case req.ServiceUrl != h.ServiceURL:
+		// Don't allow to switch the repository. It can be implemented if necessary,
+		// but it likely won't be necessary, and the implementation is not trivial.
+		return nil, status.Errorf(codes.PermissionDenied, "can query only the CIPD repository the client is using (%q)", h.ServiceURL)
+	default:
+		resp, err := h.Repository.ListMetadata(ctx, &api.ListMetadataRequest{
+			Package:   req.Package,
+			Instance:  req.Instance,
+			Keys:      req.Keys,
+			PageSize:  req.PageSize,
+			PageToken: req.PageToken,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &protocol.ListMetadataResponse{
+			Metadata:      resp.Metadata,
+			NextPageToken: resp.NextPageToken,
+		}, nil
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Process represents a plugin subprocess.
@@ -387,6 +422,28 @@ func (s *hostServer) Log(ctx context.Context, req *protocol.LogRequest) (*emptyp
 	logging.Logf(plugin.ctx, lvl, "%s: %s", plugin.name, req.Message)
 
 	return &emptypb.Empty{}, nil
+}
+
+func (s *hostServer) ListMetadata(ctx context.Context, req *protocol.ListMetadataRequest) (*protocol.ListMetadataResponse, error) {
+	plugin, err := s.host.pluginForRPC(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the context associated with the plugin for logging and other values,
+	// but inherit the cancellation from the request context.
+	pluginCtx, cancel := context.WithCancel(plugin.ctx)
+	defer cancel()
+	go func() {
+		select {
+		case <-ctx.Done():
+			cancel()
+		case <-pluginCtx.Done():
+			// Finished on our own, don't leak this goroutine.
+		}
+	}()
+
+	return s.host.listMetadata(pluginCtx, req)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

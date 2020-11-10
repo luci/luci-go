@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/version"
@@ -48,9 +49,25 @@ func main() {
 	}
 }
 
-func admissionHandler(ctx context.Context, adm *protocol.Admission) error {
+func admissionHandler(ctx context.Context, adm *protocol.Admission, info admission.InstanceInfo) error {
 	if strings.HasPrefix(adm.Package, "experimental/") {
 		return status.Errorf(codes.FailedPrecondition, "experimental packages are not allowed")
+	}
+
+	// In this primitive example a package is allowed for admission if it has
+	// a metadata entry with key "allowed-sha256" and a value that matches the
+	// hash of the package.
+	found := false
+	err := info.VisitMetadata(ctx, []string{"allowed-sha256"}, 0, func(md *api.InstanceMetadata) bool {
+		found = string(md.Value) == adm.Instance.HexDigest
+		return !found // keep iterating until found
+	})
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		return status.Errorf(codes.FailedPrecondition, "doesn't have required metadata entries")
 	}
 	return nil
 }
