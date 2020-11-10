@@ -16,6 +16,24 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/4977/overview",
       "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "563a3fa8_369691df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-10T03:01:12Z",
+      "side": 1,
+      "message": "Looks good, though I can foresee a problem: what happens when the build state changes from pending-\u003eexecuting or from executing-\u003efinished? Does the whole page update to indicate that? If not, will the pending time keep ticking upwards incorrectly?",
+      "parentUuid": "8b0bb75f_15636598",
+      "revId": "55cb311e9d39e709b26831cbb613f3e131afb1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
