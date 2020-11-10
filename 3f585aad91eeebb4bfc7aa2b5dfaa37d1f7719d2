@@ -1,0 +1,222 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94d7aab7_937f0038",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "please post results of this benchmark to the CL description. This is how golang community often does benchmarking in go stdlib",
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e10bdbee_81bda9c2",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "nit: resultdb imports should be separate from non-resultdb\n\nand luci imports separate from third-party",
+      "range": {
+        "startLine": 26,
+        "startChar": 23,
+        "endLine": 26,
+        "endChar": 31
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce176c1c_5fac7f86",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "nOSes",
+      "range": {
+        "startLine": 35,
+        "startChar": 46,
+        "endLine": 35,
+        "endChar": 51
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a6815d0_8cf36968",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "\"os\" is not much longer, but more meaningful",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 6
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77732cad_c0fbbf0e",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "this line is pretty long. consider line per extra field",
+      "range": {
+        "startLine": 45,
+        "startChar": 94,
+        "endLine": 45,
+        "endChar": 95
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5cc55815_bdb23127",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "this means only the first needle is always the first test result? sounds like a needle that is easy to find?",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 22
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7dbef5b_891da596",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "testutil.MustApply\n\nsame above",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 11
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f950458_9bbaf02c",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05e308b6_757bb2ae",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "does this make any diff given that this benchmark has sub-benchmarks?",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 15
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce47fe3c_0ef40f98",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T00:34:37Z",
+      "side": 1,
+      "message": "code copied 3 times. dedupe?",
+      "range": {
+        "startLine": 134,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 11
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
