@@ -128,7 +128,7 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	// the type of each.
 	// A VM may be recreated multiple times with the same name, so it is important to only
 	// query swarming for events since the current VM's creation.
-	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)/1000.0).Limit(5).Do()
+	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)).Limit(5).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, gerr)
