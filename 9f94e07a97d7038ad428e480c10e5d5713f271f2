@@ -16,6 +16,24 @@
       "message": "in https://chromium-swarm.appspot.com/task?id\u003d4fb08787cdef7f10\nI see BenchmarkLink/16-8\ndoes this mean it creates 8 files? This doesn\u0027t look statistically significant?",
       "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "297555c7_b39b40ea",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-10T02:09:16Z",
+      "side": 1,
+      "message": "-8 suffix means, 8 cpu is allocated for the benchmark.\nN is corresponding to the second column.",
+      "parentUuid": "13f96583_cd894b03",
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
