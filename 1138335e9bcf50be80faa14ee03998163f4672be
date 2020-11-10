@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3ef773f_99a4d470",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1404667
+      },
+      "writtenOn": "2020-11-10T19:23:34Z",
+      "side": 1,
+      "message": "This implements a gate when deploying a package (i.e. cipd register), which is great, I am a bit confused what if someone uploads a locally built package.",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f238176_7b4f8db9",
