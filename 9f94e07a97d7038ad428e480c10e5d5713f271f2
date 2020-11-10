@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "89449bea_6e88fc89",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-11-10T10:26:41Z",
+      "side": 1,
+      "message": "How is the precision of timers?  (I wonder Stop/StartTimer works correctly for this case)\nIs it fair to remove files here?",
+      "range": {
+        "startLine": 285,
+        "startChar": 0,
+        "endLine": 287,
+        "endChar": 16
+      },
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "13f96583_cd894b03",
         "filename": "common/data/caching/cache/cache_test.go",
         "patchSetId": 6
@@ -132,6 +155,53 @@
         "startChar": 0,
         "endLine": 342,
         "endChar": 40
+      },
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4895606_55943bcb",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-11-10T10:26:41Z",
+      "side": 1,
+      "message": "Does it come from measurement or guess?\nI intuitively feel SHA256 is expensive calculation, but I am not sure it matters for this case.",
+      "parentUuid": "48420aa8_1a2462b7",
+      "range": {
+        "startLine": 341,
+        "startChar": 0,
+        "endLine": 342,
+        "endChar": 40
+      },
+      "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77f85b43_e8b02cbf",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-11-10T10:26:41Z",
+      "side": 1,
+      "message": "Where do you use this?\nL392-406 looks writing files from contents in memory.",
+      "range": {
+        "startLine": 380,
+        "startChar": 0,
+        "endLine": 383,
+        "endChar": 2
       },
       "revId": "9f94e07a97d7038ad428e480c10e5d5713f271f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
