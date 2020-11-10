@@ -20,11 +20,13 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import '../../context/artifact/artifact_provider';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import '../expandable_entry';
 import './image_diff_artifact';
+import './text_artifact';
 import './text_diff_artifact';
 
 /**
@@ -60,6 +62,10 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
 
+  @computed private get artifactsMapping() {
+    return new Map(this.artifacts.map(obj => [obj.artifactId, obj]));
+  }
+
   @computed private get textDiffArtifact() {
     return this.artifacts.find((a) => a.artifactId === 'text_diff');
   }
@@ -72,14 +78,12 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   private renderSummaryHtml() {
-    if (!this.testResult.summaryHtml) {
-      return html``;
-    }
-
     return html`
-      <div id="summary-html">
+    <div id="summary-html">
+      <milo-artifact-provider .artifacts=${this.artifactsMapping}>
         ${sanitizeHTML(this.testResult.summaryHtml)}
-      </div>
+      </milo-artifact-provider>
+    </div>
     `;
   }
 
