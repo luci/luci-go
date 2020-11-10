@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7dabd34_f488f97c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-10T19:50:33Z",
+      "side": 1,
+      "message": "\u003e Patch Set 7:\n\u003e \n\u003e https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2495947\n\n",
+      "revId": "79335c1c75374af617deee31cea33685a7e7a576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c73efdab_07245603",
@@ -14,6 +31,30 @@
       "writtenOn": "2020-10-23T06:15:16Z",
       "side": 1,
       "message": "not sure how I missed this, but perhaps we need a more elaborate name, e.g. commit_position_range\nbecause this looks cryptic: https://screenshot.googleplex.com/AkbZFKq6CxsyVNY",
+      "range": {
+        "startLine": 441,
+        "startChar": 24,
+        "endLine": 441,
+        "endChar": 26
+      },
+      "revId": "79335c1c75374af617deee31cea33685a7e7a576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f688eb61_3030afbe",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-10T19:50:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c73efdab_07245603",
       "range": {
         "startLine": 441,
         "startChar": 24,
