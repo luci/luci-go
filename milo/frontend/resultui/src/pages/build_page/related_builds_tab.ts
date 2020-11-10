@@ -17,6 +17,7 @@ import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
+import '../../components/autorun';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
@@ -105,8 +106,16 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${getDisplayNameForStatus(build.status)}</td>
         <td>${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td>
-        <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
-        <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td>
+        <td>
+          <milo-autorun
+            .renderFn=${() => html`${displayDuration(build.pendingDuration) || 'N/A'}`}
+          ></milo-autorun>
+        </td>
+        <td>
+          <milo-autorun
+            .renderFn=${() => html`${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}`}
+          ></milo-autorun>
+        </td>
         <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
       </tr>
     `;

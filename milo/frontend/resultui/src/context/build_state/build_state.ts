@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -31,8 +32,19 @@ export class BuildState {
   @observable.ref buildNumOrId?: string;
 
   @observable.ref private timestamp = Date.now();
+  private clock = observable.box(DateTime.local());
 
   constructor(private appState: AppState) {}
+
+  private interval = 0;
+  init() {
+    this.interval = window.setInterval(() => {
+      this.clock.set(DateTime.local());
+    }, 1000);
+  }
+  dispose() {
+    window.clearInterval(this.interval);
+  }
 
   @computed
   get buildReq(): IPromiseBasedObservable<Build> {
@@ -57,7 +69,7 @@ export class BuildState {
     if (this.buildReq.state !== FULFILLED) {
       return null;
     }
-    return new BuildExt(this.buildReq.value);
+    return new BuildExt(this.buildReq.value, this.clock);
   }
 
   @computed({keepAlive: true})
@@ -100,7 +112,7 @@ export class BuildState {
     if (this.relatedBuildReq.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
+    return this.relatedBuildReq.value.map((build) => new BuildExt(build, this.clock));
   }
 
   @computed({keepAlive: true})
