@@ -33,6 +33,24 @@
       "message": "Actually just noticed it after I LGTM. This should be this.stepsConfig.showDebugLogs. Could you send a follow-up CL for this?",
       "revId": "3683d971153db9310363fa39b4e192f021daaf98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32108001_e7961a25",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-10T00:43:32Z",
+      "side": 1,
+      "message": "sure.",
+      "parentUuid": "a77c3fe2_a82071bd",
+      "revId": "3683d971153db9310363fa39b4e192f021daaf98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
