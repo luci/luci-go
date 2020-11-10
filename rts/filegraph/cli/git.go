@@ -170,6 +170,7 @@ func (g *gitGraph) tryReadingCache(ctx context.Context, f *os.File) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to read file length").Err()
 	case n == 0:
+		logging.Infof(ctx, "populating cache; this may take minutes...")
 		// The file is empty => cache miss.
 		return nil
 	}
