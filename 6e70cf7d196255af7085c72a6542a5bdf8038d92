@@ -16,6 +16,24 @@
       "message": "(looks juicy, but I don\u0027t think I\u0027ll have long enough stretch of time to review this today, sorry in advance for the delay)",
       "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65c303b6_c9572078",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-10T18:26:53Z",
+      "side": 1,
+      "message": "yeah, totally expected.",
+      "parentUuid": "cc1408dc_b754fa61",
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
