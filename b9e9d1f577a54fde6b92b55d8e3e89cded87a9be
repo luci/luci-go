@@ -16,6 +16,46 @@
       "message": "PTAL\n\nI considered (and in fact implemented it initially) using \n\n  rpc ListMetadata(ListMetadataRequest) returns (stream cipd.InstanceMetadata)\n\nbut then realized that due to asynchronous nature of RPC cancelations it will always be fetching more stuff than necessary (especially in a potentially popular case of fetching a single entry), so I reverted to explicit pagination.",
       "revId": "b9e9d1f577a54fde6b92b55d8e3e89cded87a9be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7546c65d_e1e94758",
+        "filename": "cipd/client/cipd/plugin/protocol/plugin.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T16:52:35Z",
+      "side": 1,
+      "message": "pedantic: Max number 😊",
+      "revId": "b9e9d1f577a54fde6b92b55d8e3e89cded87a9be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "81cb2ca2_b812bbcf",
+        "filename": "cipd/client/cipd/plugin/protocol/plugin.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-10T16:52:35Z",
+      "side": 1,
+      "message": "pedantically correct 😊",
+      "range": {
+        "startLine": 85,
+        "startChar": 18,
+        "endLine": 85,
+        "endChar": 29
+      },
+      "revId": "b9e9d1f577a54fde6b92b55d8e3e89cded87a9be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
