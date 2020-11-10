@@ -21,6 +21,7 @@ import { computed, observable, reaction } from 'mobx';
 import '../../components/commit_entry';
 import { CommitEntryElement } from '../../components/commit_entry';
 import '../../components/dot_spinner';
+import '../../components/hotkey';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { GitCommit } from '../../services/milo_internal';
@@ -70,10 +71,13 @@ export class BlamelistTabElement extends MobxLitElement {
     this.isLoading = false;
   }
 
+  private allEntriesWereExpanded = true;
   private toggleAllEntries(expand: boolean) {
+    this.allEntriesWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry')
       .forEach((e) => e.expanded = expand);
   }
+  private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
   protected render() {
     if (this.buildState.build && !this.buildState.build.input.gitilesCommit) {
@@ -87,16 +91,18 @@ export class BlamelistTabElement extends MobxLitElement {
     return html`
       <div id="header">
         <span></span>
-        <mwc-button
-          class="action-button"
-          dense unelevated
-          @click=${() => this.toggleAllEntries(true)}
-        >Expand All</mwc-button>
-        <mwc-button
-          class="action-button"
-          dense unelevated
-          @click=${() => this.toggleAllEntries(false)}
-        >Collapse All</mwc-button>
+        <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllEntries(true)}
+          >Expand All</mwc-button>
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllEntries(false)}
+          >Collapse All</mwc-button>
+        </milo-hotkey>
       </div>
       <div id="main">
         ${this.commits.map((commit, i) => html`
@@ -140,7 +146,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;
