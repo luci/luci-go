@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8db6ac9c_86432f9a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T03:08:51Z",
+      "side": 1,
+      "message": "PTAL\n\nI considered (and in fact implemented it initially) using \n\n  rpc ListMetadata(ListMetadataRequest) returns (stream cipd.InstanceMetadata)\n\nbut then realized that due to asynchronous nature of RPC cancelations it will always be fetching more stuff than necessary (especially in a potentially popular case of fetching a single entry), so I reverted to explicit pagination.",
+      "revId": "b9e9d1f577a54fde6b92b55d8e3e89cded87a9be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
