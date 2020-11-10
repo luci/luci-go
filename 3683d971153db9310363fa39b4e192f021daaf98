@@ -16,6 +16,23 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/6374/steps?succeeded\u003dfalse\u0026debug\u003dtrue",
       "revId": "3683d971153db9310363fa39b4e192f021daaf98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a77c3fe2_a82071bd",
+        "filename": "milo/frontend/resultui/src/pages/build_page/steps_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-10T00:16:30Z",
+      "side": 1,
+      "message": "Actually just noticed it after I LGTM. This should be this.stepsConfig.showDebugLogs. Could you send a follow-up CL for this?",
+      "revId": "3683d971153db9310363fa39b4e192f021daaf98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
