@@ -18,6 +18,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "52a4562f_acf7be20",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-10T23:47:27Z",
+      "side": 1,
+      "message": "please add it when it is actually needed, it is just confusing otherwise It is just 3 lines of code to add.",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 27
+      },
+      "revId": "f08f9bb98f369ff0c774a65cbd48a168c35d124f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a56d52f7_5663b8ac",
