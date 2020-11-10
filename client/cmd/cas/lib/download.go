@@ -24,8 +24,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
@@ -121,12 +121,12 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		Children: dirs,
 	}
 
-	outputs, err := tree.FlattenTree(t, r.dir)
+	outputs, err := c.FlattenTree(t, r.dir)
 	if err != nil {
 		return errors.Annotate(err, "failed to call FlattenTree").Err()
 	}
 
-	to := make(map[digest.Digest]*tree.Output)
+	to := make(map[digest.Digest]*client.TreeOutput)
 
 	var diskcache *cache.Cache
 	if r.cacheDir != "" {
@@ -139,7 +139,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	// Files have the same digest are downloaded only once, so we need to
 	// copy duplicates files later.
-	var dups []*tree.Output
+	var dups []*client.TreeOutput
 
 	mkdirmap := make(map[string]struct{})
 	mkdir := func(dir string) error {
@@ -197,7 +197,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	if diskcache != nil {
 		start = time.Now()
-		outputs := make([]*tree.Output, 0, len(to))
+		outputs := make([]*client.TreeOutput, 0, len(to))
 		for _, output := range to {
 			outputs = append(outputs, output)
 		}
