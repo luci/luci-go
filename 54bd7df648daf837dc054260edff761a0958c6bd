@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5dccdfa1_0759a818",
+        "filename": "server/auth/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-11T07:13:06Z",
+      "side": 1,
+      "message": "I\u0027m getting errors when running local test for resultdb:\n\n\"# go.chromium.org/luci/server/auth\n../server/auth/client.go:375:45: cannot use ri.AuthInfo (type credentials.AuthInfo) as type context.Context in argument to credentials.CheckSecurityLevel:\n\tcredentials.AuthInfo does not implement context.Context (missing Deadline method)\n\"\n\nI think it\u0027s caused by this change. Could you take a look?",
+      "range": {
+        "startLine": 375,
+        "startChar": 45,
+        "endLine": 375,
+        "endChar": 53
+      },
+      "revId": "54bd7df648daf837dc054260edff761a0958c6bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
