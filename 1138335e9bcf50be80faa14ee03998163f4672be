@@ -89,6 +89,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "016a5dfd_4c1b2fdc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1404667
+      },
+      "writtenOn": "2020-11-11T01:02:34Z",
+      "side": 1,
+      "message": "\u003e I thought we *wanted* to call BCID whenever we install a CIPD package\nThis is what we still want, there has been some pushbacks from BCID regarding QPS and availability on their RPC, as we will be making a lot of requests.\nRegarding the policy staying in Piper, I completely agree that with policy change (which BCID claims to be a rare event) we will have to do some manual effort to rebuild a package/get a new BCID signed attestation.\n\n\u003e Is there a documented somewhere that *clearly* states the goals and what BCID provides and what we are protecting?\nAs documented in go/bcid-for-chrome-bluedoc, BCID is supposed to provide us an RPC that we will call to enforce a policy defined in Piper. Scope of these policies can extend from Chrome artifacts to CIPD and other deps. I feel similarly about the security theater part, and BCID is being just for the sake of a stamp. When I had this conversation with them, they are referring to BCID being a certifier that certifies a particular artifact at a given point of time.\n\nNow how I feel it is providing a value (not absolute) by attesting a built artifact at a given point of time against a detached policy stored somewhere else. Now if we consider how often we want to exchange the signed bcid token, is an open question. The valuable part I believe is BCID\u0027s access to a private key which is used to sign these long lived tokens.\n\nAlso, a word from BCID team, since Chrome is the first open source integration they are doing, they are identifying a lot of nuances, which is making this a bit frustrating for us, but at the same time, it is giving us much larger scope for defining path forward for BCID for Software.\n\nI think it will be good to have you on the BCID sync on Monday if you\u0027d like, we can get some questions answered as well as come up with a better plan forward. WDYT?",
+      "parentUuid": "d78fba09_feb35726",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f238176_7b4f8db9",
