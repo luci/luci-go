@@ -26,7 +26,8 @@ export class HotkeyElement extends LitElement {
   @property() key!: string;
   handler!: KeyHandler;
 
-  private handle: KeyHandler = (...params) => this.handler(...params);
+  // Use _ prefix to prevent typo when assigning property in lit-html template.
+  private readonly _handle: KeyHandler = (...params) => this.handler(...params);
 
   shouldUpdate(changedProperties: PropertyValues) {
     if (!this.isConnected) {
@@ -35,19 +36,19 @@ export class HotkeyElement extends LitElement {
 
     const oldKey = changedProperties.get('key') as string | undefined;
     if (oldKey) {
-      Hotkeys.unbind(oldKey, this.handle);
-      Hotkeys(this.key, this.handle);
+      Hotkeys.unbind(oldKey, this._handle);
+      Hotkeys(this.key, this._handle);
     }
     return true;
   }
 
   connectedCallback() {
     super.connectedCallback();
-    Hotkeys(this.key, this.handle);
+    Hotkeys(this.key, this._handle);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    Hotkeys.unbind(this.key, this.handle);
+    Hotkeys.unbind(this.key, this._handle);
   }
 
   protected render() {

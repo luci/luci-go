@@ -89,7 +89,7 @@ export class StepsTabElement extends MobxLitElement {
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
       .forEach((e) => e.toggleAllSteps(expand));
   }
-  toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
+  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
   protected render() {
     return html`
@@ -130,7 +130,7 @@ export class StepsTabElement extends MobxLitElement {
           </div>
         </div>
         <span></span>
-        <milo-hotkey key="x" .handle=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button
             class="action-button"
             dense unelevated
@@ -175,7 +175,7 @@ export class StepsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: auto auto auto 1fr auto auto;
+      grid-template-columns: auto auto auto 1fr auto;
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px 3px 10px;
