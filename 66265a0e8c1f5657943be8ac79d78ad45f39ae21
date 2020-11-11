@@ -41,6 +41,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71262f78_76f07ed3",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:29:37Z",
+      "side": 1,
+      "message": "Err, s/2000ns/8000ns (sorry, misread stats above).\n\n\ni hardcoded this to definitely ext4 filesystem and i got \n\n  5000ns \n\nThis is amazingly fast. I didn\u0027t keep up with how much faster SSDs are these days. Also, I verified that some dirs are really large.",
+      "parentUuid": "9a89719c_f5ca9419",
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be44430c_08703a3c",
@@ -54,6 +72,30 @@
       "writtenOn": "2020-11-11T02:03:43Z",
       "side": 1,
       "message": "1. take a hash of it instead, unless you always write files mostly sorted filename order.\n2. file length matter,as it contributes to the use of bytes in inode.",
+      "range": {
+        "startLine": 264,
+        "startChar": 48,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "420f4378_912f4bcc",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:29:37Z",
+      "side": 1,
+      "message": "did this. Doesn\u0027t change anything.",
+      "parentUuid": "be44430c_08703a3c",
       "range": {
         "startLine": 264,
         "startChar": 48,
@@ -83,6 +125,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "87f86f91_cc551600",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:29:37Z",
+      "side": 1,
+      "message": "i need to try this but in L271. I wonder if it makes any diff",
+      "parentUuid": "1e35ddc3_31c3c56f",
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "73bcfeee_27def48d",
         "filename": "common/data/caching/cache/cache_test.go",
         "patchSetId": 8
@@ -94,6 +154,30 @@
       "writtenOn": "2020-11-11T02:03:43Z",
       "side": 1,
       "message": "same file every time, what\u0027s the point?",
+      "range": {
+        "startLine": 271,
+        "startChar": 61,
+        "endLine": 271,
+        "endChar": 66
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36127819_0cdeb1cd",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:29:37Z",
+      "side": 1,
+      "message": "ah, i get it now. You are trying to create a new file and are timing just that.",
+      "parentUuid": "73bcfeee_27def48d",
       "range": {
         "startLine": 271,
         "startChar": 61,
