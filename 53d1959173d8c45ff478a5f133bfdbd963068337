@@ -62,6 +62,29 @@
       },
       "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9319c62_3fb1ca56",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-11T00:39:50Z",
+      "side": 1,
+      "message": "Does this need to be an expandable entry? Do you have a use case in mind where people will want to manually collapse this? I suspect the file list is one of the most useful parts of the blamelist, so there may be no benefit to making it collapsible.",
+      "range": {
+        "startLine": 85,
+        "startChar": 6,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
