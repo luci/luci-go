@@ -186,6 +186,30 @@
       },
       "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a5f728d_35452be7",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:32:32Z",
+      "side": 1,
+      "message": "hm, but actually you are effectively overwriting the same file all the time. So, it may be that first write is slow, but second write is fast. I wonder how diff it\u0027d be if we randomly overwrote one of the written files or even completely new files instead.",
+      "parentUuid": "36127819_0cdeb1cd",
+      "range": {
+        "startLine": 271,
+        "startChar": 61,
+        "endLine": 271,
+        "endChar": 66
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
