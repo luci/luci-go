@@ -249,9 +249,10 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trNum, ShouldEqual, 3)
 
 			q := testresults.Query{
-				InvocationIDs: invIDs,
-				PageSize:      100,
-				Mask:          testresults.AllFields,
+				InvocationIDs:     invIDs,
+				PageSize:          100,
+				Mask:              testresults.AllFields,
+				MaxTestVariantNum: testresults.MaxTestVariantNum,
 			}
 			trs, _, err := q.Fetch(ctx)
 			So(err, ShouldBeNil)

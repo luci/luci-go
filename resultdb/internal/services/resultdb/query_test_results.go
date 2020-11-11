@@ -114,11 +114,12 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 
 	// Query test results.
 	q := testresults.Query{
-		Predicate:     in.Predicate,
-		PageSize:      pagination.AdjustPageSize(in.PageSize),
-		PageToken:     in.PageToken,
-		InvocationIDs: invs,
-		Mask:          readMask,
+		Predicate:         in.Predicate,
+		PageSize:          pagination.AdjustPageSize(in.PageSize),
+		PageToken:         in.PageToken,
+		InvocationIDs:     invs,
+		Mask:              readMask,
+		MaxTestVariantNum: testresults.MaxTestVariantNum,
 	}
 	trs, token, err := q.Fetch(ctx)
 	if err != nil {

@@ -58,8 +58,9 @@ func (wi *workItem) fetchOneInv(ctx context.Context) error {
 			// TODO(crbug.com/1107678): Implement support for FieldMask to
 			// return only a subset of each result.
 			query := &testresults.Query{
-				InvocationIDs: batch,
-				Predicate:     wi.predicate,
+				InvocationIDs:     batch,
+				Predicate:         wi.predicate,
+				MaxTestVariantNum: testresults.MaxTestVariantNum,
 			}
 
 			return query.Run(ctx, func(r *pb.TestResult) error {
