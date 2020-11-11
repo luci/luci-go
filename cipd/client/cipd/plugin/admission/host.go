@@ -163,13 +163,13 @@ func (p *Plugin) Close(ctx context.Context) {
 // CheckAdmission enqueues an admission check to be performed by the plugin.
 //
 // The plugin will be asked if it's OK to deploy a package with the given pin
-// hosted on the given CIPD service. The service URL has format "https://host".
+// hosted on the CIPD service used by the running CIPD client.
 //
 // Returns a promise which is resolved when the result is available. If such
 // check is already pending (or has been done before), returns an existing
 // (perhaps already resolved) promise.
-func (p *Plugin) CheckAdmission(serviceURL string, pin common.Pin) *Promise {
-	admission, err := p.makeAdmission(serviceURL, pin)
+func (p *Plugin) CheckAdmission(pin common.Pin) *Promise {
+	admission, err := p.makeAdmission(pin)
 	if err != nil {
 		return newPromise(nil).resolve(err)
 	}
@@ -217,9 +217,9 @@ func (p *Plugin) ClearCache() {
 // It hashes the request to make sure plugins do not rely on a particular format
 // of the ID. It also randomizes it with some salt, to make sure plugins do not
 // try to use it as a key in some persistent cache. Admission IDs are ephemeral.
-func (p *Plugin) makeAdmission(serviceURL string, pin common.Pin) (*protocol.Admission, error) {
+func (p *Plugin) makeAdmission(pin common.Pin) (*protocol.Admission, error) {
 	admission := &protocol.Admission{
-		ServiceUrl: serviceURL,
+		ServiceUrl: p.host.ServiceURL,
 		Package:    pin.PackageName,
 		Instance:   common.InstanceIDToObjectRef(pin.InstanceID),
 	}

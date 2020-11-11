@@ -485,6 +485,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
+		pluginsHost: plugin.Host{
+			ServiceURL: opts.ServiceURL,
+		},
 	}
 
 	if len(opts.AdmissionPlugin) != 0 {
@@ -1583,7 +1586,7 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 
 	if client.pluginsAdmission != nil {
 		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
-		err := client.pluginsAdmission.CheckAdmission(client.ServiceURL, pin).Wait(ctx)
+		err := client.pluginsAdmission.CheckAdmission(pin).Wait(ctx)
 		if err != nil {
 			return errors.Annotate(err, "not admitted for deployment").Err()
 		}
@@ -1642,14 +1645,14 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	if client.pluginsAdmission != nil {
 		aMap.LoopOrdered(func(subdir string, actions *Actions) {
 			for _, p := range actions.ToInstall {
-				client.pluginsAdmission.CheckAdmission(client.ServiceURL, p)
+				client.pluginsAdmission.CheckAdmission(p)
 			}
 			for _, pair := range actions.ToUpdate {
-				client.pluginsAdmission.CheckAdmission(client.ServiceURL, pair.To)
+				client.pluginsAdmission.CheckAdmission(pair.To)
 			}
 			for _, broken := range actions.ToRepair {
 				if broken.RepairPlan.NeedsReinstall {
-					client.pluginsAdmission.CheckAdmission(client.ServiceURL, broken.Pin)
+					client.pluginsAdmission.CheckAdmission(broken.Pin)
 				}
 			}
 		})
