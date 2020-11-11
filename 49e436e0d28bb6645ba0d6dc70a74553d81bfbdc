@@ -33,6 +33,24 @@
       "message": "Probably worth verifying that this works on a couple other browsers (e.g. safari/firefox)\n\nAlso, this brings up an interesting point. How come the steps and tests tabs scroll their panel only, but the timeline and blamelist tabs scroll the entire page? Is that a deliberate choice?",
       "revId": "49e436e0d28bb6645ba0d6dc70a74553d81bfbdc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5204ae4c_2b2dea2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-11T01:02:23Z",
+      "side": 1,
+      "message": "tested on safari and firefox. both worked.\n\n\u003e Is that a deliberate choice?\nPartially, yes.\nTest results tab and steps tab shouldn\u0027t scroll the entire page because they have the filter bar. There\u0027s not much direct benefit in making other tabs scroll their panel only.\nAlthough in the future, we can make them look more consistent.",
+      "parentUuid": "5ca0a0b2_9e0bbf3a",
+      "revId": "49e436e0d28bb6645ba0d6dc70a74553d81bfbdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
