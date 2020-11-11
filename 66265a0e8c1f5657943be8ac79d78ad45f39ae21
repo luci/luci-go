@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5af65732_82d97790",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:03:43Z",
+      "side": 1,
+      "message": "this is very unlikely even for SSD. Pretty sure it\u0027s RAM-backed, ie there is no disk flushing",
+      "range": {
+        "startLine": 26,
+        "startChar": 58,
+        "endLine": 26,
+        "endChar": 62
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a89719c_f5ca9419",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:03:43Z",
+      "side": 1,
+      "message": "are you sure this isn\u0027t going to tmpfs (ie RAM-backed)?\nThe 2000ns strongly suggest it\u0027s just 1 syscall with no waiting for any IO.",
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be44430c_08703a3c",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:03:43Z",
+      "side": 1,
+      "message": "1. take a hash of it instead, unless you always write files mostly sorted filename order.\n2. file length matter,as it contributes to the use of bytes in inode.",
+      "range": {
+        "startLine": 264,
+        "startChar": 48,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e35ddc3_31c3c56f",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:03:43Z",
+      "side": 1,
+      "message": "btw, writing nil file is also not quite realistic.\nIf we are writing real files with 4K+ data, this may contribute to filling OS buffers and hence slowness of your real code.",
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73bcfeee_27def48d",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T02:03:43Z",
+      "side": 1,
+      "message": "same file every time, what\u0027s the point?",
+      "range": {
+        "startLine": 271,
+        "startChar": 61,
+        "endLine": 271,
+        "endChar": 66
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
