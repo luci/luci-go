@@ -56,23 +56,39 @@ export class CommitEntryElement extends MobxLitElement {
     this.onToggle(this._expanded);
   }
 
-  @computed get commitTime() { return DateTime.fromISO(this.commit.committer.time); }
-  @computed get title() { return this.commit.message.split('\n', 1)[0]; }
-  @computed get descriptionLines() {
-    const lines = this.commit.message.split('\n');
-    lines.shift();
-    if (lines[0].length === 0) {
-      lines.shift();
-    }
-    return lines;
+  @computed private get commitTime() { return DateTime.fromISO(this.commit.committer.time); }
+  @computed private get commitTitle() { return this.commit.message.split('\n', 1)[0]; }
+
+  @computed private get description() {
+    return this.commit.message.slice(this.commitTitle.length + 1);
   }
 
-  @computed get description() {
-    return this.commit.message.slice(this.title.length + 1);
-  }
-
-  @computed get descriptionHTML() {
+  @computed private get descriptionHTML() {
     return sanitizeHTML(md.render(this.description));
+  }
+
+  @computed private get changedFilenames() {
+    return this.commit.treeDiff.map((diff) => {
+      // If a file was moved, there is both an old and a new path, from which we
+      // take only the new path.
+      // If a file was deleted, its new path is /dev/null. In that case, we're
+      // only interested in the old path.
+      if (!diff.newPath || diff.newPath === '/dev/null') {
+        return diff.oldPath;
+      }
+      return diff.newPath;
+    });
+  }
+
+  private renderChangedFiles() {
+    return html`
+      <milo-expandable-entry .expanded=${true} .hideContentRuler=${true}>
+        <span slot="header">Changed files: <span class="greyed-out">${this.commit.treeDiff.length}</span></span>
+        <ul slot="content">
+          ${this.changedFilenames.map((filename) => html`<li>${filename}</li>`)}
+        </ul>
+      </milo-expandable-entry>
+    `;
   }
 
   protected render() {
@@ -82,7 +98,7 @@ export class CommitEntryElement extends MobxLitElement {
         .onToggle=${(expanded: boolean) => this.expanded = expanded}
       >
         <span slot="header">
-          <b>${this.number}. ${this.title}</b> <i>by ${this.commit.author.name} at ${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</i>
+          <b>${this.number}. ${this.commitTitle}</b> <i>by ${this.commit.author.name} at ${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</i>
         </span>
         <div slot="content">
           <table slot="content" border="0">
@@ -91,6 +107,7 @@ export class CommitEntryElement extends MobxLitElement {
             <tr><td>Revision:</td><td><a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id}</a></td></tr>
           </table>
           <div id="summary">${this.descriptionHTML}</div>
+          ${this.renderChangedFiles()}
         </div>
       </milo-expandable-entry>
     `;
@@ -110,6 +127,15 @@ export class CommitEntryElement extends MobxLitElement {
     }
     #summary > p:last-child {
       margin-block-end: 0;
+    }
+
+    .greyed-out {
+      color: var(--greyed-out-text-color);
+    }
+
+    ul {
+      margin: 3px 0;
+      padding-inline-start: 28px;
     }
   `;
 }
