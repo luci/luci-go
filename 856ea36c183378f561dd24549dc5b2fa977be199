@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "83bbdc0f_cec9f354",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T17:05:11Z",
+      "side": 1,
+      "message": "this is not great, and it happens when this repeated query returns a lot of results.",
+      "range": {
+        "startLine": 11,
+        "startChar": 84,
+        "endLine": 11,
+        "endChar": 100
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "c78a22d6_0d922a1a",
@@ -14,6 +37,46 @@
       "writtenOn": "2020-11-11T08:01:00Z",
       "side": 1,
       "message": "PTAL",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7d2fbf6_e3a60c71",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T17:05:11Z",
+      "side": 1,
+      "message": "i am not sure about this change. The original optimization CL added a significant amount of complexity, and now this one adds even more. That\u0027s a lot of complexity for something that should not exist to begin with (if only spanner provided MAX_PARALLELISM). Now that they seem to be OK letting our cloud projects use it, ideally we revert my CL and use MAX_PARALLELISM instead, which would be much simpler. \n\nin other words, the amount of additional complexity is my original CL + this one. To all of it, you could revert my CL and including its optimization into this CL. It would demonstrate how much complexity we are adding.\n\nAlso, I wonder if it is time to compute longest_common_prefix. It would enable us to split the set of invocations into independent subsets and process them in parallel. ",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62fbdd9b_be46b6c1",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T17:05:11Z",
+      "side": 1,
+      "message": "why is it configurable by the caller?",
+      "range": {
+        "startLine": 81,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 18
+      },
       "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
