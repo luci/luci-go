@@ -106,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad7c6565_d3de3360",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-11T04:46:45Z",
+      "side": 1,
+      "message": "changed to use hash",
+      "parentUuid": "420f4378_912f4bcc",
+      "range": {
+        "startLine": 264,
+        "startChar": 48,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1e35ddc3_31c3c56f",
@@ -137,6 +161,24 @@
       "side": 1,
       "message": "i need to try this but in L271. I wonder if it makes any diff",
       "parentUuid": "1e35ddc3_31c3c56f",
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf6c93e7_e1745f7a",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-11T04:46:45Z",
+      "side": 1,
+      "message": "changed to use 4k file size",
+      "parentUuid": "87f86f91_cc551600",
       "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -202,6 +244,30 @@
       "side": 1,
       "message": "hm, but actually you are effectively overwriting the same file all the time. So, it may be that first write is slow, but second write is fast. I wonder how diff it\u0027d be if we randomly overwrote one of the written files or even completely new files instead.",
       "parentUuid": "36127819_0cdeb1cd",
+      "range": {
+        "startLine": 271,
+        "startChar": 61,
+        "endLine": 271,
+        "endChar": 66
+      },
+      "revId": "66265a0e8c1f5657943be8ac79d78ad45f39ae21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54038e8e_25011375",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-11T04:46:45Z",
+      "side": 1,
+      "message": "changed to do create/remove, and windows seems to have slowness if there are 100k files.",
+      "parentUuid": "7a5f728d_35452be7",
       "range": {
         "startLine": 271,
         "startChar": 61,
