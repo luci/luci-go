@@ -215,7 +215,12 @@ export class TestResultsTabElement extends MobxLitElement {
           .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
         ></milo-test-nav-tree>
       </milo-left-panel>
-      <div id="test-result-view">
+      <milo-hotkey
+        key="space,shift+space,up,down,pageup,pagedown"
+        style="display: none;"
+        .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
+      ></milo-hotkey>
+      <div id="test-result-view" tabindex="-1">
         ${this.renderAllVariants()}
         <div class="list-entry">
           <span>Showing ${state.selectedNode.testCount} tests.</span>
@@ -292,6 +297,7 @@ export class TestResultsTabElement extends MobxLitElement {
       flex: 1;
       overflow-y: auto;
       padding-top: 5px;
+      outline: none;
     }
     #test-result-view>* {
       margin-bottom: 2px;
