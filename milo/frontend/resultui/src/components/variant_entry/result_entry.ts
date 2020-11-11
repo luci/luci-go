@@ -78,6 +78,10 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   private renderSummaryHtml() {
+    if (!this.testResult.summaryHtml) {
+      return html``;
+    }
+
     return html`
     <div id="summary-html">
       <milo-artifact-provider .artifacts=${this.artifactsMapping}>
