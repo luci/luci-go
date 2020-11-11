@@ -181,6 +181,30 @@
       },
       "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e6629b3_fd267deb",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-11T00:57:16Z",
+      "side": 1,
+      "message": "To me the collapsible arrows add a little visual noise. But it\u0027s not a big deal, so I\u0027m OK to +1 as-is.\n\nBy the way, I think after this is sorted we should consider restructuring the blamelist page a bit to make it more readable (e.g. as requested in https://crbug.com/989245). I have some ideas, let\u0027s discuss it sometime.",
+      "parentUuid": "d3234b30_cd449f6b",
+      "range": {
+        "startLine": 85,
+        "startChar": 6,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
