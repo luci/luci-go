@@ -16,6 +16,52 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/win-rel-swarming/6993/blamelist",
       "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d5884da_a255ced1",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-11T00:39:29Z",
+      "side": 1,
+      "message": "If file was moved, there are both new and old path",
+      "range": {
+        "startLine": 72,
+        "startChar": 9,
+        "endLine": 72,
+        "endChar": 57
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c73918f0_e379d4f3",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-11T00:39:29Z",
+      "side": 1,
+      "message": "was",
+      "range": {
+        "startLine": 74,
+        "startChar": 19,
+        "endLine": 74,
+        "endChar": 21
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
