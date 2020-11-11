@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f436348_9cc36cce",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-11T00:51:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d5884da_a255ced1",
+      "range": {
+        "startLine": 72,
+        "startChar": 9,
+        "endLine": 72,
+        "endChar": 57
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c73918f0_e379d4f3",
@@ -88,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "46a2fa42_bac242a5",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-11T00:51:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c73918f0_e379d4f3",
+      "range": {
+        "startLine": 74,
+        "startChar": 19,
+        "endLine": 74,
+        "endChar": 21
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d9319c62_3fb1ca56",
@@ -101,6 +149,30 @@
       "writtenOn": "2020-11-11T00:39:50Z",
       "side": 1,
       "message": "Does this need to be an expandable entry? Do you have a use case in mind where people will want to manually collapse this? I suspect the file list is one of the most useful parts of the blamelist, so there may be no benefit to making it collapsible.",
+      "range": {
+        "startLine": 85,
+        "startChar": 6,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "53d1959173d8c45ff478a5f133bfdbd963068337",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3234b30_cd449f6b",
+        "filename": "milo/frontend/resultui/src/components/commit_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-11T00:51:42Z",
+      "side": 1,
+      "message": "I don\u0027t have a user case in mind but I think it doesn\u0027t hurt to make it collapsible either.\nA minor upside is that this make its style consistent with other entries (result entries).",
+      "parentUuid": "d9319c62_3fb1ca56",
       "range": {
         "startLine": 85,
         "startChar": 6,
