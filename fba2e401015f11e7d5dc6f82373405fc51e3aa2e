@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6c97d1d_b4e42397",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-11T10:32:23Z",
+      "side": 1,
+      "message": "Demo at https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/6357/overview, but you\u0027ll have to add some \u003cpre\u003e tags manually in the developer tools.",
+      "revId": "fba2e401015f11e7d5dc6f82373405fc51e3aa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
