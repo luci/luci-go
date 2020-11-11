@@ -21,10 +21,12 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
@@ -40,7 +43,11 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-const exampleHost = "https://example.com"
+const (
+	exampleHost       = "https://example.com"
+	fakeMetadataLimit = 15
+	listingPageSize   = 7
+)
 
 func TestMain(m *testing.M) {
 	isPluginProc := len(os.Args) >= 1 && strings.HasPrefix(os.Args[1], "PLUGIN_")
@@ -69,7 +76,7 @@ func pluginMain(ctx context.Context, mode string) error {
 
 	var count int32
 
-	return RunPlugin(ctx, os.Stdin, "some version", func(ctx context.Context, req *protocol.Admission) error {
+	return RunPlugin(ctx, os.Stdin, "some version", func(ctx context.Context, req *protocol.Admission, info InstanceInfo) error {
 		cur := atomic.AddInt32(&count, 1)
 
 		if req.ServiceUrl != exampleHost {
@@ -100,6 +107,43 @@ func pluginMain(ctx context.Context, mode string) error {
 			}
 			return nil
 
+		case "PLUGIN_VISIT_METADATA_ALL":
+			var visited []string
+			err := info.VisitMetadata(ctx, []string{"some-key"}, listingPageSize,
+				func(md *api.InstanceMetadata) bool {
+					visited = append(visited, string(md.Value))
+					return true
+				},
+			)
+			if err != nil {
+				return err
+			}
+			if len(visited) != fakeMetadataLimit {
+				return status.Errorf(codes.FailedPrecondition, "unexpected number of metadata entries")
+			}
+			for i, v := range visited {
+				if v != fmt.Sprintf("metadata-value-%d", i) {
+					return status.Errorf(codes.FailedPrecondition, "unexpected metadata #%d %q", i, v)
+				}
+			}
+			return nil
+
+		case "PLUGIN_VISIT_METADATA_ONE":
+			var visited []string
+			err := info.VisitMetadata(ctx, []string{"some-key"}, 0,
+				func(md *api.InstanceMetadata) bool {
+					visited = append(visited, string(md.Value))
+					return false
+				},
+			)
+			if err != nil {
+				return err
+			}
+			if len(visited) != 1 || visited[0] != "metadata-value-0" {
+				return status.Errorf(codes.FailedPrecondition, "unexpected metadata %q", visited)
+			}
+			return nil
+
 		default:
 			return status.Errorf(codes.Aborted, "unknown mode")
 		}
@@ -110,6 +154,8 @@ func TestPlugin(t *testing.T) {
 	t.Parallel()
 
 	const testInstanceID = "qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaGSpEcC"
+
+	testObjectRef := common.InstanceIDToObjectRef(testInstanceID)
 
 	testPin := func(pkg string) common.Pin {
 		return common.Pin{
@@ -123,8 +169,10 @@ func TestPlugin(t *testing.T) {
 	defer cancel()
 
 	Convey("With a host", t, func() {
+		fakeRepo := &fakeRepository{}
 		host := &plugin.Host{
 			ServiceURL: exampleHost,
+			Repository: fakeRepo,
 		}
 		defer host.Close(ctx)
 
@@ -180,6 +228,68 @@ func TestPlugin(t *testing.T) {
 			// Rejects all requests right away if closed.
 			p := plug.CheckAdmission(testPin("good/a/b/c/d/e"))
 			So(p.Wait(ctx), ShouldEqual, ErrAborted)
+		})
+
+		Convey("VisitMetadata visit all", func() {
+			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ALL"})
+			defer plug.Close(ctx)
+			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
+			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+				{
+					Package:  "good/a/b",
+					Instance: testObjectRef,
+					Keys:     []string{"some-key"},
+					PageSize: listingPageSize,
+				},
+				{
+					Package:   "good/a/b",
+					Instance:  testObjectRef,
+					Keys:      []string{"some-key"},
+					PageSize:  listingPageSize,
+					PageToken: "start-from-7",
+				},
+				{
+					Package:   "good/a/b",
+					Instance:  testObjectRef,
+					Keys:      []string{"some-key"},
+					PageSize:  listingPageSize,
+					PageToken: "start-from-14",
+				},
+			})
+		})
+
+		Convey("VisitMetadata visit one", func() {
+			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ONE"})
+			defer plug.Close(ctx)
+			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
+			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+				{
+					Package:  "good/a/b",
+					Instance: testObjectRef,
+					Keys:     []string{"some-key"},
+					PageSize: 20, // default
+				},
+			})
+		})
+
+		Convey("VisitMetadata visit error", func() {
+			fakeRepo.SetErr(status.Errorf(codes.PermissionDenied, "the listing says boo"))
+
+			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ALL"})
+			defer plug.Close(ctx)
+
+			err := plug.CheckAdmission(testPin("good/a/b")).Wait(ctx)
+			So(err, ShouldHaveRPCCode, codes.PermissionDenied)
+			So(err, ShouldErrLike, "the listing says boo")
+
+			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
+				{
+					Package:  "good/a/b",
+					Instance: testObjectRef,
+					Keys:     []string{"some-key"},
+					PageSize: listingPageSize,
+				},
+			})
 		})
 
 		Convey("Closing right after starting", func() {
@@ -269,4 +379,63 @@ func TestPlugin(t *testing.T) {
 			So(ctx.Err(), ShouldBeNil)
 		})
 	})
+}
+
+type fakeRepository struct {
+	m     sync.Mutex
+	err   error
+	calls []*api.ListMetadataRequest
+}
+
+func (r *fakeRepository) SetErr(err error) {
+	r.m.Lock()
+	defer r.m.Unlock()
+	r.err = err
+}
+
+func (r *fakeRepository) Calls() []*api.ListMetadataRequest {
+	r.m.Lock()
+	defer r.m.Unlock()
+	return r.calls
+}
+
+func (r *fakeRepository) ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error) {
+	r.m.Lock()
+	r.calls = append(r.calls, in)
+	err := r.err
+	r.m.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+
+	cursor := 0
+	if in.PageToken != "" {
+		fmt.Sscanf(in.PageToken, "start-from-%d", &cursor)
+	}
+
+	key := "some-key"
+	if len(in.Keys) != 0 {
+		key = in.Keys[0]
+	}
+
+	var md []*api.InstanceMetadata
+	for cursor < fakeMetadataLimit && len(md) < int(in.PageSize) {
+		md = append(md, &api.InstanceMetadata{
+			Key:         key,
+			Value:       []byte(fmt.Sprintf("metadata-value-%d", cursor)),
+			ContentType: "text/plain",
+		})
+		cursor += 1
+	}
+
+	nextPageToken := ""
+	if cursor != fakeMetadataLimit {
+		nextPageToken = fmt.Sprintf("start-from-%d", cursor)
+	}
+
+	return &api.ListMetadataResponse{
+		Metadata:      md,
+		NextPageToken: nextPageToken,
+	}, nil
 }
