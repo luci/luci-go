@@ -143,7 +143,12 @@ export class StepsTabElement extends MobxLitElement {
           >Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <milo-lazy-list id="main" .growth=${300}>
+      <milo-hotkey
+        key="space,shift+space,up,down,pageup,pagedown"
+        style="display: none;"
+        .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
+      ></milo-hotkey>
+      <milo-lazy-list id="main" .growth=${300} tabindex="-1">
         ${this.buildState.build?.rootSteps.map((step, i) => html`
         <milo-build-step-entry
           style=${styleMap({'display': !step.succeededRecursively || this.stepsConfig.showSucceededSteps ? '' : 'none'})}
@@ -203,6 +208,7 @@ export class StepsTabElement extends MobxLitElement {
       padding-top: 5px;
       padding-left: 10px;
       border-top: 1px solid var(--divider-color);
+      outline: none;
     }
     milo-build-step-entry {
       margin-bottom: 2px;
