@@ -493,9 +493,10 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	})
 
 	q := testresults.Query{
-		Predicate:     bqExport.GetTestResults().GetPredicate(),
-		InvocationIDs: invIDs,
-		Mask:          testresults.AllFields,
+		Predicate:         bqExport.GetTestResults().GetPredicate(),
+		InvocationIDs:     invIDs,
+		Mask:              testresults.AllFields,
+		MaxTestVariantNum: testresults.MaxTestVariantNum,
 	}
 	eg.Go(func() error {
 		defer close(batchC)

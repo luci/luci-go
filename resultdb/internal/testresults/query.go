@@ -37,6 +37,12 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// MaxTestVariantNum indicates the maximum number of testVariants we can pass
+// to query for manual parallelization. If exceeds, we should discard the
+// testVariants and join VariantsWithUnexpectedResults in the query.
+// Limit is 10MiB, each testVariants usually takes about (256 + 8) * 4 bytes.
+const MaxTestVariantNum = 10000
+
 // AllFields is a field mask that selects all TestResults fields.
 var AllFields = mask.All(&pb.TestResult{})
 
@@ -67,11 +73,12 @@ func ListMask(readMask *field_mask.FieldMask) (mask.Mask, error) {
 
 // Query specifies test results to fetch.
 type Query struct {
-	InvocationIDs invocations.IDSet
-	Predicate     *pb.TestResultPredicate
-	PageSize      int // must be positive
-	PageToken     string
-	Mask          mask.Mask
+	InvocationIDs     invocations.IDSet
+	Predicate         *pb.TestResultPredicate
+	PageSize          int // must be positive
+	PageToken         string
+	Mask              mask.Mask
+	MaxTestVariantNum int
 }
 
 func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {
@@ -102,6 +109,8 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		case len(testVariants) == 0:
 			// No test variant to match.
 			return nil
+		case len(testVariants) > q.MaxTestVariantNum:
+			params["forceJoin"] = true
 		default:
 			params["testVariants"] = testVariants
 		}
@@ -244,7 +253,7 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) ([]testV
 	// Fetch test variants with unexpected results.
 	var testVariants map[testVariant]struct{}
 	eg.Go(func() (err error) {
-		testVariants, err = q.executeTestVariantQuery(ctx, "variantsWithUnexpectedResults")
+		testVariants, err = q.executeTestVariantQuery(ctx, "variantsWithUnexpectedResultsFull")
 		return
 	})
 
@@ -388,7 +397,7 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 
 // queryTmpl is a set of templates that generate the SQL statements used
 // by Query type.
-// Two main templates are "testResults" and "variantsWithUnexpectedResults"
+// Two main templates are "testResults" and "variantsWithUnexpectedResultsFull"
 var queryTmpl = template.Must(template.New("").Parse(`
 	{{define "testResults"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
@@ -428,6 +437,14 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	{{end}}
 
 	{{define "testResultsBase"}}
+		{{if .params.forceJoin}}
+			{{template "joinWithVariantsWithUnexpectedResults" .}}
+		{{else}}
+			{{template "useParamsTestVariantsIfExist" .}}
+		{{end}}
+	{{end}}
+
+	{{define "useParamsTestVariantsIfExist"}}
 		SELECT {{.columns}}
 		FROM TestResults tr
 		WHERE InvocationId IN UNNEST(@invIDs)
@@ -449,8 +466,22 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		{{end}}
 	{{end}}
 
-	{{define "variantsWithUnexpectedResults"}}
+  {{define "joinWithVariantsWithUnexpectedResults"}}
+		WITH variantsWithUnexpectedResults AS (
+			{{template "variantsWithUnexpectedResultsQuery" .}}
+		)
+		SELECT {{.columns}}
+		FROM variantsWithUnexpectedResults vur
+			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+		WHERE InvocationId IN UNNEST(@invIDs)
+	{{end}}
+
+	{{define "variantsWithUnexpectedResultsFull"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
+		{{template "variantsWithUnexpectedResultsQuery" .}}
+	{{end}}
+
+	{{define "variantsWithUnexpectedResultsQuery"}}
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
