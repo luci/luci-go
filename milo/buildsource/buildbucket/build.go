@@ -151,10 +151,10 @@ func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
 	res.CommitTime, _ = ptypes.Timestamp(commit.Committer.Time)
 	res.File = make([]string, 0, len(commit.TreeDiff))
 	for _, td := range commit.TreeDiff {
-		// If file is moved, there is both new and old path,
-		// from which we take only new path.
-		// If a file is deleted, its new path is /dev/null.
-		// In that case, we're only interested in the old path.
+		// If a file was moved, there is both an old and a new path, from which we
+		// take only the new path.
+		// If a file was deleted, its new path is /dev/null. In that case, we're
+		// only interested in the old path.
 		switch {
 		case td.NewPath != "" && td.NewPath != "/dev/null":
 			res.File = append(res.File, td.NewPath)
