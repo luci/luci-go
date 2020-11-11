@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4c5ea34_27870c16",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 15
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T10:53:56Z",
+      "side": 1,
+      "message": "this is a slow down, but it\u0027s still just 2ms, so it\u0027s not too bad.",
+      "range": {
+        "startLine": 18,
+        "startChar": 55,
+        "endLine": 18,
+        "endChar": 62
+      },
+      "revId": "f03e70d327f6af3d688763dff666515a77687edd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7993d85d_2f7bca07",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T10:53:56Z",
+      "side": 1,
+      "message": "👍 I like this benchmark very much. Btw, have you tried running this on HDD? In theory, it shouldn\u0027t make any difference since most ops here end up done purely in RAM by the OS.",
+      "revId": "f03e70d327f6af3d688763dff666515a77687edd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd343982_b851c43f",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-11T10:53:56Z",
+      "side": 1,
+      "message": "nit: case of totally 0 buffer might actually be optimized for in a file system. Random is better.",
+      "revId": "f03e70d327f6af3d688763dff666515a77687edd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
