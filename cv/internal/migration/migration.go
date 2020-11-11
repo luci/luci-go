@@ -25,11 +25,13 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -75,6 +77,26 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	a := req.Run.Attempt
 	logging.Infof(ctx, "CQD[%s] finished working on %s (%s) attempt with %s", a.LuciProject, a.Key, clsOf(a), a.Status.String())
 	resp = &empty.Empty{}
+	return
+}
+
+func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return
+	}
+	if req.AccessToken == "" || req.GerritHost == "" {
+		err = appstatus.Error(codes.InvalidArgument, "access_token and gerrit_host required")
+		return
+	}
+
+	project := "<UNKNOWN>"
+	if i := auth.CurrentIdentity(ctx); i.Kind() == identity.Project {
+		project = i.Value()
+	}
+	logging.Infof(ctx, "CQD[%s] uses netrc access token for %s", project, req.GerritHost)
+	resp = &empty.Empty{}
+	err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken)
 	return
 }
 

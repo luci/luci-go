@@ -40,6 +40,10 @@ service Migration {
 
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
   rpc ReportFinishedRun(ReportFinishedRunRequest) returns (google.protobuf.Empty);
+
+  // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
+  // CQDaemon.
+  rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
 }
 
 message ReportRunsRequest {
@@ -55,4 +59,9 @@ message ReportedRun {
 
 message ReportFinishedRunRequest {
   ReportedRun run = 1;
+}
+
+message ReportUsedNetrcRequest {
+  string gerrit_host = 1;
+  string access_token = 2;
 }
