@@ -22,6 +22,30 @@
       },
       "revId": "54bd7df648daf837dc054260edff761a0958c6bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "040e0929_e761151a",
+        "filename": "server/auth/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-11T07:14:22Z",
+      "side": 1,
+      "message": "Did you sync with infra/infra https://crrev.com/c/2526668?",
+      "parentUuid": "5dccdfa1_0759a818",
+      "range": {
+        "startLine": 375,
+        "startChar": 45,
+        "endLine": 375,
+        "endChar": 53
+      },
+      "revId": "54bd7df648daf837dc054260edff761a0958c6bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
