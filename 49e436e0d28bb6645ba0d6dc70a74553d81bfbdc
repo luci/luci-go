@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f071f93a_a9ed5f32",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-11T00:38:05Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/win-rel-swarming/6993/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
+      "revId": "49e436e0d28bb6645ba0d6dc70a74553d81bfbdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
