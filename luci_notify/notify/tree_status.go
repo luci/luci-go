@@ -220,6 +220,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 					// The project was deleted since the previous time we fetched it just above.
 					// In this case, just move on, since the project is no more.
 					case err == datastore.ErrNoSuchEntity:
+						logging.Infof(c, "Project %s removed between queries, ignoring it", project.Name)
 						return nil
 					case err != nil:
 						return errors.Annotate(err, "failed to get project").Tag(transient.Tag).Err()
@@ -233,6 +234,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 
 					mu.Lock()
 					defer mu.Unlock()
+					logging.Debugf(c, "Appending tree closers for project: %v", project)
 					treeClosers = append(treeClosers, treeClosersForProject...)
 					if project.TreeClosingEnabled {
 						closingEnabledProjects.Add(project.Name)
@@ -247,6 +249,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 		return err
 	}
 
+	logging.Debugf(c, "closingEnabledProjects: %v", closingEnabledProjects)
 	return parallel.WorkPool(32, func(ch chan<- func() error) {
 		for host, treeClosers := range groupTreeClosers(treeClosers) {
 			host, treeClosers := host, treeClosers
@@ -283,13 +286,16 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		return nil
 	}
 
+	logging.Debugf(c, "Scanning treeClosers for any belonging to a project with tree closing enabled: %v", treeClosers)
 	anyEnabled := false
 	for _, tc := range treeClosers {
 		if closingEnabledProjects.Has(tcProject(tc)) {
+			logging.Debugf(c, "Found such a treeCloser: %v", tc)
 			anyEnabled = true
 			break
 		}
 	}
+	logging.Debugf(c, "anyEnabled = %v", anyEnabled)
 
 	anyFailingBuild := false
 	anyNewBuild := false
