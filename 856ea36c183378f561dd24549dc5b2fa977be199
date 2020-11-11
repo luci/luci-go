@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4e50500_4930ba5f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-11T19:22:42Z",
+      "side": 1,
+      "message": "Yeah... But I think this case should be quite rare.",
+      "parentUuid": "83bbdc0f_cec9f354",
+      "range": {
+        "startLine": 11,
+        "startChar": 84,
+        "endLine": 11,
+        "endChar": 100
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "c78a22d6_0d922a1a",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bac841f_b8fd30ea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-11T19:22:42Z",
+      "side": 1,
+      "message": "I\u0027m hesitate to revert your original CL because I think the optimization should help most of the invocations. If revert then we\u0027ll see slowness across the board.\n\nDo you think the complexity overweights the performance improvement?",
+      "parentUuid": "b7d2fbf6_e3a60c71",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62fbdd9b_be46b6c1",
@@ -71,6 +113,30 @@
       "writtenOn": "2020-11-11T17:05:11Z",
       "side": 1,
       "message": "why is it configurable by the caller?",
+      "range": {
+        "startLine": 81,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e91c48c4_1a41e8fc",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-11T19:22:42Z",
+      "side": 1,
+      "message": "Mainly for testing purpose.",
+      "parentUuid": "62fbdd9b_be46b6c1",
       "range": {
         "startLine": 81,
         "startChar": 1,
