@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8f978ecc_9384394f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T19:44:05Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c4e50500_4930ba5f",
+      "range": {
+        "startLine": 11,
+        "startChar": 84,
+        "endLine": 11,
+        "endChar": 100
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c78a22d6_0d922a1a",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -102,6 +126,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e6bf4401_94320389",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T19:44:05Z",
+      "side": 1,
+      "message": "I am advocating for better optimizations (MAX_PARALLELISM, longest_common_prefix). If we do them, then we don\u0027t need this complexity.\n\nI am OK with this CL only if this is temporary. Could you add a TODO with a bug, so that we don\u0027t forget?",
+      "parentUuid": "8bac841f_b8fd30ea",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "62fbdd9b_be46b6c1",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 2
@@ -137,6 +179,30 @@
       "side": 1,
       "message": "Mainly for testing purpose.",
       "parentUuid": "62fbdd9b_be46b6c1",
+      "range": {
+        "startLine": 81,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51bf9f0d_07dee76a",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-11T19:44:05Z",
+      "side": 1,
+      "message": "then please make it private, and use the default it is 0",
+      "parentUuid": "e91c48c4_1a41e8fc",
       "range": {
         "startLine": 81,
         "startChar": 1,
