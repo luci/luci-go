@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d78fba09_feb35726",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-11T00:18:14Z",
+      "side": 1,
+      "message": "I thought we *wanted* to call BCID whenever we install a CIPD package, since BCID is where all policies are defined: if policies change, we need to detect this change ASAP. It means we need to hit BCID policy service relative frequently. Caching results for some short controllable duration is fine, but it should not be months... Also using long-lived signed tokens is a path of despair since we\u0027d need a way to revoke them in case of compromise. BCID attestations are already such long-lived tokens and BCID service supports their revocation (I hope).\n\nIs there a documented somewhere that *clearly* states the goals and what BCID provides and what we are protecting? I feel I\u0027m confused and this whole thing begins to smell like a security theater or using BCID for the sake of using BCID (and not because it provides a valuable service).\n\nEither way, CIPD now provides a hook \"IsItOKToInstallThisPackageNow(package, sha256, metadata)\". You can implement it however you like, using BCID policies or checking adhoc signatures or any other logic. This should allow you to experiment and come up with the best approach. \n\nIt does assume we check packages before installing them, not before uploading to CIPD. I we want to consult BCID/check signatures/etc *only* before uploading packages to the CIPD backend, it means we\u0027d have to 100% trust CIPD backend (since it will hold the list of approved packages and clients will trust this list). In this case I believe BCID just becomes a giant complication that doesn\u0027t give much additional security (it would be essentially a parallel ACL system, which is still rooted in the CIPD backend security).",
+      "parentUuid": "ce914fdb_0b069dfc",
+      "revId": "1138335e9bcf50be80faa14ee03998163f4672be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f238176_7b4f8db9",
