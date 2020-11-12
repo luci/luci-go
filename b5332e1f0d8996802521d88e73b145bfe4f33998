@@ -69,6 +69,24 @@
       "parentUuid": "e813b595_d5428d7e",
       "revId": "b5332e1f0d8996802521d88e73b145bfe4f33998",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8aa0af3_d7a8e70b",
+        "filename": "cv/internal/servicecfg/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T20:00:26Z",
+      "side": 1,
+      "message": "oh sweet! I actually missed the `e. attemptEagerUpdate()` in this line[1] when I check the implementation so I thought it is just loading another layer of cache from datastore. Hence, asked.\n\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/server/cfgcache/cache.go;l\u003d285;drc\u003d85629364b999c3b1a5ded8c9f264dd82c0a6f5ef",
+      "parentUuid": "54cd40a3_585f23ed",
+      "revId": "b5332e1f0d8996802521d88e73b145bfe4f33998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
