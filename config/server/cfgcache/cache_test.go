@@ -48,6 +48,12 @@ var testEntry = Register(&Entry{
 	},
 })
 
+var testEntryCustomConfigSet = Register(&Entry{
+	Path:      "path.cfg",
+	ConfigSet: "services/another-service",
+	Type:      (*durationpb.Duration)(nil),
+})
+
 func TestProtoReflection(t *testing.T) {
 	t.Parallel()
 
@@ -87,7 +93,8 @@ func TestProtoReflection(t *testing.T) {
 		)
 
 		configs := map[config.Set]cfgmem.Files{
-			serviceConfigSet: {testEntry.Path: `seconds: 1`},
+			defaultServiceConfigSet:    {testEntry.Path: `seconds: 1`},
+			"services/another-service": {testEntryCustomConfigSet.Path: `nanos: 5`},
 		}
 
 		ctx := memory.Use(context.Background())
@@ -102,10 +109,18 @@ func TestProtoReflection(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
 			So(meta.Revision, ShouldEqual, rev1)
+
+			Convey("Custom ConfigSet", func() {
+				meta := config.Meta{}
+
+				pb, err := testEntryCustomConfigSet.Get(ctx, &meta)
+				So(err, ShouldBeNil)
+				So(pb.(*durationpb.Duration).Nanos, ShouldEqual, 5)
+			})
 		})
 
 		Convey("Eager update fail", func() {
-			configs[serviceConfigSet][testEntry.Path] = `broken`
+			configs[defaultServiceConfigSet][testEntry.Path] = `broken`
 			_, err := testEntry.Get(ctx, nil)
 			So(err, ShouldErrLike, "no such entity")
 		})
@@ -138,7 +153,7 @@ func TestProtoReflection(t *testing.T) {
 			So(meta.Revision, ShouldEqual, rev1)
 
 			// Real update.
-			configs[serviceConfigSet][testEntry.Path] = `seconds: 2`
+			configs[defaultServiceConfigSet][testEntry.Path] = `seconds: 2`
 			pb, err = testEntry.Update(ctx, &meta)
 			So(err, ShouldBeNil)
 			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 2)
@@ -167,7 +182,7 @@ func TestProtoReflection(t *testing.T) {
 		})
 
 		Convey("Failing validation", func() {
-			configs[serviceConfigSet][testEntry.Path] = `wat?`
+			configs[defaultServiceConfigSet][testEntry.Path] = `wat?`
 			_, err := testEntry.Update(ctx, nil)
 			So(err, ShouldErrLike, "validation errors")
 		})

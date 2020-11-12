@@ -53,6 +53,11 @@ type Entry struct {
 	// Path is a path within the service config set to fetch.
 	Path string
 
+	// ConfigSet allows to provider custom config set.
+	//
+	// If empty, defaults to this service's config set.
+	ConfigSet string
+
 	// Type identifies proto message type with the config file schema.
 	//
 	// The actual value will never be used, only its type. All methods will
@@ -101,7 +106,7 @@ func Register(e *Entry) *Entry {
 	if rules == nil {
 		rules = &validation.Rules
 	}
-	rules.Add(serviceConfigSet, e.Path, func(ctx *validation.Context, _, _ string, content []byte) error {
+	rules.Add(e.configSet(), e.Path, func(ctx *validation.Context, _, _ string, content []byte) error {
 		_, err := e.validate(ctx, string(content))
 		return err
 	})
@@ -124,9 +129,9 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	// Fetch the raw text body from LUCI Config service.
 	var raw string
 	var fetchedMeta config.Meta
-	err := cfgclient.Get(ctx, serviceConfigSet, e.Path, cfgclient.String(&raw), &fetchedMeta)
+	err := cfgclient.Get(ctx, config.Set(e.configSet()), e.Path, cfgclient.String(&raw), &fetchedMeta)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch %s:%s", serviceConfigSet, e.Path).Err()
+		return nil, errors.Annotate(err, "failed to fetch %s:%s", e.configSet(), e.Path).Err()
 	}
 
 	// Make sure there are no blocking validation errors. This also deserializes
@@ -302,8 +307,7 @@ func (e *Entry) Fetch(ctx context.Context, meta *config.Meta) (proto.Message, er
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Note: we can potentially make this configurable if necessary.
-const serviceConfigSet = "services/${appid}"
+const defaultServiceConfigSet = "services/${appid}"
 
 // cachedConfig holds binary-serialized config and its metadata.
 type cachedConfig struct {
@@ -321,9 +325,17 @@ type procCache struct {
 	Meta   config.Meta
 }
 
+// configSet returns overridden ConfigSet or the default.
+func (e *Entry) configSet() string {
+	if e.ConfigSet != "" {
+		return e.ConfigSet
+	}
+	return defaultServiceConfigSet
+}
+
 // entityID returns an ID to use for cachedConfig entity.
 func (e *Entry) entityID() string {
-	return fmt.Sprintf("%s:%s", serviceConfigSet, e.Path)
+	return fmt.Sprintf("%s:%s", e.configSet(), e.Path)
 }
 
 // newMessage creates a new empty proto message of e.Type.
