@@ -16,6 +16,109 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/8626/overview\n\nStephen said that with the new library, he could not see the disappearing input/output blocks anymore.\n\nAnother approach is maybe to fix the ace-builds library, but I am not sure we should follow it, because none of us has a chromebook.",
       "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd49bd12_9c6ca67e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T06:58:22Z",
+      "side": 1,
+      "message": "Can we shrink the font size of the panel a little? It should be at least as small as the body text.",
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d74f341_b9cf9261",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T06:58:22Z",
+      "side": 1,
+      "message": "Remove this (and ace_editor.ts)?",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 28
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75c8547e_8d416403",
+        "filename": "milo/frontend/resultui/src/components/milo_code_mirror_editor.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T06:58:22Z",
+      "side": 1,
+      "message": "remove leading blank line",
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63713c41_23eb965f",
+        "filename": "milo/frontend/resultui/src/components/milo_code_mirror_editor.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T06:58:22Z",
+      "side": 1,
+      "message": "One UX downside of this editor is that the JSON is less readable: keys and values have the same syntax coloring. Can we use the JSON option for the JS mode here?\n\nhttps://codemirror.net/mode/javascript/",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 50
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8cc7957d_6c939135",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T06:58:22Z",
+      "side": 1,
+      "message": "this closing tag doesn\u0027t match",
+      "range": {
+        "startLine": 259,
+        "startChar": 10,
+        "endLine": 259,
+        "endChar": 27
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
