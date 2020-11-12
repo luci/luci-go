@@ -103,7 +103,7 @@ export class BuildState {
     return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
-  @computed({keepAlive: true})
+  @computed
   get queryBlamelistResIterFn() {
     if (!this.appState.milo || !this.build) {
       return async function*() { await Promise.race([]); };
