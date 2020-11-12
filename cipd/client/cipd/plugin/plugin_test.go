@@ -159,7 +159,9 @@ func TestPlugins(t *testing.T) {
 
 		Convey("Plugin crashing on start", func() {
 			_, err := launchPlugin(ctx, host, "PLUGIN_CRASHING_ON_START")
-			So(err, ShouldHaveSameTypeAs, &exec.ExitError{})
+			// This is either an ExitError or a pipe error writing to stdin, depending
+			// on how far LaunchPlugin progressed before the plugin process crashed.
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Plugin crashing after RPC", func() {
