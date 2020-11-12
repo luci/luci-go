@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f5bdc12_868f4b3e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-12T21:55:25Z",
+      "side": 1,
+      "message": "I\u0027m not a fan of this solution, it mixes API intended for bots with API for end clients.\n\nSince we\u0027ll need server side changed either way, can we instead change UpdateBuild API slightly to say: \"UpdateBuild can update only running builds. Returns FailedPrecondition error otherwise\"?\n\nThen in bbagent just recognized FailedPrecondition before first successful UpdateBuild as \"probably is still SCHEDULER\".",
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d58c18e7_1f5fc6c7",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-12T21:55:25Z",
+      "side": 1,
+      "message": "I think it will require some server-side changes to allow GetBuild calls from bots (for non-public builds).",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
