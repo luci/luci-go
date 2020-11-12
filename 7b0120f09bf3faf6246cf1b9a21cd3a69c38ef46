@@ -33,6 +33,24 @@
       "message": "I\u0027m not sure what \"Note that this preempts any common filename in this directory.\" is supposed to mean. I know you\u0027re just moving it. It might be trying to say that it will preempt processing of a spec filename in this directory, which is no longer true, so I\u0027d remove it.\n\n(fwiw the comments at line 85-86 seem to describe the desired behavior, that it terminates _after_ processing the directory containing the barrier file)",
       "revId": "7b0120f09bf3faf6246cf1b9a21cd3a69c38ef46",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b471085e_67cf63e2",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1329751
+      },
+      "writtenOn": "2020-11-12T20:28:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a17bc075_7895d4a8",
+      "revId": "7b0120f09bf3faf6246cf1b9a21cd3a69c38ef46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
