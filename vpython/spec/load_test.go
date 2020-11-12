@@ -270,6 +270,19 @@ func TestLoadForScript(t *testing.T) {
 			So(spec, ShouldBeNil)
 		})
 
+		Convey(`Layout: individual file with a spec and barrier sharing a folder`, func() {
+			mustBuild(map[string]string{
+				"foo/bar/baz.py":      "main",
+				"foo/bar/__init__.py": "",
+				"BARRIER":             "",
+				"common.vpython":      goodSpecData,
+			})
+
+			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			So(err, ShouldBeNil)
+			So(spec, ShouldResemble, goodSpec)
+		})
+
 		Convey(`Layout: module with a common spec`, func() {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": "main",
