@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da2b644b_95dec642",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T17:14:22Z",
+      "side": 1,
+      "message": "Not relevant to this CL: I feel like our go test is flaky. Maybe another reason to move to smaller go module is that we only need to run relevant test so that the flakiness won\u0027t bite us everytime.",
+      "revId": "04cd7d2af6c60f7e4d80f1b4b27c81e6c36cd2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "794ca3df_f8f0604f",
+        "filename": "cv/api/migration/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T17:14:22Z",
+      "side": 1,
+      "message": "typo: although",
+      "range": {
+        "startLine": 50,
+        "startChar": 13,
+        "endLine": 50,
+        "endChar": 21
+      },
+      "revId": "04cd7d2af6c60f7e4d80f1b4b27c81e6c36cd2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
