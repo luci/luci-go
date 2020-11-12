@@ -56,6 +56,29 @@
       "message": "PTAL",
       "revId": "ddd2d485c7929c103ca81641f2e480c699f7d76e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77a3f4e6_e3f42396",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-12T14:02:32Z",
+      "side": 1,
+      "message": "you can also make it\nconst warningMsg \u003d `WARNING: This step blah blah\nthat exists blah blah\n...\nNOTE: blha blah\nlast line\n`",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 26
+      },
+      "revId": "ddd2d485c7929c103ca81641f2e480c699f7d76e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
