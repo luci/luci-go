@@ -16,6 +16,69 @@
       "message": "PTAL",
       "revId": "9db399f05336f34ce24e96377d4d2853e29753ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e4c15de_9769020a",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:01:35Z",
+      "side": 1,
+      "message": "this talks like something already happened.\nMaybe replace with instructions, e.g. to upload result-level artifact, use ReportTestResults.",
+      "range": {
+        "startLine": 40,
+        "startChar": 15,
+        "endLine": 40,
+        "endChar": 32
+      },
+      "revId": "9db399f05336f34ce24e96377d4d2853e29753ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c7d3279_fd7c5f37",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:01:35Z",
+      "side": 1,
+      "message": "please make it obvious that these are invocation-level artifacts, through docs, field names, RPC name or any combination thereof.",
+      "revId": "9db399f05336f34ce24e96377d4d2853e29753ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d62e731b_7ba170b8",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:01:35Z",
+      "side": 1,
+      "message": "needs to be a map, because Artifact message doesn\u0027t have its own name",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 19
+      },
+      "revId": "9db399f05336f34ce24e96377d4d2853e29753ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
