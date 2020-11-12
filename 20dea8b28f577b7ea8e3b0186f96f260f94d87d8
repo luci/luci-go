@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ffa6670_4d51aedd",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:19:01Z",
+      "side": 1,
+      "message": "inconsistent indentation",
+      "range": {
+        "startLine": 41,
+        "startChar": 2,
+        "endLine": 41,
+        "endChar": 4
+      },
+      "revId": "20dea8b28f577b7ea8e3b0186f96f260f94d87d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "266fdae2_675b15c1",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:19:01Z",
+      "side": 1,
+      "message": "please explain what is the key here\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/98/2535098/1/resultdb/sink/proto/v1/test_result.proto#58",
+      "revId": "20dea8b28f577b7ea8e3b0186f96f260f94d87d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6debc6a2_cbfa19a5",
+        "filename": "resultdb/sink/proto/v1/sink.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:19:01Z",
+      "side": 1,
+      "message": "given that the message already says that these are invocation-level artifacts, maybe the field can be just \"artifacts\".",
+      "range": {
+        "startLine": 57,
+        "startChar": 24,
+        "endLine": 57,
+        "endChar": 44
+      },
+      "revId": "20dea8b28f577b7ea8e3b0186f96f260f94d87d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
