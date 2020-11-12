@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63120b4a_3414e592",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-12T03:56:09Z",
+      "side": 1,
+      "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/8626/overview\n\nStephen said that with the new library, he could not see the disappearing input/output blocks anymore.\n\nAnother approach is maybe to fix the ace-builds library, but I am not sure we should follow it, because none of us has a chromebook.",
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
