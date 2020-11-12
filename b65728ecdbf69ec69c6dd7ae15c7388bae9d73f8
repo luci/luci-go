@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "631e44a6_f50aaef8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T02:16:53Z",
+      "side": 1,
+      "message": "Demo (with page_size set to 2): https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/5007/blamelist",
+      "revId": "b65728ecdbf69ec69c6dd7ae15c7388bae9d73f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
