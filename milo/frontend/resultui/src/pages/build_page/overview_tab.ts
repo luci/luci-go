@@ -24,6 +24,7 @@ import { observable } from 'mobx';
 import '../../components/ace_editor';
 import '../../components/build_step_entry';
 import '../../components/link';
+import '../../components/milo_code_mirror_editor';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
@@ -242,24 +243,17 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderProperties(header: string, properties: {[key: string]: unknown}) {
     const editorOptions = {
-      mode: 'ace/mode/json',
+      mode: 'application/json',
       readOnly: true,
-      highlightActiveLine: false,
-      showPrintMargin: false,
-      scrollPastEnd: false,
-      fontSize: 12,
-      maxLines: 50,
     };
 
     return html`
       <div>
         <h3>${header}</h3>
-        <milo-ace-editor
-          .options=${{
-            ...editorOptions,
-            value: JSON.stringify(properties, undefined, 2),
-          }}
-        ></milo-ace-editor>
+        <milo-code-mirror-editor
+          .value=${JSON.stringify(properties, undefined, 2)},
+          .options=${{...editorOptions}}
+        ></milo-text-editor>
       </div>
     `;
   }
