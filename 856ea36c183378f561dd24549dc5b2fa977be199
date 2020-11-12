@@ -162,6 +162,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "437eff28_5a672a46",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T02:10:18Z",
+      "side": 1,
+      "message": "also note that now that we deployed result sink in many places, our task invocations don\u0027t have sub-invocations, so the overall number of invocations reduced. This probably explains how come https://paste.googleplex.com/5699683142860800?raw finishes in 250ms without any manual parallelization.\n\nmy point is, there is a chance that the manual parallelization I did back then no longer improves situation significantly because we have fewer invocations, i.e. it is possible that nothing bad will happen if we revert that.\n\nWDYT about reverting and seeing what happens?",
+      "parentUuid": "3bd8e618_cfdaeb82",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "62fbdd9b_be46b6c1",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 2
