@@ -34,6 +34,24 @@
       "parentUuid": "f6c97d1d_b4e42397",
       "revId": "fba2e401015f11e7d5dc6f82373405fc51e3aa2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "130cd4d0_ed52f782",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-12T00:52:46Z",
+      "side": 1,
+      "message": "OK, it does work now. I guess there was some caching issue. PTAL",
+      "parentUuid": "9084169f_3486e4e5",
+      "revId": "fba2e401015f11e7d5dc6f82373405fc51e3aa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
