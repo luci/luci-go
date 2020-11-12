@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11217c2c_0c6a0cb1",
+        "filename": "config/server/cfgcache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-12T18:01:27Z",
+      "side": 1,
+      "message": "i\u0027m not happy with this function, but I think mutating e.ConfigSet in Register() isn\u0027t strictly sufficient.",
+      "range": {
+        "startLine": 328,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 1
+      },
+      "revId": "97a92e42aff5578f92fff4434867a3f27a36f95c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
