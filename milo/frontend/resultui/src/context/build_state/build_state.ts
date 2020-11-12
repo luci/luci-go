@@ -17,7 +17,6 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
-import * as iter from '../../libs/iter_utils';
 import { BuildExt } from '../../models/build_ext';
 import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
@@ -125,7 +124,7 @@ export class BuildState {
         yield res;
       } while (res.nextPageToken);
     }
-    return iter.teeAsync(streamBlamelist());
+    return streamBlamelist;
   }
 
   // Refresh all data that depends on the timestamp.
