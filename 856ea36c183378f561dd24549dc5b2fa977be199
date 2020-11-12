@@ -214,6 +214,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed5495b7_c35a4385",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-12T08:30:03Z",
+      "side": 1,
+      "message": "Well, got it work eventually: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2534080\n\nAlthough the query template is quite complicated to me.",
+      "parentUuid": "93e6da3f_58fa1675",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62fbdd9b_be46b6c1",
