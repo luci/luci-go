@@ -35,6 +35,16 @@ import (
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
+const warningMsg = `WARNING: This step is launched using deprecated allow_subannotation feature
+that exists in the legacy @@@annotator@@@ protocol. Although a replacement
+is built using the latest luciexe protocol for backwards compatibility,
+please consider using 'step.presentation' object to mutate the step/build
+state instead in the recipe.
+
+NOTE: The original stdout/stderr log for this step is available at
+annotation.stdout/annotation.stderr log stream.
+`
+
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -43,6 +53,7 @@ func check(err error) {
 
 func main() {
 	exe.Run(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild exe.BuildSender) error {
+		os.Stderr.WriteString(warningMsg)
 		if len(userArgs) == 0 {
 			return errors.New("No arguments were provided")
 		}
