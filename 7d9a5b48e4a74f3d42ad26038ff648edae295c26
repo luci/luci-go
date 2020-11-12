@@ -164,6 +164,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "10aa32f8_c7548f6e",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T17:08:43Z",
+      "side": 1,
+      "message": "eh.. forget to paste the link: https://npf.io/2015/06/testing-exec-command/\n\nAgreed with the can\u0027t run tests in parallel part. So this way is fine.",
+      "parentUuid": "61e8e2d1_ec1bf978",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 89
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34d99711_9bd97254",
@@ -201,6 +225,30 @@
       "side": 1,
       "message": "I still have a TODO to load blocklist from config, meaning that it\u0027ll be mutable, so yes.\n\nBut, lruCache has its own RWMutex, so locking is considerably simpler now.",
       "parentUuid": "34d99711_9bd97254",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 19
+      },
+      "revId": "7d9a5b48e4a74f3d42ad26038ff648edae295c26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b72a238_5ee3bbd7",
+        "filename": "cv/internal/gerrit/auth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T17:08:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "96a472ad_1e430508",
       "range": {
         "startLine": 106,
         "startChar": 0,
