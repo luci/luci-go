@@ -32,7 +32,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -52,6 +51,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -112,6 +112,9 @@ func mainImpl() int {
 		cctx, cancel = context.WithCancel(ctx)
 	}
 	defer cancel()
+
+	err = waitForBB(cctx, bbclient, input.GetBuild().GetId())
+	check(errors.Annotate(err, "waiting for buildbucket moving build to non-scheduled status").Err())
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, secrets, bbclient))
@@ -213,16 +216,7 @@ func mainImpl() int {
 		// fatal error is received.
 		stopped := false
 		fatalPred := func(err error) bool {
-			// TODO(crbug.com/1140612): Figure out a better solution to handle the
-			// InvalidArgument error at the beginning of the build when build status
-			// hasn't switched to STARTED yet.
-			// Possible solution: keep calling GetBuild and start shuttling the build
-			// once GetBuild returns STARTED status. For now, simply tolerate such
-			// error.
-			if grpcutil.Code(err) == codes.InvalidArgument && !strings.Contains(err.Error(), "cannot update steps of a SCHEDULED build") {
-				return true
-			}
-			return false
+			return grpcutil.Code(err) == codes.InvalidArgument
 		}
 		for {
 			select {
@@ -289,6 +283,27 @@ func mainImpl() int {
 		return 1
 	}
 	return 0
+}
+
+func waitForBB(ctx context.Context, bbclient BuildsClient, id int64) error {
+	if id == 0 {
+		// led build
+		return nil
+	}
+	req := &bbpb.GetBuildRequest{
+		Id:     id,
+		Fields: &fieldmaskpb.FieldMask{Paths: []string{"status"}},
+	}
+	return retry.Retry(ctx, retry.Default, func() error {
+		switch build, err := bbclient.GetBuild(ctx, req); {
+		case err != nil:
+			return err
+		case build.GetStatus() == bbpb.Status_SCHEDULED:
+			return errors.Reason("expected non-scheduled status for build %d in Buildbucket", id).Err()
+		default:
+			return nil
+		}
+	}, nil)
 }
 
 func prepareInputBuild(ctx context.Context, build *bbpb.Build) {

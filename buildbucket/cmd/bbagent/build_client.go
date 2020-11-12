@@ -41,6 +41,11 @@ import (
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
 // contains the required RPC method for bbagent.
 type BuildsClient interface {
+	// Gets a build.
+	//
+	// By default the returned build does not include all fields.
+	GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
+
 	// Updates a build. Returns an empty build.
 	//
 	// RPC metadata must include "X-Build-Token" key with a token
@@ -51,6 +56,10 @@ type BuildsClient interface {
 var _ BuildsClient = dummyBBClient{}
 
 type dummyBBClient struct{}
+
+func (dummyBBClient) GetBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	return nil, nil
+}
 
 func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
 	return nil, nil
