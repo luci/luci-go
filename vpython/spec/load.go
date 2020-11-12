@@ -362,16 +362,7 @@ func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
 	// Walk until we hit root.
 	prevDir := ""
 	for prevDir != startDir {
-		// If we have any barrier files, check to see if they are present in this
-		// directory. Note that this preempts any common filename in this directory.
-		for _, name := range l.CommonFilesystemBarriers {
-			barrierName := filepath.Join(startDir, name)
-			if _, err := os.Stat(barrierName); err == nil {
-				// Identified a barrier file in this directory.
-				return "", nil
-			}
-		}
-
+		// Check the current directory before checking barrier files.
 		for _, name := range names {
 			checkPath := filepath.Join(startDir, name)
 			switch st, err := os.Stat(checkPath); {
@@ -384,6 +375,16 @@ func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
 			default:
 				// Failed to load specification from this file.
 				return "", errors.Annotate(err, "failed to stat common spec file at: %s", checkPath).Err()
+			}
+		}
+
+		// If we have any barrier files, check to see if they are present in this
+		// directory.
+		for _, name := range l.CommonFilesystemBarriers {
+			barrierName := filepath.Join(startDir, name)
+			if _, err := os.Stat(barrierName); err == nil {
+				// Identified a barrier file in this directory.
+				return "", nil
 			}
 		}
 
