@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -172,4 +173,9 @@ func updateArtifactContentType(a *sinkpb.Artifact) {
 	case ".png":
 		a.ContentType = "image/png"
 	}
+}
+
+// ReportTestResults implement sinkpb.SinkServer.
+func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
 }

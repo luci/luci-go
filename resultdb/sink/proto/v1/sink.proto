@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultsink.v1;
 
+import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
@@ -33,6 +34,11 @@ service Sink {
   // Reports test results.
   rpc ReportTestResults(ReportTestResultsRequest)
       returns (ReportTestResultsResponse) {};
+
+  // Reports invocation-level artifacts.
+  // To upload result-level artifact, use ReportTestResults instead.
+  rpc ReportInvocationLevelArtifacts(ReportInvocationLevelArtifactsRequest)
+      returns (google.protobuf.Empty) {};
 }
 
 message ReportTestResultsRequest {
@@ -44,4 +50,10 @@ message ReportTestResultsResponse {
   // List of unique identifiers that can be used to link to these results
   // or requested via luci.resultdb.v1.ResultDB service.
   repeated string test_result_names = 1;
+}
+
+message ReportInvocationLevelArtifactsRequest {
+  // Invocation-level artifacts to report.
+  // The map key is an artifact id.
+  map<string, Artifact> artifacts = 1;
 }
