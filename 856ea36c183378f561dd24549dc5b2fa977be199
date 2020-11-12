@@ -178,6 +178,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "596e538f_185c8c96",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-12T05:36:14Z",
+      "side": 1,
+      "message": "Done.\n\nAnd yeah, I\u0027ll put this change on hold and do a revert instead. If we don\u0027t observe obvious slowness, then I\u0027ll abandon this change.\n\nI think UI-specific RPC will make this case even rarer. But if user call QueryTestResultRPC they may still get the error.",
+      "parentUuid": "3bd8e618_cfdaeb82",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62fbdd9b_be46b6c1",
@@ -239,6 +257,30 @@
       "side": 1,
       "message": "then please make it private, and use the default it is 0",
       "parentUuid": "e91c48c4_1a41e8fc",
+      "range": {
+        "startLine": 81,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2d8e67b_6eb8b57f",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-12T05:36:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51bf9f0d_07dee76a",
       "range": {
         "startLine": 81,
         "startChar": 1,
