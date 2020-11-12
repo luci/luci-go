@@ -51,6 +51,24 @@
       "message": "Sorry if it\u0027s a dumb question. I\u0027m wondering if there will be a window between the service just bootstraps and the first cron job come in to populate the cache, in this case, will Get return a nil migrationpb.Setting during that time period?",
       "revId": "b5332e1f0d8996802521d88e73b145bfe4f33998",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54cd40a3_585f23ed",
+        "filename": "cv/internal/servicecfg/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-12T19:27:46Z",
+      "side": 1,
+      "message": "That\u0027s actually a solid question. It\u0027ll bock on actually fetching it frm LUCI-Config:\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/server/cfgcache/cache.go;l\u003d240",
+      "parentUuid": "e813b595_d5428d7e",
+      "revId": "b5332e1f0d8996802521d88e73b145bfe4f33998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
