@@ -39,10 +39,11 @@ func TestQueryTestResults(t *testing.T) {
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 
 		q := &Query{
-			Predicate:     &pb.TestResultPredicate{},
-			PageSize:      100,
-			InvocationIDs: invocations.NewIDSet("inv1"),
-			Mask:          AllFields,
+			Predicate:         &pb.TestResultPredicate{},
+			PageSize:          100,
+			InvocationIDs:     invocations.NewIDSet("inv1"),
+			Mask:              AllFields,
+			maxTestVariantNum: MaxTestVariantNum,
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
@@ -122,6 +123,18 @@ func TestQueryTestResults(t *testing.T) {
 				)...)
 
 				Convey(`Works`, func() {
+					So(mustFetchNames(q), ShouldResemble, []string{
+						"invocations/inv0/tests/T1/results/0",
+						"invocations/inv0/tests/T1/results/1",
+						"invocations/inv0/tests/T2/results/0",
+						"invocations/inv1/tests/T1/results/0",
+						"invocations/inv1/tests/T2/results/0",
+						"invocations/inv1/tests/T4/results/0",
+					})
+				})
+
+				Convey(`Exceeds maxTestVariantNum`, func() {
+					q.maxTestVariantNum = 2
 					So(mustFetchNames(q), ShouldResemble, []string{
 						"invocations/inv0/tests/T1/results/0",
 						"invocations/inv0/tests/T1/results/1",
