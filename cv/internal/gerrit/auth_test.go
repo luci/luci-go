@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -38,8 +40,13 @@ func TestMakeClient(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		So(datastore.Put(ctx, &netrcToken{"first.example.com", "legacy-1"}), ShouldBeNil)
+		err := servicecfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+			PssaMigration: &migrationpb.PSSAMigration{
+				ProjectsBlocklist: []string{"force-legacy"},
+			},
+		})
+		So(err, ShouldBeNil)
 		f := newFactory()
-		f.pssaBlocklist.Add("force-legacy")
 
 		Convey("works", func() {
 			Convey("forced legacy", func() {
