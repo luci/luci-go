@@ -384,6 +384,10 @@ export class OverviewTabElement extends MobxLitElement {
       overflow-wrap: break-word;
     }
 
+    #summary-html pre {
+      white-space: pre-wrap;
+    }
+
     #tags {
       display: grid;
       grid-template-columns: auto 1fr;
