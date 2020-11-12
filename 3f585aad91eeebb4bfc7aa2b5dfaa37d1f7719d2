@@ -253,6 +253,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06c5523a_a78d953c",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "ah got it",
+      "parentUuid": "2a32d196_2e666c76",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 22
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e7dbef5b_891da596",
@@ -290,6 +314,30 @@
       "side": 1,
       "message": "I am doing this because I am not using Convey in this benchmark.",
       "parentUuid": "e7dbef5b_891da596",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 11
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6054cd64_2535a509",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "ok. the point of the comment was to check the returned error.\nit is currently ignored\n\nsame above",
+      "parentUuid": "9a07359f_3e571d3d",
       "range": {
         "startLine": 86,
         "startChar": 1,

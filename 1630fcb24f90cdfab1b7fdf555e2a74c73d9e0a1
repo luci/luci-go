@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ace7c78_2dc266fc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "let me see if I interpret this line correctly:\n\nwith 16k builds in the realm, containing 262144 results in total, the RPC takes 28 seconds. Is this right?",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c749711_3685b3cb",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "check the returned error",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 19
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cf9ebad_99ea753f",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "how do we know it doesn\u0027t return early because of outOfTime() thing? \nshould we disable it in the benchmark, e.g. via a private field in Query?",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18597fcd_2abebaaf",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "this basically means we have a single build in the entire realm?\nchromium:ci has 13k per day.\ni am not sure `1` and `8` case are representative of the reality.\n\nstepping back, this doesn\u0027t help assessing how long would it take retrieve test results from a week-worth of data (a typical use case), which is about 125k builds, but at the same time I don\u0027t know how long would it take to insert so much data.",
+      "range": {
+        "startLine": 133,
+        "startChar": 31,
+        "endLine": 133,
+        "endChar": 37
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4a5e081_91c7ebe2",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "nit: the code lists all params in L120-125 and then lists them again here.\nwould be simpler to create a struct with all params are fields. Then call myStruct.insert(ctx) here without passing all of them again",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf1a761a_81e14cdc",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T20:55:54Z",
+      "side": 1,
+      "message": "not sure this is representative benchmark (retrieve everything).\nI think a more representative would be a specific test ID here (but not a needle)\n\nalso I think we need one more case: specific variant of a specific test id (not a needle)",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 29
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
