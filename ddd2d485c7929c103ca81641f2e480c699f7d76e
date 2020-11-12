@@ -79,6 +79,30 @@
       },
       "revId": "ddd2d485c7929c103ca81641f2e480c699f7d76e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5931266a_48919d0d",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-12T17:05:15Z",
+      "side": 1,
+      "message": "Good point, done!",
+      "parentUuid": "77a3f4e6_e3f42396",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 26
+      },
+      "revId": "ddd2d485c7929c103ca81641f2e480c699f7d76e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
