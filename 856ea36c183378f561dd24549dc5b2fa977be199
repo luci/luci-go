@@ -144,6 +144,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3bd8e618_cfdaeb82",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-12T00:28:37Z",
+      "side": 1,
+      "message": "also note that https://docs.google.com/document/d/1mJ-7hAeyeXZmgdEMJBhcTFCB2XfmvNVi_jXjAg_Cs_M/edit\nmakes this obsolete",
+      "parentUuid": "e6bf4401_94320389",
+      "revId": "856ea36c183378f561dd24549dc5b2fa977be199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "62fbdd9b_be46b6c1",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 2
