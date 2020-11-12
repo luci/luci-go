@@ -1,0 +1,156 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package history
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/ptypes"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+func insertBenchmarkData(ctx context.Context, nOSes, nVariants, nBuilds, nSteps, nShards, nTests, nResults, buildOffset int, insertNeedle bool) {
+	needleSet := !insertNeedle
+	start := testclock.TestRecentTimeUTC
+	ms := make([]*spanner.Mutation, 0)
+	for os := 0; os < nOSes; os++ {
+		for v := 0; v < nVariants; v++ {
+			builder := fmt.Sprintf("OS%d_Variant%d", os, v)
+			for build := buildOffset; build < buildOffset+nBuilds; build++ {
+				buildInvID := invocations.ID(fmt.Sprintf("%s-build%d", builder, build))
+				buildTS := start.Add(time.Duration(os*v) * time.Minute) // + build hours + ov minutes
+				ms = append(ms, insert.Invocation(buildInvID, pb.Invocation_ACTIVE, map[string]interface{}{
+					"HistoryTime": buildTS,
+					"Realm":       "luci:benchmark",
+				}))
+				for step := 0; step < nSteps; step++ {
+					stepInvID := invocations.ID(fmt.Sprintf("%s-build%d-step%d", builder, build, step))
+					ms = append(ms, insert.Invocation(stepInvID, pb.Invocation_ACTIVE, nil))
+					ms = append(ms, insert.Inclusion(buildInvID, stepInvID))
+					for shard := 0; shard < nShards; shard++ {
+						shardInvID := invocations.ID(fmt.Sprintf("%s-build%d-step%d-shard%d", builder, build, step, shard))
+						ms = append(ms, insert.Invocation(shardInvID, pb.Invocation_ACTIVE, nil))
+						ms = append(ms, insert.Inclusion(stepInvID, shardInvID))
+						for test := 0; test < nTests; test++ {
+							testID := fmt.Sprintf("step%d-shard%d-test%d", step, shard, test)
+							if !needleSet {
+								// The first invocation created should be among the last in the index.
+								needleSet = true
+								testID = "needle"
+							}
+							for result := 0; result < nResults; result++ {
+								resultID := fmt.Sprint(result)
+								ms = append(ms,
+									spanutil.InsertMap("TestResults", map[string]interface{}{
+										"InvocationId":    shardInvID,
+										"TestId":          testID,
+										"ResultId":        resultID,
+										"Variant":         pbutil.Variant("os", fmt.Sprint(os), "variant", fmt.Sprint(v)),
+										"VariantHash":     fmt.Sprintf("deadbeef%d%d", os, v),
+										"CommitTimestamp": spanner.CommitTimestamp,
+										"Status":          pb.TestStatus_PASS,
+										"RunDurationUsec": 1534567,
+									}))
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	maxSpannerBatch := 2000
+	for len(ms) > maxSpannerBatch {
+		span.Apply(ctx, ms[:maxSpannerBatch])
+		ms = ms[maxSpannerBatch:]
+	}
+
+	span.Apply(ctx, ms)
+}
+
+func BenchmarkGetTestResultsHistory(b *testing.B) {
+	runQueryBenchmark := func(ctx context.Context, b *testing.B, name string, q *Query) {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				iCtx, cancel := span.ReadOnlyTransaction(ctx)
+				q.Execute(iCtx)
+				cancel()
+			}
+		})
+	}
+
+	past, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+	q := &Query{
+		Request: &pb.GetTestResultHistoryRequest{
+			Range: &pb.GetTestResultHistoryRequest_TimeRange{
+				TimeRange: &pb.TimeRange{
+					Earliest: past,
+					Latest:   ptypes.TimestampNow(),
+				},
+			},
+			Realm: "luci:benchmark",
+		},
+	}
+
+	nOSes := 4
+	nVariants := 4
+	nSteps := 4
+	nShards := 4
+	nTests := 4
+	nResults := 4
+
+	ctx := testutil.SpannerTestContext(b)
+	lastBuild := 0
+	needleInserted := false
+
+	// 16 builders, each with (1, 8, 64) builds, where each build-level
+	// invocation contains 20 sub-invocations and 256 results.
+	for _, nBuilds := range []int{1, 8, 64} {
+		insertBenchmarkData(ctx, nOSes, nVariants, nBuilds-lastBuild, nSteps, nShards, nTests, nResults, lastBuild, !needleInserted)
+		lastBuild += nBuilds
+		needleInserted = true
+		totalInvocations := nOSes * nVariants * nBuilds * nSteps * nShards
+		totalResults := totalInvocations * nTests * nResults
+
+		q.Request.TestIdRegexp = ""
+		q.Request.VariantPredicate = nil
+		runQueryBenchmark(ctx, b, fmt.Sprintf("All-Builds-All-Tests-%d-invocations-%d-results", totalInvocations, totalResults), q)
+
+		q.Request.TestIdRegexp = "step0-shard0.*"
+		q.Request.VariantPredicate = &pb.VariantPredicate{
+			Predicate: &pb.VariantPredicate_Contains{
+				Contains: pbutil.Variant("os", "0", "variant", "0"),
+			},
+		}
+		runQueryBenchmark(ctx, b, fmt.Sprintf("Some-Builds-Some-Tests-%d-invocations-%d-results", totalInvocations, totalResults), q)
+
+		q.Request.TestIdRegexp = "needle"
+		q.Request.VariantPredicate = nil
+		runQueryBenchmark(ctx, b, fmt.Sprintf("Needle-In-Haystack-%d-invocations-%d-results", totalInvocations, totalResults), q)
+	}
+}
