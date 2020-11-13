@@ -25,15 +25,16 @@ import (
 // gobWatchMap contains config groups for a particular LUCI project and
 // host/repo combination.
 //
-// gobWatchMap entities are stored with a parent key of the form
+// GobWatchMap entities are stored with a parent key of the form
 // (GobWatchMapParent, host/repo), so that all gobWatchMap entities with a
 // particular host/repo can be fetched with an ancestor query; the goal
 // is to have fast reads by host/repo.
 //
-// The gobWatchMap entities as a whole store data used to lookup which
+// The GobWatchMap entities as a whole store data used to lookup which
 // host/repo/ref maps to which config group, and the map is updated when a
 // project config is updated.
 type gobWatchMap struct {
+	_kind string `gae:"$kind,GobWatchMap"`
 
 	// The ID of this GobWatchMap, which contains (host, repo, project).
 	ID string `gae:"$id"`
@@ -63,6 +64,12 @@ func Update(ctx context.Context, project string) error {
 	// TODO(qyearsley): Implement.
 	// 1. Fetch the current state of the map by querying for all
 	//    GobWatchMap entities for the LUCI project.
+	entities := []*gobWatchMap{}
+	q := datastore.NewQuery("GobWatchMap").Eq("Parent", project)
+	if err := datastore.GetAll(ctx, q, &entities); err != nil {
+		return errors.Annotate(err, "failed to fetch GobWatchMaps with project %s", project)
+	}
+
 	// 2. Get the latest config from datastore (using the config package).
 	// 3. Determine which GobWatchMap entities need to be modified,
 	//    removed, or added.
@@ -95,9 +102,24 @@ func Lookup(ctx context.Context, host, repo, ref string) ([]ProjectConfigGroupID
 	// TODO(qyearsley): Implement:
 	// 1. Fetch all GobWatchMap entities for the given host and repo.
 	//    This should be done with a ancestor query for a host/repo.
+	hostRepo := host + "/" + repo
+	parentKey := datastore.NewKey(ctx, "GobWatchMapParent", hostRepo, 0, nil)
+	q := datastore.NewQuery("GobWatchMap").Ancestor(parentKey)
+	entities := []*gobWatchMap{}
+	if err := datastore.GetAll(ctx, q, &entities); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch GobWatchMaps for %s", hostRepo)
+	}
+
+	// "project/hash/name",
+	ids := []ProjectConfigGroupID{}
 	// 2. For each entity, which represents 1 host/repo/LUCI_project, inspect
-	//    the gobWatchMap.Groups to determine which configs apply.
+	//    the GobWatchMap.Groups to determine which configs apply.
 	//    If several config groups of a LUCI project match, then all fallback
 	//    groups are ignored.
+	for _, e := range entities {
+		//e.Project
+		for _, g := range e.Groups {
+		}
+	}
 	return nil, errors.New("not implemented")
 }
