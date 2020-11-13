@@ -135,6 +135,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "034fac83_d3ca8b10",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T20:50:37Z",
+      "side": 1,
+      "message": "Since crrev.com/c/2522063 we have stoped export derived results to bq. So I think we no longer need this change.",
+      "range": {
+        "startLine": 249,
+        "startChar": 0,
+        "endLine": 252,
+        "endChar": 3
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "621d5530_da7c9235",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 2
