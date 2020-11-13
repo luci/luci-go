@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/system/signals"
 
 	"go.chromium.org/luci/rts/filegraph"
 	"go.chromium.org/luci/rts/filegraph/git"
@@ -116,6 +117,10 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
 func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)
+
 	gitDir, err := execGit(repoDir)("rev-parse", "--absolute-git-dir")
 	if err != nil {
 		return err
