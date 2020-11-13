@@ -73,6 +73,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "42ca0b22_2df92ee4",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T21:25:58Z",
+      "side": 1,
+      "message": "ah, nvm then! I keep forgetting this.",
+      "parentUuid": "0d3e5960_ea87d8e6",
+      "range": {
+        "startLine": 61,
+        "startChar": 33,
+        "endLine": 61,
+        "endChar": 38
+      },
+      "revId": "68b9c2a3d132c92e201678a72173b8e56be2d642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f5a9fc1e_20d4c45c",
         "filename": "rts/filegraph/git/log_test.go",
         "patchSetId": 10
