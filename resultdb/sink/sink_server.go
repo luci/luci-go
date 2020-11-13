@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
@@ -31,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
@@ -46,6 +48,12 @@ type sinkServer struct {
 	tc            *testResultChannel
 	resultIDBase  string
 	resultCounter uint32
+
+	// A set of invocation-level artifact IDs that have been uploaded.
+	// If an artifact is uploaded again, server should reject the request with
+	// error AlreadyExists.
+	invocationArtifactIDs stringset.Set
+	mu                    sync.Mutex
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
@@ -59,10 +67,11 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	ctx = metadata.AppendToOutgoingContext(
 		ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ss := &sinkServer{
-		cfg:          cfg,
-		ac:           newArtifactChannel(ctx, &cfg),
-		tc:           newTestResultChannel(ctx, &cfg),
-		resultIDBase: hex.EncodeToString(bytes),
+		cfg:                   cfg,
+		ac:                    newArtifactChannel(ctx, &cfg),
+		tc:                    newTestResultChannel(ctx, &cfg),
+		resultIDBase:          hex.EncodeToString(bytes),
+		invocationArtifactIDs: stringset.New(0),
 	}
 
 	return &sinkpb.DecoratedSink{
@@ -153,11 +162,30 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.ac.schedule(in.TestResults...)
+	s.ac.scheduleTestResults(in.TestResults...)
 	s.tc.schedule(in.TestResults...)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
+}
+
+// ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
+func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
+	for id, a := range in.Artifacts {
+		s.mu.Lock()
+		if added := s.invocationArtifactIDs.Add(id); !added {
+			s.mu.Unlock()
+			return nil, status.Errorf(codes.AlreadyExists, "artifact %q has already been uploaded", id)
+		}
+		s.mu.Unlock()
+		updateArtifactContentType(a)
+		if err := validateArtifact(a); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
+		}
+	}
+	s.ac.scheduleArtifacts(in.Artifacts)
+
+	return &empty.Empty{}, nil
 }
 
 func updateArtifactContentType(a *sinkpb.Artifact) {
@@ -173,9 +201,4 @@ func updateArtifactContentType(a *sinkpb.Artifact) {
 	case ".png":
 		a.ContentType = "image/png"
 	}
-}
-
-// ReportTestResults implement sinkpb.SinkServer.
-func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
 }
