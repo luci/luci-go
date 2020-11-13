@@ -90,11 +90,20 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 	return bbpb.NewBuildsPRPCClient(prpcClient), secrets, nil
 }
 
+// retry if error is transient or the failed batch has ended build status.
+func decideRetry(failedBatch *buffer.Batch, err error) bool {
+	if transient.Tag.In(err) {
+		return true
+	}
+	if req, ok := failedBatch.Meta.(*bbpb.UpdateBuildRequest); ok && protoutil.IsEnded(req.GetBuild().GetStatus()) {
+		return true
+	}
+	return false
+}
+
 // options for the dispatcher.Channel
 func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
-	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch, err error) (retry bool) {
-		return transient.Tag.In(err)
-	})
+	errorFn, errCh := dispatcher.ErrorFnReport(10, decideRetry)
 	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
@@ -160,8 +169,6 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 		defer cancel()
 
 		_, err := client.UpdateBuild(tctx, req)
-		// TODO(iannucci): Always tag errors as transient for the 'final' build
-		// update?
 		return err
 	}
 }
