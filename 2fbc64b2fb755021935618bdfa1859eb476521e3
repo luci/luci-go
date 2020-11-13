@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a18a836a_6c9e0abd",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:58:25Z",
+      "side": 1,
+      "message": "I like that this is less string math. done",
+      "parentUuid": "e720ebb1_9837268b",
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8fb8bcff_b5293cf5",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-13T16:43:30Z",
       "side": 1,
       "message": "never false",
+      "range": {
+        "startLine": 78,
+        "startChar": 5,
+        "endLine": 78,
+        "endChar": 15
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "436a054b_7672c273",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:58:25Z",
+      "side": 1,
+      "message": "? \nsee L109",
+      "parentUuid": "8fb8bcff_b5293cf5",
       "range": {
         "startLine": 78,
         "startChar": 5,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f297012_61e679e8",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:58:25Z",
+      "side": 1,
+      "message": "Good catch! I was testing it on infra.git where the orphan commit is empty. Fixed the bug and added a test.\n\nThe fix is not ideal. The logic from readFileChanges() leaked here, but",
+      "parentUuid": "c20cd3d2_0076a045",
+      "range": {
+        "startLine": 166,
+        "startChar": 22,
+        "endLine": 166,
+        "endChar": 32
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0d8c7c8f_7aa4012d",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-11-13T16:43:30Z",
       "side": 1,
       "message": "I guess not r.r.Peek(1) to avoid allocating []byte? If so, worth a // comment.",
+      "range": {
+        "startLine": 280,
+        "startChar": 1,
+        "endLine": 283,
+        "endChar": 2
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6901618_559d0225",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:58:25Z",
+      "side": 1,
+      "message": "somehow I missed Peek!",
+      "parentUuid": "0d8c7c8f_7aa4012d",
       "range": {
         "startLine": 280,
         "startChar": 1,
