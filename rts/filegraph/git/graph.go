@@ -70,9 +70,9 @@ type node struct {
 	// copyEdgesOnAppend indicates that edges must be copied before appending.
 	copyEdgesOnAppend bool
 
-	// children are files and subdirectories of the this directory.
-	// TODO(nodir): consider a sorted list instead.
-	children map[string]*node
+	// children are files and subdirectories of the current node, which itself
+	// is a directory. Ordered by name.
+	children []*node
 }
 
 // edge is directed edge.
@@ -110,9 +110,11 @@ func (g *Graph) Node(name string) filegraph.Node {
 func (g *Graph) node(name string) *node {
 	cur := &g.root
 	for _, component := range splitName(name) {
-		if cur = cur.children[component]; cur == nil {
+		i, ok := cur.child(component)
+		if !ok {
 			return nil
 		}
+		cur = cur.children[i]
 	}
 	return cur
 }
@@ -128,15 +130,15 @@ func (g *Graph) ensureNode(name string) *node {
 	cur := &g.root
 
 	child := func(baseName, name string) *node {
-		if ret, ok := cur.children[baseName]; ok {
-			return ret
+		i, ok := cur.child(baseName)
+		if ok {
+			return cur.children[i]
 		}
 
 		ret := &node{name: name}
-		if cur.children == nil {
-			cur.children = map[string]*node{}
-		}
-		cur.children[baseName] = ret
+		cur.children = append(cur.children, nil)
+		copy(cur.children[i+1:], cur.children[i:])
+		cur.children[i] = ret
 		return ret
 	}
 
@@ -152,6 +154,20 @@ func (g *Graph) ensureNode(name string) *node {
 		cur = child(name[startAt:sep], name[:sep])
 		startAt = sep + 1
 	}
+}
+
+// child returns index of the child by base name.
+func (n *node) child(baseName string) (index int, ok bool) {
+	offset := len(n.name) + 1
+	if n.name == "//" {
+		offset = 2
+	}
+
+	index = sort.Search(len(n.children), func(i int) bool {
+		return n.children[i].name[offset:] >= baseName
+	})
+	ok = index < len(n.children) && n.children[index].name[offset:] == baseName
+	return
 }
 
 func (n *node) Name() string {
@@ -185,18 +201,6 @@ func (n *node) visit(callback func(*node) bool) {
 	for _, child := range n.children {
 		child.visit(callback)
 	}
-}
-
-func (n *node) sortedChildKeys() []string {
-	if len(n.children) == 0 {
-		return nil
-	}
-	keys := make([]string, 0, len(n.children))
-	for name := range n.children {
-		keys = append(keys, name)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // ensureAlias ensures there is an alias edge from n to `to`.

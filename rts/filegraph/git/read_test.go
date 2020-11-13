@@ -86,22 +86,22 @@ func TestRead(t *testing.T) {
 			So(g.Commit, ShouldResemble, "deadbeef")
 			So(g.root, ShouldResemble, node{
 				name: "//",
-				children: map[string]*node{
-					"foo": {
-						name:     "//foo",
-						commits:  1,
+				children: []*node{
+					{
+						name:              "//foo",
+						commits:           1,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
-							to:            g.root.children["bar"],
+							to:            g.node("//bar"),
 							commonCommits: 1,
 						}},
 					},
-					"bar": {
-						name:     "//bar",
-						commits:  2,
+					{
+						name:              "//bar",
+						commits:           2,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
-							to:            g.root.children["foo"],
+							to:            g.node("//foo"),
 							commonCommits: 1,
 						}},
 					},
@@ -136,17 +136,13 @@ func TestRead(t *testing.T) {
 			So(g.Commit, ShouldResemble, "deadbeef")
 			So(g.root, ShouldResemble, node{
 				name: "//",
-				children: map[string]*node{
-					"dir": {
-						name: "//dir",
-						children: map[string]*node{
-							"foo": {
-								name:    "//dir/foo",
-								commits: 1,
-							},
-						},
-					},
-				},
+				children: []*node{{
+					name: "//dir",
+					children: []*node{{
+						name:    "//dir/foo",
+						commits: 1,
+					}},
+				}},
 			})
 		})
 	})

@@ -36,13 +36,10 @@ func TestGraph(t *testing.T) {
 		Convey(`node()`, func() {
 			g := &Graph{
 				root: node{
-					children: map[string]*node{
-						"dir": {
-							children: map[string]*node{
-								"foo": {},
-							},
-						},
-					},
+					children: []*node{{
+						name:     "//dir",
+						children: []*node{{name: "//dir/foo"}},
+					}},
 				},
 			}
 
@@ -51,10 +48,10 @@ func TestGraph(t *testing.T) {
 			})
 
 			Convey(`//dir`, func() {
-				So(g.node("//dir"), ShouldEqual, g.root.children["dir"])
+				So(g.node("//dir"), ShouldEqual, g.node("//dir"))
 			})
 			Convey(`//dir/foo`, func() {
-				So(g.node("//dir/foo"), ShouldEqual, g.root.children["dir"].children["foo"])
+				So(g.node("//dir/foo"), ShouldEqual, g.node("//dir/foo"))
 			})
 			Convey(`//dir/bar`, func() {
 				So(g.node("//dir/bar"), ShouldBeNil)
@@ -72,7 +69,7 @@ func TestGraph(t *testing.T) {
 				foo := g.node("//foo")
 				So(foo, ShouldNotBeNil)
 				So(foo.name, ShouldEqual, "//foo")
-				So(foo.children["bar"], ShouldEqual, bar)
+				So(foo.children, ShouldResemble, []*node{bar})
 			})
 
 			Convey("already exists", func() {
@@ -85,14 +82,9 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
-		Convey(`sortedChildKeys()`, func() {
-			node := &node{
-				children: map[string]*node{
-					"foo": {},
-					"bar": {},
-				},
-			}
-			So(node.sortedChildKeys(), ShouldResemble, []string{"bar", "foo"})
+		Convey(`Node(non-existent) returns nil`, func() {
+			g := &Graph{}
+			So(g.Node("//a/b"), ShouldBeNil)
 		})
 
 		Convey(`Node(non-existent) returns nil`, func() {

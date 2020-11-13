@@ -17,9 +17,11 @@ package git
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -49,6 +51,11 @@ type reader struct {
 }
 
 func (r *reader) readGraph(g *Graph) error {
+	start := time.Now()
+	defer func() {
+		fmt.Printf("loaded in %s\n", time.Since(start))
+	}()
+
 	// Verify header.
 	switch header, err := r.readInt(); {
 	case err != nil:
@@ -115,7 +122,7 @@ func (r *reader) readNode(n *node) error {
 	}
 
 	// Read the children.
-	n.children = make(map[string]*node, childCount)
+	n.children = make([]*node, childCount)
 	for i := 0; i < childCount; i++ {
 		childBaseName, err := r.readString()
 		if err != nil {
@@ -127,7 +134,7 @@ func (r *reader) readNode(n *node) error {
 		} else {
 			child.name = n.name + "/" + childBaseName
 		}
-		n.children[childBaseName] = child
+		n.children[i] = child
 		if err := r.readNode(child); err != nil {
 			return err
 		}

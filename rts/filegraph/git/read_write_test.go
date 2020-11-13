@@ -56,10 +56,7 @@ func TestReadWrite(t *testing.T) {
 			test(&Graph{
 				Commit: "deadbeef",
 				root: node{
-					children: map[string]*node{
-						"foo": foo,
-						"bar": bar,
-					},
+					children: []*node{foo, bar},
 				},
 			})
 		})

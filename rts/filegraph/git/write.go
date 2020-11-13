@@ -113,11 +113,12 @@ func (w *writer) writeNode(n *node) error {
 	}
 
 	// Write the descendants.
-	for _, key := range n.sortedChildKeys() {
-		if err := w.writeString(key); err != nil {
+	for _, child := range n.children {
+		baseName := child.name[len(n.name)+1:]
+		if err := w.writeString(baseName); err != nil {
 			return err
 		}
-		if err := w.writeNode(n.children[key]); err != nil {
+		if err := w.writeNode(child); err != nil {
 			return err
 		}
 	}
@@ -144,8 +145,8 @@ func (w *writer) writeEdges(n *node) error {
 	}
 
 	// Write the edges of descendants.
-	for _, key := range n.sortedChildKeys() {
-		if err := w.writeEdges(n.children[key]); err != nil {
+	for _, child := range n.children {
+		if err := w.writeEdges(child); err != nil {
 			return err
 		}
 	}

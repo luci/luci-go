@@ -41,12 +41,10 @@ func TestUpdater(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(g.root, ShouldResemble, node{
 				name: "//",
-				children: map[string]*node{
-					"a": {
-						name:    "//a",
-						commits: 1,
-					},
-				},
+				children: []*node{{
+					name:    "//a",
+					commits: 1,
+				}},
 			})
 		})
 
@@ -58,13 +56,13 @@ func TestUpdater(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(g.root, ShouldResemble, node{
 				name: "//",
-				children: map[string]*node{
-					"a": {
+				children: []*node{
+					{
 						name:    "//a",
 						commits: 1,
 						edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 					},
-					"b": {
+					{
 						name:    "//b",
 						commits: 1,
 						edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
@@ -80,13 +78,13 @@ func TestUpdater(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
-					children: map[string]*node{
-						"a": {
+					children: []*node{
+						{
 							name:    "//a",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
-						"b": {
+						{
 							name:    "//b",
 							commits: 2,
 							edges: []edge{
@@ -94,15 +92,13 @@ func TestUpdater(t *testing.T) {
 								{to: g.node("//c/d"), commonCommits: 1},
 							},
 						},
-						"c": {
+						{
 							name: "//c",
-							children: map[string]*node{
-								"d": {
-									name:    "//c/d",
-									commits: 1,
-									edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
-								},
-							},
+							children: []*node{{
+								name:    "//c/d",
+								commits: 1,
+								edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							}},
 						},
 					},
 				})
@@ -116,13 +112,13 @@ func TestUpdater(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
-					children: map[string]*node{
-						"a": {
+					children: []*node{
+						{
 							name:    "//a",
 							commits: 2,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 2}},
 						},
-						"b": {
+						{
 							name:    "//b",
 							commits: 2,
 							edges:   []edge{{to: g.node("//a"), commonCommits: 2}},
@@ -140,13 +136,13 @@ func TestUpdater(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
-					children: map[string]*node{
-						"a": {
+					children: []*node{
+						{
 							name:    "//a",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
-						"b": {
+						{
 							name:    "//b",
 							commits: 2,
 							edges: []edge{
@@ -154,7 +150,7 @@ func TestUpdater(t *testing.T) {
 								{to: g.node("//c"), commonCommits: 1},
 							},
 						},
-						"c": {
+						{
 							name:    "//c",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
@@ -170,13 +166,13 @@ func TestUpdater(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
-					children: map[string]*node{
-						"a": {
+					children: []*node{
+						{
 							name:    "//a",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
-						"b": {
+						{
 							name:    "//b",
 							commits: 1,
 							edges: []edge{
@@ -184,7 +180,7 @@ func TestUpdater(t *testing.T) {
 								{to: g.node("//c")},
 							},
 						},
-						"c": {
+						{
 							name:    "//c",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b")}},
@@ -200,13 +196,13 @@ func TestUpdater(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
-					children: map[string]*node{
-						"a": {
+					children: []*node{
+						{
 							name:    "//a",
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
-						"b": {
+						{
 							name:    "//b",
 							commits: 1,
 							edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
