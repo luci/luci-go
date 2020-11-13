@@ -153,6 +153,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "86ece046_59fe4f1a",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T18:37:10Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d152076b_943447a2",
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a5d2784_1b6890b1",
@@ -190,6 +208,30 @@
       "side": 1,
       "message": "Done. Thanks!",
       "parentUuid": "8a5d2784_1b6890b1",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 112,
+        "endChar": 3
+      },
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4710d0dd_8116256d",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T18:37:10Z",
+      "side": 1,
+      "message": "on a second look, i actually misread original code, but glad my suggestion still gave you a better idea.",
+      "parentUuid": "38395d2c_018a1691",
       "range": {
         "startLine": 107,
         "startChar": 2,
