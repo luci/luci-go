@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1e32d6f_0320feb5",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T19:46:48Z",
+      "side": 1,
+      "message": "^ah I finally see it^.",
+      "range": {
+        "startLine": 44,
+        "startChar": 94,
+        "endLine": 44,
+        "endChar": 97
+      },
+      "revId": "68b9c2a3d132c92e201678a72173b8e56be2d642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87b3dc76_80c4773b",
@@ -19,6 +42,29 @@
         "startChar": 33,
         "endLine": 61,
         "endChar": 38
+      },
+      "revId": "68b9c2a3d132c92e201678a72173b8e56be2d642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5a9fc1e_20d4c45c",
+        "filename": "rts/filegraph/git/log_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T19:46:48Z",
+      "side": 1,
+      "message": "everyone must switch to `ed`! 😄",
+      "range": {
+        "startLine": 182,
+        "startChar": 2,
+        "endLine": 183,
+        "endChar": 59
       },
       "revId": "68b9c2a3d132c92e201678a72173b8e56be2d642",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
