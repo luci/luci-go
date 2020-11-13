@@ -145,6 +145,30 @@
       },
       "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0fc6100_ca031fa6",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:14:14Z",
+      "side": 1,
+      "message": "also I wouldn\u0027t have to sort children for determinism when writing to disk",
+      "parentUuid": "475a59d9_b3bae5f3",
+      "range": {
+        "startLine": 72,
+        "startChar": 10,
+        "endLine": 72,
+        "endChar": 26
+      },
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
