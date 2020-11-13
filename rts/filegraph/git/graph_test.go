@@ -71,6 +71,13 @@ func TestGraph(t *testing.T) {
 			So(node.sortedChildKeys(), ShouldResemble, []string{"bar", "foo"})
 		})
 
+		Convey(`Node(non-existent) returns nil`, func() {
+			g := &Graph{}
+			// Do not use ShouldBeNil - it checks for interface{} with nil inside,
+			// and we need exact nil.
+			So(g.Node("//a/b") == nil, ShouldBeTrue)
+		})
+
 		Convey(`Outgoing`, func() {
 			bar := &node{commits: 2}
 			foo := &node{
