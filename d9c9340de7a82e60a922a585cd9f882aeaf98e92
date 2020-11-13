@@ -46,6 +46,30 @@
       },
       "revId": "d9c9340de7a82e60a922a585cd9f882aeaf98e92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c92c9f9f_b53e88e8",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-13T04:32:55Z",
+      "side": 1,
+      "message": "map is not thread-safe, and stringset isn\u0027t, either.\nPlease protect it with a mutex or use sync.Map. There are interesting posts about the performance of map, sync.map, binary-search with slice/linked-list.\n- https://go-talks.appspot.com/github.com/dgryski/talks/dotgo-2016/slices.slide#13\n- https://medium.com/@deckarep/the-new-kid-in-town-gos-sync-map-de24a6bf7c2c\n\nI don\u0027t expect that clients will send a massive number of invocation-level artifacts concurrently. I\u0027d pick stringset + mutex for simplicity.",
+      "parentUuid": "ca1bf5fd_b11c9a20",
+      "range": {
+        "startLine": 185,
+        "startChar": 0,
+        "endLine": 191,
+        "endChar": 1
+      },
+      "revId": "d9c9340de7a82e60a922a585cd9f882aeaf98e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
