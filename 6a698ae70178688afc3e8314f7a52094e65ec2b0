@@ -22,6 +22,30 @@
       },
       "revId": "6a698ae70178688afc3e8314f7a52094e65ec2b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ee2c897_e541f044",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T03:45:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "297f70da_50fed66f",
+      "range": {
+        "startLine": 169,
+        "startChar": 79,
+        "endLine": 169,
+        "endChar": 80
+      },
+      "revId": "6a698ae70178688afc3e8314f7a52094e65ec2b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
