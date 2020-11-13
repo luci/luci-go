@@ -39,5 +39,5 @@ type Node interface {
 
 	// Outgoing calls the given function for each direct successor.
 	// If callback returns false, then iteration stops.
-	Outgoing(callback func(other Node, distance float64) (keepGoing bool))
+	Outgoing(callback func(to Node, distance float64) (keepGoing bool))
 }
