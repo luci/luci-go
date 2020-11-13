@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c565105_6c4ec8b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "looks clean overall",
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "932e3aa9_92cefcd2",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "now that it is in \"bqexporter\" package, can this be just \"Tasks\"?",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 17
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3d95046_f21bbf93",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "same here: just UseTQ?",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 17
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd823a6b_20152d1b",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "nit: does this function exist only for testing purposes? \nit seems the code would be simpler if this func was merged into Schedule(). For example, we would have only one loop instead of two. We wouldn\u0027t need to create a slice.",
+      "range": {
+        "startLine": 564,
+        "startChar": 5,
+        "endLine": 564,
+        "endChar": 18
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "488099d2_36729106",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "nit: MustApply accepts multiple mutations as a variadic params.\nthese 3 MustApply calls can be merged into one",
+      "range": {
+        "startLine": 238,
+        "startChar": 11,
+        "endLine": 238,
+        "endChar": 20
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6764c832_4d66eb49",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "ShouldHaveLength, 0\nwould be more robust",
+      "range": {
+        "startLine": 252,
+        "startChar": 11,
+        "endLine": 252,
+        "endChar": 22
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "621d5530_da7c9235",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "how does this work? this call must be inside a transaction.\nalso this is not atomic with the txn above\n\ni suspect the problem here is that Schedule() assumes Invocation is already written into Spanner, and it is not written in the txn above.\n\nbut stepping back, Chan already removed bq export for derived invocations, so let\u0027s undo changes files in this package",
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ac23003_e0175011",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:29:37Z",
+      "side": 1,
+      "message": "move up\nand also use the new package",
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
