@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0235f50d_a49f6227",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T18:30:21Z",
+      "side": 1,
+      "message": "Not all, only tips of visited chains of commits, i was thinking smth like this:\n\ntips \u003d set()\non_commit(c):\n tips.remove_existing(c.parents)\n tips.add(c)",
+      "parentUuid": "8cf2db3e_d229c186",
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0d167179_e9243053",
         "filename": "rts/filegraph/git/update.go",
         "patchSetId": 17
