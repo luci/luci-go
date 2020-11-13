@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5228a10_0c841c08",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-13T00:50:19Z",
+      "side": 1,
+      "message": "Make sense. I don\u0027t know the discrepancy between BB APIs for different types of callers.\n\nI can certainly change BB to return FailedPrecondtion as it sounds like a better status code to return than InvalidArgument.\n\nHowever, the other thing this change need to solve is that what if there\u0027s a delay in BB to move the status from SCHEDULED to STARTED and the build execute too quick that it finishes before it has seen the first successful UpdateBuild. I think I can solve it by retrying if BBAgent is calling UpdateBuild with final build (which is the most important one). Does that SGTU?",
+      "parentUuid": "9f5bdc12_868f4b3e",
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d58c18e7_1f5fc6c7",
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-12T21:55:25Z",
       "side": 1,
       "message": "I think it will require some server-side changes to allow GetBuild calls from bots (for non-public builds).",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f00c147a_da689362",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-13T00:50:19Z",
+      "side": 1,
+      "message": "I see. To clarify, does that mean if this change gets released, we will see failure when BBAgent call GetBuild on non-public builds?",
+      "parentUuid": "d58c18e7_1f5fc6c7",
       "range": {
         "startLine": 47,
         "startChar": 1,
