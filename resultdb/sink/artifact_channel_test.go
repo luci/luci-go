@@ -40,25 +40,45 @@ func TestArtifactChannel(t *testing.T) {
 		})
 
 		ac := newArtifactChannel(ctx, &cfg)
-
-		// send a sample request
-		tr, cleanup := validTestResult()
-		defer cleanup()
 		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
-		tr.Artifacts = map[string]*sinkpb.Artifact{"art1": art}
-		ac.schedule(tr)
-		ac.closeAndDrain(ctx)
 
-		// verify the URL of the sent request
-		req := <-reqCh
-		artName := pbutil.TestResultArtifactName(cfg.invocationID, tr.TestId, tr.ResultId, "art1")
-		expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
-		So(req, ShouldNotBeNil)
-		So(req.URL.String(), ShouldEqual, expectedURL)
+		Convey("scheduleTestResults works", func() {
+			// send a sample request
+			tr, cleanup := validTestResult()
+			defer cleanup()
+			tr.Artifacts = map[string]*sinkpb.Artifact{"art1": art}
+			ac.scheduleTestResults(tr)
+			ac.closeAndDrain(ctx)
 
-		// verify the body
-		body, err := ioutil.ReadAll(req.Body)
-		So(err, ShouldBeNil)
-		So(body, ShouldResemble, []byte("123"))
+			// verify the URL of the sent request
+			req := <-reqCh
+			artName := pbutil.TestResultArtifactName(cfg.invocationID, tr.TestId, tr.ResultId, "art1")
+			expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
+			So(req, ShouldNotBeNil)
+			So(req.URL.String(), ShouldEqual, expectedURL)
+
+			// verify the body
+			body, err := ioutil.ReadAll(req.Body)
+			So(err, ShouldBeNil)
+			So(body, ShouldResemble, []byte("123"))
+		})
+
+		Convey("scheduleArtifacts works", func() {
+			// send a sample request
+			ac.scheduleArtifacts(map[string]*sinkpb.Artifact{"art1": art})
+			ac.closeAndDrain(ctx)
+
+			// verify the URL of the sent request
+			req := <-reqCh
+			artName := pbutil.InvocationArtifactName(cfg.invocationID, "art1")
+			expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
+			So(req, ShouldNotBeNil)
+			So(req.URL.String(), ShouldEqual, expectedURL)
+
+			// verify the body
+			body, err := ioutil.ReadAll(req.Body)
+			So(err, ShouldBeNil)
+			So(body, ShouldResemble, []byte("123"))
+		})
 	})
 }

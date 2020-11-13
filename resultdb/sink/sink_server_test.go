@@ -33,7 +33,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
+func checkTestResults(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
 	sink, err := newSinkServer(ctx, cfg)
 	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDBase = "foo"
 	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultCounter = 100
@@ -47,6 +47,21 @@ func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expecte
 		gomock.Any(), matchBatchCreateTestResultsRequest(cfg.Invocation, expected))
 
 	// close and drain the server to enforce all the requests processed.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	closeSinkServer(ctx, sink)
+}
+
+func checkArtifacts(ctx context.Context, cfg ServerConfig, artId string, art *sinkpb.Artifact) {
+	sink, err := newSinkServer(ctx, cfg)
+	So(err, ShouldBeNil)
+
+	req := &sinkpb.ReportInvocationLevelArtifactsRequest{Artifacts: map[string]*sinkpb.Artifact{artId: art}}
+	_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
+	So(err, ShouldBeNil)
+	// Duplicated artifact will be rejected.
+	_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
+	So(err, ShouldErrLike, `artifact "art1" has already been uploaded`)
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	closeSinkServer(ctx, sink)
@@ -92,40 +107,40 @@ func TestReportTestResults(t *testing.T) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
 				tr.TestId = "HelloWorld.TestA"
 				expected.TestId = "ninja://foo/bar/HelloWorld.TestA"
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 			})
 
 			Convey("with ServerConfig.BaseVariant", func() {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
 				cfg.BaseVariant = pbutil.Variant(base...)
 				expected.Variant = pbutil.Variant(base...)
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 			})
 
 			Convey("with ServerConfig.BaseTags", func() {
 				t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
 				// (nil, nil)
 				cfg.BaseTags, tr.Tags, expected.Tags = nil, nil, nil
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// (tag, nil)
 				cfg.BaseTags, tr.Tags, expected.Tags = t1, nil, t1
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// (nil, tag)
 				cfg.BaseTags, tr.Tags, expected.Tags = nil, t1, t1
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// (tag1, tag2)
 				cfg.BaseTags, tr.Tags, expected.Tags = t1, t2, append(t1, t2...)
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 			})
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {
 			tr.ResultId = ""
 			expected.ResultId = "foo-00101"
-			check(ctx, cfg, tr, expected)
+			checkTestResults(ctx, cfg, tr, expected)
 		})
 
 		Convey("duration", func() {
@@ -134,20 +149,20 @@ func TestReportTestResults(t *testing.T) {
 
 				// duration == nil
 				tr.Duration, expected.Duration = nil, nil
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// duration == 0
 				tr.Duration, expected.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// duration > 0
 				tr.Duration, expected.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 
 				// duration < 0
 				tr.Duration = ptypes.DurationProto(-8)
 				expected.Duration = ptypes.DurationProto(0)
-				check(ctx, cfg, tr, expected)
+				checkTestResults(ctx, cfg, tr, expected)
 			})
 			Convey("without CoerceNegativeDuration", func() {
 				// duration < 0
@@ -176,7 +191,7 @@ func TestReportTestResults(t *testing.T) {
 					FileName: "//base/artifact_dir/a_test.cc",
 				},
 			}
-			check(ctx, cfg, tr, expected)
+			checkTestResults(ctx, cfg, tr, expected)
 		})
 
 		Convey("with ServerConfig.LocationTags", func() {
@@ -209,7 +224,7 @@ func TestReportTestResults(t *testing.T) {
 				"monorail_project", "chromium",
 				"os", "WINDOWS",
 				"teamEmail", "team_email@chromium.org")
-			check(ctx, cfg, tr, expected)
+			checkTestResults(ctx, cfg, tr, expected)
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
@@ -222,5 +237,23 @@ func TestReportTestResults(t *testing.T) {
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			closeSinkServer(ctx, sink)
 		})
+	})
+}
+
+func TestReportInvocationLevelArtifacts(t *testing.T) {
+	t.Parallel()
+
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+
+	Convey("ReportInvocationLevelArtifacts", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+
+		cfg := testServerConfig(ctl, "", "secret")
+		artId := "art1"
+		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
+		checkArtifacts(ctx, cfg, artId, art)
 	})
 }
