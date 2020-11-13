@@ -61,4 +61,33 @@ func TestArtifactChannel(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(body, ShouldResemble, []byte("123"))
 	})
+
+	Convey("scheduleArts works", t, func() {
+		ctx := context.Background()
+		cfg := testServerConfig(nil, "127.0.0.1:123", "secret")
+		reqCh := make(chan *http.Request, 1)
+		cfg.ArtifactUploader.Client.Transport = mockTransport(func(req *http.Request) (*http.Response, error) {
+			reqCh <- req
+			return &http.Response{StatusCode: http.StatusNoContent}, nil
+		})
+
+		ac := newArtifactChannel(ctx, &cfg)
+
+		// send a sample request
+		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
+		ac.scheduleArts(map[string]*sinkpb.Artifact{"art1": art})
+		ac.closeAndDrain(ctx)
+
+		// verify the URL of the sent request
+		req := <-reqCh
+		artName := pbutil.InvocationArtifactName(cfg.invocationID, "art1")
+		expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
+		So(req, ShouldNotBeNil)
+		So(req.URL.String(), ShouldEqual, expectedURL)
+
+		// verify the body
+		body, err := ioutil.ReadAll(req.Body)
+		So(err, ShouldBeNil)
+		So(body, ShouldResemble, []byte("123"))
+	})
 }

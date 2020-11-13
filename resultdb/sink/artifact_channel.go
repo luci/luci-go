@@ -103,3 +103,19 @@ func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
 		}
 	}
 }
+
+func (c *artifactChannel) scheduleArts(as map[string]*sinkpb.Artifact) {
+	c.wgActive.Add(1)
+	defer c.wgActive.Done()
+	// if the channel already has been closed, drop the test results.
+	if atomic.LoadInt32(&c.closed) == 1 {
+		return
+	}
+
+	for id, a := range as {
+		c.ch.C <- &uploadTask{
+			artName: pbutil.InvocationArtifactName(c.cfg.invocationID, id),
+			art:     a,
+		}
+	}
+}
