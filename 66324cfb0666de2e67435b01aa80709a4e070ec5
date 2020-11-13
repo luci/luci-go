@@ -33,6 +33,24 @@
       "message": "not unlocked in this case",
       "revId": "66324cfb0666de2e67435b01aa80709a4e070ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bd74ef9_1c0a5483",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T19:55:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbce0fb1_6c31ebbf",
+      "revId": "66324cfb0666de2e67435b01aa80709a4e070ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
