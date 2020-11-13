@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "f35ce369_6f066a1d",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:25:03Z",
+      "side": 1,
+      "message": "i couldn\u0027t figure out how to do that. ideas?\n\ni expect this not to be a problem because i expect -max-commit-size value to be pretty static",
+      "parentUuid": "13ea9f56_f170f9c2",
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "c2f67bde_dbf1ec9c",
@@ -66,6 +84,30 @@
       "writtenOn": "2020-11-13T16:02:45Z",
       "side": 1,
       "message": "imo, this it\u0027s more readable with this before updater is created, even if it means you need standalone `tillRev` var,\nbecause two write calls are closer to each other.",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 172,
+        "endChar": 2
+      },
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7f315cc_d65648c8",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T18:25:03Z",
+      "side": 1,
+      "message": "restored",
+      "parentUuid": "c2f67bde_dbf1ec9c",
       "range": {
         "startLine": 164,
         "startChar": 1,
