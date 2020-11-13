@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a0ea86f_9f8851e0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:15:58Z",
+      "side": 1,
+      "message": "yeah, this is getting pretty complicated.\nConsider writing a test for critical combinations of query params and just assert the SQL being generated. This way we will see the full query for each critical use case, and it will make it easier to review the code.",
+      "revId": "df9562a94b9eb90d6eb2693bc66c7f9f6e216d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7fb6371_2443d327",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:15:58Z",
+      "side": 1,
+      "message": "this filter should be only if !withUnexpected because variantsWithUnexpectedResults are already filtered",
+      "range": {
+        "startLine": 389,
+        "startChar": 2,
+        "endLine": 390,
+        "endChar": 41
+      },
+      "revId": "df9562a94b9eb90d6eb2693bc66c7f9f6e216d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5afa88d8_14c9c476",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:15:58Z",
+      "side": 1,
+      "message": "nit: SELECT tv.*",
+      "range": {
+        "startLine": 398,
+        "startChar": 4,
+        "endLine": 400,
+        "endChar": 19
+      },
+      "revId": "df9562a94b9eb90d6eb2693bc66c7f9f6e216d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
