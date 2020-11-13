@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f94dc08_6a7f06a4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-13T01:15:29Z",
+      "side": 1,
+      "message": "That\u0027s a good point. I\u0027m not sure if this is an intentional design choice. BBAgent can certain update the status. Let me check if anything in BB is blocking that.\n\nI will still make the change to retry on final build since I think it is useful anyway.",
+      "parentUuid": "8bbe79c2_d31f038f",
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d58c18e7_1f5fc6c7",
@@ -115,6 +133,30 @@
       "side": 1,
       "message": "Yes. UpdateBuild calls are authorized through `buildbucket-update-build-users` group and special tokens from x-build-token header. GetBuild is completely oblivious of that mechanism. If we want to use GetBuild, we\u0027ll need to teach BB to recognize x-build-token for GetBuild.",
       "parentUuid": "f00c147a_da689362",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c0e1dba_a34cf70b",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-13T01:15:29Z",
+      "side": 1,
+      "message": "Got it. Thanks",
+      "parentUuid": "0f51635e_4d788b0f",
       "range": {
         "startLine": 47,
         "startChar": 1,
