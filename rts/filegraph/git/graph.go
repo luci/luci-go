@@ -117,6 +117,43 @@ func (g *Graph) node(name string) *node {
 	return cur
 }
 
+// ensureNode creates the node if it doesn't exist, and returns it.
+// Creates the node's ancestors if needed.
+// Assumes the name is valid.
+func (g *Graph) ensureNode(name string) *node {
+	if name == "//" {
+		return &g.root
+	}
+
+	cur := &g.root
+
+	child := func(baseName, name string) *node {
+		if ret, ok := cur.children[baseName]; ok {
+			return ret
+		}
+
+		ret := &node{name: name}
+		if cur.children == nil {
+			cur.children = map[string]*node{}
+		}
+		cur.children[baseName] = ret
+		return ret
+	}
+
+	// Note: this loop does not allocate new strings.
+	startAt := 2 // skip the "//" prefix
+	for {
+		sep := strings.Index(name[startAt:], "/")
+		if sep == -1 {
+			return child(name[startAt:], name)
+		}
+		sep += startAt
+
+		cur = child(name[startAt:sep], name[:sep])
+		startAt = sep + 1
+	}
+}
+
 func (n *node) Name() string {
 	return n.name
 }
@@ -160,6 +197,35 @@ func (n *node) sortedChildKeys() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// ensureAlias ensures there is an alias edge from n to `to`.
+func (n *node) ensureAlias(to *node) {
+	for i := range n.edges {
+		if n.edges[i].to == to {
+			n.edges[i].commonCommits = 0
+			return
+		}
+	}
+
+	n.prepareToAppendEdges()
+	n.edges = append(n.edges, edge{to: to})
+}
+
+// prepareToAppendEdges copies n.edges if n.copyEdgesOnAppend is true.
+func (n *node) prepareToAppendEdges() {
+	if !n.copyEdgesOnAppend {
+		return
+	}
+
+	if len(n.edges) > 0 {
+		// Double the capacity in preparation for the append.
+		edges := make([]edge, len(n.edges), len(n.edges)*2)
+		copy(edges, n.edges)
+		n.edges = edges
+	}
+
+	n.copyEdgesOnAppend = false
 }
 
 // splitName splits a node name into components,

@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -38,20 +39,30 @@ import (
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	ref string
+	ref           string
+	maxCommitSize int
 	git.Graph
 }
 
 func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&g.ref, "ref", "refs/heads/main", text.Doc(`
-		load the file graph for this git ref.
+		Load the file graph for this git ref.
 		For refs/heads/main, refs/heads/master is read if main doesn't exist.
+	`))
+	fs.IntVar(&g.maxCommitSize, "max-commit-size", 100, text.Doc(`
+		Maximum number of files touched by a commit.
+		Commits that exceed this limit are ignored.
+		The rationale is that large commits provide a weak signal of file
+		relatedness and are expensive to process, O(N^2).
 	`))
 }
 
 func (g *gitGraph) Validate() error {
 	if !strings.HasPrefix(g.ref, "refs/") {
 		return errors.Reason("-ref %q doesn't start with refs/", g.ref).Err()
+	}
+	if g.maxCommitSize < 0 {
+		return errors.Reason("-max-commit-size must be non-negative").Err()
 	}
 	return nil
 }
@@ -65,7 +76,7 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 	}
 
 	// Load the graph.
-	if err := g.loadSyncedGraph(ctx, repoDir); err != nil {
+	if err := g.loadUpdatedGraph(ctx, repoDir); err != nil {
 		return nil, err
 	}
 
@@ -101,10 +112,10 @@ func (g *gitGraph) loadSyncedNodes(ctx context.Context, filePaths ...string) ([]
 	return nodes, nil
 }
 
-// loadSyncedGraph loads a file graph for g.ref in the given repo, syncs to
+// loadUpdatedGraph loads a file graph for g.ref in the given repo, syncs to
 // the latest commit in the ref, and caches the result on the file system.
 // repoDir is a local path to a local checkout of the git repo.
-func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
+func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
 	gitDir, err := execGit(repoDir)("rev-parse", "--absolute-git-dir")
 	if err != nil {
 		return err
@@ -115,7 +126,7 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 		gitDir,
 		"filegraph",
 		filepath.FromSlash(g.ref),
-		"fg.v0",
+		fmt.Sprintf("fg.max-commit-size-%d.v0", g.maxCommitSize),
 	)
 	if err := os.MkdirAll(filepath.Dir(fileName), 0777); err != nil {
 		return err
@@ -144,22 +155,26 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	err = g.Graph.Sync(ctx, repoDir, tillRev, func() error {
-		dirty = true
-
-		processed++
-		if processed%10000 == 0 {
-			if err := g.writeCache(f); err != nil {
-				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+	updater := &git.Updater{
+		RepoDir:       repoDir,
+		Rev:           tillRev,
+		MaxCommitSize: g.maxCommitSize,
+		Callback: func() error {
+			dirty = true
+			processed++
+			if processed%10000 == 0 {
+				if err := g.writeCache(f); err != nil {
+					return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
+				}
+				dirty = false
+				logging.Infof(ctx, "processed %d commits", processed)
 			}
-			dirty = false
-			logging.Infof(ctx, "processed %d commits", processed)
-		}
-		return nil
-	})
-	switch {
+			return nil
+		},
+	}
+	switch err := updater.Update(ctx, &g.Graph); {
 	case err != nil:
-		return err
+		return errors.Annotate(err, "failed to update the graph").Err()
 	case dirty:
 		err = g.writeCache(f)
 		return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
