@@ -100,6 +100,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "51d2b5e4_5f0adb8f",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T02:44:52Z",
+      "side": 1,
+      "message": "good question. The server will reject that, so the error will happen in a background goroutine, which isn\u0027t great.\nperhaps we could have a hashset of already-reported artifact IDs to reduce the likelihood of that happening?\n\nstrictly speaking, we have the same problem with Test results, but it is less of a problem because most clients do not specify result ids.",
+      "parentUuid": "c08eda47_537fd16a",
+      "range": {
+        "startLine": 168,
+        "startChar": 12,
+        "endLine": 168,
+        "endChar": 28
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d59dcf60_9e86e1e9",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 2
