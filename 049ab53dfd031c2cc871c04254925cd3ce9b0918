@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b70b4b28_4c286c58",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:12:00Z",
+      "side": 1,
+      "message": "yeah, good point. Added a TODO",
+      "parentUuid": "dab1eb43_3d12330b",
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e95c46c_ba997c50",
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-10T18:04:31Z",
       "side": 1,
       "message": "del",
+      "range": {
+        "startLine": 39,
+        "startChar": 15,
+        "endLine": 39,
+        "endChar": 23
+      },
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ba1e0a0_c3164be7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e95c46c_ba997c50",
       "range": {
         "startLine": 39,
         "startChar": 15,
@@ -71,6 +113,30 @@
       "writtenOn": "2020-11-10T18:04:31Z",
       "side": 1,
       "message": "btw, food for thought: have you tried sorted list of (sub, *node)?\n + less RAM\n ++ reading from file skips on hashing entirely.\n + insertion should be faster for \u003c10 elements\n \u003d insertion should be competitive for \u003c50 elements\n - binary-search selection should be quick\n\nIf it works better, with extra complexity, we can store just []*node and compute `sub` on the fly.",
+      "range": {
+        "startLine": 72,
+        "startChar": 10,
+        "endLine": 72,
+        "endChar": 26
+      },
+      "revId": "049ab53dfd031c2cc871c04254925cd3ce9b0918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "475a59d9_b3bae5f3",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:12:00Z",
+      "side": 1,
+      "message": "yeah, less RAM would be really nice. In the first impl I stored edges as map[*node]float in each node and it used a lot of ram. In the second impl I moved it to a giant Graph.weights as map[nodePair]float64 and that was better. In the third impl (that you saw), it is a slice.\n\nI like the idea, added a TODO.\n\nLoading is more important than insertion.\n\nI assume by sub you mean the base name that is used as key here.",
+      "parentUuid": "007ac304_627cbab5",
       "range": {
         "startLine": 72,
         "startChar": 10,
