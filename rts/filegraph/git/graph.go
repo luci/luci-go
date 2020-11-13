@@ -100,7 +100,10 @@ func (g *Graph) ensureInitialized() {
 // Node implements filegraph.Graph.
 func (g *Graph) Node(name string) filegraph.Node {
 	g.ensureInitialized()
-	return g.node(name)
+	if n := g.node(name); n != nil {
+		return n
+	}
+	return nil
 }
 
 // node retrieves a graph node by name. Returns nil if it doesn't exist.
