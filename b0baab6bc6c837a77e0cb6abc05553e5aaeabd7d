@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "30a9927d_0f0ced3b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-13T06:09:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd49bd12_9c6ca67e",
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0d74f341_b9cf9261",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-12T06:58:22Z",
       "side": 1,
       "message": "Remove this (and ace_editor.ts)?",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 28
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "149dde9b_14beb78a",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-13T06:09:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d74f341_b9cf9261",
       "range": {
         "startLine": 16,
         "startChar": 4,
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb9aa65a_a9d67133",
+        "filename": "milo/frontend/resultui/src/components/milo_code_mirror_editor.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-13T06:09:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75c8547e_8d416403",
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63713c41_23eb965f",
@@ -98,6 +158,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de59408b_57c045a7",
+        "filename": "milo/frontend/resultui/src/components/milo_code_mirror_editor.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-13T06:09:28Z",
+      "side": 1,
+      "message": "It does not appear to change the keys/values coloring.I\u0027ve made some css change though",
+      "parentUuid": "63713c41_23eb965f",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 50
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8cc7957d_6c939135",
@@ -111,6 +195,30 @@
       "writtenOn": "2020-11-12T06:58:22Z",
       "side": 1,
       "message": "this closing tag doesn\u0027t match",
+      "range": {
+        "startLine": 259,
+        "startChar": 10,
+        "endLine": 259,
+        "endChar": 27
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41c83f6f_b65377d1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-13T06:09:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cc7957d_6c939135",
       "range": {
         "startLine": 259,
         "startChar": 10,
