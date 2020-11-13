@@ -16,6 +16,7 @@ package testresults
 
 import (
 	"sort"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -338,6 +339,87 @@ func TestQueryTestResults(t *testing.T) {
 
 			actual, _ := mustFetch(q)
 			So(actual, ShouldResembleProto, expected)
+		})
+
+		Convey(`Query statements`, func() {
+			Convey(`only unexpected exclude exonerated`, func() {
+				st := q.genStatement("testResults", map[string]interface{}{
+					"params": map[string]interface{}{
+						"invIDs": q.InvocationIDs,
+					},
+					"columns":           "InvocationId, TestId, VariantHash",
+					"onlyUnexpected":    true,
+					"withUnexpected":    true,
+					"excludeExonerated": true,
+				})
+				expected := `
+  				@{USE_ADDITIONAL_PARALLELISM=TRUE}
+  				WITH
+						test_variants AS (
+							SELECT DISTINCT TestId, VariantHash
+							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+						),
+						exonerated AS (
+							SELECT DISTINCT TestId, VariantHash
+							FROM TestExonerations
+							WHERE InvocationId IN UNNEST(@invIDs)
+						),
+						variantsWithUnexpectedResults AS (
+							SELECT
+								tv.*
+							FROM test_variants tv
+							LEFT JOIN exonerated USING(TestId, VariantHash)
+							WHERE exonerated.TestId IS NULL
+						) ,
+  					withUnexpected AS (
+  						SELECT InvocationId, TestId, VariantHash
+							FROM variantsWithUnexpectedResults vur
+							JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+							WHERE InvocationId IN UNNEST(@invIDs)
+						),
+						withOnlyUnexpected AS (
+							SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
+							FROM withUnexpected tr
+							GROUP BY TestId, VariantHash
+							HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
+						)
+  				SELECT tr.*
+  				FROM withOnlyUnexpected owu, owu.trs tr
+  				ORDER BY InvocationId, TestId, ResultId
+				`
+				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
+			})
+
+			Convey(`with unexpected filter by testID`, func() {
+				st := q.genStatement("testResults", map[string]interface{}{
+					"params": map[string]interface{}{
+						"invIDs":       q.InvocationIDs,
+						"testIdRegexp": "^T4$",
+					},
+					"columns":           "InvocationId, TestId, VariantHash",
+					"onlyUnexpected":    false,
+					"withUnexpected":    true,
+					"excludeExonerated": false,
+				})
+				expected := `
+					@{USE_ADDITIONAL_PARALLELISM=TRUE}
+					WITH
+						variantsWithUnexpectedResults AS (
+							SELECT DISTINCT TestId, VariantHash
+							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+							AND REGEXP_CONTAINS(TestId, @testIdRegexp)
+						)
+					SELECT InvocationId, TestId, VariantHash
+					FROM variantsWithUnexpectedResults vur
+					JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+					WHERE InvocationId IN UNNEST(@invIDs)
+					ORDER BY InvocationId, TestId, ResultId
+				`
+				// Compare sql strings ignoring whitespaces.
+				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
+			})
 		})
 	})
 }
