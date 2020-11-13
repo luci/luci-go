@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "85429646_76cd1ec9",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "932e3aa9_92cefcd2",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 17
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d3d95046_f21bbf93",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-13T02:29:37Z",
       "side": 1,
       "message": "same here: just UseTQ?",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 17
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a9fa8e6_af0c4bb9",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3d95046_f21bbf93",
       "range": {
         "startLine": 132,
         "startChar": 4,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8385d4c2_7f40d4c5",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd823a6b_20152d1b",
+      "range": {
+        "startLine": 564,
+        "startChar": 5,
+        "endLine": 564,
+        "endChar": 18
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "488099d2_36729106",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-11-13T02:29:37Z",
       "side": 1,
       "message": "nit: MustApply accepts multiple mutations as a variadic params.\nthese 3 MustApply calls can be merged into one",
+      "range": {
+        "startLine": 238,
+        "startChar": 11,
+        "endLine": 238,
+        "endChar": 20
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c792a425_6474aff5",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "488099d2_36729106",
       "range": {
         "startLine": 238,
         "startChar": 11,
@@ -133,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce39e9a0_1c437679",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6764c832_4d66eb49",
+      "range": {
+        "startLine": 252,
+        "startChar": 11,
+        "endLine": 252,
+        "endChar": 22
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "034fac83_d3ca8b10",
@@ -146,6 +266,30 @@
       "writtenOn": "2020-11-13T20:50:37Z",
       "side": 1,
       "message": "Since crrev.com/c/2522063 we have stoped export derived results to bq. So I think we no longer need this change.",
+      "range": {
+        "startLine": 249,
+        "startChar": 0,
+        "endLine": 252,
+        "endChar": 3
+      },
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59b7ee7f_982282d4",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "034fac83_d3ca8b10",
       "range": {
         "startLine": 249,
         "startChar": 0,
@@ -173,6 +317,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cdb6f67_6563d1d2",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "621d5530_da7c9235",
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ac23003_e0175011",
@@ -186,6 +348,24 @@
       "writtenOn": "2020-11-13T02:29:37Z",
       "side": 1,
       "message": "move up\nand also use the new package",
+      "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4711add_453014c8",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T22:47:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ac23003_e0175011",
       "revId": "6962fe4a5563770b45bcf09323b62f649c3bcb24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
