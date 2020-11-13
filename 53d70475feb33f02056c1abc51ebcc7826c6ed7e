@@ -16,6 +16,86 @@
       "message": "PTAL",
       "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93b79d16_288343d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T01:38:13Z",
+      "side": 1,
+      "message": "LGTM % copy-pasta",
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6579b9e6_5125e1cd",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T01:38:13Z",
+      "side": 1,
+      "message": "is it possible to dedupe this code?",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 2
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3478f8d_1eb10d50",
+        "filename": "resultdb/sink/artifact_channel_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T01:38:13Z",
+      "side": 1,
+      "message": "please dedupe the code\n\n  Convey(...\n     common code\n     Convey(...\n        specific code\n     )\n     Convey(...\n        specific code\n     )\n  )",
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d59dcf60_9e86e1e9",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T01:38:13Z",
+      "side": 1,
+      "message": "artifact id would be more useful",
+      "range": {
+        "startLine": 169,
+        "startChar": 57,
+        "endLine": 169,
+        "endChar": 64
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
