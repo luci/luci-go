@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2475d8b9_5e63cf37",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:43:30Z",
+      "side": 1,
+      "message": "nice!",
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e720ebb1_9837268b",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:43:30Z",
+      "side": 1,
+      "message": "TBH, i never remember that exclude is first, I prefer separate args like \"^excluded\" \"included\"\nThis is particularly handy if you want to exclude \u003e1 rev (e.g. my suggestion on prior CL)",
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8fb8bcff_b5293cf5",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:43:30Z",
+      "side": 1,
+      "message": "never false",
+      "range": {
+        "startLine": 78,
+        "startChar": 5,
+        "endLine": 78,
+        "endChar": 15
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c20cd3d2_0076a045",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:43:30Z",
+      "side": 1,
+      "message": "btw, where do you handle an orphan commit? or is it merely side effect of no more commits being returned?\n\nhm, I tried your command on depot_tools and I got just 1 parent:\n\ndepot_tools $  git log --format\u003dformat:\"%H %P\" --raw --reverse\n\nfb2b8eb2e2456a7dd091593cbc1a0c237c41f6ab \n:000000 100644 00000000 a7531cf7 A      LICENSE\n:000000 100644 00000000 ccd597cb A      README\n \u003c...ommitted...\u003e\n3380c1a484cac48314394ff133456cc50e659a97 fb2b8eb2e2456a7dd091593cbc1a0c237c41f6ab\n:100644 100644 66fa05b8 90519281 M      bootstrap/gclient.bat\n:100644 100644 9e309bf3 4603d5bc M      bootstrap/win/win_tools.bat\n:100644 100644 3a19bc05 32b4f66e M      gclient.bat\n\nSo, I think you have a bug.",
+      "range": {
+        "startLine": 166,
+        "startChar": 22,
+        "endLine": 166,
+        "endChar": 32
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d8c7c8f_7aa4012d",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:43:30Z",
+      "side": 1,
+      "message": "I guess not r.r.Peek(1) to avoid allocating []byte? If so, worth a // comment.",
+      "range": {
+        "startLine": 280,
+        "startChar": 1,
+        "endLine": 283,
+        "endChar": 2
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
