@@ -58,6 +58,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7341870_c63dc20d",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "823e10a9_7f43a5ed",
+      "range": {
+        "startLine": 239,
+        "startChar": 5,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f55f64f5_ba68ee8d",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f97164e_e85b6d90",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9335e3a_6922fb26",
@@ -71,6 +113,24 @@
       "writtenOn": "2020-10-21T04:57:02Z",
       "side": 1,
       "message": "nit: if this condition is inverted, then the code below is dedented, making it more readable.\n\nalso means we don\u0027t need L241",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac9828e4_37ad52e5",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9335e3a_6922fb26",
       "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -122,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8f8225a_bb6147b1",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89862911_48cdcbd0",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 84
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "19dd6971_7bea82e8",
@@ -139,6 +223,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fbb36f7_faace31c",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Oh. Thanks, fixed.",
+      "parentUuid": "19dd6971_7bea82e8",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8c5aec72_b84c7a91",
@@ -152,6 +254,30 @@
       "writtenOn": "2020-10-21T04:57:02Z",
       "side": 1,
       "message": "just `invID` doesn\u0027t work?",
+      "range": {
+        "startLine": 318,
+        "startChar": 35,
+        "endLine": 318,
+        "endChar": 48
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53ad63f2_abb064da",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "8c5aec72_b84c7a91",
       "range": {
         "startLine": 318,
         "startChar": 35,
@@ -185,6 +311,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ee04232_741d1076",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Did what nodir suggested and moved to bqexporter.Schedule.",
+      "parentUuid": "0966fed6_f0401eec",
+      "range": {
+        "startLine": 313,
+        "startChar": 6,
+        "endLine": 319,
+        "endChar": 8
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c1d02597_982f5472",
@@ -198,6 +348,30 @@
       "writtenOn": "2020-10-21T04:57:02Z",
       "side": 1,
       "message": "should this be in `else` block? we are exporting the same thing twice?",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 326,
+        "endChar": 7
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2ad3755_64fa4ac3",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "there\u0027s a return at the end of the if block, the tool warns me against doing this. (go vet/lint/fmt, IDK which but VSCode surfaces it)",
+      "parentUuid": "c1d02597_982f5472",
       "range": {
         "startLine": 323,
         "startChar": 4,
@@ -225,6 +399,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "31468eea_aba5be7d",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe7b426d_3878b8ee",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "91360bf9_cf6dab49",
@@ -238,6 +430,30 @@
       "writtenOn": "2020-10-21T02:19:41Z",
       "side": 1,
       "message": "Could you add a test to test the TQ-based code path? Link L150.",
+      "range": {
+        "startLine": 172,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 4
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "667301e8_6634dd47",
+        "filename": "resultdb/internal/services/finalizer/finalizer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91360bf9_cf6dab49",
       "range": {
         "startLine": 172,
         "startChar": 2,
@@ -271,6 +487,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45243a26_1bf3c8b6",
+        "filename": "resultdb/internal/tasks/bq_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e9cdc02_f5f4f38e",
+      "range": {
+        "startLine": 32,
+        "startChar": 23,
+        "endLine": 32,
+        "endChar": 36
+      },
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f005de8_cedebd89",
@@ -288,6 +528,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9074a5d1_b160ed1c",
+        "filename": "resultdb/internal/tasks/bq_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f005de8_cedebd89",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d99b2fb1_e494d0bc",
@@ -301,6 +559,24 @@
       "writtenOn": "2020-10-21T02:19:41Z",
       "side": 1,
       "message": "nit: newline.",
+      "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1604c56a_afc8e096",
+        "filename": "resultdb/internal/tasks/taskspb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-13T02:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d99b2fb1_e494d0bc",
       "revId": "a82f36069ed33e3c5a8143d6521b4976e9615de0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
