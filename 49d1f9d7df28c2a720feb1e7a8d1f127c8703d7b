@@ -76,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "642a7a46_7bc173ad",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:04:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ba4c73f_4b914d55",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 6
+      },
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f6b0b982_8ec2015a",
@@ -89,6 +113,24 @@
       "writtenOn": "2020-11-04T21:22:30Z",
       "side": 1,
       "message": "i assume it\u0027ll be used later, ie not just for tests",
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3126a440_32bbc5c5",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:04:28Z",
+      "side": 1,
+      "message": "yeah, it is used in the next CL.\nperhaps next CL would have been better for this function, but leaving since this is already reviewed",
+      "parentUuid": "f6b0b982_8ec2015a",
       "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -141,6 +183,30 @@
       "writtenOn": "2020-11-04T21:22:30Z",
       "side": 1,
       "message": "bar.cc",
+      "range": {
+        "startLine": 116,
+        "startChar": 35,
+        "endLine": 116,
+        "endChar": 38
+      },
+      "revId": "49d1f9d7df28c2a720feb1e7a8d1f127c8703d7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "841c0911_89ce3245",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T07:04:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4bbfff2_d429c202",
       "range": {
         "startLine": 116,
         "startChar": 35,
