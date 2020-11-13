@@ -153,11 +153,25 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.ac.schedule(in.TestResults...)
+	s.ac.scheduleTestResults(in.TestResults...)
 	s.tc.schedule(in.TestResults...)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
+}
+
+// ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
+func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
+	for _, a := range in.Artifacts {
+		updateArtifactContentType(a)
+
+		if err := validateArtifact(a); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
+		}
+	}
+	s.ac.scheduleArtifacts(in.Artifacts)
+
+	return &empty.Empty{}, nil
 }
 
 func updateArtifactContentType(a *sinkpb.Artifact) {
@@ -173,9 +187,4 @@ func updateArtifactContentType(a *sinkpb.Artifact) {
 	case ".png":
 		a.ContentType = "image/png"
 	}
-}
-
-// ReportTestResults implement sinkpb.SinkServer.
-func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
 }

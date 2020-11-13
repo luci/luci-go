@@ -86,7 +86,7 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
+func (c *artifactChannel) scheduleTestResults(trs ...*sinkpb.TestResult) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -100,6 +100,22 @@ func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
 				artName: pbutil.TestResultArtifactName(c.cfg.invocationID, tr.TestId, tr.ResultId, id),
 				art:     art,
 			}
+		}
+	}
+}
+
+func (c *artifactChannel) scheduleArtifacts(as map[string]*sinkpb.Artifact) {
+	c.wgActive.Add(1)
+	defer c.wgActive.Done()
+	// if the channel already has been closed, drop the artifacts.
+	if atomic.LoadInt32(&c.closed) == 1 {
+		return
+	}
+
+	for id, a := range as {
+		c.ch.C <- &uploadTask{
+			artName: pbutil.InvocationArtifactName(c.cfg.invocationID, id),
+			art:     a,
 		}
 	}
 }
