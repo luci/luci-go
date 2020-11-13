@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bbe79c2_d31f038f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-13T00:58:34Z",
+      "side": 1,
+      "message": "Yes.\n\nAlso have we considered to allow bbagent itself to move the build from SCHEDULED to STARTED? Why do we have to wait for BB server to update the state?",
+      "parentUuid": "a5228a10_0c841c08",
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d58c18e7_1f5fc6c7",
@@ -73,6 +91,30 @@
       "side": 1,
       "message": "I see. To clarify, does that mean if this change gets released, we will see failure when BBAgent call GetBuild on non-public builds?",
       "parentUuid": "d58c18e7_1f5fc6c7",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "93b90e3f224835ca4e5efcc18bc10edd0fd4a943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f51635e_4d788b0f",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-13T00:58:34Z",
+      "side": 1,
+      "message": "Yes. UpdateBuild calls are authorized through `buildbucket-update-build-users` group and special tokens from x-build-token header. GetBuild is completely oblivious of that mechanism. If we want to use GetBuild, we\u0027ll need to teach BB to recognize x-build-token for GetBuild.",
+      "parentUuid": "f00c147a_da689362",
       "range": {
         "startLine": 47,
         "startChar": 1,
