@@ -110,11 +110,16 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 	}
 
 	// Read/write the graph from/to a file under .git directory, named after the ref.
-	f, err := os.OpenFile(
-		filepath.Join(gitDir, "filegraph", filepath.FromSlash(g.ref), "fg.v0"),
-		os.O_RDWR|os.O_CREATE,
-		0777,
+	fileName := filepath.Join(
+		gitDir,
+		"filegraph",
+		filepath.FromSlash(g.ref),
+		"fg.v0",
 	)
+	if err := os.MkdirAll(filepath.Dir(fileName), 0777); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		return err
 	}
