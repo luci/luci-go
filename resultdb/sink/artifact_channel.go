@@ -86,7 +86,7 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
+func (c *artifactChannel) schedule(tasks []*uploadTask) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -94,12 +94,31 @@ func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
 		return
 	}
 
+	for _, task := range tasks {
+		c.ch.C <- task
+	}
+}
+
+func (c *artifactChannel) scheduleTestResults(trs ...*sinkpb.TestResult) {
+	tasks := make([]*uploadTask, 0)
 	for _, tr := range trs {
 		for id, art := range tr.GetArtifacts() {
-			c.ch.C <- &uploadTask{
+			tasks = append(tasks, &uploadTask{
 				artName: pbutil.TestResultArtifactName(c.cfg.invocationID, tr.TestId, tr.ResultId, id),
 				art:     art,
-			}
+			})
 		}
 	}
+	c.schedule(tasks)
+}
+
+func (c *artifactChannel) scheduleArtifacts(as map[string]*sinkpb.Artifact) {
+	tasks := make([]*uploadTask, 0, len(as))
+	for id, a := range as {
+		tasks = append(tasks, &uploadTask{
+			artName: pbutil.InvocationArtifactName(c.cfg.invocationID, id),
+			art:     a,
+		})
+	}
+	c.schedule(tasks)
 }
