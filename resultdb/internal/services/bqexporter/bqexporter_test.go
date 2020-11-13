@@ -30,12 +30,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -222,5 +224,31 @@ func TestBqTableCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
 		})
+	})
+}
+
+func TestReadBQExports(t *testing.T) {
+	Convey(`TestReadBQExports`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		bqx1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}
+		bqx2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2"}
+		bqx1Bytes, _ := proto.Marshal(bqx1)
+		bqx2Bytes, _ := proto.Marshal(bqx2)
+		exports := [][]byte{bqx1Bytes, bqx2Bytes}
+		testutil.MustApply(ctx, insert.Invocation("two-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": exports}))
+		testutil.MustApply(ctx, insert.Invocation("one-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": exports[:1]}))
+		testutil.MustApply(ctx, insert.Invocation("zero-bqx", pb.Invocation_FINALIZED, nil))
+		both, err := readBQExports(span.Single(ctx), "two-bqx")
+		So(err, ShouldBeNil)
+		So(both, ShouldHaveLength, 2)
+		So(both[0], ShouldResembleProto, bqx1)
+		So(both[1], ShouldResembleProto, bqx2)
+		one, err := readBQExports(span.Single(ctx), "one-bqx")
+		So(err, ShouldBeNil)
+		So(one, ShouldHaveLength, 1)
+		So(one[0], ShouldResembleProto, bqx1)
+		none, err := readBQExports(span.Single(ctx), "zero-bqx")
+		So(err, ShouldBeNil)
+		So(none, ShouldBeNil)
 	})
 }

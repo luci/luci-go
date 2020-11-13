@@ -16,6 +16,7 @@ package bqexporter
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -37,11 +38,14 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -50,7 +54,7 @@ const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 var bqTableCache = caching.RegisterLRUCache(50)
 
-// Options is bqexpoerter configuration.
+// Options is bqexporter configuration.
 type Options struct {
 	// How often to query for tasks.
 	TaskQueryInterval time.Duration
@@ -114,6 +118,19 @@ type bqExporter struct {
 	batchSem *semaphore.Weighted
 }
 
+// BQExportTasks describes how to route bq export tasks.
+var BQExportTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:                  "bq-export",
+	Prototype:           &taskspb.ExportInvocationToBQ{},
+	Kind:                tq.Transactional,
+	InheritTraceContext: true,
+	Queue:               "bqexporter",                 // use a dedicated queue
+	RoutingPrefix:       "/internal/tasks/bqexporter", // for routing to "bqexporter" service
+})
+
+// UseBQExportTQ experiment enables using server/tq for bq export tasks.
+var UseBQExportTQ = experiments.Register("rdb-use-tq-bq-export")
+
 // InitServer initializes a bqexporter server.
 func InitServer(srv *server.Server, opts Options) {
 	b := &bqExporter{
@@ -128,7 +145,18 @@ func InitServer(srv *server.Server, opts Options) {
 		QueryInterval: opts.TaskQueryInterval,
 	}
 	srv.RunInBackground("bqexport", func(ctx context.Context) {
-		d.Run(ctx, tasks.BQExport, b.exportResultsToBigQuery)
+		d.Run(ctx, tasks.BQExport, func(ctx context.Context, invID invocations.ID, payload []byte) error {
+			bqExport := &pb.BigQueryExport{}
+			if err := proto.Unmarshal(payload, bqExport); err != nil {
+				return err
+			}
+			return b.exportResultsToBigQuery(ctx, invID, bqExport)
+		})
+	})
+
+	BQExportTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.ExportInvocationToBQ)
+		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
 	})
 }
 
@@ -506,14 +534,9 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, payload []byte) error {
+func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
-
-	bqExport := &pb.BigQueryExport{}
-	if err := proto.Unmarshal(payload, bqExport); err != nil {
-		return err
-	}
 
 	luciProject, err := getLUCIProject(ctx, invID)
 	if err != nil {
@@ -535,4 +558,41 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 		inserter: client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter(),
 	}
 	return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
+}
+
+// readBQExports reads the invocation's BQExports.
+func readBQExports(ctx context.Context, id invocations.ID) ([]*pb.BigQueryExport, error) {
+	var bqExports [][]byte
+	if err := invocations.ReadColumns(ctx, id, map[string]interface{}{"BigQueryExports": &bqExports}); err != nil {
+		return nil, err
+	}
+	if len(bqExports) == 0 {
+		return nil, nil
+	}
+	ret := make([]*pb.BigQueryExport, len(bqExports))
+	for i, buf := range bqExports {
+		ret[i] = &pb.BigQueryExport{}
+		if err := proto.Unmarshal(buf, ret[i]); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+// Schedule schedules tasks for all the given invocation's BigQuery Exports.
+func Schedule(ctx context.Context, invID invocations.ID) error {
+	bqExports, err := readBQExports(ctx, invID)
+	if err != nil {
+		return err
+	}
+	for i, bqx := range bqExports {
+		tq.MustAddTask(ctx, &tq.Task{
+			Payload: &taskspb.ExportInvocationToBQ{
+				BqExport:     bqx,
+				InvocationId: string(invID),
+			},
+			Title: fmt.Sprintf("%s:%d", invID, i),
+		})
+	}
+	return nil
 }

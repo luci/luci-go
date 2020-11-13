@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -35,7 +36,9 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -243,6 +246,11 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	}
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		if !bqexporter.UseBQExportTQ.Enabled(ctx) {
+			// Use legacy db row-based tasks.
+			ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
+		}
+
 		// Check origin invocation state again.
 		if err := shouldWriteInvocation(ctx, originInvID); err != nil {
 			return err
@@ -257,6 +265,9 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	case err != nil:
 		return nil, nil, err
 	default:
+		if bqexporter.UseBQExportTQ.Enabled(ctx) {
+			bqexporter.Schedule(ctx, originInvID)
+		}
 		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
 		// Cache the included invocations.
 		invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
