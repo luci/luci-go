@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -103,6 +104,7 @@ func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*o
 	for _, project := range cfg.PssaMigration.ProjectsBlocklist {
 		if luciProject == project {
 			allowed = false
+			logging.Debugf(ctx, "Project %q is not allowed to use project scoped service account", luciProject)
 		}
 	}
 	if allowed {
