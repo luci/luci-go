@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59394649_3b0174a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "Looks reasonable % suggestions",
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e3a3b1e_6818c5d7",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "yes, except 1st parent is strictly speaking not safe either.\nI think a better approach is to save list of visited commits (and hence all their parents) instead of just one.\nThen callback is safe to call, though callback would need to pass this list every time.",
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d167179_e9243053",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "(ignorable bikeshed, just curious what your thoughts are) Do we really want to record deletion as a signal?\nMy thinking was NO, because \n * iff file is re-added, there is likely a revert, where we\u0027d record relation,\n * else, file is gone, so whatever.",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 10
+      },
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7271272_70b00dcf",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "it\u0027s not actually N^2, it\u0027s O(N*max(edges of a node) which isn\u0027t bounded by N^2.",
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a5d2784_1b6890b1",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "better do it once for all files before the L104 loop,\nand then add `e.to !\u003d file` to L120\nand then record already found into temp buffer.\n\nAsymptotically same, but should be faster.",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 112,
+        "endChar": 3
+      },
+      "revId": "20282062e8dca2462c9dd772873921c957012d48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

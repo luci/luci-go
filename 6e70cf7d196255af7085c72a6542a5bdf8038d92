@@ -34,6 +34,92 @@
       "parentUuid": "cc1408dc_b754fa61",
       "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13ea9f56_f170f9c2",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "TBH, this was surprising. I thought I could var this arg w/o having to re-compute it. But it\u0027s not unreasonable, and anyhow old data isn\u0027t deleted.",
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2f67bde_dbf1ec9c",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "imo, this it\u0027s more readable with this before updater is created, even if it means you need standalone `tillRev` var,\nbecause two write calls are closer to each other.",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 172,
+        "endChar": 2
+      },
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9d0ab69_2f71856b",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "👍perfect",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 31,
+        "endChar": 50
+      },
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb14393c_5cc35f7a",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T16:02:45Z",
+      "side": 1,
+      "message": "nice! Though maybe worth saying why 2.",
+      "range": {
+        "startLine": 57,
+        "startChar": 19,
+        "endLine": 57,
+        "endChar": 35
+      },
+      "revId": "6e70cf7d196255af7085c72a6542a5bdf8038d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
