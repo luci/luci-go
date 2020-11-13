@@ -55,6 +55,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fc3be3b9_740ac9e5",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T19:35:04Z",
+      "side": 1,
+      "message": "already deferred on L46.",
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8fb8bcff_b5293cf5",
         "filename": "rts/filegraph/git/log.go",
         "patchSetId": 8
@@ -90,6 +107,30 @@
       "side": 1,
       "message": "? \nsee L109",
       "parentUuid": "8fb8bcff_b5293cf5",
+      "range": {
+        "startLine": 78,
+        "startChar": 5,
+        "endLine": 78,
+        "endChar": 15
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35dd9ba5_794788f8",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-13T19:35:04Z",
+      "side": 1,
+      "message": "i mean `err !\u003d nil` check is done on 64 with early bail (btw, L72 can re-use existing err, too)\nSo, the only way `err` can become non-nil is inside this (or earlier) defer (L76..L77) OR after defer (L83..L84)",
+      "parentUuid": "436a054b_7672c273",
       "range": {
         "startLine": 78,
         "startChar": 5,
