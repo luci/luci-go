@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"flag"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -170,18 +171,24 @@ func (g *gitGraph) loadSyncedGraph(ctx context.Context, repoDir string) error {
 // tryReadingCache tries to read the graph from the cache file.
 // On a non-fatal error, logs the error and clears g.Graph.
 func (g *gitGraph) tryReadingCache(ctx context.Context, f *os.File) error {
-	// Check for cache-miss based on the file length.
-	switch n, err := f.Seek(0, 1); {
-	case err != nil:
-		return errors.Annotate(err, "failed to read file length").Err()
-	case n == 0:
+	r := bufio.NewReader(f)
+
+	// Check for cache-miss.
+	switch _, err := r.ReadByte(); {
+	case err == io.EOF:
 		logging.Infof(ctx, "populating cache; this may take minutes...")
 		// The file is empty => cache miss.
 		return nil
+	case err != nil:
+		return err
+	default:
+		if err := r.UnreadByte(); err != nil {
+			return err
+		}
 	}
 
 	// Read the cache.
-	if err := g.Graph.Read(bufio.NewReader(f)); err != nil {
+	if err := g.Graph.Read(r); err != nil {
 		logging.Warningf(ctx, "cache is corrupted: %s\npopulating cache; this may take minutes...", err)
 		// Reset the graph state.
 		g.Graph = git.Graph{}
