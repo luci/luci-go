@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -303,6 +304,9 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 					if err := insertNextFinalizationTasks(ctx, invID); err != nil {
 						return err
 					}
+				}
+				if bqexporter.UseTQ.Enabled(ctx) {
+					return bqexporter.Schedule(ctx, invID)
 				}
 				// Enqueue tasks to export the invocation to BigQuery.
 				// Note: this cannot be done in parallel with insertNextFinalizationTasks
