@@ -61,6 +61,30 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
+		Convey(`ensureNode`, func() {
+			g := &Graph{}
+			Convey("//foo/bar", func() {
+				bar := g.ensureNode("//foo/bar")
+				So(bar, ShouldNotBeNil)
+				So(bar.name, ShouldEqual, "//foo/bar")
+				So(g.node("//foo/bar"), ShouldEqual, bar)
+
+				foo := g.node("//foo")
+				So(foo, ShouldNotBeNil)
+				So(foo.name, ShouldEqual, "//foo")
+				So(foo.children["bar"], ShouldEqual, bar)
+			})
+
+			Convey("already exists", func() {
+				So(g.ensureNode("//foo/bar"), ShouldEqual, g.ensureNode("//foo/bar"))
+			})
+
+			Convey("//", func() {
+				root := g.ensureNode("//")
+				So(root, ShouldEqual, &g.root)
+			})
+		})
+
 		Convey(`sortedChildKeys()`, func() {
 			node := &node{
 				children: map[string]*node{
