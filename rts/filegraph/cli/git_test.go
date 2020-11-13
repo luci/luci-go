@@ -15,11 +15,15 @@
 package cli
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -66,5 +70,31 @@ func TestGit(t *testing.T) {
 		repoDir, err := ensureSameRepo(tmpd, fooPath)
 		So(err, ShouldBeNil)
 		So(repoDir, ShouldEqual, tmpd)
+	})
+}
+
+func TestGitGraph(t *testing.T) {
+	t.Parallel()
+
+	Convey(`tryReadingCache`, t, func() {
+		ctx := context.Background()
+		ctx = memlogger.Use(ctx)
+
+		Convey(`empty file`, func() {
+			tmpd, err := ioutil.TempDir("", "filegraph_git")
+			So(err, ShouldBeNil)
+			defer os.RemoveAll(tmpd)
+
+			f, err := os.Create(filepath.Join(tmpd, "empty"))
+			So(err, ShouldBeNil)
+			defer f.Close()
+
+			g := gitGraph{}
+			err = g.tryReadingCache(ctx, f)
+			So(err, ShouldBeNil)
+
+			log := logging.Get(ctx).(*memlogger.MemLogger)
+			So(log, memlogger.ShouldHaveLog, logging.Info, "populating cache")
+		})
 	})
 }
