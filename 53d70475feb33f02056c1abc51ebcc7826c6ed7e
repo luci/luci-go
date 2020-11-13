@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0bf0f54_6cc981b6",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T03:04:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6579b9e6_5125e1cd",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 2
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d3478f8d_1eb10d50",
@@ -71,6 +95,24 @@
       "writtenOn": "2020-11-13T01:38:13Z",
       "side": 1,
       "message": "please dedupe the code\n\n  Convey(...\n     common code\n     Convey(...\n        specific code\n     )\n     Convey(...\n        specific code\n     )\n  )",
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76df2c0a_892d0066",
+        "filename": "resultdb/sink/artifact_channel_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T03:04:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3478f8d_1eb10d50",
       "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -124,6 +166,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f46d3c47_fef4aaa0",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T03:04:05Z",
+      "side": 1,
+      "message": "This is about uploading the same artifact (or artifacts with the same id) multiple times in the same invocation, right?\n\nI mean if for multiple invocations like Scott asked, them the artifacts actually have different names so there should be no error?",
+      "parentUuid": "51d2b5e4_5f0adb8f",
+      "range": {
+        "startLine": 168,
+        "startChar": 12,
+        "endLine": 168,
+        "endChar": 28
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d59dcf60_9e86e1e9",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 2
@@ -135,6 +201,30 @@
       "writtenOn": "2020-11-13T01:38:13Z",
       "side": 1,
       "message": "artifact id would be more useful",
+      "range": {
+        "startLine": 169,
+        "startChar": 57,
+        "endLine": 169,
+        "endChar": 64
+      },
+      "revId": "53d70475feb33f02056c1abc51ebcc7826c6ed7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dd94f8f_ef84956b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-13T03:04:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d59dcf60_9e86e1e9",
       "range": {
         "startLine": 169,
         "startChar": 57,
