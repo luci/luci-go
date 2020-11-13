@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0531246_68cc30f2",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T20:37:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc3be3b9_740ac9e5",
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8fb8bcff_b5293cf5",
@@ -155,6 +173,30 @@
       "side": 1,
       "message": "ah, I see now -- L84 can produce an error. Oh, cryptic. Can you change defer to just code after after L84?",
       "parentUuid": "35dd9ba5_794788f8",
+      "range": {
+        "startLine": 78,
+        "startChar": 5,
+        "endLine": 78,
+        "endChar": 15
+      },
+      "revId": "2fbc64b2fb755021935618bdfa1859eb476521e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a44f4b6_eb3de1c8",
+        "filename": "rts/filegraph/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T20:37:13Z",
+      "side": 1,
+      "message": "this thing had two responsibilities. I split this piece of code into two. Should be more readable now.",
+      "parentUuid": "1481e008_559761b9",
       "range": {
         "startLine": 78,
         "startChar": 5,

@@ -22,6 +22,30 @@
       },
       "revId": "e8e62fad8c95d885e0ed5896ea80b183957784be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb982bb3_d2d0f8f6",
+        "filename": "rts/filegraph/cli/git.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-13T20:37:13Z",
+      "side": 0,
+      "message": "bad merge. sorry! fixed",
+      "parentUuid": "8f162116_1aed507b",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 2
+      },
+      "revId": "e8e62fad8c95d885e0ed5896ea80b183957784be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
