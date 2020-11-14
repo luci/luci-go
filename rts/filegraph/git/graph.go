@@ -159,14 +159,31 @@ func (n *node) Name() string {
 }
 
 func (n *node) Outgoing(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
+	n.visitEdges(true, callback)
+}
+
+func (n *node) Incoming(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
+	n.visitEdges(false, callback)
+}
+
+func (n *node) visitEdges(outgoing bool, callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
 	for _, e := range n.edges {
 		distance := 0.0
 		if e.commonCommits == 0 {
 			// e.to is alias of n. The distance is 0.
 		} else {
+			var sampleSizeSize int // https://en.wikipedia.org/wiki/Sample_space
+			if outgoing {
+				sampleSizeSize = n.commits
+			} else {
+				sampleSizeSize = e.to.commits
+			}
+
 			// TODO(nodir): consider using multiplication in filegraph.Query instead of
 			// calling log2, because the latter is expensive.
-			distance = -math.Log2(float64(e.commonCommits) / float64(n.commits))
+
+			// Note: commonCommits is same for incoming and outgoing edges.
+			distance = -math.Log2(float64(e.commonCommits) / float64(sampleSizeSize))
 		}
 		if !callback(e.to, distance) {
 			return
