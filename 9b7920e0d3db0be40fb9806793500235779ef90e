@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "d304b85b_b4f9317e",
         "filename": "/PATCHSET_LEVEL",
@@ -14,10 +15,10 @@
       "side": 1,
       "message": "PTAL. Thank you!",
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "669f0616_f12653c7",
         "filename": "cv/appengine/internal/config/refresh.go",
@@ -37,10 +38,34 @@
         "endChar": 9
       },
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "096f6316_78704d3b",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:28:49Z",
+      "side": 1,
+      "message": "`init` is a golang concept which is called during the import time and it is imported in appengine/main.go (see the downstream CL) which means task is registered when the service starts.\n\nTL;DR: what this code is doing is that. \n\nIt register a new Task class `RefreshProjectConfigTask`. Everytime when we add a task with a RefreshProjectConfigTask message as its payload, CV will send a task to a queue named `refresh-project-config` in Cloud Task. \n\nIt will also install a handler at path \u0027$RoutingPrefx/refresh-project-config\u0027 (we use the default value for RoutingPrefix in the latest PS which is /internal/tasks/t/) for CV. Cloud Task will then call CV at that path with the serialized RefreshProjectConfigTask message.",
+      "parentUuid": "669f0616_f12653c7",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 9
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "297898ac_e8e55496",
         "filename": "cv/appengine/internal/config/refresh.go",
@@ -60,10 +85,34 @@
         "endChar": 36
       },
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c1069e3_38b93d33",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:28:49Z",
+      "side": 1,
+      "message": "Yes, done.",
+      "parentUuid": "297898ac_e8e55496",
+      "range": {
+        "startLine": 52,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 36
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "469491e1_36206316",
         "filename": "cv/appengine/internal/config/refresh.go",
@@ -83,10 +132,34 @@
         "endChar": 70
       },
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8bff158_a4d21bf8",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:28:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "469491e1_36206316",
+      "range": {
+        "startLine": 90,
+        "startChar": 57,
+        "endLine": 90,
+        "endChar": 70
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "f52df4bf_2768bcaa",
         "filename": "cv/appengine/internal/config/refresh.go",
@@ -106,10 +179,34 @@
         "endChar": 34
       },
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "165e5d2d_c0515df4",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:28:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f52df4bf_2768bcaa",
+      "range": {
+        "startLine": 181,
+        "startChar": 27,
+        "endLine": 181,
+        "endChar": 34
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "dd0ebea9_defcf8d3",
         "filename": "cv/appengine/internal/config/refresh_test.go",
@@ -129,8 +226,31 @@
         "endChar": 13
       },
       "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3e74b02_ff2f10f2",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:28:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd0ebea9_defcf8d3",
+      "range": {
+        "startLine": 52,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 13
+      },
+      "revId": "9b7920e0d3db0be40fb9806793500235779ef90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
