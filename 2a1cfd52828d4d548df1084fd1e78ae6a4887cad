@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "854e95c0_ee1de2a4",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:29:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42ea316e_55551bb2",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 48
+      },
+      "revId": "2a1cfd52828d4d548df1084fd1e78ae6a4887cad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "656c3aae_636cb31b",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-09T18:02:52Z",
       "side": 1,
       "message": "* cron doesn\u0027t retry by default\n* we have standard alerting for 5xx\n\u003d\u003e IMO 5xx is better.",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 17
+      },
+      "revId": "2a1cfd52828d4d548df1084fd1e78ae6a4887cad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1a74859_af6c4fc7",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T20:29:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "656c3aae_636cb31b",
       "range": {
         "startLine": 49,
         "startChar": 5,
