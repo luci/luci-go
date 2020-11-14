@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b809631_7400fd3b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-14T17:54:30Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 18,
+        "startChar": 20,
+        "endLine": 18,
+        "endChar": 27
+      },
+      "revId": "89a6b9cd7851b39ddb4d7a25f3001a8f676a08d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "1a172636_8efff4c1",
@@ -14,6 +37,46 @@
       "writtenOn": "2020-11-14T09:15:46Z",
       "side": 1,
       "message": "PTAL. Sorry for asking to review very similar code again. I have refactored it.",
+      "revId": "89a6b9cd7851b39ddb4d7a25f3001a8f676a08d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afa6d1e5_f39649dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-14T17:54:30Z",
+      "side": 1,
+      "message": "lgtm % I certainly didn\u0027t review as carefully as the first time (i\u0027m physically not quite able to since structure is still mostly preserved)",
+      "revId": "89a6b9cd7851b39ddb4d7a25f3001a8f676a08d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a3dd363_7f49e544",
+        "filename": "rts/filegraph/git/load.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-14T17:54:30Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 117,
+        "startChar": 17,
+        "endLine": 117,
+        "endChar": 18
+      },
       "revId": "89a6b9cd7851b39ddb4d7a25f3001a8f676a08d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
