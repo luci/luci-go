@@ -20,17 +20,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Updater updates a graph based on changes in a git repository.
-// This is the only way to mutate the Graph.
-type Updater struct {
-	// RepoDir is the path to the git repository.
-	RepoDir string
-
-	// Rev is the target revision. The graph is updated with commits reachable
-	// from Rev, and not reachable from Graph.Commit.
-	// Defaults to "HEAD".
-	Rev string
-
+// UpdateOptions are options for Graph.Update().
+type UpdateOptions struct {
 	// Callback, if not nil, is called each time after each commit is processed
 	// and Graph.Commit is updated.
 	Callback func() error
@@ -42,28 +33,30 @@ type Updater struct {
 	MaxCommitSize int
 }
 
-// Update updates the graph.
+// Update updates the graph based on changes in a git repository.
+// This is the only way to mutate the Graph.
+// Applies all changes reachable from rev, but not from g.Commit, and updates
+// g.Commit.
+//
 // If returns an error which wasn't returned by the callback, then it is
 // possible that the graph is corrupted.
-func (u *Updater) Update(ctx context.Context, g *Graph) error {
+func (g *Graph) Update(ctx context.Context, repoDir, rev string, opt UpdateOptions) error {
 	g.ensureInitialized()
-
-	rev := u.Rev
 	if rev == "" {
-		rev = "HEAD"
+		return errors.New("rev is empty")
 	}
 
-	return readLog(ctx, u.RepoDir, g.Commit, rev, func(c commit) error {
+	return readLog(ctx, repoDir, g.Commit, rev, func(c commit) error {
 		switch {
 		case len(c.Files) == 1:
 			// Skip this commit. It provides no signal about file relatedness.
 			return nil
-		case u.MaxCommitSize != 0 && len(c.Files) > u.MaxCommitSize:
+		case opt.MaxCommitSize != 0 && len(c.Files) > opt.MaxCommitSize:
 			// Skip this commit - too large.
 			return nil
 		}
 
-		if err := u.apply(g, c.Files); err != nil {
+		if err := g.apply(c.Files); err != nil {
 			return errors.Annotate(err, "failed to apply commit %s", c.Hash).Err()
 		}
 
@@ -72,15 +65,15 @@ func (u *Updater) Update(ctx context.Context, g *Graph) error {
 		// because the graph already incorporated commits that are not reachable
 		// by c.Hash. The graph must not be saved in this state.
 		g.Commit = c.Hash
-		if u.Callback != nil {
-			return u.Callback()
+		if opt.Callback != nil {
+			return opt.Callback()
 		}
 		return nil
 	})
 }
 
 // apply applies the file changes to the graph.
-func (u *Updater) apply(g *Graph, fileChanges []fileChange) error {
+func (g *Graph) apply(fileChanges []fileChange) error {
 	files := make([]*node, 0, len(fileChanges))
 	for _, fc := range fileChanges {
 		switch {
