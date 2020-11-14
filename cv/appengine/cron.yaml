@@ -1,0 +1,4 @@
+cron:
+- description: Kick off Config refresh for all LUCI Projects.
+  url: /internal/cron/refresh-config
+  schedule: every 1 minutes
