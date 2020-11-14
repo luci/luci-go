@@ -160,24 +160,24 @@ func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	updater := &git.Updater{
-		RepoDir:       repoDir,
-		Rev:           tillRev,
-		MaxCommitSize: g.maxCommitSize,
-		Callback: func() error {
-			dirty = true
-			processed++
-			if processed%10000 == 0 {
-				if err := g.writeCache(f); err != nil {
-					return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
-				}
-				dirty = false
-				logging.Infof(ctx, "processed %d commits", processed)
+	commitProcessed := func() error {
+		dirty = true
+		processed++
+		if processed%10000 == 0 {
+			if err := g.writeCache(f); err != nil {
+				return errors.Annotate(err, "failed to write the graph to %q", f.Name()).Err()
 			}
-			return nil
-		},
+			dirty = false
+			logging.Infof(ctx, "processed %d commits", processed)
+		}
+		return nil
 	}
-	switch err := updater.Update(ctx, &g.Graph); {
+
+	err = g.Graph.Update(ctx, repoDir, tillRev, git.UpdateOptions{
+		MaxCommitSize: g.maxCommitSize,
+		Callback:      commitProcessed,
+	})
+	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to update the graph").Err()
 	case dirty:
