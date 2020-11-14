@@ -160,9 +160,7 @@ func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
 	// Sync the graph with new commits.
 	processed := 0
 	dirty := false
-	updater := &git.Updater{
-		RepoDir:       repoDir,
-		Rev:           tillRev,
+	opt := git.UpdateOptions{
 		MaxCommitSize: g.maxCommitSize,
 		Callback: func() error {
 			dirty = true
@@ -177,7 +175,7 @@ func (g *gitGraph) loadUpdatedGraph(ctx context.Context, repoDir string) error {
 			return nil
 		},
 	}
-	switch err := updater.Update(ctx, &g.Graph); {
+	switch err := g.Graph.Update(ctx, repoDir, tillRev, opt); {
 	case err != nil:
 		return errors.Annotate(err, "failed to update the graph").Err()
 	case dirty:
