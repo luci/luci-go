@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a172636_8efff4c1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-14T09:15:46Z",
+      "side": 1,
+      "message": "PTAL. Sorry for asking to review very similar code again. I have refactored it.",
+      "revId": "89a6b9cd7851b39ddb4d7a25f3001a8f676a08d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
