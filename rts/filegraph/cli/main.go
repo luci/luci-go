@@ -41,6 +41,7 @@ func Main() {
 		},
 		Commands: []*subcommands.Command{
 			cmdQuery,
+			cmdPath,
 
 			{},
 			subcommands.CmdHelp,
