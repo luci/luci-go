@@ -26,6 +26,9 @@ type Query struct {
 	// Sources are the nodes to start from.
 	Sources []Node
 
+	// MaxDistance, if positive, is the distance threshold for Query.Run().
+	MaxDistance float64
+
 	// TODO(crbug.com/1136280): add Backwards
 	// TODO(crbug.com/1136280): add MaxDistance
 	// TODO(crbug.com/1136280): add SilbingDistance
@@ -80,7 +83,13 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 
 	for len(q.heap) > 0 {
 		cur := heap.Pop(&q.heap).(*ShortestPath)
-		if cur.Distance > q.dist[cur.Node] {
+
+		// Check the distance.
+		switch {
+		case q.MaxDistance > 0 && cur.Distance > q.MaxDistance:
+			return
+
+		case cur.Distance > q.dist[cur.Node]:
 			// A better one was already reported.
 			continue
 		}
