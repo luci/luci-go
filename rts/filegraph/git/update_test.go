@@ -20,22 +20,21 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestUpdater(t *testing.T) {
+func TestApply(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Updater`, t, func() {
+	Convey(`apply`, t, func() {
 		g := &Graph{}
 		g.ensureInitialized()
-		u := Updater{}
 
 		Convey(`Empty change`, func() {
-			err := u.apply(g, nil)
+			err := g.apply(nil)
 			So(err, ShouldBeNil)
 			So(g.root, ShouldResemble, node{name: "//"})
 		})
 
 		Convey(`Add one file`, func() {
-			err := u.apply(g, []fileChange{
+			err := g.apply([]fileChange{
 				{Path: "a", Status: 'A'},
 			})
 			So(err, ShouldBeNil)
@@ -51,7 +50,7 @@ func TestUpdater(t *testing.T) {
 		})
 
 		Convey(`Add two files`, func() {
-			err := u.apply(g, []fileChange{
+			err := g.apply([]fileChange{
 				{Path: "a", Status: 'A'},
 				{Path: "b", Status: 'A'},
 			})
@@ -73,7 +72,7 @@ func TestUpdater(t *testing.T) {
 			})
 
 			Convey(`Add two more`, func() {
-				err := u.apply(g, []fileChange{
+				err := g.apply([]fileChange{
 					{Path: "b", Status: 'A'},
 					{Path: "c/d", Status: 'A'},
 				})
@@ -109,7 +108,7 @@ func TestUpdater(t *testing.T) {
 			})
 
 			Convey(`Modify them again`, func() {
-				err := u.apply(g, []fileChange{
+				err := g.apply([]fileChange{
 					{Path: "a", Status: 'M'},
 					{Path: "b", Status: 'M'},
 				})
@@ -133,7 +132,7 @@ func TestUpdater(t *testing.T) {
 			})
 
 			Convey(`Modify one and add another`, func() {
-				err := u.apply(g, []fileChange{
+				err := g.apply([]fileChange{
 					{Path: "b", Status: 'M'},
 					{Path: "c", Status: 'M'},
 				})
@@ -164,7 +163,7 @@ func TestUpdater(t *testing.T) {
 			})
 
 			Convey(`Rename one`, func() {
-				err := u.apply(g, []fileChange{
+				err := g.apply([]fileChange{
 					{Path: "b", Path2: "c", Status: 'R'},
 				})
 				So(err, ShouldBeNil)
@@ -194,7 +193,7 @@ func TestUpdater(t *testing.T) {
 			})
 
 			Convey(`Remove one`, func() {
-				err := u.apply(g, []fileChange{
+				err := g.apply([]fileChange{
 					{Path: "b", Status: 'D'},
 				})
 				So(err, ShouldBeNil)
