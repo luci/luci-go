@@ -123,6 +123,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "57597976_a1050dc8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-14T19:40:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "256f4fa4_06f29c8e",
+      "revId": "5bb1539735d9359b8202b566ded8f0bde05c70d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e288ac4f_f24cab25",
