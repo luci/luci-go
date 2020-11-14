@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28e00577_c0625934",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-14T02:01:28Z",
+      "side": 1,
+      "message": "Go doesn\u0027t inline callback. I saw huge speed increase by copy-pasting sort.Search code directly.",
+      "range": {
+        "startLine": 166,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 3
+      },
+      "revId": "c4097d635ecfcf67cded9a6759b466a01ef900d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
