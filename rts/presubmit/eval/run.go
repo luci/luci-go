@@ -169,6 +169,7 @@ func (r *Result) Print(w io.Writer) error {
 		pf("Evaluation failed: no test results with duration\n")
 	} else {
 		pf("Saved: %.0f%%\n", r.Efficiency.Score())
+		pf("# of analyzed test results: %d\n", r.Efficiency.TestResults)
 		pf("Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
 		pf("Forecasted compute time: %s\n", r.Efficiency.ForecastDuration)
 	}
@@ -208,9 +209,11 @@ func (r *evalRun) progressReportLine() string {
 
 	fmt.Fprintf(&r.buf, "safety: ")
 	printScore(r.res.Safety.Score())
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.EligibleRejections)
 
 	fmt.Fprintf(&r.buf, " | efficiency: ")
 	printScore(r.res.Efficiency.Score())
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Efficiency.TestResults)
 
 	return r.buf.String()
 }

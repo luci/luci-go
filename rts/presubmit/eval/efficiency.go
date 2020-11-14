@@ -27,6 +27,9 @@ import (
 // Efficiency is result of evaluation how much compute time the RTS algorithm
 // could save.
 type Efficiency struct {
+	// TestResults is the number of analyzed test results.
+	TestResults int
+
 	// SampleDuration is the sum of test durations in the analyzed data sample.
 	SampleDuration time.Duration
 
@@ -75,6 +78,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 				// Record results.
 				dur := td.Duration.AsDuration()
 				r.mu.Lock()
+				r.res.Efficiency.TestResults++
 				r.res.Efficiency.SampleDuration += dur
 				if out.ShouldRunAny {
 					r.res.Efficiency.ForecastDuration += dur
