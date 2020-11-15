@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0f0bc0c_5c9d611a",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:09:29Z",
+      "side": 0,
+      "message": "intentional? (it\u0027s added in prior CL)",
+      "revId": "9deb91fc5aa931d0745dc8e2a0cecf0930efaa14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
