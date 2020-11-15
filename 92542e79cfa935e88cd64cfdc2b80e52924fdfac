@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7bfbb6e_9272abfc",
+        "filename": "rts/filegraph/cli/cmd_path.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-15T19:20:28Z",
+      "side": 1,
+      "message": "oops! Fixed the example. thanks",
+      "parentUuid": "520c7d57_7293f51a",
+      "range": {
+        "startLine": 36,
+        "startChar": 56,
+        "endLine": 36,
+        "endChar": 60
+      },
+      "revId": "92542e79cfa935e88cd64cfdc2b80e52924fdfac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b7d8e373_85359717",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fae6208_2b91a9b8",
+        "filename": "rts/filegraph/cli/cmd_path.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-15T19:20:28Z",
+      "side": 1,
+      "message": "this was incorrect copy-pasta from cmd_query.go\nremoved",
+      "parentUuid": "b7d8e373_85359717",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 43,
+        "endChar": 35
+      },
+      "revId": "92542e79cfa935e88cd64cfdc2b80e52924fdfac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "831349d0_3b8583c1",
@@ -60,6 +108,30 @@
       "writtenOn": "2020-11-15T18:15:14Z",
       "side": 1,
       "message": "nit: del",
+      "range": {
+        "startLine": 114,
+        "startChar": 52,
+        "endLine": 114,
+        "endChar": 53
+      },
+      "revId": "92542e79cfa935e88cd64cfdc2b80e52924fdfac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "188978b8_b07aacee",
+        "filename": "rts/filegraph/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-15T19:20:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "831349d0_3b8583c1",
       "range": {
         "startLine": 114,
         "startChar": 52,
