@@ -32,12 +32,11 @@ var cmdQuery = &subcommands.Command{
 	LongDesc: text.Doc(`
 		Print graph files in the distance-ascending order from SOURCE_FILEs.
 
-		All SOURCE_FILEs must be in the same git repository.
-
 		Each output line has format "<distance> <filename>",
 		where the filename is forward-slash-separated and has "//" prefix.
 		Example: "0.4 //foo/bar.cpp".
 
+		All SOURCE_FILEs must be in the same git repository.
 		Does not print unreachable files.
 	`),
 	CommandRun: func() subcommands.CommandRun {
