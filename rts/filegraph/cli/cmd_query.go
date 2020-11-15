@@ -60,13 +60,12 @@ func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(errors.New("expected filenames as positional arguments"))
 	}
 
-	nodes, err := r.git.loadSyncedNodes(ctx, args...)
-	if err != nil {
+	var err error
+	if r.git.q.Sources, err = r.git.loadSyncedNodes(ctx, args...); err != nil {
 		return r.done(err)
 	}
 
-	q := filegraph.Query{Sources: nodes}
-	q.Run(func(sp *filegraph.ShortestPath) bool {
+	r.git.q.Run(func(sp *filegraph.ShortestPath) bool {
 		fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
 		return ctx.Err() == nil
 	})

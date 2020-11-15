@@ -36,12 +36,7 @@ func (g *testGraph) node(name string) *testNode {
 	return n
 }
 
-func (g *testGraph) query(sources ...string) map[string]*ShortestPath {
-	q := &Query{Sources: make([]Node, len(sources))}
-	for i, src := range sources {
-		q.Sources[i] = g.node(src)
-	}
-
+func run(q *Query) map[string]*ShortestPath {
 	ret := map[string]*ShortestPath{}
 	q.Run(func(sp *ShortestPath) bool {
 		name := sp.Node.Name()
@@ -50,6 +45,14 @@ func (g *testGraph) query(sources ...string) map[string]*ShortestPath {
 		return true
 	})
 	return ret
+}
+
+func (g *testGraph) query(sources ...string) map[string]*ShortestPath {
+	q := &Query{Sources: make([]Node, len(sources))}
+	for i, src := range sources {
+		q.Sources[i] = g.node(src)
+	}
+	return run(q)
 }
 
 type testNode struct {
@@ -120,6 +123,35 @@ func TestQuery(t *testing.T) {
 						Prev:     sps["//b/1"],
 						Node:     g.node("//c"),
 						Distance: 4,
+					},
+				})
+			})
+
+			Convey(`MaxDistance`, func() {
+				g := initGraph(
+					testEdge{from: "//a", to: "//b/1", distance: 1},
+					testEdge{from: "//a", to: "//b/2", distance: 2},
+					testEdge{from: "//b/1", to: "//c", distance: 3},
+					testEdge{from: "//b/2", to: "//c", distance: 3},
+				)
+				sps := run(&Query{
+					Sources:     []Node{g.node("//a")},
+					MaxDistance: 3,
+				})
+				So(sps, ShouldResemble, map[string]*ShortestPath{
+					"//a": {
+						Node:     g.node("//a"),
+						Distance: 0,
+					},
+					"//b/1": {
+						Prev:     sps["//a"],
+						Node:     g.node("//b/1"),
+						Distance: 1,
+					},
+					"//b/2": {
+						Prev:     sps["//a"],
+						Node:     g.node("//b/2"),
+						Distance: 2,
 					},
 				})
 			})

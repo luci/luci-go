@@ -31,6 +31,7 @@ import (
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
 	opt git.LoadOptions
+	q   filegraph.Query
 	*git.Graph
 }
 
@@ -44,6 +45,10 @@ func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
 		Commits that exceed this limit are ignored.
 		The rationale is that large commits provide a weak signal of file
 		relatedness and are expensive to process, O(N^2).
+	`))
+	fs.Float64Var(&g.q.MaxDistance, "max-distance", 0, text.Doc(`
+		If positive, the distance threshold. Nodes further than this are considered
+		unreachable.
 	`))
 }
 
