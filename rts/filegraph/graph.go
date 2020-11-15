@@ -40,4 +40,7 @@ type Node interface {
 	// Outgoing calls the given function for each direct successor.
 	// If callback returns false, then iteration stops.
 	Outgoing(callback func(to Node, distance float64) (keepGoing bool))
+
+	// Incoming is like Outgoing, but for incoming edges.
+	Incoming(callback func(from Node, distance float64) (keepGoing bool))
 }
