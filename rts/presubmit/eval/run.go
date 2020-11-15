@@ -164,6 +164,23 @@ func (r *Result) Print(w io.Writer) error {
 	}
 	p.Level--
 
+	pf("Test recall:\n")
+	tr := r.Safety.TestRecall
+	p.Level++
+	switch {
+	case tr.TotalFailures == 0:
+		pf("Evaluation failed: rejections not found\n")
+
+	case tr.EligibleFailures == 0:
+		pf("Evaluation failed: all %d test failures are ineligible.\n", tr.TotalFailures)
+
+	default:
+		pf("Score: %.0f%%\n", tr.Score())
+		pf("Eligible test failures: %d\n", tr.EligibleFailures)
+		pf("Eligible test failures preserved by this RTS: %d\n", tr.preserved())
+	}
+	p.Level--
+
 	pf("Efficiency:\n")
 	p.Level++
 	if r.Efficiency.SampleDuration == 0 {
@@ -211,6 +228,10 @@ func (r *evalRun) progressReportLine() string {
 	fmt.Fprintf(&r.buf, "change recall: ")
 	printScore(r.res.Safety.ChangeRecall.Score())
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.ChangeRecall.EligibleRejections)
+
+	fmt.Fprintf(&r.buf, "| test recall: ")
+	printScore(r.res.Safety.TestRecall.Score())
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.TestRecall.EligibleFailures)
 
 	fmt.Fprintf(&r.buf, " | efficiency: ")
 	printScore(r.res.Efficiency.Score())
