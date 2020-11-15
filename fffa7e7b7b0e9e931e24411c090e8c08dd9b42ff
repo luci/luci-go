@@ -16,6 +16,424 @@
       "message": "PTAL again",
       "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "406b08a1_adfe15e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "Yiwei, sorry for a lot of comments, please focus on the 3 major ones marked with \"major #\"",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a818d9d_736d8e4d",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "Fact 1: the refresh tasks are submitted every minute.\nFact 2: by default, if this fails transiently, it\u0027ll be retried by task queue automatically.\n\n\u003d\u003e\n\nIf LUCI config is transiently unavailable for N minutes,\nthere will be N tasks per LUCI project hammering LUCI config, and doing essentially the same thing.\n\n\nSo, better to always return permanent failure here regardless of transience of error or not, since we don\u0027t automatic need retries. I think something like this should work:\n\nerr :\u003d RefreshConfig(ctx, project)\nif transient.Tag.In(err) {\n  errors.Log(ctx, err)\n  return errors.Reason(\"failed to refresh config for %s: %s\", project, err).Err()\n}\nreturn err",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2366a5e_1b5c5d43",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "nit: del 1 space",
+      "range": {
+        "startLine": 51,
+        "startChar": 21,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2975e4f3_4701bd53",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "nitty/imo: typically, but not always, we start with \"failed to\".",
+      "range": {
+        "startLine": 56,
+        "startChar": 31,
+        "endLine": 56,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83ce7215_3145aaf4",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "let\u0027s wrap it with transient, since that\u0027s what it usually is.",
+      "range": {
+        "startLine": 56,
+        "startChar": 91,
+        "endLine": 56,
+        "endChar": 97
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e278deb_2e50df53",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "we don\u0027t *always* have to annotate errors, the most important reason to capture stack as early as possible as well as mark it as transient (if it is such). errors.Annotate, erorrs.Reason, errors.New (from our errors package) do this job.\nAlso, FYI, errors.Log(ctx, err) will helpfully provide stacktrace (useful in tests/debug logs on server)\n\nOn higher levels, like here where error comes form getAllProjects which you can trust to ensure errors it returns already captured stack, there is little advantage in more annotation -- I\u0027d just forward `err` as is.",
+      "range": {
+        "startLine": 61,
+        "startChar": 9,
+        "endLine": 61,
+        "endChar": 69
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8be9b663_fbb61f95",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "FYI: beware of `err` here as it\u0027s a errors.MultiError. multiErrors and transient.Tag don\u0027t work well together 😞 (kudos to Vadim for educating me). It\u0027s not very useful to forward multierror since you\u0027ve already logged every error above, and there is nothing that caller of your func can do with these errors. I think Vadim suggested to just grab and return only the first error, since failures should either be transient or all permanent (e.g. queue doesn\u0027t exist).",
+      "range": {
+        "startLine": 85,
+        "startChar": 25,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87a0aa18_71b92b3f",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "(similar to above comment about annotation)\n  return disableProject(ctx,project)",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05c22589_eea64ed6",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e25a3ebc_9ca1508c",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "transient.",
+      "range": {
+        "startLine": 114,
+        "startChar": 64,
+        "endLine": 114,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "706e6157_b29a0352",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "*major #1*: hm, so this will be called for every project as well as at the beginning of the cronjob.\nCan the fact that project was found in LUCI config in CronHandler be propagated into the tq.Task payload to avoid this extra call?",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 68
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "44950adb_f9d2147b",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "every time DS flakes, you\u0027d cause extra load on LUCI Config with slimmer chances of success. Bailing with error is better, IMO.\n\nI see that bool return value is better than (bool, error), but you can also merge this part into updateProject, say\nupdateProjectIfNeeded(ctx, project, externalHash)\n\nFor a stronger reason to do this see L154 comment.",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ac2f928_171b27ff",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "*major #2*: this can lead to orphan config groups stored in DS which will never be referenced from ConfigHashInfo.\n\nIdea: write ConfigHashInfo first right here, referencing expected readProjectConfig.EVersion+1 (see also L154 comment). Then, when we do cleanup, all config groups are guaranteed to be referenced by a ConfigHashInfo. And, you don\u0027t need to write ConfigHashInfo when updating ProjectConfig.\n\nThe write must be transactional to ensure we don\u0027t downgrade ConfigHashInfo.ProjectEversion to lower number.\n\ntargetEversion \u003d readProjectConfig.EVersion + 1\nds.runInTransaction(\n   chi :\u003d ConfigHashInfo{...}\n  if ds.Get(chi) \u003d\u003d nil \u0026\u0026 chi.ProjectEVersion \u003e\u003d targetEversion{\n    return nil // good enough.\n  }\n  chi.ProjectEversion \u003d targetEversion \n  // set other fields.\n  return ds.Put(chi)\n}\n\nThoughts?",
+      "range": {
+        "startLine": 147,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1297a21_9bbf84c9",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "it may also return plain errors (which don\u0027t capture stack), so you should annotate it.",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "306e2fea_5af146c8",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "*major #3*:\n\ngood point, but such update is likely due to competing updateProject.\n\nIf so, then we wouldn\u0027t want to update the entity blindly, as we can accidentally \"downgrade\" to an older config version. I think the right way is:\n\nbefore :\u003d ProjectConfig{...}\nds.Get(before) \nif before.ExternalHash \u003d\u003d externalHash{ return nil }\nfetch, putConfigGroups\nds.RunInTransaction(\n  pc :\u003d ProjectConfig{...}  \n  ds.Get(pc)\n  if pc.EVersion !\u003d before.EVersion {\n    return nil // Concurrent updateProject was faster. Leave it as is.\n  }\n  ...update \u0026 ds.Put(pc)\n)",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 75
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c62140b_e530d180",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "better invert condition on L158 (aka prefer early returns)",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 189,
+        "endChar": 66
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45e7a6dc_9b77f268",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "Make it a return value instead.\n\nMutating input args should be avoided if they can just as efficiently created and returned (for readability).",
+      "range": {
+        "startLine": 194,
+        "startChar": 71,
+        "endLine": 194,
+        "endChar": 85
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86a2bc4b_d6cf8cbc",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "transient",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3bc5a74d_69f7c1dc",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "same as above, annotate err returned from here.",
+      "range": {
+        "startLine": 206,
+        "startChar": 8,
+        "endLine": 206,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a492c8e1_eba51581",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "strictly speaking, also transient (and same for Put below),\nbut if you annotate datastore.RunInTransaction as transient, then here it doesn\u0027t matter as much (though I still do it just in case I copy-paste this code later to somewhere outside trasaction).",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

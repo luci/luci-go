@@ -224,6 +224,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6fc37327_82297963",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "well, yeah, for 50 projects it\u0027s not required, since it\u0027s ~50ms per call \u003d\u003e 2.5s if *everything* goes well.",
+      "parentUuid": "94a610e0_8fc042fd",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 51
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "668750e6_9848d982",
@@ -261,6 +285,30 @@
       "side": 1,
       "message": "oh wow, TIL. BTW, Is there any documentation for ~1hr dedup window for recently executed task?",
       "parentUuid": "668750e6_9848d982",
+      "range": {
+        "startLine": 72,
+        "startChar": 21,
+        "endLine": 72,
+        "endChar": 29
+      },
+      "revId": "56d2553ba16e49dc4dc416d5e12eb1c80a393b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "962cd203_a966eff4",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T20:08:23Z",
+      "side": 1,
+      "message": "here: https://cloud.google.com/tasks/docs/quotas \"Task de-duplication window\"",
+      "parentUuid": "6e879738_fc3803c3",
       "range": {
         "startLine": 72,
         "startChar": 21,
