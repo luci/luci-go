@@ -184,6 +184,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6df439a1_a545daf6",
+        "filename": "milo/frontend/resultui/src/components/milo_code_mirror_editor.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-15T23:15:47Z",
+      "side": 1,
+      "message": "Cool. Since we can change the colours, any chance we could steal the colours from the old editor, or at least de-saturate the red and blue a bit? I find them quite harsh to look at.\n\nOtherwise LGTM",
+      "parentUuid": "de59408b_57c045a7",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 50
+      },
+      "revId": "b0baab6bc6c837a77e0cb6abc05553e5aaeabd7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8cc7957d_6c939135",
         "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
         "patchSetId": 2
