@@ -22,8 +22,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/rts/filegraph"
 )
 
 var cmdPath = &subcommands.Command{
@@ -65,8 +63,8 @@ func (r *pathRun) Run(a subcommands.Application, args []string, env subcommands.
 		return r.done(err)
 	}
 
-	q := filegraph.Query{Sources: nodes[:1]}
-	shorest := q.ShortestPath(nodes[1])
+	r.q.Sources = nodes[:1]
+	shorest := r.q.ShortestPath(nodes[1])
 	if shorest == nil {
 		return r.done(errors.New("not reachable"))
 	}
