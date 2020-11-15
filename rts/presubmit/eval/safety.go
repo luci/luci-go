@@ -35,6 +35,13 @@ import (
 // Safety is result of algorithm safety evaluation.
 // A safe algorithm does not let bad CLs pass CQ.
 type Safety struct {
+	ChangeRecall ChangeRecall
+	// TODO(crbug.com/1145215): add TestRecall.
+}
+
+// ChangeRecall represents the fraction of eligible code change rejections
+// that were preserved by the RTS algorithm.
+type ChangeRecall struct {
 	// TotalRejections is the total number of analyzed rejections.
 	TotalRejections int
 
@@ -51,23 +58,24 @@ type Safety struct {
 	LostRejections []*evalpb.Rejection
 }
 
-func (s *Safety) preserved() int {
-	return s.EligibleRejections - len(s.LostRejections)
+func (r *ChangeRecall) preserved() int {
+	return r.EligibleRejections - len(r.LostRejections)
 }
 
-// Score returns the safety score.
+// Score returns the fraction of eligible rejections that were preserved.
 // May return NaN.
-func (s *Safety) Score() float64 {
-	if s.TotalRejections == 0 || s.EligibleRejections == 0 {
+func (r *ChangeRecall) Score() float64 {
+	if r.TotalRejections == 0 || r.EligibleRejections == 0 {
 		return math.NaN()
 	}
-	return float64(100*s.preserved()) / float64(s.EligibleRejections)
+	return float64(100*r.preserved()) / float64(r.EligibleRejections)
 }
 
 // evaluateSafety reads rejections from r.rejectionC,
 // updates r.res.Safety and calls r.maybeReportProgress.
 func (r *evalRun) evaluateSafety(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
+	cr := &r.res.Safety.ChangeRecall
 
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
@@ -89,11 +97,11 @@ func (r *evalRun) evaluateSafety(ctx context.Context) error {
 					}
 
 					r.mu.Lock()
-					r.res.Safety.TotalRejections++
+					cr.TotalRejections++
 					if eligible {
-						r.res.Safety.EligibleRejections++
+						cr.EligibleRejections++
 						if !wouldReject {
-							r.res.Safety.LostRejections = append(r.res.Safety.LostRejections, rej)
+							cr.LostRejections = append(cr.LostRejections, rej)
 						}
 					}
 					r.maybeReportProgress(ctx)
