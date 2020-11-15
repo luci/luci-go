@@ -9,7 +9,11 @@ candidate algorithm, based on CQ's historial records.
 ## Safety
 
 A safe RTS algorithm doesn't let bad code into the repository.
-Safety is scored as a ratio `preserved_rejections/total_rejections`,
+There are two metrics for safety: change recall and test recall.
+
+### Change recall
+
+Change recall is scored as a ratio `preserved_rejections/total_rejections`,
 where
 *   `total_rejections` is the number of patchsets rejected by CQ due to test
     failures. More generally, a single *rejection* may span multiple patchsets.
@@ -19,6 +23,14 @@ where
 A rejection is considered *preserved* if and only if the RTS algorithm selects
 at least one test that caused the rejection. For example, if 10 tests failed out
 of 1000, it is sufficient to select just 2 to preserve the rejection.
+
+### Test recall
+
+Test recall is scored as a ratio `preserved_test_failures/total_test_failures`,
+where
+*   `total_test_failures` is the number of test failures that caused a CQ
+    rejection.
+*  `preserved_test_failures` is how many of them the RTS algorithm would select.
 
 ## Efficiency
 
@@ -81,7 +93,7 @@ As it runs, it will print all unpreserved rejections as they are discovered.
 When done, it will print something like this:
 
 ```
-Safety:
+Change recall:
   Score: 42%
   # of eligible rejections: 846
   # of them preserved by this RTS: 354
