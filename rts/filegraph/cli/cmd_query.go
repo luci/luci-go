@@ -42,6 +42,7 @@ var cmdQuery = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
 		r.git.RegisterFlags(&r.Flags)
+		r.Flags.BoolVar(&r.git.q.Reversed, "reversed", false, "Follow incoming edges instead of outgoing")
 		return r
 	},
 }

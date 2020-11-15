@@ -30,7 +30,9 @@ type Query struct {
 	// Nodes further than this are considered unreachable.
 	MaxDistance float64
 
-	// TODO(crbug.com/1136280): add Backwards
+	// Reversed instructs to follow incoming edges instead of outgoing.
+	Reversed bool
+
 	// TODO(crbug.com/1136280): add SilbingDistance
 
 	heap spHeap
@@ -56,6 +58,8 @@ type ShortestPath struct {
 // If the callback returns false, then the iteration stops.
 func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 	// This function implements Dijkstra's algorithm.
+
+	forward := !q.Reversed // be positive
 
 	q.heap = q.heap[:0]
 
@@ -115,7 +119,11 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 			return true
 		}
 
-		cur.Node.Outgoing(consider)
+		if forward {
+			cur.Node.Outgoing(consider)
+		} else {
+			cur.Node.Incoming(consider)
+		}
 
 		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()
 	}

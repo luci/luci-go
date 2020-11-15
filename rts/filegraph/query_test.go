@@ -72,6 +72,14 @@ func (n *testNode) Outgoing(callback func(successor Node, distance float64) bool
 	}
 }
 
+func (n *testNode) Incoming(callback func(successor Node, distance float64) bool) {
+	for other := range n.edges {
+		if !callback(other, other.edges[n]) {
+			return
+		}
+	}
+}
+
 func initGraph(edges ...testEdge) *testGraph {
 	g := &testGraph{
 		nodes: map[string]*testNode{},

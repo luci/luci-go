@@ -102,26 +102,36 @@ func TestGraph(t *testing.T) {
 			So(g.Node("//a/b") == nil, ShouldBeTrue)
 		})
 
-		Convey(`Outgoing`, func() {
-			bar := &node{commits: 2}
-			foo := &node{
-				commits: 2,
-				edges:   []edge{{to: bar, commonCommits: 1}},
-			}
+		Convey(`Edges`, func() {
+			bar := &node{commits: 4}
+			foo := &node{commits: 2}
+			foo.edges = []edge{{to: bar, commonCommits: 1}}
+			bar.edges = []edge{{to: foo, commonCommits: 1}}
 
 			type outgoingEdge struct {
 				other    filegraph.Node
 				distance float64
 			}
 			var actual []outgoingEdge
-			foo.Outgoing(func(other filegraph.Node, distance float64) bool {
+			callback := func(other filegraph.Node, distance float64) bool {
 				actual = append(actual, outgoingEdge{other: other, distance: distance})
 				return true
+			}
+
+			Convey(`Outgoing`, func() {
+				foo.Outgoing(callback)
+				So(actual, ShouldResemble, []outgoingEdge{{
+					other:    bar,
+					distance: 1,
+				}})
 			})
-			So(actual, ShouldResemble, []outgoingEdge{{
-				other:    bar,
-				distance: 1,
-			}})
+			Convey(`Incoming`, func() {
+				foo.Incoming(callback)
+				So(actual, ShouldResemble, []outgoingEdge{{
+					other:    bar,
+					distance: 2,
+				}})
+			})
 		})
 
 		Convey(`splitName`, func() {
