@@ -34,6 +34,24 @@
       "parentUuid": "9b06acf1_37c8ef09",
       "revId": "271d5293c84508e276fa3908eac5cc91dc09f6da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a06c82f_5b8662dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T19:52:00Z",
+      "side": 1,
+      "message": "i checked the other CL. Let\u0027s leave the struct in this CL as is. I\u0027ll debate its use on the next CL (i agree it\u0027s needed, but disagree on the way it\u0027s used).",
+      "parentUuid": "fc673970_bf1f2ca0",
+      "revId": "271d5293c84508e276fa3908eac5cc91dc09f6da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

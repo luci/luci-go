@@ -214,6 +214,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b68f84b7_2d2fc384",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T19:52:00Z",
+      "side": 1,
+      "message": "Let\u0027s discuss on next CL.",
+      "parentUuid": "e07517b9_709a70a8",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43e0ccd7_4fbdb828",
