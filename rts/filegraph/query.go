@@ -111,6 +111,41 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 	}
 }
 
+// ShortestPath returns the shortest path to a node.
+// Returns nil if the path does not exist.
+// ShortestPath.Path() can be used to reconstruct the full path.
+func (q *Query) ShortestPath(to Node) *ShortestPath {
+	if to == nil {
+		panic("to is nil")
+	}
+
+	var ret *ShortestPath
+	q.Run(func(result *ShortestPath) (keepGoing bool) {
+		if result.Node != to {
+			return true
+		}
+
+		ret = result
+		return false
+	})
+	return ret
+}
+
+// Path reconstructs the path from a query source to r.Node.
+func (r *ShortestPath) Path() []*ShortestPath {
+	var ret []*ShortestPath
+	for r != nil {
+		ret = append(ret, r)
+		r = r.Prev
+	}
+
+	// Reverse.
+	for i, j := 0, len(ret)-1; i < j; i, j = i+1, j-1 {
+		ret[i], ret[j] = ret[j], ret[i]
+	}
+	return ret
+}
+
 // spHeap implements heap.Interface for ShortestPath, with ascending distance.
 type spHeap []*ShortestPath
 
