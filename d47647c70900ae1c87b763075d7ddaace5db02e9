@@ -153,6 +153,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "72345a58_0d6f543a",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T19:58:46Z",
+      "side": 1,
+      "message": "ProjectEVersion\n\n(since ConfigHashInfo doesn\u0027t need an EVersion of its own)",
+      "range": {
+        "startLine": 107,
+        "startChar": 4,
+        "endLine": 107,
+        "endChar": 12
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "39371e08_4133a847",
         "filename": "cv/appengine/internal/config/store.go",
         "patchSetId": 10
