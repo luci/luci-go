@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57a01a2e_66ec3a77",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:06:06Z",
+      "side": 1,
+      "message": "👍 for readability.",
+      "revId": "0d38ff3ca2c1d0afcbc022f15fbb29cc9ecdf760",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
