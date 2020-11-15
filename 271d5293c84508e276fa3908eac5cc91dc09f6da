@@ -16,6 +16,24 @@
       "message": "The new PS address all the comments and added tests. PTAL\n\nNote that, I have introduced a new entity `ConfigHashInfo` because we now write ConfigGroup out of transaction context. Therefore, I have to take out mutable fields (i.e. associated EVersion and UpdatedTime).",
       "revId": "271d5293c84508e276fa3908eac5cc91dc09f6da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc673970_bf1f2ca0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "Oh, good thinking. I\u0027ll review the rest of CLs and come back here.",
+      "parentUuid": "9b06acf1_37c8ef09",
+      "revId": "271d5293c84508e276fa3908eac5cc91dc09f6da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

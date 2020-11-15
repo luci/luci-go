@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7cfa36a_7e6c96b0",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "nit: no past tense ( https://google.aip.dev/142#timestamps ). Not that it really matters, but consistency pays.",
+      "range": {
+        "startLine": 48,
+        "startChar": 10,
+        "endLine": 48,
+        "endChar": 11
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b72398c1_85f73e3b",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "IIUC, `Deterministic: True` does NOT guarantee that equal proto messages will be serialized to exact same byte sequence in diff languages or even builds. See https://godoc.org/google.golang.org/protobuf/proto#MarshalOptions.\n\nThe way we use hash right now, this is fine. Worst case, we\u0027ll re-ingest functionally equivalent config after new version of CV with newer version of proto library is deployed. Still, i think it is worth documenting in this function.",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e28ae3d_54966185",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "nit: based on this doc, I\u0027m surprised disabled are filtered out.\ni think getEnabledProjectsIDs is better name.",
+      "range": {
+        "startLine": 80,
+        "startChar": 41,
+        "endLine": 80,
+        "endChar": 77
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6f1b705_f99640d2",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "annotate + transient.Tag",
+      "range": {
+        "startLine": 85,
+        "startChar": 14,
+        "endLine": 85,
+        "endChar": 17
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbcdd3d7_169e23d2",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "fine to leave, but I\u0027d have expected the order to be sorted by $id already. Since $id is Project, in theory sorting here is redundant.",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dcb39036_db6f0087",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 100,
+        "startChar": 67,
+        "endLine": 100,
+        "endChar": 73
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39371e08_4133a847",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 111,
+        "startChar": 53,
+        "endLine": 111,
+        "endChar": 54
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24759e03_cdc000e7",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "the timestamp of the latest import of config with this `Hash`",
+      "range": {
+        "startLine": 114,
+        "startChar": 18,
+        "endLine": 114,
+        "endChar": 45
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e07517b9_709a70a8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "I think it\u0027s worth adding a CreateTime here. (Follow up is fine)\n\nRational: CV may write this entity, fail to update HashInfo, and next time the importer may see newer config, s.t. this entity becomes total orphan. We\u0027d still need to clean these.\n\nRight?",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43e0ccd7_4fbdb828",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": ".Tag(transient.Tag).Err()",
+      "range": {
+        "startLine": 181,
+        "startChar": 67,
+        "endLine": 181,
+        "endChar": 73
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6c040a3_3fd48e16",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "Please, add a TODO for the future to batch of up to ~10 entities.\nThis is to avoid hitting 10MiB limit. This isn\u0027t *yet* important, but I suspect may become important in 2021-2022.",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7f359c7_a1a7bbd4",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:46:20Z",
+      "side": 1,
+      "message": "transient",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
