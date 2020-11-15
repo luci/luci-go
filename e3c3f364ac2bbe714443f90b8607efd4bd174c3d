@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1530b5c1_b2cf5ecf",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-15T23:10:43Z",
+      "side": 0,
+      "message": "we can just set\ntoken.content \u003d template.innerHTML;",
+      "revId": "e3c3f364ac2bbe714443f90b8607efd4bd174c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
