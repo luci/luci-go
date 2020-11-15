@@ -286,6 +286,115 @@
       "message": "yeah, that\u0027s a good assert. If you had asserted specific value, that\u0027d be fragile.",
       "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6987914_2781297f",
+        "filename": "cv/appengine/internal/config/store_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:53:00Z",
+      "side": 1,
+      "message": "err :\u003d \nSo(err, ShouldBeNil)",
+      "range": {
+        "startLine": 122,
+        "startChar": 3,
+        "endLine": 122,
+        "endChar": 5
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81d60422_669d4e1a",
+        "filename": "cv/appengine/internal/config/store_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:53:00Z",
+      "side": 1,
+      "message": "ShouldBeNil",
+      "range": {
+        "startLine": 127,
+        "startChar": 35,
+        "endLine": 127,
+        "endChar": 53
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e59b5ea_9f45a307",
+        "filename": "cv/appengine/internal/config/store_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:53:00Z",
+      "side": 1,
+      "message": "can be omitted if not used.",
+      "range": {
+        "startLine": 133,
+        "startChar": 46,
+        "endLine": 133,
+        "endChar": 48
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac38c77b_7c97609e",
+        "filename": "cv/appengine/internal/config/store_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:53:00Z",
+      "side": 1,
+      "message": "(imo)\n\nctx :\u003d \n\nrebinding ctx is also fine and in fact more common in our tests",
+      "range": {
+        "startLine": 133,
+        "startChar": 4,
+        "endLine": 133,
+        "endChar": 8
+      },
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91b3c6ee_243c7c89",
+        "filename": "cv/appengine/internal/config/store_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-15T18:53:00Z",
+      "side": 1,
+      "message": "err :\u003d \nSo(err, ShouldBeNil)",
+      "revId": "d47647c70900ae1c87b763075d7ddaace5db02e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
