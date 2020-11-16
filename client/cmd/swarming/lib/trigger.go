@@ -416,6 +416,9 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 			Digest: &swarming.SwarmingRpcsDigest{
 				Hash:      d.Hash,
 				SizeBytes: d.Size,
+
+				// 0 is valid value for SizeBytes.
+				ForceSendFields: []string{"SizeBytes"},
 			},
 		}
 	}
