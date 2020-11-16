@@ -25,7 +25,7 @@ import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
 import { sanitizeHTML } from '../libs/sanitize_html';
-import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
+import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
@@ -59,12 +59,8 @@ export class CommitEntryElement extends MobxLitElement {
   @computed private get commitTime() { return DateTime.fromISO(this.commit.committer.time); }
   @computed private get commitTitle() { return this.commit.message.split('\n', 1)[0]; }
 
-  @computed private get description() {
-    return this.commit.message.slice(this.commitTitle.length + 1);
-  }
-
   @computed private get descriptionHTML() {
-    return sanitizeHTML(md.render(this.description));
+    return sanitizeHTML(md.render(this.commit.message));
   }
 
   @computed private get changedFilenames() {
@@ -82,12 +78,10 @@ export class CommitEntryElement extends MobxLitElement {
 
   private renderChangedFiles() {
     return html`
-      <milo-expandable-entry .expanded=${true} .hideContentRuler=${true}>
-        <span slot="header">Changed files: <span class="greyed-out">${this.commit.treeDiff.length}</span></span>
-        <ul slot="content">
-          ${this.changedFilenames.map((filename) => html`<li>${filename}</li>`)}
-        </ul>
-      </milo-expandable-entry>
+      Changed files: <span class="greyed-out">${this.commit.treeDiff.length}</span>
+      <ul>
+        ${this.changedFilenames.map((filename) => html`<li>${filename}</li>`)}
+      </ul>
     `;
   }
 
@@ -97,15 +91,16 @@ export class CommitEntryElement extends MobxLitElement {
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => this.expanded = expanded}
       >
-        <span slot="header">
-          <b>${this.number}. ${this.commitTitle}</b> <i>by ${this.commit.author.name} at ${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</i>
-        </span>
-        <div slot="content">
-          <table slot="content" border="0">
-            <tr><td>Changed by:</td><td>${this.commit.author.name} - ${this.commit.author.email}</td></tr>
-            <tr><td>Changed at:</td><td>${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
-            <tr><td>Revision:</td><td><a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id}</a></td></tr>
-          </table>
+        <div slot="header" id="entry-header">
+          <div id="header-number">${this.number}.</div>
+          <div id="header-revision">
+            <a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id.substring(0, 12)}</a>
+          </div>
+          <div id="header-author">${this.commit.author.email}</div>
+          <div id="header-time">${this.commitTime.toFormat(NUMERIC_TIME_FORMAT)}</div>
+          <div id="header-description">${this.commitTitle}</div>
+        </div>
+        <div slot="content" id="entry-content">
           <div id="summary">${this.descriptionHTML}</div>
           ${this.renderChangedFiles()}
         </div>
@@ -118,9 +113,49 @@ export class CommitEntryElement extends MobxLitElement {
       display: block;
     }
 
+    #entry-header {
+      display: flex;
+    }
+
+    #header-number {
+      flex: 1;
+      max-width: 20px;
+      font-weight: bold;
+    }
+
+    #header-revision {
+      flex: 1;
+      max-width: 110px;
+      font-weight: bold;
+    }
+
+    #header-author {
+      flex: 1;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #header-time {
+      flex: 1;
+      max-width: 190px;
+      padding-left: 10px;
+    }
+
+    #header-description {
+      flex: 1;
+      padding-left: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #entry-content {
+      padding: 10px 20px 20px;
+      border-bottom: 1px solid var(--divider-color);
+    }
+
     #summary {
-      background-color: var(--block-background-color);
-      padding: 5px;
+      margin-bottom: 15px;
     }
     #summary > p:first-child {
       margin-block-start: 0;
