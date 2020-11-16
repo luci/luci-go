@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d783a441_d3075f4a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T20:35:56Z",
+      "side": 1,
+      "message": "LGTM with optional nits",
+      "revId": "f47d7100b78cc42f56946273f8fc67f22c5d239f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f13213f2_91bd73d6",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T20:35:56Z",
+      "side": 1,
+      "message": "It may be worth noting somewhere (maybe here or cron.yaml or both) that this is supposed to refresh all project configs and service config.",
+      "range": {
+        "startLine": 48,
+        "startChar": 34,
+        "endLine": 48,
+        "endChar": 48
+      },
+      "revId": "f47d7100b78cc42f56946273f8fc67f22c5d239f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "75971ef5_ac512673",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T20:35:56Z",
+      "side": 1,
+      "message": "Optional: When there is more stuff in main.go, it may be more readable if the different handler funcs are separated out into top-level functions, perhaps named like refreshConfigHandler.",
+      "revId": "f47d7100b78cc42f56946273f8fc67f22c5d239f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
