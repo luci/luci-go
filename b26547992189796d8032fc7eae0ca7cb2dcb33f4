@@ -50,6 +50,24 @@
       "message": "Nit: You can\n@observable.ref private precedingCommit!: GitCommit;\ninstead if it will never be null after initialisation.",
       "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acfddf6e_113e8dd0",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-16T09:05:44Z",
+      "side": 1,
+      "message": "Thanks, done.",
+      "parentUuid": "6a29109a_2f55a2b3",
+      "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
