@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c75bd866_d5ca8855",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-16T02:36:16Z",
+      "side": 1,
+      "message": "yuanjunh, I think similar implementation with this can avoid the issue in led.",
+      "revId": "819ef4583a650780e87d3e2a970848db9a0fcac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
