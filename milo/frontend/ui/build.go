@@ -680,14 +680,8 @@ type Link struct {
 	// AriaLabel is a spoken label for the link.  Used as aria-label under the anchor tag.
 	AriaLabel string `json:"aria_label,omitempty"`
 
-	// Img is an icon for the link.  Not compatible with label.  Rendered as <img>
-	Img string `json:"img,omitempty"`
-
-	// Alt text for the image, or title text with text link.
+	// Alt text to display in a tooltip.
 	Alt string `json:"alt,omitempty"`
-
-	// Alias, if true, means that this link is an [alias link].
-	Alias bool `json:"alias,omitempty"`
 }
 
 // NewLink does just about what you'd expect.
