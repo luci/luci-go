@@ -32,8 +32,6 @@ var cachedMigrationCfg = cfgcache.Register(&cfgcache.Entry{
 
 // ImportConfig is called from a cron to import and cache all the configs.
 func ImportConfig(ctx context.Context) error {
-	// TODO(tandrii): actually call this from cron handler once
-	// https://crrev.com/c/2427189 lands.
 	_, err := cachedMigrationCfg.Update(ctx, nil)
 	return err
 }
