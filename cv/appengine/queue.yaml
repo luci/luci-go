@@ -1,0 +1,3 @@
+queue:
+- name: refresh-project-config
+  rate: 1000/m
