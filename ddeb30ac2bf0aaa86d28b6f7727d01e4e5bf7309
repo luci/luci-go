@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b03327bb_21c1d981",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "lgtm % still have to review tests.",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f83ab84b_08c22049",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "s/GetProject/Project\nnit: GetXXX is useful iff task is nil, but it definitely isn\u0027t.",
+      "range": {
+        "startLine": 44,
+        "startChar": 22,
+        "endLine": 44,
+        "endChar": 25
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf430fda_a6b5014d",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "this is true for UpdateProject, too. Consider:\n\n  f :\u003d UpdateProject\n  msg :\u003d \"update\"\n  if task.Disable {\n     msg :\u003d \"disable\"\n     f :\u003d DisableProject\n  }\n  if err :\u003d f(ctx, project); err !\u003d nil {\n    // Explicitly not forwarding transient tag ...\n    errors.Log(ctx, err)\n    return errors.Reason(\"failed to %s project %q: %s\", msg, project, err).Err()\n  }",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 13
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a368647_c9237f62",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "nit: del \u0027s\u0027",
+      "range": {
+        "startLine": 63,
+        "startChar": 47,
+        "endLine": 63,
+        "endChar": 48
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f41814b5_a374915b",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": ".Project",
+      "range": {
+        "startLine": 99,
+        "startChar": 129,
+        "endLine": 99,
+        "endChar": 139
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54cf9d6d_858244b2",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "Nice catch!",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

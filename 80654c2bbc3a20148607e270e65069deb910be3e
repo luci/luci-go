@@ -137,6 +137,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "abdd2087_f07517b4",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T22:46:34Z",
+      "side": 1,
+      "message": "I meant this https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cq/appengine/config/config.go;l\u003d60\n\nNormally, it should be called by LUCI Config *before* accepting a new revision via validation endpoint. However, if for whatever reason[1,2] a bad version was accepted, we shouldn\u0027t ingest it into CV and break deep assumptions inside CV guts.\n\n[1] someone accidentally disabled/misconfigured metadata endpoint (did that 😭)\n[2] especially in CV + CQ app cases during development, CQ app may be accidentally not updated and hence not getting latest validation code.",
+      "parentUuid": "86c9e92d_30019dd6",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8873ca5a_1d4a2d72",
         "filename": "cv/appengine/internal/config/refresh.go",
         "patchSetId": 9
