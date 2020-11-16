@@ -33,6 +33,23 @@
       "message": "Adding Nico in case he wants to weigh in on the UX. See demo link in the other comment I posted.",
       "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a29109a_2f55a2b3",
+        "filename": "milo/frontend/resultui/src/pages/build_page/blamelist_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-16T05:27:02Z",
+      "side": 1,
+      "message": "Nit: You can\n@observable.ref private precedingCommit!: GitCommit;\ninstead if it will never be null after initialisation.",
+      "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
