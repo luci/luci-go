@@ -26,11 +26,15 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -221,6 +225,35 @@ func TestBqTableCache(t *testing.T) {
 			err = ensureBQTable(ctx, t)
 			So(err, ShouldBeNil)
 			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
+		})
+	})
+}
+
+func TestSchedule(t *testing.T) {
+	Convey(`TestSchedule`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		bqx1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}
+		bqx2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2"}
+		bqx1Bytes, _ := proto.Marshal(bqx1)
+		bqx2Bytes, _ := proto.Marshal(bqx2)
+		exports := [][]byte{bqx1Bytes, bqx2Bytes}
+		testutil.MustApply(ctx,
+			insert.Invocation("two-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": exports}),
+			insert.Invocation("one-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": exports[:1]}),
+			insert.Invocation("zero-bqx", pb.Invocation_FINALIZED, nil))
+
+		ctx, sched := tq.TestingContext(ctx, nil)
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			So(Schedule(ctx, "two-bqx"), ShouldBeNil)
+			So(Schedule(ctx, "one-bqx"), ShouldBeNil)
+			So(Schedule(ctx, "zero-bqx"), ShouldBeNil)
+			return nil
+		})
+		So(err, ShouldBeNil)
+		So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
+			{InvocationId: "one-bqx", BqExport: bqx1},
+			{InvocationId: "two-bqx", BqExport: bqx2},
+			{InvocationId: "two-bqx", BqExport: bqx1},
 		})
 	})
 }

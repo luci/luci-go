@@ -19,13 +19,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -113,6 +114,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		// Note: testing only new TQ-based code path. The old one will be removed
 		// soon, it's fine not to test it. We "know" it works.
 		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
+		ctx = experiments.Enable(ctx, bqexporter.UseTQ)
 
 		// This is flaky https://crbug.com/1042602#c19
 		SkipConvey(`Changes the state and finalization time`, func() {
@@ -169,38 +171,44 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		// This is flaky https://crbug.com/1042602#c17
 		SkipConvey(`Enqueues more bq_export tasks`, func() {
+			bq1, _ := proto.Marshal(&pb.BigQueryExport{
+				Dataset: "dataset",
+				Project: "project",
+				Table:   "table",
+			})
+			bq2, _ := proto.Marshal(&pb.BigQueryExport{
+				Dataset: "dataset",
+				Project: "project2",
+				Table:   "table1",
+			})
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
-					"BigQueryExports": [][]byte{
-						[]byte("bq_export1"),
-						[]byte("bq_export2"),
-					},
+					"BigQueryExports": [][]byte{bq1, bq2},
 				}),
 			)
 
 			err := finalizeInvocation(ctx, "x")
 			So(err, ShouldBeNil)
+			// Enqueued TQ tasks.
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.ExportInvocationToBQ{
+				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project2", Table: "table1"}},
+				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}},
+			})
 
+			// No InvocationTasks enqueued, using TQ now.
 			st := spanner.NewStatement(`
-				SELECT TaskID, InvocationId, Payload
+				SELECT InvocationId
 				FROM InvocationTasks
 				WHERE TaskType = @taskType
 			`)
 			st.Params["taskType"] = string(tasks.BQExport)
-			var payloads []string
-			var b spanutil.Buffer
-			err = span.Query(span.Single(ctx), st).Do(func(r *spanner.Row) error {
-				var taskID string
-				var invID invocations.ID
-				var payload []byte
-				err := b.FromSpanner(r, &taskID, &invID, &payload)
-				So(err, ShouldBeNil)
-				So(taskID, ShouldContainSubstring, "x:")
-				payloads = append(payloads, string(payload))
+			var count int
+			err = span.Query(span.Single(ctx), st).Do(func(*spanner.Row) error {
+				count++
 				return nil
 			})
 			So(err, ShouldBeNil)
-			So(payloads, ShouldResemble, []string{"bq_export1", "bq_export2"})
+			So(count, ShouldEqual, 0)
 		})
 	})
 }
