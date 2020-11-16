@@ -16,6 +16,23 @@
       "message": "Demo: https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/8706/blamelist",
       "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "161835f7_da356ea8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-16T05:04:33Z",
+      "side": 1,
+      "message": "Adding Nico in case he wants to weigh in on the UX. See demo link in the other comment I posted.",
+      "revId": "b26547992189796d8032fc7eae0ca7cb2dcb33f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
