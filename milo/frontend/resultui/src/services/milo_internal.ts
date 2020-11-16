@@ -66,6 +66,7 @@ export interface GitCommit {
 export interface QueryBlamelistResponse {
   readonly commits: GitCommit[];
   readonly nextPageToken?: string;
+  readonly precedingCommit: GitCommit;
 }
 
 const SERVICE = 'luci.milo.v1.MiloInternal';

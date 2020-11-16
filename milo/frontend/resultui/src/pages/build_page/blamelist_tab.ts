@@ -32,6 +32,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @observable.ref private commits: GitCommit[] = [];
   @observable.ref private endOfPage = false;
+  @observable.ref private precedingCommit!: GitCommit;
   @observable.ref private isLoading = true;
 
   @computed
@@ -43,6 +44,35 @@ export class BlamelistTabElement extends MobxLitElement {
   private get repoUrl() {
     const gitilesCommit = this.buildState.build!.input.gitilesCommit!;
     return `https://${gitilesCommit!.host}/${gitilesCommit.project}`;
+  }
+
+  @computed
+  private get latestCommitId() {
+    return this.buildState.build?.input.gitilesCommit?.id;
+  }
+
+  @computed
+  private get revisionRange() {
+      return this.endOfPage ? `${this.precedingCommit!.id.substring(0, 12)}..${this.latestCommitId!.substring(0, 12)}` : ``;
+  }
+
+  @computed
+  private get blamelistSummary() {
+      if (this.revisionRange) {
+          return `This build included ${this.commits.length} new revisions from ${this.revisionRange}`;
+      }
+      if (this.commits.length > 0) {
+          return `This build included over ${this.commits.length} new revisions up to ${this.latestCommitId!.substring(0, 12)}`;
+      }
+      return ``;
+  }
+
+  @computed
+  private get gitilesLink() {
+      if (this.revisionRange && this.repoUrl) {
+          return `${this.repoUrl}/+log/${this.revisionRange}`;
+      }
+      return ``;
   }
 
   private disposer = () => {};
@@ -70,6 +100,7 @@ export class BlamelistTabElement extends MobxLitElement {
       this.endOfPage = true;
     } else {
       this.commits = this.commits.concat(iter.value.commits);
+      this.precedingCommit = iter.value.precedingCommit;
       this.endOfPage = !iter.value.nextPageToken;
     }
     this.isLoading = false;
@@ -94,7 +125,26 @@ export class BlamelistTabElement extends MobxLitElement {
 
     return html`
       <div id="header">
-        <span></span>
+        <div id="blamelist-summary">
+          <span style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
+            ${this.blamelistSummary}
+          </span>
+          <a href="${this.gitilesLink}" target="_blank" style=${styleMap({'display': this.gitilesLink ? '' : 'none'})}>
+            [view in Gitiles]
+          </a>
+          <span id="load" style=${styleMap({'display': this.blamelistSummary && !this.endOfPage ? '' : 'none'})}>
+            <span
+              id="load-more"
+              style=${styleMap({'display': this.isLoading ? 'none' : ''})}
+              @click=${this.loadNextPage}
+            >
+              Load More
+            </span>
+            <span style=${styleMap({'display': this.isLoading ? '' : 'none'})}>
+              Loading <milo-dot-spinner></milo-dot-spinner>
+            </span>
+          </span>
+        </div>
         <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
           <mwc-button
             class="action-button"
@@ -153,7 +203,11 @@ export class BlamelistTabElement extends MobxLitElement {
       grid-template-columns: 1fr auto;
       grid-gap: 5px;
       height: 28px;
-      padding: 5px 10px 3px 10px;
+      padding: 5px 10px;
+    }
+
+    #blamelist-summary {
+      padding: 4px 0;
     }
 
     #main {

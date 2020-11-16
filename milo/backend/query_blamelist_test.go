@@ -229,6 +229,7 @@ func TestQueryBlamelist(t *testing.T) {
 				So(res.Commits[0].Id, ShouldEqual, "commit8")
 				So(res.Commits[1].Id, ShouldEqual, "commit7")
 				So(res.Commits[2].Id, ShouldEqual, "commit6")
+				So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
 			})
 			Convey(`in multiple pages`, func() {
 				// Query the first page.
@@ -253,6 +254,7 @@ func TestQueryBlamelist(t *testing.T) {
 				So(res.Commits[0].Id, ShouldEqual, "commit8")
 				So(res.Commits[1].Id, ShouldEqual, "commit7")
 				So(res.NextPageToken, ShouldNotBeZeroValue)
+				So(res.PrecedingCommit.Id, ShouldEqual, "commit6")
 
 				// Query the second page.
 				req = &milopb.QueryBlamelistRequest{
@@ -276,6 +278,7 @@ func TestQueryBlamelist(t *testing.T) {
 				So(res.Commits, ShouldHaveLength, 1)
 				So(res.Commits[0].Id, ShouldEqual, "commit6")
 				So(res.NextPageToken, ShouldBeZeroValue)
+				So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
 			})
 		})
 	})
