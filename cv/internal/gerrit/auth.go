@@ -17,6 +17,7 @@ package gerrit
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -70,6 +71,9 @@ func newFactory() *factory {
 }
 
 func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
+	if strings.ContainsRune(luciProject, '.') {
+		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
+	}
 	t, err := f.transport(ctx, gerritHost, luciProject)
 	if err != nil {
 		return nil, err
