@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d204da39_4f990945",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-16T03:52:03Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/6480/blamelist\n\nPreviously I misunderstood the caching behaviour of keepAlive, which caused some memory leak.\nAfter the fix, keepAlive properties should no longer be kept alive after the object goes out of scope.\n\nReferences:\nhttps://mobx.js.org/computeds.html\nhttps://medium.com/terria/when-and-why-does-mobxs-keepalive-cause-a-memory-leak-8c29feb9ff55",
+      "revId": "2df8b7781f6cf666e9f46e36ee040c7529c2c28e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
