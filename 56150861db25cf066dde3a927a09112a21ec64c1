@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db000de1_8cd468c8",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:50:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b981576d_091b1f63",
+      "range": {
+        "startLine": 72,
+        "startChar": 54,
+        "endLine": 72,
+        "endChar": 63
+      },
+      "revId": "56150861db25cf066dde3a927a09112a21ec64c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ff1669f8_88f7e718",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-16T16:06:46Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 73,
+        "startChar": 14,
+        "endLine": 73,
+        "endChar": 26
+      },
+      "revId": "56150861db25cf066dde3a927a09112a21ec64c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c863cef_40194f05",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:50:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff1669f8_88f7e718",
       "range": {
         "startLine": 73,
         "startChar": 14,
