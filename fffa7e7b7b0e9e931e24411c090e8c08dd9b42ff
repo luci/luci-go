@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "31e5ec52_0ed0c240",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Make sense. Retry storm is bad.",
+      "parentUuid": "0a818d9d_736d8e4d",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f2366a5e_1b5c5d43",
@@ -65,6 +83,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "nit: del 1 space",
+      "range": {
+        "startLine": 51,
+        "startChar": 21,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb2159e4_50abc1e9",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2366a5e_1b5c5d43",
       "range": {
         "startLine": 51,
         "startChar": 21,
@@ -121,6 +163,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cd4d0d6_6c409d23",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83ce7215_3145aaf4",
+      "range": {
+        "startLine": 56,
+        "startChar": 91,
+        "endLine": 56,
+        "endChar": 97
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a69bf59_ceb52340",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2975e4f3_4701bd53",
+      "range": {
+        "startLine": 56,
+        "startChar": 31,
+        "endLine": 56,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e278deb_2e50df53",
@@ -134,6 +224,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "we don\u0027t *always* have to annotate errors, the most important reason to capture stack as early as possible as well as mark it as transient (if it is such). errors.Annotate, erorrs.Reason, errors.New (from our errors package) do this job.\nAlso, FYI, errors.Log(ctx, err) will helpfully provide stacktrace (useful in tests/debug logs on server)\n\nOn higher levels, like here where error comes form getAllProjects which you can trust to ensure errors it returns already captured stack, there is little advantage in more annotation -- I\u0027d just forward `err` as is.",
+      "range": {
+        "startLine": 61,
+        "startChar": 9,
+        "endLine": 61,
+        "endChar": 69
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ee28920_fb806ba0",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e278deb_2e50df53",
       "range": {
         "startLine": 61,
         "startChar": 9,
@@ -167,6 +281,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6367e8a0_ebd12524",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Good point.",
+      "parentUuid": "8be9b663_fbb61f95",
+      "range": {
+        "startLine": 85,
+        "startChar": 25,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87a0aa18_71b92b3f",
@@ -180,6 +318,24 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "(similar to above comment about annotation)\n  return disableProject(ctx,project)",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52130fce_26dee3cf",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87a0aa18_71b92b3f",
       "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -201,6 +357,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b87862cc_15fb550c",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05c22589_eea64ed6",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e25a3ebc_9ca1508c",
@@ -214,6 +388,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "transient.",
+      "range": {
+        "startLine": 114,
+        "startChar": 64,
+        "endLine": 114,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "936af9fb_64728d45",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e25a3ebc_9ca1508c",
       "range": {
         "startLine": 114,
         "startChar": 64,
@@ -249,6 +447,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f9bd97b4_cccec34f",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "I think it result in with potential race. i.e\n\n  T1: submit refresh task with project foo found in LUCI Config\n  T2: project foo is deregistered\n  T3: CV start executing the task and think project foo is still alive.",
+      "parentUuid": "706e6157_b29a0352",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 68
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "44950adb_f9d2147b",
         "filename": "cv/appengine/internal/config/refresh.go",
         "patchSetId": 7
@@ -260,6 +482,24 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "every time DS flakes, you\u0027d cause extra load on LUCI Config with slimmer chances of success. Bailing with error is better, IMO.\n\nI see that bool return value is better than (bool, error), but you can also merge this part into updateProject, say\nupdateProjectIfNeeded(ctx, project, externalHash)\n\nFor a stronger reason to do this see L154 comment.",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "977b14ea_42ea584b",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44950adb_f9d2147b",
       "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -277,6 +517,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "*major #2*: this can lead to orphan config groups stored in DS which will never be referenced from ConfigHashInfo.\n\nIdea: write ConfigHashInfo first right here, referencing expected readProjectConfig.EVersion+1 (see also L154 comment). Then, when we do cleanup, all config groups are guaranteed to be referenced by a ConfigHashInfo. And, you don\u0027t need to write ConfigHashInfo when updating ProjectConfig.\n\nThe write must be transactional to ensure we don\u0027t downgrade ConfigHashInfo.ProjectEversion to lower number.\n\ntargetEversion \u003d readProjectConfig.EVersion + 1\nds.runInTransaction(\n   chi :\u003d ConfigHashInfo{...}\n  if ds.Get(chi) \u003d\u003d nil \u0026\u0026 chi.ProjectEVersion \u003e\u003d targetEversion{\n    return nil // good enough.\n  }\n  chi.ProjectEversion \u003d targetEversion \n  // set other fields.\n  return ds.Put(chi)\n}\n\nThoughts?",
+      "range": {
+        "startLine": 147,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6d8165e_79ce09a6",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "I\u0027ve thought of that but I think the problem with this approach is that it may results in a ConfigHashInfo with incorrect Hash to EVersion mapping. Imaging a scenario\n  \n  T0: datastore has H0 + V0\n  T1: New Config detected, task starts updating config with H1+V1. Successfully write ConfigHashInfo but writing ProjectConfig fails.\n  T2: Config has been changed again\n  T3: A new task starts. This time the CV config in datastore is updated with H1\u0027+V1\n\nTherefore, datastore has a ConfigHashInfo with H1+V1 while in reality, V1 should maps to H1\u0027. So that\u0027s why I write ConfigHashInfo and ProjectConfig in the same transaction. I think a better way is to write ConfigHashInfo here (without a transaction) but leave the ProjectEVersion empty.\n\nIn the transaction of writing Project Config, update the ProjectEVersion of ConfigHashInfo to establish the correct mapping. \n\nThe cleanup job should delete both old versions and empty versions.",
+      "parentUuid": "5ac2f928_171b27ff",
       "range": {
         "startLine": 147,
         "startChar": 1,
@@ -310,6 +574,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce1150e9_dc4eb865",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1297a21_9bbf84c9",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "306e2fea_5af146c8",
@@ -323,6 +611,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "*major #3*:\n\ngood point, but such update is likely due to competing updateProject.\n\nIf so, then we wouldn\u0027t want to update the entity blindly, as we can accidentally \"downgrade\" to an older config version. I think the right way is:\n\nbefore :\u003d ProjectConfig{...}\nds.Get(before) \nif before.ExternalHash \u003d\u003d externalHash{ return nil }\nfetch, putConfigGroups\nds.RunInTransaction(\n  pc :\u003d ProjectConfig{...}  \n  ds.Get(pc)\n  if pc.EVersion !\u003d before.EVersion {\n    return nil // Concurrent updateProject was faster. Leave it as is.\n  }\n  ...update \u0026 ds.Put(pc)\n)",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 75
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e983eb7c_a1dd1adc",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "306e2fea_5af146c8",
       "range": {
         "startLine": 153,
         "startChar": 2,
@@ -356,6 +668,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c2f9cc1_6dc5ff8e",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c62140b_e530d180",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 189,
+        "endChar": 66
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "45e7a6dc_9b77f268",
@@ -369,6 +705,30 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "Make it a return value instead.\n\nMutating input args should be avoided if they can just as efficiently created and returned (for readability).",
+      "range": {
+        "startLine": 194,
+        "startChar": 71,
+        "endLine": 194,
+        "endChar": 85
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0cb0ebed_4ad9ce2a",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45e7a6dc_9b77f268",
       "range": {
         "startLine": 194,
         "startChar": 71,
@@ -396,6 +756,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ae0d979_831a97c9",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86a2bc4b_d6cf8cbc",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3bc5a74d_69f7c1dc",
@@ -419,6 +797,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "40c3a857_757a14c3",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3bc5a74d_69f7c1dc",
+      "range": {
+        "startLine": 206,
+        "startChar": 8,
+        "endLine": 206,
+        "endChar": 34
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a492c8e1_eba51581",
@@ -432,6 +834,24 @@
       "writtenOn": "2020-11-15T20:08:23Z",
       "side": 1,
       "message": "strictly speaking, also transient (and same for Put below),\nbut if you annotate datastore.RunInTransaction as transient, then here it doesn\u0027t matter as much (though I still do it just in case I copy-paste this code later to somewhere outside trasaction).",
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a3720fd_b991a6f2",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T08:14:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a492c8e1_eba51581",
       "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
