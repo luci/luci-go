@@ -60,6 +60,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "db5f50f9_4fb911c5",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Yes but I\u0027m thinking using Getter is more future proof as we will eventually move to opaque proto message: go/go-opaque-proto-faq ?",
+      "parentUuid": "f83ab84b_08c22049",
+      "range": {
+        "startLine": 44,
+        "startChar": 22,
+        "endLine": 44,
+        "endChar": 25
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cf430fda_a6b5014d",
         "filename": "cv/appengine/internal/config/refresh.go",
         "patchSetId": 12
@@ -71,6 +95,30 @@
       "writtenOn": "2020-11-16T22:46:34Z",
       "side": 1,
       "message": "this is true for UpdateProject, too. Consider:\n\n  f :\u003d UpdateProject\n  msg :\u003d \"update\"\n  if task.Disable {\n     msg :\u003d \"disable\"\n     f :\u003d DisableProject\n  }\n  if err :\u003d f(ctx, project); err !\u003d nil {\n    // Explicitly not forwarding transient tag ...\n    errors.Log(ctx, err)\n    return errors.Reason(\"failed to %s project %q: %s\", msg, project, err).Err()\n  }",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 13
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84ab93a9_84dcd028",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Good idea.",
+      "parentUuid": "cf430fda_a6b5014d",
       "range": {
         "startLine": 47,
         "startChar": 5,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "df60f294_597a69b1",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a368647_c9237f62",
+      "range": {
+        "startLine": 63,
+        "startChar": 47,
+        "endLine": 63,
+        "endChar": 48
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f41814b5_a374915b",
@@ -127,6 +199,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b441777_69fc4b0a",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Ack. Let\u0027s continue the discussion in https://crrev.com/c/2416822/comment/f83ab84b_08c22049/",
+      "parentUuid": "f41814b5_a374915b",
+      "range": {
+        "startLine": 99,
+        "startChar": 129,
+        "endLine": 99,
+        "endChar": 139
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "64ac2c9d_b3f8a577",
@@ -140,6 +236,30 @@
       "writtenOn": "2020-11-16T23:34:12Z",
       "side": 1,
       "message": "if the config",
+      "range": {
+        "startLine": 114,
+        "startChar": 20,
+        "endLine": 114,
+        "endChar": 29
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7c201c6_4fbb1ee0",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64ac2c9d_b3f8a577",
       "range": {
         "startLine": 114,
         "startChar": 20,
@@ -190,6 +310,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "64f90365_bff1878d",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcaec14e_e73f57a1",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 44
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1b113b0e_71a1ccdf",
@@ -203,6 +347,24 @@
       "writtenOn": "2020-11-16T23:34:12Z",
       "side": 1,
       "message": "Optional nit: the capitalization in the convey strings is currently slightly inconsistent (sometimes all words are capitalized, sometimes only the first).",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a47017d_87947c6a",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T23:40:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b113b0e_71a1ccdf",
       "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
