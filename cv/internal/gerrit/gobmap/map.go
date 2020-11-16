@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -91,7 +92,7 @@ type ProjectConfigGroupID string
 // Due to the ref_regexp[_exclude] options, CV can't ensure that each possible
 // combination is watched by at most one ConfigGroup, which is why this may
 // return multiple ProjectConfigGroupIDs.
-func Lookup(ctx context.Context, host, repo, ref string) ([]ProjectConfigGroupID, error) {
+func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
 	// TODO(qyearsley): Implement:
 	// 1. Fetch all GobWatchMap entities for the given host and repo.
 	//    This should be done with a ancestor query for a host/repo.
