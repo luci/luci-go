@@ -21,9 +21,9 @@ import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
-import '../../components/ace_editor';
 import '../../components/build_step_entry';
 import '../../components/link';
+import '../../components/code_mirror_editor';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
@@ -242,24 +242,20 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderProperties(header: string, properties: {[key: string]: unknown}) {
     const editorOptions = {
-      mode: 'ace/mode/json',
+      mode: {name: "javascript", json: true},
       readOnly: true,
-      highlightActiveLine: false,
-      showPrintMargin: false,
-      scrollPastEnd: false,
-      fontSize: 12,
-      maxLines: 50,
+      scrollbarStyle: 'null',
+      matchBrackets: true,
+      lineWrapping: true,
     };
 
     return html`
       <div>
         <h3>${header}</h3>
-        <milo-ace-editor
-          .options=${{
-            ...editorOptions,
-            value: JSON.stringify(properties, undefined, 2),
-          }}
-        ></milo-ace-editor>
+        <milo-code-mirror-editor
+          .value=${JSON.stringify(properties, undefined, 2)}
+          .options=${{...editorOptions}}
+        ></milo-code-mirror-editor>
       </div>
     `;
   }
@@ -408,7 +404,7 @@ export class OverviewTabElement extends MobxLitElement {
       margin-top: 5px;
     }
 
-    milo-ace-editor {
+    milo-code-mirror-editor {
       min-width: 600px;
       max-width: 1000px;
     }
