@@ -49,6 +49,8 @@ func BenchmarkE2E(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
+		b.StopTimer()
+		printStats(g, b)
 	})
 
 	// Serialize it.
@@ -87,6 +89,17 @@ func BenchmarkE2E(b *testing.B) {
 			}
 		})
 	}
+}
+
+func printStats(g *Graph, b *testing.B) {
+	nodes := 0
+	edges := 0
+	g.root.visit(func(n *node) bool {
+		nodes++
+		edges += len(n.edges)
+		return true
+	})
+	b.Logf("%d nodes, %d edges", nodes, edges)
 }
 
 func benchRepoDir(b *testing.B) string {
