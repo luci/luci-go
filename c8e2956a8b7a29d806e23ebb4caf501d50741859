@@ -39,6 +39,30 @@
       },
       "revId": "c8e2956a8b7a29d806e23ebb4caf501d50741859",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88929277_d358520f",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T23:45:48Z",
+      "side": 1,
+      "message": "Oops, disregard this, I was thrown off by the name ApplicableConfig which sounds like just one.",
+      "parentUuid": "135d3bca_1c0c158c",
+      "range": {
+        "startLine": 72,
+        "startChar": 36,
+        "endLine": 72,
+        "endChar": 43
+      },
+      "revId": "c8e2956a8b7a29d806e23ebb4caf501d50741859",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
