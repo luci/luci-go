@@ -327,6 +327,8 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 				Digest: &swarming.SwarmingRpcsDigest{
 					Hash:      "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd",
 					SizeBytes: 10430,
+
+					ForceSendFields: []string{"SizeBytes"},
 				},
 			})
 	})
