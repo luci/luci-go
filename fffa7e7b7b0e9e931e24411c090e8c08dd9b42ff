@@ -493,6 +493,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d73af41_581b133f",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e9c41c2_8a1694e5",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 68
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "44950adb_f9d2147b",
@@ -589,6 +613,30 @@
       "side": 1,
       "message": "First, thanks for entertaining this deeply.\n\nSecond, the above example is not a problem. Yes, DS will contain H1 and H1\u0027 both referencing ProjectConfig @ V1. However, only cleanup job reads these entities, and it can just wait until ProjectConfig moves on to @V6 (+time delay) before wiping it out.\n\n\u003e  I think a better way is to write ConfigHashInfo here (without a transaction) but leave the ProjectEVersion empty.\n\nYes, I agree that it\u0027ll  make it clear that this hash isn\u0027t yet referenced. However, this would mean 2 writes to the same entity of ConfigHashInfo back-to-back, which is discouraged by datastore (and most other DBs).",
       "parentUuid": "b6d8165e_79ce09a6",
+      "range": {
+        "startLine": 147,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89e7f5c5_eca75667",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Sure, that makes sense.",
+      "parentUuid": "4aeccf9d_c3890391",
       "range": {
         "startLine": 147,
         "startChar": 1,

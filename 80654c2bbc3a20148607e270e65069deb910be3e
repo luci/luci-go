@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "183450e5_b6259fb6",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a281434f_c5b3af3c",
+      "range": {
+        "startLine": 165,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 3
+      },
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b2a3b8b6_12b9dc82",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-11-16T16:02:53Z",
       "side": 1,
       "message": "add transient",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "40ccaa09_121e95f6",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2a3b8b6_12b9dc82",
       "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -77,6 +119,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "86c9e92d_30019dd6",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Sure but what do we want to validate here?",
+      "parentUuid": "41ebc1c3_e83b49ec",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8873ca5a_1d4a2d72",
         "filename": "cv/appengine/internal/config/refresh.go",
         "patchSetId": 9
@@ -88,6 +148,24 @@
       "writtenOn": "2020-11-16T16:02:53Z",
       "side": 1,
       "message": "definitely transient.",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca6338ae_5d0a5b28",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T22:19:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8873ca5a_1d4a2d72",
       "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
