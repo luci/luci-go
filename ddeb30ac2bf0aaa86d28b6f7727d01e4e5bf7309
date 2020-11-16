@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5465277_08b70138",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T23:34:12Z",
+      "side": 1,
+      "message": "LGTM (I mainly looked at a high level; the general organization makes sense and the tests seem to cover all important cases).",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f83ab84b_08c22049",
@@ -110,6 +127,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "64ac2c9d_b3f8a577",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T23:34:12Z",
+      "side": 1,
+      "message": "if the config",
+      "range": {
+        "startLine": 114,
+        "startChar": 20,
+        "endLine": 114,
+        "endChar": 29
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "54cf9d6d_858244b2",
@@ -123,6 +163,46 @@
       "writtenOn": "2020-11-16T22:46:34Z",
       "side": 1,
       "message": "Nice catch!",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bcaec14e_e73f57a1",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T23:34:12Z",
+      "side": 1,
+      "message": "Minor nit for tests: What do you think about using convey strings that form full sentences or phrases (in two parts) like:\n\nSubmit refresh task\n   with a new project\n   with an existing project\n\nDisable project\n   when the project doesn\u0027t have a CV config\n   when the project doesn\u0027t exist in LUCI config\n   when the project is already disabled",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 44
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b113b0e_71a1ccdf",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-16T23:34:12Z",
+      "side": 1,
+      "message": "Optional nit: the capitalization in the convey strings is currently slightly inconsistent (sometimes all words are capitalized, sometimes only the first).",
       "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
