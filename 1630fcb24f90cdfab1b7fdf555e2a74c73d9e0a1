@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "747b65bb_ba6e76cd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-16T22:28:21Z",
+      "side": 1,
+      "message": "Yes, though I think only the build-level inv is in the index.(1 out of every 21)",
+      "parentUuid": "0ace7c78_2dc266fc",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6c749711_3685b3cb",
@@ -111,6 +129,30 @@
       "writtenOn": "2020-11-12T20:55:54Z",
       "side": 1,
       "message": "not sure this is representative benchmark (retrieve everything).\nI think a more representative would be a specific test ID here (but not a needle)\n\nalso I think we need one more case: specific variant of a specific test id (not a needle)",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 29
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bedd1fc_a7a17596",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-16T22:28:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf1a761a_81e14cdc",
       "range": {
         "startLine": 140,
         "startChar": 2,
