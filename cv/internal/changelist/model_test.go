@@ -111,7 +111,7 @@ func TestCL(t *testing.T) {
 	})
 }
 
-func TestUpdateSnapshot(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	t.Parallel()
 
 	Convey("UpdateSnapshot", t, func() {
@@ -122,20 +122,26 @@ func TestUpdateSnapshot(t *testing.T) {
 
 		Convey("new CL is created", func() {
 			snap := makeSnapshot(epoch)
-			err := UpdateSnapshot(ctx, eid, 0 /* unknown CLID */, snap)
+			acfg := makeApplicableConfig(epoch)
+			err := Update(ctx, eid, 0 /* unknown CLID */, snap, acfg)
 			So(err, ShouldBeNil)
 			cl, err := eid.Get(ctx)
 			So(err, ShouldBeNil)
 			So(cl.Snapshot, ShouldResembleProto, snap)
+			So(cl.ApplicableConfig, ShouldResembleProto, acfg)
 			So(cl.EVersion, ShouldEqual, 1)
 		})
 
 		Convey("update existing", func() {
-			cl, err := eid.GetOrInsert(ctx, func(*CL) { /* no snapshot attached yet*/ })
+			acfg := makeApplicableConfig(epoch)
+			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
+				// no snapshot attached yet
+				cl.ApplicableConfig = acfg
+			})
 			So(err, ShouldBeNil)
 
 			snap := makeSnapshot(epoch)
-			err = UpdateSnapshot(ctx, eid, 0 /* unknown CLID */, snap)
+			err = Update(ctx, eid, 0 /* unknown CLID */, snap, nil /*don't change acfg*/)
 			So(err, ShouldBeNil)
 
 			cl2, err := eid.Get(ctx)
@@ -143,22 +149,25 @@ func TestUpdateSnapshot(t *testing.T) {
 			So(cl2.ID, ShouldEqual, cl.ID)
 			So(cl2.EVersion, ShouldEqual, 2)
 			So(cl2.Snapshot, ShouldResembleProto, snap)
+			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(epoch))
 
 			Convey("with known CLID", func() {
-				snap2 := makeSnapshot(epoch.Add(time.Minute))
-				err = UpdateSnapshot(ctx, "" /*unspecified externalID*/, cl.ID, snap2)
+				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
+				err = Update(ctx, "" /*unspecified externalID*/, cl.ID, nil /*don't change snapshot*/, acfg2)
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
 				So(cl3.ID, ShouldEqual, cl.ID)
 				So(cl3.EVersion, ShouldEqual, 3)
-				So(cl3.Snapshot, ShouldResembleProto, snap2)
+				So(cl3.Snapshot, ShouldResembleProto, snap)
+				So(cl3.ApplicableConfig, ShouldResembleProto, acfg2)
 			})
 
 			Convey("skip if not newer", func() {
-				snap2 := makeSnapshot(epoch.Add(-time.Minute))
-				err = UpdateSnapshot(ctx, "", cl.ID, snap2)
+				snapOld := makeSnapshot(epoch.Add(-time.Minute))
+				acfgOld := makeApplicableConfig(epoch.Add(-time.Minute))
+				err = Update(ctx, "", cl.ID, snapOld, acfgOld)
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
@@ -166,15 +175,16 @@ func TestUpdateSnapshot(t *testing.T) {
 				So(cl3.ID, ShouldEqual, cl.ID)
 				So(cl3.EVersion, ShouldEqual, 2)
 				So(cl3.Snapshot, ShouldResembleProto, snap)
+				So(cl3.ApplicableConfig, ShouldResembleProto, acfg)
 			})
 		})
 	})
 }
 
-func TestConcurrentUpdateSnapshot(t *testing.T) {
+func TestConcurrentUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateSnapshot is atomic when called concurrently with flaky datastore", t, func() {
+	Convey("Update is atomic when called concurrently with flaky datastore", t, func() {
 		epoch := testclock.TestRecentTimeUTC
 		ctx, _ := testclock.UseTime(context.Background(), epoch)
 		ctx = txndefer.FilterRDS(memory.Use(ctx))
@@ -195,7 +205,7 @@ func TestConcurrentUpdateSnapshot(t *testing.T) {
 			featureBreaker.DatastoreFeatures...,
 		)
 		// Number of tries per worker.
-		// With probabilities above, it typically takes <40 tries.
+		// With probabilities above, it typically takes <60 tries.
 		const R = 200
 		// Number of workers.
 		const N = 10
@@ -207,13 +217,17 @@ func TestConcurrentUpdateSnapshot(t *testing.T) {
 		wg.Add(N)
 		delays := mathrand.Perm(ctx, N) // 0,1,...,N-1
 		for _, d := range delays {
-			d := d
+			// Simulate opposing Snapshot and ApplicableConfig timestamps for better
+			// test coverage.
+			snapTS := epoch.Add(time.Minute * time.Duration(d))
+			acfgTS := epoch.Add(time.Minute * time.Duration(N-1-d))
 			go func() {
 				defer wg.Done()
-				snap := makeSnapshot(epoch.Add(time.Minute * time.Duration(d)))
+				snap := makeSnapshot(snapTS)
+				acfg := makeApplicableConfig(acfgTS)
 				var err error
 				for i := 0; i < R; i++ {
-					if err = UpdateSnapshot(ctx, eid, 0, snap); err == nil {
+					if err = Update(ctx, eid, 0, snap, acfg); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
@@ -232,8 +246,9 @@ func TestConcurrentUpdateSnapshot(t *testing.T) {
 		So(err, ShouldBeNil)
 		// Since all workers have succeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
-		latest := makeSnapshot(epoch.Add((N - 1) * time.Minute))
-		So(cl.Snapshot, ShouldResembleProto, latest)
+		latestTS := epoch.Add((N - 1) * time.Minute)
+		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
+		So(cl.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(latestTS))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot
 		// calls (one per worker, iff they did exactly in the increasing order of
 		// the ExternalUpdateTime).
@@ -256,5 +271,14 @@ func makeSnapshot(updatedTime time.Time) *Snapshot {
 				},
 			},
 		}},
+	}
+}
+
+func makeApplicableConfig(updatedTime time.Time) *ApplicableConfig {
+	return &ApplicableConfig{
+		UpdateTime: timestamppb.New(updatedTime),
+		Projects: []*ApplicableConfig_Project{
+			{Name: "luci_project", ConfigGroupIds: []string{"blah"}},
+		},
 	}
 }
