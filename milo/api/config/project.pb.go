@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 	sync "sync"
 
-	proto "github.com/golang/protobuf/proto"
 	_ "go.chromium.org/luci/common/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -26,10 +25,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Project is a project definition for Milo.
 type Project struct {
@@ -838,7 +833,6 @@ type Builder struct {
 
 	// Name is the BuilderID of the builders you wish to display for this column
 	// in the console. e.g.
-	//   * "buildbot/chromium.linux/Linux Tests"
 	//   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Category describes the hierarchy of the builder on the header of the
