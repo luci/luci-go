@@ -35,7 +35,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
 
   @computed private get artifactIdent() { return parseArtifactName(this.artifactName); }
 
-  @computed({keepAlive: true})
+  @computed
   private get artifactRes() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
@@ -46,7 +46,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     return this.artifactRes.state === 'fulfilled' ? this.artifactRes.value : null;
   }
 
-  @computed({keepAlive: true})
+  @computed
   private get contentRes() {
     if (!this.appState.resultDb || !this.artifact) {
       return fromPromise(Promise.race([]));

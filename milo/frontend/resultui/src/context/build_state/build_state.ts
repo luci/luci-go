@@ -34,6 +34,23 @@ export class BuildState {
 
   constructor(private appState: AppState) {}
 
+  @observable.ref private isDisposed = false;
+
+  /**
+   * Perform cleanup.
+   * Must be called before the object is GCed.
+   */
+  dispose() {
+    this.isDisposed = true;
+
+    // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
+    // is set to true so they no longer subscribes to any external observable.
+    // tslint:disable: no-unused-expression
+    this.relatedBuilds;
+    this.queryBlamelistResIterFn;
+    // tslint:enable: no-unused-expression
+  }
+
   @computed
   get buildReq(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
@@ -60,8 +77,8 @@ export class BuildState {
     return new BuildExt(this.buildReq.value);
   }
 
-  @computed({keepAlive: true})
-  get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+  @computed
+  private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
       return fromPromise(new Promise(() => {}));
     }
@@ -95,17 +112,17 @@ export class BuildState {
     }));
   }
 
-  @computed
+  @computed({keepAlive: true})
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.relatedBuildReq.state !== FULFILLED) {
+    if (this.isDisposed || this.relatedBuildReq.state !== FULFILLED) {
       return null;
     }
     return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
-  @computed
+  @computed({keepAlive: true})
   get queryBlamelistResIterFn() {
-    if (!this.appState.milo || !this.build) {
+    if (this.isDisposed || !this.appState.milo || !this.build) {
       return async function*() { await Promise.race([]); };
     }
     if (!this.build.input.gitilesCommit) {

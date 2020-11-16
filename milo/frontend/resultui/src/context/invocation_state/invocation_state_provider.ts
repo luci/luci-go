@@ -32,7 +32,10 @@ export class InvocationStateProviderElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.disposers.push(autorun(
-      () => this.invocationState = new InvocationState(this.appState, this.configsStore.userConfigs),
+      () => {
+        this.invocationState?.dispose();
+        this.invocationState = new InvocationState(this.appState, this.configsStore.userConfigs);
+      },
     ));
     this.disposers.push(when(
       () => this.invocationState.invocationReq.state === 'rejected',

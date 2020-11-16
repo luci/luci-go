@@ -33,6 +33,23 @@ export class InvocationState {
 
   constructor(private appState: AppState, private userConfigs: UserConfigs) {}
 
+  @observable.ref private isDisposed = false;
+
+  /**
+   * Perform cleanup.
+   * Must be called before the object is GCed.
+   */
+  dispose() {
+    this.isDisposed = true;
+
+    // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
+    // is set to true so they no longer subscribes to any external observable.
+    // tslint:disable: no-unused-expression
+    this.testLoader;
+    // tslint:enable: no-unused-expression
+  }
+
+
   @computed
   get invocationName(): string | null {
     if (!this.invocationId) {
@@ -111,7 +128,12 @@ export class InvocationState {
   }
 
   @computed({keepAlive: true})
-  get testLoader() { return new TestLoader(TestNode.newRoot(), this.testIterFn()); }
+  get testLoader(): TestLoader {
+    if (this.isDisposed) {
+      return new TestLoader(TestNode.newRoot(), (async function*() {})());
+    }
+    return new TestLoader(TestNode.newRoot(), this.testIterFn());
+  }
 }
 
 export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');
