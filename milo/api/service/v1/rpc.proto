@@ -71,13 +71,17 @@ message QueryBlamelistRequest {
 
 // A response message for QueryBlamelist RPC.
 message QueryBlamelistResponse {
-  // The commits from the blamelist of the build, in reversed chronologically
+  // The commits from the blamelist of the build, in reverse chronological
   // order.
   repeated git.Commit commits = 1;
 
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.
   string next_page_token = 2;
+
+  // The repo commit immediately preceding |commits|. Useful for creating
+  // git log queries, which are exclusive of the first commit.
+  git.Commit preceding_commit = 3;
 }
 
 // A stateless page token for QueryBlamelist RPC.

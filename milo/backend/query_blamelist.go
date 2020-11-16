@@ -118,6 +118,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	return &milopb.QueryBlamelistResponse{
 		Commits:       commits[:blameLength],
 		NextPageToken: nextPageToken,
+		PrecedingCommit: commits[blameLength],
 	}, nil
 }
 
