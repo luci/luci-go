@@ -31,7 +31,10 @@ export class BuildStateProviderElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.disposers.push(autorun(
-      () => this.buildState = new BuildState(this.appState),
+      () => {
+        this.buildState?.dispose();
+        this.buildState = new BuildState(this.appState);
+      },
     ));
     this.disposers.push(when(
       () => this.buildState.buildReq.state === REJECTED,
