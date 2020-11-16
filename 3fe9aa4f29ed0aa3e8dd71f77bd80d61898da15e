@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dec7da88_d4c69296",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T17:59:11Z",
+      "side": 1,
+      "message": "tbh, I\u0027m not really fond of this metric from *safety* PoV, since on a bad CL that breaks 1000 tests in the same way, I don\u0027t particularly care that RTS runs all 1000 anyway. But I guess it\u0027s an interesting indicator while tuning the algo.\n\nBut I bet you know all this already. So, is smarter folks saying that\u0027s a useful safety metric?",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 0
+      },
+      "revId": "3fe9aa4f29ed0aa3e8dd71f77bd80d61898da15e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f068b9d_76c34321",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T17:59:11Z",
+      "side": 1,
+      "message": "nit-nit: here and below, it\u0027d be cool if numbers were aligned to the right so eyeballing most significant digits was easier.",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 48
+      },
+      "revId": "3fe9aa4f29ed0aa3e8dd71f77bd80d61898da15e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86dd2f8f_4a01cb46",
+        "filename": "rts/presubmit/eval/safety.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T17:59:11Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 86,
+        "startChar": 33,
+        "endLine": 86,
+        "endChar": 37
+      },
+      "revId": "3fe9aa4f29ed0aa3e8dd71f77bd80d61898da15e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cd6e33d_670c279f",
+        "filename": "rts/presubmit/eval/safety.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T17:59:11Z",
+      "side": 1,
+      "message": "%\n\npedantic: this is a fraction of a %, not just a fraction.",
+      "range": {
+        "startLine": 94,
+        "startChar": 21,
+        "endLine": 94,
+        "endChar": 29
+      },
+      "revId": "3fe9aa4f29ed0aa3e8dd71f77bd80d61898da15e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
