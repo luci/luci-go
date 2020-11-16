@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a7d6ab5_7a683a91",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-16T10:57:35Z",
+      "side": 1,
+      "message": "Demo, PTAL: https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/8706/blamelist\n\nThis changes up the UI a fair bit so I\u0027d like both of you to cast a critical eye over it before I submit 😊",
+      "revId": "0a05ed90102a1ddeb6d70c38d260039afcbb1cd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
