@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe5fa813_ab88f335",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:06:46Z",
+      "side": 1,
+      "message": "still lgtm % 2 nits",
+      "revId": "56150861db25cf066dde3a927a09112a21ec64c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b981576d_091b1f63",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:06:46Z",
+      "side": 1,
+      "message": "typo (btw, why Tricium didn\u0027t complain?)",
+      "range": {
+        "startLine": 72,
+        "startChar": 54,
+        "endLine": 72,
+        "endChar": 63
+      },
+      "revId": "56150861db25cf066dde3a927a09112a21ec64c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff1669f8_88f7e718",
+        "filename": "cv/appengine/internal/config/store.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:06:46Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 73,
+        "startChar": 14,
+        "endLine": 73,
+        "endChar": 26
+      },
+      "revId": "56150861db25cf066dde3a927a09112a21ec64c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
