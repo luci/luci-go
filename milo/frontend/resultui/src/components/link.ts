@@ -30,14 +30,8 @@ export class LinkElement extends LitElement {
     return html`
       <a href=${this.link.url}
         aria-label=${this.link.ariaLabel}
-        title=${this.link.img ? '' : this.link.alt || ''}
         target=${this.target || ''}
-      >
-      ${this.link.img ?
-        html`<img src=${this.link.img} alt=${this.link.alt}>` :
-        this.link.alias ? `[${this.link.label}]` : this.link.label
-      }
-      </a>
+      >${this.link.label}</a>
     `;
   }
 }

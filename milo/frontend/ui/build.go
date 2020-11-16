@@ -604,7 +604,6 @@ var (
 					`{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}` +
 					`{{if .Alt}}{{if not .Img}} title="{{.Alt}}"{{end}}{{end}}>` +
 					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
-					`{{else if .Alias}}[{{.Label}}]` +
 					`{{else}}{{.Label}}{{end}}` +
 					`</a>`))
 
@@ -685,9 +684,6 @@ type Link struct {
 
 	// Alt text for the image, or title text with text link.
 	Alt string `json:"alt,omitempty"`
-
-	// Alias, if true, means that this link is an [alias link].
-	Alias bool `json:"alias,omitempty"`
 }
 
 // NewLink does just about what you'd expect.
