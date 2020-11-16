@@ -106,7 +106,7 @@ export class BlamelistTabElement extends MobxLitElement {
     this.isLoading = false;
   }
 
-  private allEntriesWereExpanded = true;
+  private allEntriesWereExpanded = false;
   private toggleAllEntries(expand: boolean) {
     this.allEntriesWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry')
@@ -164,7 +164,7 @@ export class BlamelistTabElement extends MobxLitElement {
           .number=${i + 1}
           .repoUrl=${this.repoUrl}
           .commit=${commit}
-          .expanded=${true}
+          .expanded=${false}
         ></milo-commit-entry>
         `)}
         <div
