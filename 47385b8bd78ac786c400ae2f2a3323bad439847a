@@ -22,6 +22,30 @@
       },
       "revId": "47385b8bd78ac786c400ae2f2a3323bad439847a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e9af575_59dfec3f",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 571,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-16T20:44:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3b69fb2_f834d279",
+      "range": {
+        "startLine": 569,
+        "startChar": 0,
+        "endLine": 571,
+        "endChar": 2
+      },
+      "revId": "47385b8bd78ac786c400ae2f2a3323bad439847a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
