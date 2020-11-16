@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package cv.clpb;
+package cv.changelist;
 
-option go_package = "go.chromium.org/luci/cv/internal/changelist/clpb;clpb";
+option go_package = "go.chromium.org/luci/cv/internal/changelist";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
