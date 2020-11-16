@@ -41,21 +41,15 @@ import (
 // manage the file descriptor.
 func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
 	return Exec(c, ve.Interpreter(), cl, env, dir, func() error {
-		// Store our lock file descriptor as FD #3 (after #2, STDERR).
+		// Clear the close-on-exec flag, which Go enables by default.
 		lockFD := ve.LockHandle.LockFile().Fd()
-		if lockFD == 3 {
-			// "dup2" doesn't change flags if the source and destination file
-			// descriptors are the same. Explicitly remove the close-on-exec flag, which
-			// Go enables by default.
-			if _, err := unix.FcntlInt(lockFD, unix.F_SETFD, 0); err != nil {
-				return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
-			}
-		} else {
-			// Use "dup2" to copy the file descriptor to #3 slot. This will also clear
-			// its flags, including close-on-exec.
-			if err := unix.Dup2(int(lockFD), 3); err != nil {
-				return errors.Annotate(err, "could not dup2 lock file").Err()
-			}
+		fdFlags, err := unix.FcntlInt(lockFD, unix.F_GETFD, 0)
+		if err != nil {
+			return errors.Annotate(err, "could not get flags for lock file").Err()
+		}
+		if _, err := unix.FcntlInt(lockFD, unix.F_SETFD,
+			fdFlags & ^unix.FD_CLOEXEC); err != nil {
+			return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
 		}
 		return nil
 	})
