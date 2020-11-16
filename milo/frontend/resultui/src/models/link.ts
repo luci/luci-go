@@ -15,8 +15,5 @@
 export interface Link {
   label: string;
   url: string;
-  ariaLabel?: string;
-  img?: string;
-  alt?: string;
-  alias?: boolean;
+  ariaLabel: string;
 }
