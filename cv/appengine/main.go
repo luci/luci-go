@@ -16,9 +16,11 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 
 	"go.chromium.org/luci/server"
@@ -29,6 +31,7 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/servicecfg"
 )
 
 func main() {
@@ -46,14 +49,33 @@ func main() {
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) {
 				// The cron job interval is 1 minute.
-				_, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
+				ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
 				defer cancel()
-				code := 200
-				// TODO: uncomment after https://crrev.com/c/2416822 is landed
-				// if err := config.SubmitRefreshTasks(ctx); err != nil {
-				// 	code = 500
-				// }
+				wg := sync.WaitGroup{}
+				errs := make(errors.MultiError, 2)
+
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					errs[0] = servicecfg.ImportConfig(ctx)
+				}()
+
+				// TODO(yiwzhang): uncomment after https://crrev.com/c/2416822 is landed
+				// wg.Add(1)
+				// go func() {
+				// 	 defer wg.Done()
+				// 	 errs[1] = config.SubmitRefreshTasks(ctx)
+				// }()
+
+				wg.Wait()
 				rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				code := 200
+				for _, err := range errs {
+					if err != nil {
+						errors.Log(ctx, err)
+						code = 500
+					}
+				}
 				rc.Writer.WriteHeader(code)
 			})
 
