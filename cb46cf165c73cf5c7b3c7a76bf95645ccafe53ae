@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fff12018_561f696e",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T07:39:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6402bc3_16166cdf",
+      "range": {
+        "startLine": 54,
+        "startChar": 4,
+        "endLine": 54,
+        "endChar": 50
+      },
+      "revId": "cb46cf165c73cf5c7b3c7a76bf95645ccafe53ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "29f4c046_29b0d019",
@@ -37,6 +61,24 @@
       "writtenOn": "2020-11-15T20:12:55Z",
       "side": 1,
       "message": "can you make it a TODO instead, rebase on master \u0026 land this CL ASAP s.t. I can base my work on it?",
+      "revId": "cb46cf165c73cf5c7b3c7a76bf95645ccafe53ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb3cb1e1_715b1dc7",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-16T07:39:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29f4c046_29b0d019",
       "revId": "cb46cf165c73cf5c7b3c7a76bf95645ccafe53ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
