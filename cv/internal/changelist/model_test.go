@@ -33,8 +33,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/changelist/clpb"
-
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -61,7 +59,7 @@ func TestCL(t *testing.T) {
 
 		Convey("create", func() {
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
-				cl.Snapshot = &clpb.Snapshot{Patchset: 1}
+				cl.Snapshot = &Snapshot{Patchset: 1}
 			})
 
 			Convey("GetOrInsert succeed", func() {
@@ -87,7 +85,7 @@ func TestCL(t *testing.T) {
 
 			Convey("GetOrInsert already exists", func() {
 				cl3, err := eid.GetOrInsert(ctx, func(cl *CL) {
-					cl.Snapshot = &clpb.Snapshot{Patchset: 999}
+					cl.Snapshot = &Snapshot{Patchset: 999}
 				})
 				So(err, ShouldBeNil)
 				So(cl3.ID, ShouldEqual, cl.ID)
@@ -244,10 +242,10 @@ func TestConcurrentUpdateSnapshot(t *testing.T) {
 	})
 }
 
-func makeSnapshot(updatedTime time.Time) *clpb.Snapshot {
-	return &clpb.Snapshot{
+func makeSnapshot(updatedTime time.Time) *Snapshot {
+	return &Snapshot{
 		ExternalUpdateTime: timestamppb.New(updatedTime),
-		Kind: &clpb.Snapshot_Gerrit{Gerrit: &clpb.Gerrit{
+		Kind: &Snapshot_Gerrit{Gerrit: &Gerrit{
 			Info: &gerritpb.ChangeInfo{
 				CurrentRevision: "deadbeef",
 				Revisions: map[string]*gerritpb.RevisionInfo{

@@ -25,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/cv/internal/changelist/clpb"
 )
 
 // CLID is a unique ID of a CL used internally in CV.
@@ -69,7 +67,7 @@ type CL struct {
 	// Snapshot is latest known state of a CL.
 	// It may and often is behind the source of truth -- the code reveview site
 	// (e.g. Gerrit).
-	Snapshot *clpb.Snapshot
+	Snapshot *Snapshot
 
 	// UpdateTime is exact time of when this entity was last updated.
 	//
@@ -181,7 +179,7 @@ func Delete(ctx context.Context, id CLID) error {
 // is newer as measured by ExternalUpdateTime.
 //
 // TODO(tandrii): emit notification events.
-func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *clpb.Snapshot) error {
+func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snapshot) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known CLID must be provided")
 	}

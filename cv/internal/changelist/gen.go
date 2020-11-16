@@ -14,5 +14,4 @@
 
 //go:generate cproto
 
-// Package clpb contains protobufs used inside CL entity.
-package clpb
+package changelist
