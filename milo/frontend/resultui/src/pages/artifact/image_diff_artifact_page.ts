@@ -42,7 +42,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
 
   @computed private get parsedDiffArtifactName() { return parseArtifactName(this.diffArtifactName); }
 
-  @computed({keepAlive: true})
+  @computed
   private get diffArtifactRes() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
@@ -53,7 +53,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return this.diffArtifactRes.state === 'fulfilled' ? this.diffArtifactRes.value : null;
   }
 
-  @computed({keepAlive: true})
+  @computed
   private get expectedArtifactRes() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
@@ -64,7 +64,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return this.expectedArtifactRes.state === 'fulfilled' ? this.expectedArtifactRes.value : null;
   }
 
-  @computed({keepAlive: true})
+  @computed
   private get actualArtifactRes() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));

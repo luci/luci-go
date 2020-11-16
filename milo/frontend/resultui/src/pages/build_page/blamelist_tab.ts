@@ -34,8 +34,10 @@ export class BlamelistTabElement extends MobxLitElement {
   @observable.ref private endOfPage = false;
   @observable.ref private isLoading = true;
 
-  @computed({keepAlive: true})
-  private get queryBlamelistResIter() { return this.buildState.queryBlamelistResIterFn(); }
+  @computed
+  private get queryBlamelistResIter() {
+    return this.buildState.queryBlamelistResIterFn();
+  }
 
   @computed
   private get repoUrl() {
