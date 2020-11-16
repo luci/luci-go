@@ -25,7 +25,7 @@ import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
 import { sanitizeHTML } from '../libs/sanitize_html';
-import { DEFAULT_TIME_FORMAT } from '../libs/time_utils';
+import { DEFAULT_TIME_FORMAT, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
@@ -97,10 +97,14 @@ export class CommitEntryElement extends MobxLitElement {
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => this.expanded = expanded}
       >
-        <span slot="header">
-          <b>${this.number}. ${this.commitTitle}</b> <i>by ${this.commit.author.name} at ${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</i>
-        </span>
-        <div slot="content">
+        <div slot="header" id="entry-header">
+          <div id="header-number">${this.number}.</div>
+          <div id="header-revision">${this.commit.id.substring(0, 7)}</div>
+          <div id="header-author">${this.commit.author.email}</div>
+          <div id="header-time">${this.commitTime.toFormat(NUMERIC_TIME_FORMAT)}</div>
+          <div id="header-description">${this.commitTitle}</div>
+        </div>
+        <div slot="content" id="entry-content">
           <table slot="content" border="0">
             <tr><td>Changed by:</td><td>${this.commit.author.name} - ${this.commit.author.email}</td></tr>
             <tr><td>Changed at:</td><td>${this.commitTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
@@ -116,6 +120,46 @@ export class CommitEntryElement extends MobxLitElement {
   static styles = css`
     :host {
       display: block;
+    }
+
+    #entry-header {
+        display: flex;
+    }
+
+    #header-number {
+        flex: 1;
+        max-width: 20px;
+        font-weight: bold;
+    }
+
+    #header-revision {
+        flex: 1;
+        max-width: 75px;
+        font-weight: bold;
+    }
+
+    #header-author {
+        flex: 1;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #header-time {
+        flex: 1;
+        max-width: 190px;
+        padding-left: 10px;
+    }
+
+    #header-description {
+        flex: 1;
+        padding-left: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #entry-content {
+        padding-bottom: 20px;
     }
 
     #summary {
