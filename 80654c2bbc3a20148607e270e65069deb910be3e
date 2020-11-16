@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c2d0a43_276fdeb2",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "clever, as this works even if err\u003d\u003dErrNoSuchEntity.",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a281434f_c5b3af3c",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "This must be in a transaction with get, else you might overwrite actually valid entity written on L198.",
+      "range": {
+        "startLine": 165,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 3
+      },
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2a3b8b6_12b9dc82",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "add transient",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41ebc1c3_e83b49ec",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "sorry, can you add // TODO to validate config?",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8873ca5a_1d4a2d72",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "definitely transient.",
+      "revId": "80654c2bbc3a20148607e270e65069deb910be3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

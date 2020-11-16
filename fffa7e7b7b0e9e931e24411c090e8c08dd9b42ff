@@ -471,6 +471,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5e9c41c2_8a1694e5",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "yes, but this is not harmful and it\u0027ll be corrected during the next iteration for sure.",
+      "parentUuid": "f9bd97b4_cccec34f",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 68
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "44950adb_f9d2147b",
         "filename": "cv/appengine/internal/config/refresh.go",
         "patchSetId": 7
@@ -541,6 +565,30 @@
       "side": 1,
       "message": "I\u0027ve thought of that but I think the problem with this approach is that it may results in a ConfigHashInfo with incorrect Hash to EVersion mapping. Imaging a scenario\n  \n  T0: datastore has H0 + V0\n  T1: New Config detected, task starts updating config with H1+V1. Successfully write ConfigHashInfo but writing ProjectConfig fails.\n  T2: Config has been changed again\n  T3: A new task starts. This time the CV config in datastore is updated with H1\u0027+V1\n\nTherefore, datastore has a ConfigHashInfo with H1+V1 while in reality, V1 should maps to H1\u0027. So that\u0027s why I write ConfigHashInfo and ProjectConfig in the same transaction. I think a better way is to write ConfigHashInfo here (without a transaction) but leave the ProjectEVersion empty.\n\nIn the transaction of writing Project Config, update the ProjectEVersion of ConfigHashInfo to establish the correct mapping. \n\nThe cleanup job should delete both old versions and empty versions.",
       "parentUuid": "5ac2f928_171b27ff",
+      "range": {
+        "startLine": 147,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 70
+      },
+      "revId": "fffa7e7b7b0e9e931e24411c090e8c08dd9b42ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4aeccf9d_c3890391",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-16T16:02:53Z",
+      "side": 1,
+      "message": "First, thanks for entertaining this deeply.\n\nSecond, the above example is not a problem. Yes, DS will contain H1 and H1\u0027 both referencing ProjectConfig @ V1. However, only cleanup job reads these entities, and it can just wait until ProjectConfig moves on to @V6 (+time delay) before wiping it out.\n\n\u003e  I think a better way is to write ConfigHashInfo here (without a transaction) but leave the ProjectEVersion empty.\n\nYes, I agree that it\u0027ll  make it clear that this hash isn\u0027t yet referenced. However, this would mean 2 writes to the same entity of ConfigHashInfo back-to-back, which is discouraged by datastore (and most other DBs).",
+      "parentUuid": "b6d8165e_79ce09a6",
       "range": {
         "startLine": 147,
         "startChar": 1,
