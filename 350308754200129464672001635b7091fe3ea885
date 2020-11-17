@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b88a328_623f44ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T19:53:17Z",
+      "side": 1,
+      "message": "PTAL the general structure and LMK wdyt.\nI had to somehow shrink the resulting CLs, so here is the first one.\nI still have to write tests.",
+      "revId": "350308754200129464672001635b7091fe3ea885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
