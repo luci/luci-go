@@ -1,6 +1,10 @@
 service: default
 runtime: go113
 
+automatic_scaling:
+  max_concurrent_requests: 50
+
+
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
 # It maps the app ID being deployed to values of vars used below.
 luci_gae_vars:
