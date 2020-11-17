@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3a62670_3f0c5e84",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1174099
+      },
+      "writtenOn": "2020-11-17T16:44:12Z",
+      "side": 1,
+      "message": "1. It’s good to not mix “magic fd” with execv on macOS. If you do need “magic fd”, you can still do it with posix_spawn. posix_spawn is, in general, a superior replacement for fork–execv, and I encourage its use wherever possible (including here, even if you don’t need “magic fd” semantics).\n\n2. Does the thing being run need to interact with this fd at all? If it does, it won’t find it in the magic slot anymore.\n\n(1) is informational. LGTM assuming the answer to (2) is “no.”",
+      "revId": "7bbffd9a2d99ba1a26009d6bf087d43dc2e08776",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
