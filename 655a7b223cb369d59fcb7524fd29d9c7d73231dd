@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa5eed92_291c6b03",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-17T18:39:24Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "655a7b223cb369d59fcb7524fd29d9c7d73231dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "947f1664_55711e89",
+        "filename": "rts/doc/eval.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-11-17T18:39:24Z",
+      "side": 1,
+      "message": "Might want to clarify that incorporating test recall is planned for the future.",
+      "revId": "655a7b223cb369d59fcb7524fd29d9c7d73231dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
