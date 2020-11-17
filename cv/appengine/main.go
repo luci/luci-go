@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 )
@@ -60,12 +61,11 @@ func main() {
 					errs[0] = servicecfg.ImportConfig(ctx)
 				}()
 
-				// TODO(yiwzhang): uncomment after https://crrev.com/c/2416822 is landed
-				// wg.Add(1)
-				// go func() {
-				// 	 defer wg.Done()
-				// 	 errs[1] = config.SubmitRefreshTasks(ctx)
-				// }()
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					errs[1] = config.SubmitRefreshTasks(ctx)
+				}()
 
 				wg.Wait()
 				rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
