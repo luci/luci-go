@@ -21,11 +21,7 @@ import { css, customElement, html, LitElement } from 'lit-element';
 @customElement('milo-dot-spinner')
 export class DotSpinnerElement extends LitElement {
   protected render() {
-    return html`
-      <div></div>
-      <div></div>
-      <div></div>
-    `;
+    return html`<div></div><div></div><div></div>`;
   }
 
   static styles = css`
