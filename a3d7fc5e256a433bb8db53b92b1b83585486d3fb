@@ -16,6 +16,23 @@
       "message": "PTAL. Not sure if it is the ideal way to register task. Please advise. Thank you.",
       "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2e14819_993b2760",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-17T08:19:21Z",
+      "side": 1,
+      "message": "What\u0027s wrong with keeping at in init() around where it is used?",
+      "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
