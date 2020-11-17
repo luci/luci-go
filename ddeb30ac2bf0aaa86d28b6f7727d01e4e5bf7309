@@ -381,6 +381,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2eddc90e_e1571a65",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-17T04:39:09Z",
+      "side": 1,
+      "message": "oh no.. I forget to clean this up after I refactor the test for disabling project out. They are now in a separate test (i.e. `TestDisableProject`). So this function is purely verifyExisting.",
+      "parentUuid": "e73dd11a_800c101d",
+      "range": {
+        "startLine": 158,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 19
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1b113b0e_71a1ccdf",

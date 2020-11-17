@@ -39,6 +39,30 @@
       },
       "revId": "eb5b332cd3596a8e308298785d553efd86b16305",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d2f77ed_fd66a909",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-17T04:39:09Z",
+      "side": 1,
+      "message": "Correct. Made them private.",
+      "parentUuid": "135e8ff4_bb77f85e",
+      "range": {
+        "startLine": 113,
+        "startChar": 5,
+        "endLine": 113,
+        "endChar": 18
+      },
+      "revId": "eb5b332cd3596a8e308298785d553efd86b16305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
