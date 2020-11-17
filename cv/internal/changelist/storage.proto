@@ -30,11 +30,18 @@ message Snapshot {
   // Used to determine if re-querying external system is needed.
   google.protobuf.Timestamp external_update_time = 1;
 
+  // LUCI project in the context of which this snapshot was saved.
+  //
+  // Since a CL isn't a resource of CV, CV can't infer whether specific LUCI
+  // project has access to a CL w/o re-querying Gerrit and effectively
+  // recomputing the snapshot.
+  string luci_project = 2;
+
   // Resolved dependencies of a CL.
-  repeated Dep deps = 2;
+  repeated Dep deps = 3;
 
   // Patchset is incremental number of the latest patchset (aka revision).
-  int32 patchset = 3;
+  int32 patchset = 4;
   // MinEquivalentPatchset is the smallest and hence the earliest patchset
   // which is code-wise equivalent to the latest one.
   //
@@ -42,7 +49,7 @@ message Snapshot {
   //
   // CV tracks this to determine which prior tryjobs can be re-used and which
   // can be canceled.
-  int32 min_equivalent_patchset = 4;
+  int32 min_equivalent_patchset = 5;
 
   // CL-kind specific data.
   oneof kind {
@@ -120,4 +127,37 @@ message GerritSoftDep {
   string host = 1;
   // Gerrit change number.
   int32 change = 2;
+}
+
+// ApplicableConfig keeps track of configs applicable to a CL.
+//
+// This is computed based on known set of LUCI project configs, versions of
+// which are updated by CV independently, so the ApplicableConfig are also
+// eventually consistent.
+//
+// Normally, there is 1 applicable configs = exactly 1 project with 1 config
+// group. If CL is no longer watched by CV, there will be 0 applicable configs.
+//
+// Sometimes, there can be 2+ applicable configs. This happens if either:
+//  * eventual consistency: responsibility for CL is moved from one LUCI project
+//    to another. Three is no way to make this atomically, so CL may temporarily
+//    end up with 0 or 2 projects watching it, before settling on just 1.
+//  * misconfiguration: two projects or 2 different ConfigGroups within the same
+//    project watch the same CL.
+// In either case, CV refuses to guess and will abstain from processing such
+// CLs, but storing the list is very useful for CV debugging and potentially for
+// better diagnostic messages to CV users and LUCI project owners.
+message ApplicableConfig {
+  // The timestamp when this was computed.
+  google.protobuf.Timestamp update_time = 1;
+
+  message Project {
+    string name = 1;
+    // ID of the specific ConfigGroup. See cv/internal/config.ConfigGroupID.
+    //
+    // The referenced version may no longer be available to datastore,
+    // commonly happening if CL wasn't active for a long time.
+    repeated string config_group_ids = 2;
+  }
+  repeated Project projects = 2;
 }
