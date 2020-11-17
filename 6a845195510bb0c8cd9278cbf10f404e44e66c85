@@ -22,6 +22,30 @@
       },
       "revId": "6a845195510bb0c8cd9278cbf10f404e44e66c85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e61ac9b4_39dc705d",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T18:29:41Z",
+      "side": 1,
+      "message": "i\u0027m not aware of a doc, but roughly: more QPS \u003d\u003e more RAM + CPU.\nSo, watch for exhaustion of either:\n * RAM: detection: OOMs in logs, constant creation churn of new instances.\n   potential red herring: if code is leaky (e.g. goroutines, or LRU cache with too big N), more QPS will cause more frequent OOMs, but root cause are leaks, not QPS.\n\n * CPU: watch for either 100% CPU utilization (easy to spot) or sometimes spikes in latency despite low utilization -- this can be due to random long pauses due to CPU intensive works (e.g. submit order computation 😊)\n\n\nMy thinking here is that we should start with maximum possible QPS / instance (80 in GAE) and then adjust as needed.",
+      "parentUuid": "c14f05f9_82a94d68",
+      "range": {
+        "startLine": 5,
+        "startChar": 27,
+        "endLine": 5,
+        "endChar": 29
+      },
+      "revId": "6a845195510bb0c8cd9278cbf10f404e44e66c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
