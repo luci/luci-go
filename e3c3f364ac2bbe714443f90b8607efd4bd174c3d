@@ -16,6 +16,24 @@
       "message": "we can just set\ntoken.content \u003d template.innerHTML;",
       "revId": "e3c3f364ac2bbe714443f90b8607efd4bd174c3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8448fe3a_e24ba015",
+        "filename": "milo/frontend/resultui/src/libs/markdown_it_plugins/default_target.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-17T00:14:11Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "1530b5c1_b2cf5ecf",
+      "revId": "e3c3f364ac2bbe714443f90b8607efd4bd174c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
