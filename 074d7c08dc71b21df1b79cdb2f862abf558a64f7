@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "68d710e3_bd743894",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-17T17:52:50Z",
+      "side": 1,
+      "message": "I also don\u0027t have a strong opinion, I was just initially confused.\n\nI just think that this is something worth explaining in comments, regardless of whether it\u0027s renamed or not.",
+      "parentUuid": "6dddbf80_d317d4af",
+      "revId": "074d7c08dc71b21df1b79cdb2f862abf558a64f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d2104f4_f3fd8a54",
@@ -214,6 +232,30 @@
       "side": 1,
       "message": "Whatever is in config.ConfigGroupID (see Yiwei\u0027s recent CL). Added a comment.\n\n$hash/$name is impl details which shouldn\u0027t be relevant to this code.",
       "parentUuid": "1be57890_bc7992f7",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 36
+      },
+      "revId": "074d7c08dc71b21df1b79cdb2f862abf558a64f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04d000d5_3726b64d",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-17T17:52:50Z",
+      "side": 1,
+      "message": "Got it, thanks for adding a pointer mentioning ConfigGroupID so that a reader can find out more.",
+      "parentUuid": "329bdd7c_520e59d8",
       "range": {
         "startLine": 160,
         "startChar": 20,
