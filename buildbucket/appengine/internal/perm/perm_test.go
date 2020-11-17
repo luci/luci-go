@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -381,6 +382,37 @@ func TestCanUpdateBuild(t *testing.T) {
 			can, err := CanUpdateBuild(ctx)
 			So(err, ShouldBeNil)
 			So(can, ShouldBeFalse)
+		})
+	})
+}
+
+func TestValidateBuildToken(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidateUpdateBuildToken", t, func() {
+		ctx := context.Background()
+		b := &model.Build{
+			ID: 1,
+			Proto: pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+			BucketID:  "project/bucket",
+			BuilderID: "project/bucket/builder",
+		}
+
+		Convey("Works", func() {
+			ctx = metadata.NewIncomingContext(
+				ctx, metadata.Pairs(BuildTokenKey, authTokenValue("secret")))
+			b.UpdateToken = "secret"
+			So(ValidateBuildToken(ctx, b), ShouldBeNil)
+		})
+
+		Convey("Fails", func() {
 		})
 	})
 }
