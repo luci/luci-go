@@ -69,6 +69,9 @@ type CL struct {
 	// (e.g. Gerrit).
 	Snapshot *Snapshot
 
+	// ApplicableConfig keeps track of configs applicable to the CL.
+	ApplicableConfig *ApplicableConfig
+
 	// UpdateTime is exact time of when this entity was last updated.
 	//
 	// It's not indexed to avoid hot areas in the index.
@@ -168,23 +171,28 @@ func Delete(ctx context.Context, id CLID) error {
 	return nil
 }
 
-// UpdateSnapshot ensures that CL entity contains a snapshot at least as
-// recent as the given one.
+// Update updates CL entity with Snapshot and ApplicableConfig.
 //
 // Either ExternalID or a known CLID must be provided.
+// Either new Snapshot or ApplicableConfig must be provided.
 //
 // If CLID is not known and CL for provided ExternalID doesn't exist,
-// then a new CL is created with the given snapshot.
-// Otherwise, an existing CL entity is updated iff provided snapshot
-// is newer as measured by ExternalUpdateTime.
+// then a new CL is created with the given Snapshot & ApplicableConfig.
+//
+// Otherwise, an existing CL entity will be updated iff either:
+//  * if snapshot is given and it is more recent than what is already stored,
+//    as measured by ExternalUpdateTime.
+//  * same but for ApplicableConfig and ApplicableConfig.UpdateTime,
+//    respectively.
 //
 // TODO(tandrii): emit notification events.
-func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snapshot) error {
+func Update(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snapshot, acfg *ApplicableConfig) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known CLID must be provided")
 	}
-
-	newExternalTS := snapshot.ExternalUpdateTime.AsTime()
+	if snapshot == nil && acfg == nil {
+		panic("either new snapshot or new ApplicableConfig must be provided")
+	}
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if knownCLID == 0 {
@@ -192,7 +200,10 @@ func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapsho
 			switch err := datastore.Get(ctx, &m); {
 			case err == datastore.ErrNoSuchEntity:
 				// Insert new entity.
-				_, err = insert(ctx, eid, func(cl *CL) { cl.Snapshot = snapshot })
+				_, err = insert(ctx, eid, func(cl *CL) {
+					cl.Snapshot = snapshot
+					cl.ApplicableConfig = acfg
+				})
 				return err
 			case err != nil:
 				return errors.Annotate(err, "failed to get CLMap entity").Tag(transient.Tag).Err()
@@ -204,13 +215,18 @@ func UpdateSnapshot(ctx context.Context, eid ExternalID, knownCLID CLID, snapsho
 			return err
 		}
 		// Update exsting entity.
-		return update(ctx, cl, func(cl *CL) bool {
-			savedExternalTS := cl.Snapshot.GetExternalUpdateTime().AsTime()
-			if !savedExternalTS.IsZero() && newExternalTS.Before(savedExternalTS) {
-				return false // skip update.
+		return update(ctx, cl, func(cl *CL) (changed bool) {
+			if snapshot != nil && (cl.Snapshot == nil ||
+				cl.Snapshot.ExternalUpdateTime.AsTime().Before(snapshot.ExternalUpdateTime.AsTime())) {
+				cl.Snapshot = snapshot
+				changed = true
 			}
-			cl.Snapshot = snapshot
-			return true
+			if acfg != nil && (cl.ApplicableConfig == nil ||
+				cl.ApplicableConfig.UpdateTime.AsTime().Before(acfg.UpdateTime.AsTime())) {
+				cl.ApplicableConfig = acfg
+				changed = true
+			}
+			return
 		})
 	}, nil)
 	return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
