@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "701bef19_f81b6990",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T03:03:58Z",
+      "side": 1,
+      "message": "final lgtm.",
+      "revId": "eb5b332cd3596a8e308298785d553efd86b16305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "135e8ff4_bb77f85e",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T03:03:58Z",
+      "side": 1,
+      "message": "this and disable are no longer needed to be public, right?",
+      "range": {
+        "startLine": 113,
+        "startChar": 5,
+        "endLine": 113,
+        "endChar": 18
+      },
+      "revId": "eb5b332cd3596a8e308298785d553efd86b16305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

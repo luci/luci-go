@@ -82,6 +82,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c19125f_204f9469",
+        "filename": "cv/appengine/internal/config/refresh.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T03:03:58Z",
+      "side": 1,
+      "message": "Great point. Let\u0027s follow this from now on for CQ code. Thanks!",
+      "parentUuid": "db5f50f9_4fb911c5",
+      "range": {
+        "startLine": 44,
+        "startChar": 22,
+        "endLine": 44,
+        "endChar": 25
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cf430fda_a6b5014d",
@@ -336,6 +360,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e73dd11a_800c101d",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T03:03:58Z",
+      "side": 1,
+      "message": "this is quite hard to follow while reading you tests below. Can you split this into 2 separate functions:\nverifyExisting\nverifyDisabled",
+      "range": {
+        "startLine": 158,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 19
+      },
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1b113b0e_71a1ccdf",
         "filename": "cv/appengine/internal/config/refresh_test.go",
         "patchSetId": 12
@@ -365,6 +412,23 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "1b113b0e_71a1ccdf",
+      "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a9be76b_352e7ad3",
+        "filename": "cv/appengine/internal/config/refresh_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T03:03:58Z",
+      "side": 1,
+      "message": "👍",
       "revId": "ddeb30ac2bf0aaa86d28b6f7727d01e4e5bf7309",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
