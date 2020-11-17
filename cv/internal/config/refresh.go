@@ -161,7 +161,9 @@ func updateProject(ctx context.Context, project string) error {
 		return err
 	}
 
+	updated := false
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		updated = false
 		pc := ProjectConfig{Project: project}
 		switch err := datastore.Get(ctx, &pc); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
@@ -179,11 +181,19 @@ func updateProject(ctx context.Context, project string) error {
 				ExternalHash:     externalHash,
 				ConfigGroupNames: cgNames,
 			}
+			updated = true
 			return errors.Annotate(datastore.Put(ctx, &pc), "failed to put ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
 			// TODO(yiwzhang): Notify ProjectManager
 		}
 	}, nil)
-	return errors.Annotate(err, "failed to run transaction to update ProjectConfig").Tag(transient.Tag).Err()
+
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to run transaction to update ProjectConfig").Tag(transient.Tag).Err()
+	case updated:
+		logging.Infof(ctx, "updated project %q to rev %s hash %s ", project, "TODO", localHash)
+	}
+	return nil
 }
 
 func getExternalContentHash(ctx context.Context, project string) (string, error) {
@@ -215,7 +225,10 @@ func fetchCfg(ctx context.Context, project string, contentHash string) (*pb.Conf
 
 // disableProject disables the given LUCI Project if it is currently enabled.
 func disableProject(ctx context.Context, project string) error {
+	disabled := false
+
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		disabled = false
 		pc := ProjectConfig{Project: project}
 		switch err := datastore.Get(ctx, &pc); {
 		case datastore.IsErrNoSuchEntity(err):
@@ -231,8 +244,16 @@ func disableProject(ctx context.Context, project string) error {
 		if err := datastore.Put(ctx, &pc); err != nil {
 			return errors.Annotate(err, "failed to put ProjectConfig").Tag(transient.Tag).Err()
 		}
+		disabled = true
 		// TODO(yiwzhang): Notify ProjectManager
 		return nil
 	}, nil)
-	return errors.Annotate(err, "failed to run transaction to disable project %q", project).Tag(transient.Tag).Err()
+
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to run transaction to disable project %q", project).Tag(transient.Tag).Err()
+	case disabled:
+		logging.Infof(ctx, "disabled project %q", project)
+	}
+	return nil
 }
