@@ -46,6 +46,30 @@
       },
       "revId": "6a845195510bb0c8cd9278cbf10f404e44e66c85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddde1410_80935782",
+        "filename": "cv/appengine/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T18:30:57Z",
+      "side": 1,
+      "message": "nit: by QPS really I meant *concurrent* QPS, of course. An instance certainly can and should process \u003e\u003e80 requests/second, so long as they aren\u0027t all arriving at the same time.",
+      "parentUuid": "e61ac9b4_39dc705d",
+      "range": {
+        "startLine": 5,
+        "startChar": 27,
+        "endLine": 5,
+        "endChar": 29
+      },
+      "revId": "6a845195510bb0c8cd9278cbf10f404e44e66c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
