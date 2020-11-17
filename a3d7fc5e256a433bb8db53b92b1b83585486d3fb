@@ -33,6 +33,24 @@
       "message": "What\u0027s wrong with keeping at in init() around where it is used?",
       "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b68582d4_1832ced5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-17T13:51:48Z",
+      "side": 1,
+      "message": "tl;dr nothing yet. I think we can abandon this CL.\n\nMy prior comment prompted this CL, so I\u0027m answering instead of Yiwei.\n\n\nHardcoding queue name in the config package \"smells\" for me, and I wish a handler wasn\u0027t always immediately linked into every binary once (and if) we split CV into \u003e1 microservice.\n\nHowever, I don\u0027t have any idea yet how to best structure code and I think it should till we actually launch first milestone OR decide that we really need \u003e1 microservice.\n\n\nYiwei, sorry for not being clear that I don\u0027t think anything should be done right now.",
+      "parentUuid": "e2e14819_993b2760",
+      "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
