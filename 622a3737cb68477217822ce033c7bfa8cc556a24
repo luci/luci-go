@@ -93,6 +93,30 @@
       },
       "revId": "622a3737cb68477217822ce033c7bfa8cc556a24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "732a241d_206a7a18",
+        "filename": "cv/internal/config/refresh.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-17T18:34:39Z",
+      "side": 1,
+      "message": "oh sure! make sense. I can upload a follow up CL for that. Not sure if it\u0027s useful, should we also put the git revision in ProjectConfig entity?",
+      "parentUuid": "44dd9172_01616cf1",
+      "range": {
+        "startLine": 194,
+        "startChar": 44,
+        "endLine": 194,
+        "endChar": 47
+      },
+      "revId": "622a3737cb68477217822ce033c7bfa8cc556a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
