@@ -46,6 +46,13 @@ func main() {
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
 
+		tq.RegisterTaskClass(tq.TaskClass{
+			ID:        "refresh-project-config",
+			Prototype: (*config.RefreshProjectConfigTask)(nil),
+			Queue:     "refresh-project-config",
+			Handler:   config.RefreshTaskHandler,
+		})
+
 		srv.Routes.POST("/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) {

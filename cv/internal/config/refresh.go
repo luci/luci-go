@@ -34,30 +34,6 @@ import (
 
 const configFileName = "commit-queue.cfg"
 
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "refresh-project-config",
-		Prototype: &RefreshProjectConfigTask{},
-		Queue:     "refresh-project-config",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*RefreshProjectConfigTask)
-			action, actionFn := "update", updateProject
-			if task.GetDisable() {
-				action, actionFn = "disable", disableProject
-			}
-			project := task.GetProject()
-			if err := actionFn(ctx, project); err != nil {
-				errors.Log(ctx, err)
-				// Explicitly not forwarding transient tag so that tq won't retry
-				// because the refresh task is submitted every minute by AppEngine
-				// Cron.
-				return errors.Reason("failed to %s project %q: %s", action, project, err).Err()
-			}
-			return nil
-		},
-	})
-}
-
 // SubmitRefreshTasks submits tasks that update config for LUCI projects
 // or disable projects that do not have CV config in LUCI Config.
 func SubmitRefreshTasks(ctx context.Context) error {
@@ -104,6 +80,27 @@ func SubmitRefreshTasks(ctx context.Context) error {
 
 	if err != nil {
 		return err.(errors.MultiError).First()
+	}
+	return nil
+}
+
+// RefreshTaskHandler is the handler to handle the tasks submitted by
+// `SubmitRefreshTasks`.
+var RefreshTaskHandler tq.Handler = handleRefreshTask
+
+func handleRefreshTask(ctx context.Context, payload proto.Message) error {
+	task := payload.(*RefreshProjectConfigTask)
+	action, actionFn := "update", updateProject
+	if task.GetDisable() {
+		action, actionFn = "disable", disableProject
+	}
+	project := task.GetProject()
+	if err := actionFn(ctx, project); err != nil {
+		errors.Log(ctx, err)
+		// Explicitly not forwarding transient tag so that tq won't retry
+		// because the refresh task is submitted every minute by AppEngine
+		// Cron.
+		return errors.Reason("failed to %s project %q: %s", action, project, err).Err()
 	}
 	return nil
 }
