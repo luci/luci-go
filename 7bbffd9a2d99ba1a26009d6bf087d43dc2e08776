@@ -16,6 +16,24 @@
       "message": "1. It’s good to not mix “magic fd” with execv on macOS. If you do need “magic fd”, you can still do it with posix_spawn. posix_spawn is, in general, a superior replacement for fork–execv, and I encourage its use wherever possible (including here, even if you don’t need “magic fd” semantics).\n\n2. Does the thing being run need to interact with this fd at all? If it does, it won’t find it in the magic slot anymore.\n\n(1) is informational. LGTM assuming the answer to (2) is “no.”",
       "revId": "7bbffd9a2d99ba1a26009d6bf087d43dc2e08776",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15655e69_cfc8e5f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-11-17T23:26:52Z",
+      "side": 1,
+      "message": "1) It\u0027s worth clarifying that we do not want to fork here. We are execve\u0027ing python over top of the vpython process. This is desirable so that we don\u0027t need to deal with whether signals are forwarded to a subprocesss (and in the example where the parent is SIGKILLed, we\u0027d end up with an orphaned python subprocess)\n\n2) It does not. The only thing we want is for the fd to be kept open, to hold the lock. As long as the thing being run (python) doesn\u0027t close fds that it didn\u0027t open, this will work fine.\n\nThanks,",
+      "parentUuid": "e3a62670_3f0c5e84",
+      "revId": "7bbffd9a2d99ba1a26009d6bf087d43dc2e08776",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
