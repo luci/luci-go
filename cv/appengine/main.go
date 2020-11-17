@@ -46,7 +46,7 @@ func main() {
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
 
-		srv.Routes.POST("/internal/cron/refresh-config",
+		srv.Routes.GET("/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) {
 				// The cron job interval is 1 minute.
