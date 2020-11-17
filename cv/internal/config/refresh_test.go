@@ -40,6 +40,14 @@ import (
 
 var testNow = testclock.TestTimeUTC.Round(1 * time.Millisecond)
 
+func init() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "refresh-project-config",
+		Prototype: (*RefreshProjectConfigTask)(nil),
+		Queue:     "refresh-project-config",
+	})
+}
+
 func TestSubmitRefreshTasks(t *testing.T) {
 	t.Parallel()
 
