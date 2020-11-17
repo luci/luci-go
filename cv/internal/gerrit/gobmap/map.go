@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -75,12 +76,6 @@ func Update(ctx context.Context, project string) error {
 	return errors.New("not implemented")
 }
 
-// TODO(qyearsley): Update when this is in the config package. This is expected
-// to be "project/hash/name", where project is the LUCI project, hash is the
-// config hash for the LUCI project config that contains the config group, and
-// name is the config group name.
-type ProjectConfigGroupID string
-
 // Lookup returns config group IDs which watch the given combination of Gerrit
 // host, repo and ref.
 //
@@ -90,8 +85,8 @@ type ProjectConfigGroupID string
 //
 // Due to the ref_regexp[_exclude] options, CV can't ensure that each possible
 // combination is watched by at most one ConfigGroup, which is why this may
-// return multiple ProjectConfigGroupIDs.
-func Lookup(ctx context.Context, host, repo, ref string) ([]ProjectConfigGroupID, error) {
+// return multiple ConfigGroupIDs even for the same LUCI project.
+func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
 	// TODO(qyearsley): Implement:
 	// 1. Fetch all GobWatchMap entities for the given host and repo.
 	//    This should be done with a ancestor query for a host/repo.
