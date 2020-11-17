@@ -56,7 +56,7 @@ export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
       const target = anchor.getAttribute('target') || defaultTarget;
       anchor.setAttribute('target', target);
     });
-    token.content = template.content.firstElementChild!.outerHTML;
+    token.content = template.innerHTML;
     return existingHTMLBlockRule(tokens, i, ...params);
   };
 }
