@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1054f6d_07cc66bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-18T02:40:26Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/chromeos/builders/staging/staging-kernel-3.18-release-afdo-verify-toolchain/301/blamelist\n",
+      "revId": "dfb869c09dd7da38d39bdebd5180db6c64891924",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
