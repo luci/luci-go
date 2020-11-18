@@ -16,6 +16,52 @@
       "message": "https://nqmtuan-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/8629",
       "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "497b3a65_4335f57d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-18T01:17:15Z",
+      "side": 1,
+      "message": "Suggestion for slight wording change (slightly more specific about what the change will be for users):\n\n\"Switch to the new build page! (Note: from 1 Dec 2020, this page will redirect by default.)\"",
+      "range": {
+        "startLine": 628,
+        "startChar": 6,
+        "endLine": 629,
+        "endChar": 57
+      },
+      "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0576c419_2b58debb",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-18T01:17:15Z",
+      "side": 1,
+      "message": "Nit: I think many US/Europe users won\u0027t know what AEDT is. I\u0027d just remove it; we don\u0027t have to be that precise.",
+      "range": {
+        "startLine": 629,
+        "startChar": 52,
+        "endLine": 629,
+        "endChar": 56
+      },
+      "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
