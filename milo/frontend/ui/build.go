@@ -174,6 +174,7 @@ func (b *Build) ChangeLinks() []*Link {
 }
 
 func (b *Build) RecipeLink() *Link {
+	projectName := b.GetBuilder().GetProject()
 	cipdPackage := b.GetExe().GetCipdPackage()
 	recipeName := b.GetInput().GetProperties().GetFields()["recipe"].GetStringValue()
 	// We don't know location of recipes within the repo and getting that
@@ -181,6 +182,11 @@ func (b *Build) RecipeLink() *Link {
 	csHost := "source.chromium.org"
 	if strings.Contains(cipdPackage, "internal") {
 		csHost = "source.corp.google.com"
+	}
+	// TODO(crbug.com/1149540): remove this conditional once the long-term
+    // solution for recipe links has been implemented.
+	if projectName == "flutter" {
+		csHost = "cs.opensource.google"
 	}
 	u := url.URL{
 		Scheme: "https",
