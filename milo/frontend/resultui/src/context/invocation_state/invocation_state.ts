@@ -14,13 +14,13 @@
 
 
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
 import { TestNode, VariantStatus } from '../../models/test_node';
-import { Expectancy, Invocation } from '../../services/resultdb';
+import { Artifact, Expectancy, Invocation, QueryArtifactsResponse } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
 import { UserConfigs } from '../app_state/user_configs';
 
@@ -59,7 +59,7 @@ export class InvocationState {
   }
 
   @computed
-  get invocationReq(): IPromiseBasedObservable<Invocation> {
+  get invocationRes(): IPromiseBasedObservable<Invocation> {
     if (!this.appState.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
@@ -69,10 +69,36 @@ export class InvocationState {
 
   @computed
   get invocation(): Invocation | null {
-    if (this.invocationReq.state !== 'fulfilled') {
+    if (this.invocationRes.state !== FULFILLED) {
       return null;
     }
-    return this.invocationReq.value;
+    return this.invocationRes.value;
+  }
+
+  @computed
+  private get invArtifactsRes(): IPromiseBasedObservable<QueryArtifactsResponse> {
+    if (!this.appState.resultDb || !this.invocationName) {
+      // Returns a promise that never resolves when resultDb isn't ready.
+      return fromPromise(Promise.race([]));
+    }
+    const req = {
+      invocations: [this.invocationName],
+      followEdges: {includedInvocations: true, testResults: false},
+    };
+
+    // TODO(weiweilin): handle pagination.
+    return fromPromise(this.appState.resultDb.queryArtifacts(req));
+  }
+
+  @computed({keepAlive: true})
+  get invArtifacts(): Array<{invId: string, artifact: Artifact}> {
+    if (this.invArtifactsRes.state !== FULFILLED) {
+      return [];
+    }
+    return this.invArtifactsRes.value.artifacts?.map((a) => ({
+      invId: /^invocations\/(?<inv_id>.+)\/artifacts\/.+$/.exec(a.name)!.groups!['inv_id'],
+      artifact: a,
+    })) || [];
   }
 
   @observable.ref selectedNode!: TestNode;

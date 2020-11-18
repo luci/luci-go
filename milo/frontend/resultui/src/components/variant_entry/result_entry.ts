@@ -21,6 +21,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import '../../context/artifact/artifact_provider';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
@@ -36,6 +37,7 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
   @observable.ref appState!: AppState;
+  @observable.ref invocationState!: InvocationState;
 
   @observable.ref private _expanded = false;
   @computed get expanded() { return this._expanded; }
@@ -123,7 +125,7 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  private renderArtifacts() {
+  private renderResultLevelArtifacts() {
     if (this.artifacts.length === 0) {
       return html``;
     }
@@ -137,6 +139,27 @@ export class ResultEntryElement extends MobxLitElement {
           ${this.artifacts.map((artifact) => html`
           <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
           <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
+          `)}
+        </ul>
+      </milo-expandable-entry>
+    `;
+  }
+
+  private renderInvLevelArtifacts() {
+    const invArtifacts = this.invocationState.invArtifacts;
+    if (invArtifacts.length === 0) {
+      return html``;
+    }
+
+    return html`
+      <milo-expandable-entry .hideContentRuler=${true}>
+        <span slot="header">
+          Invocation Artifacts: <span class="greyed-out">${invArtifacts.length}</span>
+        </span>
+        <ul id="artifact-list" slot="content">
+          ${invArtifacts.map(({invId, artifact}) => html`
+          <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
+          <li><a href=${artifact.fetchUrl} target="_blank">${invId}/${artifact.artifactId}</a></li>
           `)}
         </ul>
       </milo-expandable-entry>
@@ -161,7 +184,8 @@ export class ResultEntryElement extends MobxLitElement {
       >
       </milo-image-diff-artifact>
       `}
-      ${this.renderArtifacts()}
+      ${this.renderResultLevelArtifacts()}
+      ${this.renderInvLevelArtifacts()}
       ${this.renderTags()}
     `;
   }
@@ -234,5 +258,9 @@ export class ResultEntryElement extends MobxLitElement {
 }
 
 customElement('milo-result-entry')(
-  consumeAppState(ResultEntryElement),
+  consumeAppState(
+    consumeInvocationState(
+      ResultEntryElement,
+    ),
+  ),
 );

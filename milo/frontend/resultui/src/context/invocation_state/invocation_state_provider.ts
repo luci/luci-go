@@ -38,9 +38,9 @@ export class InvocationStateProviderElement extends MobxLitElement {
       },
     ));
     this.disposers.push(when(
-      () => this.invocationState.invocationReq.state === 'rejected',
+      () => this.invocationState.invocationRes.state === 'rejected',
       () => this.dispatchEvent(new ErrorEvent('error', {
-        message: this.invocationState.invocationReq.value.toString(),
+        message: this.invocationState.invocationRes.value.toString(),
         composed: true,
         bubbles: true,
       })),
