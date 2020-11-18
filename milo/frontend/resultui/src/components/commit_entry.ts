@@ -119,7 +119,7 @@ export class CommitEntryElement extends MobxLitElement {
 
     #header-number {
       flex: 1;
-      max-width: 20px;
+      max-width: 30px;
       font-weight: bold;
     }
 
