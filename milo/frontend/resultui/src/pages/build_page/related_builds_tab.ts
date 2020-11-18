@@ -22,7 +22,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
-import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { NUMERIC_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { BuildExt } from '../../models/build_ext';
 
@@ -104,7 +104,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${getDisplayNameForStatus(build.status)}</td>
-        <td>${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td>
+        <td>${build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
         <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td>
         <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
