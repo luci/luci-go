@@ -39,6 +39,30 @@
       },
       "revId": "fe34724175d3b8fbd246b52b5c89cab6ff5b2a1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb4bba7a_9fac2ac3",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-18T05:08:35Z",
+      "side": 1,
+      "message": "Yes. This is probably not ideal but\n1. once we supported invocation level artifact in artifact embedding users probably won\u0027t need to expand this entry anymore.\n2. There are not many invocation level artifacts to begin with.\nWe can revisit this in the future if it causes any problem.",
+      "parentUuid": "f428a6d1_08bdeb78",
+      "range": {
+        "startLine": 188,
+        "startChar": 6,
+        "endLine": 188,
+        "endChar": 39
+      },
+      "revId": "fe34724175d3b8fbd246b52b5c89cab6ff5b2a1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
