@@ -79,6 +79,54 @@
       },
       "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2e4b1f4_39a5f16e",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-18T03:19:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0576c419_2b58debb",
+      "range": {
+        "startLine": 629,
+        "startChar": 52,
+        "endLine": 629,
+        "endChar": 56
+      },
+      "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8854c499_5c8e84e2",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-18T03:19:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "497b3a65_4335f57d",
+      "range": {
+        "startLine": 628,
+        "startChar": 6,
+        "endLine": 629,
+        "endChar": 57
+      },
+      "revId": "05921ae10868c71dc7728cceb48e3a38a778d6d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
