@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a2deea09_4fdeade1",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T21:17:33Z",
+      "side": 1,
+      "message": "I meant re-only RPCs. Will rephrase.",
+      "parentUuid": "c6170695_c0988049",
+      "revId": "392d30dd6602ca6ec509e554272022323e37481c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "98892a46_f1b809cc",
         "filename": "cv/internal/gerrit/gerritfake/fake.go",
         "patchSetId": 2
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-18T19:01:58Z",
       "side": 1,
       "message": "ACLs",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 5
+      },
+      "revId": "392d30dd6602ca6ec509e554272022323e37481c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d226012_e88ad998",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T21:17:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98892a46_f1b809cc",
       "range": {
         "startLine": 41,
         "startChar": 1,
