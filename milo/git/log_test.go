@@ -83,8 +83,8 @@ func TestLog(t *testing.T) {
 			res := &gitilespb.LogResponse{
 				Log: fakeCommits[1:101], // return 100 commits
 			}
-
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req)).Return(res, nil)
+
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, res.Log)
@@ -96,6 +96,36 @@ func TestLog(t *testing.T) {
 			Convey("ACLs respected even with cache", func() {
 				_, err := impl.Log(cDenied, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err.Error(), ShouldContainSubstring, "not logged in")
+			})
+
+			Convey("with exactly one last commit not in cache", func() {
+				req2 := &gitilespb.LogRequest{
+					Project:    "project",
+					Committish: fakeCommits[100].Id,
+					PageSize:   100, // we always fetch 100
+				}
+				res2 := &gitilespb.LogResponse{
+					Log: fakeCommits[100:200],
+				}
+				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
+				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 101})
+				So(err, ShouldBeNil)
+				So(commits, ShouldResembleProto, fakeCommits[1:102])
+			})
+
+			Convey("with exactly the proceeding commit not in cache", func() {
+				req2 := &gitilespb.LogRequest{
+					Project:    "project",
+					Committish: fakeCommits[51].Id,
+					PageSize:   100, // we always fetch 100
+				}
+				res2 := &gitilespb.LogResponse{
+					Log: fakeCommits[51:150],
+				}
+				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil).Times(0)
+				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[51].Id, &LogOptions{Limit: 50})
+				So(err, ShouldBeNil)
+				So(commits, ShouldResembleProto, fakeCommits[51:101])
 			})
 
 			Convey("with ref in cache", func() {
