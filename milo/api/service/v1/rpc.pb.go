@@ -148,6 +148,7 @@ type QueryBlamelistResponse struct {
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	// The repo commit immediately preceding |commits|. Useful for creating
 	// git log queries, which are exclusive of the first commit.
+	// Unset when |commits| includes the first commit in the repository.
 	PrecedingCommit *git.Commit `protobuf:"bytes,3,opt,name=preceding_commit,json=precedingCommit,proto3" json:"preceding_commit,omitempty"`
 }
 
