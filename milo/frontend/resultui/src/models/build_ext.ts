@@ -92,9 +92,15 @@ export class BuildExt {
   }
 
   @computed get recipeLink(): Link {
-    const csHost = this.exe.cipdPackage.includes('internal')
-      ? 'source.corp.google.com'
-      : 'source.chromium.org';
+    var csHost = 'source.chromium.org'
+    if (this.exe.cipdPackage.includes('internal')) {
+      csHost = 'source.corp.google.com'
+    }
+    // TODO(crbug.com/1149540): remove this conditional once the long-term
+    // solution for recipe links has been implemented.
+    if (this.builder.project === 'flutter') {
+      csHost = 'cs.opensource.google'
+    }
     const recipeName = this.input.properties['recipe'] as string;
     return {
       label: recipeName,
