@@ -116,4 +116,16 @@ export class BuildExt {
   @computed get executionDuration(): Duration | null {
     return this.startTime ? (this.endTime || this.renderTime.get()).diff(this.startTime) : null;
   }
+
+  @computed get timeSinceCreated(): Duration {
+    return this.renderTime.get().diff(this.createTime)
+  }
+
+  @computed get timeSinceStarted(): Duration | null {
+    return this.startTime ? this.renderTime.get().diff(this.startTime) : null;
+  }
+
+  @computed get timeSinceEnded(): Duration | null {
+    return this.endTime ? this.renderTime.get().diff(this.endTime) : null;
+  }
 }

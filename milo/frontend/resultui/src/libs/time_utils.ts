@@ -14,7 +14,7 @@
 
 import { Duration } from 'luxon';
 
-export const DEFAULT_TIME_FORMAT = 'ccc, HH:mm:ss MMM dd yyyy ZZZZ';
+export const LONG_TIME_FORMAT = 'HH:mm:ss ccc, MMM dd yyyy ZZZZ';
 export const NUMERIC_TIME_FORMAT = 'y-MM-dd HH:mm:ss ZZ';
 
 export function displayDuration(duration: Duration) {

@@ -26,7 +26,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state/build_s
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { LONG_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 
@@ -175,9 +175,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       </i>
       ${(() => { switch (build.status) {
       case BuildStatus.Scheduled:
-        return `since ${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}`;
+        return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
       case BuildStatus.Started:
-        return `since ${build.startTime!.toFormat(DEFAULT_TIME_FORMAT)}`;
+        return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
       case BuildStatus.Canceled:
         return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
       case BuildStatus.Failure:

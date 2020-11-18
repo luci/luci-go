@@ -28,7 +28,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { DEFAULT_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { LONG_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
@@ -57,9 +57,9 @@ export class OverviewTabElement extends MobxLitElement {
         </i>
         ${(() => { switch (build.status) {
         case BuildStatus.Scheduled:
-          return `since ${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}`;
+          return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
         case BuildStatus.Started:
-          return `since ${build.startTime!.toFormat(DEFAULT_TIME_FORMAT)}`;
+          return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
         case BuildStatus.Canceled:
           return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
         case BuildStatus.Failure:
@@ -212,9 +212,9 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Timing</h3>
         <table>
-          <tr><td>Create:</td><td>${build.createTime.toFormat(DEFAULT_TIME_FORMAT)}</td></tr>
-          <tr><td>Start:</td><td>${build.startTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
-          <tr><td>End:</td><td>${build.endTime?.toFormat(DEFAULT_TIME_FORMAT) || 'N/A'}</td></tr>
+          <tr><td>Created:</td><td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td></tr>
+          <tr><td>Started:</td><td>${build.startTime && (build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) || 'N/A'}</td></tr>
+          <tr><td>Ended:</td><td>${build.endTime && (build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) || 'N/A'}</td></tr>
           <tr><td>Pending:</td><td>${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}</td></tr>
           <tr><td>Execution:</td><td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td></tr>
         </table>
