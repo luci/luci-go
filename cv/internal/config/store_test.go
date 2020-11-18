@@ -64,6 +64,32 @@ func TestComputeHash(t *testing.T) {
 	})
 }
 
+func TestGetProjectConfig(t *testing.T) {
+	t.Parallel()
+	Convey("Get ProjectConfig", t, func() {
+		ctx := gaememory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		pc := &ProjectConfig{
+			Project:      "my-project",
+			Enabled:      true,
+			EVersion:     1,
+			Hash:         "sha256:c0ffee7ea",
+			ExternalHash: "ba5eba11ba5eba11",
+		}
+		So(datastore.Put(ctx, pc), ShouldBeNil)
+		Convey("with existent ProjectConfig", func() {
+			ret, err := GetProjectConfig(ctx, "my-project")
+			So(err, ShouldBeNil)
+			So(ret, ShouldResemble, pc)
+		})
+		Convey("with nonexistent ProjectConfig", func() {
+			_, err := GetProjectConfig(ctx, "bogus-project")
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
 func TestGetAllProjectIDs(t *testing.T) {
 	t.Parallel()
 	Convey("Get Project IDs", t, func() {
@@ -114,17 +140,20 @@ type readOnlyFilter struct{ datastore.RawInterface }
 func (f readOnlyFilter) PutMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.NewKeyCB) error {
 	panic("write is not supported")
 }
-func TestPutConfigGroups(t *testing.T) {
+
+func TestPutAndGetConfigGroups(t *testing.T) {
 	t.Parallel()
-	Convey("PutConfigGroups", t, func() {
+	Convey("PutConfigGroups and GetConfigGrups", t, func() {
 		ctx := gaememory.Use(context.Background())
-		Convey("New Configs", func() {
+		project := "chromium"
+
+		Convey("Putting one sample group", func() {
 			hash := computeHash(testCfg)
-			err := putConfigGroups(ctx, testCfg, "chromium", hash)
+			err := putConfigGroups(ctx, testCfg, project, hash)
 			So(err, ShouldBeNil)
 			stored := ConfigGroup{
 				ID:      makeConfigGroupID(hash, "group_foo", 0),
-				Project: datastore.MakeKey(ctx, projectConfigKind, "chromium"),
+				Project: datastore.MakeKey(ctx, projectConfigKind, project),
 			}
 			err = datastore.Get(ctx, &stored)
 			So(err, ShouldBeNil)
@@ -136,8 +165,22 @@ func TestPutConfigGroups(t *testing.T) {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
 					return readOnlyFilter{rds}
 				})
-				err := putConfigGroups(ctx, testCfg, "chromium", computeHash(testCfg))
+				err := putConfigGroups(ctx, testCfg, project, computeHash(testCfg))
 				So(err, ShouldBeNil)
+			})
+
+			Convey("Getting the group that was put", func() {
+				groups, err := GetConfigGroups(ctx, project)
+				So(err, ShouldBeNil)
+				So(len(groups), ShouldEqual, 1)
+				So(groups[0].ID, ShouldEqual, makeConfigGroupID(hash, "group_foo", 0))
+			})
+
+			Convey("Getting groups for a nonexistent project", func() {
+				groups, err := GetConfigGroups(ctx, "nonexistent")
+				// No error, but no groups returned.
+				So(err, ShouldBeNil)
+				So(len(groups), ShouldEqual, 0)
 			})
 		})
 	})
