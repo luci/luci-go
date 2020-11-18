@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bde3a26a_4e5491b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-18T23:49:45Z",
+      "side": 1,
+      "message": "I think it looks good to submit, and adding tests in a separate CL sounds alright to me.",
+      "revId": "adda70df62309bb56392753c2b4e576a90757c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee2f04c4_95ff274a",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-18T23:49:45Z",
+      "side": 1,
+      "message": "Nit: capitalize",
+      "range": {
+        "startLine": 152,
+        "startChar": 6,
+        "endLine": 152,
+        "endChar": 11
+      },
+      "revId": "adda70df62309bb56392753c2b4e576a90757c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8b1c68f_31b020ff",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-18T23:49:45Z",
+      "side": 1,
+      "message": "Nit: period at end of line",
+      "revId": "adda70df62309bb56392753c2b4e576a90757c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
