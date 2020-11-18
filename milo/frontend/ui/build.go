@@ -626,6 +626,7 @@ var (
 							href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/b{{.Id}}"
 						{{end}}
 					>Switch to the new build page!</a>
+					(It will become the default view on 1 Dec 2020 AEDT)
 				</div>`))
 )
 
