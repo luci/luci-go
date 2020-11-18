@@ -16,6 +16,29 @@
       "message": "Demo:\nhttps://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/inv/task-chromium-swarm.appspot.com-4eb6836b40d82d11-batch-3/test-results?expected\u003dfalse\u0026exonerated\u003dfalse\u0026flaky\u003dtrue\n\nNote: data in the demo are hardcoded since there\u0027s no invocation-level artifact in dev environment yet.",
       "revId": "fe34724175d3b8fbd246b52b5c89cab6ff5b2a1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f428a6d1_08bdeb78",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-18T05:05:16Z",
+      "side": 1,
+      "message": "FMI: Does this mean that invocation-level artifacts are rendered for every test result?",
+      "range": {
+        "startLine": 188,
+        "startChar": 6,
+        "endLine": 188,
+        "endChar": 39
+      },
+      "revId": "fe34724175d3b8fbd246b52b5c89cab6ff5b2a1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
