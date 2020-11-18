@@ -80,8 +80,6 @@ func (p *implementation) log(c context.Context, host, project, commitish, ancest
 		switch {
 		case len(commits) == 0:
 			commits = page
-		case len(page) == 0:
-			// Do nothing.
 		default:
 			if page[0].Id != commits[len(commits)-1].Id {
 				panic(fmt.Sprintf(
@@ -104,37 +102,31 @@ func (p *implementation) log(c context.Context, host, project, commitish, ancest
 	}
 
 	var page []*gitpb.Commit
-	for remaining > 100 {
-		// We need to fetch >100 commits, but one logReq can handle only 100.
-		// Call it in a loop.
+
+	// We may need to fetch >100 commits, but one logReq can handle only 100.
+	// Call it in a loop.
+	for remaining > 0 {
+		// Don't query excessive commits.
+		// +1 because the first returned commit will be discarded.
+		if req.min > remaining+1 {
+			req.min = remaining + 1
+		}
 		page, err = req.call(c)
 		switch {
 		case err != nil:
 			return
-		case len(page) < 100:
-			// This can happen iff there are no more commits.
-			add(page)
-			return
+		case len(page) == 0:
+			break
 		case len(page) > 100:
 			panic("impossible: logReq.call() returned >100 commits")
 		default:
+			add(page)
+
 			// There may be more commits.
 			// Continue from the last fetched commit.
 			req.commitish = page[len(page)-1].Id
-			add(page)
-			if remaining == 0 {
-				panic("impossible: remaining reached 0")
-			}
 		}
 	}
-
-	// last page. One logReq.call() can handle the rest.
-	req.min = remaining
-	page, err = req.call(c)
-	if err != nil {
-		return
-	}
-	add(page)
 
 	// we may end up with more than we were asked for because
 	// gitReq's parameter is minimum, not limit.
