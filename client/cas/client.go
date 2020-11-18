@@ -59,7 +59,7 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		casConcurrency = runtime.NumCPU()
 	}
 
-	client, err := client.NewClient(ctx, instance,
+	cl, err := client.NewClient(ctx, instance,
 		client.DialParams{
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
@@ -70,9 +70,13 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	}
 
 	// Set restricted permission for written files.
-	client.DirMode = 0700
-	client.ExecutableMode = 0700
-	client.RegularMode = 0600
-	client.UtilizeLocality = true
-	return client, nil
+	cl.DirMode = 0700
+	cl.ExecutableMode = 0700
+	cl.RegularMode = 0600
+	cl.UtilizeLocality = true
+	cl.TreeSymlinkOpts = client.DefaultTreeSymlinkOpts()
+	cl.TreeSymlinkOpts.Preserved = true
+	cl.TreeSymlinkOpts.FollowsTarget = false
+
+	return cl, nil
 }
