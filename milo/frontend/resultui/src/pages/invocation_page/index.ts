@@ -108,7 +108,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       </div>
       <milo-status-bar
         .components=${[{color: 'var(--active-color)', weight: 1}]}
-        .loading=${this.invocationState.invocationReq.state === 'pending'}
+        .loading=${this.invocationState.invocationRes.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
         .tabs=${this.tabDefs}
