@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0a868011_af780800",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-18T23:43:35Z",
+      "side": 1,
+      "message": "\u003e Patch Set 2:\n\u003e \n\u003e (1 comment)\n\u003e \n\u003e This change is ready for review.\n\nNote, it\u0027s not really ready for review yet, still WIP.\n\nI might split this into separate CLs for Update and Lookup.",
+      "revId": "958b574e13a9f02bdf73dbc0b2be54c8754b54d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7599ffab_b9298919",
         "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
         "patchSetId": 2
