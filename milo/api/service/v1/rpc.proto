@@ -81,6 +81,7 @@ message QueryBlamelistResponse {
 
   // The repo commit immediately preceding |commits|. Useful for creating
   // git log queries, which are exclusive of the first commit.
+  // Unset when |commits| includes the first commit in the repository.
   git.Commit preceding_commit = 3;
 }
 
