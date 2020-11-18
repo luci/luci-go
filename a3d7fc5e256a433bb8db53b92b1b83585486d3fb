@@ -51,6 +51,24 @@
       "parentUuid": "e2e14819_993b2760",
       "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5d7658f_73e17093",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-18T04:45:02Z",
+      "side": 1,
+      "message": "got it. sorry, it\u0027s misunderstanding on my end. I\u0027ll abandon this change.",
+      "parentUuid": "b68582d4_1832ced5",
+      "revId": "a3d7fc5e256a433bb8db53b92b1b83585486d3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
