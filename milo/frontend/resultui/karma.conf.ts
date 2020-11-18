@@ -31,7 +31,7 @@ module.exports = (config: Config) => {
     frameworks: ['mocha', 'chai'],
 
     // list of files / patterns to load in the browser
-    files: ['index_test.ts'],
+    files: ['src/index_test.ts'],
 
     // list of files / patterns to exclude
     exclude: [],
@@ -40,7 +40,7 @@ module.exports = (config: Config) => {
     // available preprocessors:
     // https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'index_test.ts': ['webpack', 'sourcemap'],
+      'src/index_test.ts': ['webpack', 'sourcemap'],
     },
 
     plugins: [
