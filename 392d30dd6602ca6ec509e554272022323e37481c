@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c9c1bb1_789fc017",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:58:36Z",
+      "side": 1,
+      "message": "Yeah.",
+      "parentUuid": "8da6f856_65ebd31e",
+      "revId": "392d30dd6602ca6ec509e554272022323e37481c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "98892a46_f1b809cc",
