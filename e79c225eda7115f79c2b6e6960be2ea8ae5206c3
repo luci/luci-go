@@ -16,6 +16,52 @@
       "message": "Hi, can you help to review this CL? I also outlined my idea in that bug - https://crbug.com/1145959.",
       "revId": "e79c225eda7115f79c2b6e6960be2ea8ae5206c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e0d9928_6a23c19e",
+        "filename": "led/job/job.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T21:21:07Z",
+      "side": 1,
+      "message": "(crbug/1145959).",
+      "range": {
+        "startLine": 87,
+        "startChar": 50,
+        "endLine": 87,
+        "endChar": 51
+      },
+      "revId": "e79c225eda7115f79c2b6e6960be2ea8ae5206c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "873899b9_fb797f9f",
+        "filename": "led/job/job.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T21:21:07Z",
+      "side": 1,
+      "message": "job.\nnot all of them are bb builds.",
+      "range": {
+        "startLine": 99,
+        "startChar": 56,
+        "endLine": 99,
+        "endChar": 62
+      },
+      "revId": "e79c225eda7115f79c2b6e6960be2ea8ae5206c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
