@@ -32,7 +32,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @observable.ref private commits: GitCommit[] = [];
   @observable.ref private endOfPage = false;
-  @observable.ref private precedingCommit!: GitCommit;
+  @observable.ref private precedingCommit?: GitCommit;
   @observable.ref private isLoading = true;
 
   @computed
