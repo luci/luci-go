@@ -194,7 +194,7 @@ func TestQueryBlamelist(t *testing.T) {
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "fake_gitiles_host",
 						Project: "fake_gitiles_project",
-						Id:      "commit1",
+						Id:      "commit8",
 					},
 					Builder: builder1,
 				}
@@ -210,75 +210,153 @@ func TestQueryBlamelist(t *testing.T) {
 
 		Convey(`get all the commits in the blamelist`, func() {
 			Convey(`in one page`, func() {
-				req := &milopb.QueryBlamelistRequest{
-					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "fake_gitiles_host",
-						Project: "fake_gitiles_project",
-						Id:      "commit1",
-					},
-					Builder: builder1,
-				}
-				gitMock.
-					EXPECT().
-					Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
-					Return(commits, nil)
+				Convey(`when we found the previous build`, func() {
+					req := &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit8",
+						},
+						Builder: builder1,
+					}
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Return(commits, nil)
 
-				res, err := srv.QueryBlamelist(c, req)
-				So(err, ShouldBeNil)
-				So(res.Commits, ShouldHaveLength, 3)
-				So(res.Commits[0].Id, ShouldEqual, "commit8")
-				So(res.Commits[1].Id, ShouldEqual, "commit7")
-				So(res.Commits[2].Id, ShouldEqual, "commit6")
-				So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+					res, err := srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 3)
+					So(res.Commits[0].Id, ShouldEqual, "commit8")
+					So(res.Commits[1].Id, ShouldEqual, "commit7")
+					So(res.Commits[2].Id, ShouldEqual, "commit6")
+					So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+				})
+
+				Convey(`when there's no previous build`, func() {
+					req := &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit3",
+						},
+						Builder: builder1,
+					}
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Return(commits[5:], nil)
+
+					res, err := srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 3)
+					So(res.Commits[0].Id, ShouldEqual, "commit3")
+					So(res.Commits[1].Id, ShouldEqual, "commit2")
+					So(res.Commits[2].Id, ShouldEqual, "commit1")
+					So(res.PrecedingCommit, ShouldBeZeroValue)
+				})
 			})
+
 			Convey(`in multiple pages`, func() {
-				// Query the first page.
-				req := &milopb.QueryBlamelistRequest{
-					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "fake_gitiles_host",
-						Project: "fake_gitiles_project",
-						Id:      "commit1",
-					},
-					Builder:  builder1,
-					PageSize: 2,
-				}
+				Convey(`when we found the previous build`, func() {
+					// Query the first page.
+					req := &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit8",
+						},
+						Builder:  builder1,
+						PageSize: 2,
+					}
 
-				gitMock.
-					EXPECT().
-					Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
-					Return(commits[0:3], nil)
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[0:3], nil)
 
-				res, err := srv.QueryBlamelist(c, req)
-				So(err, ShouldBeNil)
-				So(res.Commits, ShouldHaveLength, 2)
-				So(res.Commits[0].Id, ShouldEqual, "commit8")
-				So(res.Commits[1].Id, ShouldEqual, "commit7")
-				So(res.NextPageToken, ShouldNotBeZeroValue)
-				So(res.PrecedingCommit.Id, ShouldEqual, "commit6")
+					res, err := srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 2)
+					So(res.Commits[0].Id, ShouldEqual, "commit8")
+					So(res.Commits[1].Id, ShouldEqual, "commit7")
+					So(res.NextPageToken, ShouldNotBeZeroValue)
+					So(res.PrecedingCommit.Id, ShouldEqual, "commit6")
 
-				// Query the second page.
-				req = &milopb.QueryBlamelistRequest{
-					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "fake_gitiles_host",
-						Project: "fake_gitiles_project",
-						Id:      "commit1",
-					},
-					Builder:   builder1,
-					PageSize:  2,
-					PageToken: res.NextPageToken,
-				}
+					// Query the second page.
+					req = &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit8",
+						},
+						Builder:   builder1,
+						PageSize:  2,
+						PageToken: res.NextPageToken,
+					}
 
-				gitMock.
-					EXPECT().
-					Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, "commit6", &git.LogOptions{Limit: 3, WithFiles: true}).
-					Return(commits[2:5], nil)
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, "commit6", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[2:5], nil)
 
-				res, err = srv.QueryBlamelist(c, req)
-				So(err, ShouldBeNil)
-				So(res.Commits, ShouldHaveLength, 1)
-				So(res.Commits[0].Id, ShouldEqual, "commit6")
-				So(res.NextPageToken, ShouldBeZeroValue)
-				So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+					res, err = srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 1)
+					So(res.Commits[0].Id, ShouldEqual, "commit6")
+					So(res.NextPageToken, ShouldBeZeroValue)
+					So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+				})
+
+				Convey(`when there's no previous build`, func() {
+					// Query the first page.
+					req := &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit3",
+						},
+						Builder:  builder1,
+						PageSize: 2,
+					}
+
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[5:8], nil)
+
+					res, err := srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 2)
+					So(res.Commits[0].Id, ShouldEqual, "commit3")
+					So(res.Commits[1].Id, ShouldEqual, "commit2")
+					So(res.NextPageToken, ShouldNotBeZeroValue)
+					So(res.PrecedingCommit.Id, ShouldEqual, "commit1")
+
+					// Query the second page.
+					req = &milopb.QueryBlamelistRequest{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "fake_gitiles_host",
+							Project: "fake_gitiles_project",
+							Id:      "commit3",
+						},
+						Builder:   builder1,
+						PageSize:  2,
+						PageToken: res.NextPageToken,
+					}
+
+					gitMock.
+						EXPECT().
+						Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, "commit1", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[7:], nil)
+
+					res, err = srv.QueryBlamelist(c, req)
+					So(err, ShouldBeNil)
+					So(res.Commits, ShouldHaveLength, 1)
+					So(res.Commits[0].Id, ShouldEqual, "commit1")
+					So(res.NextPageToken, ShouldBeZeroValue)
+					So(res.PrecedingCommit, ShouldBeZeroValue)
+				})
 			})
 		})
 	})
