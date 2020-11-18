@@ -75,19 +75,28 @@ func TestLog(t *testing.T) {
 				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
-			req := &gitilespb.LogRequest{
+			req1 := &gitilespb.LogRequest{
 				Project:    "project",
 				Committish: "refs/heads/main",
 				PageSize:   100,
 			}
-			res := &gitilespb.LogResponse{
+			res1 := &gitilespb.LogResponse{
 				Log: fakeCommits[1:101], // return 100 commits
 			}
+			req2 := &gitilespb.LogRequest{
+				Project:    "project",
+				Committish: res1.Log[len(res1.Log)-1].Id,
+				PageSize:   100, // we always fetch 100
+			}
+			res2 := &gitilespb.LogResponse{
+				Log: fakeCommits[100:200],
+			}
+			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req1)).Return(res1, nil)
+			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil).MaxTimes(1)
 
-			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req)).Return(res, nil)
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, res.Log)
+			So(commits, ShouldResemble, res1.Log)
 
 			// Now that we have something in cache, call Log with cached commits.
 			// gitiles.Log was already called maximum number of times, which is 1,
@@ -98,28 +107,34 @@ func TestLog(t *testing.T) {
 				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
+			Convey("with exactly one last commit not in cache", func() {
+				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 101})
+				So(err, ShouldBeNil)
+				So(commits, ShouldResembleProto, fakeCommits[1:102])
+			})
+
 			Convey("with ref in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[:50])
+				So(commits, ShouldResembleProto, res1.Log[:50])
 			})
 
 			Convey("with top commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[1].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[:50])
+				So(commits, ShouldResembleProto, res1.Log[:50])
 			})
 
 			Convey("with ancestor commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[1:51])
+				So(commits, ShouldResembleProto, res1.Log[1:51])
 			})
 
 			Convey("with second ancestor commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[3].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[2:52])
+				So(commits, ShouldResembleProto, res1.Log[2:52])
 			})
 
 			Convey("min is honored", func() {
