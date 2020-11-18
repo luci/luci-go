@@ -57,8 +57,13 @@ export interface TestResult {
   readonly status: TestStatus;
   readonly summaryHtml: string;
   readonly startTime: string;
-  readonly duration: string;
+  readonly duration: Duration;
   readonly tags?: Tag[];
+}
+
+export interface Duration {
+  readonly seconds?: number;
+  readonly nanos?: number;
 }
 
 export interface TestExoneration {
@@ -113,6 +118,20 @@ export interface ListArtifactsRequest {
   readonly pageToken?: string;
 }
 
+export interface EdgeTypeSet {
+  readonly includedInvocations: boolean;
+  readonly testResults: boolean;
+}
+
+export interface QueryArtifactsRequest {
+  readonly invocations: string[];
+  readonly followEdges?: EdgeTypeSet;
+  readonly testResultPredicate?: TestResultPredicate;
+  readonly maxStaleness?: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
 export interface GetArtifactRequest {
   readonly name: string;
 }
@@ -146,6 +165,11 @@ export interface QueryTestExonerationsResponse {
 }
 
 export interface ListArtifactsResponse {
+  readonly artifacts?: Artifact[];
+  readonly nextPageToken?: string;
+}
+
+export interface QueryArtifactsResponse {
   readonly artifacts?: Artifact[];
   readonly nextPageToken?: string;
 }
@@ -185,6 +209,13 @@ export class ResultDb {
       'ListArtifacts',
       req,
     ) as ListArtifactsResponse;
+  }
+
+  async queryArtifacts(req: QueryArtifactsRequest) {
+    return await this.call(
+      'QueryArtifacts',
+      req,
+    ) as QueryArtifactsResponse;
   }
 
   async getArtifact(req: GetArtifactRequest) {
