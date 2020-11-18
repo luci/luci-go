@@ -16,6 +16,24 @@
       "message": "Just want to doublecheck if this is a string? From the name I imagine it may be a number",
       "revId": "26da244095483f56c07e379ee49d5db934355eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e6ef0b3_d30d9377",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-18T03:06:03Z",
+      "side": 1,
+      "message": "It is a string.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/third_party/src/github.com/golang/protobuf/ptypes/duration/duration.pb.go;l\u003d72",
+      "parentUuid": "413981ac_9b823c39",
+      "revId": "26da244095483f56c07e379ee49d5db934355eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
