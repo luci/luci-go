@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bf6dd89_bcef5469",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:57:44Z",
+      "side": 1,
+      "message": "Thanks for quick review!",
+      "parentUuid": "bde3a26a_4e5491b3",
+      "revId": "adda70df62309bb56392753c2b4e576a90757c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ee2f04c4_95ff274a",
