@@ -141,25 +141,31 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	// copy duplicates files later.
 	var dups []*client.TreeOutput
 
-	mkdirmap := make(map[string]struct{})
-	mkdir := func(dir string) error {
-		if _, ok := mkdirmap[dir]; ok {
-			return nil
+	{
+		// Create directories in this scope.
+		dirs := make([]string, 0, len(outputs))
+		for path, output := range outputs {
+			if output.IsEmptyDirectory {
+				dirs = append(dirs, path)
+			} else {
+				dirs = append(dirs, filepath.Dir(path))
+			}
 		}
-		mkdirmap[dir] = struct{}{}
-		return os.MkdirAll(dir, 0o700)
+		sort.Strings(dirs)
+
+		for i, dir := range dirs {
+			if i > 0 && dirs[i-1] == dir {
+				continue
+			}
+			if err := os.MkdirAll(dir, 0o700); err != nil {
+				return errors.Annotate(err, "failed to create directory").Err()
+			}
+		}
 	}
 
 	for path, output := range outputs {
 		if output.IsEmptyDirectory {
-			if err := mkdir(path); err != nil {
-				return errors.Annotate(err, "failed to create directory").Err()
-			}
 			continue
-		}
-
-		if err := mkdir(filepath.Dir(path)); err != nil {
-			return errors.Annotate(err, "failed to create directory").Err()
 		}
 
 		if output.SymlinkTarget != "" {
