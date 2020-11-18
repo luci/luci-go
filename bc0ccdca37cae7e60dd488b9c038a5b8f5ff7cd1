@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba05aed2_3adb8358",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T01:10:42Z",
+      "side": 1,
+      "message": "Yiwei, this is my incomplete fake. PTAL. If you can make progress on it this week, that\u0027d be of great help. I\u0027m open to changes of some of the methods -- I haven\u0027t coded tests any tests with it, yet.\nThe inspiration is test/gerrit_fakes.py file in CQDaemon, though Go makes life harder.",
+      "revId": "bc0ccdca37cae7e60dd488b9c038a5b8f5ff7cd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
