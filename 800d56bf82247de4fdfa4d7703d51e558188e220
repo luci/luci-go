@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f1b3219_b6c8a263",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:16:59Z",
+      "side": 1,
+      "message": "I propose to land this CL w/o tests, trusting that I\u0027ll add them once fake is ready + file fetching code is added. SGTU?",
+      "revId": "800d56bf82247de4fdfa4d7703d51e558188e220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

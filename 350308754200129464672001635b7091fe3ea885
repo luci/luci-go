@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b19d2d0_b585146c",
+        "filename": "cv/internal/changelist/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a1a9ce7_c529d33c",
+      "range": {
+        "startLine": 34,
+        "startChar": 37,
+        "endLine": 34,
+        "endChar": 45
+      },
+      "revId": "350308754200129464672001635b7091fe3ea885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0aa6b6d_8369341a",
@@ -71,6 +95,24 @@
       "writtenOn": "2020-11-18T19:13:52Z",
       "side": 1,
       "message": "Naming nit: this could be called ContainsOnlyProject (or this function and the one below could be named HasOnlyProject (or OnlyHasProject) and HasProject).",
+      "revId": "350308754200129464672001635b7091fe3ea885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0debbc55_05d3c91c",
+        "filename": "cv/internal/changelist/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0aa6b6d_8369341a",
       "revId": "350308754200129464672001635b7091fe3ea885",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -98,6 +140,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "09500a8d_8dc4c76f",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64fe9701_1bfb82a3",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 17
+      },
+      "revId": "350308754200129464672001635b7091fe3ea885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f19852f_e1ba5f03",
@@ -111,6 +177,30 @@
       "writtenOn": "2020-11-18T19:13:52Z",
       "side": 1,
       "message": "new",
+      "range": {
+        "startLine": 138,
+        "startChar": 3,
+        "endLine": 138,
+        "endChar": 5
+      },
+      "revId": "350308754200129464672001635b7091fe3ea885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26aac632_37b27209",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-18T23:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f19852f_e1ba5f03",
       "range": {
         "startLine": 138,
         "startChar": 3,
