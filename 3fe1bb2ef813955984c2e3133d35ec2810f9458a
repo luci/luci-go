@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a0949a37_91ec326e",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-18T06:05:42Z",
+      "side": 1,
+      "message": "i see the problem: I don\u0027t think we should use QueryArtifacts in this case, because invocation-level artifacts of sub-invocations have little to do with test results in the current invocation. Consider a situation:\n- build B scheduled a task T to run some tests\n- T ran some tests, and then attached syslogs as invocation-level artifacts\n- B also ran some of its own tests, and also attached its own syslogs to the B\u0027s invocation\n\nnow when we display B\u0027s test results, we also display syslogs of B (correct), but also syslogs of other machines.",
+      "parentUuid": "179d2299_01377ed8",
+      "range": {
+        "startLine": 162,
+        "startChar": 59,
+        "endLine": 162,
+        "endChar": 67
+      },
+      "revId": "3fe1bb2ef813955984c2e3133d35ec2810f9458a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6fa0b009_85f521a5",
         "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
         "patchSetId": 3
