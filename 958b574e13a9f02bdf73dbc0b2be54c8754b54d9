@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7599ffab_b9298919",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-18T23:42:37Z",
+      "side": 1,
+      "message": "Note: changing this to ID; since IDs are stored in ConfigGroup entities, this the gobmap package never needs to know what a ConfigGroupID consists of.",
+      "revId": "958b574e13a9f02bdf73dbc0b2be54c8754b54d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
