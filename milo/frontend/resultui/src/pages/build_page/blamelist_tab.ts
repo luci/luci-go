@@ -32,7 +32,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @observable.ref private commits: GitCommit[] = [];
   @observable.ref private endOfPage = false;
-  @observable.ref private precedingCommit!: GitCommit;
+  @observable.ref private precedingCommit?: GitCommit;
   @observable.ref private isLoading = true;
 
   @computed
@@ -53,7 +53,13 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @computed
   private get revisionRange() {
-      return this.endOfPage ? `${this.precedingCommit!.id.substring(0, 12)}..${this.latestCommitId!.substring(0, 12)}` : ``;
+    if (!this.endOfPage) {
+      return '';
+    }
+
+    return this.precedingCommit
+      ? `${this.precedingCommit.id.substring(0, 12)}..${this.latestCommitId!.substring(0, 12)}`
+      : this.latestCommitId!.substring(0, 12);
   }
 
   @computed

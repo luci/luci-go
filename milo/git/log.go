@@ -104,9 +104,21 @@ func (p *implementation) log(c context.Context, host, project, commitish, ancest
 	}
 
 	var page []*gitpb.Commit
-	for remaining > 100 {
-		// We need to fetch >100 commits, but one logReq can handle only 100.
-		// Call it in a loop.
+
+	// We may need to fetch >100 commits, but one logReq can handle only 100.
+	// Call it in a loop.
+queryLoop:
+	for remaining > 0 {
+		required := remaining
+		if len(commits) > 0 {
+			// +1 because the first returned commit will be discarded.
+			required++
+		}
+
+		// Don't query excessive commits.
+		if req.min > required {
+			req.min = required
+		}
 		page, err = req.call(c)
 		switch {
 		case err != nil:
@@ -114,7 +126,7 @@ func (p *implementation) log(c context.Context, host, project, commitish, ancest
 		case len(page) < 100:
 			// This can happen iff there are no more commits.
 			add(page)
-			return
+			break queryLoop
 		case len(page) > 100:
 			panic("impossible: logReq.call() returned >100 commits")
 		default:
@@ -122,19 +134,8 @@ func (p *implementation) log(c context.Context, host, project, commitish, ancest
 			// Continue from the last fetched commit.
 			req.commitish = page[len(page)-1].Id
 			add(page)
-			if remaining == 0 {
-				panic("impossible: remaining reached 0")
-			}
 		}
 	}
-
-	// last page. One logReq.call() can handle the rest.
-	req.min = remaining
-	page, err = req.call(c)
-	if err != nil {
-		return
-	}
-	add(page)
 
 	// we may end up with more than we were asked for because
 	// gitReq's parameter is minimum, not limit.
