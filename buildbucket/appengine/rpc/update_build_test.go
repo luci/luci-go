@@ -26,7 +26,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -315,6 +317,86 @@ func TestValidateStep(t *testing.T) {
 					setTS(t, addTS(t, time.Hour), t, t)
 					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
 				})
+			})
+		})
+	})
+}
+
+func TestGetBuildForUpdate(t *testing.T) {
+	t.Parallel()
+	fieldMask := func(req *pb.UpdateBuildRequest) *mask.Mask {
+		fm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+		So(err, ShouldBeNil)
+		return &fm
+	}
+
+	Convey("getBuildForUpdate", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		build := &model.Build{
+			ID: 1,
+			Proto: pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_SCHEDULED,
+			},
+			CreateTime: testclock.TestRecentTimeUTC,
+		}
+		So(datastore.Put(ctx, build), ShouldBeNil)
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+
+		Convey("works", func() {
+			b, err := getBuildForUpdate(ctx, fieldMask(req), req)
+			So(err, ShouldBeNil)
+			So(&b.Proto, ShouldResembleProto, &build.Proto)
+
+			Convey("if status is not SCHEDULED", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", ""}}
+				req.Build.Status = pb.Status_STARTED
+
+				Convey("with build.steps", func() {
+					req.UpdateMask.Paths[1] = "build.steps"
+					_, err = getBuildForUpdate(ctx, fieldMask(req), req)
+					So(err, ShouldBeNil)
+				})
+				Convey("with build.output", func() {
+					req.UpdateMask.Paths[1] = "build.output"
+					_, err = getBuildForUpdate(ctx, fieldMask(req), req)
+					So(err, ShouldBeNil)
+				})
+			})
+		})
+
+		Convey("fails", func() {
+			Convey("if build doesn't exist", func() {
+				req.Build.Id = 2
+				_, err := getBuildForUpdate(ctx, fieldMask(req), req)
+				So(err, ShouldBeRPCNotFound)
+			})
+
+			Convey("if ended", func() {
+				build.Proto.Status = pb.Status_SUCCESS
+				So(datastore.Put(ctx, build), ShouldBeNil)
+				_, err := getBuildForUpdate(ctx, fieldMask(req), req)
+				So(err, ShouldBeRPCFailedPrecondition, "cannot update an ended build")
+			})
+
+			req.UpdateMask = &field_mask.FieldMask{Paths: []string{""}}
+			Convey("with build.steps", func() {
+				req.UpdateMask.Paths[0] = "build.steps"
+				_, err := getBuildForUpdate(ctx, fieldMask(req), req)
+				So(err, ShouldBeRPCInvalidArgument, "cannot update steps of a SCHEDULED build")
+			})
+			Convey("with build.output", func() {
+				req.UpdateMask.Paths[0] = "build.output"
+				_, err := getBuildForUpdate(ctx, fieldMask(req), req)
+				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
 			})
 		})
 	})
