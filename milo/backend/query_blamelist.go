@@ -22,6 +22,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -115,10 +116,15 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 		}
 	}
 
+	var precedingCommit *gitpb.Commit
+	if blameLength < len(commits) {
+		precedingCommit = commits[blameLength]
+	}
+
 	return &milopb.QueryBlamelistResponse{
-		Commits:       commits[:blameLength],
-		NextPageToken: nextPageToken,
-		PrecedingCommit: commits[blameLength],
+		Commits:         commits[:blameLength],
+		NextPageToken:   nextPageToken,
+		PrecedingCommit: precedingCommit,
 	}, nil
 }
 
