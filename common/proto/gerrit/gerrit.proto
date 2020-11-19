@@ -22,6 +22,30 @@ import "google/protobuf/timestamp.proto";
 option go_package = "go.chromium.org/luci/common/proto/gerrit;gerrit";
 
 service Gerrit {
+  /////////////////////////////////////////////////////////////////////////////
+  //                            Non-Change RPCs.
+  //
+
+  // Lists the projects on a Gerrit host
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+
+  // Retrieve information about a ref of a project.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
+  rpc GetRefInfo(RefInfoRequest) returns (RefInfo);
+
+  // Lists the code owners for a file/folder in a branch
+  //
+  // https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+  rpc ListFileOwners(ListFileOwnersRequest) returns (ListOwnersResponse);
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  //                            Change read-only RPCs.
+  //
+
   // Lists changes that match a query.
   //
   // Note, although the Gerrit API supports multiple queries, for which
@@ -35,6 +59,21 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
+
+  // Gets Mergeable status for a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+  rpc GetMergeable(GetMergeableRequest) returns (MergeableInfo);
+
+  // Lists the files that were modified, added or deleted in a revision.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  //                            Change mutation RPCs.
+  //
 
   // Create a new empty change.
   //
@@ -83,32 +122,6 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
   rpc AbandonChange(AbandonChangeRequest) returns (ChangeInfo);
-
-  // Gets Mergeable status for a change.
-  //
-  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
-  rpc GetMergeable(GetMergeableRequest) returns (MergeableInfo);
-
-  // Lists the files that were modified, added or deleted in a revision.
-  //
-  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
-  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
-
-  // Lists the code owners for a file/folder in a branch
-  //
-  // https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
-  rpc ListFileOwners(ListFileOwnersRequest) returns (ListOwnersResponse);
-
-  // Lists the projects on a Gerrit host
-  //
-  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
-  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
-
-  // Retrieve information about a ref of a project.
-  //
-  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
-  rpc GetRefInfo(RefInfoRequest) returns (RefInfo);
-
 }
 
 // Specifies what extra information to include in the response.
