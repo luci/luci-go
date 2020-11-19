@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8fe8f06_c2e1c1a9",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:49:06Z",
+      "side": 1,
+      "message": "Makes sense.",
+      "parentUuid": "ebb847c7_3560e360",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b90e1aca_f577dd71",
@@ -135,6 +153,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87a7c3ad_82cfae44",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:49:06Z",
+      "side": 1,
+      "message": "Got it.",
+      "parentUuid": "a638faac_a487eddd",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c678ba17_dddec8c9",
@@ -213,6 +249,24 @@
       "side": 1,
       "message": "I\u0027ve moved minor code off the main func. I decided to the BFS + conversion to DEPS inside 1 func because a lot of assumptions carry over from BFS to DEPS construction.",
       "parentUuid": "0d93af3e_341ec9b4",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "617df385_2f78e79b",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:49:06Z",
+      "side": 1,
+      "message": "Thanks, I think that this is good.",
+      "parentUuid": "9f08d443_79077e1e",
       "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
