@@ -16,6 +16,24 @@
       "message": "Not sure if we should consider \"Canceled\" as Failed, since it maybe because a user cancel it.",
       "revId": "43e3796236f5446761056608d680519bc6938b6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f76fc60_433f4967",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:59:04Z",
+      "side": 1,
+      "message": "Yeah, good point. I\u0027ve turned \u0027Canceled\u0027 into its own category, so now failed() only includes failure and infra-failure.",
+      "parentUuid": "fd9ffa34_7483396e",
+      "revId": "43e3796236f5446761056608d680519bc6938b6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
