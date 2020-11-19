@@ -60,14 +60,13 @@ export const TEST_STATUS_DISPLAY_MAP = Object.freeze({
 
 export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'scheduled',
-  [BuildStatus.Started]: 'started',
+  [BuildStatus.Started]: 'running',
   [BuildStatus.Success]: 'succeeded',
   [BuildStatus.Failure]: 'failed',
-  [BuildStatus.InfraFailure]: 'infra-failed',
+  [BuildStatus.InfraFailure]: 'infra failed',
   [BuildStatus.Canceled]: 'canceled',
 });
 
-// Just so happens to be the same as BUILD_STATUS_DISPLAY_MAP.
 export const BUILD_STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'scheduled',
   [BuildStatus.Started]: 'started',

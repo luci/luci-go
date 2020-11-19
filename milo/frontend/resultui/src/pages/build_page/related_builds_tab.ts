@@ -20,8 +20,8 @@ import { observable } from 'mobx';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
-import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
+import { getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { BuildExt } from '../../models/build_ext';
@@ -103,7 +103,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${build.builder.bucket}</td>
         <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
-        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${getDisplayNameForStatus(build.status)}</td>
+        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown'}</td>
         <td>${build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
         <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td>
