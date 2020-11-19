@@ -40,18 +40,6 @@ export function getLegacyURLForBuild(builder: BuilderID , buildNumOrId: string) 
   return `${getURLForBuilder(builder)}/${buildNumOrId}`;
 }
 
-export function getDisplayNameForStatus(s: BuildStatus): string {
-  const statusMap = new Map([
-    [BuildStatus.Scheduled, 'Scheduled'],
-    [BuildStatus.Started, 'Running'],
-    [BuildStatus.Success, 'Success'],
-    [BuildStatus.Failure, 'Failure'],
-    [BuildStatus.InfraFailure, 'Infra Failure'],
-    [BuildStatus.Canceled, 'Canceled'],
-  ]);
-  return statusMap.get(s) || 'Unknown';
-}
-
 export function getURLForGitilesCommit(commit: GitilesCommit): string {
   return `https://${commit.host}/${commit.project}/+/${commit.id}`;
 }
