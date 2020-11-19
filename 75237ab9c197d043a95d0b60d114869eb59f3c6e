@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e14c55c3_2fd8ac30",
+        "filename": "cv/internal/gerrit/poller/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96afa5e8_9f0a7218",
+      "range": {
+        "startLine": 15,
+        "startChar": 47,
+        "endLine": 15,
+        "endChar": 50
+      },
+      "revId": "75237ab9c197d043a95d0b60d114869eb59f3c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "385e998d_55a99fee",
@@ -66,6 +90,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "02f6555a_21ea56b9",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:06:04Z",
+      "side": 1,
+      "message": "Exactly\n(deleted that part, since caller doesn\u0027t have any impact on when that\u0027d be).",
+      "parentUuid": "385e998d_55a99fee",
+      "range": {
+        "startLine": 40,
+        "startChar": 61,
+        "endLine": 40,
+        "endChar": 73
+      },
+      "revId": "75237ab9c197d043a95d0b60d114869eb59f3c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3139494d_455a59a8",
         "filename": "cv/internal/gerrit/poller/poller.go",
         "patchSetId": 1
@@ -77,6 +125,30 @@
       "writtenOn": "2020-11-19T19:00:23Z",
       "side": 1,
       "message": "disabled",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 43
+      },
+      "revId": "75237ab9c197d043a95d0b60d114869eb59f3c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb2216ed_62b5e122",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3139494d_455a59a8",
       "range": {
         "startLine": 60,
         "startChar": 36,
