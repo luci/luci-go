@@ -326,7 +326,7 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 		params.Add("o", "ALL_EMAILS")
 	}
 
-	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", req.Project, req.Ref, req.Path)
+	path := fmt.Sprintf("/projects/%s/branches/%s/code_owners/%s", url.PathEscape(req.Project), url.PathEscape(req.Ref), url.PathEscape(req.Path))
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "list file owners").Err()
 	}
@@ -342,8 +342,10 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsRequest, opts ...grpc.CallOption) (*gerritpb.ListProjectsResponse, error) {
 	resp := map[string]*projectInfo{}
 	params := url.Values{}
-	if req.Ref != "" {
-		params.Add("b", req.Ref)
+	if req.Ref != nil {
+		for _, ref := range req.Ref {
+			params.Add("b", ref)
+		}
 	}
 	if _, err := c.call(ctx, "GET", "/projects/", params, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "list projects").Err()

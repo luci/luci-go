@@ -842,7 +842,7 @@ message ListFilesResponse {
 message ListProjectsRequest {
   // Limit results to projects with the specified ref, e.g.: refs/heads/main.
   // Ref SHA1 will be included in the results.
-  string ref = 1;
+  repeated string ref = 1;
 
 }
 
