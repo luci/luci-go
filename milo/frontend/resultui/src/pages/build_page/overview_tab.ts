@@ -244,8 +244,14 @@ export class OverviewTabElement extends MobxLitElement {
           <tr><td>Created:</td><td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td></tr>
           <tr><td>Started:</td><td>${build.startTime && (build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) || 'N/A'}</td></tr>
           <tr><td>Ended:</td><td>${build.endTime && (build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) || 'N/A'}</td></tr>
-          <tr><td>Pending:</td><td>${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}</td></tr>
-          <tr><td>Execution:</td><td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td></tr>
+          <tr>
+            <td>Pending:</td>
+            <td>${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}${!build.startTime && ' (and counting)' || ''}</td>
+          </tr>
+          <tr>
+            <td>Execution:</td>
+            <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}${!build.endTime && build.startTime && ' (and counting)' || ''}</td>
+          </tr>
         </table>
       </div>
     `;
