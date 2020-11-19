@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6573640e_893871bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:33:31Z",
+      "side": 1,
+      "message": "weird, last upload diff is wrong. I think I hit weird git cl bug with lots of stacked changes 😞",
+      "revId": "2a3ffa399da5c29b7690520a05449fb0bc346e1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
