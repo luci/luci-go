@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf2e117e_506fc122",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:34:42Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "f49c352a5d928044f7868be5b02ca264134f509f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61aeaf54_0fdcde32",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:34:42Z",
+      "side": 1,
+      "message": "Oh, I see, that answers my question from the CL that adds fetching.",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 18
+      },
+      "revId": "f49c352a5d928044f7868be5b02ca264134f509f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
