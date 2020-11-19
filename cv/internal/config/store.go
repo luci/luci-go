@@ -65,6 +65,29 @@ type ProjectConfig struct {
 	ConfigGroupNames []string `gae:",noindex"`
 }
 
+// GetProjectConfig returns one stored ProjectConfig from datastore.
+func GetProjectConfig(ctx context.Context, project string) (*ProjectConfig, error) {
+	config := &ProjectConfig{Project: project}
+	if err := datastore.Get(ctx, config); err != nil {
+		if datastore.IsErrNoSuchEntity(err) {
+			return nil, errors.Annotate(err, "project %q not found", project).Err()
+		}
+		return nil, errors.Annotate(err, "failed to get project %q", project).Err()
+	}
+	return config, nil
+}
+
+// GetConfigGroups returns the ConfigGroup entities for a project.
+func GetConfigGroups(ctx context.Context, project string) ([]*ConfigGroup, error) {
+	parent := datastore.MakeKey(ctx, projectConfigKind, project)
+	q := datastore.NewQuery("ProjectConfigGroup").Ancestor(parent)
+	groups := []*ConfigGroup{}
+	if err := datastore.GetAll(ctx, q, &groups); err != nil {
+		return nil, errors.Annotate(err, "failed to query ConfigGroups for project %q", project).Err()
+	}
+	return groups, nil
+}
+
 // computeHash computes the hash string of given CV Config and prefixed with
 // hash algorithm string. (e.g. sha256:deadbeefdeadbeef)
 //
@@ -132,7 +155,7 @@ type ConfigHashInfo struct {
 //   - `hash` is the `Hash` field in the containing `ProjectConfig`.
 //   - `name` is the value of `ConfigGroup.Name` if specified. If `name is
 //      not provided (Name in ConfigGroup is optional as of Sep. 2020. See:
-//      crbug/1063508), use "index#i" as name instead where `i` is the index
+//      crbug/1063508), using "index#i" as name instead where `i` is the index
 //      (0-based) of this ConfigGroup in the config.
 type ConfigGroupID string
 
