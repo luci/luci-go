@@ -178,6 +178,10 @@ type TestResult struct {
 	//
 	// The size of the summary must be equal to or smaller than 4096 bytes in
 	// UTF-8.
+	//
+	// Supports artifact embedding using custom tags:
+	// * <text-artifact> renders contents of an artifact as text.
+	//   Usage: <text-artifact artifact-id="<artifact_id>">
 	SummaryHtml string `protobuf:"bytes,7,opt,name=summary_html,json=summaryHtml,proto3" json:"summary_html,omitempty"`
 	// The point in time when the test case started to execute.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
