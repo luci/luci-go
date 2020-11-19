@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd2a8afc_c7d6f539",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:32:50Z",
+      "side": 1,
+      "message": "LGTM\n\nI think the order before was loosely based on the order in https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html, but anyway splitting it up into sections makes sense.",
+      "revId": "67a4e99fe2604164f51a7dd405e7634775a12e80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe5e9bf9_483fbd9e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:32:50Z",
+      "side": 1,
+      "message": "For consistency maybe 2 blank lines",
+      "revId": "67a4e99fe2604164f51a7dd405e7634775a12e80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
