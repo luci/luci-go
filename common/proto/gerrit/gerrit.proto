@@ -291,6 +291,7 @@ message GetChangeRequest {
 }
 
 // Information about an account.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-info
 message AccountInfo {
@@ -324,6 +325,7 @@ message AccountInfo {
 }
 
 // Information about a change.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 message ChangeInfo {
@@ -386,6 +388,7 @@ message ChangeInfo {
 }
 
 // Information about a patch set.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info
 message RevisionInfo {
@@ -418,6 +421,7 @@ message RevisionInfo {
 }
 
 // Information about a Label.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#label-info
 message LabelInfo {
@@ -448,6 +452,7 @@ message LabelInfo {
 }
 
 // Information about a message attached to change.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
 message ChangeMessageInfo {
@@ -472,6 +477,7 @@ message ChangeMessageInfo {
 }
 
 // Information about a file in a patch set.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info
 message FileInfo {
@@ -696,7 +702,8 @@ message SetReviewRequest {
   string project = 2;
 
   // Unique ID for the revision to query.
-  // See
+  //
+  // Source of truth:
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
   string revision_id = 3;
 
@@ -722,7 +729,8 @@ message ReviewResult {
 }
 
 // Information to add/remove a user from the attention set of a change.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#attention-set-input
 message AttentionSetRequest {
   // The change number.
@@ -734,7 +742,8 @@ message AttentionSetRequest {
   string project = 2;
 
   // A unique identifier for an account.
-  // See
+  //
+  // Source of truth:
   // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
   string user = 3;
 
@@ -765,7 +774,8 @@ message GetMergeableRequest {
   string project = 2;
 
   // Unique ID for the revision to query.
-  // See
+  //
+  // Source of truth:
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
   string revision_id = 3;
 
@@ -780,7 +790,7 @@ message GetMergeableRequest {
 
 // Contains information about the mergeability of a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#mergeable-info
 message MergeableInfo {
   enum SubmitType {
@@ -816,7 +826,7 @@ message MergeableInfo {
 
 // Information for requesting the files in a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 message ListFilesRequest {
   // Change number.
@@ -828,7 +838,8 @@ message ListFilesRequest {
   string project = 2;
 
   // Unique ID for the revision to query.
-  // See
+  //
+  // Source of truth:
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
   string revision_id = 3;
 
@@ -843,7 +854,7 @@ message ListFilesRequest {
 
 // Information about the files in a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 message ListFilesResponse {
   // A map of file paths to FileInfos.
@@ -851,17 +862,18 @@ message ListFilesResponse {
 }
 
 // Information for requesting the projects on a host.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/cmd-ls-projects.html
 message ListProjectsRequest {
   // Limit results to projects with the specified ref, e.g.: refs/heads/main.
   // Ref SHA1 will be included in the results.
   string ref = 1;
-
 }
 
 // Describes a link to an external site
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#web-link-info
 message WebLinkInfo {
   // The link name
@@ -876,7 +888,7 @@ message WebLinkInfo {
 
 // Information about individual projects.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
 message ProjectInfo {
   // The project name
@@ -906,7 +918,8 @@ message ProjectInfo {
 }
 
 // Information about the projects on a host.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
 message ListProjectsResponse {
   // A map of project names to ProjectInfo entries, sorted by project name.
@@ -923,7 +936,8 @@ message RefInfoRequest{
 }
 
 // Information about a branch.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#branch-info
 message RefInfo{
   // The ref of the branch
@@ -933,7 +947,8 @@ message RefInfo{
 }
 
 // Options when requesting information about an account
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#details
 message AccountOptions{
   // Include account details in the response
