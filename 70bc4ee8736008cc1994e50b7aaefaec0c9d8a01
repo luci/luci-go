@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59f9d348_11b42c99",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-19T06:18:08Z",
+      "side": 1,
+      "message": "so that\u0027s 1.8s with Redis? Not bad!",
+      "range": {
+        "startLine": 15,
+        "startChar": 88,
+        "endLine": 15,
+        "endChar": 98
+      },
+      "revId": "70bc4ee8736008cc1994e50b7aaefaec0c9d8a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "183889c6_a522377b",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-19T06:18:08Z",
+      "side": 1,
+      "message": "dupe of testutil.connectToRedis()\nwhy not make it public?",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 57
+      },
+      "revId": "70bc4ee8736008cc1994e50b7aaefaec0c9d8a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66bec1e0_9c6feb8d",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-19T06:18:08Z",
+      "side": 1,
+      "message": "does this halt all tests in the process? it would be cleaner to pass *testing.B and call Fatal()\nsame below",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 98,
+        "endChar": 13
+      },
+      "revId": "70bc4ee8736008cc1994e50b7aaefaec0c9d8a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
