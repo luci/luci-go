@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "573f14d0_abb1a006",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:37:58Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "a8b266eb7c96041b902a03f47f4643697e268960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3ad14a4_17531ac8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:37:58Z",
+      "side": 1,
+      "message": "Examples are helpful, thanks :-)",
+      "revId": "a8b266eb7c96041b902a03f47f4643697e268960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e84c6f8_c9c73516",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 630,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:37:58Z",
+      "side": 1,
+      "message": "Strictly speaking, this tests that given a particular response from Gerrit, the expected GetRelatedChangesResponse is returned. But I suppose that\u0027s what the tests in this file mostly test :-)",
+      "range": {
+        "startLine": 630,
+        "startChar": 27,
+        "endLine": 630,
+        "endChar": 32
+      },
+      "revId": "a8b266eb7c96041b902a03f47f4643697e268960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
