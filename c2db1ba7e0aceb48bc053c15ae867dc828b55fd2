@@ -16,6 +16,23 @@
       "message": "Missing CL summary; looks like this makes ChangeStatus top-level in gerrit.proto, as per the TODO, right?",
       "revId": "c2db1ba7e0aceb48bc053c15ae867dc828b55fd2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e053d776_50cb1e9a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:36:53Z",
+      "side": 1,
+      "message": "oops, that\u0027s an accidentally uploaded CL.",
+      "revId": "c2db1ba7e0aceb48bc053c15ae867dc828b55fd2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
