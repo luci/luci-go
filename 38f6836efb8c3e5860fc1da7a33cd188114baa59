@@ -22,6 +22,30 @@
       },
       "revId": "38f6836efb8c3e5860fc1da7a33cd188114baa59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acc20784_e8f18fc9",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-19T00:36:19Z",
+      "side": 1,
+      "message": "scratch this.. I see what this check is about.",
+      "parentUuid": "ea0964de_1a9bc498",
+      "range": {
+        "startLine": 41,
+        "startChar": 21,
+        "endLine": 41,
+        "endChar": 37
+      },
+      "revId": "38f6836efb8c3e5860fc1da7a33cd188114baa59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
