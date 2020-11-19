@@ -199,7 +199,7 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 	resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
-		RevisionId: f.mustCurrentRevision(),
+		RevisionId: f.mustHaveCurrentRevision(),
 	})
 	switch code := grpcutil.Code(err); code {
 	case codes.OK:
@@ -345,7 +345,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 	resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
-		RevisionId: f.mustCurrentRevision(),
+		RevisionId: f.mustHaveCurrentRevision(),
 		// For CLs with >1 parent commit (aka merge commits), relies on Gerrit
 		// ensuring that such a CL always has first parent from the target branch.
 		Parent: 1, // Request a diff against the first parent.
@@ -461,7 +461,7 @@ func (f *fetcher) priorAcfg() *changelist.ApplicableConfig {
 	return nil
 }
 
-func (f *fetcher) mustCurrentRevision() string {
+func (f *fetcher) mustHaveCurrentRevision() string {
 	switch ci := f.newSnapshot.GetGerrit().GetInfo(); {
 	case ci == nil:
 		panic("ChangeInfo must be already fetched into newSnapshot")
