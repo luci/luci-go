@@ -348,6 +348,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7779f387_c979df3a",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6054cd64_2535a509",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 11
+      },
+      "revId": "3f585aad91eeebb4bfc7aa2b5dfaa37d1f7719d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f950458_9bbaf02c",

@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6aef90dd_3bf552b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "We are overriding the number of builds per builder from 4 to {100, 1000} in ps5 L125, hence the 16k builds. That\u0027s a total of 336k invocations (256k of which have results)\n\nThough I figured that 100 builds per builder should be enough. I\u0027ve also tweaked other parameters so that now we have 1600 builds/33.6k invocations and now we get one result from each build in a given builder, so by for getting a page full of results we have to scan all the invocations.",
+      "parentUuid": "767f41ec_3d5bf67b",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6c749711_3685b3cb",
@@ -94,6 +112,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a55bc3f_58b20ef1",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cf9ebad_99ea753f",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8fb1906_c9540143",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c749711_3685b3cb",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 19
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "18597fcd_2abebaaf",
@@ -117,6 +177,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2dee5fba_4a754edf",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "I have modified this to test with 1600 builds (100 per each of 16 builders), For each build invocation there\u0027s 4 step invocations and for each of these there\u0027s 4 shard invocations. That\u0027s 1+4+16\u003d21 invocations per build, though only one of them is in the realm\u0027s index.",
+      "parentUuid": "18597fcd_2abebaaf",
+      "range": {
+        "startLine": 133,
+        "startChar": 31,
+        "endLine": 133,
+        "endChar": 37
+      },
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a4a5e081_91c7ebe2",
@@ -130,6 +214,24 @@
       "writtenOn": "2020-11-12T20:55:54Z",
       "side": 1,
       "message": "nit: the code lists all params in L120-125 and then lists them again here.\nwould be simpler to create a struct with all params are fields. Then call myStruct.insert(ctx) here without passing all of them again",
+      "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "adbcd4c3_492a1085",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4a5e081_91c7ebe2",
       "revId": "1630fcb24f90cdfab1b7fdf555e2a74c73d9e0a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

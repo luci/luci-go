@@ -16,6 +16,24 @@
       "message": "waiting for other comments to be addressed",
       "revId": "8d07bf5dde0b754c00242825924376451cd80217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "142a623e_c6b18f99",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T01:02:34Z",
+      "side": 1,
+      "message": "With the latest numbers, there\u0027s a 5x speedup when using redis locally.\n\nIIUC on my off-corp laptop I am scanning 2400 inv/s.",
+      "parentUuid": "fd97358e_a8b231e6",
+      "revId": "8d07bf5dde0b754c00242825924376451cd80217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
