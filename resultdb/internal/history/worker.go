@@ -79,13 +79,14 @@ func (wi *workItem) fetchOneInv(ctx context.Context) error {
 
 // Query represents the details of the results history to be retrieved.
 type Query struct {
-	Request       *pb.GetTestResultHistoryRequest
-	workC         chan *workItem
-	allResultsC   chan *workItem
-	results       []*pb.GetTestResultHistoryResponse_Entry
-	resultOffset  int
-	nextPageToken string
-	deadline      time.Time
+	Request        *pb.GetTestResultHistoryRequest
+	workC          chan *workItem
+	allResultsC    chan *workItem
+	results        []*pb.GetTestResultHistoryResponse_Entry
+	resultOffset   int
+	nextPageToken  string
+	deadline       time.Time
+	ignoreDeadline bool
 }
 
 // Execute runs the query and returns the results in a slice, along with a token
@@ -211,6 +212,9 @@ func (q *Query) fetchAll(ctx context.Context) error {
 
 // outOfTime returns true if the context will expire in less than 5 seconds.
 func (q *Query) outOfTime(ctx context.Context) bool {
+	if q.ignoreDeadline {
+		return false
+	}
 	dl, ok := ctx.Deadline()
 	return ok && clock.Until(ctx, dl) < 5*time.Second
 }
