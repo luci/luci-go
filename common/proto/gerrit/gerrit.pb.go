@@ -24,14 +24,13 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -42,10 +41,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Specifies what extra information to include in the response.
 //
@@ -1035,9 +1030,9 @@ type ChangeInfo struct {
 	// Only set if submittable is requested.
 	Submittable bool `protobuf:"varint,10,opt,name=submittable,proto3" json:"submittable,omitempty"`
 	// Timestamp of when the change was created
-	Created *timestamp.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
+	Created *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
 	// Timestamp of when the change was last updated
-	Updated *timestamp.Timestamp `protobuf:"bytes,12,opt,name=updated,proto3" json:"updated,omitempty"`
+	Updated *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated,proto3" json:"updated,omitempty"`
 }
 
 func (x *ChangeInfo) Reset() {
@@ -1142,14 +1137,14 @@ func (x *ChangeInfo) GetSubmittable() bool {
 	return false
 }
 
-func (x *ChangeInfo) GetCreated() *timestamp.Timestamp {
+func (x *ChangeInfo) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Created
 	}
 	return nil
 }
 
-func (x *ChangeInfo) GetUpdated() *timestamp.Timestamp {
+func (x *ChangeInfo) GetUpdated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Updated
 	}
@@ -1379,7 +1374,7 @@ type ChangeMessageInfo struct {
 	// Set if the message was posted on behalf of another user.
 	RealAuthor *AccountInfo `protobuf:"bytes,3,opt,name=real_author,json=realAuthor,proto3" json:"real_author,omitempty"`
 	// The timestamp this message was posted.
-	Date *timestamp.Timestamp `protobuf:"bytes,4,opt,name=date,proto3" json:"date,omitempty"`
+	Date *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=date,proto3" json:"date,omitempty"`
 	// The text left by the user.
 	Message string `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
 }
@@ -1437,7 +1432,7 @@ func (x *ChangeMessageInfo) GetRealAuthor() *AccountInfo {
 	return nil
 }
 
-func (x *ChangeMessageInfo) GetDate() *timestamp.Timestamp {
+func (x *ChangeMessageInfo) GetDate() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Date
 	}
@@ -3916,77 +3911,77 @@ var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_rawDesc = []byte{
 	0x5f, 0x54, 0x57, 0x4f, 0x5f, 0x57, 0x41, 0x59, 0x5f, 0x49, 0x4e, 0x5f, 0x43, 0x4f, 0x52, 0x45,
 	0x10, 0x03, 0x12, 0x08, 0x0a, 0x04, 0x4f, 0x55, 0x52, 0x53, 0x10, 0x04, 0x12, 0x0a, 0x0a, 0x06,
 	0x54, 0x48, 0x45, 0x49, 0x52, 0x53, 0x10, 0x05, 0x32, 0xec, 0x08, 0x0a, 0x06, 0x47, 0x65, 0x72,
-	0x72, 0x69, 0x74, 0x12, 0x46, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x73, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b,
-	0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x68, 0x61, 0x6e,
-	0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x39, 0x0a, 0x09, 0x47,
-	0x65, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x18, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69,
-	0x74, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x12, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e,
-	0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x3f, 0x0a, 0x0c, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x72, 0x69, 0x74, 0x12, 0x49, 0x0a, 0x0c, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x6a, 0x65,
+	0x63, 0x74, 0x73, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73,
+	0x74, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x1c, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x35,
+	0x0a, 0x0a, 0x47, 0x65, 0x74, 0x52, 0x65, 0x66, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16, 0x2e, 0x67,
+	0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x52, 0x65, 0x66, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x52, 0x65,
+	0x66, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x4b, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c,
+	0x65, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x46, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x73, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e,
+	0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x39, 0x0a, 0x09, 0x47, 0x65,
+	0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x18, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74,
+	0x2e, 0x47, 0x65, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x12, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x42, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x72, 0x67,
+	0x65, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x47,
+	0x65, 0x74, 0x4d, 0x65, 0x72, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x15, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4d, 0x65, 0x72, 0x67,
+	0x65, 0x61, 0x62, 0x6c, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x40, 0x0a, 0x09, 0x4c, 0x69, 0x73,
+	0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x18, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x19, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69,
+	0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3f, 0x0a, 0x0c, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65,
+	0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69,
+	0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x55, 0x0a, 0x15,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f,
+	0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x24, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f, 0x6e,
+	0x74, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x12, 0x55, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x45, 0x64, 0x69,
+	0x74, 0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x24, 0x2e, 0x67,
+	0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x45, 0x64, 0x69, 0x74,
+	0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x4d, 0x0a, 0x11, 0x43, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x45, 0x64, 0x69, 0x74, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x12,
+	0x20, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x45,
+	0x64, 0x69, 0x74, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x64, 0x64,
+	0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x65, 0x72, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69,
+	0x74, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x65, 0x72, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x64,
+	0x64, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x65, 0x72, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12,
+	0x3b, 0x0a, 0x09, 0x53, 0x65, 0x74, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x12, 0x18, 0x2e, 0x67,
+	0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x53, 0x65, 0x74, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e,
+	0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x45, 0x0a, 0x11,
+	0x41, 0x64, 0x64, 0x54, 0x6f, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65,
+	0x74, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x6e,
+	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13,
+	0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x49,
+	0x6e, 0x66, 0x6f, 0x12, 0x3f, 0x0a, 0x0c, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x43, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x53, 0x75, 0x62,
+	0x6d, 0x69, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x12, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x49, 0x6e, 0x66, 0x6f, 0x12, 0x41, 0x0a, 0x0d, 0x41, 0x62, 0x61, 0x6e, 0x64, 0x6f, 0x6e, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1c, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41,
+	0x62, 0x61, 0x6e, 0x64, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x55, 0x0a, 0x15, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,
-	0x12, 0x24, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x55,
-	0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65,
-	0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x24, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74,
-	0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x45, 0x64, 0x69, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x43,
-	0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e,
-	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
-	0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x4d, 0x0a, 0x11, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x45,
-	0x64, 0x69, 0x74, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x12, 0x20, 0x2e, 0x67, 0x65, 0x72,
-	0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x45, 0x64, 0x69, 0x74, 0x50, 0x75,
-	0x62, 0x6c, 0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x64, 0x64, 0x52, 0x65, 0x76, 0x69, 0x65,
-	0x77, 0x65, 0x72, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x64, 0x64,
-	0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x19, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x76, 0x69,
-	0x65, 0x77, 0x65, 0x72, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x3b, 0x0a, 0x09, 0x53, 0x65,
-	0x74, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x12, 0x18, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74,
-	0x2e, 0x53, 0x65, 0x74, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x14, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x52, 0x65, 0x76, 0x69, 0x65,
-	0x77, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x45, 0x0a, 0x11, 0x41, 0x64, 0x64, 0x54, 0x6f,
-	0x41, 0x74, 0x74, 0x65, 0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x12, 0x1b, 0x2e, 0x67,
-	0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x74, 0x69, 0x6f, 0x6e, 0x53,
-	0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x67, 0x65, 0x72, 0x72,
-	0x69, 0x74, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x3f,
-	0x0a, 0x0c, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1b,
-	0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x43, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x67, 0x65,
-	0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12,
-	0x41, 0x0a, 0x0d, 0x41, 0x62, 0x61, 0x6e, 0x64, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x12, 0x1c, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x41, 0x62, 0x61, 0x6e, 0x64, 0x6f,
-	0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12,
-	0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x49, 0x6e,
-	0x66, 0x6f, 0x12, 0x42, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x72, 0x67, 0x65, 0x61, 0x62,
-	0x6c, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x47, 0x65, 0x74, 0x4d,
-	0x65, 0x72, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x15, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4d, 0x65, 0x72, 0x67, 0x65, 0x61, 0x62,
-	0x6c, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x40, 0x0a, 0x09, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69,
-	0x6c, 0x65, 0x73, 0x12, 0x18, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e,
-	0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4b, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74,
-	0x46, 0x69, 0x6c, 0x65, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65, 0x72,
-	0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x4f, 0x77, 0x6e, 0x65,
-	0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x65, 0x72, 0x72,
-	0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x49, 0x0a, 0x0c, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x72, 0x6f,
-	0x6a, 0x65, 0x63, 0x74, 0x73, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x35, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x52, 0x65, 0x66, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16,
-	0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x52, 0x65, 0x66, 0x49, 0x6e, 0x66, 0x6f, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f, 0x2e, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e,
-	0x52, 0x65, 0x66, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x6e, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68,
 	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
 	0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x65, 0x72,
 	0x72, 0x69, 0x74, 0x3b, 0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
@@ -4061,8 +4056,8 @@ var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_goTypes = []inter
 	nil,                                  // 50: gerrit.ListFilesResponse.FilesEntry
 	nil,                                  // 51: gerrit.ProjectInfo.RefsEntry
 	nil,                                  // 52: gerrit.ListProjectsResponse.ProjectsEntry
-	(*timestamp.Timestamp)(nil),          // 53: google.protobuf.Timestamp
-	(*empty.Empty)(nil),                  // 54: google.protobuf.Empty
+	(*timestamppb.Timestamp)(nil),        // 53: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                // 54: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_depIdxs = []int32{
 	0,  // 0: gerrit.ListChangesRequest.options:type_name -> gerrit.QueryOption
@@ -4111,38 +4106,38 @@ var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_depIdxs = []int32
 	17, // 43: gerrit.RevisionInfo.FilesEntry.value:type_name -> gerrit.FileInfo
 	17, // 44: gerrit.ListFilesResponse.FilesEntry.value:type_name -> gerrit.FileInfo
 	36, // 45: gerrit.ListProjectsResponse.ProjectsEntry.value:type_name -> gerrit.ProjectInfo
-	9,  // 46: gerrit.Gerrit.ListChanges:input_type -> gerrit.ListChangesRequest
-	11, // 47: gerrit.Gerrit.GetChange:input_type -> gerrit.GetChangeRequest
-	18, // 48: gerrit.Gerrit.CreateChange:input_type -> gerrit.CreateChangeRequest
-	20, // 49: gerrit.Gerrit.ChangeEditFileContent:input_type -> gerrit.ChangeEditFileContentRequest
-	21, // 50: gerrit.Gerrit.DeleteEditFileContent:input_type -> gerrit.DeleteEditFileContentRequest
-	22, // 51: gerrit.Gerrit.ChangeEditPublish:input_type -> gerrit.ChangeEditPublishRequest
-	24, // 52: gerrit.Gerrit.AddReviewer:input_type -> gerrit.AddReviewerRequest
-	27, // 53: gerrit.Gerrit.SetReview:input_type -> gerrit.SetReviewRequest
-	29, // 54: gerrit.Gerrit.AddToAttentionSet:input_type -> gerrit.AttentionSetRequest
-	19, // 55: gerrit.Gerrit.SubmitChange:input_type -> gerrit.SubmitChangeRequest
-	23, // 56: gerrit.Gerrit.AbandonChange:input_type -> gerrit.AbandonChangeRequest
-	30, // 57: gerrit.Gerrit.GetMergeable:input_type -> gerrit.GetMergeableRequest
-	32, // 58: gerrit.Gerrit.ListFiles:input_type -> gerrit.ListFilesRequest
-	41, // 59: gerrit.Gerrit.ListFileOwners:input_type -> gerrit.ListFileOwnersRequest
-	34, // 60: gerrit.Gerrit.ListProjects:input_type -> gerrit.ListProjectsRequest
-	38, // 61: gerrit.Gerrit.GetRefInfo:input_type -> gerrit.RefInfoRequest
-	10, // 62: gerrit.Gerrit.ListChanges:output_type -> gerrit.ListChangesResponse
-	13, // 63: gerrit.Gerrit.GetChange:output_type -> gerrit.ChangeInfo
-	13, // 64: gerrit.Gerrit.CreateChange:output_type -> gerrit.ChangeInfo
-	54, // 65: gerrit.Gerrit.ChangeEditFileContent:output_type -> google.protobuf.Empty
-	54, // 66: gerrit.Gerrit.DeleteEditFileContent:output_type -> google.protobuf.Empty
-	54, // 67: gerrit.Gerrit.ChangeEditPublish:output_type -> google.protobuf.Empty
-	26, // 68: gerrit.Gerrit.AddReviewer:output_type -> gerrit.AddReviewerResult
-	28, // 69: gerrit.Gerrit.SetReview:output_type -> gerrit.ReviewResult
-	12, // 70: gerrit.Gerrit.AddToAttentionSet:output_type -> gerrit.AccountInfo
-	13, // 71: gerrit.Gerrit.SubmitChange:output_type -> gerrit.ChangeInfo
-	13, // 72: gerrit.Gerrit.AbandonChange:output_type -> gerrit.ChangeInfo
-	31, // 73: gerrit.Gerrit.GetMergeable:output_type -> gerrit.MergeableInfo
-	33, // 74: gerrit.Gerrit.ListFiles:output_type -> gerrit.ListFilesResponse
-	43, // 75: gerrit.Gerrit.ListFileOwners:output_type -> gerrit.ListOwnersResponse
-	37, // 76: gerrit.Gerrit.ListProjects:output_type -> gerrit.ListProjectsResponse
-	39, // 77: gerrit.Gerrit.GetRefInfo:output_type -> gerrit.RefInfo
+	34, // 46: gerrit.Gerrit.ListProjects:input_type -> gerrit.ListProjectsRequest
+	38, // 47: gerrit.Gerrit.GetRefInfo:input_type -> gerrit.RefInfoRequest
+	41, // 48: gerrit.Gerrit.ListFileOwners:input_type -> gerrit.ListFileOwnersRequest
+	9,  // 49: gerrit.Gerrit.ListChanges:input_type -> gerrit.ListChangesRequest
+	11, // 50: gerrit.Gerrit.GetChange:input_type -> gerrit.GetChangeRequest
+	30, // 51: gerrit.Gerrit.GetMergeable:input_type -> gerrit.GetMergeableRequest
+	32, // 52: gerrit.Gerrit.ListFiles:input_type -> gerrit.ListFilesRequest
+	18, // 53: gerrit.Gerrit.CreateChange:input_type -> gerrit.CreateChangeRequest
+	20, // 54: gerrit.Gerrit.ChangeEditFileContent:input_type -> gerrit.ChangeEditFileContentRequest
+	21, // 55: gerrit.Gerrit.DeleteEditFileContent:input_type -> gerrit.DeleteEditFileContentRequest
+	22, // 56: gerrit.Gerrit.ChangeEditPublish:input_type -> gerrit.ChangeEditPublishRequest
+	24, // 57: gerrit.Gerrit.AddReviewer:input_type -> gerrit.AddReviewerRequest
+	27, // 58: gerrit.Gerrit.SetReview:input_type -> gerrit.SetReviewRequest
+	29, // 59: gerrit.Gerrit.AddToAttentionSet:input_type -> gerrit.AttentionSetRequest
+	19, // 60: gerrit.Gerrit.SubmitChange:input_type -> gerrit.SubmitChangeRequest
+	23, // 61: gerrit.Gerrit.AbandonChange:input_type -> gerrit.AbandonChangeRequest
+	37, // 62: gerrit.Gerrit.ListProjects:output_type -> gerrit.ListProjectsResponse
+	39, // 63: gerrit.Gerrit.GetRefInfo:output_type -> gerrit.RefInfo
+	43, // 64: gerrit.Gerrit.ListFileOwners:output_type -> gerrit.ListOwnersResponse
+	10, // 65: gerrit.Gerrit.ListChanges:output_type -> gerrit.ListChangesResponse
+	13, // 66: gerrit.Gerrit.GetChange:output_type -> gerrit.ChangeInfo
+	31, // 67: gerrit.Gerrit.GetMergeable:output_type -> gerrit.MergeableInfo
+	33, // 68: gerrit.Gerrit.ListFiles:output_type -> gerrit.ListFilesResponse
+	13, // 69: gerrit.Gerrit.CreateChange:output_type -> gerrit.ChangeInfo
+	54, // 70: gerrit.Gerrit.ChangeEditFileContent:output_type -> google.protobuf.Empty
+	54, // 71: gerrit.Gerrit.DeleteEditFileContent:output_type -> google.protobuf.Empty
+	54, // 72: gerrit.Gerrit.ChangeEditPublish:output_type -> google.protobuf.Empty
+	26, // 73: gerrit.Gerrit.AddReviewer:output_type -> gerrit.AddReviewerResult
+	28, // 74: gerrit.Gerrit.SetReview:output_type -> gerrit.ReviewResult
+	12, // 75: gerrit.Gerrit.AddToAttentionSet:output_type -> gerrit.AccountInfo
+	13, // 76: gerrit.Gerrit.SubmitChange:output_type -> gerrit.ChangeInfo
+	13, // 77: gerrit.Gerrit.AbandonChange:output_type -> gerrit.ChangeInfo
 	62, // [62:78] is the sub-list for method output_type
 	46, // [46:62] is the sub-list for method input_type
 	46, // [46:46] is the sub-list for extension type_name
@@ -4610,6 +4605,18 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type GerritClient interface {
+	// Lists the projects on a Gerrit host
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
+	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+	// Retrieve information about a ref of a project.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
+	GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error)
+	// Lists the code owners for a file/folder in a branch
+	//
+	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+	ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
 	//
 	// Note, although the Gerrit API supports multiple queries, for which
@@ -4622,6 +4629,14 @@ type GerritClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 	GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
+	// Gets Mergeable status for a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+	GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error)
+	// Lists the files that were modified, added or deleted in a revision.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	// Create a new empty change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change
@@ -4629,15 +4644,15 @@ type GerritClient interface {
 	// Edit a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
-	ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Delete a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
-	DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publish all changes in a a change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
-	ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Add a reviewer to a change
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
@@ -4658,26 +4673,6 @@ type GerritClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
 	AbandonChange(ctx context.Context, in *AbandonChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
-	// Gets Mergeable status for a change.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
-	GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error)
-	// Lists the files that were modified, added or deleted in a revision.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
-	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
-	// Lists the code owners for a file/folder in a branch
-	//
-	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
-	ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error)
-	// Lists the projects on a Gerrit host
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
-	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
-	// Retrieve information about a ref of a project.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
-	GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error)
 }
 type gerritPRPCClient struct {
 	client *prpc.Client
@@ -4685,6 +4680,33 @@ type gerritPRPCClient struct {
 
 func NewGerritPRPCClient(client *prpc.Client) GerritClient {
 	return &gerritPRPCClient{client}
+}
+
+func (c *gerritPRPCClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	out := new(ListProjectsResponse)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "ListProjects", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
+	out := new(RefInfo)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "GetRefInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
+	out := new(ListOwnersResponse)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "ListFileOwners", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gerritPRPCClient) ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error) {
@@ -4705,6 +4727,24 @@ func (c *gerritPRPCClient) GetChange(ctx context.Context, in *GetChangeRequest, 
 	return out, nil
 }
 
+func (c *gerritPRPCClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
+	out := new(MergeableInfo)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "GetMergeable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	out := new(ListFilesResponse)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "ListFiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gerritPRPCClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	out := new(ChangeInfo)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "CreateChange", in, out, opts...)
@@ -4714,8 +4754,8 @@ func (c *gerritPRPCClient) CreateChange(ctx context.Context, in *CreateChangeReq
 	return out, nil
 }
 
-func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4723,8 +4763,8 @@ func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *Change
 	return out, nil
 }
 
-func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "DeleteEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4732,8 +4772,8 @@ func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *Delete
 	return out, nil
 }
 
-func (c *gerritPRPCClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritPRPCClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditPublish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4786,57 +4826,39 @@ func (c *gerritPRPCClient) AbandonChange(ctx context.Context, in *AbandonChangeR
 	return out, nil
 }
 
-func (c *gerritPRPCClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
-	out := new(MergeableInfo)
-	err := c.client.Call(ctx, "gerrit.Gerrit", "GetMergeable", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritPRPCClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
-	out := new(ListFilesResponse)
-	err := c.client.Call(ctx, "gerrit.Gerrit", "ListFiles", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritPRPCClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
-	out := new(ListOwnersResponse)
-	err := c.client.Call(ctx, "gerrit.Gerrit", "ListFileOwners", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritPRPCClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
-	out := new(ListProjectsResponse)
-	err := c.client.Call(ctx, "gerrit.Gerrit", "ListProjects", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritPRPCClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
-	out := new(RefInfo)
-	err := c.client.Call(ctx, "gerrit.Gerrit", "GetRefInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 type gerritClient struct {
 	cc grpc.ClientConnInterface
 }
 
 func NewGerritClient(cc grpc.ClientConnInterface) GerritClient {
 	return &gerritClient{cc}
+}
+
+func (c *gerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	out := new(ListProjectsResponse)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListProjects", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
+	out := new(RefInfo)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetRefInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
+	out := new(ListOwnersResponse)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListFileOwners", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gerritClient) ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error) {
@@ -4857,6 +4879,24 @@ func (c *gerritClient) GetChange(ctx context.Context, in *GetChangeRequest, opts
 	return out, nil
 }
 
+func (c *gerritClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
+	out := new(MergeableInfo)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetMergeable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	out := new(ListFilesResponse)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListFiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	out := new(ChangeInfo)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/CreateChange", in, out, opts...)
@@ -4866,8 +4906,8 @@ func (c *gerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest
 	return out, nil
 }
 
-func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4875,8 +4915,8 @@ func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEdit
 	return out, nil
 }
 
-func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/DeleteEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4884,8 +4924,8 @@ func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEdit
 	return out, nil
 }
 
-func (c *gerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *gerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditPublish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4938,53 +4978,20 @@ func (c *gerritClient) AbandonChange(ctx context.Context, in *AbandonChangeReque
 	return out, nil
 }
 
-func (c *gerritClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
-	out := new(MergeableInfo)
-	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetMergeable", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
-	out := new(ListFilesResponse)
-	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListFiles", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
-	out := new(ListOwnersResponse)
-	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListFileOwners", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
-	out := new(ListProjectsResponse)
-	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ListProjects", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
-	out := new(RefInfo)
-	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetRefInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // GerritServer is the server API for Gerrit service.
 type GerritServer interface {
+	// Lists the projects on a Gerrit host
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
+	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	// Retrieve information about a ref of a project.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
+	GetRefInfo(context.Context, *RefInfoRequest) (*RefInfo, error)
+	// Lists the code owners for a file/folder in a branch
+	//
+	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+	ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
 	//
 	// Note, although the Gerrit API supports multiple queries, for which
@@ -4997,6 +5004,14 @@ type GerritServer interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 	GetChange(context.Context, *GetChangeRequest) (*ChangeInfo, error)
+	// Gets Mergeable status for a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+	GetMergeable(context.Context, *GetMergeableRequest) (*MergeableInfo, error)
+	// Lists the files that were modified, added or deleted in a revision.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	// Create a new empty change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change
@@ -5004,15 +5019,15 @@ type GerritServer interface {
 	// Edit a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
-	ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*empty.Empty, error)
+	ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*emptypb.Empty, error)
 	// Delete a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
-	DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*empty.Empty, error)
+	DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*emptypb.Empty, error)
 	// Publish all changes in a a change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
-	ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*empty.Empty, error)
+	ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*emptypb.Empty, error)
 	// Add a reviewer to a change
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
@@ -5033,48 +5048,43 @@ type GerritServer interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
 	AbandonChange(context.Context, *AbandonChangeRequest) (*ChangeInfo, error)
-	// Gets Mergeable status for a change.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
-	GetMergeable(context.Context, *GetMergeableRequest) (*MergeableInfo, error)
-	// Lists the files that were modified, added or deleted in a revision.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
-	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
-	// Lists the code owners for a file/folder in a branch
-	//
-	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
-	ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error)
-	// Lists the projects on a Gerrit host
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#list-projects
-	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
-	// Retrieve information about a ref of a project.
-	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-branch
-	GetRefInfo(context.Context, *RefInfoRequest) (*RefInfo, error)
 }
 
 // UnimplementedGerritServer can be embedded to have forward compatible implementations.
 type UnimplementedGerritServer struct {
 }
 
+func (*UnimplementedGerritServer) ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
+}
+func (*UnimplementedGerritServer) GetRefInfo(context.Context, *RefInfoRequest) (*RefInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRefInfo not implemented")
+}
+func (*UnimplementedGerritServer) ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFileOwners not implemented")
+}
 func (*UnimplementedGerritServer) ListChanges(context.Context, *ListChangesRequest) (*ListChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListChanges not implemented")
 }
 func (*UnimplementedGerritServer) GetChange(context.Context, *GetChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChange not implemented")
 }
+func (*UnimplementedGerritServer) GetMergeable(context.Context, *GetMergeableRequest) (*MergeableInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMergeable not implemented")
+}
+func (*UnimplementedGerritServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
+}
 func (*UnimplementedGerritServer) CreateChange(context.Context, *CreateChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateChange not implemented")
 }
-func (*UnimplementedGerritServer) ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*empty.Empty, error) {
+func (*UnimplementedGerritServer) ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditFileContent not implemented")
 }
-func (*UnimplementedGerritServer) DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*empty.Empty, error) {
+func (*UnimplementedGerritServer) DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteEditFileContent not implemented")
 }
-func (*UnimplementedGerritServer) ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*empty.Empty, error) {
+func (*UnimplementedGerritServer) ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditPublish not implemented")
 }
 func (*UnimplementedGerritServer) AddReviewer(context.Context, *AddReviewerRequest) (*AddReviewerResult, error) {
@@ -5092,24 +5102,63 @@ func (*UnimplementedGerritServer) SubmitChange(context.Context, *SubmitChangeReq
 func (*UnimplementedGerritServer) AbandonChange(context.Context, *AbandonChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbandonChange not implemented")
 }
-func (*UnimplementedGerritServer) GetMergeable(context.Context, *GetMergeableRequest) (*MergeableInfo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMergeable not implemented")
-}
-func (*UnimplementedGerritServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
-}
-func (*UnimplementedGerritServer) ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListFileOwners not implemented")
-}
-func (*UnimplementedGerritServer) ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
-}
-func (*UnimplementedGerritServer) GetRefInfo(context.Context, *RefInfoRequest) (*RefInfo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRefInfo not implemented")
-}
 
 func RegisterGerritServer(s prpc.Registrar, srv GerritServer) {
 	s.RegisterService(&_Gerrit_serviceDesc, srv)
+}
+
+func _Gerrit_ListProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ListProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/ListProjects",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ListProjects(ctx, req.(*ListProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_GetRefInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).GetRefInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/GetRefInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).GetRefInfo(ctx, req.(*RefInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_ListFileOwners_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFileOwnersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ListFileOwners(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/ListFileOwners",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ListFileOwners(ctx, req.(*ListFileOwnersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Gerrit_ListChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -5144,6 +5193,42 @@ func _Gerrit_GetChange_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GerritServer).GetChange(ctx, req.(*GetChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_GetMergeable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMergeableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).GetMergeable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/GetMergeable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).GetMergeable(ctx, req.(*GetMergeableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/ListFiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ListFiles(ctx, req.(*ListFilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5310,100 +5395,22 @@ func _Gerrit_AbandonChange_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gerrit_GetMergeable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMergeableRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GerritServer).GetMergeable(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gerrit.Gerrit/GetMergeable",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GerritServer).GetMergeable(ctx, req.(*GetMergeableRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Gerrit_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListFilesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GerritServer).ListFiles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gerrit.Gerrit/ListFiles",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GerritServer).ListFiles(ctx, req.(*ListFilesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Gerrit_ListFileOwners_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListFileOwnersRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GerritServer).ListFileOwners(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gerrit.Gerrit/ListFileOwners",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GerritServer).ListFileOwners(ctx, req.(*ListFileOwnersRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Gerrit_ListProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListProjectsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GerritServer).ListProjects(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gerrit.Gerrit/ListProjects",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GerritServer).ListProjects(ctx, req.(*ListProjectsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Gerrit_GetRefInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RefInfoRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GerritServer).GetRefInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gerrit.Gerrit/GetRefInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GerritServer).GetRefInfo(ctx, req.(*RefInfoRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _Gerrit_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gerrit.Gerrit",
 	HandlerType: (*GerritServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListProjects",
+			Handler:    _Gerrit_ListProjects_Handler,
+		},
+		{
+			MethodName: "GetRefInfo",
+			Handler:    _Gerrit_GetRefInfo_Handler,
+		},
+		{
+			MethodName: "ListFileOwners",
+			Handler:    _Gerrit_ListFileOwners_Handler,
+		},
 		{
 			MethodName: "ListChanges",
 			Handler:    _Gerrit_ListChanges_Handler,
@@ -5411,6 +5418,14 @@ var _Gerrit_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetChange",
 			Handler:    _Gerrit_GetChange_Handler,
+		},
+		{
+			MethodName: "GetMergeable",
+			Handler:    _Gerrit_GetMergeable_Handler,
+		},
+		{
+			MethodName: "ListFiles",
+			Handler:    _Gerrit_ListFiles_Handler,
 		},
 		{
 			MethodName: "CreateChange",
@@ -5447,26 +5462,6 @@ var _Gerrit_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AbandonChange",
 			Handler:    _Gerrit_AbandonChange_Handler,
-		},
-		{
-			MethodName: "GetMergeable",
-			Handler:    _Gerrit_GetMergeable_Handler,
-		},
-		{
-			MethodName: "ListFiles",
-			Handler:    _Gerrit_ListFiles_Handler,
-		},
-		{
-			MethodName: "ListFileOwners",
-			Handler:    _Gerrit_ListFileOwners_Handler,
-		},
-		{
-			MethodName: "ListProjects",
-			Handler:    _Gerrit_ListProjects_Handler,
-		},
-		{
-			MethodName: "GetRefInfo",
-			Handler:    _Gerrit_GetRefInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
