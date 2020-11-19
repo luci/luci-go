@@ -47,6 +47,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0b6980f_09b3d6ba",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T21:59:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "183889c6_a522377b",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 57
+      },
+      "revId": "70bc4ee8736008cc1994e50b7aaefaec0c9d8a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66bec1e0_9c6feb8d",
@@ -60,6 +84,30 @@
       "writtenOn": "2020-11-19T06:18:08Z",
       "side": 1,
       "message": "does this halt all tests in the process? it would be cleaner to pass *testing.B and call Fatal()\nsame below",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 98,
+        "endChar": 13
+      },
+      "revId": "70bc4ee8736008cc1994e50b7aaefaec0c9d8a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b7cfb0b_e0430509",
+        "filename": "resultdb/internal/history/history_benchmark_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-11-19T21:59:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66bec1e0_9c6feb8d",
       "range": {
         "startLine": 98,
         "startChar": 3,
