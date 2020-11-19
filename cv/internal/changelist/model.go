@@ -216,13 +216,11 @@ func Update(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snaps
 		}
 		// Update exsting entity.
 		return update(ctx, cl, func(cl *CL) (changed bool) {
-			if snapshot != nil && (cl.Snapshot == nil ||
-				cl.Snapshot.ExternalUpdateTime.AsTime().Before(snapshot.ExternalUpdateTime.AsTime())) {
+			if snapshot != nil && !cl.Snapshot.IsUpToDate(snapshot.GetLuciProject(), snapshot.GetExternalUpdateTime().AsTime()) {
 				cl.Snapshot = snapshot
 				changed = true
 			}
-			if acfg != nil && (cl.ApplicableConfig == nil ||
-				cl.ApplicableConfig.UpdateTime.AsTime().Before(acfg.UpdateTime.AsTime())) {
+			if acfg != nil && !cl.ApplicableConfig.IsUpToDate(acfg.GetUpdateTime().AsTime()) {
 				cl.ApplicableConfig = acfg
 				changed = true
 			}
