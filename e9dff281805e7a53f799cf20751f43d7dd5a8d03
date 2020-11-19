@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdd022fb_d75e0102",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:16:46Z",
+      "side": 1,
+      "message": "Are you planning to add tests after gerrit fake is added?",
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0dd8cec6_a9f63530",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:16:46Z",
+      "side": 1,
+      "message": "What does this function do?",
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aaccd1ea_74e86d9e",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:16:46Z",
+      "side": 1,
+      "message": "maybe \"this relies on...\"",
+      "range": {
+        "startLine": 207,
+        "startChar": 56,
+        "endLine": 207,
+        "endChar": 62
+      },
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67de415a_4b35b069",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:16:46Z",
+      "side": 1,
+      "message": "I see that the prefix must is added to this function name indicating that it panics if there\u0027s no current revision, although I wonder if there\u0027s a better name... maybe:\n\n - currentRevision        // just leave \"must\" off, readers may read this function to see that it panics; \n - currentRevisionOrPanic // kind of like the naming convention of \"...OrDie\"\n - or keep it as mustCurrentRevision, also fine",
+      "range": {
+        "startLine": 322,
+        "startChar": 18,
+        "endLine": 322,
+        "endChar": 37
+      },
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
