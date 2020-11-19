@@ -217,7 +217,7 @@ func TestValidateTestResult(t *testing.T) {
 			Convey("because start_time is in the future", func() {
 				future, _ := ptypes.TimestampProto(now.Add(time.Hour))
 				msg.StartTime = future
-				So(validate(msg), ShouldErrLike, "start_time: cannot be in the future")
+				So(validate(msg), ShouldErrLike, fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew))
 			})
 
 			Convey("because duration is < 0", func() {
@@ -229,7 +229,7 @@ func TestValidateTestResult(t *testing.T) {
 				st, _ := ptypes.TimestampProto(now.Add(-1 * time.Hour))
 				msg.StartTime = st
 				msg.Duration = ptypes.DurationProto(2 * time.Hour)
-				expected := "start_time + duration: cannot be in the future"
+				expected := fmt.Sprintf("start_time + duration: cannot be > (now + %s)", clockSkew)
 				So(validate(msg), ShouldErrLike, expected)
 			})
 		})
