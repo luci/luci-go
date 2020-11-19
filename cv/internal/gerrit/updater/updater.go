@@ -215,11 +215,9 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 	}
 }
 
-// setGitDeps sets GerritGitDeps based on list of related changes provided by
-// Gerrit.GetRelatedChanges RPC.
 func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) error {
 	// Gerrit does not provide API that returns just the changes which a given
-	// change depends on, but has the API call that returns the following changes:
+	// change depends on, but has an API call that returns the following changes:
 	//   (1) those on which this change depends, transitively. Among these,
 	//       some CLs may have been already merged.
 	//   (2) this change itself, with its commit and parent(s) hashes
@@ -230,9 +228,20 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 		// changes.
 		return nil
 	}
-	this, err := f.matchCurrentAmongRelated(ctx, related)
-	if err != nil {
-		return err
+
+	var this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit
+	matchedThisOne := 0
+	for _, r := range related {
+		if r.GetNumber() == f.change {
+			matchedThisOne++
+			this = r
+		}
+	}
+	// Sanity check for better error message if Gerrit API changes.
+	if matchedThisOne != 1 {
+		logging.Errorf(ctx, "Gerrit.GetRelatedChanges should have exactly 1 change "+
+			"matching the given one %s, got %d (all related %s)", f, matchedThisOne, related)
+		return errors.Reason("Unexpected Gerrit.GetRelatedChangesResponse for %s, see logs", f).Err()
 	}
 
 	// Construct a map from revision to a list of changes that it represents.
@@ -247,7 +256,15 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 		byRevision[rev] = append(byRevision[rev], r)
 	}
 
-	thisParentsCount := f.countRelatedWhichAreParents(this, byRevision)
+	thisParentsCount := 0
+	for _, p := range this.GetCommit().GetParents() {
+		// Not all parents may be represented by related CLs.
+		// OTOH, if there are several CLs matching parent revision,
+		// CV will choose just one.
+		if _, ok := byRevision[p.GetId()]; ok {
+			thisParentsCount++
+		}
+	}
 	if thisParentsCount == 0 {
 		// Quick exit if there are no dependencies of this change (1), only changes
 		// depending on this change (3).
@@ -268,7 +285,7 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 	nextLevel[0] = this
 	for len(nextLevel) > 0 {
 		curLevel, nextLevel = nextLevel, curLevel[:0]
-		// For determinism of the output.
+		// Fot determinism of the output.
 		sort.SliceStable(curLevel, func(i, j int) bool {
 			return curLevel[i].GetNumber() < curLevel[j].GetNumber()
 		})
@@ -280,7 +297,7 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 					continue
 				case len(prs) > 1:
 					logging.Warningf(ctx, "Gerrit.GetRelatedChanges returned rev %q %d times for %s"+
-						"(ALL Related %s)", p.GetId(), len(prs), f, related)
+						"(all related %s)", p.GetId(), len(prs), f, related)
 					// Avoid borking. Take the first CL by number.
 					for i, x := range prs[1:] {
 						if prs[0].GetNumber() > x.GetNumber() {
@@ -321,37 +338,6 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 	}
 	f.newSnapshot.GetGerrit().GitDeps = deps
 	return nil
-}
-
-func (f *fetcher) matchCurrentAmongRelated(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) (
-	this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit, err error) {
-	matched := 0
-	for _, r := range related {
-		if r.GetNumber() == f.change {
-			matched++
-			this = r
-		}
-	}
-	// Sanity check for better error message if Gerrit API changes.
-	if matched != 1 {
-		logging.Errorf(ctx, "Gerrit.GetRelatedChanges should have exactly 1 change "+
-			"matching the given one %s, got %d (all related %s)", f, matched, related)
-		return nil, errors.Reason("Unexpected Gerrit.GetRelatedChangesResponse for %s, see logs", f).Err()
-	}
-	return this, nil
-}
-
-func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit, byRevision map[string][]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) int {
-	cnt := 0
-	for _, p := range this.GetCommit().GetParents() {
-		// Not all parents may be represented by related CLs.
-		// OTOH, if there are several CLs matching parent revision,
-		// CV will choose just one.
-		if _, ok := byRevision[p.GetId()]; ok {
-			cnt++
-		}
-	}
-	return cnt
 }
 
 // fetchFiles fetches files for the current revision of the new Snapshot.

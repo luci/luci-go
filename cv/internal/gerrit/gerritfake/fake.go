@@ -107,13 +107,13 @@ func CI(change int, mods ...CIModifier) *gerritpb.ChangeInfo {
 	panic("TODO(tandrii): implement")
 }
 
-// Rev generates revision in the form "rev-000006-013" where 6 and 13 are change and
+// It generates revision in the form "rev-000006-013" where 6 and 13 are change and
 // patchset numbers, respectively.
 func Rev(ch, ps int64) string {
 	return fmt.Sprintf("rev-%06d-%03d", ch, ps)
 }
 
-// RelatedChange returns ChangeAndCommit for the GetRelatedChangesResponse.
+// RelatedCC returns ChangeAndCommit for the GetRelatedChangesResponse.
 //
 // Parents can be specified in several ways:
 //  * gerritpb.CommitInfo_Parent
