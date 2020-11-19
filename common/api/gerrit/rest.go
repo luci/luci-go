@@ -342,8 +342,10 @@ func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwner
 func (c *client) ListProjects(ctx context.Context, req *gerritpb.ListProjectsRequest, opts ...grpc.CallOption) (*gerritpb.ListProjectsResponse, error) {
 	resp := map[string]*projectInfo{}
 	params := url.Values{}
-	if req.Ref != "" {
-		params.Add("b", req.Ref)
+	if req.Ref != nil {
+		for _, ref := range req.Ref {
+			params.Add("b", ref)
+		}
 	}
 	if _, err := c.call(ctx, "GET", "/projects/", params, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "list projects").Err()

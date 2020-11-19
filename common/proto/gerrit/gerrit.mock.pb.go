@@ -7,8 +7,8 @@ package gerrit
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 )
 
@@ -196,14 +196,14 @@ func (mr *MockGerritClientMockRecorder) CreateChange(ctx, in interface{}, opts .
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", varargs...)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -216,14 +216,14 @@ func (mr *MockGerritClientMockRecorder) ChangeEditFileContent(ctx, in interface{
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", varargs...)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -236,14 +236,14 @@ func (mr *MockGerritClientMockRecorder) DeleteEditFileContent(ctx, in interface{
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditPublish", varargs...)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -499,10 +499,10 @@ func (mr *MockGerritServerMockRecorder) CreateChange(arg0, arg1 interface{}) *go
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*emptypb.Empty, error) {
+func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -514,10 +514,10 @@ func (mr *MockGerritServerMockRecorder) ChangeEditFileContent(arg0, arg1 interfa
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*emptypb.Empty, error) {
+func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -529,10 +529,10 @@ func (mr *MockGerritServerMockRecorder) DeleteEditFileContent(arg0, arg1 interfa
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*emptypb.Empty, error) {
+func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditPublish", arg0, arg1)
-	ret0, _ := ret[0].(*emptypb.Empty)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
