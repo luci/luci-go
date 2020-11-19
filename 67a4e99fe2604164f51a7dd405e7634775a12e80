@@ -33,6 +33,24 @@
       "message": "For consistency maybe 2 blank lines",
       "revId": "67a4e99fe2604164f51a7dd405e7634775a12e80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d946722_1b80f13d",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:33:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe5e9bf9_483fbd9e",
+      "revId": "67a4e99fe2604164f51a7dd405e7634775a12e80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
