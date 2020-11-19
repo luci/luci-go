@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3a6e53d_f752155e",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:48:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "834c37b3_6d4f64f1",
+      "range": {
+        "startLine": 72,
+        "startChar": 22,
+        "endLine": 72,
+        "endChar": 24
+      },
+      "revId": "64ca13eeadcc69463311d162bb04702776c58636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e59727f_0e684376",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-19T03:44:23Z",
       "side": 1,
       "message": "It should return a string",
+      "range": {
+        "startLine": 215,
+        "startChar": 94,
+        "endLine": 215,
+        "endChar": 95
+      },
+      "revId": "64ca13eeadcc69463311d162bb04702776c58636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd56bc29_585e273b",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:48:57Z",
+      "side": 1,
+      "message": "Isn\u0027t this implicit? None of the other render methods in this file specify their return type.",
+      "parentUuid": "4e59727f_0e684376",
       "range": {
         "startLine": 215,
         "startChar": 94,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e183a57e_3ba3f4f3",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:48:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60efc812_57ca9efd",
+      "range": {
+        "startLine": 216,
+        "startChar": 20,
+        "endLine": 216,
+        "endChar": 22
+      },
+      "revId": "64ca13eeadcc69463311d162bb04702776c58636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e8c7407_fc8ea5df",
@@ -100,6 +172,24 @@
       "writtenOn": "2020-11-19T03:44:23Z",
       "side": 1,
       "message": "Do we really have the concept of \"scheduled\" steps?",
+      "revId": "64ca13eeadcc69463311d162bb04702776c58636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "337c335f_910b3016",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:48:57Z",
+      "side": 1,
+      "message": "Yes: https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/step.proto#65",
+      "parentUuid": "2e8c7407_fc8ea5df",
       "revId": "64ca13eeadcc69463311d162bb04702776c58636",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
