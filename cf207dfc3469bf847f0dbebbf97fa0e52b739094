@@ -22,6 +22,30 @@
       },
       "revId": "cf207dfc3469bf847f0dbebbf97fa0e52b739094",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "548aca7e_7ea80b9b",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-19T17:43:57Z",
+      "side": 1,
+      "message": "%v is the format used in the example snipet.\nhttps://golang.org/pkg/time/#Time.Sub\n\n```\n\tdifference :\u003d end.Sub(start)\n\tfmt.Printf(\"difference \u003d %v\\n\", difference)\n```\n\nI changed it to \"%s\". %s should work as well. Here is a sample output after this patchset.\n```\nstart_time + duration: cannot be \u003e (now + 10m0s), but was +1h0m0s\u0027\n```",
+      "parentUuid": "60ad20ea_e0a89600",
+      "range": {
+        "startLine": 104,
+        "startChar": 53,
+        "endLine": 104,
+        "endChar": 57
+      },
+      "revId": "cf207dfc3469bf847f0dbebbf97fa0e52b739094",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
