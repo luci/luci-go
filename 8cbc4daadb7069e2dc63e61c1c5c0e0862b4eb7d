@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "457ceef2_a5a9aae9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-11-19T22:49:13Z",
+      "side": 1,
+      "message": "I think this is okay because I didn\u0027t find any uses of listfileowners other than in my owners code, which I\u0027ll update in the same CL as rolling the deps.",
+      "revId": "8cbc4daadb7069e2dc63e61c1c5c0e0862b4eb7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
