@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d91b824e_4ea3836e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T19:01:19Z",
+      "side": 1,
+      "message": "Note, we discussed this in sync meeting, and suggested probably not doing this, and instead keeping all TQ protos in separate packages, right?",
+      "revId": "16525a97df302c710472aa6a83dee8134c260ace",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
