@@ -96,6 +96,10 @@ message TestResult {
   //
   // The size of the summary must be equal to or smaller than 4096 bytes in
   // UTF-8.
+  //
+  // Supports artifact embedding using custom tags:
+  // * <text-artifact> renders contents of an artifact as text.
+  //   Usage: <text-artifact artifact-id="<artifact_id>">
   string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
