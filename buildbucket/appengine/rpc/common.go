@@ -16,12 +16,18 @@ package rpc
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -46,6 +52,12 @@ const (
 	// summaryMardkdownMaxLength is the maximum size of Build.summary_markdown field in bytes.
 	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
 	summaryMarkdownMaxLength = 4 * 1000
+
+	// BuildTokenKey is the key of the gRPC request header where the auth token should be
+	// specified.
+	//
+	// It's used to authenticate build messages, such as UpdateBuild request,
+	BuildTokenKey = "x-build-token"
 )
 
 var (
@@ -215,6 +227,88 @@ func validateCommit(cm *pb.GitilesCommit) error {
 		}
 	default:
 		return errors.Reason("one of id or ref is required").Err()
+	}
+	return nil
+}
+
+// ValidateBuildToken validates the update token stored in the header.
+func ValidateBuildToken(ctx context.Context, b *model.Build) error {
+	if b.UpdateToken == "" {
+		// TODO(crbug.com/1110990) - Use Cloud Secret Manager to validate the request.
+		return appstatus.Errorf(codes.Internal, "build %d has no update_token", b.ID)
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok || len(md.Get(BuildTokenKey)) == 0 {
+		return appstatus.Errorf(codes.Unauthenticated, "authorization header is missing")
+	}
+
+	// validate it against the token stored in the build entity.
+	var tk string
+	for _, tk = range md.Get(BuildTokenKey) {
+		if tk == b.UpdateToken {
+			break
+		}
+	}
+	if tk != b.UpdateToken {
+		return perm.NotFoundErr(ctx)
+	}
+
+	// The below values are what the python implementation uses and are not necessarily
+	// the same as the values that should be used with Cloud Secret Manager. The usage of
+	// these values should be limited to the token validation with build.update_token.
+	digestLen := 32
+	expiration := time.Duration(time.Hour * 24 * 2)
+	version := byte(1)
+
+	blob, err := base64.RawURLEncoding.DecodeString(tk)
+	if err != nil {
+		return appstatus.Errorf(codes.PermissionDenied, "failed to decode build token: %s", err)
+	}
+	if blob[0] != version {
+		return appstatus.Errorf(codes.PermissionDenied, "tokens: bad version %q", version)
+	}
+
+	public := blob[1 : len(blob)-digestLen]
+	embedded := map[string]string{}
+	if json.Unmarshal(public, &embedded); err != nil {
+		return appstatus.Errorf(codes.PermissionDenied, "tokens: invalid public")
+	}
+
+	getTime := func(m map[string]string, key string) (int64, error) {
+		s, ok := m[key]
+		if !ok {
+			return 0, appstatus.Errorf(codes.PermissionDenied, "tokens: missing %q", key)
+		}
+		i, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return 0, appstatus.Errorf(codes.PermissionDenied, "tokens: invaid value on %q", key)
+		}
+		return i, nil
+	}
+
+	// Grab issue time, reject token from the future.
+	now := clock.Now(ctx)
+	it, err := getTime(embedded, "_i")
+	if err != nil {
+		return err
+	}
+	issueTS := time.Unix(0, it*1e6)
+	if issueTS.After(now.Add(30 * time.Second)) {
+		return appstatus.Errorf(codes.PermissionDenied, "tokens: issued ts is in the future")
+	}
+
+	// check the expiration
+	if _, ok := embedded["_x"]; ok {
+		exp, err := getTime(embedded, "_x")
+		if err != nil {
+			return err
+		}
+		expiration = time.Duration(exp) * time.Millisecond
+	}
+
+	if expired := now.Sub(issueTS.Add(expiration)); expired > 0 {
+		return appstatus.Errorf(codes.PermissionDenied, "tokens: expired %s ago", expired)
 	}
 	return nil
 }
