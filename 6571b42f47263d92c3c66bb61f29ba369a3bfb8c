@@ -90,6 +90,54 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cb9ce217_0d08519e",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-19T17:29:42Z",
+      "side": 1,
+      "message": "could we handle such a case in a different layer? For example, an agent ensures that the clock is in sync before running a SwarmingTask. If the clock in a bot is out of sync for x-hours, then we probably need to fix it for other use cases as well. For example, logging, monitoring, etc.\n\nI\u0027m happy to double or triple the threshold. WDYT?",
+      "parentUuid": "03dbb32b_be8c28e9",
+      "range": {
+        "startLine": 38,
+        "startChar": 12,
+        "endLine": 38,
+        "endChar": 23
+      },
+      "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afadb7c1_17e13a90",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-19T17:29:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bbf8d1f6_fdb7c6cd",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 9
+      },
+      "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a64bf55f_9ae5c2fd",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 2
@@ -124,6 +172,48 @@
         "endLine": 104,
         "endChar": 59
       },
+      "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56d85d91_c9ae6dc9",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-19T17:29:42Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "3582ae2f_8356d71b",
+      "range": {
+        "startLine": 104,
+        "startChar": 49,
+        "endLine": 104,
+        "endChar": 59
+      },
+      "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e0254c6_0c0f34b2",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-19T17:29:42Z",
+      "side": 1,
+      "message": "done. Here is a sample output.\n\u003e\u003e start_time + duration: cannot be \u003e (now + 1m0s), but +1h0m0s",
+      "parentUuid": "a64bf55f_9ae5c2fd",
       "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
