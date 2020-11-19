@@ -26,7 +26,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state/build_s
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { LONG_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 
