@@ -7,8 +7,8 @@ package gerrit
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 )
 
@@ -33,6 +33,66 @@ func NewMockGerritClient(ctrl *gomock.Controller) *MockGerritClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGerritClient) EXPECT() *MockGerritClientMockRecorder {
 	return m.recorder
+}
+
+// ListProjects mocks base method.
+func (m *MockGerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListProjects", varargs...)
+	ret0, _ := ret[0].(*ListProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
+}
+
+// GetRefInfo mocks base method.
+func (m *MockGerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRefInfo", varargs...)
+	ret0, _ := ret[0].(*RefInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefInfo indicates an expected call of GetRefInfo.
+func (mr *MockGerritClientMockRecorder) GetRefInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritClient)(nil).GetRefInfo), varargs...)
+}
+
+// ListFileOwners mocks base method.
+func (m *MockGerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFileOwners", varargs...)
+	ret0, _ := ret[0].(*ListOwnersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFileOwners indicates an expected call of ListFileOwners.
+func (mr *MockGerritClientMockRecorder) ListFileOwners(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritClient)(nil).ListFileOwners), varargs...)
 }
 
 // ListChanges mocks base method.
@@ -75,6 +135,46 @@ func (mr *MockGerritClientMockRecorder) GetChange(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritClient)(nil).GetChange), varargs...)
 }
 
+// GetMergeable mocks base method.
+func (m *MockGerritClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMergeable", varargs...)
+	ret0, _ := ret[0].(*MergeableInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeable indicates an expected call of GetMergeable.
+func (mr *MockGerritClientMockRecorder) GetMergeable(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritClient)(nil).GetMergeable), varargs...)
+}
+
+// ListFiles mocks base method.
+func (m *MockGerritClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFiles", varargs...)
+	ret0, _ := ret[0].(*ListFilesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFiles indicates an expected call of ListFiles.
+func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -96,14 +196,14 @@ func (mr *MockGerritClientMockRecorder) CreateChange(ctx, in interface{}, opts .
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -116,14 +216,14 @@ func (mr *MockGerritClientMockRecorder) ChangeEditFileContent(ctx, in interface{
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -136,14 +236,14 @@ func (mr *MockGerritClientMockRecorder) DeleteEditFileContent(ctx, in interface{
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditPublish", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -255,106 +355,6 @@ func (mr *MockGerritClientMockRecorder) AbandonChange(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritClient)(nil).AbandonChange), varargs...)
 }
 
-// GetMergeable mocks base method.
-func (m *MockGerritClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetMergeable", varargs...)
-	ret0, _ := ret[0].(*MergeableInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetMergeable indicates an expected call of GetMergeable.
-func (mr *MockGerritClientMockRecorder) GetMergeable(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritClient)(nil).GetMergeable), varargs...)
-}
-
-// ListFiles mocks base method.
-func (m *MockGerritClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListFiles", varargs...)
-	ret0, _ := ret[0].(*ListFilesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListFiles indicates an expected call of ListFiles.
-func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
-}
-
-// ListFileOwners mocks base method.
-func (m *MockGerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListFileOwners", varargs...)
-	ret0, _ := ret[0].(*ListOwnersResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListFileOwners indicates an expected call of ListFileOwners.
-func (mr *MockGerritClientMockRecorder) ListFileOwners(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritClient)(nil).ListFileOwners), varargs...)
-}
-
-// ListProjects mocks base method.
-func (m *MockGerritClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListProjects", varargs...)
-	ret0, _ := ret[0].(*ListProjectsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListProjects indicates an expected call of ListProjects.
-func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
-}
-
-// GetRefInfo mocks base method.
-func (m *MockGerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetRefInfo", varargs...)
-	ret0, _ := ret[0].(*RefInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRefInfo indicates an expected call of GetRefInfo.
-func (mr *MockGerritClientMockRecorder) GetRefInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritClient)(nil).GetRefInfo), varargs...)
-}
-
 // MockGerritServer is a mock of GerritServer interface.
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -376,6 +376,51 @@ func NewMockGerritServer(ctrl *gomock.Controller) *MockGerritServer {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGerritServer) EXPECT() *MockGerritServerMockRecorder {
 	return m.recorder
+}
+
+// ListProjects mocks base method.
+func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjectsRequest) (*ListProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjects", arg0, arg1)
+	ret0, _ := ret[0].(*ListProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
+}
+
+// GetRefInfo mocks base method.
+func (m *MockGerritServer) GetRefInfo(arg0 context.Context, arg1 *RefInfoRequest) (*RefInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefInfo", arg0, arg1)
+	ret0, _ := ret[0].(*RefInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefInfo indicates an expected call of GetRefInfo.
+func (mr *MockGerritServerMockRecorder) GetRefInfo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritServer)(nil).GetRefInfo), arg0, arg1)
+}
+
+// ListFileOwners mocks base method.
+func (m *MockGerritServer) ListFileOwners(arg0 context.Context, arg1 *ListFileOwnersRequest) (*ListOwnersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFileOwners", arg0, arg1)
+	ret0, _ := ret[0].(*ListOwnersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFileOwners indicates an expected call of ListFileOwners.
+func (mr *MockGerritServerMockRecorder) ListFileOwners(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritServer)(nil).ListFileOwners), arg0, arg1)
 }
 
 // ListChanges mocks base method.
@@ -408,6 +453,36 @@ func (mr *MockGerritServerMockRecorder) GetChange(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritServer)(nil).GetChange), arg0, arg1)
 }
 
+// GetMergeable mocks base method.
+func (m *MockGerritServer) GetMergeable(arg0 context.Context, arg1 *GetMergeableRequest) (*MergeableInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMergeable", arg0, arg1)
+	ret0, _ := ret[0].(*MergeableInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeable indicates an expected call of GetMergeable.
+func (mr *MockGerritServerMockRecorder) GetMergeable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritServer)(nil).GetMergeable), arg0, arg1)
+}
+
+// ListFiles mocks base method.
+func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesRequest) (*ListFilesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFiles", arg0, arg1)
+	ret0, _ := ret[0].(*ListFilesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFiles indicates an expected call of ListFiles.
+func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritServer) CreateChange(arg0 context.Context, arg1 *CreateChangeRequest) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -424,10 +499,10 @@ func (mr *MockGerritServerMockRecorder) CreateChange(arg0, arg1 interface{}) *go
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -439,10 +514,10 @@ func (mr *MockGerritServerMockRecorder) ChangeEditFileContent(arg0, arg1 interfa
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -454,10 +529,10 @@ func (mr *MockGerritServerMockRecorder) DeleteEditFileContent(arg0, arg1 interfa
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditPublish", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -541,79 +616,4 @@ func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChan
 func (mr *MockGerritServerMockRecorder) AbandonChange(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritServer)(nil).AbandonChange), arg0, arg1)
-}
-
-// GetMergeable mocks base method.
-func (m *MockGerritServer) GetMergeable(arg0 context.Context, arg1 *GetMergeableRequest) (*MergeableInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMergeable", arg0, arg1)
-	ret0, _ := ret[0].(*MergeableInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetMergeable indicates an expected call of GetMergeable.
-func (mr *MockGerritServerMockRecorder) GetMergeable(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritServer)(nil).GetMergeable), arg0, arg1)
-}
-
-// ListFiles mocks base method.
-func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesRequest) (*ListFilesResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListFiles", arg0, arg1)
-	ret0, _ := ret[0].(*ListFilesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListFiles indicates an expected call of ListFiles.
-func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
-}
-
-// ListFileOwners mocks base method.
-func (m *MockGerritServer) ListFileOwners(arg0 context.Context, arg1 *ListFileOwnersRequest) (*ListOwnersResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListFileOwners", arg0, arg1)
-	ret0, _ := ret[0].(*ListOwnersResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListFileOwners indicates an expected call of ListFileOwners.
-func (mr *MockGerritServerMockRecorder) ListFileOwners(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFileOwners", reflect.TypeOf((*MockGerritServer)(nil).ListFileOwners), arg0, arg1)
-}
-
-// ListProjects mocks base method.
-func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjectsRequest) (*ListProjectsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListProjects", arg0, arg1)
-	ret0, _ := ret[0].(*ListProjectsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListProjects indicates an expected call of ListProjects.
-func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
-}
-
-// GetRefInfo mocks base method.
-func (m *MockGerritServer) GetRefInfo(arg0 context.Context, arg1 *RefInfoRequest) (*RefInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRefInfo", arg0, arg1)
-	ret0, _ := ret[0].(*RefInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRefInfo indicates an expected call of GetRefInfo.
-func (mr *MockGerritServerMockRecorder) GetRefInfo(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefInfo", reflect.TypeOf((*MockGerritServer)(nil).GetRefInfo), arg0, arg1)
 }
