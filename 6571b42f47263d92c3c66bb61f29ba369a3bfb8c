@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a64bf55f_9ae5c2fd",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-19T16:59:52Z",
+      "side": 1,
+      "message": "Can you print how far in the future it is? It\u0027d be useful to debug.",
+      "revId": "6571b42f47263d92c3c66bb61f29ba369a3bfb8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
