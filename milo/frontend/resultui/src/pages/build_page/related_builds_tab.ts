@@ -22,7 +22,7 @@ import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
-import { NUMERIC_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { BuildExt } from '../../models/build_ext';
 
