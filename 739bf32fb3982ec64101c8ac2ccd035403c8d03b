@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebb847c7_3560e360",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "gerritpb defined it as int64, so i want to avoid needless conversion between int32 and int64.",
+      "parentUuid": "4fc84121_217f414b",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b90e1aca_f577dd71",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-19T18:57:35Z",
       "side": 1,
       "message": "Rev",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 5
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03b23890_9fa3617b",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b90e1aca_f577dd71",
       "range": {
         "startLine": 110,
         "startChar": 3,
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a638faac_a487eddd",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "Yes. 6 is good enough to look different from patchset in tests though.",
+      "parentUuid": "06c9efbc_63a569e3",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c678ba17_dddec8c9",
@@ -88,6 +148,30 @@
       "writtenOn": "2020-11-19T18:57:35Z",
       "side": 1,
       "message": "function name below is RelatedChange",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 12
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45d4ce57_940eede7",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c678ba17_dddec8c9",
       "range": {
         "startLine": 116,
         "startChar": 3,
@@ -115,6 +199,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f08d443_79077e1e",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "I\u0027ve moved minor code off the main func. I decided to the BFS + conversion to DEPS inside 1 func because a lot of assumptions carry over from BFS to DEPS construction.",
+      "parentUuid": "0d93af3e_341ec9b4",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "afd5fa27_3fd65444",
@@ -138,6 +240,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4711306_8ea9a3b9",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afd5fa27_3fd65444",
+      "range": {
+        "startLine": 220,
+        "startChar": 23,
+        "endLine": 220,
+        "endChar": 47
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fa3d87f1_dd2338d6",
@@ -151,6 +277,30 @@
       "writtenOn": "2020-11-19T18:57:35Z",
       "side": 1,
       "message": "For",
+      "range": {
+        "startLine": 288,
+        "startChar": 5,
+        "endLine": 288,
+        "endChar": 8
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a2a1c6b_9edeec2d",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T21:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa3d87f1_dd2338d6",
       "range": {
         "startLine": 288,
         "startChar": 5,
