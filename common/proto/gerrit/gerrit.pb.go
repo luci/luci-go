@@ -24,13 +24,13 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -887,6 +887,7 @@ func (x *GetChangeRequest) GetOptions() []QueryOption {
 }
 
 // Information about an account.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-info
 type AccountInfo struct {
@@ -987,6 +988,7 @@ func (x *AccountInfo) GetAccountId() int64 {
 }
 
 // Information about a change.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 type ChangeInfo struct {
@@ -1030,9 +1032,9 @@ type ChangeInfo struct {
 	// Only set if submittable is requested.
 	Submittable bool `protobuf:"varint,10,opt,name=submittable,proto3" json:"submittable,omitempty"`
 	// Timestamp of when the change was created
-	Created *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
+	Created *timestamp.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
 	// Timestamp of when the change was last updated
-	Updated *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated,proto3" json:"updated,omitempty"`
+	Updated *timestamp.Timestamp `protobuf:"bytes,12,opt,name=updated,proto3" json:"updated,omitempty"`
 }
 
 func (x *ChangeInfo) Reset() {
@@ -1137,14 +1139,14 @@ func (x *ChangeInfo) GetSubmittable() bool {
 	return false
 }
 
-func (x *ChangeInfo) GetCreated() *timestamppb.Timestamp {
+func (x *ChangeInfo) GetCreated() *timestamp.Timestamp {
 	if x != nil {
 		return x.Created
 	}
 	return nil
 }
 
-func (x *ChangeInfo) GetUpdated() *timestamppb.Timestamp {
+func (x *ChangeInfo) GetUpdated() *timestamp.Timestamp {
 	if x != nil {
 		return x.Updated
 	}
@@ -1152,6 +1154,7 @@ func (x *ChangeInfo) GetUpdated() *timestamppb.Timestamp {
 }
 
 // Information about a patch set.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info
 type RevisionInfo struct {
@@ -1241,6 +1244,7 @@ func (x *RevisionInfo) GetFiles() map[string]*FileInfo {
 }
 
 // Information about a Label.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#label-info
 type LabelInfo struct {
@@ -1356,6 +1360,7 @@ func (x *LabelInfo) GetDefaultValue() int32 {
 }
 
 // Information about a message attached to change.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
 type ChangeMessageInfo struct {
@@ -1374,7 +1379,7 @@ type ChangeMessageInfo struct {
 	// Set if the message was posted on behalf of another user.
 	RealAuthor *AccountInfo `protobuf:"bytes,3,opt,name=real_author,json=realAuthor,proto3" json:"real_author,omitempty"`
 	// The timestamp this message was posted.
-	Date *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=date,proto3" json:"date,omitempty"`
+	Date *timestamp.Timestamp `protobuf:"bytes,4,opt,name=date,proto3" json:"date,omitempty"`
 	// The text left by the user.
 	Message string `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
 }
@@ -1432,7 +1437,7 @@ func (x *ChangeMessageInfo) GetRealAuthor() *AccountInfo {
 	return nil
 }
 
-func (x *ChangeMessageInfo) GetDate() *timestamppb.Timestamp {
+func (x *ChangeMessageInfo) GetDate() *timestamp.Timestamp {
 	if x != nil {
 		return x.Date
 	}
@@ -1447,6 +1452,7 @@ func (x *ChangeMessageInfo) GetMessage() string {
 }
 
 // Information about a file in a patch set.
+//
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info
 type FileInfo struct {
@@ -2254,7 +2260,8 @@ type SetReviewRequest struct {
 	// Optional, but recommended for better routing and faster RPC execution.
 	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// Unique ID for the revision to query.
-	// See
+	//
+	// Source of truth:
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
 	RevisionId string `protobuf:"bytes,3,opt,name=revision_id,json=revisionId,proto3" json:"revision_id,omitempty"`
 	// Message to be added to the change along with this review.
@@ -2388,7 +2395,8 @@ func (x *ReviewResult) GetLabels() map[string]int32 {
 }
 
 // Information to add/remove a user from the attention set of a change.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#attention-set-input
 type AttentionSetRequest struct {
 	state         protoimpl.MessageState
@@ -2402,7 +2410,8 @@ type AttentionSetRequest struct {
 	// Optional, but recommended for better routing and faster RPC execution.
 	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// A unique identifier for an account.
-	// See
+	//
+	// Source of truth:
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
 	User string `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
 	// The justification for adding/removing the user.
@@ -2490,7 +2499,8 @@ type GetMergeableRequest struct {
 	// Optional, but recommended for better routing and faster RPC execution.
 	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// Unique ID for the revision to query.
-	// See
+	//
+	// Source of truth:
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
 	RevisionId string `protobuf:"bytes,3,opt,name=revision_id,json=revisionId,proto3" json:"revision_id,omitempty"`
 	// The source to merge from, e.g. a complete or abbreviated commit SHA-1, a
@@ -2570,7 +2580,7 @@ func (x *GetMergeableRequest) GetStrategy() MergeableStrategy {
 
 // Contains information about the mergeability of a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#mergeable-info
 type MergeableInfo struct {
 	state         protoimpl.MessageState
@@ -2676,7 +2686,7 @@ func (x *MergeableInfo) GetMergeableInto() []string {
 
 // Information for requesting the files in a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 type ListFilesRequest struct {
 	state         protoimpl.MessageState
@@ -2690,7 +2700,8 @@ type ListFilesRequest struct {
 	// Optional, but recommended for better routing and faster RPC execution.
 	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// Unique ID for the revision to query.
-	// See
+	//
+	// Source of truth:
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
 	RevisionId string `protobuf:"bytes,3,opt,name=revision_id,json=revisionId,proto3" json:"revision_id,omitempty"`
 	// Changes the response to return a list of all files (modified or unmodified)
@@ -2770,7 +2781,7 @@ func (x *ListFilesRequest) GetParent() int64 {
 
 // Information about the files in a change.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 type ListFilesResponse struct {
 	state         protoimpl.MessageState
@@ -2821,7 +2832,8 @@ func (x *ListFilesResponse) GetFiles() map[string]*FileInfo {
 }
 
 // Information for requesting the projects on a host.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/cmd-ls-projects.html
 type ListProjectsRequest struct {
 	state         protoimpl.MessageState
@@ -2830,7 +2842,7 @@ type ListProjectsRequest struct {
 
 	// Limit results to projects with the specified ref, e.g.: refs/heads/main.
 	// Ref SHA1 will be included in the results.
-	Ref string `protobuf:"bytes,1,opt,name=ref,proto3" json:"ref,omitempty"`
+	Ref []string `protobuf:"bytes,1,rep,name=ref,proto3" json:"ref,omitempty"`
 }
 
 func (x *ListProjectsRequest) Reset() {
@@ -2865,15 +2877,16 @@ func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *ListProjectsRequest) GetRef() string {
+func (x *ListProjectsRequest) GetRef() []string {
 	if x != nil {
 		return x.Ref
 	}
-	return ""
+	return nil
 }
 
 // Describes a link to an external site
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#web-link-info
 type WebLinkInfo struct {
 	state         protoimpl.MessageState
@@ -2943,7 +2956,7 @@ func (x *WebLinkInfo) GetImageUrl() string {
 
 // Information about individual projects.
 //
-// See
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
 type ProjectInfo struct {
 	state         protoimpl.MessageState
@@ -3039,7 +3052,8 @@ func (x *ProjectInfo) GetWebLinks() []*WebLinkInfo {
 }
 
 // Information about the projects on a host.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#project-info
 type ListProjectsResponse struct {
 	state         protoimpl.MessageState
@@ -3148,7 +3162,8 @@ func (x *RefInfoRequest) GetRef() string {
 }
 
 // Information about a branch.
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#branch-info
 type RefInfo struct {
 	state         protoimpl.MessageState
@@ -3208,7 +3223,8 @@ func (x *RefInfo) GetRevision() string {
 }
 
 // Options when requesting information about an account
-// See
+//
+// Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#details
 type AccountOptions struct {
 	state         protoimpl.MessageState
@@ -3793,7 +3809,7 @@ var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_rawDesc = []byte{
 	0x67, 0x65, 0x72, 0x72, 0x69, 0x74, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52,
 	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x27, 0x0a, 0x13, 0x4c, 0x69,
 	0x73, 0x74, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
+	0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x03,
 	0x72, 0x65, 0x66, 0x22, 0x50, 0x0a, 0x0b, 0x57, 0x65, 0x62, 0x4c, 0x69, 0x6e, 0x6b, 0x49, 0x6e,
 	0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x02, 0x20,
@@ -4056,8 +4072,8 @@ var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_goTypes = []inter
 	nil,                                  // 50: gerrit.ListFilesResponse.FilesEntry
 	nil,                                  // 51: gerrit.ProjectInfo.RefsEntry
 	nil,                                  // 52: gerrit.ListProjectsResponse.ProjectsEntry
-	(*timestamppb.Timestamp)(nil),        // 53: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                // 54: google.protobuf.Empty
+	(*timestamp.Timestamp)(nil),          // 53: google.protobuf.Timestamp
+	(*empty.Empty)(nil),                  // 54: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_common_proto_gerrit_gerrit_proto_depIdxs = []int32{
 	0,  // 0: gerrit.ListChangesRequest.options:type_name -> gerrit.QueryOption
@@ -4644,15 +4660,15 @@ type GerritClient interface {
 	// Edit a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
-	ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Delete a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
-	DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Publish all changes in a a change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
-	ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Add a reviewer to a change
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
@@ -4754,8 +4770,8 @@ func (c *gerritPRPCClient) CreateChange(ctx context.Context, in *CreateChangeReq
 	return out, nil
 }
 
-func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4763,8 +4779,8 @@ func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *Change
 	return out, nil
 }
 
-func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "DeleteEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4772,8 +4788,8 @@ func (c *gerritPRPCClient) DeleteEditFileContent(ctx context.Context, in *Delete
 	return out, nil
 }
 
-func (c *gerritPRPCClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritPRPCClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditPublish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4906,8 +4922,8 @@ func (c *gerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest
 	return out, nil
 }
 
-func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4915,8 +4931,8 @@ func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEdit
 	return out, nil
 }
 
-func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/DeleteEditFileContent", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4924,8 +4940,8 @@ func (c *gerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEdit
 	return out, nil
 }
 
-func (c *gerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditPublish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -5019,15 +5035,15 @@ type GerritServer interface {
 	// Edit a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
-	ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*emptypb.Empty, error)
+	ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*empty.Empty, error)
 	// Delete a single file within an existing change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
-	DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*emptypb.Empty, error)
+	DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*empty.Empty, error)
 	// Publish all changes in a a change edit.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
-	ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*emptypb.Empty, error)
+	ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*empty.Empty, error)
 	// Add a reviewer to a change
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
@@ -5078,13 +5094,13 @@ func (*UnimplementedGerritServer) ListFiles(context.Context, *ListFilesRequest) 
 func (*UnimplementedGerritServer) CreateChange(context.Context, *CreateChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateChange not implemented")
 }
-func (*UnimplementedGerritServer) ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*emptypb.Empty, error) {
+func (*UnimplementedGerritServer) ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditFileContent not implemented")
 }
-func (*UnimplementedGerritServer) DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*emptypb.Empty, error) {
+func (*UnimplementedGerritServer) DeleteEditFileContent(context.Context, *DeleteEditFileContentRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteEditFileContent not implemented")
 }
-func (*UnimplementedGerritServer) ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*emptypb.Empty, error) {
+func (*UnimplementedGerritServer) ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditPublish not implemented")
 }
 func (*UnimplementedGerritServer) AddReviewer(context.Context, *AddReviewerRequest) (*AddReviewerResult, error) {
