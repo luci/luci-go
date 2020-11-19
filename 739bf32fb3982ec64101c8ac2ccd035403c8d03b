@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b7cbf4f_7393f65a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "(Initial quick review)",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fc84121_217f414b",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "Just curious, why int64?",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b90e1aca_f577dd71",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "Rev",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 5
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06c9efbc_63a569e3",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "If change is 7 or more digits is that OK? e.g. if you had change 12345678 and patchset 1022, then you\u0027d get \"rev-12345678-1022\" and that would be OK, right?",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c678ba17_dddec8c9",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "function name below is RelatedChange",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 12
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d93af3e_341ec9b4",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "Since this is a very long function, it should probably have a function comment; also if you can easily extract some parts out to helper functions that may be helpful.",
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afd5fa27_3fd65444",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "but has the API call GetRelatedChanges that returns...",
+      "range": {
+        "startLine": 220,
+        "startChar": 23,
+        "endLine": 220,
+        "endChar": 47
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa3d87f1_dd2338d6",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T18:57:35Z",
+      "side": 1,
+      "message": "For",
+      "range": {
+        "startLine": 288,
+        "startChar": 5,
+        "endLine": 288,
+        "endChar": 8
+      },
+      "revId": "739bf32fb3982ec64101c8ac2ccd035403c8d03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
