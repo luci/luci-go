@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de320efe_29049299",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:31:07Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "fdd022fb_d75e0102",
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0dd8cec6_a9f63530",
@@ -31,6 +49,24 @@
       "writtenOn": "2020-11-19T18:16:46Z",
       "side": 1,
       "message": "What does this function do?",
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41143fec_9abea7d3",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:31:07Z",
+      "side": 1,
+      "message": "oops, done.",
+      "parentUuid": "0dd8cec6_a9f63530",
       "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -58,6 +94,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8689dd92_6c9e4532",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aaccd1ea_74e86d9e",
+      "range": {
+        "startLine": 207,
+        "startChar": 56,
+        "endLine": 207,
+        "endChar": 62
+      },
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "67de415a_4b35b069",
@@ -71,6 +131,30 @@
       "writtenOn": "2020-11-19T18:16:46Z",
       "side": 1,
       "message": "I see that the prefix must is added to this function name indicating that it panics if there\u0027s no current revision, although I wonder if there\u0027s a better name... maybe:\n\n - currentRevision        // just leave \"must\" off, readers may read this function to see that it panics; \n - currentRevisionOrPanic // kind of like the naming convention of \"...OrDie\"\n - or keep it as mustCurrentRevision, also fine",
+      "range": {
+        "startLine": 322,
+        "startChar": 18,
+        "endLine": 322,
+        "endChar": 37
+      },
+      "revId": "e9dff281805e7a53f799cf20751f43d7dd5a8d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a4a179f_ff793416",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:31:07Z",
+      "side": 1,
+      "message": "I followed regexp.MustCompile, but I\u0027ve just realized that it\u0027s missing a verb. Renaming in a follow up on top of my stack to avoid rebasing conflicts: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2550704",
+      "parentUuid": "67de415a_4b35b069",
       "range": {
         "startLine": 322,
         "startChar": 18,
