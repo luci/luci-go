@@ -34,6 +34,8 @@ import (
 const (
 	resultIDPattern   = `[a-z0-9\-_.]{1,32}`
 	maxLenSummaryHTML = 4 * 1024
+	// fuzzyNow is the maxmium amount of time that clocks could have been out of sync for.
+	fuzzyNow = time.Minute
 )
 
 var (
@@ -98,11 +100,11 @@ func ValidateStartTimeWithDuration(now time.Time, startTime *tspb.Timestamp, dur
 	}
 
 	switch {
-	case startTime != nil && now.Before(t):
+	case startTime != nil && now.Add(fuzzyNow).Before(t):
 		return errors.Reason("start_time: cannot be in the future").Err()
 	case duration != nil && d < 0:
 		return errors.Reason("duration: is < 0").Err()
-	case startTime != nil && duration != nil && now.Before(t.Add(d)):
+	case startTime != nil && duration != nil && now.Add(fuzzyNow).Before(t.Add(d)):
 		return errors.Reason("start_time + duration: cannot be in the future").Err()
 	}
 	return nil
