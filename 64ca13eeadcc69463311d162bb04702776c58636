@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "799bc9b9_ed4b40fd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-19T03:27:34Z",
+      "side": 1,
+      "message": "Demo (try clicking on failed, succeeded or running builds):\nhttps://jsca-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/linux-rel-swarming",
+      "revId": "64ca13eeadcc69463311d162bb04702776c58636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
