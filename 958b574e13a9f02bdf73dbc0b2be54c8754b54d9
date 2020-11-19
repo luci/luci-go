@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "81568861_a6614761",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T01:00:16Z",
+      "side": 1,
+      "message": "as you wish -- it\u0027s small enough that it\u0027s easy to review both together.",
+      "parentUuid": "0a868011_af780800",
+      "revId": "958b574e13a9f02bdf73dbc0b2be54c8754b54d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7599ffab_b9298919",
         "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
         "patchSetId": 2
