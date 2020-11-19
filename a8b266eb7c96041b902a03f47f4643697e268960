@@ -56,6 +56,30 @@
       },
       "revId": "a8b266eb7c96041b902a03f47f4643697e268960",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8df96f0f_7a266334",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 630,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-19T20:36:21Z",
+      "side": 1,
+      "message": "Sure. But there are no subtle cases here (but elsewhere, lots of untested gotchas, i\u0027m sure we\u0027ll hit them), so it\u0027s as \"works\" as it can be 😊",
+      "parentUuid": "4e84c6f8_c9c73516",
+      "range": {
+        "startLine": 630,
+        "startChar": 27,
+        "endLine": 630,
+        "endChar": 32
+      },
+      "revId": "a8b266eb7c96041b902a03f47f4643697e268960",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
