@@ -57,8 +57,8 @@ func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
 }
 
-// connectToRedis returns true if tests should connect to Redis.
-func connectToRedis() bool {
+// ConnectToRedis returns true if tests should connect to Redis.
+func ConnectToRedis() bool {
 	return os.Getenv(RedisTestEnvVar) == "1"
 }
 
@@ -86,7 +86,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 
 	ctx = span.UseClient(ctx, spannerClient)
 
-	if connectToRedis() {
+	if ConnectToRedis() {
 		ctx = redisconn.UsePool(ctx, redisconn.NewPool("localhost:6379", 0))
 		if err := cleanupRedis(ctx); err != nil {
 			tb.Fatal(err)
