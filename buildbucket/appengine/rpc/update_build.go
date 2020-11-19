@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -217,6 +218,50 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 	return nil
 }
 
+func getBuildForUpdate(ctx context.Context, bm *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+	build, err := getBuild(ctx, req.Build.Id)
+	if err != nil {
+		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+			return nil, err
+		}
+		return nil, appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.Build.Id, err)
+	}
+
+	if protoutil.IsEnded(build.Status) {
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
+	}
+
+	var finalStatus = build.Status
+	switch incl, err := bm.Includes("build.status"); {
+	case err != nil:
+		// This is probably a bug in the server code.
+		return nil, appstatus.Errorf(codes.Internal, "failed to parse mask path 'build.status': %s", err)
+	case incl == mask.IncludeEntirely:
+		finalStatus = req.Build.Status
+	}
+
+	// ensure that a SCHEDULED build does not have steps or output.
+	if finalStatus == pb.Status_SCHEDULED {
+		switch incl, err := bm.Includes("build.steps"); {
+		case err != nil:
+			// This is probably a bug in the server code.
+			return nil, appstatus.Errorf(codes.Internal, "failed to parse mask path 'build.steps' of build %d: %s", req.Build.Id, err)
+		case incl == mask.IncludeEntirely:
+			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
+		}
+
+		switch incl, err := bm.Includes("build.output"); {
+		case err != nil:
+			// This is probably a bug in the server code.
+			return nil, appstatus.Errorf(codes.Internal, "failed to parse mask path 'build.output' of build %d: %s", req.Build.Id, err)
+		case incl != mask.Exclude:
+			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
+		}
+	}
+
+	return build, nil
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	switch can, err := perm.CanUpdateBuild(ctx); {
@@ -228,9 +273,24 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 
 	var bs model.BuildSteps
 	if err := validateUpdate(req, &bs); err != nil {
-		return nil, appstatus.BadRequest(err)
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
 	bs.Build = datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id})
+
+	// load the build and check if the build can be updated.
+	bm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
+	}
+
+	b, err := getBuildForUpdate(ctx, &bm, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ValidateBuildToken(ctx, b); err != nil {
+		return nil, err
+	}
 
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
