@@ -22,13 +22,13 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import '../../components/build_step_entry';
-import '../../components/link';
 import '../../components/code_mirror_editor';
+import '../../components/link';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { LONG_TIME_FORMAT, displayDuration } from '../../libs/time_utils';
+import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
@@ -182,10 +182,26 @@ export class OverviewTabElement extends MobxLitElement {
     const nonSucceededSteps = (build.rootSteps || [])
       .map((step, i) => [step, i + 1] as [StepExt, number])
       .filter(([step, _stepNum]) => !step.succeededRecursively);
+    const scheduledSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.status === BuildStatus.Scheduled);
+    const runningSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.status === BuildStatus.Started);
+    const canceledSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.status === BuildStatus.Canceled);
+    const failedSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.failed);
 
     return html`
       <div>
-        <h3>Steps & Logs</h3>
+        <h3>Steps & Logs
+          (<a href=${router.urlForName('build-steps', {
+            ...this.buildState.builder,
+            build_num_or_id: this.buildState.buildNumOrId!,
+          })}>View All</a>)
+        </h3>
+        <div class="step-summary-line">
+          ${this.renderStepSummary(failedSteps.length, canceledSteps.length, scheduledSteps.length, runningSteps.length)}
+        </div>
         ${nonSucceededSteps.map(([step, stepNum]) => html`
         <milo-build-step-entry
           .expanded=${true}
@@ -194,15 +210,28 @@ export class OverviewTabElement extends MobxLitElement {
           .showDebugLogs=${false}
         ></milo-build-step-entry>
         `) || ''}
-        <div class="list-entry">
-          ${nonSucceededSteps.length} non-succeeded step(s).
-          <a href=${router.urlForName('build-steps', {
-            ...this.buildState.builder,
-            build_num_or_id: this.buildState.buildNumOrId!,
-          })}>View All</a>
-        </div>
       </div>
     `;
+  }
+
+  private renderStepSummary(failedSteps: number, canceledSteps: number, scheduledSteps: number, runningSteps: number) {
+    if (failedSteps === 0 && scheduledSteps === 0 && runningSteps === 0) {
+        return 'All steps succeeded.';
+    }
+    const messageParts: string[] = [];
+    if (failedSteps > 0) {
+        messageParts.push(`${failedSteps} step${failedSteps === 1 ? '' : 's'} failed`);
+    }
+    if (canceledSteps > 0) {
+        messageParts.push(`${canceledSteps} step${canceledSteps === 1 ? '' : 's'} canceled`);
+    }
+    if (scheduledSteps > 0) {
+        messageParts.push(`${scheduledSteps} step${scheduledSteps === 1 ? '' : 's'} scheduled`);
+    }
+    if (runningSteps > 0) {
+        messageParts.push(`${runningSteps} step${runningSteps === 1 ? '' : 's'} still running`);
+    }
+    return messageParts.join(', ') + ':';
   }
 
   private renderTiming() {
@@ -242,7 +271,7 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderProperties(header: string, properties: {[key: string]: unknown}) {
     const editorOptions = {
-      mode: {name: "javascript", json: true},
+      mode: {name: 'javascript', json: true},
       readOnly: true,
       scrollbarStyle: 'null',
       matchBrackets: true,
@@ -400,8 +429,8 @@ export class OverviewTabElement extends MobxLitElement {
       margin-bottom: 1px;
     }
 
-    .list-entry {
-      margin-top: 5px;
+    .step-summary-line {
+      margin-bottom: 10px;
     }
 
     milo-code-mirror-editor {

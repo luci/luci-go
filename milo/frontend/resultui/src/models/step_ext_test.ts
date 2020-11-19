@@ -52,7 +52,7 @@ describe('StepExt', () => {
       assert.isTrue(step.succeededRecursively);
     });
 
-    it('succeeded step with no succeeded children should return true', async () => {
+    it('succeeded step with only succeeded children should return true', async () => {
       const step = createStep('child', BuildStatus.Success);
       step.children.push(createStep('parent|child1', BuildStatus.Success));
       step.children.push(createStep('parent|child2', BuildStatus.Success));
@@ -63,6 +63,34 @@ describe('StepExt', () => {
       const step = createStep('parent', BuildStatus.Success);
       step.children.push(createStep('parent|child1', BuildStatus.Success));
       step.children.push(createStep('parent|child2', BuildStatus.Failure));
+      assert.isFalse(step.succeededRecursively);
+    });
+
+    it('succeeded step with failed child should return false', async () => {
+      const step = createStep('parent', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Failure));
+      assert.isFalse(step.succeededRecursively);
+    });
+
+    it('succeeded step with started child should return false', async () => {
+      const step = createStep('parent', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Started));
+      assert.isFalse(step.succeededRecursively);
+    });
+
+    it('succeeded step with scheduled child should return false', async () => {
+      const step = createStep('parent', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Scheduled));
+      assert.isFalse(step.succeededRecursively);
+    });
+
+    it('succeeded step with canceled child should return false', async () => {
+      const step = createStep('parent', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Canceled));
       assert.isFalse(step.succeededRecursively);
     });
 
@@ -83,6 +111,66 @@ describe('StepExt', () => {
       step.children.push(createStep('parent|child1', BuildStatus.Success));
       step.children.push(createStep('parent|child2', BuildStatus.Failure));
       assert.isFalse(step.succeededRecursively);
+    });
+  });
+
+  describe('failed', () => {
+    it('succeeded step with no children should return false', async () => {
+      const step = createStep('child', BuildStatus.Success);
+      assert.isFalse(step.failed);
+    });
+
+    it('succeeded step with only succeeded children should return false', async () => {
+      const step = createStep('child', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Success));
+      assert.isFalse(step.failed);
+    });
+
+    it('succeeded step with failed child should return true', async () => {
+      const step = createStep('parent', BuildStatus.Success);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Failure));
+      assert.isTrue(step.failed);
+    });
+
+    it('failed step with no children should return true', async () => {
+      const step = createStep('child', BuildStatus.Failure);
+      assert.isTrue(step.failed);
+    });
+
+    it('infra-failed step with no children should return true', async () => {
+      const step = createStep('child', BuildStatus.InfraFailure);
+      assert.isTrue(step.failed);
+    });
+
+    it('canceled step with no children should return false', async () => {
+      const step = createStep('child', BuildStatus.Canceled);
+      assert.isFalse(step.failed);
+    });
+
+    it('scheduled step with no children should return false', async () => {
+      const step = createStep('child', BuildStatus.Scheduled);
+      assert.isFalse(step.failed);
+    });
+
+    it('started step with no children should return false', async () => {
+      const step = createStep('child', BuildStatus.Started);
+      assert.isFalse(step.failed);
+    });
+
+    it('failed step with succeeded children should return true', async () => {
+      const step = createStep('parent', BuildStatus.Failure);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Success));
+      assert.isTrue(step.failed);
+    });
+
+    it('failed step with failed children should return true', async () => {
+      const step = createStep('parent', BuildStatus.Failure);
+      step.children.push(createStep('parent|child1', BuildStatus.Success));
+      step.children.push(createStep('parent|child2', BuildStatus.Failure));
+      assert.isTrue(step.failed);
     });
   });
 });

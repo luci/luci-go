@@ -92,14 +92,14 @@ export class BuildExt {
   }
 
   @computed get recipeLink(): Link {
-    var csHost = 'source.chromium.org'
+    let csHost = 'source.chromium.org';
     if (this.exe.cipdPackage.includes('internal')) {
-      csHost = 'source.corp.google.com'
+      csHost = 'source.corp.google.com';
     }
     // TODO(crbug.com/1149540): remove this conditional once the long-term
     // solution for recipe links has been implemented.
     if (this.builder.project === 'flutter') {
-      csHost = 'cs.opensource.google'
+      csHost = 'cs.opensource.google';
     }
     const recipeName = this.input.properties['recipe'] as string;
     return {
@@ -118,7 +118,7 @@ export class BuildExt {
   }
 
   @computed get timeSinceCreated(): Duration {
-    return this.renderTime.get().diff(this.createTime)
+    return this.renderTime.get().diff(this.createTime);
   }
 
   @computed get timeSinceStarted(): Duration | null {
