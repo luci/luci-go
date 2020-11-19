@@ -16,6 +16,7 @@ package ledcmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -91,6 +92,8 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport, opts.ResultDB); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
 	}
+
+	fmt.Printf("the GetSwarming is %v", *jd.GetSwarming())
 
 	st, err := jobexport.ToSwarmingNewTask(jd.GetSwarming(), jd.UserPayload)
 	if err != nil {

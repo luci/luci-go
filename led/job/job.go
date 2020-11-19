@@ -380,7 +380,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 	baseProperties := &swarmingpb.TaskProperties{
 		CipdInputs: append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
-		CasInputs:  jd.UserPayload,
+		CasInputs:  jd.UserPayload, // TODO(yuanjunh): change to use CasInputRoot
 
 		EnvPaths:         bb.EnvPrefixes,
 		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,

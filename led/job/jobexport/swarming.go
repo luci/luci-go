@@ -15,10 +15,17 @@
 package jobexport
 
 import (
+	"fmt"
+
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/led/job"
 	apipb "go.chromium.org/luci/swarming/proto/api"
+
+	"go.chromium.org/luci/led/job"
+)
+
+const (
+	casInstanceTemplate = "projects/%s/instances/default_instance"
 )
 
 // ToSwarmingNewTask renders a swarming proto task to a
@@ -115,11 +122,25 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 			isoToUse = jobIso
 		}
 		if isoToUse != nil {
-			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
-				Isolated:       isoToUse.Digest,
-				Isolatedserver: isoToUse.Server,
-				Namespace:      isoToUse.Namespace,
-			}
+			// toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
+			// 	CasInstance:     fmt.Sprintf(casInstanceTemplate, sw.Hostname[:len(sw.Hostname) - len(".appspot.com")]),
+			// 	Digest:          &swarming.SwarmingRpcsDigest{
+			// 		Hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			// 		SizeBytes: 0,
+			// 		},
+			// 	}
+			// toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
+			// 	Isolated:       isoToUse.Digest,
+			// 	Isolatedserver: isoToUse.Server,
+			// 	Namespace:      isoToUse.Namespace,
+			// }
+			toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
+				CasInstance:     fmt.Sprintf(casInstanceTemplate, sw.Hostname[:len(sw.Hostname) - len(".appspot.com")]),
+				Digest:          &swarming.SwarmingRpcsDigest{
+					Hash: "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+					SizeBytes: 91,
+					},
+				}
 		}
 
 		for _, env := range props.Env {

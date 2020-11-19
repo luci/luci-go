@@ -16,6 +16,7 @@ package ledcmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -23,7 +24,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/mattn/go-tty"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/cas"
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/downloader"
@@ -33,6 +41,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/led/job"
+)
+const (
+	casInstanceTemplate = "projects/%s/instances/default_instance"
 )
 
 // IsolatedTransformer is a function which receives a directory on the local
@@ -84,7 +95,7 @@ func PromptIsolatedTransformer() IsolatedTransformer {
 //
 // This implicitly collapses all isolate sources in the job.Definition into
 // a single isolate.
-func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definition, xform IsolatedTransformer) error {
+func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definition, xform IsolatedTransformer, opts auth.Options) error {
 	logging.Infof(ctx, "editing isolated")
 
 	tdir, err := ioutil.TempDir("", "led-edit-isolated")
@@ -132,6 +143,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(dgst), tdir, &downloader.Options{
 			FileStatsCallback: func(s downloader.FileStats, span time.Duration) {
 				logging.Infof(ctx, "%s", s.StatLine(previousStats, span))
+				fmt.Println("me: isolate downloading......")
 				statMu.Lock()
 				previousStats = &s
 				statMu.Unlock()
@@ -154,7 +166,41 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 	}
 	logging.Infof(ctx, "isolated upload: done")
 	jd.UserPayload.Digest = string(hash)
+
+	swHost := jd.Info().SwarmingHostname()
+	casInstance := fmt.Sprintf(casInstanceTemplate, swHost[:len(swHost) - len(".appspot.com")])
+	if _, err := uploadToCas(ctx, casInstance, tdir, opts); err != nil {
+		logging.Errorf(ctx, "errors in uploadToCas")
+	}
 	return nil
+}
+
+func uploadToCas(ctx context.Context, casInstance string, dir string, opts auth.Options) (*digest.Digest, error) {
+	logging.Infof(ctx, "the casInstance is %s - ", casInstance)
+	is := command.InputSpec{
+		Inputs: []string{"."}, // entire dir
+	}
+
+	rootDg, chunkers, _, err := tree.ComputeMerkleTree(dir, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+	}
+	logging.Infof(ctx, "the rootDg is %v - ", rootDg)
+
+	client, err := cas.NewClient(ctx, casInstance, opts, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create cas client").Err()
+	}
+	defer client.Close()
+
+	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call UploadIfMissing").Err()
+	}
+	for _, d  := range uploadedDigests {
+		logging.Infof(ctx, "the uploadedDigests is %v - ", d)
+	}
+	return &uploadedDigests[0], nil
 }
 
 func isolateDirectory(ctx context.Context, isoClient *isolatedclient.Client, dir string) (isolated.HexDigest, error) {

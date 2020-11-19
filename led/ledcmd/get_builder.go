@@ -81,6 +81,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 		return nil, err
 	}
 
+	fmt.Printf("decoded SwarmingRpcsNewTaskRequest is %v", *newTask)
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, newTask, fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder),
 		answer.SwarmingHost, opts.KitchenSupport)
@@ -90,6 +91,12 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 
 	if err := fillIsolateServerDefaults(authClient, jd); err != nil {
 		return nil, err
+	}
+
+	if newTask.Properties == nil {
+		fmt.Println("newTask.Properties is nil")
+	} else {
+		fmt.Printf("the CAS instance - %s, digest - %v", newTask.Properties.CasInputRoot.CasInstance, newTask.Properties.CasInputRoot.Digest)
 	}
 
 	return jd, nil

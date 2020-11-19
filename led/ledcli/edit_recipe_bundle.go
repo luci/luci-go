@@ -114,10 +114,12 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 }
 
 func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+	authOpts, _ := c.authFlags.Options()
 	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, inJob, &ledcmd.EditRecipeBundleOpts{
 		Overrides:  c.overrides,
 		DebugSleep: c.debugSleep,
-	})
+	},
+		authOpts)
 }
 
 func (c *cmdEditRecipeBundle) Run(a subcommands.Application, args []string, env subcommands.Env) int {

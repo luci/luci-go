@@ -16,6 +16,7 @@ package jobcreate
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strings"
 
@@ -130,33 +131,47 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		}
 	}
 
-	// ensure isolate source consistency
+	// ensure isolate/rbe-cas source consistency
 	for i, slice := range r.TaskSlices {
 		ir := slice.Properties.InputsRef
-		if ir == nil {
-			continue
+		cir := slice.Properties.CasInputRoot
+
+		if ir != nil && cir != nil {
+			return nil, errors.Reason("shouldn't have both isolate and rbe-cas property in task slice").Err()
 		}
 
-		if ret.UserPayload.Digest == "" {
-			ret.UserPayload.Digest = ir.Isolated
-		} else if ret.UserPayload.Digest != ir.Isolated {
-			return nil, errors.Reason("isolate hash inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Digest, ir.Isolated).Err()
+		fmt.Printf("\nthe slice.Properties.InputsRef is %v", *ir)
+		if slice.Properties.CasInputRoot == nil {
+			fmt.Println("\n slice.Properties.CasInputRoot is nil")
+		} else {
+			fmt.Printf("\n the CAS instance - %s, digest - %v", slice.Properties.CasInputRoot.CasInstance, slice.Properties.CasInputRoot.Digest)
 		}
 
-		if ret.UserPayload.Server == "" {
-			ret.UserPayload.Server = ir.Isolatedserver
-		} else if ret.UserPayload.Server != ir.Isolatedserver {
-			return nil, errors.Reason("isolate server inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Server, ir.Isolatedserver).Err()
-		}
+		if ir != nil {
+			if ret.UserPayload.Digest == "" {
+				ret.UserPayload.Digest = ir.Isolated
+			} else if ret.UserPayload.Digest != ir.Isolated {
+				return nil, errors.Reason("isolate hash inconsistency in slice %d: %q != %q",
+					i, ret.UserPayload.Digest, ir.Isolated).Err()
+			}
 
-		if ret.UserPayload.Namespace == "" {
-			ret.UserPayload.Namespace = ir.Namespace
-		} else if ret.UserPayload.Namespace != ir.Namespace {
-			return nil, errors.Reason("isolate namespace inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Namespace, ir.Namespace).Err()
+			if ret.UserPayload.Server == "" {
+				ret.UserPayload.Server = ir.Isolatedserver
+			} else if ret.UserPayload.Server != ir.Isolatedserver {
+				return nil, errors.Reason("isolate server inconsistency in slice %d: %q != %q",
+					i, ret.UserPayload.Server, ir.Isolatedserver).Err()
+			}
+
+			if ret.UserPayload.Namespace == "" {
+				ret.UserPayload.Namespace = ir.Namespace
+			} else if ret.UserPayload.Namespace != ir.Namespace {
+				return nil, errors.Reason("isolate namespace inconsistency in slice %d: %q != %q",
+					i, ret.UserPayload.Namespace, ir.Namespace).Err()
+			}
 		}
+		// if cir != nil {
+		// 	pass
+		// }
 	}
 
 	return ret, err

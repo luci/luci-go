@@ -16,6 +16,7 @@ package ledcmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -67,6 +68,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 		return nil, err
 	}
 
+	fmt.Printf("decoded SwarmingRpcsTaskRequest is %v", *req)
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, taskRequestToNewTaskRequest(req), opts.Name,
 		opts.SwarmingHost, opts.KitchenSupport)
