@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd9ffa34_7483396e",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-19T03:53:40Z",
+      "side": 1,
+      "message": "Not sure if we should consider \"Canceled\" as Failed, since it maybe because a user cancel it.",
+      "revId": "43e3796236f5446761056608d680519bc6938b6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
