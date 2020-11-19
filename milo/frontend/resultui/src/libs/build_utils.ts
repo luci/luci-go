@@ -14,7 +14,7 @@
 
 import { Link } from '../models/link';
 import { router } from '../routes';
-import { Build, BuilderID, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
+import { Build, BuilderID, BuildInfraSwarming, GerritChange, GitilesCommit } from '../services/buildbucket';
 
 export function getURLForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
   return router.urlForName(
