@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "6a6520e9_bb3f8229",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:53:18Z",
+      "side": 1,
+      "message": "Alright. (Most likely it will actually be ready for actual review at the start of next week.)",
+      "parentUuid": "81568861_a6614761",
+      "revId": "958b574e13a9f02bdf73dbc0b2be54c8754b54d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7599ffab_b9298919",
         "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
         "patchSetId": 2

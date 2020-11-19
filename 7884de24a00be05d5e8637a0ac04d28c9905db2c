@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "767d261c_3bc5d44f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75fe4c61_a90c3e00",
+      "range": {
+        "startLine": 118,
+        "startChar": 37,
+        "endLine": 118,
+        "endChar": 54
+      },
+      "revId": "7884de24a00be05d5e8637a0ac04d28c9905db2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "175800d1_61213a98",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-19T01:00:16Z",
       "side": 1,
       "message": ".Tag(transient.Tag)",
+      "range": {
+        "startLine": 122,
+        "startChar": 83,
+        "endLine": 122,
+        "endChar": 84
+      },
+      "revId": "7884de24a00be05d5e8637a0ac04d28c9905db2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66f24b8a_82dfcf3c",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "175800d1_61213a98",
       "range": {
         "startLine": 122,
         "startChar": 83,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fd05a71_a046747a",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4456a2a_1ad91210",
+      "range": {
+        "startLine": 127,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 9
+      },
+      "revId": "7884de24a00be05d5e8637a0ac04d28c9905db2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0259d2f4_5e8fbea1",
@@ -83,6 +155,24 @@
       "writtenOn": "2020-11-19T01:00:16Z",
       "side": 1,
       "message": "better to declare here empty Config group ids.\nThen in L139 append to it.\nand after L140, if list isn\u0027t empty, then add a new \u0026ApplicableConfig_Project to the `ac`.",
+      "revId": "7884de24a00be05d5e8637a0ac04d28c9905db2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c567a89f_78571e85",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-19T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0259d2f4_5e8fbea1",
       "revId": "7884de24a00be05d5e8637a0ac04d28c9905db2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
