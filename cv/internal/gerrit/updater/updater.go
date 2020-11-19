@@ -18,6 +18,8 @@ package updater
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -26,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -160,17 +163,77 @@ func (f *fetcher) new(ctx context.Context) error {
 			return err
 		}
 		f.newSnapshot.GetGerrit().Info = ci
+		f.newSnapshot.ExternalUpdateTime = ci.GetUpdated()
 	case codes.NotFound:
 		// Either no access OR CL was deleted.
 		return errors.New("not implemented")
 	case codes.PermissionDenied:
 		return errors.New("not implemented")
 	default:
-		return unhandledError(ctx, err, "failed to fetch %s/%d", f.host, f.change)
+		return unhandledError(ctx, err, "failed to fetch %s", f)
 	}
 
-	// TODO(tandrii): implement files & deps.
-	return nil
+	switch ci.GetStatus() {
+	case gerritpb.ChangeInfo_NEW:
+		// OK, proceed.
+	case gerritpb.ChangeInfo_ABANDONED, gerritpb.ChangeInfo_MERGED:
+		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus().String())
+		return nil
+	default:
+		logging.Warningf(ctx, "%s has unknown status %d %s", f, ci.GetStatus().Number(), ci.GetStatus().String())
+		return nil
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error { return f.fetchFiles(ctx) })
+	eg.Go(func() error { return f.fetchRelated(ctx) })
+	if err = eg.Wait(); err != nil {
+		return err
+	}
+	return errors.New("not implemented")
+}
+
+// fetchRelated fetches related changes and computes GerritGitDeps.
+func (f *fetcher) fetchRelated(ctx context.Context) error {
+	return errors.New("not implemented")
+}
+
+// fetchFiles fetches files for the current revision of the new Snapshot.
+func (f *fetcher) fetchFiles(ctx context.Context) error {
+	resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
+		Number:     f.change,
+		Project:    f.gerritProjectIfKnown(),
+		RevisionId: f.mustCurrentRevision(),
+		// For CLs with >1 parent commit (aka merge commits), this relies on Gerrit
+		// ensuring that such a CL always has first parent from the target branch.
+		Parent: 1, // Request a diff against the first parent.
+	})
+	switch code := grpcutil.Code(err); code {
+	case codes.OK:
+		// Iterate files map and take keys only. CV treats all files "touched" in a
+		// Change to be interesting, including chmods. Skip special /COMMIT_MSG and
+		// /MERGE_LIST entries, which aren't files. For example output, see
+		// https://chromium-review.googlesource.com/changes/1817639/revisions/1/files?parent=1
+		fs := make([]string, 0, len(resp.GetFiles()))
+		for f := range resp.GetFiles() {
+			if !strings.HasPrefix(f, "/") {
+				fs = append(fs, f)
+			}
+		}
+		sort.Strings(fs)
+		f.newSnapshot.GetGerrit().Files = fs
+		return nil
+
+	case codes.PermissionDenied, codes.NotFound:
+		// Getting this right after successfully fetching ChangeInfo should
+		// typically be due to eventual consistency of Gerrit, and rarely due to
+		// change of ACLs. So, err transiently s.t. retry handles the same error
+		// when re-fetching ChangeInfo.
+		return errors.Annotate(err, "failed to fetch files for %s", f).Tag(transient.Tag).Err()
+
+	default:
+		return unhandledError(ctx, err, "failed to fetch files for %s", f)
+	}
 }
 
 // ensureNotStale returns error if given Gerrit updated timestamp is older than
@@ -254,6 +317,17 @@ func (f *fetcher) priorAcfg() *changelist.ApplicableConfig {
 		return f.priorCL.ApplicableConfig
 	}
 	return nil
+}
+
+func (f *fetcher) mustCurrentRevision() string {
+	switch ci := f.newSnapshot.GetGerrit().GetInfo(); {
+	case ci == nil:
+		panic("ChangeInfo must be already fetched into newSnapshot")
+	case ci.GetCurrentRevision() == "":
+		panic("ChangeInfo must have CurrentRevision populated.")
+	default:
+		return ci.GetCurrentRevision()
+	}
 }
 
 // String is used for debug identification of a fetch in errors and logs.
