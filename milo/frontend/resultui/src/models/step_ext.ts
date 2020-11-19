@@ -65,6 +65,18 @@ export class StepExt {
     return this.children.every((child) => child.succeededRecursively);
   }
 
+  /**
+   * true iff the step or one of its descendants failed (status Failure, InfraFailure or Canceled).
+   */
+  @computed get failed(): boolean {
+      if (this.status == BuildStatus.Failure ||
+          this.status == BuildStatus.InfraFailure ||
+          this.status == BuildStatus.Canceled) {
+          return true;
+      }
+      return this.children.some((child) => child.failed);
+  }
+
   @computed get duration() {
     return (this.endTime || this.renderTime.get()).diff(this.startTime);
   }

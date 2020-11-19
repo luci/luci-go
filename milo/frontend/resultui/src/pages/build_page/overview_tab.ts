@@ -182,10 +182,24 @@ export class OverviewTabElement extends MobxLitElement {
     const nonSucceededSteps = (build.rootSteps || [])
       .map((step, i) => [step, i + 1] as [StepExt, number])
       .filter(([step, _stepNum]) => !step.succeededRecursively);
+    const scheduledSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.status == BuildStatus.Scheduled);
+    const runningSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.status == BuildStatus.Started);
+    const failedSteps = nonSucceededSteps
+      .filter(([step, _stepNum]) => step.failed);
 
     return html`
       <div>
-        <h3>Steps & Logs</h3>
+        <h3>Steps & Logs
+          (<a href=${router.urlForName('build-steps', {
+            ...this.buildState.builder,
+            build_num_or_id: this.buildState.buildNumOrId!,
+          })}>View All</a>)
+        </h3>
+        <div class="step-summary-line">
+          ${this.renderStepSummary(failedSteps.length, scheduledSteps.length, runningSteps.length)}
+        </div>
         ${nonSucceededSteps.map(([step, stepNum]) => html`
         <milo-build-step-entry
           .expanded=${true}
@@ -194,15 +208,25 @@ export class OverviewTabElement extends MobxLitElement {
           .showDebugLogs=${false}
         ></milo-build-step-entry>
         `) || ''}
-        <div class="list-entry">
-          ${nonSucceededSteps.length} non-succeeded step(s).
-          <a href=${router.urlForName('build-steps', {
-            ...this.buildState.builder,
-            build_num_or_id: this.buildState.buildNumOrId!,
-          })}>View All</a>
-        </div>
       </div>
     `;
+  }
+
+  private renderStepSummary(failedSteps: number, scheduledSteps: number, runningSteps: number) {
+    if (failedSteps == 0 && scheduledSteps == 0 && runningSteps == 0) {
+        return 'All steps succeeded.'
+    }
+    const messageParts: Array<string> = [];
+    if (failedSteps > 0) {
+        messageParts.push(`${failedSteps} step${failedSteps == 1 ? '' : 's'} failed`);
+    }
+    if (scheduledSteps > 0) {
+        messageParts.push(`${scheduledSteps} step${scheduledSteps == 1 ? '' : 's'} scheduled`);
+    }
+    if (runningSteps > 0) {
+        messageParts.push(`${runningSteps} step${runningSteps == 1 ? '' : 's'} still running`);
+    }
+    return messageParts.join(', ') + ':';
   }
 
   private renderTiming() {
@@ -400,8 +424,8 @@ export class OverviewTabElement extends MobxLitElement {
       margin-bottom: 1px;
     }
 
-    .list-entry {
-      margin-top: 5px;
+    .step-summary-line {
+      margin-bottom: 10px;
     }
 
     milo-code-mirror-editor {
