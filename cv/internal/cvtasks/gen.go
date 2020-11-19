@@ -12,17 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+// Package cvtasks defines proto tasks for async execution via task queue.
+package cvtasks
 
-package internal.config;
-
-option go_package = "go.chromium.org/luci/cv/appengine/internal/config;config";
-
-// RefreshProjectConfigTask is used to import latest CV config for a LUCI
-// Project from LUCI Config or disable a LUCI Project if `disable` is true.
-//
-// Queue: "refresh-project-config".
-message RefreshProjectConfigTask {
-  string project = 1;
-  bool disable = 2;
-}
+//go:generate cproto

@@ -27,9 +27,11 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/cvtasks"
 )
 
 const configFileName = "commit-queue.cfg"
@@ -37,10 +39,10 @@ const configFileName = "commit-queue.cfg"
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "refresh-project-config",
-		Prototype: &RefreshProjectConfigTask{},
+		Prototype: &cvtasks.RefreshProjectConfigTask{},
 		Queue:     "refresh-project-config",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*RefreshProjectConfigTask)
+			task := payload.(*cvtasks.RefreshProjectConfigTask)
 			action, actionFn := "update", updateProject
 			if task.GetDisable() {
 				action, actionFn = "disable", disableProject
@@ -68,7 +70,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 	tasks := make([]*tq.Task, len(projects))
 	for i, p := range projects {
 		tasks[i] = &tq.Task{
-			Payload: &RefreshProjectConfigTask{
+			Payload: &cvtasks.RefreshProjectConfigTask{
 				Project: p,
 			},
 		}
@@ -82,7 +84,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 	for _, p := range curEnabledProjects {
 		if !projectsInLUCIConfig.Has(p) {
 			tasks = append(tasks, &tq.Task{
-				Payload: &RefreshProjectConfigTask{
+				Payload: &cvtasks.RefreshProjectConfigTask{
 					Project: p,
 					Disable: true,
 				},
@@ -94,7 +96,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 		for _, task := range tasks {
 			workCh <- func() error {
 				if err := tq.AddTask(ctx, task); err != nil {
-					logging.WithError(err).Errorf(ctx, "Failed to submit refresh task for project %q", task.Payload.(*RefreshProjectConfigTask).GetProject())
+					logging.WithError(err).Errorf(ctx, "Failed to submit refresh task for project %q", task.Payload.(*cvtasks.RefreshProjectConfigTask).GetProject())
 					return err
 				}
 				return nil

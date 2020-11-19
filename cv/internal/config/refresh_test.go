@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	pb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/cvtasks"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -53,7 +54,7 @@ func TestSubmitRefreshTasks(t *testing.T) {
 			// Project chromium doesn't exist in datastore.
 			err := SubmitRefreshTasks(ctx)
 			So(err, ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
+			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*cvtasks.RefreshProjectConfigTask{
 				{Project: "chromium"},
 			})
 		})
@@ -68,7 +69,7 @@ func TestSubmitRefreshTasks(t *testing.T) {
 			}), ShouldBeNil)
 			err := SubmitRefreshTasks(ctx)
 			So(err, ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
+			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*cvtasks.RefreshProjectConfigTask{
 				{Project: "chromium"},
 			})
 		})
@@ -84,7 +85,7 @@ func TestSubmitRefreshTasks(t *testing.T) {
 				}), ShouldBeNil)
 				err := SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
+				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*cvtasks.RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
 				})
 			})
@@ -96,7 +97,7 @@ func TestSubmitRefreshTasks(t *testing.T) {
 				}), ShouldBeNil)
 				err := SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
+				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*cvtasks.RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
 				})
 			})
