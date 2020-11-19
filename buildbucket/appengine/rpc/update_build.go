@@ -282,8 +282,13 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
-	_, err = getBuildForUpdate(ctx, &bm, req)
+
+	b, err := getBuildForUpdate(ctx, &bm, req)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := ValidateBuildToken(ctx, b); err != nil {
 		return nil, err
 	}
 
