@@ -17,6 +17,7 @@
 import { DateTime } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
+import { renderMarkdownUnsanitize } from '../libs/utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
 /**
@@ -80,11 +81,50 @@ export class StepExt {
     return (this.endTime || this.renderTime.get()).diff(this.startTime);
   }
 
+  @computed private get canSplitSummaryHtmlCleanly(): boolean {
+    // We enclose summaryMarkdown in div tag to prevent Markdown-it to add
+    // extra <p> tag to enclose everything.
+    const markdown = `<div id="markdown_start">${this.summaryMarkdown || ''}</div>`;
+    const summaryHtml = renderMarkdownUnsanitize(markdown);
+    const domParser = new DOMParser();
+    const parsed = domParser.parseFromString(summaryHtml, 'text/html');
+    const brElements = parsed.querySelectorAll('br');
+    // If parent of the first <br> element is not markdown-start, it means we cannot
+    // break header and content cleanly.
+    if (brElements.length > 0) {
+      return brElements[0].parentElement?.getAttribute('id') === 'markdown_start';
+    }
+    return true;
+  }
+
+  private isHeaderValid(header: string): boolean {
+    const html = renderMarkdownUnsanitize(header);
+    const domParser = new DOMParser();
+    const parsed = domParser.parseFromString(html, 'text/html');
+    // Do not allow header to contain <li> elements
+    const eles = parsed.querySelectorAll('li');
+    return eles.length === 0;
+  }
+
+  @computed get summaryParts() {
+    if (!this.canSplitSummaryHtmlCleanly) {
+      return ['', this.summaryMarkdown || ''];
+    }
+
+    const parts = this.summaryMarkdown?.split(/\<br\/?\>/i) || [''];
+    const header = parts[0] || '';
+    if (!this.isHeaderValid(header)) {
+      return ['', this.summaryMarkdown || ''];
+    }
+    const content = parts.slice(1).join('<br>') || '';
+    return [header, content];
+  }
+
   @computed get header() {
-    return this.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
+    return this.summaryParts[0];
   }
 
   @computed get summary() {
-    return this.summaryMarkdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
+    return this.summaryParts[1];
   }
 }
