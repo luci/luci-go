@@ -623,6 +623,140 @@ func TestListFiles(t *testing.T) {
 	})
 }
 
+func TestGetRelatedChanges(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("GetRelatedChanges works", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			// Taken from
+			// https://chromium-review.googlesource.com/changes/playground%2Fgerrit-cq~1563638/revisions/2/related
+			fmt.Fprint(w, `)]}'
+				{
+				  "changes": [
+				    {
+				      "project": "playground/gerrit-cq",
+				      "change_id": "If00fa4f207440d7f12fbfff8c05afa9077ab0c21",
+				      "commit": {
+				        "commit": "4d048b016cb4df4d5d2805f0d3d1042cb1d80671",
+				        "parents": [
+				          {
+				            "commit": "cd7db096c014399c369ddddd319708c3f46752f5"
+				          }
+				        ],
+				        "author": {
+				          "name": "Andrii Shyshkalov",
+				          "email": "tandrii@chromium.org",
+				          "date": "2019-04-11 06:41:01.000000000",
+				          "tz": -420
+				        },
+				        "subject": "p3 change"
+				      },
+				      "_change_number": 1563639,
+				      "_revision_number": 1,
+				      "_current_revision_number": 1,
+				      "status": "NEW"
+				    },
+				    {
+				      "project": "playground/gerrit-cq",
+				      "change_id": "I80bf05eb9124dc126490820ec192c77a24938622",
+				      "commit": {
+				        "commit": "bce1f3beea01b8b282001b01bd9ea442730d578e",
+				        "parents": [
+				          {
+				            "commit": "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f"
+				          }
+				        ],
+				        "author": {
+				          "name": "Andrii Shyshkalov",
+				          "email": "tandrii@chromium.org",
+				          "date": "2019-04-11 06:40:28.000000000",
+				          "tz": -420
+				        },
+				        "subject": "p2 change"
+				      },
+				      "_change_number": 1563638,
+				      "_revision_number": 2,
+				      "_current_revision_number": 2,
+				      "status": "NEW"
+				    },
+				    {
+				      "project": "playground/gerrit-cq",
+				      "change_id": "Icf12c110abc0cbc0c7d01a40dc047683634a62d7",
+				      "commit": {
+				        "commit": "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f",
+				        "parents": [
+				          {
+				            "commit": "f8e5384ee591cd5105113098d24c60e750b6c4f6"
+				          }
+				        ],
+				        "author": {
+				          "name": "Andrii Shyshkalov",
+				          "email": "tandrii@chromium.org",
+				          "date": "2019-04-11 06:40:18.000000000",
+				          "tz": -420
+				        },
+				        "subject": "p1 change"
+				      },
+				      "_change_number": 1563637,
+				      "_revision_number": 1,
+				      "_current_revision_number": 1,
+				      "status": "NEW"
+				    }
+				  ]
+				}
+			`)
+		})
+		defer srv.Close()
+
+		rcs, err := c.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
+			Number:     1563638,
+			Project:    "playground/gerrit-cq",
+			RevisionId: "2",
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.EscapedPath(), ShouldEqual, "/changes/playground%2Fgerrit-cq~1563638/revisions/2/related")
+		So(rcs, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{
+			Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+				{
+					Project: "playground/gerrit-cq",
+					Commit: &gerritpb.CommitInfo{
+						Id:      "4d048b016cb4df4d5d2805f0d3d1042cb1d80671",
+						Parents: []*gerritpb.CommitInfo_Parent{{Id: "cd7db096c014399c369ddddd319708c3f46752f5"}},
+					},
+					Number:          1563639,
+					Patchset:        1,
+					CurrentPatchset: 1,
+				},
+				{
+					Project: "playground/gerrit-cq",
+					Commit: &gerritpb.CommitInfo{
+						Id:      "bce1f3beea01b8b282001b01bd9ea442730d578e",
+						Parents: []*gerritpb.CommitInfo_Parent{{Id: "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f"}},
+					},
+					Number:          1563638,
+					Patchset:        2,
+					CurrentPatchset: 2,
+				},
+				{
+					Project: "playground/gerrit-cq",
+					Commit: &gerritpb.CommitInfo{
+						Id:      "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f",
+						Parents: []*gerritpb.CommitInfo_Parent{{Id: "f8e5384ee591cd5105113098d24c60e750b6c4f6"}},
+					},
+					Number:          1563637,
+					Patchset:        1,
+					CurrentPatchset: 1,
+				},
+			},
+		})
+	})
+}
+
 func TestGetFileOwners(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
