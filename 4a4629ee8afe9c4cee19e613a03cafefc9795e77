@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "056a0c1e_4a86d3c0",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-20T08:43:19Z",
+      "side": 1,
+      "message": "Currently, I don\u0027t take stats of cache hit case.\nI\u0027ll check that.",
+      "parentUuid": "c5115f06_c2375a90",
+      "revId": "4a4629ee8afe9c4cee19e613a03cafefc9795e77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e8452a42_dfe3d399",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 4
@@ -31,6 +49,24 @@
       "writtenOn": "2020-11-20T08:32:38Z",
       "side": 1,
       "message": "nit: doDownload() is 200+ lines of code. With this artificial scope ({...}), consider extracting this to a separate function",
+      "revId": "4a4629ee8afe9c4cee19e613a03cafefc9795e77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "357b7cfa_d63c7b95",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-20T08:43:19Z",
+      "side": 1,
+      "message": "made https://crrev.com/c/2552301",
+      "parentUuid": "e8452a42_dfe3d399",
       "revId": "4a4629ee8afe9c4cee19e613a03cafefc9795e77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
