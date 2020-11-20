@@ -167,7 +167,7 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			e.maybeReportProgress(ctx)
 			e.mu.Unlock()
 
-			if eligible && lostRejection {
+			if eligible && lostRejection && e.LogLostRejections {
 				buf.Reset()
 				printLostRejection(p, rej)
 				logging.Infof(ctx, "%s", buf.Bytes())
