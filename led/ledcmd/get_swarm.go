@@ -16,13 +16,24 @@ package ledcmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"regexp"
 
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobcreate"
+)
+
+const (
+	casInstanceTemplate = "projects/%s/instances/default_instance"
+)
+
+var (
+	hostRx = regexp.MustCompile("(.*)\\.appspot\\.com")
 )
 
 // GetFromSwarmingTaskOpts are the options for GetFromSwarmingTask.
@@ -130,26 +141,21 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 		}
 	}
 
-	if err := fillIsolateServerDefaults(authClient, jd); err != nil {
+	if err := fillCasDefaults(jd); err != nil {
 		return nil, err
 	}
 	return jd, nil
 }
 
-func fillIsolateServerDefaults(authClient *http.Client, jd *job.Definition) error {
-	if jd.UserPayload.Server == "" || jd.UserPayload.Namespace == "" {
-		swarm := newSwarmClient(authClient, jd.Info().SwarmingHostname())
-
-		details, err := swarm.Server.Details().Do()
-		if err != nil {
-			return err
+// fill the cas default if no isolate inputs.
+func fillCasDefaults(jd *job.Definition) error {
+	if jd.UserPayload.Digest == "" {
+		match := hostRx.FindStringSubmatch(jd.Info().SwarmingHostname())
+		if match == nil {
+			return errors.New("invalid swarming host in job definition")
 		}
-		if jd.UserPayload.Server == "" {
-			jd.UserPayload.Server = details.DefaultIsolateServer
-		}
-		if jd.UserPayload.Namespace == "" {
-			jd.UserPayload.Namespace = details.DefaultIsolateNamespace
-		}
+		jd.CasUserPayload.CasInstance = fmt.Sprintf(casInstanceTemplate, match[1])
+		jd.UserPayload = nil
 	}
 	return nil
 }
