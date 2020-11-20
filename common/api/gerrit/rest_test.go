@@ -853,54 +853,109 @@ func TestListProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListProjects basic", t, func() {
-		var actualURL *url.URL
-		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-			actualURL = r.URL
-			w.WriteHeader(200)
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `)]}'
-			{
-				"android_apks": {
-				  "id": "android_apks",
-				  "state": "ACTIVE",
-				  "branches": {
-					"main": "82264ea131fcc2a386b83e38b962b370315c7c93"
-				  },
-				  "web_links": [
-					{
-					  "name": "gitiles",
-					  "url": "https://chromium.googlesource.com/android_apks/",
-					  "target": "_blank"
+	Convey("List Projects", t, func() {
+		Convey("...works for a single ref", func() {
+			var actualURL *url.URL
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualURL = r.URL
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'
+				{
+					"android_apks": {
+					  "id": "android_apks",
+					  "state": "ACTIVE",
+					  "branches": {
+						"main": "82264ea131fcc2a386b83e38b962b370315c7c93"
+					  },
+					  "web_links": [
+						{
+						  "name": "gitiles",
+						  "url": "https://chromium.googlesource.com/android_apks/",
+						  "target": "_blank"
+						}
+					  ]
 					}
-				  ]
-				}
-			  }`)
-		})
-		defer srv.Close()
+				  }`)
+			})
+			defer srv.Close()
 
-		projects, err := c.ListProjects(ctx, &gerritpb.ListProjectsRequest{
-			Ref: "refs/heads/main",
-		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/projects/")
-		So(actualURL.Query().Get("b"), ShouldEqual, "refs/heads/main")
-		So(projects, ShouldResemble, &gerritpb.ListProjectsResponse{
-			Projects: map[string]*gerritpb.ProjectInfo{
-				"android_apks": &gerritpb.ProjectInfo{
-					Name:  "android_apks",
-					State: gerritpb.ProjectInfo_PROJECT_STATE_ACTIVE,
-					Refs: map[string]string{
-						"refs/heads/main": "82264ea131fcc2a386b83e38b962b370315c7c93",
-					},
-					WebLinks: []*gerritpb.WebLinkInfo{
-						&gerritpb.WebLinkInfo{
-							Name: "gitiles",
-							Url:  "https://chromium.googlesource.com/android_apks/",
+			projects, err := c.ListProjects(ctx, &gerritpb.ListProjectsRequest{
+				Refs: []string{"refs/heads/main"},
+			})
+			So(err, ShouldBeNil)
+			So(actualURL.Path, ShouldEqual, "/projects/")
+			So(actualURL.Query().Get("b"), ShouldEqual, "refs/heads/main")
+			So(projects, ShouldResemble, &gerritpb.ListProjectsResponse{
+				Projects: map[string]*gerritpb.ProjectInfo{
+					"android_apks": &gerritpb.ProjectInfo{
+						Name:  "android_apks",
+						State: gerritpb.ProjectInfo_PROJECT_STATE_ACTIVE,
+						Refs: map[string]string{
+							"refs/heads/main": "82264ea131fcc2a386b83e38b962b370315c7c93",
+						},
+						WebLinks: []*gerritpb.WebLinkInfo{
+							&gerritpb.WebLinkInfo{
+								Name: "gitiles",
+								Url:  "https://chromium.googlesource.com/android_apks/",
+							},
 						},
 					},
 				},
-			},
+			})
+		})
+
+		Convey("...works for multiple refs", func() {
+			var actualURL *url.URL
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualURL = r.URL
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'
+				{
+					"android_apks": {
+					  "id": "android_apks",
+					  "state": "ACTIVE",
+					  "branches": {
+						"main": "82264ea131fcc2a386b83e38b962b370315c7c93",
+						"master": "82264ea131fcc2a386b83e38b962b370315c7c93"
+					  },
+					  "web_links": [
+						{
+						  "name": "gitiles",
+						  "url": "https://chromium.googlesource.com/android_apks/",
+						  "target": "_blank"
+						}
+					  ]
+					}
+				  }`)
+			})
+			defer srv.Close()
+
+			projects, err := c.ListProjects(ctx, &gerritpb.ListProjectsRequest{
+				Refs: []string{"refs/heads/main", "refs/heads/master"},
+			})
+			So(err, ShouldBeNil)
+			So(actualURL.Path, ShouldEqual, "/projects/")
+			So(actualURL.Query()["b"], ShouldResemble, []string{"refs/heads/main", "refs/heads/master"})
+			So(projects, ShouldResemble, &gerritpb.ListProjectsResponse{
+				Projects: map[string]*gerritpb.ProjectInfo{
+					"android_apks": &gerritpb.ProjectInfo{
+						Name:  "android_apks",
+						State: gerritpb.ProjectInfo_PROJECT_STATE_ACTIVE,
+						Refs: map[string]string{
+							"refs/heads/main":   "82264ea131fcc2a386b83e38b962b370315c7c93",
+							"refs/heads/master": "82264ea131fcc2a386b83e38b962b370315c7c93",
+						},
+						WebLinks: []*gerritpb.WebLinkInfo{
+							&gerritpb.WebLinkInfo{
+								Name: "gitiles",
+								Url:  "https://chromium.googlesource.com/android_apks/",
+							},
+						},
+					},
+				},
+			})
 		})
 	})
 }
