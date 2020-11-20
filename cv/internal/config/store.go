@@ -20,14 +20,16 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const projectConfigKind string = "ProjectConfig"
@@ -135,6 +137,15 @@ type ConfigHashInfo struct {
 //      crbug/1063508), use "index#i" as name instead where `i` is the index
 //      (0-based) of this ConfigGroup in the config.
 type ConfigGroupID string
+
+// Returns Hash of the corresponding project config.
+func (c ConfigGroupID) Hash() string {
+	s := string(c)
+	if i := strings.IndexRune(s, '/'); i >= 0 {
+		return s[:i]
+	}
+	panic(fmt.Errorf("invalid ConfigGroupID %q", c))
+}
 
 func makeConfigGroupID(hash, name string, index int) ConfigGroupID {
 	return ConfigGroupID(fmt.Sprintf("%s/%s", hash, makeConfigGroupName(name, index)))
