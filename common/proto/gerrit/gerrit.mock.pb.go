@@ -175,6 +175,26 @@ func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
 }
 
+// GetRelatedChanges mocks base method.
+func (m *MockGerritClient) GetRelatedChanges(ctx context.Context, in *GetRelatedChangesRequest, opts ...grpc.CallOption) (*GetRelatedChangesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRelatedChanges", varargs...)
+	ret0, _ := ret[0].(*GetRelatedChangesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRelatedChanges indicates an expected call of GetRelatedChanges.
+func (mr *MockGerritClientMockRecorder) GetRelatedChanges(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritClient)(nil).GetRelatedChanges), varargs...)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -481,6 +501,21 @@ func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesReques
 func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
+}
+
+// GetRelatedChanges mocks base method.
+func (m *MockGerritServer) GetRelatedChanges(arg0 context.Context, arg1 *GetRelatedChangesRequest) (*GetRelatedChangesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRelatedChanges", arg0, arg1)
+	ret0, _ := ret[0].(*GetRelatedChangesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRelatedChanges indicates an expected call of GetRelatedChanges.
+func (mr *MockGerritServerMockRecorder) GetRelatedChanges(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritServer)(nil).GetRelatedChanges), arg0, arg1)
 }
 
 // CreateChange mocks base method.
