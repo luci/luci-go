@@ -33,6 +33,75 @@
       "message": "expected usage:\n\nswitch m, err :\u003d config.GetLatestMeta(ctx, project); {\ncase err !\u003d nil:\n  return err\ncase !m.Exists():\n  // Handle somehow\ndefault:\n  // Get m.Hash() or m.EVersion for later comparisons.\n  // Or, load all config groups at once:\n  cgs, err :\u003d m.GetConfigGroups(ctx)\n  if err !\u003d nil {\n    // In most cases, this is due to transient error,\n    // I don\u0027t expect handling of NotExist error separately.\n    return err\n  }\n  // Do stuff with cgs.\n}",
       "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30c18030_d2ccbfec",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T17:00:00Z",
+      "side": 1,
+      "message": "at least one group",
+      "range": {
+        "startLine": 56,
+        "startChar": 24,
+        "endLine": 56,
+        "endChar": 38
+      },
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "037f5db4_abecbfb1",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T17:00:00Z",
+      "side": 1,
+      "message": "Although this is private you could still optionally add a note, e.g.\n\nUsed for extracting hash from ConfigGroupIDs;\nthe length of the hash of all ConfigGroupIDs is assumed to be the same.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 12
+      },
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bcd94b9_ddf8d88d",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T17:00:00Z",
+      "side": 1,
+      "message": "Maybe we could add another function to make ConfigGroupID that doesn\u0027t take index...",
+      "range": {
+        "startLine": 97,
+        "startChar": 54,
+        "endLine": 97,
+        "endChar": 77
+      },
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
