@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c223fdf4_732ec4e0",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "This general usage looks good to me, thanks for adding this.\n\nTechnically the test itself doesn\u0027t contain examples like this (with switch), but testing.go does and soon there will be more examples.",
+      "parentUuid": "fe609e3f_55540773",
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "30c18030_d2ccbfec",

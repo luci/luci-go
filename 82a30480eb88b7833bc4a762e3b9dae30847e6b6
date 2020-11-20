@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbcf50a4_c83329df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "LGTM with a couple more little notes",
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97a80fda_7f889a07",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "Some alternative (longer) names might have also been Metadata, VersionMetadata, etc. Although this is fine since it\u0027s in the config package and the fields make it clear that describes one version of a project config (without the project config contents itself)",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 9
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1cbbf4a9_158db865",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "Might be obvious, but this means all ConfigGroups for a given config version (i.e. a given Meta)",
+      "range": {
+        "startLine": 105,
+        "startChar": 25,
+        "endLine": 105,
+        "endChar": 41
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6282347c_0378373c",
+        "filename": "cv/internal/config/loader_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "or ShouldStartWith (same below)",
+      "range": {
+        "startLine": 89,
+        "startChar": 9,
+        "endLine": 89,
+        "endChar": 31
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11d4123d_7c70a26f",
+        "filename": "cv/internal/config/loader_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-20T21:54:14Z",
+      "side": 1,
+      "message": "I\u0027m not sure, but does this need to be neted in the \"Disabled project\" part?",
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
