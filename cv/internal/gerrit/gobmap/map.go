@@ -16,27 +16,37 @@ package gobmap
 
 import (
 	"context"
+	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 	"go.chromium.org/luci/gae/service/datastore"
+)
+
+const (
+	gobWatchMapKind = "GobWatchMap"
+	parentKind      = "GobWatchMapParent"
 )
 
 // gobWatchMap contains config groups for a particular LUCI project and
 // host/repo combination.
 //
-// gobWatchMap entities are stored with a parent key of the form
+// GobWatchMap entities are stored with a parent key of the form
 // (GobWatchMapParent, host/repo), so that all gobWatchMap entities with a
 // particular host/repo can be fetched with an ancestor query; the goal
 // is to have fast reads by host/repo.
 //
-// The gobWatchMap entities as a whole store data used to lookup which
+// The GobWatchMap entities as a whole store data used to lookup which
 // host/repo/ref maps to which config group, and the map is updated when a
 // project config is updated.
 type gobWatchMap struct {
+	_kind string `gae:"$kind,GobWatchMap"`
 
-	// The ID of this GobWatchMap, which contains (host, repo, project).
+	// The ID of this GobWatchMap, which is the LUCI project name.
 	ID string `gae:"$id"`
 
 	// LUCI project name.
@@ -51,8 +61,8 @@ type gobWatchMap struct {
 	// Groups keeps config groups of a LUCI project applicable to this host/repo.
 	Groups *internal.Groups
 
-	// ConfigHash is the hash of latest CV config file imported from LUCI Config;
-	// this is updated based on ProjectConfig entity.
+	// ConfigHash is the hash of latest CV project config imported from LUCI
+	// Config; this is updated based on ProjectConfig entity.
 	ConfigHash string `gae:",noindex"`
 }
 
@@ -61,20 +71,53 @@ type gobWatchMap struct {
 //
 // This may include adding, removing and modifying entities.
 func Update(ctx context.Context, project string) error {
-	// TODO(qyearsley): Implement.
-	// 1. Fetch the current state of the map by querying for all
-	//    GobWatchMap entities for the LUCI project.
-	// 2. Get the latest config from datastore (using the config package).
-	// 3. Determine which GobWatchMap entities need to be modified,
-	//    removed, or added.
-	// Note: for each config group in the config, there is a host, repo,
-	//    and a ref specification. Specifically, if cg is the ConfigGroup,
-	//    cg.Gerrit.Url is the host (plus schema), cg.Gerrit.Projects is a list
-	//    of Gerrit Project messages; within each of those messages is Name
-	//    (i.e. repo), RefRegexp, and RefRegexpExclude). field, which has Url
-	//    field, which is the Gerrit host plus schema.
+	// Fetch stored GobWatchMap entities for the project.
+	gwms := []*gobWatchMap{}
+	q := datastore.NewQuery(gobWatchMapKind).Eq("Project", project)
+	if err := datastore.GetAll(ctx, q, &gwms); err != nil {
+		return errors.Annotate(err, "failed to get GobWatchMap entities for project %q", project).Tag(transient.Tag).Err()
+	}
+
+	// Get the latest ProjectConfig and ConfigGroups from datastore.
+	//
+	// TODO(qyearsley): If the project is disabled or missing, or if
+	// there are no config groups fetched, we can delete all gobWatchMap.
+
+	// TODO(qyearsley): Determine which GobWatchMap entities need to be
+	// modified, removed, or added. To this end, we can iterate through both
+	// gobWatchMap entities and stored ConfigGroups to get sets of host/repo
+	// to decide which to add/remove. To decide which to update, compare the
+	// hash in the gobWatchMap with the hash in the fetched config groups.
 	return errors.New("not implemented")
 }
+
+// diffHostRepos lists host + repo combinations that should be added or removed
+// from GobWatchMap.
+func diffHostRepos(gwms []*gobWatchMap) (toPut, toDelete []*gobWatchMap) {
+	oldHostRepos = stringset.New()
+	newHostRepos = stringset.New()
+
+	for _, gwm := range gwms {
+		oldHostRepos.Add(gwm.Parent.StringID())
+	}
+
+	for _, g := range groups {
+		gerrit := g.Content.Gerrit
+		host := strings.TrimPrefix(gerrit.Url, "https://").TrimSuffix("/")
+		for _, p := range gerrit.Projects {
+			newHostRepos.Add(host + "/" + p.Name)
+		}
+	}
+
+	added = new.Diff(old).Elements()
+	removed = old.Diff(new).Elements()
+	return added, removed
+}
+
+//    cg.Gerrit.Url is the host (plus schema), cg.Gerrit.Projects is a list
+//    of Gerrit Project messages; within each of those messages is Name
+//    (i.e. repo), RefRegexp, and RefRegexpExclude). field, which has Url
+//    field, which is the Gerrit host plus schema.
 
 // Lookup returns config group IDs which watch the given combination of Gerrit
 // host, repo and ref.
@@ -87,12 +130,35 @@ func Update(ctx context.Context, project string) error {
 // combination is watched by at most one ConfigGroup, which is why this may
 // return multiple ConfigGroupIDs even for the same LUCI project.
 func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
-	// TODO(qyearsley): Implement:
-	// 1. Fetch all GobWatchMap entities for the given host and repo.
-	//    This should be done with a ancestor query for a host/repo.
-	// 2. For each entity, which represents 1 host/repo/LUCI_project, inspect
-	//    the gobWatchMap.Groups to determine which configs apply.
-	//    If several config groups of a LUCI project match, then all fallback
-	//    groups are ignored.
-	return nil, errors.New("not implemented")
+	// Fetch all GobWatchMap entities for the given host and repo.
+	hostRepo := host + "/" + repo
+	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
+	q := datastore.NewQuery(gobWatchMapKind).Ancestor(parentKey)
+	gwms := []*gobWatchMap{}
+	if err := datastore.GetAll(ctx, q, &gwms); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch GobWatchMaps for %s", hostRepo).Tag(transient.Tag).Err()
+	}
+
+	// For each GobWatchMap entity, inspect the Groups to determine which
+	// configs apply for the given ref.
+	ac := &changelist.ApplicableConfig{}
+	// TODO(qyearsley): Set UpdateTime.
+	// ApplicableConfig includes a timestamp UpdateTime
+	// and Projects, each of which includes Name and
+	// ConfigGroupIDs.
+	for _, gwm := range gwms {
+		ids := []string{}
+		acp.Name = gwm.Project
+		for _, g := range gwm.Groups.Groups {
+			// TODO(qyearsley): Implement.
+			// Fields to use: g.Fallback, g.Include, g.Exclude
+			// compare against ref passed in.
+			ids = append(ids, g.Id)
+		}
+		if len(ids) != 0 {
+			acp := &changelist.ApplicableConfig_Project{ConfigGroupIds: ids}
+			ac.Projects = append(ac.Projects, acp)
+		}
+	}
+	return ac, nil
 }
