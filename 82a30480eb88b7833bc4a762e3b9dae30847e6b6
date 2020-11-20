@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6f15ea6_e6c22e70",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T22:58:04Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "97a80fda_7f889a07",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 9
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1cbbf4a9_158db865",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-20T21:54:14Z",
       "side": 1,
       "message": "Might be obvious, but this means all ConfigGroups for a given config version (i.e. a given Meta)",
+      "range": {
+        "startLine": 105,
+        "startChar": 25,
+        "endLine": 105,
+        "endChar": 41
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a09ddb69_fdd9d7a6",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T22:58:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cbbf4a9_158db865",
       "range": {
         "startLine": 105,
         "startChar": 25,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5ac62a8_a8487c70",
+        "filename": "cv/internal/config/loader_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T22:58:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6282347c_0378373c",
+      "range": {
+        "startLine": 89,
+        "startChar": 9,
+        "endLine": 89,
+        "endChar": 31
+      },
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11d4123d_7c70a26f",
@@ -100,6 +172,24 @@
       "writtenOn": "2020-11-20T21:54:14Z",
       "side": 1,
       "message": "I\u0027m not sure, but does this need to be neted in the \"Disabled project\" part?",
+      "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe15bb46_93804e0b",
+        "filename": "cv/internal/config/loader_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T22:58:04Z",
+      "side": 1,
+      "message": "Nope. But I\u0027ve moved it in the next CL already 😊",
+      "parentUuid": "11d4123d_7c70a26f",
       "revId": "82a30480eb88b7833bc4a762e3b9dae30847e6b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
