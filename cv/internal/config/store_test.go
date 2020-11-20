@@ -22,9 +22,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -114,6 +115,7 @@ type readOnlyFilter struct{ datastore.RawInterface }
 func (f readOnlyFilter) PutMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.NewKeyCB) error {
 	panic("write is not supported")
 }
+
 func TestPutConfigGroups(t *testing.T) {
 	t.Parallel()
 	Convey("PutConfigGroups", t, func() {

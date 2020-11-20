@@ -27,9 +27,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const configFileName = "commit-queue.cfg"
@@ -119,6 +120,8 @@ func updateProject(ctx context.Context, project string) error {
 	switch err := datastore.Get(ctx, &existingPC); {
 	case err != nil && err != datastore.ErrNoSuchEntity:
 		return errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+	case !existingPC.Enabled:
+		// Go through update process to ensure all configs are present.
 	case existingPC.ExternalHash == externalHash:
 		return nil // up-to-date
 	}
@@ -148,7 +151,7 @@ func updateProject(ctx context.Context, project string) error {
 			return nil // Do not go backwards.
 		default:
 			hashInfo.ProjectEVersion = targetEVersion
-			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx))
+			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 			hashInfo.ConfigGroupNames = cgNames
 			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		}
@@ -171,11 +174,10 @@ func updateProject(ctx context.Context, project string) error {
 		case pc.EVersion != existingPC.EVersion:
 			return nil // Already updated by concurrent updateProject.
 		default:
-			now := datastore.RoundTime(clock.Now(ctx))
 			pc = ProjectConfig{
 				Project:          project,
 				Enabled:          true,
-				UpdateTime:       now,
+				UpdateTime:       datastore.RoundTime(clock.Now(ctx)).UTC(),
 				EVersion:         targetEVersion,
 				Hash:             localHash,
 				ExternalHash:     externalHash,
@@ -239,7 +241,7 @@ func disableProject(ctx context.Context, project string) error {
 			return nil // Already disabled
 		}
 		pc.Enabled = false
-		pc.UpdateTime = datastore.RoundTime(clock.Now(ctx))
+		pc.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 		pc.EVersion++
 		if err := datastore.Put(ctx, &pc); err != nil {
 			return errors.Annotate(err, "failed to put ProjectConfig").Tag(transient.Tag).Err()

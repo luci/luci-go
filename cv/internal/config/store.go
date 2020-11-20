@@ -26,8 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const projectConfigKind string = "ProjectConfig"
