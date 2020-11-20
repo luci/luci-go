@@ -21,7 +21,11 @@ const md = MarkdownIt({html: true})
   .use(defaultTarget, '_blank');
 
 export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(md.render(markdown));
+  return sanitizeHTML(renderMarkdownUnsanitize(markdown));
+}
+
+export function renderMarkdownUnsanitize(markdown: string): string {
+  return md.render(markdown);
 }
 
 /**
