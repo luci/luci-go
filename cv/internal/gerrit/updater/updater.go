@@ -174,9 +174,9 @@ func (f *fetcher) new(ctx context.Context) error {
 	}
 
 	switch ci.GetStatus() {
-	case gerritpb.ChangeInfo_NEW:
+	case gerritpb.ChangeStatus_NEW:
 		// OK, proceed.
-	case gerritpb.ChangeInfo_ABANDONED, gerritpb.ChangeInfo_MERGED:
+	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
 		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus().String())
 		return nil
 	default:

@@ -357,7 +357,7 @@ func TestRestCreateChange(t *testing.T) {
 			Number:      1,
 			Project:     "example/repo",
 			Ref:         "refs/heads/master",
-			Status:      gerritpb.ChangeInfo_NEW,
+			Status:      gerritpb.ChangeStatus_NEW,
 			Submittable: false,
 			Created:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 			Updated:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),

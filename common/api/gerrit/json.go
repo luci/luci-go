@@ -112,7 +112,7 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 		Owner:           ci.Owner,
 		Project:         ci.Project,
 		Ref:             branchToRef(ci.Branch),
-		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
+		Status:          gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
 		CurrentRevision: ci.CurrentRevision,
 		Submittable:     ci.Submittable,
 		Created:         timestamppb.New(ci.Created.Time),

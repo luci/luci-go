@@ -351,14 +351,7 @@ message ChangeInfo {
   // API.
   string ref = 4;
 
-  // TODO(tandrii): make this top-level.
-  enum Status {
-    STATUS_INVALID = 0;
-    NEW = 1;
-    MERGED = 2;
-    ABANDONED = 3;
-  }
-  Status status = 5;
+  ChangeStatus status = 5;
 
   // Current revision of the change.
   //
@@ -392,6 +385,13 @@ message ChangeInfo {
 
   // Timestamp of when the change was last updated
   google.protobuf.Timestamp updated = 12;
+}
+
+enum ChangeStatus {
+  CHANGE_STATUS_INVALID = 0;
+  NEW = 1;
+  MERGED = 2;
+  ABANDONED = 3;
 }
 
 // Information about a patch set.
