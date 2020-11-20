@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fee72c86_6a2d7081",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-20T09:48:45Z",
+      "side": 1,
+      "message": "var bucketName \u003d []byte(\"v1\")\n\nno need to copy it every time in L98",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 23
+      },
+      "revId": "50afc8af13154016ef7b0967d806bc8a2510a86e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "652884d6_ed9d8817",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-20T09:48:45Z",
+      "side": 1,
+      "message": "this allocates a buffer each time we read a file. Could reuse buffer",
+      "range": {
+        "startLine": 271,
+        "startChar": 13,
+        "endLine": 271,
+        "endChar": 41
+      },
+      "revId": "50afc8af13154016ef7b0967d806bc8a2510a86e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc050ad7_45a19328",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-20T09:48:45Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 277,
+        "startChar": 5,
+        "endLine": 277,
+        "endChar": 15
+      },
+      "revId": "50afc8af13154016ef7b0967d806bc8a2510a86e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
