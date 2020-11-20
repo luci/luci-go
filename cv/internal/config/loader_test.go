@@ -84,6 +84,7 @@ func TestLoadingConfigs(t *testing.T) {
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
+			So(m.Status, ShouldEqual, StatusEnabled)
 			So(m.EVersion, ShouldEqual, 1)
 			h := m.Hash()
 			So(h, ShouldStartWith, "sha256:")
@@ -118,6 +119,7 @@ func TestLoadingConfigs(t *testing.T) {
 			m, err := GetLatestMeta(ctx, project)
 			So(err, ShouldBeNil)
 			So(m.Exists(), ShouldBeTrue)
+			So(m.Status, ShouldEqual, StatusEnabled)
 			So(m.EVersion, ShouldEqual, 2)
 			h := m.Hash()
 			So(h, ShouldStartWith, "sha256:")
@@ -149,26 +151,45 @@ func TestLoadingConfigs(t *testing.T) {
 			cgs, err := m.GetConfigGroups(ctx)
 			So(err, ShouldBeNil)
 			So(len(cgs), ShouldEqual, 3)
-
-			Convey("reading partially deleted project", func() {
-				So(datastore.Delete(ctx, cgs[1]), ShouldBeNil)
-				_, err := m.GetConfigGroups(ctx)
-				So(err, ShouldErrLike, "ConfigGroups for")
-				So(err, ShouldErrLike, "not found")
-				So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
-
-				// Can still read individual ConfigGroups.
-				cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[0])
-				So(err, ShouldBeNil)
-				So(cg.Content, ShouldResembleProto, cfg.ConfigGroups[0])
-				cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
-				So(err, ShouldBeNil)
-				So(cg.Content, ShouldResembleProto, cfg.ConfigGroups[2])
-				// ... except the deleted one.
-				cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
-				So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
-			})
 		})
-		// TODO(tandrii): implement enable & delete.
+
+		tc.Enable(ctx, project)
+		Convey("Re-enabled project", func() {
+			tc.MustExist(ctx, project)
+			m, err := GetLatestMeta(ctx, project)
+			So(err, ShouldBeNil)
+			So(m.Exists(), ShouldBeTrue)
+			So(m.Status, ShouldEqual, StatusEnabled)
+		})
+
+		Convey("Deleted project", func() {
+			tc.Delete(ctx, project)
+			tc.MustNotExist(ctx, project)
+			m, err := GetLatestMeta(ctx, project)
+			So(err, ShouldBeNil)
+			So(m.Exists(), ShouldBeFalse)
+		})
+
+		Convey("reading partially deleted project", func() {
+			m, err := GetLatestMeta(ctx, project)
+			So(err, ShouldBeNil)
+			cgs, err := m.GetConfigGroups(ctx)
+			So(datastore.Delete(ctx, cgs[1]), ShouldBeNil)
+			_, err = m.GetConfigGroups(ctx)
+			So(err, ShouldErrLike, "ConfigGroups for")
+			So(err, ShouldErrLike, "not found")
+			So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
+
+			// Can still read individual ConfigGroups.
+			cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[0])
+			So(err, ShouldBeNil)
+			So(cg.Content, ShouldResembleProto, cfg.ConfigGroups[0])
+			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
+			So(err, ShouldBeNil)
+			So(cg.Content, ShouldResembleProto, cfg.ConfigGroups[2])
+			// ... except the deleted one.
+			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
+			So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
+		})
 	})
 }
