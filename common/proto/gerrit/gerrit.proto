@@ -945,9 +945,10 @@ message GetRelatedChangesResponse {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/cmd-ls-projects.html
 message ListProjectsRequest {
-  // Limit results to projects with the specified ref, e.g.: refs/heads/main.
+  // Limit results to projects with any of the specified refs, e.g.: refs/heads/main.
   // Ref SHA1 will be included in the results.
-  string ref = 1;
+  repeated string refs = 1;
+
 }
 
 // Describes a link to an external site
