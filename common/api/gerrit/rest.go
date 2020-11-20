@@ -316,6 +316,10 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 	return lfr, nil
 }
 
+func (c *client) GetRelatedChanges(ctx context.Context, req *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
+	return nil, status.New(codes.Unimplemented, "TODO(tandrii): implement").Err()
+}
+
 func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwnersRequest, opts ...grpc.CallOption) (*gerritpb.ListOwnersResponse, error) {
 	var resp []ownerInfo
 	params := url.Values{}

@@ -70,6 +70,13 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 
+  // Retrieves related changes of a revision.
+  //
+  // Related changes are changes that either depend on, or are dependencies of
+  // the revision.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
+  rpc GetRelatedChanges(GetRelatedChangesRequest) returns (GetRelatedChangesResponse);
 
   /////////////////////////////////////////////////////////////////////////////
   //                            Change mutation RPCs.
@@ -344,6 +351,7 @@ message ChangeInfo {
   // API.
   string ref = 4;
 
+  // TODO(tandrii): make this top-level.
   enum Status {
     STATUS_INVALID = 0;
     NEW = 1;
@@ -417,6 +425,26 @@ message RevisionInfo {
   //
   // Only set if file information is requested.
   map<string, FileInfo> files = 6;
+
+  // TODO(tandrii): Add CommitInfo when needed.
+}
+
+// The CommitInfo entity contains information about a commit.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#commit-info
+message CommitInfo {
+  // The commit ID. Not set if included in a RevisionInfo entity that is
+  // contained in a map which has the commit ID as key.
+  string id = 1;
+
+  message Parent {
+    string id = 1;
+    // TODO(tandrii): add subject when necessary.
+  }
+  repeated Parent parents = 2;
+
+  // TODO(tandrii): add other fields when necessary.
 }
 
 // Information about a Label.
@@ -858,6 +886,58 @@ message ListFilesRequest {
 message ListFilesResponse {
   // A map of file paths to FileInfos.
   map<string, FileInfo> files = 1;
+}
+
+// Information for requesting the related changes of a change.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
+message GetRelatedChangesRequest {
+  // Change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Unique ID for the revision to query.
+  //
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 3;
+}
+
+// Information about related changes of a specific change's revision.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#related-changes-info
+message GetRelatedChangesResponse {
+  // Contains information about a related change and commit.
+  //
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#related-change-and-commit-info
+  message ChangeAndCommit {
+    // The project of the change or commit.
+    string project = 1;
+    // The commit as a CommitInfo entity.
+    CommitInfo commit = 2;
+    // Optional. The change number.
+    int64 number = 3;
+    // Optional. The patchset number.
+    int64 patchset = 4;
+    // Optional. The current patchset number.
+    int64 current_patchset = 5;
+    // Optional. The status of the change.
+    // TODO(tandrii): add status once it can be shared with ChangeInfo.
+    // Status status = 6;
+  }
+
+  // A list of describing the related changes.
+  //
+  // Sorted by git commit order, newest to oldest. Empty if there are no related
+  // changes.
+  repeated ChangeAndCommit changes = 1;
 }
 
 // Information for requesting the projects on a host.
