@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,6 +29,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/maruel/subcommands"
+	"go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/auth"
@@ -60,6 +62,41 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			return &c
 		},
 	}
+}
+
+type bboltCache struct {
+	db *bbolt.DB
+}
+
+const bucketName = "v1"
+
+func newbboltCache(name string) (*bboltCache, error) {
+	db, err := bbolt.Open(name, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+	db.NoSync = true
+	db.NoFreelistSync = true
+
+	if err := db.Update(func(tx *bbolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		return err
+	}); err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	return &bboltCache{db: db}, nil
+}
+
+func (c *bboltCache) Close() error {
+	return c.db.Close()
+}
+
+func (c *bboltCache) Put(key, value []byte) error {
+	return c.db.Batch(func(tx *bbolt.Tx) error {
+		return tx.Bucket([]byte(bucketName)).Put(key, value)
+	})
 }
 
 type downloadRun struct {
@@ -201,6 +238,9 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
 
+	// limit the number of concurrent I/O threads.
+	ch := make(chan struct{}, runtime.NumCPU())
+
 	if diskcache != nil {
 		start = time.Now()
 		outputs := make([]*client.TreeOutput, 0, len(to))
@@ -213,20 +253,53 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			return outputs[i].Path < outputs[j].Path
 		})
 
-		for _, output := range outputs {
+		dbcache, err := newbboltCache(filepath.Join(r.cacheDir, "db"))
+		if err != nil {
+			return err
+		}
+
+		var eg errgroup.Group
+
+		for i, output := range outputs {
+			if output.Digest.Size < 1024*128 {
+				output := output
+
+				eg.Go(func() error {
+					b, err := func() ([]byte, error) {
+						ch <- struct{}{}
+						defer func() { <-ch }()
+						return ioutil.ReadFile(output.Path)
+					}()
+
+					if err != nil {
+						return err
+					}
+					if err := dbcache.Put([]byte(output.Digest.Hash), b); err != nil {
+						return err
+					}
+					return nil
+				})
+				continue
+			}
+
 			if err := diskcache.AddFileWithoutValidation(
 				isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
 				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
 			}
+		}
+
+		if err := eg.Wait(); err != nil {
+			return err
+		}
+
+		if err := dbcache.Close(); err != nil {
+			return err
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
 	}
 
 	start = time.Now()
 	eg, _ := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent I/O threads.
-	ch := make(chan struct{}, runtime.NumCPU())
 
 	for _, dup := range dups {
 		src := to[dup.Digest]
