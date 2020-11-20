@@ -158,8 +158,8 @@ func (r *Result) Print(w io.Writer) error {
 		pf("Evaluation failed: all %d rejections are ineligible.\n", cr.TotalRejections)
 
 	default:
-		pf("Score: %.0f%%\n", cr.Score())
-		pf("Eligible rejections:                       %d\n", cr.EligibleRejections)
+		pf("Score: %s\n", scoreString(cr.Score()))
+		pf("Eligible rejections: %d\n", cr.EligibleRejections)
 		pf("Eligible rejections preserved by this RTS: %d\n", cr.preserved())
 	}
 	p.Level--
@@ -175,7 +175,7 @@ func (r *Result) Print(w io.Writer) error {
 		pf("Evaluation failed: all %d test failures are ineligible.\n", tr.TotalFailures)
 
 	default:
-		pf("Score: %.0f%%\n", tr.Score())
+		pf("Score: %s\n", scoreString(tr.Score()))
 		pf("Eligible test failures:                       %d\n", tr.EligibleFailures)
 		pf("Eligible test failures preserved by this RTS: %d\n", tr.preserved())
 	}
@@ -186,7 +186,7 @@ func (r *Result) Print(w io.Writer) error {
 	if r.Efficiency.SampleDuration == 0 {
 		pf("Evaluation failed: no test results with duration\n")
 	} else {
-		pf("Saved: %.0f%%\n", r.Efficiency.Score())
+		pf("Saved: %s\n", scoreString(r.Efficiency.Score()))
 		pf("Test results analyzed: %d\n", r.Efficiency.TestResults)
 		pf("Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
 		pf("Forecasted compute time:    %s\n", r.Efficiency.ForecastDuration)
@@ -217,25 +217,30 @@ func (r *evalRun) maybeReportProgress(ctx context.Context) {
 func (r *evalRun) progressReportLine() string {
 	r.buf.Reset()
 
-	printScore := func(score float64) {
-		if math.IsNaN(score) {
-			fmt.Fprintf(&r.buf, "?")
-		} else {
-			fmt.Fprintf(&r.buf, "%02.0f%%", score)
-		}
-	}
-
-	fmt.Fprintf(&r.buf, "change recall: ")
-	printScore(r.res.Safety.ChangeRecall.Score())
+	fmt.Fprintf(&r.buf, "change recall: %s", scoreString(r.res.Safety.ChangeRecall.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.ChangeRecall.EligibleRejections)
 
-	fmt.Fprintf(&r.buf, "| test recall: ")
-	printScore(r.res.Safety.TestRecall.Score())
+	fmt.Fprintf(&r.buf, "| test recall: %s", scoreString(r.res.Safety.TestRecall.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.TestRecall.EligibleFailures)
 
-	fmt.Fprintf(&r.buf, " | efficiency: ")
-	printScore(r.res.Efficiency.Score())
+	fmt.Fprintf(&r.buf, " | efficiency: %s", scoreString(r.res.Efficiency.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Efficiency.TestResults)
 
 	return r.buf.String()
+}
+
+func scoreString(score float64) string {
+	percentage := score * 100
+	switch {
+	case math.IsNaN(percentage):
+		return "?"
+	case percentage > 0 && percentage < 0.01:
+		// Do not print it as 0.00%.
+		return "<0.01%"
+	case percentage > 99.99 && percentage < 100:
+		// Do not print it as 100.00%.
+		return ">99.99%"
+	default:
+		return fmt.Sprintf("%02.2f%%", percentage)
+	}
 }
