@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb2fd05c_c9d776ff",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T01:42:29Z",
+      "side": 1,
+      "message": "not needed.",
+      "range": {
+        "startLine": 345,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 20
+      },
+      "revId": "3fb2bb49342a109019b4dc68aa9bc12c3a981e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62641062_296a48a0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 870,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T01:42:29Z",
+      "side": 1,
+      "message": "Repeated fields should be plural. Can you rename it while we still can + you roll has to be manual anyway.",
+      "revId": "3fb2bb49342a109019b4dc68aa9bc12c3a981e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
