@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f37d4e3_866cd6cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T03:31:13Z",
+      "side": 1,
+      "message": "PTAL. I\u0027ll upload next patchset with tests tomorrow.",
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17b38bd0_8b946990",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T03:31:13Z",
+      "side": 1,
+      "message": "expected usage:\n\nswitch m, err :\u003d config.GetLatestMeta(ctx, project); {\ncase err !\u003d nil:\n  return err\ncase !m.Exists():\n  // Handle somehow\ndefault:\n  // Get m.Hash() or m.EVersion for later comparisons.\n  // Or, load all config groups at once:\n  cgs, err :\u003d m.GetConfigGroups(ctx)\n  if err !\u003d nil {\n    // In most cases, this is due to transient error,\n    // I don\u0027t expect handling of NotExist error separately.\n    return err\n  }\n  // Do stuff with cgs.\n}",
+      "revId": "e31c4491182236f1ee9e975921c86e45e084f5fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
