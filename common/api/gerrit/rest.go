@@ -178,7 +178,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 	}
 
 	ci := resp.ToProto()
-	if ci.Status != gerritpb.ChangeInfo_NEW {
+	if ci.Status != gerritpb.ChangeStatus_NEW {
 		return nil, fmt.Errorf("unknown status %s for newly created change", ci.Status)
 	}
 	return ci, nil
