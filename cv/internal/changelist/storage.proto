@@ -99,7 +99,7 @@ message GerritGitDep {
   // Host is omitted because it's always the same as that of the CL.
 
   // Gerrit Change number.
-  int32 change = 1;
+  int64 change = 1;
 
   // Immediate is set iff this dep is an immediate parent of the Gerrit CL.
   //
@@ -126,7 +126,7 @@ message GerritSoftDep {
   // Gerrit host.
   string host = 1;
   // Gerrit change number.
-  int32 change = 2;
+  int64 change = 2;
 }
 
 // ApplicableConfig keeps track of configs applicable to a CL.
