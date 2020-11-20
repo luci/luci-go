@@ -94,14 +94,19 @@ When done, it will print something like this:
 
 ```
 Change recall:
-  Score: 42%
-  # of eligible rejections: 846
-  # of them preserved by this RTS: 354
+  Score: 69%
+  Eligible rejections:                       722
+  Eligible rejections preserved by this RTS: 500
+Test recall:
+  Score: 50%
+  Eligible test failures:                       1357767
+  Eligible test failures preserved by this RTS: 679198
 Efficiency:
   Saved: 50%
-  Compute time in the sample: 165h32m48.580086037s
-  Forecasted compute time: 82h37m32.134879486s
-Total records: 2444461
+  Test results analyzed: 157728
+  Compute time in the sample: 166h4m4.127344853s
+  Forecasted compute time:    83h10m13.081573441s
+Total records: 1516227
 ```
 
 ## Practical tips

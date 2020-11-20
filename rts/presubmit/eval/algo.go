@@ -22,7 +22,7 @@ import (
 
 // Algorithm accepts a list of changed files and a test description and
 // decides whether to run it.
-type Algorithm func(context.Context, Input) (Output, error)
+type Algorithm func(context.Context, Input, *Output) error
 
 // Input is input to an RTS Algorithm.
 type Input struct {
@@ -47,7 +47,7 @@ type SourceFile struct {
 
 // Output is the output of an RTS algorithm.
 type Output struct {
-	// ShouldRunAny is true if any of the test variants should run as a
-	// part of the suite.
-	ShouldRunAny bool
+	// ShouldSkip is the list of test variant that should be skipped.
+	// It must be a subset of Input.TestVariants.
+	ShouldSkip []*evalpb.TestVariant
 }

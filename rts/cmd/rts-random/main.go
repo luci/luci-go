@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"math"
 	"math/rand"
 	"time"
 
@@ -26,13 +25,12 @@ import (
 func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().Unix())
-	eval.Main(ctx, func(ctx context.Context, in eval.Input) (eval.Output, error) {
-		if len(in.TestVariants) > 32 {
-			return eval.Output{ShouldRunAny: true}, nil
+	eval.Main(ctx, func(ctx context.Context, in eval.Input, out *eval.Output) error {
+		for _, tv := range in.TestVariants {
+			if rand.Intn(2) == 0 {
+				out.ShouldSkip = append(out.ShouldSkip, tv)
+			}
 		}
-		oneOf := int(math.Pow(2, float64(len(in.TestVariants))))
-		return eval.Output{
-			ShouldRunAny: rand.Intn(oneOf) == 0,
-		}, nil
+		return nil
 	})
 }
