@@ -34,9 +34,10 @@ import (
 
 // Fake simulates Gerrit for CV tests.
 type Fake struct {
-	m  sync.Mutex
-	cs map[string]*Change
-	// TODO(tandrii): add determining relationships between CLs.
+	m        sync.Mutex
+	cs       map[string]*Change
+	parentOf map[string][]string
+	childOf  map[string][]string
 }
 
 func (f *Fake) Install(ctx context.Context) context.Context {
@@ -350,6 +351,38 @@ func (f *Fake) DeleteChange(host string, change int, mut func(c *Change)) {
 	mut(c)
 }
 
+// SetDependsOn establishes Git relationship between child CL and 1 or more
+// parents.
+//
+// Each
+func (f *Fake) SetDependsOn(host string, child interface{}, parents ...interface{}) {
+	f.m.Lock()
+	defer f.m.Unlock()
+	if f.parentOf == nil {
+		f.parentOf = make(map[string][]string, len(parents))
+	}
+	if f.childOf == nil {
+		f.childOf = make(map[string][]string, 1)
+	}
+
+	ch, ps := parseChangePatchset(child)
+	ckey := relkey(host, ch, ps)
+	if _, _, _, err := f.resolveRelkeyLocked(ckey); err != nil {
+		panic(err)
+	}
+	pkeys := make([]string, 0, len(parents))
+	for _, p := range parents {
+		ch, ps = parseChangePatchset(p)
+		pkey := relkey(host, ch, ps)
+		if _, _, _, err := f.resolveRelkeyLocked(pkey); err != nil {
+			panic(err)
+		}
+		pkeys = append(pkeys, pkey)
+		f.childOf[pkey] = append(f.childOf[pkey], ckey)
+	}
+	f.parentOf[ckey] = append(f.parentOf[ckey], pkeys...)
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
@@ -359,6 +392,24 @@ func (c *Change) key() string {
 
 func key(host string, change int) string {
 	return fmt.Sprintf("%s/%d", host, change)
+}
+
+func relkey(host string, change, ps int) string {
+	return fmt.Sprintf("%s/%d/%d", host, change, ps)
+}
+
+func splitRelkey(r string) (key string, ps int) {
+	i := strings.LastIndex(r, "/")
+	return r[:i], atoi(r[i+1:])
+}
+
+func (c *Change) findRevisionForPS(ps int) (rev string, ri *gerritpb.RevisionInfo) {
+	for rev, ri := range c.Info.GetRevisions() {
+		if ri.GetNumber() == int32(ps) {
+			return rev, ri
+		}
+	}
+	return "", nil
 }
 
 func atoi64(s string) int64 {
@@ -374,4 +425,35 @@ func atoi32(s string) int32 {
 }
 func atoi(s string) int {
 	return int(atoi64(s))
+}
+
+func parseChangePatchset(s interface{}) (int, int) {
+	switch v := s.(type) {
+	case *gerritpb.ChangeInfo:
+		return int(v.GetNumber()), int(v.GetRevisions()[v.GetCurrentRevision()].GetNumber())
+	case *Change:
+		return parseChangePatchset(v.Info)
+	case string:
+		if j := strings.IndexRune(v, '_'); j != -1 {
+			return int(atoi64(v[:j])), int(atoi64(v[j+1:]))
+		}
+		panic(fmt.Errorf("unsupported %q: use change_patchset e.g. 123_1", v))
+	default:
+		panic(fmt.Errorf("unsupported type %T %v as change patchset", s, v))
+	}
+}
+
+func (f *Fake) resolveRelkeyLocked(relkey string) (ch *Change, rev string, ri *gerritpb.RevisionInfo, err error) {
+	k, ps := splitRelkey(relkey)
+	var ok bool
+	ch, ok = f.cs[k]
+	if !ok {
+		err = status.Errorf(codes.Unknown, "fake relation chain invalid: missing %s change", k)
+		return
+	}
+	rev, ri = ch.findRevisionForPS(ps)
+	if ri == nil {
+		err = status.Errorf(codes.Unknown, "fake relation chain invalid: missing patchset %d for %s change", ps, k)
+	}
+	return
 }
