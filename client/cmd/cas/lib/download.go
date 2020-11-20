@@ -87,6 +87,28 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
+func createDirectories(outputs map[string]*client.TreeOutput) error {
+	dirs := make([]string, 0, len(outputs))
+	for path, output := range outputs {
+		if output.IsEmptyDirectory {
+			dirs = append(dirs, path)
+		} else {
+			dirs = append(dirs, filepath.Dir(path))
+		}
+	}
+	sort.Strings(dirs)
+
+	for i, dir := range dirs {
+		if i > 0 && dirs[i-1] == dir {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			return errors.Annotate(err, "failed to create directory").Err()
+		}
+	}
+	return nil
+}
+
 // doDownload downloads directory tree from the CAS server.
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
@@ -137,31 +159,13 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
+	if err := createDirectories(outputs); err != nil {
+		return err
+	}
+
 	// Files have the same digest are downloaded only once, so we need to
 	// copy duplicates files later.
 	var dups []*client.TreeOutput
-
-	{
-		// Create directories in this scope.
-		dirs := make([]string, 0, len(outputs))
-		for path, output := range outputs {
-			if output.IsEmptyDirectory {
-				dirs = append(dirs, path)
-			} else {
-				dirs = append(dirs, filepath.Dir(path))
-			}
-		}
-		sort.Strings(dirs)
-
-		for i, dir := range dirs {
-			if i > 0 && dirs[i-1] == dir {
-				continue
-			}
-			if err := os.MkdirAll(dir, 0o700); err != nil {
-				return errors.Annotate(err, "failed to create directory").Err()
-			}
-		}
-	}
 
 	for path, output := range outputs {
 		if output.IsEmptyDirectory {
