@@ -79,8 +79,7 @@ func (r *evalRun) run(ctx context.Context) error {
 	return nil
 }
 
-func (r *evalRun) selectTests(ctx context.Context, in eval.Input) (out eval.Output, err error) {
-	// TODO(nodir): select tests more intellegently.
-	out.ShouldRunAny = true
-	return
+func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
+	// TODO(nodir): skip some tests.
+	return nil
 }

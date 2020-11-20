@@ -46,7 +46,7 @@ func (e *Efficiency) Score() float64 {
 		return math.NaN()
 	}
 	saved := e.SampleDuration - e.ForecastDuration
-	return float64(100*saved) / float64(e.SampleDuration)
+	return float64(saved) / float64(e.SampleDuration)
 }
 
 // evaluateEfficiency reads test durations from r.durationC,
@@ -58,6 +58,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
+			var out Output
 			for td := range r.durationC {
 				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
 				switch {
@@ -70,8 +71,8 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 				// Run the algorithm.
 				in.ChangedFiles = changedFiles
 				in.TestVariants[0] = td.TestVariant
-				out, err := r.Algorithm(ctx, in)
-				if err != nil {
+				out.ShouldSkip = out.ShouldSkip[:0]
+				if err := r.Algorithm(ctx, in, &out); err != nil {
 					return err
 				}
 
@@ -80,7 +81,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 				r.mu.Lock()
 				r.res.Efficiency.TestResults++
 				r.res.Efficiency.SampleDuration += dur
-				if out.ShouldRunAny {
+				if len(out.ShouldSkip) == 0 {
 					r.res.Efficiency.ForecastDuration += dur
 				}
 				r.maybeReportProgress(ctx)
