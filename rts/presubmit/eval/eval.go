@@ -58,6 +58,10 @@ type Eval struct {
 
 	// How often to report progress. Defaults to 5s.
 	ProgressReportInterval time.Duration
+
+	// If true, log eligible lost rejections.
+	// See also ChangeRecall.LostRejections.
+	LogLostRejections bool
 }
 
 // RegisterFlags registers flags for the Eval fields.
@@ -73,6 +77,7 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.IntVar(&e.GerritQPSLimit, "gerrit-qps-limit", defaultGerritQPSLimit, "Max Gerrit QPS")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
+	fs.BoolVar(&e.LogLostRejections, "log-lost-rejections", false, "Log every lost rejection, to diagnose the RTS algorithm")
 	return nil
 }
 
