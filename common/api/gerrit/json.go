@@ -193,6 +193,49 @@ func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
 	return ret
 }
 
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#commit-info
+type commitInfo struct {
+	Commit    string        `json:"commit"`
+	Parents   []*commitInfo `json:"parents"`
+	Author    AccountInfo   `json:"author"`
+	Committer AccountInfo   `json:"committer"`
+	Subject   string        `json:"subject"`
+	Message   string        `json:"message"`
+}
+
+func (c *commitInfo) ToProto() *gerritpb.CommitInfo {
+	parents := make([]*gerritpb.CommitInfo_Parent, len(c.Parents))
+	for i, p := range c.Parents {
+		parents[i] = &gerritpb.CommitInfo_Parent{Id: p.Commit}
+	}
+	return &gerritpb.CommitInfo{
+		Id:      c.Commit,
+		Parents: parents,
+		// TODO(tandrii): support other fields once added.
+	}
+}
+
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#related-change-and-commit-info
+type relatedChangeAndCommitInfo struct {
+	Project         string     `json:"project"`
+	ChangeID        string     `json:"change_id"`
+	Commit          commitInfo `json:"commit"`
+	Number          int64      `json:"_change_number"`
+	Patchset        int64      `json:"_revision_number"`
+	CurrentPatchset int64      `json:"_current_revision_number"`
+	Status          string     `json:"status"`
+}
+
+func (r *relatedChangeAndCommitInfo) ToProto() *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
+	return &gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+		Project:         r.Project,
+		Number:          r.Number,
+		Patchset:        r.Patchset,
+		CurrentPatchset: r.CurrentPatchset,
+		Commit:          r.Commit.ToProto(),
+	}
+}
+
 type mergeableInfo struct {
 	SubmitType    string   `json:"submit_type"`
 	Strategy      string   `json:"strategy"`

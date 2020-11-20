@@ -317,7 +317,21 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 }
 
 func (c *client) GetRelatedChanges(ctx context.Context, req *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
-	return nil, status.New(codes.Unimplemented, "TODO(tandrii): implement").Err()
+	// Example:
+	// https://chromium-review.googlesource.com/changes/1563638/revisions/2/related
+	path := fmt.Sprintf("/changes/%s/revisions/%s/related",
+		gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
+	out := struct {
+		Changes []relatedChangeAndCommitInfo `json:"changes"`
+	}{}
+	if _, err := c.call(ctx, "GET", path, nil, nil, &out); err != nil {
+		return nil, errors.Annotate(err, "related changes").Err()
+	}
+	changes := make([]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, len(out.Changes))
+	for i, c := range out.Changes {
+		changes[i] = c.ToProto()
+	}
+	return &gerritpb.GetRelatedChangesResponse{Changes: changes}, nil
 }
 
 func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwnersRequest, opts ...grpc.CallOption) (*gerritpb.ListOwnersResponse, error) {
