@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a6af1c2_27f87782",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T13:34:34Z",
+      "side": 1,
+      "message": "pedantic: you\u0027re contradicting \"always\" in the next sentence.\nHow about \"by default has ...",
+      "range": {
+        "startLine": 10,
+        "startChar": 29,
+        "endLine": 10,
+        "endChar": 41
+      },
+      "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "2978cf31_f1cd1548",
@@ -14,6 +37,75 @@
       "writtenOn": "2020-11-20T04:16:55Z",
       "side": 1,
       "message": "Hi, can you help to review this 1st stacked CL? ",
+      "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d288cb1a_33471da2",
+        "filename": "led/job/jobcreate/create.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T13:34:34Z",
+      "side": 1,
+      "message": "prefer switch for exclusive clauses:\n\nswitch{\ncase ir !\u003d nil \u0026\u0026 cir !\u003d nil:\ncase ir !\u003d nil:\ncaes cir !\u003d nil:\n}",
+      "range": {
+        "startLine": 142,
+        "startChar": 2,
+        "endLine": 142,
+        "endChar": 30
+      },
+      "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e511f57e_f7d5994c",
+        "filename": "led/job/jobcreate/create.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T13:34:34Z",
+      "side": 1,
+      "message": "(nit for consistency with other errors below)\ntask slice %d: both isolate and rbe-cas specified",
+      "range": {
+        "startLine": 143,
+        "startChar": 30,
+        "endLine": 143,
+        "endChar": 76
+      },
+      "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa7185a1_a1d5f3a4",
+        "filename": "led/job/jobcreate/testdata/bbagent_cas.job.json",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-20T13:34:34Z",
+      "side": 1,
+      "message": "qq: why is this still emitted? can we make it actually `nil` in proto s.t. it doesn\u0027t go into output?\n\nhm, isee the same thing for \"containment\". Maybe this is intentionally done by Robbie s.t. all parameter blocks are available for someone editing by hand?",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 227,
+        "endChar": 4
+      },
       "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
