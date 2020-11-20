@@ -27,18 +27,19 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	pb "go.chromium.org/luci/cv/api/config/v2"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-var testNow = testclock.TestTimeUTC.Round(1 * time.Millisecond)
+var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 
 func TestSubmitRefreshTasks(t *testing.T) {
 	t.Parallel()
@@ -185,7 +186,7 @@ func TestUpdateProject(t *testing.T) {
 				EVersion:         expectedEVersion,
 				Hash:             localHash,
 				ExternalHash:     meta.ContentHash,
-				UpdateTime:       datastore.RoundTime(testClock.Now()),
+				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
 			})
 			// Verify ConfigHashInfo
@@ -196,7 +197,7 @@ func TestUpdateProject(t *testing.T) {
 				Hash:             localHash,
 				Project:          projKey,
 				ProjectEVersion:  expectedEVersion,
-				UpdateTime:       datastore.RoundTime(testClock.Now()),
+				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
 			})
 		}
@@ -220,7 +221,7 @@ func TestUpdateProject(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(pc.EVersion, ShouldEqual, 1)
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
-				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime)
+				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime.UTC())
 			})
 
 			Convey("Update existing ProjectConfig", func() {
@@ -260,6 +261,34 @@ func TestUpdateProject(t *testing.T) {
 					So(err, ShouldBeNil)
 					verifyEntitiesInDatastore(ctx, 3)
 				})
+
+				Convey("Re-enables project even if config hash is the same", func() {
+					testClock.Add(10 * time.Minute)
+					So(disableProject(ctx, "chromium"), ShouldBeNil)
+					before := ProjectConfig{Project: "chromium"}
+					So(datastore.Get(ctx, &before), ShouldBeNil)
+					// Delete config entities.
+					projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
+					err := datastore.Delete(ctx,
+						&ConfigHashInfo{Hash: before.Hash, Project: projKey},
+						&ConfigGroup{
+							ID:      makeConfigGroupID(before.Hash, before.ConfigGroupNames[0], 0),
+							Project: projKey,
+						},
+					)
+					So(err, ShouldBeNil)
+
+					testClock.Add(10 * time.Minute)
+					So(updateProject(ctx, "chromium"), ShouldBeNil)
+					after := ProjectConfig{Project: "chromium"}
+					So(datastore.Get(ctx, &after), ShouldBeNil)
+
+					So(after.Enabled, ShouldBeTrue)
+					So(after.EVersion, ShouldEqual, before.EVersion+1)
+					So(after.Hash, ShouldResemble, before.Hash)
+					// Ensure deleted entities are re-created.
+					verifyEntitiesInDatastore(ctx, 4)
+				})
 			})
 		})
 	})
@@ -275,7 +304,7 @@ func TestDisableProject(t *testing.T) {
 				EVersion:         100,
 				Hash:             "hash",
 				ExternalHash:     "externalHash",
-				UpdateTime:       datastore.RoundTime(testClock.Now()),
+				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: []string{"default"},
 			}
 			So(datastore.Put(ctx, &pc), ShouldBeNil)
@@ -290,7 +319,7 @@ func TestDisableProject(t *testing.T) {
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
 			So(actual.Enabled, ShouldBeFalse)
 			So(actual.EVersion, ShouldEqual, 101)
-			So(actual.UpdateTime, ShouldResemble, datastore.RoundTime(testClock.Now()))
+			So(actual.UpdateTime, ShouldResemble, datastore.RoundTime(testClock.Now()).UTC())
 		})
 
 		Convey("currently disabled Project", func() {
