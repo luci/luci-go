@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "293991e8_88a0fc68",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-20T09:35:32Z",
+      "side": 1,
+      "message": "PTAL. This is the first version of Chromium\u0027s RTS.",
+      "revId": "b036fa0a75d26e1e0f72afa2cfb828e39cf761a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
