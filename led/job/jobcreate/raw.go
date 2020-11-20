@@ -35,6 +35,20 @@ func casTreeFromSwarming(iso *swarming.SwarmingRpcsFilesRef) *swarmingpb.CASTree
 	}
 }
 
+func casReferenceFromSwarming(cas *swarming.SwarmingRpcsCASReference) *swarmingpb.CASReference {
+	if cas == nil {
+		return nil
+	}
+	casRef := &swarmingpb.CASReference{CasInstance: cas.CasInstance}
+	if cas.Digest != nil {
+		casRef.Digest = &swarmingpb.Digest{
+			Hash:      cas.Digest.Hash,
+			SizeBytes: cas.Digest.SizeBytes,
+		}
+	}
+	return casRef
+}
+
 func cipdPkgsFromSwarming(pkgs *swarming.SwarmingRpcsCipdInput) []*swarmingpb.CIPDPackage {
 	if pkgs == nil || len(pkgs.Packages) == 0 {
 		return nil
@@ -115,12 +129,13 @@ func taskPropertiesFromSwarming(ts *swarming.SwarmingRpcsTaskProperties) *swarmi
 	// TODO(iannucci): log that we're dropping SecretBytes?
 
 	return &swarmingpb.TaskProperties{
-		CasInputs:   casTreeFromSwarming(ts.InputsRef),
-		CipdInputs:  cipdPkgsFromSwarming(ts.CipdInput),
-		NamedCaches: namedCachesFromSwarming(ts.Caches),
-		Command:     ts.Command,
-		RelativeCwd: ts.RelativeCwd,
-		ExtraArgs:   ts.ExtraArgs,
+		CasInputs:    casTreeFromSwarming(ts.InputsRef),
+		CasInputRoot: casReferenceFromSwarming(ts.CasInputRoot),
+		CipdInputs:   cipdPkgsFromSwarming(ts.CipdInput),
+		NamedCaches:  namedCachesFromSwarming(ts.Caches),
+		Command:      ts.Command,
+		RelativeCwd:  ts.RelativeCwd,
+		ExtraArgs:    ts.ExtraArgs,
 		// SecretBytes/HasSecretBytes are not provided by the swarming server.
 		Dimensions:       dimensionsFromSwarming(ts.Dimensions),
 		Env:              envFromSwarming(ts.Env),
