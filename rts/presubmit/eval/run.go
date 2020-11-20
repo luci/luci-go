@@ -159,7 +159,7 @@ func (r *Result) Print(w io.Writer) error {
 
 	default:
 		pf("Score: %s\n", scoreString(cr.Score()))
-		pf("Eligible rejections: %d\n", cr.EligibleRejections)
+		pf("Eligible rejections:                       %d\n", cr.EligibleRejections)
 		pf("Eligible rejections preserved by this RTS: %d\n", cr.preserved())
 	}
 	p.Level--
@@ -220,7 +220,7 @@ func (r *evalRun) progressReportLine() string {
 	fmt.Fprintf(&r.buf, "change recall: %s", scoreString(r.res.Safety.ChangeRecall.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.ChangeRecall.EligibleRejections)
 
-	fmt.Fprintf(&r.buf, "| test recall: %s", scoreString(r.res.Safety.TestRecall.Score()))
+	fmt.Fprintf(&r.buf, " | test recall: %s", scoreString(r.res.Safety.TestRecall.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.TestRecall.EligibleFailures)
 
 	fmt.Fprintf(&r.buf, " | efficiency: %s", scoreString(r.res.Efficiency.Score()))
