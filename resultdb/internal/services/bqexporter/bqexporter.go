@@ -83,6 +83,9 @@ type Options struct {
 	// be large (e.g. 100) if exports small invocations (1000 results per
 	// invocation).
 	TaskWorkers int
+
+	// Name of the cloud tasks queue to use.
+	QueueName string
 }
 
 // DefaultOptions returns Options with default values.
@@ -101,6 +104,7 @@ func DefaultOptions() Options {
 		TaskLeaseDuration:       10 * time.Minute,
 		TaskQueryInterval:       5 * time.Second,
 		TaskWorkers:             10,
+		QueueName:               "bqexporter",
 	}
 }
 
@@ -118,16 +122,6 @@ type bqExporter struct {
 	batchSem *semaphore.Weighted
 }
 
-// Tasks describes how to route bq export tasks.
-var Tasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:                  "bq-export",
-	Prototype:           &taskspb.ExportInvocationToBQ{},
-	Kind:                tq.Transactional,
-	InheritTraceContext: true,
-	Queue:               "bqexporter",                 // use a dedicated queue
-	RoutingPrefix:       "/internal/tasks/bqexporter", // for routing to "bqexporter" service
-})
-
 // UseTQ experiment enables using server/tq for bq export tasks.
 var UseTQ = experiments.Register("rdb-use-tq-bq-export")
 
@@ -138,7 +132,7 @@ func InitServer(srv *server.Server, opts Options) {
 		putLimiter: rate.NewLimiter(opts.RateLimit, 1),
 		batchSem:   semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
 	}
-
+	b.initTQ()
 	d := tasks.Dispatcher{
 		Workers:       opts.TaskWorkers,
 		LeaseDuration: opts.TaskLeaseDuration,
@@ -153,8 +147,17 @@ func InitServer(srv *server.Server, opts Options) {
 			return b.exportResultsToBigQuery(ctx, invID, bqExport)
 		})
 	})
+}
 
-	Tasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+func (b *bqExporter) initTQ() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:                  "bq-export",
+		Prototype:           &taskspb.ExportInvocationToBQ{},
+		Kind:                tq.Transactional,
+		InheritTraceContext: true,
+		Queue:               b.Options.QueueName,          // use a dedicated queue
+		RoutingPrefix:       "/internal/tasks/bqexporter", // for routing to "bqexporter" service
+	}).AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
 	})

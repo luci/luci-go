@@ -232,6 +232,9 @@ func TestBqTableCache(t *testing.T) {
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		opts := DefaultOptions()
+		b := &bqExporter{Options: &opts}
+		b.initTQ()
 		bqx1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}
 		bqx2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2"}
 		bqx1Bytes, _ := proto.Marshal(bqx1)
