@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
 )
@@ -74,24 +75,43 @@ func (t TestController) Disable(ctx context.Context, project string) {
 //
 // Panics if project config doesn't exist.
 func (t TestController) Enable(ctx context.Context, project string) {
-	t.MustExist(ctx, project)
-	panic("not implemented yet")
+	m := t.MustExist(ctx, project)
+	if _, err := m.GetConfigGroups(ctx); err != nil {
+		panic(err)
+	}
+	p := ProjectConfig{Project: project}
+	if err := datastore.Get(ctx, &p); err != nil {
+		panic(err)
+	}
+	p.Enabled = true
+	p.EVersion++
+	if err := datastore.Put(ctx, &p); err != nil {
+		panic(err)
+	}
 }
 
 // Delete deletes the project config.
 //
 // Panics if project config doesn't exist.
 func (t TestController) Delete(ctx context.Context, project string) {
-	t.MustExist(ctx, project)
-	panic("not implemented yet")
+	m := t.MustExist(ctx, project)
+	cfgs, err := m.GetConfigGroups(ctx)
+	if err != nil {
+		panic(err)
+	}
+	if err := datastore.Delete(ctx, &ProjectConfig{Project: project}, cfgs); err != nil {
+		panic(err)
+	}
 }
 
-func (_ TestController) MustExist(ctx context.Context, project string) {
+func (_ TestController) MustExist(ctx context.Context, project string) Meta {
 	switch m, err := GetLatestMeta(ctx, project); {
 	case err != nil:
 		panic(err)
 	case !m.Exists():
 		panic(fmt.Errorf("project %q doesn't exist", project))
+	default:
+		return m
 	}
 }
 
