@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "719b6115_20374118",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-21T23:54:32Z",
+      "side": 1,
+      "message": "This is an area that seems tricky to me, and would be easy for me to accidentally mix up.\n\nparentOf is a map of each patchset to a list of children (and childOf maps each patchset to its parents), right?",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d0401bb_c9fd5f9c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-21T23:54:32Z",
+      "side": 1,
+      "message": "between a child CL",
+      "range": {
+        "startLine": 354,
+        "startChar": 45,
+        "endLine": 354,
+        "endChar": 61
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "770965a4_bd10cf96",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-21T23:54:32Z",
+      "side": 1,
+      "message": "Incomplete",
+      "range": {
+        "startLine": 357,
+        "startChar": 3,
+        "endLine": 357,
+        "endChar": 7
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "72f916c0_41bf10de",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-21T23:54:32Z",
+      "side": 1,
+      "message": "The terms \"to depend on\" and \"dependency\" and \"parent\" and \"child\" again are worth extra attention since it would be easy for me to mix these up. Parent is parent in the git sense, right, and most commits/patchsets have one parent, unless there\u0027s a merge?\n\nAnd we say a child \"depends on\" its parents, and each parent is a dependency of the child?",
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9667391_0049a06c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-21T23:54:32Z",
+      "side": 1,
+      "message": "What is relkey? It looks like it represents one patchset of one change; does rel stand for relationship? Would the names psKey or revisionKey make sense here?",
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
