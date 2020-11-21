@@ -403,6 +403,19 @@ func splitRelkey(r string) (key string, ps int) {
 	return r[:i], atoi(r[i+1:])
 }
 
+// resolveRevisionToPS accepts either stringified patchset or actual revision
+// and returns revision.
+func (c *Change) resolveRevisionToPS(r string) (int, error) {
+	if ri, ok := c.Info.GetRevisions()[r]; ok {
+		return int(ri.GetNumber()), nil
+	}
+	if ps, err := strconv.Atoi(r); err == nil {
+		return ps, nil
+	}
+	return 0, status.Errorf(codes.NotFound,
+		"couldn't resolve change %d revision %q", c.Info.GetNumber(), r)
+}
+
 func (c *Change) findRevisionForPS(ps int) (rev string, ri *gerritpb.RevisionInfo) {
 	for rev, ri := range c.Info.GetRevisions() {
 		if ri.GetNumber() == int32(ps) {
