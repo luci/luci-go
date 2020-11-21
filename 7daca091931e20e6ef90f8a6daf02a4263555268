@@ -81,6 +81,24 @@
       "parentUuid": "ea029cd4_d53a2bf2",
       "revId": "7daca091931e20e6ef90f8a6daf02a4263555268",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05efba86_b36332c9",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-21T01:35:29Z",
+      "side": 1,
+      "message": "i don\u0027t think PS2 solved the problem. InitServer is meant to be callable multiple times, but now it sometimes silently ignores QueueName. To be clear, the problem is that a non-global thing does a global registration.\n\nEarlier I meant that InitServer expects the task class already registered by something else, and only attaches the handler. But now I see it is not possible to detach a handler.\n\nI see RegisterTaskClass is a shortcut to Default.RegisterTaskClass. Maybe propagate Dispatcher as input then?\n\nCurious what Vadim would suggest.",
+      "parentUuid": "44702825_bc8ccd21",
+      "revId": "7daca091931e20e6ef90f8a6daf02a4263555268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
