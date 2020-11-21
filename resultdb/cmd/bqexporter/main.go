@@ -38,6 +38,8 @@ func main() {
 	rateLimit := int(opts.RateLimit)
 	flag.IntVar(&rateLimit, "rate-limit", rateLimit,
 		"Maximum BigQuery request rate")
+	flag.StringVar(&opts.QueueName, "queue-name", opts.QueueName,
+		"Name of the cloud tasks queue to use")
 
 	internal.Main(func(srv *server.Server) error {
 		opts.RateLimit = rate.Limit(rateLimit)
