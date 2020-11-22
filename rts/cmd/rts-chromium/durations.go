@@ -64,10 +64,11 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 }
 
 type durationRow struct {
-	Change      int
-	Patchset    int
-	TestVariant testVariantRow
-	Duration    float64
+	Change       int
+	Patchset     int
+	ChangedFiles []string
+	TestVariant  testVariantRow
+	Duration     float64
 }
 
 func (r *durationRow) proto() *evalpb.TestDuration {
@@ -82,7 +83,8 @@ func (r *durationRow) proto() *evalpb.TestDuration {
 					Project: "chromium/src",
 					Number:  int64(r.Change),
 				},
-				Patchset: int64(r.Patchset),
+				Patchset:     int64(r.Patchset),
+				ChangedFiles: toSourceFiles(r.ChangedFiles),
 			},
 		},
 		TestVariant: r.TestVariant.proto(),
@@ -90,45 +92,22 @@ func (r *durationRow) proto() *evalpb.TestDuration {
 	}
 }
 
-const testDurationsSQL = `
-WITH
-	tryjobs AS (
-		SELECT
-			b.id,
-			ps,
-		FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
-		WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
-	),
-	test_results AS (
-		SELECT
-			CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-			IFNULL(test_location.file_name, '') as file_name,
-			test_id,
-			variant,
-			duration,
-		FROM luci-resultdb.chromium.try_test_results tr
-		WHERE partition_time BETWEEN @startTime and @endTime
-			AND RAND() <= @frac
-			AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
-			AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
-			AND duration > @minDuration
-
-			-- Exclude broken test locations.
-			-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
-			AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp))$')
-			-- Exclude broken prefixes.
-			-- TODO(nodir): remove after crbug.com/1017288 is fixed.
-			AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
+const testDurationsSQL = queryHeader + `
+	some_test_results AS (
+		SELECT *
+		FROM test_results
+		WHERE RAND() <= @frac
 	)
 SELECT
 	ps.change as Change,
 	ps.patchset as Patchset,
+	changed_files as ChangedFiles,
 	STRUCT(
 		test_id as ID,
 		variant as Variant,
 		file_name as FileName
 	) as TestVariant,
 	duration as Duration
-FROM tryjobs t
+FROM tryjobs_with_files t
 JOIN test_results tr ON t.id = tr.build_id
 `

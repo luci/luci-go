@@ -94,6 +94,7 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 type rejectionRow struct {
 	Change            int
 	Patchset          int
+	ChangedFiles      []string
 	Timestamp         time.Time
 	FailedTestVariant testVariantRow
 }
@@ -108,7 +109,8 @@ func (r *rejectionRow) populatePatchsetInfo(rej *evalpb.Rejection) {
 			Project: "chromium/src",
 			Number:  int64(r.Change),
 		},
-		Patchset: int64(r.Patchset),
+		Patchset:     int64(r.Patchset),
+		ChangedFiles: toSourceFiles(r.ChangedFiles),
 	}}
 	rej.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
 }
@@ -134,60 +136,78 @@ func (t *testVariantRow) proto() *evalpb.TestVariant {
 	return ret
 }
 
+// queryHeader is a common part of rejection and duration queries.
+const queryHeader = `
+WITH
+	tryjobs AS (
+		SELECT
+			b.id,
+			ps,
+		FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
+		WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+	),
+	tryjobs_with_files AS (
+		SELECT
+			t.*,
+			JSON_EXTRACT_ARRAY(b.output.properties, '$.affected_files.first_100') as changed_files,
+		FROM tryjobs t
+		JOIN cr-buildbucket.chromium.builds b ON build_id = b.id
+		-- Read prev-day and next-day builds too to ensure that we have ALL
+		-- results of a given CQ attempt.
+		WHERE create_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			AND CAST(JSON_VALUE(b.output.properties, '$.affected_files.total_count') as INT64) < 100
+	),
+	tryjobs_with_files AS (
+		SELECT
+			t.*,
+			JSON_EXTRACT_ARRAY(b.output.properties, '$.affected_files.first_100') as changed_files,
+		FROM tryjobs t
+		JOIN cr-buildbucket.chromium.builds b ON build_id = b.id
+		-- Read prev-day and next-day builds too to ensure that we have ALL
+		-- results of a given CQ attempt.
+		WHERE create_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			AND CAST(JSON_VALUE(b.output.properties, '$.affected_files.total_count') as INT64) < 100
+	),
+	-- Select 'try' test results. All early filtering is done here.
+	test_results AS (
+		SELECT
+			-- select the build_id to join with tryjobs.
+			CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
+			test_id,
+			variant_hash,
+			variant,
+			expected,
+			-- Replace NULLs with '' to keep Go code simple.
+			IFNULL(test_location.file_name, '') as file_name,
+		FROM luci-resultdb.chromium.try_test_results tr
+		-- Read prev-day and next-day results too to ensure that we have ALL
+		-- results of a given CQ attempt.
+		WHERE partition_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			AND not exonerated
+			AND status != 'SKIP' -- not needed for RTS purposes
+			AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
+			AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
+			-- Exclude broken test locations.
+			-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
+			AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp|js))$')
+			-- Exclude broken prefixes.
+			-- TODO(nodir): remove after crbug.com/1017288 is fixed.
+			AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
+	),
+`
+
 // rejectedPatchSetsSQL is a BigQuery query that returns patchsets with test
 // failures. Excludes flaky tests.
 //
 // This query intentionally does not use ARRAY_AGG for failed tests because
 // otherwise a result row size may exceed the API limitation of 10MB.
-const rejectedPatchSetsSQL = `
-	WITH
-		-- Select all tryjobs that participated in CQ in the given time window,
-		-- along with their patchsets.
-		--
-		-- Use earliest_equivalent_patchset field instead of patchset, such that
-		-- trivial rebases are treated as the same patchset, and to ignore
-		-- CL description edits.
-		tryjobs AS (
-			SELECT
-				b.id as build_id,
-				ps.change,
-				ps.earliest_equivalent_patchset as patchset,
-				partition_time as ps_approx_timestamp,
-			FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
-			WHERE partition_time BETWEEN @startTime AND @endTime
-		),
-		-- Select 'try' test results. All early filtering is done here.
-		test_results AS (
-			SELECT
-				-- select the build_id to join with tryjobs.
-				CAST(REGEXP_EXTRACT(exported.id, r'build-(\d+)') as INT64) as build_id,
-				test_id,
-				variant_hash,
-				variant,
-				expected,
-				-- Replace NULLs with '' to keep Go code simple.
-				IFNULL(test_location.file_name, '') as file_name,
-			FROM luci-resultdb.chromium.try_test_results tr
-			-- Read prev-day and next-day results too to ensure that we have ALL
-			-- results of a given CQ attempt.
-			WHERE partition_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
-				AND not exonerated
-				AND status != 'SKIP' -- not needed for RTS purposes
-				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
-				AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
-				-- Exclude broken test locations.
-				-- TODO(nodir): remove this after crbug.com/1130425 is fixed.
-				AND REGEXP_CONTAINS(IFNULL(test_location.file_name, ''), r'(?i)^(|.*\.(cc|html|m|c|cpp|js))$')
-				-- Exclude broken prefixes.
-				-- TODO(nodir): remove after crbug.com/1017288 is fixed.
-				AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
-		),
+const rejectedPatchSetsSQL = queryHeader + `
 		-- Test results annotated with patchset.
 		-- Join the two queries above.
 		ps_test_results AS (
-			SELECT change, patchset, ps_approx_timestamp, r.*
+			SELECT change, patchset, changed_files, ps_approx_timestamp, r.*
 			FROM test_results r
-			JOIN tryjobs USING (build_id)
+			JOIN tryjobs_with_files USING (build_id)
 		),
 
     -- The following two sub-queries detect flaky tests.
@@ -230,13 +250,13 @@ const rejectedPatchSetsSQL = `
 			FROM ps_test_results
 			GROUP BY change, patchset, test_id, variant_hash
 			HAVING LOGICAL_AND(NOT expected)
-		)
-
+		),
 	-- Exclude flaky tests from failed_test_variants_per_ps.
 	-- Prepare the results for consumption by Go code (fields, order).
 	SELECT
 		change as Change,
 		patchset as Patchset,
+		changed_files as ChangedFiles,
 		ps_approx_timestamp as Timestamp,
 		STRUCT(
 			test_id as ID,
