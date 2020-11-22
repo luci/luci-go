@@ -64,10 +64,11 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 }
 
 type durationRow struct {
-	Change      int
-	Patchset    int
-	TestVariant testVariantRow
-	Duration    float64
+	Change       int
+	Patchset     int
+	ChangedFiles []string
+	TestVariant  testVariantRow
+	Duration     float64
 }
 
 func (r *durationRow) proto() *evalpb.TestDuration {
@@ -82,7 +83,8 @@ func (r *durationRow) proto() *evalpb.TestDuration {
 					Project: "chromium/src",
 					Number:  int64(r.Change),
 				},
-				Patchset: int64(r.Patchset),
+				Patchset:     int64(r.Patchset),
+				ChangedFiles: toSourceFiles(r.ChangedFiles),
 			},
 		},
 		TestVariant: r.TestVariant.proto(),
@@ -98,6 +100,17 @@ WITH
 			ps,
 		FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
 		WHERE partition_time BETWEEN @startTime AND TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+	),
+	tryjobs_with_files AS (
+		SELECT
+			t.*,
+			JSON_EXTRACT_ARRAY(b.output.properties, '$.affected_files.first_100') as changed_files,
+		FROM tryjobs t
+		JOIN cr-buildbucket.chromium.builds b ON build_id = b.id
+		-- Read prev-day and next-day builds too to ensure that we have ALL
+		-- results of a given CQ attempt.
+		WHERE create_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			AND CAST(JSON_VALUE(b.output.properties, '$.affected_files.total_count') as INT64) < 100
 	),
 	test_results AS (
 		SELECT
@@ -123,12 +136,13 @@ WITH
 SELECT
 	ps.change as Change,
 	ps.patchset as Patchset,
+	changed_files as ChangedFiles,
 	STRUCT(
 		test_id as ID,
 		variant as Variant,
 		file_name as FileName
 	) as TestVariant,
 	duration as Duration
-FROM tryjobs t
+FROM tryjobs_with_files t
 JOIN test_results tr ON t.id = tr.build_id
 `

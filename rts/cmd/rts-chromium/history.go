@@ -205,3 +205,14 @@ func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquer
 	}
 	return q, nil
 }
+
+func toSourceFiles(fileNames []string) []*evalpb.SourceFile {
+	ret := make([]*evalpb.SourceFile, len(fileNames))
+	for i, name := range fileNames {
+		ret[i] = &evalpb.SourceFile{
+			Repo: "https://chromium.googlesource.com/chromium/src",
+			Path: "//" + name,
+		}
+	}
+	return ret
+}
