@@ -35,7 +35,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
 // UpdateCL fetches latest info from Gerrit.
@@ -50,9 +49,7 @@ func UpdateCL(ctx context.Context, luciProject, host string, change int64, updat
 		change:      change,
 		updatedHint: updatedHint,
 	}
-	if fetcher.g, err = gerrit.CurrentClient(ctx, host, luciProject); err != nil {
-		return err
-	}
+	// TODO(tandrii): inline update once Gobmap is ready.
 	return fetcher.update(ctx)
 }
 
@@ -76,6 +73,9 @@ type fetcher struct {
 
 	newSnapshot *changelist.Snapshot
 	newAcfg     *changelist.ApplicableConfig
+
+	// TODO(tandrii): use real gobmap in tests once ready.
+	gobmapLookup func(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error)
 }
 
 func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
@@ -95,7 +95,7 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 
 	case !f.updatedHint.IsZero() && f.priorCL.Snapshot.IsUpToDate(f.luciProject, f.updatedHint):
 		ci := f.priorCL.Snapshot.GetGerrit().Info
-		switch acfg, err := gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
+		switch acfg, err := f.gobmapLookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
 		case err != nil:
 			return false, err
 		case acfg.HasProject(f.luciProject):
@@ -112,6 +112,9 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 }
 
 func (f *fetcher) update(ctx context.Context) (err error) {
+	if f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject); err != nil {
+		return err
+	}
 	f.externalID, err = changelist.GobID(f.host, f.change)
 	if err != nil {
 		return err
@@ -191,6 +194,8 @@ func (f *fetcher) new(ctx context.Context) error {
 	if err = eg.Wait(); err != nil {
 		return err
 	}
+	// TODO
+	// cqdepend.Parse(ci.GetRevisions()[ci.GetCurrentRevision].GetDescription()
 	return errors.New("not implemented")
 }
 
