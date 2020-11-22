@@ -60,16 +60,8 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 			var out Output
 			for td := range r.durationC {
-				changedFiles, err := r.changedFiles(ctx, td.Patchsets...)
-				switch {
-				case err != nil:
-					return err
-				case len(changedFiles) == 0:
-					continue // Ineligible.
-				}
-
 				// Run the algorithm.
-				in.ChangedFiles = changedFiles
+				in.ChangedFiles = combineFiles(td.Patchsets...)
 				in.TestVariants[0] = td.TestVariant
 				out.ShouldSkip = out.ShouldSkip[:0]
 				if err := r.Algorithm(ctx, in, &out); err != nil {
@@ -92,4 +84,12 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	}
 
 	return eg.Wait()
+}
+
+func combineFiles(pss ...*evalpb.GerritPatchset) []*evalpb.SourceFile {
+	var files []*evalpb.SourceFile
+	for _, ps := range pss {
+		files = append(files, ps.ChangedFiles...)
+	}
+	return files
 }

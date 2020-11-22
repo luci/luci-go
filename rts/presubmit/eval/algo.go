@@ -27,22 +27,10 @@ type Algorithm func(context.Context, Input, *Output) error
 // Input is input to an RTS Algorithm.
 type Input struct {
 	// ChangedFiles is a list of files changed in a patchset.
-	ChangedFiles []*SourceFile
+	ChangedFiles []*evalpb.SourceFile
 
 	// The algorithm needs to decide whether to run these test variants.
 	TestVariants []*evalpb.TestVariant
-}
-
-// SourceFile identifies a source file.
-type SourceFile struct {
-	// Repo is a repository identifier.
-	// For googlesource.com repositories, it is a canonical URL, e.g.
-	// https://chromium.googlesource.com/chromium/src
-	Repo string
-
-	// Path to the file relative to the repo root.
-	// Starts with "//".
-	Path string
 }
 
 // Output is the output of an RTS algorithm.

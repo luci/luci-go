@@ -94,6 +94,7 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 type rejectionRow struct {
 	Change            int
 	Patchset          int
+	ChangedFiles      []string
 	Timestamp         time.Time
 	FailedTestVariant testVariantRow
 }
@@ -108,7 +109,8 @@ func (r *rejectionRow) populatePatchsetInfo(rej *evalpb.Rejection) {
 			Project: "chromium/src",
 			Number:  int64(r.Change),
 		},
-		Patchset: int64(r.Patchset),
+		Patchset:     int64(r.Patchset),
+		ChangedFiles: toSourceFiles(r.ChangedFiles),
 	}}
 	rej.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
 }
@@ -155,6 +157,18 @@ const rejectedPatchSetsSQL = `
 				partition_time as ps_approx_timestamp,
 			FROM commit-queue.chromium.attempts a, a.gerrit_changes ps, a.builds b
 			WHERE partition_time BETWEEN @startTime AND @endTime
+			  AND ARRAY_LENGTH(a.gerrit_changes) = 1
+		),
+		tryjobs_with_files AS (
+			SELECT
+				t.*,
+				JSON_EXTRACT_ARRAY(b.output.properties, '$.affected_files.first_100') as changed_files,
+			FROM tryjobs t
+			JOIN cr-buildbucket.chromium.builds b ON build_id = b.id
+			-- Read prev-day and next-day builds too to ensure that we have ALL
+			-- results of a given CQ attempt.
+			WHERE create_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			  AND CAST(JSON_VALUE(b.output.properties, '$.affected_files.total_count') as INT64) < 100
 		),
 		-- Select 'try' test results. All early filtering is done here.
 		test_results AS (
@@ -185,9 +199,9 @@ const rejectedPatchSetsSQL = `
 		-- Test results annotated with patchset.
 		-- Join the two queries above.
 		ps_test_results AS (
-			SELECT change, patchset, ps_approx_timestamp, r.*
+			SELECT change, patchset, changed_files, ps_approx_timestamp, r.*
 			FROM test_results r
-			JOIN tryjobs USING (build_id)
+			JOIN tryjobs_with_files USING (build_id)
 		),
 
     -- The following two sub-queries detect flaky tests.
@@ -230,23 +244,25 @@ const rejectedPatchSetsSQL = `
 			FROM ps_test_results
 			GROUP BY change, patchset, test_id, variant_hash
 			HAVING LOGICAL_AND(NOT expected)
+		),
+		rejections AS (
+			-- Exclude flaky tests from failed_test_variants_per_ps.
+			-- Prepare the results for consumption by Go code (fields, order).
+			SELECT
+				change as Change,
+				patchset as Patchset,
+				changed_files as ChangedFiles,
+				ps_approx_timestamp as Timestamp,
+				STRUCT(
+					test_id as ID,
+					variant as Variant,
+					file_name as FileName
+				) as FailedTestVariant
+			FROM failed_test_variants_per_ps
+			LEFT JOIN flaky_test_variants flaky USING (test_id, variant_hash)
+			-- flaky.test_id is NULL if LEFT JOIN did not find a flaky_test_variants row
+			-- for this test variant, i.e. the test is not flaky
+			WHERE flaky.test_id IS NULL
+			ORDER BY change, patchset
 		)
-
-	-- Exclude flaky tests from failed_test_variants_per_ps.
-	-- Prepare the results for consumption by Go code (fields, order).
-	SELECT
-		change as Change,
-		patchset as Patchset,
-		ps_approx_timestamp as Timestamp,
-		STRUCT(
-			test_id as ID,
-			variant as Variant,
-			file_name as FileName
-		) as FailedTestVariant
-	FROM failed_test_variants_per_ps
-	LEFT JOIN flaky_test_variants flaky USING (test_id, variant_hash)
-	-- flaky.test_id is NULL if LEFT JOIN did not find a flaky_test_variants row
-	-- for this test variant, i.e. the test is not flaky
-	WHERE flaky.test_id IS NULL
-	ORDER BY change, patchset
 `
