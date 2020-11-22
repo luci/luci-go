@@ -188,6 +188,13 @@ func TestGetChange(t *testing.T) {
 								Size:          11984,
 							},
 						},
+						Commit: &gerritpb.CommitInfo{
+							Id:      "", // Gerrit doesn't set it, as it duplicates key in revisions map.
+							Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+							Parents: []*gerritpb.CommitInfo_Parent{
+								{Id: "deadbeef00"},
+							},
+						},
 					},
 				},
 				Labels: map[string]*gerritpb.LabelInfo{
@@ -252,6 +259,23 @@ func TestGetChange(t *testing.T) {
 									"size_delta": -567,
 									"size": 11984
 								}
+							},
+							"commit": {
+								"parents": [{"commit": "deadbeef00"}],
+								"author": {
+									"name": "John Doe",
+									"email": "jdoe@example.com",
+									"date": "2014-05-05 07:15:44.639000000",
+									"tz": 60
+								},
+								"committer": {
+									"name": "John Doe",
+									"email": "jdoe@example.com",
+									"date": "2014-05-05 07:15:44.639000000",
+									"tz": 60
+								},
+								"subject": "Title.",
+								"message": "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef"
 							}
 						}
 					},
@@ -303,7 +327,7 @@ func TestGetChange(t *testing.T) {
 				req.Project = "infra/luci"
 				res, err := c.GetChange(ctx, req)
 				So(err, ShouldBeNil)
-				So(res, ShouldResemble, expectedChange)
+				So(res, ShouldResembleProto, expectedChange)
 				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/infra%2Fluci~1")
 			})
 
