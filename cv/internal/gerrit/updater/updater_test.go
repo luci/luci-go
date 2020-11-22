@@ -18,7 +18,14 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
@@ -149,6 +156,38 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				{Change: 104, Immediate: true},
 				{Change: 107, Immediate: false},
 			})
+		})
+	})
+}
+
+func TestUpdateCL(t *testing.T) {
+	t.Parallel()
+
+	Convey("UpdateCL works", t, func() {
+		// TODO(tandrii): test UpdateCL method directly once gobmap is ready.
+		epoch := testclock.TestRecentTimeLocal
+		ctx, _ := testclock.UseTime(context.Background(), epoch)
+		ctx = memory.Use(ctx)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		if testing.Verbose() {
+			// Must be done after memory.Use.
+			ctx = gologger.StdConfig.Use(ctx)
+			ctx = logging.SetLevel(ctx, logging.Debug)
+		}
+
+		const host = "example.com"
+		const luciProject = "infra"
+
+		Convey("First time", func() {
+			gfake := gf.WithCIs(host, gf.ACLPublic(), gf.CI(112233))
+			ctx = gfake.Install(ctx)
+			f := fetcher{luciProject: "infra", host: host, change: 112233}
+			f.gobmapLookup = func(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
+				panic("called?")
+			}
+			errors.Log(ctx, f.update(ctx))
+			So(f.update(ctx), ShouldBeNil)
 		})
 	})
 }
