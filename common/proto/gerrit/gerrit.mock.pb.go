@@ -7,8 +7,8 @@ package gerrit
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 )
 
@@ -96,14 +96,14 @@ func (mr *MockGerritClientMockRecorder) CreateChange(ctx, in interface{}, opts .
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -116,14 +116,14 @@ func (mr *MockGerritClientMockRecorder) ChangeEditFileContent(ctx, in interface{
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) DeleteEditFileContent(ctx context.Context, in *DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -136,14 +136,14 @@ func (mr *MockGerritClientMockRecorder) DeleteEditFileContent(ctx, in interface{
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ChangeEditPublish", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -173,6 +173,26 @@ func (mr *MockGerritClientMockRecorder) AddReviewer(ctx, in interface{}, opts ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritClient)(nil).AddReviewer), varargs...)
+}
+
+// DeleteReviewer mocks base method.
+func (m *MockGerritClient) DeleteReviewer(ctx context.Context, in *DeleteReviewerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteReviewer", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReviewer indicates an expected call of DeleteReviewer.
+func (mr *MockGerritClientMockRecorder) DeleteReviewer(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReviewer", reflect.TypeOf((*MockGerritClient)(nil).DeleteReviewer), varargs...)
 }
 
 // SetReview mocks base method.
@@ -424,10 +444,10 @@ func (mr *MockGerritServerMockRecorder) CreateChange(arg0, arg1 interface{}) *go
 }
 
 // ChangeEditFileContent mocks base method.
-func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -439,10 +459,10 @@ func (mr *MockGerritServerMockRecorder) ChangeEditFileContent(arg0, arg1 interfa
 }
 
 // DeleteEditFileContent mocks base method.
-func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) DeleteEditFileContent(arg0 context.Context, arg1 *DeleteEditFileContentRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteEditFileContent", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -454,10 +474,10 @@ func (mr *MockGerritServerMockRecorder) DeleteEditFileContent(arg0, arg1 interfa
 }
 
 // ChangeEditPublish mocks base method.
-func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*empty.Empty, error) {
+func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditPublish", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -481,6 +501,21 @@ func (m *MockGerritServer) AddReviewer(arg0 context.Context, arg1 *AddReviewerRe
 func (mr *MockGerritServerMockRecorder) AddReviewer(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritServer)(nil).AddReviewer), arg0, arg1)
+}
+
+// DeleteReviewer mocks base method.
+func (m *MockGerritServer) DeleteReviewer(arg0 context.Context, arg1 *DeleteReviewerRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteReviewer", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReviewer indicates an expected call of DeleteReviewer.
+func (mr *MockGerritServerMockRecorder) DeleteReviewer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReviewer", reflect.TypeOf((*MockGerritServer)(nil).DeleteReviewer), arg0, arg1)
 }
 
 // SetReview mocks base method.

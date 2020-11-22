@@ -478,6 +478,29 @@ func TestAddReviewer(t *testing.T) {
 	})
 }
 
+func TestDeleteReviewer(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Delete reviewer", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			// API returns 204 on success.
+			w.WriteHeader(204)
+		})
+		defer srv.Close()
+
+		_, err := c.DeleteReviewer(ctx, &gerritpb.DeleteReviewerRequest{
+			Number:    42,
+			Project:   "someproject",
+			AccountId: "jdoe@example.com",
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers/jdoe@example.com/delete")
+	})
+}
+
 func TestAddToAttentionSet(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
