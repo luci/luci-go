@@ -178,7 +178,7 @@ func (f *fetcher) new(ctx context.Context) error {
 	case gerritpb.ChangeStatus_NEW:
 		// OK, proceed.
 	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
-		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus().String())
+		logging.Debugf(ctx, "%s is %s", f, ci.GetStatus())
 		return nil
 	default:
 		logging.Warningf(ctx, "%s has unknown status %d %s", f, ci.GetStatus().Number(), ci.GetStatus().String())
