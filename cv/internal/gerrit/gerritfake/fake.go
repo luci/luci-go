@@ -35,9 +35,24 @@ import (
 
 // Fake simulates Gerrit for CV tests.
 type Fake struct {
-	m  sync.Mutex
+	// m protects all other members below.
+	m sync.Mutex
+
+	// cs is a set of changes, indexed by (host, change number).
+	// See key() function.
 	cs map[string]*Change
-	// TODO(tandrii): add determining relationships between CLs.
+
+	// parentsOf maps a change's patchset (host, change number, patchset)
+	// to one or more Git parents, each parent is another change's patchset.
+	//
+	// parentsOf[X] can be read as "changes on which X depends non-transitively".
+	//
+	// parentsOf is essentially the DAG (directed acyclic graph) that Git stores.
+	parentsOf map[string][]string
+	// childrenOf is a reverse of parentsOf.
+	//
+	// childrenOf[X] can be read as "changes which depend on X non-transitively".
+	childrenOf map[string][]string
 }
 
 func (f *Fake) Install(ctx context.Context) context.Context {
@@ -357,6 +372,38 @@ func (f *Fake) DeleteChange(host string, change int, mut func(c *Change)) {
 	mut(c)
 }
 
+// SetDependsOn establishes Git relationship between a child CL and 1 or more
+// parents, which are considered dependencies of the child CL.
+//
+// Child and each parent can be specified as either:
+//  * Change or ChangeInfo, in which case their current patchset is used,
+//  * <change>_<patchset>, e.g. "10_3".
+func (f *Fake) SetDependsOn(host string, child interface{}, parents ...interface{}) {
+	f.m.Lock()
+	defer f.m.Unlock()
+	if f.parentsOf == nil {
+		f.parentsOf = make(map[string][]string, 1)
+	}
+	if f.childrenOf == nil {
+		f.childrenOf = make(map[string][]string, len(parents))
+	}
+
+	ch, ps := parseChangePatchset(child)
+	ckey := psKey(host, ch, ps)
+	if _, _, _, err := f.resolvePSKeyLocked(ckey); err != nil {
+		panic(err)
+	}
+	for _, p := range parents {
+		ch, ps = parseChangePatchset(p)
+		pkey := psKey(host, ch, ps)
+		if _, _, _, err := f.resolvePSKeyLocked(pkey); err != nil {
+			panic(err)
+		}
+		f.parentsOf[ckey] = append(f.parentsOf[ckey], pkey)
+		f.childrenOf[pkey] = append(f.childrenOf[pkey], ckey)
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
@@ -366,6 +413,24 @@ func (c *Change) key() string {
 
 func key(host string, change int) string {
 	return fmt.Sprintf("%s/%d", host, change)
+}
+
+func psKey(host string, change, ps int) string {
+	return fmt.Sprintf("%s/%d/%d", host, change, ps)
+}
+
+func splitPSKey(k string) (key string, ps int) {
+	i := strings.LastIndex(k, "/")
+	return k[:i], atoi(k[i+1:])
+}
+
+func (c *Change) findRevisionForPS(ps int) (rev string, ri *gerritpb.RevisionInfo) {
+	for rev, ri := range c.Info.GetRevisions() {
+		if ri.GetNumber() == int32(ps) {
+			return rev, ri
+		}
+	}
+	return "", nil
 }
 
 func atoi64(s string) int64 {
@@ -382,4 +447,35 @@ func atoi32(s string) int32 {
 
 func atoi(s string) int {
 	return int(atoi64(s))
+}
+
+func parseChangePatchset(s interface{}) (int, int) {
+	switch v := s.(type) {
+	case *gerritpb.ChangeInfo:
+		return int(v.GetNumber()), int(v.GetRevisions()[v.GetCurrentRevision()].GetNumber())
+	case *Change:
+		return parseChangePatchset(v.Info)
+	case string:
+		if j := strings.IndexRune(v, '_'); j != -1 {
+			return int(atoi64(v[:j])), int(atoi64(v[j+1:]))
+		}
+		panic(fmt.Errorf("unsupported %q: use change_patchset e.g. 123_1", v))
+	default:
+		panic(fmt.Errorf("unsupported type %T %v as change patchset", s, v))
+	}
+}
+
+func (f *Fake) resolvePSKeyLocked(psk string) (ch *Change, rev string, ri *gerritpb.RevisionInfo, err error) {
+	k, ps := splitPSKey(psk)
+	var ok bool
+	ch, ok = f.cs[k]
+	if !ok {
+		err = status.Errorf(codes.Unknown, "fake relation chain invalid: missing %s change", k)
+		return
+	}
+	rev, ri = ch.findRevisionForPS(ps)
+	if ri == nil {
+		err = status.Errorf(codes.Unknown, "fake relation chain invalid: missing patchset %d for %s change", ps, k)
+	}
+	return
 }
