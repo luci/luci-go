@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a32a87c7_c0c58f4c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:19:05Z",
+      "side": 1,
+      "message": "In the latest patchset you have C (which according to https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info means \"copied\"), is it meant to just be M (modified)? (Darn these short file status abbreviations...)",
+      "parentUuid": "570825bd_2535bd29",
+      "range": {
+        "startLine": 321,
+        "startChar": 63,
+        "endLine": 321,
+        "endChar": 75
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "edade30c_c84eeeb2",
