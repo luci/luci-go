@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2ce8ac1_21b9b247",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:59:36Z",
+      "side": 1,
+      "message": "LGTM with comment phrasing nits",
+      "revId": "e4cb937485b99f4bd37e884e0b70002f78d6b5f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bec1e983_4f68568c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:59:36Z",
+      "side": 1,
+      "message": "isn\u0027t",
+      "range": {
+        "startLine": 167,
+        "startChar": 23,
+        "endLine": 167,
+        "endChar": 26
+      },
+      "revId": "e4cb937485b99f4bd37e884e0b70002f78d6b5f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7772986b_84215394",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:59:36Z",
+      "side": 1,
+      "message": "\"It\u0027s set as a key in the revisions map\", or maybe: \"It\u0027s available as a key in the revisions map\"",
+      "range": {
+        "startLine": 167,
+        "startChar": 43,
+        "endLine": 167,
+        "endChar": 74
+      },
+      "revId": "e4cb937485b99f4bd37e884e0b70002f78d6b5f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a75bfa4_32eddf36",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:59:36Z",
+      "side": 1,
+      "message": "\", aka CL description,\"",
+      "range": {
+        "startLine": 332,
+        "startChar": 27,
+        "endLine": 332,
+        "endChar": 46
+      },
+      "revId": "e4cb937485b99f4bd37e884e0b70002f78d6b5f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd2dd2d5_008b091b",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:59:36Z",
+      "side": 1,
+      "message": "Status",
+      "range": {
+        "startLine": 364,
+        "startChar": 16,
+        "endLine": 364,
+        "endChar": 23
+      },
+      "revId": "e4cb937485b99f4bd37e884e0b70002f78d6b5f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
