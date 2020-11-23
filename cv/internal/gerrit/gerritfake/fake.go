@@ -102,6 +102,7 @@ func WithCLs(cs ...*Change) *Fake {
 		cpy := &Change{
 			Host: c.Host,
 			ACLs: c.ACLs,
+			Info: &gerritpb.ChangeInfo{},
 		}
 		proto.Merge(cpy.Info, c.Info)
 		f.cs[c.key()] = cpy
@@ -118,6 +119,7 @@ func WithCIs(host string, acls AccessCheck, cis ...*gerritpb.ChangeInfo) *Fake {
 		c := &Change{
 			Host: host,
 			ACLs: acls,
+			Info: &gerritpb.ChangeInfo{},
 		}
 		proto.Merge(c.Info, ci)
 		f.cs[c.key()] = c
