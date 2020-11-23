@@ -39,6 +39,30 @@
       },
       "revId": "3dc9ada7f76cb8664f49e26091ed3c3a179d21a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3b9a557_c473d103",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T20:08:19Z",
+      "side": 1,
+      "message": "It should be, otherwise, it\u0027d leak existence of an object to unauthorized to read it account.",
+      "parentUuid": "69c932a6_1e0ecc6e",
+      "range": {
+        "startLine": 224,
+        "startChar": 39,
+        "endLine": 224,
+        "endChar": 53
+      },
+      "revId": "3dc9ada7f76cb8664f49e26091ed3c3a179d21a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
