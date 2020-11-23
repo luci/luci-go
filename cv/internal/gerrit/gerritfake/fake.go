@@ -102,6 +102,7 @@ func WithCLs(cs ...*Change) *Fake {
 		cpy := &Change{
 			Host: c.Host,
 			ACLs: c.ACLs,
+			Info: &gerritpb.ChangeInfo{},
 		}
 		proto.Merge(cpy.Info, c.Info)
 		f.cs[c.key()] = cpy
@@ -118,6 +119,7 @@ func WithCIs(host string, acls AccessCheck, cis ...*gerritpb.ChangeInfo) *Fake {
 		c := &Change{
 			Host: host,
 			ACLs: acls,
+			Info: &gerritpb.ChangeInfo{},
 		}
 		proto.Merge(c.Info, ci)
 		f.cs[c.key()] = c
@@ -422,6 +424,20 @@ func psKey(host string, change, ps int) string {
 func splitPSKey(k string) (key string, ps int) {
 	i := strings.LastIndex(k, "/")
 	return k[:i], atoi(k[i+1:])
+}
+
+func (c *Change) resolveRevision(r string) (int, *gerritpb.RevisionInfo, error) {
+	if ri, ok := c.Info.GetRevisions()[r]; ok {
+		return int(ri.GetNumber()), ri, nil
+	}
+	if ps, err := strconv.Atoi(r); err == nil {
+		_, ri := c.findRevisionForPS(ps)
+		if ri != nil {
+			return ps, ri, nil
+		}
+	}
+	return 0, nil, status.Errorf(codes.NotFound,
+		"couldn't resolve change %d revision %q", c.Info.GetNumber(), r)
 }
 
 func (c *Change) findRevisionForPS(ps int) (rev string, ri *gerritpb.RevisionInfo) {
