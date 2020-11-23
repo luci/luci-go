@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package implements stateful Gerrit polling.
 package poller
 
 import (
@@ -68,8 +69,10 @@ type state struct {
 	EVersion int64 `gae:",noindex"`
 	// ConfigHash defines which Config version was last worked on.
 	ConfigHash string `gae:",noindex"`
-	// LastFullPollStartTime is when last full poll was started.
-	LastFullPollStartTime time.Time `gae:",noindex"`
-	// LastIncPollStartTime is when last incremental poll was started.
-	LastIncPollStartTime time.Time `gae:",noindex"`
+	// SubPollers track individual states of sub pollers.
+	//
+	// Most LUCI projects will have just 1 per Gerrit host,
+	// but CV may split the set of watched Gerrit projects (aka Git repos) on the
+	// same Gerrit host among several SubPollers.
+	SubPollers *SubPollers
 }
