@@ -104,6 +104,52 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebe673cf_d7e07926",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T23:07:36Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 138,
+        "endChar": 2
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b396f9ce_a3ab7af8",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T23:07:36Z",
+      "side": 1,
+      "message": "Is this intentional? why 31 bit instead of 32 bit?",
+      "range": {
+        "startLine": 156,
+        "startChar": 41,
+        "endLine": 156,
+        "endChar": 43
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c342a795_cb31b4be",
