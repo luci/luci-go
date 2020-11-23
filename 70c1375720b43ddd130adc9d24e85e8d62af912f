@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d3c97f9_b73bf9ed",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:41:32Z",
+      "side": 1,
+      "message": "Indeed, that together with the comments do make it clearer, thanks.",
+      "parentUuid": "d42d5301_42b68134",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9d0401bb_c9fd5f9c",
@@ -173,6 +197,24 @@
       "side": 1,
       "message": "Expanded comment. PTAL!\n\n\u003e Parent is parent in the git sense, right, and most commits/patchsets have one parent, unless there\u0027s a merge?\n\nYes.\n\n\u003e And we say a child \"depends on\" its parents, and each parent is a dependency of the child?\n\nyes.",
       "parentUuid": "72f916c0_41bf10de",
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c61b2658_355a400e",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:41:32Z",
+      "side": 1,
+      "message": "Thanks for clarifying.",
+      "parentUuid": "8f463886_d3c119c0",
       "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
