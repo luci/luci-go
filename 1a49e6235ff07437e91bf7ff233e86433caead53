@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c08912c_f5d22927",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 9
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T01:26:34Z",
+      "side": 1,
+      "message": "s/to add/from adding/",
+      "range": {
+        "startLine": 94,
+        "startChar": 68,
+        "endLine": 94,
+        "endChar": 74
+      },
+      "revId": "1a49e6235ff07437e91bf7ff233e86433caead53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "548b5d32_504cc48e",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 9
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T01:26:34Z",
+      "side": 1,
+      "message": "I assume this should be _?",
+      "range": {
+        "startLine": 101,
+        "startChar": 58,
+        "endLine": 101,
+        "endChar": 59
+      },
+      "revId": "1a49e6235ff07437e91bf7ff233e86433caead53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f3b5dbe_d0cd8243",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 9
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T01:26:34Z",
+      "side": 1,
+      "message": "split",
+      "range": {
+        "startLine": 128,
+        "startChar": 12,
+        "endLine": 128,
+        "endChar": 16
+      },
+      "revId": "1a49e6235ff07437e91bf7ff233e86433caead53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
