@@ -16,6 +16,75 @@
       "message": "PTAL",
       "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a77475af_0d9fa38f",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:09:48Z",
+      "side": 1,
+      "message": "looks we have two ways to indicate this.\nthis enum and QueryArtifactsRequest.\n\nAlso enum seems less flexible: if we ever add a third parent, then it will be impossible to select only INVOCATION and TEST_RESULTS.\n\nin general, the fields in this message seem to describe an artifact predicate. Would ArtifactPredicate message in predicate.proto make sense? then Artifacts message would be consistent with TestResults, and maybe we can reuse ArtifactPredicate in QueryArtifactsRequest.",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 169,
+        "endChar": 5
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01aaf39a_69b11fb9",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:09:48Z",
+      "side": 1,
+      "message": "why rename this field? this would require a migration. besides, we are not exporting tests\n\nyou can just move the old field inside the oneof",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 20
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ad2c260_21ab51fd",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:09:48Z",
+      "side": 1,
+      "message": "artifacts",
+      "range": {
+        "startLine": 183,
+        "startChar": 14,
+        "endLine": 183,
+        "endChar": 22
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
