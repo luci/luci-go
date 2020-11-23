@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bce9f094_8b302071",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-23T01:14:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6522402c_8f6b6601",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 40
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bf22d986_e7922a96",
@@ -65,6 +89,54 @@
         "startChar": 2,
         "endLine": 84,
         "endChar": 63
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6103305d_42b596bb",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-23T01:14:04Z",
+      "side": 1,
+      "message": "Discussed with jsca@. There is actually nothing wrong with the markdowns from users (in the sense that the markdowns are valid markdown - for example, the markdown \"\u003cdiv\u003eheader\u003cbr/\u003e\u003c/div\u003econtent\" is valid). It would be totally fine if we render the whole markdown in content.\n\nThe problem here is that we made the decision to split the markdown into \"header\" and \"content\" by the first \u003cbr/\u003e, which may not always been possible. It could result in invalid markdown or cause header becoming overly complicated. In such cases, we should not split, but just show everything in content.",
+      "parentUuid": "20700a98_25a5d440",
+      "range": {
+        "startLine": 84,
+        "startChar": 2,
+        "endLine": 84,
+        "endChar": 63
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac81c29c_a59654cf",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-23T01:14:04Z",
+      "side": 1,
+      "message": "Added comments",
+      "parentUuid": "bf22d986_e7922a96",
+      "range": {
+        "startLine": 84,
+        "startChar": 24,
+        "endLine": 84,
+        "endChar": 50
       },
       "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
