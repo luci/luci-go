@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb7a6271_ac20d715",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "LGTM, good clear tests.",
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "078bf3d1_67f7d583",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "see more at:",
+      "range": {
+        "startLine": 19,
+        "startChar": 14,
+        "endLine": 19,
+        "endChar": 24
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6119a5f7_4257480b",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "Thanks for adding the detailed information here, it\u0027s helpful :-)",
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9863b41_9749e184",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "Nit: you could remove these two words, and maybe change the comma to a semicolon.",
+      "range": {
+        "startLine": 68,
+        "startChar": 50,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7ebd0b8_b863f2cc",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "if",
+      "range": {
+        "startLine": 96,
+        "startChar": 21,
+        "endLine": 96,
+        "endChar": 23
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c342a795_cb31b4be",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T21:48:15Z",
+      "side": 1,
+      "message": "multiline",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 27
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
