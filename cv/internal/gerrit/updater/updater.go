@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -195,7 +196,162 @@ func (f *fetcher) new(ctx context.Context) error {
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
-	return errors.New("not implemented")
+	resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
+		Number:     f.change,
+		Project:    f.gerritProjectIfKnown(),
+		RevisionId: f.mustCurrentRevision(),
+	})
+	switch code := grpcutil.Code(err); code {
+	case codes.OK:
+		return f.setGitDeps(ctx, resp.GetChanges())
+	case codes.PermissionDenied, codes.NotFound:
+		// Getting this right after successfully fetching ChangeInfo should
+		// typically be due to eventual consistency of Gerrit, and rarely due to
+		// change of ACLs. So, err transiently s.t. retry handles the same error
+		// when re-fetching ChangeInfo.
+		return errors.Annotate(err, "failed to fetch related changes for %s", f).Tag(transient.Tag).Err()
+	default:
+		return unhandledError(ctx, err, "failed to fetch related changes for %s", f)
+	}
+}
+
+// setGitDeps sets GerritGitDeps based on list of related changes provided by
+// Gerrit.GetRelatedChanges RPC.
+func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) error {
+	// Gerrit does not provide API that returns just the changes which a given
+	// change depends on, but has the API call that returns the following changes:
+	//   (1) those on which this change depends, transitively. Among these,
+	//       some CLs may have been already merged.
+	//   (2) this change itself, with its commit and parent(s) hashes
+	//   (3) changes which depend on this change transitively
+	// We need (1).
+	if len(related) == 0 {
+		// Gerrit may not bother to return the CL itself if there are no related
+		// changes.
+		return nil
+	}
+	this, err := f.matchCurrentAmongRelated(ctx, related)
+	if err != nil {
+		return err
+	}
+
+	// Construct a map from revision to a list of changes that it represents.
+	// One may think that list is not necessary:
+	//   two CLs with the same revision should (% sha1 collision) have equal
+	//   commit messages, and hence Change-Id, so should be really the same CL.
+	// However, many Gerrit projects do not require Change-Id in commit message at
+	// upload time, instead generating new Change-Id on the fly.
+	byRevision := make(map[string][]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, len(related))
+	for _, r := range related {
+		rev := r.GetCommit().GetId()
+		byRevision[rev] = append(byRevision[rev], r)
+	}
+
+	thisParentsCount := f.countRelatedWhichAreParents(this, byRevision)
+	if thisParentsCount == 0 {
+		// Quick exit if there are no dependencies of this change (1), only changes
+		// depending on this change (3).
+		return nil
+	}
+
+	// Now starting from `this` change and following parents relation,
+	// find all issues that we can reach via breadth first traversal ordeded by
+	// distance from this CL.
+	// Note that diamond-shaped child->[parent1, parent2]->grantparent are
+	// probably possible, so keeping track of visited commits is required.
+	// Furthermore, the same CL number may appear multiple times in the chain
+	// under different revisions (patchsets).
+	visitedRevs := stringset.New(len(related))
+	ordered := make([]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, 0, len(related))
+	curLevel := make([]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, 0, len(related))
+	nextLevel := make([]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, 1, len(related))
+	nextLevel[0] = this
+	for len(nextLevel) > 0 {
+		curLevel, nextLevel = nextLevel, curLevel[:0]
+		// For determinism of the output.
+		sort.SliceStable(curLevel, func(i, j int) bool {
+			return curLevel[i].GetNumber() < curLevel[j].GetNumber()
+		})
+		ordered = append(ordered, curLevel...)
+		for _, r := range curLevel {
+			for _, p := range r.GetCommit().GetParents() {
+				switch prs := byRevision[p.GetId()]; {
+				case len(prs) == 0:
+					continue
+				case len(prs) > 1:
+					logging.Warningf(ctx, "Gerrit.GetRelatedChanges returned rev %q %d times for %s"+
+						"(ALL Related %s)", p.GetId(), len(prs), f, related)
+					// Avoid borking. Take the first CL by number.
+					for i, x := range prs[1:] {
+						if prs[0].GetNumber() > x.GetNumber() {
+							prs[i+1], prs[0] = prs[0], prs[i+1]
+						}
+					}
+					fallthrough
+				default:
+					if visitedRevs.Add(prs[0].GetCommit().GetId()) {
+						nextLevel = append(nextLevel, prs[0])
+					}
+				}
+			}
+		}
+	}
+
+	deps := make([]*changelist.GerritGitDep, 0, len(ordered)-1)
+	// Specific revision doesn't matter, CV always looks at latest revision,
+	// but since the same CL may have >1 revision, the CL number may be added
+	// several times into `ordered`.
+	// TODO(tandrii): after CQDaemon is removed, consider paying attention to
+	// specific revision of the dependency to notice when parent dep has been
+	// substantially modified such that tryjobs of this change alone ought to be
+	// invalidated (see https://crbug.com/686115).
+	added := make(map[int64]bool, len(ordered))
+	for i, r := range ordered[1:] {
+		n := r.GetNumber()
+		if added[n] {
+			continue
+		}
+		added[n] = true
+		deps = append(deps, &changelist.GerritGitDep{
+			Change: n,
+			// By construction of ordered, immediate dependencies must be located at
+			// ordered[1:1+thisParentsCount], but we are iterating over [1:] subslice.
+			Immediate: i < thisParentsCount,
+		})
+	}
+	f.newSnapshot.GetGerrit().GitDeps = deps
+	return nil
+}
+
+func (f *fetcher) matchCurrentAmongRelated(ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) (
+	this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit, err error) {
+	matched := 0
+	for _, r := range related {
+		if r.GetNumber() == f.change {
+			matched++
+			this = r
+		}
+	}
+	// Sanity check for better error message if Gerrit API changes.
+	if matched != 1 {
+		logging.Errorf(ctx, "Gerrit.GetRelatedChanges should have exactly 1 change "+
+			"matching the given one %s, got %d (all related %s)", f, matched, related)
+		return nil, errors.Reason("Unexpected Gerrit.GetRelatedChangesResponse for %s, see logs", f).Err()
+	}
+	return this, nil
+}
+
+func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit, byRevision map[string][]*gerritpb.GetRelatedChangesResponse_ChangeAndCommit) int {
+	cnt := 0
+	for _, p := range this.GetCommit().GetParents() {
+		// Not all parents may be represented by related CLs.
+		// OTOH, if there are several CLs matching parent revision,
+		// CV will choose just one.
+		if _, ok := byRevision[p.GetId()]; ok {
+			cnt++
+		}
+	}
+	return cnt
 }
 
 // fetchFiles fetches files for the current revision of the new Snapshot.

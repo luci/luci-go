@@ -42,10 +42,13 @@ func (c *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, o
 	panic("not implemented") // TODO: Implement. Must return a copy.
 }
 
-// Gets Mergeable status for a change.
+// Retrieves related changes of a revision.
 //
-// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
-func (c *Client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
+// Related changes are changes that either depend on, or are dependencies of
+// the revision.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
+func (c *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
