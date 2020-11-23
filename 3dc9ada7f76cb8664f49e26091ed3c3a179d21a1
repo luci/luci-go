@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b57e66e_fbea9927",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T20:02:13Z",
+      "side": 1,
+      "message": "Nicely Done! :)",
+      "revId": "3dc9ada7f76cb8664f49e26091ed3c3a179d21a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69c932a6_1e0ecc6e",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T20:02:13Z",
+      "side": 1,
+      "message": "Curious: is this the Gerrit behavior? i.e. returning NotFound instead of PermissionDenied?",
+      "range": {
+        "startLine": 224,
+        "startChar": 39,
+        "endLine": 224,
+        "endChar": 53
+      },
+      "revId": "3dc9ada7f76cb8664f49e26091ed3c3a179d21a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
