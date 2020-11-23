@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "570825bd_2535bd29",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:39:44Z",
+      "side": 1,
+      "message": "Oops, good find. I have no idea why I thought W is default. I just rechecked gerrit.proto and there it\u0027s correct.",
+      "parentUuid": "25a0f5cc_0b5ec97b",
+      "range": {
+        "startLine": 321,
+        "startChar": 63,
+        "endLine": 321,
+        "endChar": 75
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "edade30c_c84eeeb2",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-23T18:15:29Z",
       "side": 1,
       "message": "In this case, the revision was not found, right?\n\nThe convey strings can be a little more verbose/descriptive.",
+      "range": {
+        "startLine": 239,
+        "startChar": 10,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e27f492_35e378fe",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:39:44Z",
+      "side": 1,
+      "message": "It\u0027s actually both. Elaborated.",
+      "parentUuid": "edade30c_c84eeeb2",
       "range": {
         "startLine": 239,
         "startChar": 10,
@@ -83,6 +131,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a5e8521d_2697441d",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:39:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "434b6c19_dc2619c2",
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c926d63b_bebbc8ad",
         "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
         "patchSetId": 3
@@ -94,6 +160,30 @@
       "writtenOn": "2020-11-23T18:15:29Z",
       "side": 1,
       "message": "This just means that this tests that file names can be specified in `Files` (as above), right?",
+      "range": {
+        "startLine": 257,
+        "startChar": 10,
+        "endLine": 257,
+        "endChar": 16
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f231511b_499bf10d",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:39:44Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "c926d63b_bebbc8ad",
       "range": {
         "startLine": 257,
         "startChar": 10,
