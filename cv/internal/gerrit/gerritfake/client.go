@@ -28,6 +28,7 @@ import (
 type Client struct {
 	f           *Fake
 	luciProject string // used in ACL checks.
+	host        string
 }
 
 var _ gerrit.Client = (*Client)(nil)

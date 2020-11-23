@@ -46,7 +46,7 @@ func (f *Fake) Install(ctx context.Context) context.Context {
 			// Quick catch of common mistake.
 			panic(fmt.Errorf("wrong gerritHost or luciProject: %q %q", gerritHost, luciProject))
 		}
-		return &Client{f: f, luciProject: luciProject}, nil
+		return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 	})
 }
 
