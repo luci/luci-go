@@ -82,7 +82,7 @@ func BenchmarkE2E(b *testing.B) {
 		}
 		b.Run("Query-"+strings.TrimPrefix(n.name, "//"), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				q := filegraph.Query{Sources: []filegraph.Node{n}}
+				q := filegraph.Query{Sources: []filegraph.Node{n}, EdgeReader: &EdgeReader{}}
 				q.Run(func(*filegraph.ShortestPath) bool {
 					return true
 				})
