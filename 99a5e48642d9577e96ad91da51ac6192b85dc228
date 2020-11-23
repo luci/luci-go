@@ -114,6 +114,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "914e7552_32402363",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-23T23:52:08Z",
+      "side": 1,
+      "message": "It looks like a breaking change in startlark to me: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star;l\u003d69\n\nIf yes, then the change in this CL is inevitable?",
+      "parentUuid": "f0dddfbf_d07a9db4",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 20
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8ad2c260_21ab51fd",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 2
