@@ -64,6 +64,52 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "303d7e8b_556e68a3",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T18:34:41Z",
+      "side": 1,
+      "message": "IIUC, we want user mutate the CL through modification API defined below. Shall we clone the proto before assignment to prevent unexpected modification?",
+      "range": {
+        "startLine": 100,
+        "startChar": 9,
+        "endLine": 100,
+        "endChar": 11
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53b5b1d3_a4d99f4d",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T18:34:41Z",
+      "side": 1,
+      "message": "Should we also specify the other pre-populated fields?",
+      "range": {
+        "startLine": 119,
+        "startChar": 67,
+        "endLine": 120,
+        "endChar": 9
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "90e8a5fe_c9642abc",
@@ -169,6 +215,23 @@
         "endLine": 279,
         "endChar": 31
       },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53d9998f_d0f89fc6",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T18:34:41Z",
+      "side": 1,
+      "message": "Del?",
       "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
