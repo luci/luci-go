@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "1edb2475_ddc62cd7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:02:31Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 9,
+        "startChar": 42,
+        "endLine": 9,
+        "endChar": 50
+      },
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "b2ad6e84_8cc38319",
@@ -14,6 +37,46 @@
       "writtenOn": "2020-11-23T21:58:28Z",
       "side": 1,
       "message": "PTAL",
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bed2460b_1472d820",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:02:31Z",
+      "side": 1,
+      "message": "could you elaborate how would you split a text artifact in shards? if shard boundaries are not aligned with line boundaries, then line regexping wouldn\u0027t work",
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af423a1a_d720df30",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T22:02:31Z",
+      "side": 1,
+      "message": "Artifact shard content?",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 13
+      },
       "revId": "f1489c97e28ff624b8375b814728266df751f231",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
