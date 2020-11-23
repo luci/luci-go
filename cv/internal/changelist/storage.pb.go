@@ -284,7 +284,7 @@ type Gerrit struct {
 	Info *gerrit.ChangeInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
 	// Files are filenames touched in the current revision.
 	//
-	// It's derived frm gerrit.ListFilesResponse, see
+	// It's derived from gerrit.ListFilesResponse, see
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files.
 	Files []string `protobuf:"bytes,2,rep,name=files,proto3" json:"files,omitempty"`
 	// Git dependencies of the current revision.

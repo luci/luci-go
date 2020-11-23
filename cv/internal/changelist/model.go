@@ -17,6 +17,7 @@ package changelist
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,6 +49,21 @@ func GobID(host string, change int64) (ExternalID, error) {
 		return "", errors.Reason("invalid host %q: must not contain /", host).Err()
 	}
 	return ExternalID(fmt.Sprintf("gerrit/%s/%d", host, change)), nil
+}
+
+// ParseGobID returns Gerrit host and change if this is a GobID.
+func (e ExternalID) ParseGobID() (host string, change int64, err error) {
+	parts := strings.Split(string(e), "/")
+	if len(parts) != 3 || parts[0] != "gerrit" {
+		err = errors.Reason("%q is not a valid GobID", e).Err()
+		return
+	}
+	host = parts[1]
+	change, err = strconv.ParseInt(parts[2], 10, 63)
+	if err != nil {
+		err = errors.Annotate(err, "%q is not a valid GobID", e).Err()
+	}
+	return
 }
 
 // CL is a CL entity in Datastore.

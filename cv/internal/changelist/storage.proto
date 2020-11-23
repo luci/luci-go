@@ -81,7 +81,7 @@ message Gerrit {
 
   // Files are filenames touched in the current revision.
   //
-  // It's derived frm gerrit.ListFilesResponse, see
+  // It's derived from gerrit.ListFilesResponse, see
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files.
   repeated string files = 2;
 
