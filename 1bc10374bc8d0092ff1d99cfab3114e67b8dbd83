@@ -225,6 +225,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "cfb64ffa_03d0b16d",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T21:40:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6d1244d3_f8d3f156",
+      "range": {
+        "startLine": 119,
+        "startChar": 67,
+        "endLine": 120,
+        "endChar": 9
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "90e8a5fe_c9642abc",
         "filename": "cv/internal/gerrit/gerritfake/fake.go",
         "patchSetId": 4
