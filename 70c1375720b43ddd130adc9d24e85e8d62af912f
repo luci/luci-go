@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d42d5301_42b68134",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:47:44Z",
+      "side": 1,
+      "message": "This is a really good point and I\u0027m glad I read it 3 days after coding it: today, reading it made me very confused myself. I\u0027ve added a doc for each and changed to plural.\n\n\u003e parentOf is a map of each patchset to a list of children (and childOf maps each patchset to its parents), right?\n\nNo, the exact opposite. I hope plural makes it easier.",
+      "parentUuid": "719b6115_20374118",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9d0401bb_c9fd5f9c",
         "filename": "cv/internal/gerrit/gerritfake/fake.go",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-21T23:54:32Z",
       "side": 1,
       "message": "between a child CL",
+      "range": {
+        "startLine": 354,
+        "startChar": 45,
+        "endLine": 354,
+        "endChar": 61
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd119d5f_9b2d2bf6",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:47:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d0401bb_c9fd5f9c",
       "range": {
         "startLine": 354,
         "startChar": 45,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a02d4c3_ac40f073",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:47:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "770965a4_bd10cf96",
+      "range": {
+        "startLine": 357,
+        "startChar": 3,
+        "endLine": 357,
+        "endChar": 7
+      },
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "72f916c0_41bf10de",
@@ -89,6 +161,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8f463886_d3c119c0",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:47:44Z",
+      "side": 1,
+      "message": "Expanded comment. PTAL!\n\n\u003e Parent is parent in the git sense, right, and most commits/patchsets have one parent, unless there\u0027s a merge?\n\nYes.\n\n\u003e And we say a child \"depends on\" its parents, and each parent is a dependency of the child?\n\nyes.",
+      "parentUuid": "72f916c0_41bf10de",
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e9667391_0049a06c",
         "filename": "cv/internal/gerrit/gerritfake/fake.go",
         "patchSetId": 1
@@ -100,6 +190,24 @@
       "writtenOn": "2020-11-21T23:54:32Z",
       "side": 1,
       "message": "What is relkey? It looks like it represents one patchset of one change; does rel stand for relationship? Would the names psKey or revisionKey make sense here?",
+      "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad8be208_6dc0e228",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:47:44Z",
+      "side": 1,
+      "message": "yeah, rel stands for relationship. Let\u0027s use psKey.",
+      "parentUuid": "e9667391_0049a06c",
       "revId": "70c1375720b43ddd130adc9d24e85e8d62af912f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
