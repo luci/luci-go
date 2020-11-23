@@ -20,12 +20,17 @@
 // same commit. The core idea is that relevant files tend to be
 // modified together.
 //
-//  Distance(x, y) = -log2(P({c | c ∈ gitCommits  ∧  {x, y} ⊂ c.files}))
-//    for Ω = {c | c ∈ gitCommits  ∧  x ∈ c.files  ∧  |c.files| ∈ [1, maxCommitSize]}
-//  for some constant maxCommitSize.
+//  Distance(x, y) = -log2(P(y is relevant to x))
+//  P(y is relevant to x) := sum(1/(len(c.files)-1) for c in x.commits if y in c.files) / len(x.commits)
+//  where
+//    x.commits := {c for c in gitCommits if x in c.files and 1 <= len(c.files) <= maxCommitSize}
+//    maxCommitSize is some defined constant.
 //
 // or in English, distance from x to y is -log2 of the probability that y
-// appeared in an x's commit.
+// appears in an x's commit, where the commit is chosen randomly and independently.
+//
+// Note that this formula penalizes large commits. The more files are modified
+// in a commit, the weaker the strength of this signal.
 //
 // This graph defines distance only between files, and not directories.
 package git

@@ -54,8 +54,8 @@ func TestReadWrite(t *testing.T) {
 		Convey(`Two direct children`, func() {
 			foo := &node{name: "//foo", commits: 1}
 			bar := &node{name: "//bar", commits: 2}
-			foo.edges = []edge{{to: bar, commonCommits: 1}}
-			bar.edges = []edge{{to: foo, commonCommits: 1}}
+			foo.edges = []edge{{to: bar, probSum: 1}}
+			bar.edges = []edge{{to: foo, probSum: 1}}
 			test(&Graph{
 				Commit: "deadbeef",
 				root: node{

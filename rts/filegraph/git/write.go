@@ -18,6 +18,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -138,7 +139,7 @@ func (w *writer) writeEdges(n *node) error {
 		if err := w.writeInt(w.indices[e.to]); err != nil {
 			return err
 		}
-		if err := w.writeInt(e.commonCommits); err != nil {
+		if err := w.writeFloat(e.probSum); err != nil {
 			return err
 		}
 	}
@@ -165,6 +166,17 @@ func (w *writer) writeString(s string) error {
 		return err
 	}
 	_, err := io.WriteString(w.w, s)
+	return err
+}
+
+func (w *writer) writeFloat(x float64) error {
+	if w.textMode {
+		_, err := fmt.Fprintln(w.w, x)
+		return err
+	}
+
+	length := binary.PutUvarint(w.varintBuf[:], math.Float64bits(x))
+	_, err := w.w.Write(w.varintBuf[:length])
 	return err
 }
 

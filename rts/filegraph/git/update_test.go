@@ -15,6 +15,7 @@
 package git
 
 import (
+	"math"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,12 +39,12 @@ func TestApply(t *testing.T) {
 				{Path: "a", Status: 'A'},
 			})
 			So(err, ShouldBeNil)
+			// The file is registered, but the commit is otherwise ignored.
 			So(g.root, ShouldResemble, node{
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name:    "//a",
-						commits: 1,
+						name: "//a",
 					},
 				},
 			})
@@ -61,12 +62,12 @@ func TestApply(t *testing.T) {
 					"a": {
 						name:    "//a",
 						commits: 1,
-						edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+						edges:   []edge{{to: g.node("//b"), probSum: 1}},
 					},
 					"b": {
 						name:    "//b",
 						commits: 1,
-						edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+						edges:   []edge{{to: g.node("//a"), probSum: 1}},
 					},
 				},
 			})
@@ -83,14 +84,14 @@ func TestApply(t *testing.T) {
 						"a": {
 							name:    "//a",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:    "//b",
 							commits: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c/d"), commonCommits: 1},
+								{to: g.node("//a"), probSum: 1},
+								{to: g.node("//c/d"), probSum: 1},
 							},
 						},
 						"c": {
@@ -99,7 +100,7 @@ func TestApply(t *testing.T) {
 								"d": {
 									name:    "//c/d",
 									commits: 1,
-									edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+									edges:   []edge{{to: g.node("//b"), probSum: 1}},
 								},
 							},
 						},
@@ -119,12 +120,12 @@ func TestApply(t *testing.T) {
 						"a": {
 							name:    "//a",
 							commits: 2,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 2}},
+							edges:   []edge{{to: g.node("//b"), probSum: 2}},
 						},
 						"b": {
 							name:    "//b",
 							commits: 2,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 2}},
+							edges:   []edge{{to: g.node("//a"), probSum: 2}},
 						},
 					},
 				})
@@ -143,20 +144,20 @@ func TestApply(t *testing.T) {
 						"a": {
 							name:    "//a",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:    "//b",
 							commits: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c"), commonCommits: 1},
+								{to: g.node("//a"), probSum: 1},
+								{to: g.node("//c"), probSum: 1},
 							},
 						},
 						"c": {
 							name:    "//c",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//b"), probSum: 1}},
 						},
 					},
 				})
@@ -173,20 +174,20 @@ func TestApply(t *testing.T) {
 						"a": {
 							name:    "//a",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:    "//b",
 							commits: 1,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c")},
+								{to: g.node("//a"), probSum: 1},
+								{to: g.node("//c"), probSum: math.NaN()},
 							},
 						},
 						"c": {
 							name:    "//c",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b")}},
+							edges:   []edge{{to: g.node("//b"), probSum: math.NaN()}},
 						},
 					},
 				})
@@ -203,12 +204,12 @@ func TestApply(t *testing.T) {
 						"a": {
 							name:    "//a",
 							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:    "//b",
 							commits: 1,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+							edges:   []edge{{to: g.node("//a"), probSum: 1}},
 						},
 					},
 				})

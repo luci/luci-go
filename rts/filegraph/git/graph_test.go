@@ -105,8 +105,8 @@ func TestGraph(t *testing.T) {
 		Convey(`EdgeReader`, func() {
 			bar := &node{commits: 4}
 			foo := &node{commits: 2}
-			foo.edges = []edge{{to: bar, commonCommits: 1}}
-			bar.edges = []edge{{to: foo, commonCommits: 1}}
+			foo.edges = []edge{{to: bar, probSum: 1}}
+			bar.edges = []edge{{to: foo, probSum: 1}}
 
 			type outgoingEdge struct {
 				other    filegraph.Node
