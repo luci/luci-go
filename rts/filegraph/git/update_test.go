@@ -15,6 +15,7 @@
 package git
 
 import (
+	"math"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,12 +39,12 @@ func TestApply(t *testing.T) {
 				{Path: "a", Status: 'A'},
 			})
 			So(err, ShouldBeNil)
+			// The file is registered, but the commit is otherwise ignored.
 			So(g.root, ShouldResemble, node{
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name:    "//a",
-						commits: 1,
+						name: "//a",
 					},
 				},
 			})
@@ -59,14 +60,14 @@ func TestApply(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name:    "//a",
-						commits: 1,
-						edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+						name:               "//a",
+						sumProbDenominator: 1,
+						edges:              []edge{{to: g.node("//b"), probSum: 1}},
 					},
 					"b": {
-						name:    "//b",
-						commits: 1,
-						edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+						name:               "//b",
+						sumProbDenominator: 1,
+						edges:              []edge{{to: g.node("//a"), probSum: 1}},
 					},
 				},
 			})
@@ -81,25 +82,25 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							sumProbDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
+							name:               "//b",
+							sumProbDenominator: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c/d"), commonCommits: 1},
+								{to: g.node("//a"), probSum: 1},
+								{to: g.node("//c/d"), probSum: 1},
 							},
 						},
 						"c": {
 							name: "//c",
 							children: map[string]*node{
 								"d": {
-									name:    "//c/d",
-									commits: 1,
-									edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+									name:               "//c/d",
+									sumProbDenominator: 1,
+									edges:              []edge{{to: g.node("//b"), probSum: 1}},
 								},
 							},
 						},
@@ -117,14 +118,14 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 2,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 2}},
+							name:               "//a",
+							sumProbDenominator: 2,
+							edges:              []edge{{to: g.node("//b"), probSum: 2}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 2}},
+							name:               "//b",
+							sumProbDenominator: 2,
+							edges:              []edge{{to: g.node("//a"), probSum: 2}},
 						},
 					},
 				})
@@ -141,22 +142,22 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							sumProbDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
+							name:               "//b",
+							sumProbDenominator: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c"), commonCommits: 1},
+								{to: g.node("//a"), probSum: 1},
+								{to: g.node("//c"), probSum: 1},
 							},
 						},
 						"c": {
-							name:    "//c",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//c",
+							sumProbDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 					},
 				})
@@ -167,29 +168,17 @@ func TestApply(t *testing.T) {
 					{Path: "b", Path2: "c", Status: 'R'},
 				})
 				So(err, ShouldBeNil)
-				So(g.root, ShouldResemble, node{
-					name: "//",
-					children: map[string]*node{
-						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
-						},
-						"b": {
-							name:    "//b",
-							commits: 1,
-							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c")},
-							},
-						},
-						"c": {
-							name:    "//c",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b")}},
-						},
-					},
-				})
+
+				// Note: ShouldResemble does not work for NaN.
+				So(g.root.children["b"].edges, ShouldHaveLength, 2)
+				e := g.root.children["b"].edges[1]
+				So(e.to, ShouldEqual, g.node("//c"))
+				So(math.IsNaN(e.probSum), ShouldBeTrue)
+
+				So(g.root.children["c"].edges, ShouldHaveLength, 1)
+				e = g.root.children["c"].edges[0]
+				So(e.to, ShouldEqual, g.node("//b"))
+				So(math.IsNaN(e.probSum), ShouldBeTrue)
 			})
 
 			Convey(`Remove one`, func() {
@@ -201,14 +190,14 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							sumProbDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 1,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+							name:               "//b",
+							sumProbDenominator: 1,
+							edges:              []edge{{to: g.node("//a"), probSum: 1}},
 						},
 					},
 				})
