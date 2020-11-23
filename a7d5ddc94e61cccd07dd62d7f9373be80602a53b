@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54c07507_e75710b6",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:29:17Z",
+      "side": 1,
+      "message": "Nope, accidental leftover. Thanks!",
+      "parentUuid": "87afbd0c_0d7179ae",
+      "revId": "a7d5ddc94e61cccd07dd62d7f9373be80602a53b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab4a2e65_0688c414",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-23T18:32:47Z",
       "side": 1,
       "message": "unconditionally",
+      "range": {
+        "startLine": 87,
+        "startChar": 68,
+        "endLine": 87,
+        "endChar": 82
+      },
+      "revId": "a7d5ddc94e61cccd07dd62d7f9373be80602a53b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfa370c3_29922aa3",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:29:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab4a2e65_0688c414",
       "range": {
         "startLine": 87,
         "startChar": 68,
