@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9837274d_37c3e40c",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-23T22:38:18Z",
+      "side": 1,
+      "message": "Moving the old field inside the oneof is a breaking change? \n\nIt\u0027ll change the definition from \n\u0026pb.BigQueryExport{\n    ...\n    TestResults: \u0026pb.BigQueryExport_TestResults{},\n}\n\nto \n\n\u0026pb.BigQueryExport{\n    ...\n    ResultType: \u0026pb.BigQueryExport_TestResults{},\n}",
+      "parentUuid": "01aaf39a_69b11fb9",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 20
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8ad2c260_21ab51fd",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 2
