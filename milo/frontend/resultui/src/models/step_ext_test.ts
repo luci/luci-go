@@ -18,11 +18,12 @@ import { BuildStatus } from '../services/buildbucket';
 import { StepExt } from './step_ext';
 
 describe('StepExt', () => {
-  function createStep(name: string, status = BuildStatus.Success) {
+  function createStep(name: string, status = BuildStatus.Success, summaryMarkdown = '') {
     return new StepExt({
       name,
       startTime: '2020-11-01T21:43:03.351951Z',
       status,
+      summaryMarkdown,
     });
   }
 
@@ -171,6 +172,57 @@ describe('StepExt', () => {
       step.children.push(createStep('parent|child1', BuildStatus.Success));
       step.children.push(createStep('parent|child2', BuildStatus.Failure));
       assert.isTrue(step.failed);
+    });
+  });
+
+  describe('summary header and content should be split properly', () => {
+    it('for no summary', async () => {
+      const step = createStep('step', BuildStatus.Success, undefined);
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '');
+    });
+
+    it('for empty summary', async () => {
+      const step = createStep('step', BuildStatus.Success, '');
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '');
+    });
+
+    it('for text summary', async () => {
+      const step = createStep('step', BuildStatus.Success, 'this is some text');
+      assert.strictEqual(step.header, 'this is some text');
+      assert.strictEqual(step.summary, '');
+    });
+
+    it('for header and content separated by <br/>', async () => {
+      const step = createStep('step', BuildStatus.Success, 'header<br/>content');
+      assert.strictEqual(step.header, 'header');
+      assert.strictEqual(step.summary, 'content');
+    });
+    it('for header and content separated by <br/>, header is a link', async () => {
+      const step = createStep('step', BuildStatus.Success, '<a href="http://google.com">Link</a><br/>content');
+      assert.strictEqual(step.header, '<a href="http://google.com">Link</a>');
+      assert.strictEqual(step.summary, 'content');
+    });
+    it('for header and content separated by <br/>, header is a list', async () => {
+      const step = createStep('step', BuildStatus.Success, '<ul><li>item</li></ul><br/>content');
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '<ul><li>item</li></ul><br/>content');
+    });
+    it('for header is a list', async () => {
+      const step = createStep('step', BuildStatus.Success, '<ul><li>item1</li><li>item2</li></ul>');
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '<ul><li>item1</li><li>item2</li></ul>');
+    });
+    it('for <br/> is contained in some tags', async () => {
+      const step = createStep('step', BuildStatus.Success, '<div>header<br/>other</div>content');
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '<div>header<br/>other</div>content');
+    });
+    it('for <br/> is contained in some nested tags', async () => {
+      const step = createStep('step', BuildStatus.Success, '<div><div>header<br/>other</div></div>content');
+      assert.strictEqual(step.header, '');
+      assert.strictEqual(step.summary, '<div><div>header<br/>other</div></div>content');
     });
   });
 });

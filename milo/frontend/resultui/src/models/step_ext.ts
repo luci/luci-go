@@ -17,6 +17,7 @@
 import { DateTime } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
+import { renderMarkdownUnsanitized } from '../libs/utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
 /**
@@ -80,11 +81,86 @@ export class StepExt {
     return (this.endTime || this.renderTime.get()).diff(this.startTime);
   }
 
-  @computed get header() {
-    return this.summaryMarkdown?.split(/\<br\/?\>/i)[0] || '';
+  /**
+   * canSplitSummaryHtmlCleanly checks if we can split summaryMarkdown into
+   * header and content cleanly by the first <br/> tag.
+   * For example:
+   * 'header<br/>content' -> should return true
+   * '<div>header<br/></div>content' should return false because after the
+   * split, header would become '<div>header' and content would become
+   * '</div>content'. They are invalid.
+   */
+  @computed private get canSplitSummaryHtmlCleanly(): boolean {
+    // We enclose summaryMarkdown in div tag to prevent Markdown-it from adding
+    // extra <p> tag to enclose everything.
+    const markdown = `<div id="markdown_start">${this.summaryMarkdown || ''}</div>`;
+    const summaryHtml = renderMarkdownUnsanitized(markdown);
+    const domParser = new DOMParser();
+    const parsed = domParser.parseFromString(summaryHtml, 'text/html');
+    const brElements = parsed.querySelectorAll('br');
+    // If parent of the first <br> element is not markdown_start, it means we cannot
+    // break header and content cleanly.
+    if (brElements.length > 0) {
+      return brElements[0].parentElement?.getAttribute('id') === 'markdown_start';
+    }
+    return true;
   }
 
+  /**
+   * isHeaderValid checks if header contains invalid elements, in such cases it will
+   * return false
+   * Because header is shown in one line, it should not contain elements such as
+   * <li>.
+   */
+  private isHeaderValid(header: string): boolean {
+    const html = renderMarkdownUnsanitized(header);
+    const domParser = new DOMParser();
+    const parsed = domParser.parseFromString(html, 'text/html');
+    // Do not allow header to contain <li> elements
+    const eles = parsed.querySelectorAll('li');
+    return eles.length === 0;
+  }
+
+  /**
+   * summaryParts tries to split summaryMarkdown into header and content.
+   * If it cannot be split cleanly, for example, if the result is invalid
+   * html, or if the result header contains inappropriate elements, we
+   * do not split and treat everything as content.
+   */
+  @computed get summaryParts() {
+    if (!this.canSplitSummaryHtmlCleanly) {
+      return ['', this.summaryMarkdown || ''];
+    }
+
+    const parts = this.summaryMarkdown?.split(/\<br\/?\>/i) || [''];
+    const header = parts[0] || '';
+    if (!this.isHeaderValid(header)) {
+      return ['', this.summaryMarkdown || ''];
+    }
+    const content = parts.slice(1).join('<br>') || '';
+    return [header, content];
+  }
+
+  /**
+   * header of summaryMarkdown.
+   * It means to provide an overview of summaryMarkdown, and is shown in the UI
+   * even when the corresponding step is collapsed.
+   * Currently, it is the first line of the summaryMarkdown, if the first line
+   * can be extracted cleanly.
+   * For example, if summaryMarkdown is 'header<br/>content'
+   * header should be 'header'
+   */
+  @computed get header() {
+    return this.summaryParts[0];
+  }
+
+  /**
+   * content of summaryMarkdown, aside from header.
+   * It is only shown in the UI if the corresponding step is expanded.
+   * For example, if summaryMarkdown is 'header<br/>content'
+   * summary should be 'content'
+   */
   @computed get summary() {
-    return this.summaryMarkdown?.split(/\<br\/?\>/i).slice(1).join('<br>') || '';
+    return this.summaryParts[1];
   }
 }
