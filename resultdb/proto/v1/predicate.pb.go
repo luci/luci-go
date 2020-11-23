@@ -38,7 +38,7 @@ const (
 type TestResultPredicate_Expectancy int32
 
 const (
-	// All test results satisfiy this.
+	// All test results satisfy this.
 	// WARNING: using this significantly increases response size and latency.
 	TestResultPredicate_ALL TestResultPredicate_Expectancy = 0
 	// A test result must belong to a test variant that has one or more

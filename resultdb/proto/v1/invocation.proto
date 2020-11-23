@@ -147,13 +147,41 @@ message BigQueryExport {
   // Name of the BigQuery Table.
   string table = 3 [ (google.api.field_behavior) = REQUIRED ];
 
-  // TestResultExport indicates that test results should be exported.
+  // TestResults indicates that test results should be exported.
   message TestResults {
     // Use predicate to query test results that should be exported to
     // BigQuery table.
     TestResultPredicate predicate = 1;
   }
+  // Deprecated. Use result_type instead.
   TestResults test_results = 4;
+
+  // Artifacts indicates that artifacts should be exported.
+  message Artifacts {
+    // Filters artifacts based on the type of artifacts.
+    enum Parent {
+      // All artifacts satisfy this.
+      ALL = 0;
+      // Invocation level artifacts satisfy this.
+      INVOCATION = 1;
+      // Test result level artifacts satisfy this.
+      TEST_RESULT = 2;
+    }
+    Parent parent = 1;
+
+    // Use predicate to query artifacts belong to specified test results that
+    // should be exported to BigQuery table.
+    // It only takes effect if parent is set to TEST_RESULT.
+    TestResultPredicate predicate = 2;
+
+    // An artifact must have an id matching this regular expression entirely.
+    string artifact_id_regexp = 3;
+  }
+
+  oneof result_type {
+    TestResults test = 5;
+    Artifacts artifact = 6;
+  }
 }
 
 // HistoryOptions indicates how the invocations should be indexed, so that their
