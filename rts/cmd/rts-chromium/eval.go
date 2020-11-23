@@ -49,7 +49,7 @@ func cmdEval() *subcommands.Command {
 				relatedness and are expensive to process, O(N^2).
 			`))
 			r.Flags.Float64Var(&r.fgMaxDistance, "fg-max-distance", 1, "Max distance from tests to the changed files")
-			// TODO(nodir): add -fg-sibling-relevance flag.
+			r.Flags.Float64Var(&r.fgFamilyDistance, "fg-family-distance", 1.7, "Distance between parents and children")
 			return r
 		},
 	}
@@ -57,10 +57,11 @@ func cmdEval() *subcommands.Command {
 
 type evalRun struct {
 	baseCommandRun
-	ev            eval.Eval
-	checkout      string
-	loadOptions   git.LoadOptions
-	fgMaxDistance float64
+	ev               eval.Eval
+	checkout         string
+	loadOptions      git.LoadOptions
+	fgMaxDistance    float64
+	fgFamilyDistance float64
 
 	fg *git.Graph
 }
@@ -114,7 +115,8 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		EdgeReader: &git.EdgeReader{
 			// We run the query from changed files, but we need distance
 			// from test files to changed files, and not the other way around.
-			Reversed: true,
+			Reversed:       true,
+			FamilyDistance: r.fgFamilyDistance,
 		},
 		MaxDistance: r.fgMaxDistance,
 	}
