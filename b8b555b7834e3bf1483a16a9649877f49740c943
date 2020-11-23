@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b850b988_8c3a9f65",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:26:15Z",
+      "side": 1,
+      "message": "Oh yes!",
+      "parentUuid": "b3dc91e9_b1276c57",
+      "range": {
+        "startLine": 378,
+        "startChar": 42,
+        "endLine": 378,
+        "endChar": 54
+      },
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27854e1b_9f451bb9",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fe8b6e6_c2ae9c34",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:26:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27854e1b_9f451bb9",
+      "range": {
+        "startLine": 381,
+        "startChar": 43,
+        "endLine": 381,
+        "endChar": 44
+      },
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4c360b69_3e90c5a0",
@@ -77,6 +125,24 @@
       "writtenOn": "2020-11-23T19:15:48Z",
       "side": 1,
       "message": "It looks like pkeys is only used in L399. Can we refactor it to the next loop to\n```\nfor _, p :\u003d range parents {\n\tch, ps \u003d parseChangePatchset(p)\n\tpkey :\u003d psKey(host, ch, ps)\n\tif _, _, _, err :\u003d f.resolvePSKeyLocked(pkey); err !\u003d nil {\n\t\tpanic(err)\n\t}\n\tpkeys \u003d append(pkeys, pkey)\n\tf.childrenOf[pkey] \u003d append(f.childrenOf[pkey], ckey)\n\tf.parentsOf[ckey] \u003d append(f.parentsOf[ckey], pkey)\n\n}\n```",
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eef9ce4e_9899919e",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:26:15Z",
+      "side": 1,
+      "message": "Yeah, it can. Done.\n\n(fwiw: I automatically optimize to avoid expensive string hashing, and I cringe at 2 hashes instead of 1 when trying to append to dict value. In my case, I used the bare minimum # of hashes w/o storing slice by pointer inside map value)",
+      "parentUuid": "4c360b69_3e90c5a0",
       "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
