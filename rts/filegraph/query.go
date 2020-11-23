@@ -26,17 +26,38 @@ type Query struct {
 	// Sources are the nodes to start from.
 	Sources []Node
 
+	// EdgeReader is used to read adjacent nodes and distances.
+	EdgeReader EdgeReader
+
 	// MaxDistance, if positive, is the distance threshold.
 	// Nodes further than this are considered unreachable.
 	MaxDistance float64
 
-	// Reversed instructs to follow incoming edges instead of outgoing.
-	Reversed bool
-
-	// TODO(crbug.com/1136280): add SilbingDistance
-
 	heap spHeap
 	dist map[Node]float64
+}
+
+// Node is a node in a directed weighted graph of files.
+// It is either a file or a directory.
+//
+// The weight of edge (x, y), called distance, represents how much y is relevant
+// to x. It is a value between 0 and +inf, where 0 means extremely relevant
+// and +inf means not relevant at all.
+type Node interface {
+	// Name returns node's name.
+	// It is an forward-slash-separated path with "//" prefix,
+	// e.g. "//foo/bar.cc".
+	Name() string
+}
+
+// EdgeReader reads edges of a node.
+type EdgeReader interface {
+	// ReadEdges calls the callback for each n's edge.
+	// If callback returns false, then iteration stops.
+	//
+	// Idempotent: calling many times with the same n reports the same adjcaent
+	// Node objects.
+	ReadEdges(n Node, callback func(to Node, distance float64) (keepGoing bool))
 }
 
 // ShortestPath represents the shortest path from one of sources to a node.
@@ -58,8 +79,6 @@ type ShortestPath struct {
 // If the callback returns false, then the iteration stops.
 func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 	// This function implements Dijkstra's algorithm.
-
-	forward := !q.Reversed // be positive
 
 	q.heap = q.heap[:0]
 
@@ -103,7 +122,7 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 			return
 		}
 
-		consider := func(other Node, distFromCur float64) bool {
+		q.EdgeReader.ReadEdges(cur.Node, func(other Node, distFromCur float64) bool {
 			newDist := cur.Distance + distFromCur
 			if curDist, ok := q.dist[other]; !ok || newDist < curDist {
 				q.dist[other] = newDist
@@ -117,15 +136,7 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 				})
 			}
 			return true
-		}
-
-		if forward {
-			cur.Node.Outgoing(consider)
-		} else {
-			cur.Node.Incoming(consider)
-		}
-
-		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()
+		})
 	}
 }
 
