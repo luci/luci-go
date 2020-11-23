@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1419c886_0a65bb5d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-23T06:19:34Z",
+      "side": 1,
+      "message": "nodir@,\n\nAfter some investigation, I found that it is better to use multipart, instead of adding a new gRPC function to handle multi-artifact uploads mainly because\n- use of http.request.multipartReader() seems simple.\n- adding a new gRPC will likely require a special filter to the gRPC metrics and alerts. The latency of artifact uploads will be quite different to most of gRPC calls.\n- adding another entry point for the CAS upload pipeline may introduce unnecessary maintenance burden.\n\nI sketched the rough ideas in this CL. PTAL",
+      "revId": "065b6e233561c90e514e1c88bb2bf733368b5549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
