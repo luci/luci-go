@@ -62,10 +62,13 @@ type CLReaderClient interface {
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 	GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error)
 
-	// Gets Mergeable status for a change.
+	// Retrieves related changes of a revision.
 	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
-	GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error)
+	// Related changes are changes that either depend on, or are dependencies of
+	// the revision.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-related-changes
+	GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error)
 
 	// Lists the files that were modified, added or deleted in a revision.
 	//

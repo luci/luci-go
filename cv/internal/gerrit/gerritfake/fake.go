@@ -17,6 +17,7 @@ package gerritfake
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -32,6 +33,7 @@ import (
 type Fake struct {
 	m  sync.Mutex
 	cs map[string]*Change
+	// TODO(tandrii): add determining relationships between CLs.
 }
 
 func (f *Fake) Install(ctx context.Context) context.Context {
@@ -103,6 +105,48 @@ func (f *Fake) AddFrom(other *Fake) *Fake {
 // votes.
 func CI(change int, mods ...CIModifier) *gerritpb.ChangeInfo {
 	panic("TODO(tandrii): implement")
+}
+
+// Rev generates revision in the form "rev-000006-013" where 6 and 13 are change and
+// patchset numbers, respectively.
+func Rev(ch, ps int64) string {
+	return fmt.Sprintf("rev-%06d-%03d", ch, ps)
+}
+
+// RelatedChange returns ChangeAndCommit for the GetRelatedChangesResponse.
+//
+// Parents can be specified in several ways:
+//  * gerritpb.CommitInfo_Parent
+//  * gerritpb.CommitInfo
+//  * "<change>_<patchset>", e.g. "123_4"
+//  * "<revision>" (without underscores).
+func RelatedChange(change, ps, curPs int64, parents ...interface{}) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
+	prs := make([]*gerritpb.CommitInfo_Parent, len(parents))
+	for i, pi := range parents {
+		switch v := pi.(type) {
+		case *gerritpb.CommitInfo_Parent:
+			prs[i] = v
+		case *gerritpb.CommitInfo:
+			prs[i] = &gerritpb.CommitInfo_Parent{Id: v.GetId()}
+		case string:
+			if j := strings.IndexRune(v, '_'); j != -1 {
+				prs[i] = &gerritpb.CommitInfo_Parent{Id: Rev(atoi64(v[:j]), atoi64(v[j+1:]))}
+			} else {
+				prs[i] = &gerritpb.CommitInfo_Parent{Id: v}
+			}
+		default:
+			panic(fmt.Errorf("unsupported type %T as commit parent #%d", pi, i))
+		}
+	}
+	return &gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+		CurrentPatchset: curPs,
+		Number:          change,
+		Patchset:        ps,
+		Commit: &gerritpb.CommitInfo{
+			Id:      Rev(change, ps),
+			Parents: prs,
+		},
+	}
 }
 
 // ACLRestricted grants full access to specified projects only.
@@ -237,4 +281,12 @@ func (c *Change) key() string {
 
 func key(host string, change int) string {
 	return fmt.Sprintf("%s/%d", host, change)
+}
+
+func atoi64(s string) int64 {
+	a, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		panic(fmt.Errorf("invalid int %q: %s", s, err))
+	}
+	return a
 }
