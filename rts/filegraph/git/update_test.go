@@ -43,6 +43,7 @@ func TestApply(t *testing.T) {
 				children: map[string]*node{
 					"a": {
 						name:    "//a",
+						parent:  &g.root,
 						commits: 1,
 					},
 				},
@@ -60,11 +61,13 @@ func TestApply(t *testing.T) {
 				children: map[string]*node{
 					"a": {
 						name:    "//a",
+						parent:  &g.root,
 						commits: 1,
 						edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 					},
 					"b": {
 						name:    "//b",
+						parent:  &g.root,
 						commits: 1,
 						edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
 					},
@@ -82,11 +85,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:    "//a",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
 						"b": {
 							name:    "//b",
+							parent:  &g.root,
 							commits: 2,
 							edges: []edge{
 								{to: g.node("//a"), commonCommits: 1},
@@ -94,10 +99,12 @@ func TestApply(t *testing.T) {
 							},
 						},
 						"c": {
-							name: "//c",
+							name:   "//c",
+							parent: &g.root,
 							children: map[string]*node{
 								"d": {
 									name:    "//c/d",
+									parent:  g.node("//c"),
 									commits: 1,
 									edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 								},
@@ -118,11 +125,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:    "//a",
+							parent:  &g.root,
 							commits: 2,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 2}},
 						},
 						"b": {
 							name:    "//b",
+							parent:  &g.root,
 							commits: 2,
 							edges:   []edge{{to: g.node("//a"), commonCommits: 2}},
 						},
@@ -142,11 +151,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:    "//a",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
 						"b": {
 							name:    "//b",
+							parent:  &g.root,
 							commits: 2,
 							edges: []edge{
 								{to: g.node("//a"), commonCommits: 1},
@@ -155,6 +166,7 @@ func TestApply(t *testing.T) {
 						},
 						"c": {
 							name:    "//c",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
@@ -172,11 +184,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:    "//a",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
 						"b": {
 							name:    "//b",
+							parent:  &g.root,
 							commits: 1,
 							edges: []edge{
 								{to: g.node("//a"), commonCommits: 1},
@@ -185,6 +199,7 @@ func TestApply(t *testing.T) {
 						},
 						"c": {
 							name:    "//c",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b")}},
 						},
@@ -202,11 +217,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:    "//a",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
 						},
 						"b": {
 							name:    "//b",
+							parent:  &g.root,
 							commits: 1,
 							edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
 						},
