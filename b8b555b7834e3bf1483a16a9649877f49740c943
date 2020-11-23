@@ -16,6 +16,69 @@
       "message": "LGTM",
       "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3dc91e9_b1276c57",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T19:15:48Z",
+      "side": 1,
+      "message": "this should be 1 as we only take in one child.",
+      "range": {
+        "startLine": 378,
+        "startChar": 42,
+        "endLine": 378,
+        "endChar": 54
+      },
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27854e1b_9f451bb9",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T19:15:48Z",
+      "side": 1,
+      "message": "and this should be len(parents).",
+      "range": {
+        "startLine": 381,
+        "startChar": 43,
+        "endLine": 381,
+        "endChar": 44
+      },
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c360b69_3e90c5a0",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T19:15:48Z",
+      "side": 1,
+      "message": "It looks like pkeys is only used in L399. Can we refactor it to the next loop to\n```\nfor _, p :\u003d range parents {\n\tch, ps \u003d parseChangePatchset(p)\n\tpkey :\u003d psKey(host, ch, ps)\n\tif _, _, _, err :\u003d f.resolvePSKeyLocked(pkey); err !\u003d nil {\n\t\tpanic(err)\n\t}\n\tpkeys \u003d append(pkeys, pkey)\n\tf.childrenOf[pkey] \u003d append(f.childrenOf[pkey], ckey)\n\tf.parentsOf[ckey] \u003d append(f.parentsOf[ckey], pkey)\n\n}\n```",
+      "revId": "b8b555b7834e3bf1483a16a9649877f49740c943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
