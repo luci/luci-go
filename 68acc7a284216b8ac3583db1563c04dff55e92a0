@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27144acc_82091a86",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:36:36Z",
+      "side": 1,
+      "message": "derp, it\u0027s nil. And same below.\nFix https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2555441",
+      "range": {
+        "startLine": 91,
+        "startChar": 13,
+        "endLine": 91,
+        "endChar": 22
+      },
+      "revId": "68acc7a284216b8ac3583db1563c04dff55e92a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
