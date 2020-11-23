@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35cd630c_bfe4bd9a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T22:04:18Z",
+      "side": 1,
+      "message": "Are there any tests that can be added for this change?",
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d6a12e5_aa5ea082",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T22:04:18Z",
+      "side": 1,
+      "message": "Should this be f.host[dot-len(\"review\"):] ?",
+      "range": {
+        "startLine": 420,
+        "startChar": 21,
+        "endLine": 420,
+        "endChar": 42
+      },
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d93c441b_46ad2e41",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T22:04:18Z",
+      "side": 1,
+      "message": "maybe depHost",
+      "range": {
+        "startLine": 424,
+        "startChar": 2,
+        "endLine": 424,
+        "endChar": 9
+      },
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
