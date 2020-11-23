@@ -93,7 +93,7 @@ func TestRead(t *testing.T) {
 						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["bar"],
-							commonCommits: 1,
+							sumOfProb: 1,
 						}},
 					},
 					"bar": {
@@ -102,7 +102,7 @@ func TestRead(t *testing.T) {
 						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["foo"],
-							commonCommits: 1,
+							sumOfProb: 1,
 						}},
 					},
 				},

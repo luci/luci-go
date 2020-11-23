@@ -126,7 +126,7 @@ func openGraphCache(repoDir string, opt LoadOptions) (*graphCache, error) {
 		gitDir,
 		"filegraph",
 		filepath.FromSlash(opt.Ref),
-		fmt.Sprintf("fg.max-commit-size-%d.v0", opt.MaxCommitSize),
+		fmt.Sprintf("fg.max-commit-size-%d.v0.sum_of_prob", opt.MaxCommitSize),
 	)
 
 	if err := os.MkdirAll(filepath.Dir(fileName), 0777); err != nil {

@@ -54,8 +54,8 @@ func TestWrite(t *testing.T) {
 		Convey(`Two direct children`, func() {
 			foo := &node{commits: 1}
 			bar := &node{commits: 2}
-			foo.edges = []edge{{to: bar, commonCommits: 1}}
-			bar.edges = []edge{{to: foo, commonCommits: 1}}
+			foo.edges = []edge{{to: bar, sumOfProb: 1}}
+			bar.edges = []edge{{to: foo, sumOfProb: 1}}
 			g := &Graph{
 				Commit: "deadbeef",
 				root: node{

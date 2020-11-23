@@ -91,14 +91,18 @@ type node struct {
 // exist and have the same commonCommits.
 //
 // A special kind of edges is called "alias edge". It is indicated by
-// commonCommits == 0. If edge (x, y) is an alias, then distance(x, y) is 0.
+// sumOfProb being NaN. If edge (x, y) is an alias, then distance(x, y) is 0.
 // Alias edges are used for file renames: the old and the new file are aliases
 // of each other.
 // Alias edges are never downgraded to regular edges - they stay alias because
 // distance 0 is the minimal possible distance.
 type edge struct {
-	to            *node
-	commonCommits int
+	to *node
+
+	// sumOfProb is the sum of the probabilites that `to` appears in a commit,
+	// for each commit that touched the `from` node.
+	// It is explained in doc.go and updated in update.go.
+	sumOfProb float64
 }
 
 func (g *Graph) ensureInitialized() {
@@ -179,7 +183,7 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 	outgoing := !r.Reversed
 	for _, e := range n.edges {
 		distance := 0.0
-		if e.commonCommits == 0 {
+		if math.IsNaN(e.sumOfProb) {
 			// e.to is alias of n. The distance is 0.
 		} else {
 			var sampleSpaceSize int // https://en.wikipedia.org/wiki/Sample_space
@@ -193,7 +197,7 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 			// calling log2, because the latter is expensive.
 
 			// Note: commonCommits is same for incoming and outgoing edges.
-			distance = -math.Log2(float64(e.commonCommits) / float64(sampleSpaceSize))
+			distance = -math.Log2(e.sumOfProb / float64(sampleSpaceSize))
 		}
 		if !callback(e.to, distance) {
 			return
@@ -230,13 +234,13 @@ func (n *node) sortedChildKeys() []string {
 func (n *node) ensureAlias(to *node) {
 	for i := range n.edges {
 		if n.edges[i].to == to {
-			n.edges[i].commonCommits = 0
+			n.edges[i].sumOfProb = math.NaN()
 			return
 		}
 	}
 
 	n.prepareToAppendEdges()
-	n.edges = append(n.edges, edge{to: to})
+	n.edges = append(n.edges, edge{to: to, sumOfProb: math.NaN()})
 }
 
 // prepareToAppendEdges copies n.edges if n.copyEdgesOnAppend is true.

@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 
@@ -162,7 +163,7 @@ func (r *reader) readEdges(n *node) error {
 			n.edges[i].to = r.ordered[index]
 		}
 
-		if n.edges[i].commonCommits, err = r.readInt(); err != nil {
+		if n.edges[i].sumOfProb, err = r.readFloat(); err != nil {
 			return err
 		}
 	}
@@ -187,6 +188,19 @@ func (r *reader) readString() (string, error) {
 		return "", err
 	}
 	return string(r.buf), nil
+}
+
+func (r *reader) readFloat() (float64, error) {
+	if r.textMode {
+		s, err := r.readLine()
+		if err != nil {
+			return 0, err
+		}
+		return strconv.ParseFloat(s, 64)
+	}
+
+	n, err := binary.ReadUvarint(r.r)
+	return math.Float64frombits(n), err
 }
 
 func (r *reader) readInt() (int, error) {
