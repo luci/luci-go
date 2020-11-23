@@ -48,7 +48,12 @@ type EdgeReader struct {
 	// In other words, read the edges of the tranposed graph.
 	Reversed bool
 
-	// TODO(nodir): add FamilyDistance.
+	// If positive, the minimal distance between parents and children, in both
+	// directions. From the perspective of the file tree, any node is reachable
+	// from any other node (at least through the root node), and the minimal
+	// distance is family_distance * length_of_the_node_path.
+	// This can be used to respect the file structure.
+	FamilyDistance float64
 }
 
 // node is simultaneously a distance graph node (see edges) and a filesystem
@@ -199,6 +204,19 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 		}
 		if !callback(e.to, distance) {
 			return
+		}
+	}
+
+	if r.FamilyDistance > 0 {
+		if n.parent != nil {
+			if !callback(n.parent, r.FamilyDistance) {
+				return
+			}
+		}
+		for _, child := range n.children {
+			if !callback(child, r.FamilyDistance) {
+				return
+			}
 		}
 	}
 }
