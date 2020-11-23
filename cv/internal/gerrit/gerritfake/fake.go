@@ -20,10 +20,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -80,15 +84,30 @@ func WithCLs(cs ...*Change) *Fake {
 		cs: make(map[string]*Change, len(cs)),
 	}
 	for _, c := range cs {
-		f.cs[c.key()] = c
+		cpy := &Change{
+			Host: c.Host,
+			ACLs: c.ACLs,
+		}
+		proto.Merge(cpy.Info, c.Info)
+		f.cs[c.key()] = cpy
 	}
 	return f
 }
 
-// With CIs returns Fake with a change per passed ChangeInfo sharing the same
-// host and acls.
-func WithCIs(host string, acls AccessCheck, ci ...*gerritpb.ChangeInfo) *Fake {
-	panic("TODO(tandrii): implement")
+// WithCIs returns a Fake with one change per passed ChangeInfo sharing the same
+// host and ACLs.
+func WithCIs(host string, acls AccessCheck, cis ...*gerritpb.ChangeInfo) *Fake {
+	f := &Fake{}
+	f.cs = make(map[string]*Change, len(cis))
+	for _, ci := range cis {
+		c := &Change{
+			Host: host,
+			ACLs: acls,
+		}
+		proto.Merge(c.Info, ci)
+		f.cs[c.key()] = c
+	}
+	return f
 }
 
 // AddFrom adds all changes from another fake to the this fake and returns this
@@ -101,15 +120,42 @@ func (f *Fake) AddFrom(other *Fake) *Fake {
 	panic("TODO(tandrii): implement")
 }
 
+type CIModifier func(ci *gerritpb.ChangeInfo)
+
 // CI creates a new ChangeInfo with 1 patchset with status NEW and without any
 // votes.
 func CI(change int, mods ...CIModifier) *gerritpb.ChangeInfo {
-	panic("TODO(tandrii): implement")
+	rev := Rev(change, 1)
+	ci := &gerritpb.ChangeInfo{
+		Number:  int64(change),
+		Project: "infra/infra",
+		Ref:     "refs/heads/main",
+		Status:  gerritpb.ChangeStatus_NEW,
+
+		Created: timestamppb.New(testclock.TestRecentTimeUTC.Add(1 * time.Hour)),
+		Updated: timestamppb.New(testclock.TestRecentTimeUTC.Add(2 * time.Hour)),
+
+		CurrentRevision: rev,
+		Revisions: map[string]*gerritpb.RevisionInfo{
+			rev: RevInfo(1),
+		},
+	}
+	for _, m := range mods {
+		m(ci)
+	}
+	return ci
+}
+
+func RevInfo(ps int) *gerritpb.RevisionInfo {
+	return &gerritpb.RevisionInfo{
+		Number: int32(ps),
+		Kind:   gerritpb.RevisionInfo_REWORK,
+	}
 }
 
 // Rev generates revision in the form "rev-000006-013" where 6 and 13 are change and
 // patchset numbers, respectively.
-func Rev(ch, ps int64) string {
+func Rev(ch, ps int) string {
 	return fmt.Sprintf("rev-%06d-%03d", ch, ps)
 }
 
@@ -120,7 +166,7 @@ func Rev(ch, ps int64) string {
 //  * gerritpb.CommitInfo
 //  * "<change>_<patchset>", e.g. "123_4"
 //  * "<revision>" (without underscores).
-func RelatedChange(change, ps, curPs int64, parents ...interface{}) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
+func RelatedChange(change, ps, curPs int, parents ...interface{}) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
 	prs := make([]*gerritpb.CommitInfo_Parent, len(parents))
 	for i, pi := range parents {
 		switch v := pi.(type) {
@@ -130,7 +176,7 @@ func RelatedChange(change, ps, curPs int64, parents ...interface{}) *gerritpb.Ge
 			prs[i] = &gerritpb.CommitInfo_Parent{Id: v.GetId()}
 		case string:
 			if j := strings.IndexRune(v, '_'); j != -1 {
-				prs[i] = &gerritpb.CommitInfo_Parent{Id: Rev(atoi64(v[:j]), atoi64(v[j+1:]))}
+				prs[i] = &gerritpb.CommitInfo_Parent{Id: Rev(atoi(v[:j]), atoi(v[j+1:]))}
 			} else {
 				prs[i] = &gerritpb.CommitInfo_Parent{Id: v}
 			}
@@ -139,9 +185,9 @@ func RelatedChange(change, ps, curPs int64, parents ...interface{}) *gerritpb.Ge
 		}
 	}
 	return &gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-		CurrentPatchset: curPs,
-		Number:          change,
-		Patchset:        ps,
+		CurrentPatchset: int64(curPs),
+		Number:          int64(change),
+		Patchset:        int64(ps),
 		Commit: &gerritpb.CommitInfo{
 			Id:      Rev(change, ps),
 			Parents: prs,
@@ -210,14 +256,53 @@ func (a AccessCheck) Or(bs ...AccessCheck) AccessCheck {
 ///////////////////////////////////////////////////////////////////////////////
 // CI Modifiers
 
-type CIModifier interface {
-	Apply(ci *gerritpb.ChangeInfo)
+// PS ensures ChangeInfo's CurrentRevision corresponds to given patchset,
+// and deletes all revisions with bigger patchsets.
+func PS(ps int) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		var toDelete []string
+		found := false
+		for rev, ri := range ci.GetRevisions() {
+			switch latest := int(ri.GetNumber()); {
+			case latest == ps:
+				ci.CurrentRevision = rev
+				found = true
+			case latest > ps:
+				toDelete = append(toDelete, rev)
+			}
+		}
+		for _, rev := range toDelete {
+			delete(ci.GetRevisions(), rev)
+		}
+		if !found {
+			rev := Rev(int(ci.GetNumber()), ps)
+			ci.CurrentRevision = rev
+			ci.GetRevisions()[rev] = RevInfo(int(ps))
+		}
+	}
+}
+
+// AllRevs ensures ChangeInfo has a RevisionInfo per each revision
+// corresponding to patchsets 1..current.
+func AllRevs() CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		max := int(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber())
+		found := make([]bool, max)
+		for _, ri := range ci.GetRevisions() {
+			found[ri.GetNumber()-1] = true
+		}
+		for i, f := range found {
+			if !f {
+				ps := i + 1
+				ci.GetRevisions()[Rev(int(ci.GetNumber()), ps)] = RevInfo(ps)
+			}
+		}
+	}
 }
 
 // TODO(tandrii): implement these and more if needed.
 //  * Project(p)
 //  * Ref(ref)
-//  * Patchset(p) -- creates P patchsets. Populates only the latest revision.
 //  * AllRevisions -- populates all revisions(aka patchsets).
 //  * Status(s)-- with given status
 //  * UpdateTime(t) -- with givne UpdateTime.
@@ -289,4 +374,12 @@ func atoi64(s string) int64 {
 		panic(fmt.Errorf("invalid int %q: %s", s, err))
 	}
 	return a
+}
+
+func atoi32(s string) int32 {
+	return int32(atoi64(s))
+}
+
+func atoi(s string) int {
+	return int(atoi64(s))
 }
