@@ -26,14 +26,12 @@ type Query struct {
 	// Sources are the nodes to start from.
 	Sources []Node
 
+	// EdgeReader is used to read adjacent nodes and distances.
+	EdgeReader EdgeReader
+
 	// MaxDistance, if positive, is the distance threshold.
 	// Nodes further than this are considered unreachable.
 	MaxDistance float64
-
-	// Reversed instructs to follow incoming edges instead of outgoing.
-	Reversed bool
-
-	// TODO(crbug.com/1136280): add SilbingDistance
 
 	heap spHeap
 	dist map[Node]float64
@@ -58,8 +56,6 @@ type ShortestPath struct {
 // If the callback returns false, then the iteration stops.
 func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 	// This function implements Dijkstra's algorithm.
-
-	forward := !q.Reversed // be positive
 
 	q.heap = q.heap[:0]
 
@@ -103,7 +99,7 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 			return
 		}
 
-		consider := func(other Node, distFromCur float64) bool {
+		q.EdgeReader.ReadEdges(cur.Node, func(other Node, distFromCur float64) bool {
 			newDist := cur.Distance + distFromCur
 			if curDist, ok := q.dist[other]; !ok || newDist < curDist {
 				q.dist[other] = newDist
@@ -117,15 +113,7 @@ func (q *Query) Run(callback func(*ShortestPath) (keepGoing bool)) {
 				})
 			}
 			return true
-		}
-
-		if forward {
-			cur.Node.Outgoing(consider)
-		} else {
-			cur.Node.Incoming(consider)
-		}
-
-		// TODO(crbug.com/1136280): use q.SiblingDistance and call consider()
+		})
 	}
 }
 

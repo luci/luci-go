@@ -14,33 +14,25 @@
 
 package filegraph
 
-// Graph is a directed weighted graph of files.
+// Node is a node in a directed weighted graph of files.
+// It is either a file or a directory.
 //
 // The weight of edge (x, y), called distance, represents how much y is relevant
 // to x. It is a value between 0 and +inf, where 0 means extremely relevant
 // and +inf means not relevant at all.
-type Graph interface {
-	// Node returns a node by its name.
-	// Returns nil if the node is not found.
-	// See also Node.Name().
-	//
-	// Idempotent: calling many times with the same name returns the same Node
-	// object.
-	Node(name string) Node
-}
-
-// Node is a node in a file graph.
-// It is either a file or a directory.
 type Node interface {
 	// Name returns node's name.
 	// It is an forward-slash-separated path with "//" prefix,
 	// e.g. "//foo/bar.cc".
 	Name() string
+}
 
-	// Outgoing calls the given function for each direct successor.
+// EdgeReader reads edges of a node.
+type EdgeReader interface {
+	// ReadEdges calls the callback for each edge of the given node.
 	// If callback returns false, then iteration stops.
-	Outgoing(callback func(to Node, distance float64) (keepGoing bool))
-
-	// Incoming is like Outgoing, but for incoming edges.
-	Incoming(callback func(from Node, distance float64) (keepGoing bool))
+	//
+	// Idempotent: calling many times with the same `from` reports the same `to`
+	// Node objects.
+	ReadEdges(from Node, callback func(to Node, distance float64) (keepGoing bool))
 }

@@ -30,8 +30,9 @@ import (
 
 // gitGraph loads a file graph from a git log.
 type gitGraph struct {
-	opt git.LoadOptions
-	q   filegraph.Query
+	opt         git.LoadOptions
+	edgeReader  git.EdgeReader
+	maxDistance float64
 	*git.Graph
 }
 
@@ -46,10 +47,18 @@ func (g *gitGraph) RegisterFlags(fs *flag.FlagSet) {
 		The rationale is that large commits provide a weak signal of file
 		relatedness and are expensive to process, O(N^2).
 	`))
-	fs.Float64Var(&g.q.MaxDistance, "max-distance", 0, text.Doc(`
+	fs.Float64Var(&g.maxDistance, "max-distance", 0, text.Doc(`
 		If positive, the distance threshold. Nodes further than this are considered
 		unreachable.
 	`))
+}
+
+func (g *gitGraph) query(sources ...filegraph.Node) *filegraph.Query {
+	return &filegraph.Query{
+		Sources:     sources,
+		EdgeReader:  &g.edgeReader,
+		MaxDistance: g.maxDistance,
+	}
 }
 
 func (g *gitGraph) Validate() error {

@@ -42,7 +42,7 @@ var cmdQuery = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
 		r.gitGraph.RegisterFlags(&r.Flags)
-		r.Flags.BoolVar(&r.q.Reversed, "reversed", false, "Follow incoming edges instead of outgoing")
+		r.Flags.BoolVar(&r.edgeReader.Reversed, "reversed", false, "Follow incoming edges instead of outgoing")
 		return r
 	},
 }
@@ -61,12 +61,12 @@ func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(errors.New("expected filenames as positional arguments"))
 	}
 
-	var err error
-	if r.q.Sources, err = r.loadSyncedNodes(ctx, args...); err != nil {
+	sources, err := r.loadSyncedNodes(ctx, args...)
+	if err != nil {
 		return r.done(err)
 	}
 
-	r.q.Run(func(sp *filegraph.ShortestPath) bool {
+	r.query(sources...).Run(func(sp *filegraph.ShortestPath) bool {
 		fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
 		return ctx.Err() == nil
 	})

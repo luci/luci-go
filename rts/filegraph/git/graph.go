@@ -41,6 +41,16 @@ type Graph struct {
 	init sync.Once
 }
 
+// EdgeReader implements filegraph.EdgeReader.
+// It works only with nodes returned by Graph.Node().
+type EdgeReader struct {
+	// Reversed indicates that incoming edges must be read instead of outgoing.
+	// In other words, read the edges of the tranposed graph.
+	Reversed bool
+
+	// TODO(nodir): add FamilyDistance.
+}
+
 // node is simultaneously a distance graph node (see edges) and a filesystem
 // tree node (see children).
 // It implements filegraph.Node.
@@ -97,7 +107,12 @@ func (g *Graph) ensureInitialized() {
 	})
 }
 
-// Node implements filegraph.Graph.
+// Node returns a node by its name.
+// Returns nil if the node is not found.
+// See also Node.Name().
+//
+// Idempotent: calling many times with the same name returns the same Node
+// object.
 func (g *Graph) Node(name string) filegraph.Node {
 	g.ensureInitialized()
 	if n := g.node(name); n != nil {
@@ -158,15 +173,10 @@ func (n *node) Name() string {
 	return n.name
 }
 
-func (n *node) Outgoing(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
-	n.visitEdges(true, callback)
-}
-
-func (n *node) Incoming(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
-	n.visitEdges(false, callback)
-}
-
-func (n *node) visitEdges(outgoing bool, callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
+// ReadEdges implements filegraph.EdgeReader.
+func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
+	n := from.(*node)
+	outgoing := !r.Reversed
 	for _, e := range n.edges {
 		distance := 0.0
 		if e.commonCommits == 0 {

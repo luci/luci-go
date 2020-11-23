@@ -102,7 +102,7 @@ func TestGraph(t *testing.T) {
 			So(g.Node("//a/b") == nil, ShouldBeTrue)
 		})
 
-		Convey(`Edges`, func() {
+		Convey(`EdgeReader`, func() {
 			bar := &node{commits: 4}
 			foo := &node{commits: 2}
 			foo.edges = []edge{{to: bar, commonCommits: 1}}
@@ -118,15 +118,17 @@ func TestGraph(t *testing.T) {
 				return true
 			}
 
-			Convey(`Outgoing`, func() {
-				foo.Outgoing(callback)
+			r := &EdgeReader{}
+			Convey(`Works`, func() {
+				r.ReadEdges(foo, callback)
 				So(actual, ShouldResemble, []outgoingEdge{{
 					other:    bar,
 					distance: 1,
 				}})
 			})
-			Convey(`Incoming`, func() {
-				foo.Incoming(callback)
+			Convey(`Reversed`, func() {
+				r.Reversed = true
+				r.ReadEdges(foo, callback)
 				So(actual, ShouldResemble, []outgoingEdge{{
 					other:    bar,
 					distance: 2,
