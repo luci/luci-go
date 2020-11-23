@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68e17658_003a8099",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2fd3907e_d0801c7d",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "-\u003e WithCIs returns a Fake with one change",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 38
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a392d87_0453c5f7",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "nit: ACLs",
+      "range": {
+        "startLine": 92,
+        "startChar": 12,
+        "endLine": 92,
+        "endChar": 16
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90e8a5fe_c9642abc",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "I assume that the name is kept short because it\u0027s used repeatedly in tests, so \"MakeChangeInfo\" would be too long",
+      "range": {
+        "startLine": 121,
+        "startChar": 5,
+        "endLine": 121,
+        "endChar": 7
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c9b7c25_16cd4192",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "The main (only?) way to use these is to pass them to the CI func, right?",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c91dbcee_654959f3",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "In this case IMO it\u0027s a little confusing to use the term patchset to mean revision number. My understanding before was that:\n - patchset and revision are synonyms, and\n - patchset number and revision number are synonyms.\n\nGerrit tends to prefer \"revision\" internally. Right? So I\u0027d replace \"patchset\" with \"patchset number\" or even \"revision number\".",
+      "range": {
+        "startLine": 253,
+        "startChar": 0,
+        "endLine": 254,
+        "endChar": 51
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d010059d_36c4455c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "for each revision?",
+      "range": {
+        "startLine": 279,
+        "startChar": 51,
+        "endLine": 279,
+        "endChar": 68
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da871811_e4e0f337",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "ChangeInfo",
+      "range": {
+        "startLine": 279,
+        "startChar": 19,
+        "endLine": 279,
+        "endChar": 31
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74f9335a_9449f67c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-23T17:30:39Z",
+      "side": 1,
+      "message": "Nit: blank line between functions",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
