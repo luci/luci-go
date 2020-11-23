@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6522402c_8f6b6601",
+        "filename": "milo/frontend/resultui/src/libs/utils.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T00:13:10Z",
+      "side": 1,
+      "message": "nit: should be \"Unsanitized\"",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 40
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf22d986_e7922a96",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T00:13:10Z",
+      "side": 1,
+      "message": "This and the related methods below (isHeaderValid and summaryParts) are quite hacky; please add method documentation explaining why this code exists, with examples.",
+      "range": {
+        "startLine": 84,
+        "startChar": 24,
+        "endLine": 84,
+        "endChar": 50
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20700a98_25a5d440",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-23T00:13:10Z",
+      "side": 1,
+      "message": "Do we expect this code to live forever, or are we planning to help users clean up the Markdown they send us?",
+      "range": {
+        "startLine": 84,
+        "startChar": 2,
+        "endLine": 84,
+        "endChar": 63
+      },
+      "revId": "eea7e2ca82bebbca100b65414c37969407c5f099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
