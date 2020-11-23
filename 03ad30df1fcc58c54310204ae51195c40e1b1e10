@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d9f022b_96aeb5d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T15:21:59Z",
+      "side": 1,
+      "message": "\u003e \"fron\" is a possible misspelling of \"from\".\n\nPlease fix.",
+      "parentUuid": "977d1a65_3f8d7558",
+      "range": {
+        "startLine": 14,
+        "startChar": 35,
+        "endLine": 14,
+        "endChar": 39
+      },
+      "revId": "03ad30df1fcc58c54310204ae51195c40e1b1e10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
