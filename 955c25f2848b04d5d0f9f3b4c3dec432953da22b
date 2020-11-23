@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39e5c8ab_9117da10",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T05:17:57Z",
+      "side": 1,
+      "message": "nit: not necessary but okay.",
+      "range": {
+        "startLine": 180,
+        "startChar": 51,
+        "endLine": 180,
+        "endChar": 60
+      },
+      "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36842ffb_3895ccb1",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T05:17:57Z",
+      "side": 1,
+      "message": "TIL, very useful lib.",
+      "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29a0b66d_b3b0bae6",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T05:17:57Z",
+      "side": 1,
+      "message": "Are `COMMIT_MSG` and `MERGE_LIST` the only two entries that start with \u0027/\u0027?",
+      "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
