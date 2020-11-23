@@ -27,6 +27,8 @@ func TestReadWrite(t *testing.T) {
 
 	Convey(`ReadWrite`, t, func() {
 		test := func(g *Graph) {
+			g.ensureInitialized()
+
 			buf := &bytes.Buffer{}
 			w := writer{w: buf}
 			err := w.writeGraph(g)
@@ -34,6 +36,7 @@ func TestReadWrite(t *testing.T) {
 
 			r := reader{r: bufio.NewReader(buf)}
 			g2 := &Graph{}
+			g2.ensureInitialized()
 			err = r.readGraph(g2)
 			So(err, ShouldBeNil)
 
@@ -49,13 +52,14 @@ func TestReadWrite(t *testing.T) {
 		})
 
 		Convey(`Two direct children`, func() {
-			foo := &node{name: "/foo", commits: 1}
-			bar := &node{name: "/bar", commits: 2}
+			foo := &node{name: "//foo", commits: 1}
+			bar := &node{name: "//bar", commits: 2}
 			foo.edges = []edge{{to: bar, commonCommits: 1}}
 			bar.edges = []edge{{to: foo, commonCommits: 1}}
 			test(&Graph{
 				Commit: "deadbeef",
 				root: node{
+					name: "//",
 					children: map[string]*node{
 						"foo": foo,
 						"bar": bar,
