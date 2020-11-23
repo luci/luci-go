@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1823872_582ab23b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-23T22:11:35Z",
+      "side": 1,
+      "message": "cc\u0027ing people in our team that played with logs analysis and may have ideas on how to make the table as efficient as possible to do performant searches.",
+      "revId": "3f257f6a4edfe5cd8c169ac96539bf6d86a743f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43773c80_0f53c415",
