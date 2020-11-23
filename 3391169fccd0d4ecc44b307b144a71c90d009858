@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07c7af8b_ec1e4bd9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-23T21:03:55Z",
+      "side": 1,
+      "message": "PTAL. A very simple CL. Most code changes are in tests.",
+      "revId": "3391169fccd0d4ecc44b307b144a71c90d009858",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
