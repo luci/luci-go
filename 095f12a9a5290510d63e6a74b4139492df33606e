@@ -89,6 +89,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec6fb932_1ec2e2bc",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T21:56:21Z",
+      "side": 1,
+      "message": "Side question: Is File status matter in CV or does any logic in CV depending the file status?",
+      "parentUuid": "a32a87c7_c0c58f4c",
+      "range": {
+        "startLine": 321,
+        "startChar": 63,
+        "endLine": 321,
+        "endChar": 75
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "edade30c_c84eeeb2",

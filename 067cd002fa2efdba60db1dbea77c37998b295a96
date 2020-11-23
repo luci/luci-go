@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4c4eb9b_2b2594dd",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T21:56:21Z",
+      "side": 1,
+      "message": "nit: I think this code snippet will repeat in all raad APIs. Shall we make a small func for it?",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 129,
+        "endChar": 2
+      },
+      "revId": "067cd002fa2efdba60db1dbea77c37998b295a96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
