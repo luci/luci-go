@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d57932a9_9247cca5",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T18:41:35Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "5fe1554a_644aeaea",
+      "range": {
+        "startLine": 180,
+        "startChar": 51,
+        "endLine": 180,
+        "endChar": 60
+      },
+      "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "36842ffb_3895ccb1",
         "filename": "cv/internal/gerrit/updater/updater.go",
         "patchSetId": 4
@@ -79,6 +103,24 @@
       "side": 1,
       "message": "Just beware that it will automatically cancel all remaining ops iff any one op gives non-nil error.\nThis is justified when there is no advantage in completing the remaining ops, like here.\n\nI wouldn\u0027t use errgroup where each op is beneficial on its own, e.g. triggering tasks in parallel to refresh individual projects.",
       "parentUuid": "36842ffb_3895ccb1",
+      "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89e76441_00ddd457",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T18:41:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bb8f876d_d7eaae7b",
       "revId": "955c25f2848b04d5d0f9f3b4c3dec432953da22b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
