@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd82b932_9bf95ee5",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T06:28:22Z",
+      "side": 1,
+      "message": "grandparent?",
+      "range": {
+        "startLine": 260,
+        "startChar": 56,
+        "endLine": 260,
+        "endChar": 66
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ce49f85_b1b31b38",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T06:28:22Z",
+      "side": 1,
+      "message": "This is interesting scenario. I\u0027m wondering under what circumstance would this happen.",
+      "range": {
+        "startLine": 262,
+        "startChar": 17,
+        "endLine": 263,
+        "endChar": 29
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f3d50e7_1ba0e598",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T06:28:22Z",
+      "side": 1,
+      "message": "typo: patchsets",
+      "range": {
+        "startLine": 263,
+        "startChar": 31,
+        "endLine": 263,
+        "endChar": 39
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1dcaf8a_e282e274",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T06:28:22Z",
+      "side": 1,
+      "message": "will this ever be true since f.change should always be ordered[0]?",
+      "range": {
+        "startLine": 311,
+        "startChar": 5,
+        "endLine": 311,
+        "endChar": 18
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
