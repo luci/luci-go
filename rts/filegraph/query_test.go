@@ -36,6 +36,14 @@ func (g *testGraph) node(name string) *testNode {
 	return n
 }
 
+func (g *testGraph) ReadEdges(from Node, callback func(to Node, distance float64) (keepGoing bool)) {
+	for other, dist := range from.(*testNode).edges {
+		if !callback(other, dist) {
+			return
+		}
+	}
+}
+
 func run(q *Query) map[string]*ShortestPath {
 	ret := map[string]*ShortestPath{}
 	q.Run(func(sp *ShortestPath) bool {
@@ -47,12 +55,15 @@ func run(q *Query) map[string]*ShortestPath {
 	return ret
 }
 
-func (g *testGraph) query(sources ...string) map[string]*ShortestPath {
-	q := &Query{Sources: make([]Node, len(sources))}
+func (g *testGraph) query(sources ...string) *Query {
+	q := &Query{
+		Sources:    make([]Node, len(sources)),
+		EdgeReader: g,
+	}
 	for i, src := range sources {
 		q.Sources[i] = g.node(src)
 	}
-	return run(q)
+	return q
 }
 
 type testNode struct {
@@ -62,22 +73,6 @@ type testNode struct {
 
 func (n *testNode) Name() string {
 	return n.name
-}
-
-func (n *testNode) Outgoing(callback func(successor Node, distance float64) bool) {
-	for other, dist := range n.edges {
-		if !callback(other, dist) {
-			return
-		}
-	}
-}
-
-func (n *testNode) Incoming(callback func(successor Node, distance float64) bool) {
-	for other := range n.edges {
-		if !callback(other, other.edges[n]) {
-			return
-		}
-	}
 }
 
 func initGraph(edges ...testEdge) *testGraph {
@@ -111,7 +106,7 @@ func TestQuery(t *testing.T) {
 					testEdge{from: "//b/2", to: "//c", distance: 3},
 				)
 
-				sps := g.query("//a")
+				sps := run(g.query("//a"))
 				So(sps, ShouldResemble, map[string]*ShortestPath{
 					"//a": {
 						Node:     g.node("//a"),
@@ -142,10 +137,9 @@ func TestQuery(t *testing.T) {
 					testEdge{from: "//b/1", to: "//c", distance: 3},
 					testEdge{from: "//b/2", to: "//c", distance: 3},
 				)
-				sps := run(&Query{
-					Sources:     []Node{g.node("//a")},
-					MaxDistance: 3,
-				})
+				q := g.query("//a")
+				q.MaxDistance = 3
+				sps := run(q)
 				So(sps, ShouldResemble, map[string]*ShortestPath{
 					"//a": {
 						Node:     g.node("//a"),
@@ -170,7 +164,7 @@ func TestQuery(t *testing.T) {
 					testEdge{from: "//c", to: "//d"},
 				)
 
-				sps := g.query("//a")
+				sps := run(g.query("//a"))
 				So(sps, ShouldResemble, map[string]*ShortestPath{
 					"//a": {
 						Node:     g.node("//a"),
@@ -208,7 +202,7 @@ func TestQuery(t *testing.T) {
 				testEdge{from: "//b/2", to: "//c", distance: 3},
 				testEdge{from: "//unreachable/1", to: "//unreachable/2"},
 			)
-			q := &Query{Sources: []Node{g.node("//a")}}
+			q := g.query("//a")
 
 			Convey(`Works`, func() {
 				sp := q.ShortestPath(g.node("//c"))
