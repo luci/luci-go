@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a8f94c5_d446c35e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Thanks for review!\n\nI\u0027m landing, but should there be more feedback, I\u0027ll address it, of course!",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2fd3907e_d0801c7d",
@@ -31,6 +48,30 @@
       "writtenOn": "2020-11-23T17:30:39Z",
       "side": 1,
       "message": "-\u003e WithCIs returns a Fake with one change",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 38
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55ae662d_1ad5a89a",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fd3907e_d0801c7d",
       "range": {
         "startLine": 91,
         "startChar": 3,
@@ -64,6 +105,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cf8721a_79dd1e9d",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a392d87_0453c5f7",
+      "range": {
+        "startLine": 92,
+        "startChar": 12,
+        "endLine": 92,
+        "endChar": 16
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "303d7e8b_556e68a3",
@@ -77,6 +142,30 @@
       "writtenOn": "2020-11-23T18:34:41Z",
       "side": 1,
       "message": "IIUC, we want user mutate the CL through modification API defined below. Shall we clone the proto before assignment to prevent unexpected modification?",
+      "range": {
+        "startLine": 100,
+        "startChar": 9,
+        "endLine": 100,
+        "endChar": 11
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34f94300_709a9e9b",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "good point. Done.",
+      "parentUuid": "303d7e8b_556e68a3",
       "range": {
         "startLine": 100,
         "startChar": 9,
@@ -110,6 +199,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d1244d3_f8d3f156",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "maybe. I don\u0027t know how far one should go 😞",
+      "parentUuid": "53b5b1d3_a4d99f4d",
+      "range": {
+        "startLine": 119,
+        "startChar": 67,
+        "endLine": 120,
+        "endChar": 9
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "90e8a5fe_c9642abc",
@@ -123,6 +236,30 @@
       "writtenOn": "2020-11-23T17:30:39Z",
       "side": 1,
       "message": "I assume that the name is kept short because it\u0027s used repeatedly in tests, so \"MakeChangeInfo\" would be too long",
+      "range": {
+        "startLine": 121,
+        "startChar": 5,
+        "endLine": 121,
+        "endChar": 7
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9acc3e6d_c15c8f09",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Exactly.",
+      "parentUuid": "90e8a5fe_c9642abc",
       "range": {
         "startLine": 121,
         "startChar": 5,
@@ -150,6 +287,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a9bd7d2_21fb21cb",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "So far, yes. If we find another use, we can change type name.",
+      "parentUuid": "5c9b7c25_16cd4192",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c91dbcee_654959f3",
@@ -163,6 +318,30 @@
       "writtenOn": "2020-11-23T17:30:39Z",
       "side": 1,
       "message": "In this case IMO it\u0027s a little confusing to use the term patchset to mean revision number. My understanding before was that:\n - patchset and revision are synonyms, and\n - patchset number and revision number are synonyms.\n\nGerrit tends to prefer \"revision\" internally. Right? So I\u0027d replace \"patchset\" with \"patchset number\" or even \"revision number\".",
+      "range": {
+        "startLine": 253,
+        "startChar": 0,
+        "endLine": 254,
+        "endChar": 51
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a908d17a_ab0a17d7",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "I don\u0027t follow Gerrit notation here. CV needs a short name for \"revision number\".\nI use `patchset` to mean monotonically increasing number identifying it. Admittedly, this is old Rietveld notation, which probably originates from Critique predecessor.\nTo my best knowledge, this is also how most other ChOps code uses it, LUCI in particular (though I don\u0027t know about Tricium)",
+      "parentUuid": "c91dbcee_654959f3",
       "range": {
         "startLine": 253,
         "startChar": 0,
@@ -219,6 +398,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fd9216d_bed160b5",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da871811_e4e0f337",
+      "range": {
+        "startLine": 279,
+        "startChar": 19,
+        "endLine": 279,
+        "endChar": 31
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6452abda_faaf2b83",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Here I imply incremental nature of patchset. Rephrased. WDYT?",
+      "parentUuid": "d010059d_36c4455c",
+      "range": {
+        "startLine": 279,
+        "startChar": 51,
+        "endLine": 279,
+        "endChar": 68
+      },
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "53d9998f_d0f89fc6",
@@ -236,6 +463,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3ad2fce_ddc58a84",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "yeah, sorry. Deleted in the CL in the stack. Will leave as is here to avoid needless rebase conflicts.",
+      "parentUuid": "53d9998f_d0f89fc6",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "74f9335a_9449f67c",
@@ -249,6 +494,24 @@
       "writtenOn": "2020-11-23T17:30:39Z",
       "side": 1,
       "message": "Nit: blank line between functions",
+      "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "639c7938_65f46c3d",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T18:47:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74f9335a_9449f67c",
       "revId": "1bc10374bc8d0092ff1d99cfab3114e67b8dbd83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
