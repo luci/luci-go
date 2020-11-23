@@ -18,6 +18,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "64113629_17db72f4",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-23T22:20:58Z",
+      "side": 1,
+      "message": "Curious, is there any reason you prefer proto.Merge over proto.Clone?",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 29
+      },
+      "revId": "a7d5ddc94e61cccd07dd62d7f9373be80602a53b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87afbd0c_0d7179ae",
