@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87d80886_5c06cbe2",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:14:27Z",
+      "side": 1,
+      "message": "yep.",
+      "parentUuid": "8aa0699f_45a7c6e1",
+      "range": {
+        "startLine": 51,
+        "startChar": 3,
+        "endLine": 52,
+        "endChar": 16
+      },
+      "revId": "6153d170d65050e4dfc250ea844be2c2f26a70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "64e96c3f_365414ed",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-23T18:09:02Z",
       "side": 1,
       "message": "I don\u0027t quite understand this yet.\n\nIMO You could be a little more verbose here in explaining the DAG\nin the tests, maybe with a diagram if you think it helps, e.g.\n\n  //    +\u003e3\u003e+\n  //  4-+   +\u003e1\n  //    +\u003e2\u003e+\n\nor maybe\n\n  // 1 is a parent of 2 and 3, and so 2 and 3 both depend on 1.\n  // Drawn as a graph, this forms a diamond:\n  //     1\n  //    2 3\n  //     4",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 38
+      },
+      "revId": "6153d170d65050e4dfc250ea844be2c2f26a70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9fee9bf_4a0223c6",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:14:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64e96c3f_365414ed",
       "range": {
         "startLine": 40,
         "startChar": 0,
@@ -81,6 +129,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "82addff9_6a2a37e8",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:14:27Z",
+      "side": 1,
+      "message": "It\u0027s here purely because visit func callbacks on the node only after its children are visited.\n\nHowever, since CV doesn\u0027t care about the order, neither should this test. Force-sorted by revision.",
+      "parentUuid": "18083c91_2a1918b9",
+      "revId": "6153d170d65050e4dfc250ea844be2c2f26a70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c71b1e0f_142cb794",
@@ -94,6 +160,24 @@
       "writtenOn": "2020-11-23T18:09:02Z",
       "side": 1,
       "message": "Is 2 not here because it\u0027s not directly related?",
+      "revId": "6153d170d65050e4dfc250ea844be2c2f26a70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e070d396_c1a2eaa3",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T19:14:27Z",
+      "side": 1,
+      "message": "Correct. That said, I didn\u0027t actually verify that this is what Gerrit does.\nWe\u0027ll see how important it\u0027d be to behave like Gerrit, and if necessary, I\u0027ll improve this.",
+      "parentUuid": "c71b1e0f_142cb794",
       "revId": "6153d170d65050e4dfc250ea844be2c2f26a70d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
