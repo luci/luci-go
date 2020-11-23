@@ -102,6 +102,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4b4f820a_13c90b7f",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-23T22:09:25Z",
+      "side": 1,
+      "message": "Also, sharding needs to be intentional and well documented, for example between LF, CRLF or CR only.  CR only can happen for tool that tries to replace the current line, like when you run ninja locally.\n\nIs the assumption that the shard id is monotonically increasing and starts at 0? Write it in the description.",
+      "parentUuid": "bed2460b_1472d820",
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "af423a1a_d720df30",
         "filename": "resultdb/proto/bq/artifact_row.proto",
         "patchSetId": 1
@@ -136,6 +154,30 @@
       "writtenOn": "2020-11-23T22:09:12Z",
       "side": 1,
       "message": "Done",
+      "parentUuid": "af423a1a_d720df30",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 13
+      },
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c874aeab_61f8e3bf",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-23T22:09:25Z",
+      "side": 1,
+      "message": "Do we want this to be bytes or do we enforce UTF-8? I recall having fun™ with non-utf8 output. It generally tends to happen more on Windows due to its archaic default locale mechanism.",
       "parentUuid": "af423a1a_d720df30",
       "range": {
         "startLine": 42,
