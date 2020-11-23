@@ -18,6 +18,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -43,12 +44,14 @@ const magicHeader = 54
 //  node-edges = number-of-edges edge*
 //  edge =
 //    index-of-the-adjacent-node-as-found-in-the-file
-//    number-of-common-commits
+//    prob-sum
 //    edges-of-children-sorted-by-base-name
 //  edges-of-children-sorted-by-base-name = edge*
 //
 //  where
-//   all integer types are encoded as uvarint
+//   all integer types are encoded as varint
+//   all float types are encoded as uvarint of float64 bits,
+//     see https://godoc.org/math#Float64bits
 //   all strings are encoded as length-prefixed utf8
 //   `*` means "0 or more"
 func (g *Graph) Write(w io.Writer) error {
@@ -103,7 +106,7 @@ func (w *writer) writeNode(n *node) error {
 	w.totalEdges += len(n.edges)
 
 	// Write the number of commits.
-	if err := w.writeInt(n.commits); err != nil {
+	if err := w.writeInt(n.sumProbDenominator); err != nil {
 		return err
 	}
 
@@ -138,7 +141,7 @@ func (w *writer) writeEdges(n *node) error {
 		if err := w.writeInt(w.indices[e.to]); err != nil {
 			return err
 		}
-		if err := w.writeInt(e.commonCommits); err != nil {
+		if err := w.writeFloat(e.probSum); err != nil {
 			return err
 		}
 	}
@@ -165,6 +168,17 @@ func (w *writer) writeString(s string) error {
 		return err
 	}
 	_, err := io.WriteString(w.w, s)
+	return err
+}
+
+func (w *writer) writeFloat(x float64) error {
+	if w.textMode {
+		_, err := fmt.Fprintln(w.w, x)
+		return err
+	}
+
+	length := binary.PutUvarint(w.varintBuf[:], math.Float64bits(x))
+	_, err := w.w.Write(w.varintBuf[:length])
 	return err
 }
 

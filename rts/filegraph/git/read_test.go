@@ -75,12 +75,12 @@ func TestRead(t *testing.T) {
 				"0", // number of root edges
 
 				"1", // number of bar edges
-				"2", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"2", // index of foo
+				"1", // probSum for bar->foo
 
 				"1", // number of foo edges
-				"1", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"1", // index bar
+				"1", // probSum for foo->bar
 			)
 
 			So(g.Commit, ShouldResemble, "deadbeef")
@@ -88,21 +88,21 @@ func TestRead(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"foo": {
-						name:     "//foo",
-						commits:  1,
+						name:              "//foo",
+						sumProbDenominator:           1,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
-							to:            g.root.children["bar"],
-							commonCommits: 1,
+							to:      g.root.children["bar"],
+							probSum: 1,
 						}},
 					},
 					"bar": {
-						name:     "//bar",
-						commits:  2,
+						name:              "//bar",
+						sumProbDenominator:           2,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
-							to:            g.root.children["foo"],
-							commonCommits: 1,
+							to:      g.root.children["foo"],
+							probSum: 1,
 						}},
 					},
 				},
@@ -142,7 +142,7 @@ func TestRead(t *testing.T) {
 						children: map[string]*node{
 							"foo": {
 								name:    "//dir/foo",
-								commits: 1,
+								sumProbDenominator: 1,
 							},
 						},
 					},
