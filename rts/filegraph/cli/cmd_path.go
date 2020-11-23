@@ -63,8 +63,7 @@ func (r *pathRun) Run(a subcommands.Application, args []string, env subcommands.
 		return r.done(err)
 	}
 
-	r.q.Sources = nodes[:1]
-	shorest := r.q.ShortestPath(nodes[1])
+	shorest := r.query(nodes[0]).ShortestPath(nodes[1])
 	if shorest == nil {
 		return r.done(errors.New("not reachable"))
 	}
