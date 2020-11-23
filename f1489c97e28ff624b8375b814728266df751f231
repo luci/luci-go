@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8121d958_7db38b08",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-23T22:09:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1edb2475_ddc62cd7",
+      "range": {
+        "startLine": 9,
+        "startChar": 42,
+        "endLine": 9,
+        "endChar": 50
+      },
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b2ad6e84_8cc38319",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfb43737_ac5f3c6b",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-23T22:09:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bed2460b_1472d820",
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "af423a1a_d720df30",
@@ -71,6 +113,30 @@
       "writtenOn": "2020-11-23T22:02:31Z",
       "side": 1,
       "message": "Artifact shard content?",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 13
+      },
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47d5829b_15ad7606",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-23T22:09:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af423a1a_d720df30",
       "range": {
         "startLine": 42,
         "startChar": 5,
