@@ -64,6 +64,8 @@ type node struct {
 	// See also filegraph.Node.Name().
 	name string
 
+	parent *node
+
 	// commits is the number of commits that touched this file.
 	// Note that if "//foo/bar.cc" is touched, foo's commit count is
 	// not incremented.
@@ -147,7 +149,7 @@ func (g *Graph) ensureNode(name string) *node {
 			return ret
 		}
 
-		ret := &node{name: name}
+		ret := &node{name: name, parent: cur}
 		if cur.children == nil {
 			cur.children = map[string]*node{}
 		}

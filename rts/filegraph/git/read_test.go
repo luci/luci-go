@@ -88,8 +88,9 @@ func TestRead(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"foo": {
-						name:     "//foo",
-						commits:  1,
+						parent:            &g.root,
+						name:              "//foo",
+						commits:           1,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["bar"],
@@ -97,8 +98,9 @@ func TestRead(t *testing.T) {
 						}},
 					},
 					"bar": {
-						name:     "//bar",
-						commits:  2,
+						parent:            &g.root,
+						name:              "//bar",
+						commits:           2,
 						copyEdgesOnAppend: true,
 						edges: []edge{{
 							to:            g.root.children["foo"],
@@ -138,10 +140,12 @@ func TestRead(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"dir": {
-						name: "//dir",
+						name:   "//dir",
+						parent: &g.root,
 						children: map[string]*node{
 							"foo": {
 								name:    "//dir/foo",
+								parent:  g.node("//dir"),
 								commits: 1,
 							},
 						},
