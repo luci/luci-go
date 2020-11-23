@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/span"
 
@@ -82,24 +81,59 @@ type artifactCreationHandler struct {
 
 // Handle implements router.Handler.
 func (h *artifactCreationHandler) Handle(c *router.Context) {
-	ac := &artifactCreator{artifactCreationHandler: h}
-	err := ac.handle(c)
-	st, ok := appstatus.Get(err)
-	switch {
-	case ok:
-		logging.Warningf(c.Context, "Responding with %s: %s", st.Code(), err)
-		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
-	case err != nil:
-		logging.Errorf(c.Context, "Internal server error: %s", err)
-		http.Error(c.Writer, "Internal server error", http.StatusInternalServerError)
-	default:
-		c.Writer.WriteHeader(http.StatusNoContent)
+	// parseRequest returns a slice of artifactCreationRequet(s).
+	// If Content-Type == "multipart/form-data", it will return a slice with 1 or more
+	// of artifactCreationRequest(s).
+	// If not, it will return a slice with a single artifactCreationRequest.
+	artReqs, err := h.parseRequest(c.Request)
+	if err != nil {
+		http.Error(c.Context, "bad request", http.StatusBadRequest)
 	}
+
+	// This runs a Spanner query to check duplicates for all the given hashes.
+	// If a given hash already exists, set artReq[i].sameExists = true.
+	if err := h.verifyBeforeWriting(ctx, artReqs); err != nil {
+		if err == AllDuplicates {
+			// good
+			c.Writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+		http.Error(c.Context, "bad request", http.StatusBadRequest)
+	}
+
+	// instead of (ctx, io.Reader),
+	// this writeToCAS() takes (ctx, []*artifactCreationRequest).
+	// Note that artifactCreationRequest.body is io.Reader.
+	//
+	// This sends artifacts to CAS iteratively with verifying the digest.
+	// I'm not sure if it'd be a good idea to spin up multiple goroutines and call
+	// multiple send() in parallel. Maybe. for a small number of concurrent connections.
+	//
+	// ByteStream_WriteClient() doesn't seem to support vectorized send().
+	// Also, it's not costy to check the digest before send().
+	// What if the digest of an artifact was unmatched?
+	// Should we remove those that have been uploaded already? Probably, no.
+	if err := h.writeToCAS(ctx, artReqs); err != nil {
+		http.Error(c.Context, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	// Save them in the spanner table with a single transaction.
+	if err := h.saveInSpanner(ctx, artReqs); err != nil {
+		// return an error without removing the uploaded files in CAS.
+		http.Error(c.Context, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	// good
+	c.Writer.WriteHeader(http.StatusNoContent)
+	return
 }
 
-// artifactCreator handles one artifact creation request.
-type artifactCreator struct {
-	*artifactCreationHandler
+type artifactCreationRequest struct {
+	body io.Reader
+
+	sameExists // if true, the artifact don't need to be uploaded.
 
 	artifactName  string
 	invID         invocations.ID
@@ -113,17 +147,12 @@ type artifactCreator struct {
 	size int64
 }
 
-func (ac *artifactCreator) sha256Hash() string {
+func (ac *artifactCreateRequest) sha256Hash() string {
 	return strings.TrimPrefix(ac.hash, "sha256:")
 }
 
-func (ac *artifactCreator) handle(c *router.Context) error {
+func (ac *artifactCreator) handle(reqs []*artifactCreateRequest) error {
 	ctx := c.Context
-
-	// Parse and validate the request.
-	if err := ac.parseRequest(c); err != nil {
-		return err
-	}
 
 	// Read and verify the current state.
 	switch sameExists, err := ac.verifyStateBeforeWriting(ctx); {
@@ -273,15 +302,67 @@ func (ac *artifactCreator) genWriteResourceName(ctx context.Context) string {
 		ac.size)
 }
 
-// parseRequest populates ac fields based on the HTTP request.
-func (ac *artifactCreator) parseRequest(c *router.Context) error {
-	// Read the artifact name.
-	// We must use EscapedPath(), not Path, to preserve test ID's own encoding.
-	ac.artifactName = strings.TrimPrefix(c.Request.URL.EscapedPath(), "/")
+func (h *artifactCreationHandler) parseRequest(req *http.Request) (arts []*artifactCreationRequest, err error) {
+	// check the update token.
+	updateToken := req.Header.Get(updateTokenHeaderKey)
+	if updateToken == "" {
+		return appstatus.Errorf(codes.Unauthenticated, "%s header is missing", updateTokenHeaderKey)
+	}
 
+	reader, err := req.MultipartReader()
+	switch err {
+	case ErrNotMultipart:
+		art, err := newArtifactRequest(
+			// artifact name is from the URL, if not a multipart request.
+			strings.TrimPrefix(req.Request.URL.EscapedPath(), "/"),
+			// body & header
+			req.Body, req.Header,
+		)
+		if err != nil {
+			return nil, errors.Reason("beep").Err()
+		}
+		arts = append(arts, art)
+		return arts, nil
+	case nil: // multipart
+	default:
+		// error!
+		return errors.Reason("invalid request").Err()
+	}
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+
+		art, err := newArtifactRequest(
+			// artifact name is from Content-Disposition
+			part.FileName(),
+			// multipart.Part implements io.Reader.
+			part,
+			// Part.Header is textproto.MIMEHeader, not http.Header. However, both
+			// implements Get(key string) string.
+			part.Header,
+		)
+		if err != nil {
+			return nil, errors.Reason("beep").Err()
+		}
+		arts = append(arts, art)
+	}
+	return
+}
+
+type readOnlyHeader interface {
+	Get(key string) string
+}
+
+func newArtifactRequest(artName string, body io.Reader, header readOnlyHeader) (artifactCreationRequest, error) {
 	// Parse and validate the artifact name.
+	var ac artifactCreationRequest
 	var invIDString string
 	var err error
+
+	ac.body = body
 	invIDString, ac.testID, ac.resultID, ac.artifactID, err = pbutil.ParseArtifactName(ac.artifactName)
 	if err != nil {
 		return appstatus.Errorf(codes.InvalidArgument, "bad artifact name: %s", err)
@@ -290,7 +371,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	ac.localParentID = artifacts.ParentID(ac.testID, ac.resultID)
 
 	// Parse and validate the hash.
-	switch ac.hash = c.Request.Header.Get(artifactContentHashHeaderKey); {
+	switch ac.hash = header.Get(artifactContentHashHeaderKey); {
 	case ac.hash == "":
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactContentHashHeaderKey)
 	case !artifactContentHashRe.MatchString(ac.hash):
@@ -298,7 +379,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	}
 
 	// Parse and validate the size.
-	sizeHeader := c.Request.Header.Get(artifactContentSizeHeaderKey)
+	sizeHeader := header.Get(artifactContentSizeHeaderKey)
 	if sizeHeader == "" {
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactContentSizeHeaderKey)
 	}
@@ -309,16 +390,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 		return appstatus.Errorf(codes.InvalidArgument, "%s header must be a value between 0 and %d", artifactContentSizeHeaderKey, maxArtifactContentSize)
 	}
 
-	// Parse and validate the update token.
-	updateToken := c.Request.Header.Get(updateTokenHeaderKey)
-	if updateToken == "" {
-		return appstatus.Errorf(codes.Unauthenticated, "%s header is missing", updateTokenHeaderKey)
-	}
-	if err := validateInvocationToken(c.Context, updateToken, ac.invID); err != nil {
-		return appstatus.Errorf(codes.PermissionDenied, "invalid %s header value", updateTokenHeaderKey)
-	}
-
-	ac.contentType = c.Request.Header.Get(artifactContentTypeHeaderKey)
+	ac.contentType = header.Get(artifactContentTypeHeaderKey)
 
 	return nil
 }
