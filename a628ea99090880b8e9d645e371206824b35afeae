@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3bff2e20_9c4c075c",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:24:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd82b932_9bf95ee5",
+      "range": {
+        "startLine": 260,
+        "startChar": 56,
+        "endLine": 260,
+        "endChar": 66
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ce49f85_b1b31b38",
@@ -72,6 +96,54 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3980098f_eabd3bd1",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:24:48Z",
+      "side": 1,
+      "message": "notation: C[change-id]rev@ps  \u003d\u003d CL with specific change-id and revision/ps pair.\n\nThen think I created it like this once\n\ncreate local chain of:\n  base \u003c-  r1      \u003c- r2\nbut specify Change-Id only in r2 to be [B].     \nupload them, and get back auto-generated change-id [A] for r1, s.t.  \n          C[A]r1@1 \u003c- C[B]r2@2\n\nnow create r3 with r2 as parent and specify change-id: A.\nNow push r3. GoB will end up with C[A]r3@2, whose parent is C[B]r2@1, whose parent is C[A]r1@1.\n\nOnce you add merge commits to the menu, I\u0027d rather code CV defensively than rely on Gerrit to disallow these shenanigans.",
+      "parentUuid": "2ce49f85_b1b31b38",
+      "range": {
+        "startLine": 262,
+        "startChar": 17,
+        "endLine": 263,
+        "endChar": 29
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0d5e421_ad8d5746",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:24:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f3d50e7_1ba0e598",
+      "range": {
+        "startLine": 263,
+        "startChar": 31,
+        "endLine": 263,
+        "endChar": 39
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c1dcaf8a_e282e274",
         "filename": "cv/internal/gerrit/updater/updater.go",
         "patchSetId": 7
@@ -83,6 +155,30 @@
       "writtenOn": "2020-11-23T06:28:22Z",
       "side": 1,
       "message": "will this ever be true since f.change should always be ordered[0]?",
+      "range": {
+        "startLine": 311,
+        "startChar": 5,
+        "endLine": 311,
+        "endChar": 18
+      },
+      "revId": "a628ea99090880b8e9d645e371206824b35afeae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63253c01_70df0be5",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-23T13:24:48Z",
+      "side": 1,
+      "message": "good catch! Indeed, it won\u0027t.\n(my early implementation didn\u0027t use a visitedRevs dict and hence it was actually possible.",
+      "parentUuid": "c1dcaf8a_e282e274",
       "range": {
         "startLine": 311,
         "startChar": 5,
