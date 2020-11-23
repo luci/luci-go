@@ -41,6 +41,14 @@ type Graph struct {
 	init sync.Once
 }
 
+// EdgeReader implements filegraph.EdgeReader.
+// It works only with nodes returned by Graph.Node().
+type EdgeReader struct {
+	// Reversed indicates that incoming edges must be read instead of outgoing.
+	// In other words, read edges of the tranposed graph.
+	Reversed bool
+}
+
 // node is simultaneously a distance graph node (see edges) and a filesystem
 // tree node (see children).
 // It implements filegraph.Node.
@@ -158,23 +166,18 @@ func (n *node) Name() string {
 	return n.name
 }
 
-func (n *node) Outgoing(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
-	n.visitEdges(true, callback)
-}
-
-func (n *node) Incoming(callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
-	n.visitEdges(false, callback)
-}
-
-func (n *node) visitEdges(outgoing bool, callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
-	for _, e := range n.edges {
+// ReadEdges implements filegraph.EdgeReader.
+func (r *EdgeReader) ReadEdges(n filegraph.Node, callback func(to filegraph.Node, distance float64) (keepGoing bool)) {
+	nd := n.(*node)
+	outgoing := !r.Reversed
+	for _, e := range nd.edges {
 		distance := 0.0
 		if e.commonCommits == 0 {
 			// e.to is alias of n. The distance is 0.
 		} else {
 			var sampleSpaceSize int // https://en.wikipedia.org/wiki/Sample_space
 			if outgoing {
-				sampleSpaceSize = n.commits
+				sampleSpaceSize = nd.commits
 			} else {
 				sampleSpaceSize = e.to.commits
 			}
