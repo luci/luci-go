@@ -22,6 +22,29 @@
       },
       "revId": "89ebb40d7413e6ff3aa8b89181b981765aa5cdce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13ef58b0_09b629df",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-11-23T03:08:52Z",
+      "side": 1,
+      "message": "Do you need to use url.PathEscape here to handle things like emails properly?",
+      "range": {
+        "startLine": 233,
+        "startChar": 111,
+        "endLine": 233,
+        "endChar": 120
+      },
+      "revId": "89ebb40d7413e6ff3aa8b89181b981765aa5cdce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
