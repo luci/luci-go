@@ -41,20 +41,20 @@ var cmdQuery = &subcommands.Command{
 	`),
 	CommandRun: func() subcommands.CommandRun {
 		r := &queryRun{}
-		r.git.RegisterFlags(&r.Flags)
-		r.Flags.BoolVar(&r.git.q.Reversed, "reversed", false, "Follow incoming edges instead of outgoing")
+		r.gitGraph.RegisterFlags(&r.Flags)
+		r.Flags.BoolVar(&r.q.Reversed, "reversed", false, "Follow incoming edges instead of outgoing")
 		return r
 	},
 }
 
 type queryRun struct {
 	baseCommandRun
-	git gitGraph
+	gitGraph
 }
 
 func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if err := r.git.Validate(); err != nil {
+	if err := r.gitGraph.Validate(); err != nil {
 		return r.done(err)
 	}
 	if len(args) == 0 {
@@ -62,11 +62,11 @@ func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands
 	}
 
 	var err error
-	if r.git.q.Sources, err = r.git.loadSyncedNodes(ctx, args...); err != nil {
+	if r.q.Sources, err = r.loadSyncedNodes(ctx, args...); err != nil {
 		return r.done(err)
 	}
 
-	r.git.q.Run(func(sp *filegraph.ShortestPath) bool {
+	r.q.Run(func(sp *filegraph.ShortestPath) bool {
 		fmt.Printf("%.2f %s\n", sp.Distance, sp.Node.Name())
 		return ctx.Err() == nil
 	})
