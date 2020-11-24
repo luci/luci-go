@@ -114,5 +114,5 @@ func Exec(c context.Context, interp *python.Interpreter, cl *python.CommandLine,
 
 	argv := append([]string{interp.Python}, cl.BuildArgs()...)
 	logging.Debugf(c, "Exec Python command: %#v", argv)
-	return execImpl(c, argv, env, dir, nil)
+	return execImpl(c, argv, env, dir, setupFn)
 }
