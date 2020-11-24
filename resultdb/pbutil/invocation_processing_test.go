@@ -27,10 +27,12 @@ func TestValidateBigQueryExport(t *testing.T) {
 	Convey(`ValidateBigQueryExport`, t, func() {
 		Convey(`Valid, Empty TestResults`, func() {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "table",
-				TestResults: &pb.BigQueryExport_TestResults{},
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
 			})
 			So(err, ShouldBeNil)
 		})
@@ -73,9 +75,11 @@ func TestValidateBigQueryExport(t *testing.T) {
 				Project: "project",
 				Dataset: "dataset",
 				Table:   "table",
-				TestResults: &pb.BigQueryExport_TestResults{
-					Predicate: &pb.TestResultPredicate{
-						TestIdRegexp: "(",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{
+						Predicate: &pb.TestResultPredicate{
+							TestIdRegexp: "(",
+						},
 					},
 				},
 			})

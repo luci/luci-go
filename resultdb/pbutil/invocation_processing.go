@@ -34,11 +34,11 @@ func ValidateBigQueryExport(bq_export *pb.BigQueryExport) error {
 		return errors.Annotate(unspecified(), "test_results").Err()
 	}
 
-	if bq_export.TestResults.GetPredicate() == nil {
+	if bq_export.GetTestResults().GetPredicate() == nil {
 		return nil
 	}
 
-	if err := ValidateTestResultPredicate(bq_export.TestResults.Predicate); err != nil {
+	if err := ValidateTestResultPredicate(bq_export.GetTestResults().Predicate); err != nil {
 		return errors.Annotate(err, "test_results: predicate").Err()
 	}
 
