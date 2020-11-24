@@ -1,6 +1,98 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb1ccce1_dae1c8b3",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T20:09:40Z",
+      "side": 1,
+      "message": "gae:\"update_token,noindex\"\n\nOtherwise Go code will be using entity field named \"UpdateToken\" which are not compatible with Python version of this code.",
+      "range": {
+        "startLine": 108,
+        "startChar": 20,
+        "endLine": 108,
+        "endChar": 33
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad15bcd9_588a31c8",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T20:09:40Z",
+      "side": 1,
+      "message": "nit: reuse the result. Also \u0027ok\u0027 check is not necessary:\n\n  md, _ :\u003d metadata.FromIncomingContext(ctx)\n  buildToks :\u003d md.Get(BuildTokenKey)\n  if len(buildToks) !\u003d 0 {\n     ...\n  }\n\n  for _, tk :\u003d range buildToks {\n     ...\n  }",
+      "range": {
+        "startLine": 237,
+        "startChar": 15,
+        "endLine": 237,
+        "endChar": 36
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37f6502f_9d97bbad",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T20:09:40Z",
+      "side": 1,
+      "message": "nit: \"%q header is missing\", BuildTokenKey",
+      "range": {
+        "startLine": 238,
+        "startChar": 49,
+        "endLine": 238,
+        "endChar": 82
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "167985e2_00e05d63",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T20:09:40Z",
+      "side": 1,
+      "message": "Strictly speaking this should use https://golang.org/pkg/crypto/subtle/#ConstantTimeCompare otherwise it is possible to \"guess\" the token by measuring how fast request fails (it will require a lot of trials though).",
+      "range": {
+        "startLine": 244,
+        "startChar": 5,
+        "endLine": 244,
+        "endChar": 24
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "f6eb0b82_3c9c354d",
