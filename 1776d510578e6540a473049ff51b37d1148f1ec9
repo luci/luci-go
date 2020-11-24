@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8bec2eb9_8d5f1ad3",
+        "filename": "rts/filegraph/git/doc.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T06:45:51Z",
+      "side": 1,
+      "message": "but all weights are the same? because each commit has equal chance of getting picked\n\nin my mental model there a decision tree. First we pick a commit with P\u003d1/commits. Then in that commit, pick a file.\nlike this https://www.mathsisfun.com/data/probability-tree-diagrams.html\nis this traditional probability?",
+      "parentUuid": "05b02e43_723a5fec",
+      "range": {
+        "startLine": 26,
+        "startChar": 55,
+        "endLine": 26,
+        "endChar": 66
+      },
+      "revId": "1776d510578e6540a473049ff51b37d1148f1ec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "33a3a3ba_8d8075fb",
         "filename": "rts/filegraph/git/graph.go",
         "patchSetId": 9
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-24T03:22:28Z",
       "side": 1,
       "message": "My experience suggests to avoid encoding exact data in floats if at all possible.\nFor instance, did you know there are several bit sequences that correspond to NaN values? 😊\nEnjoy: https://golang.org/src/math/bits.go?s\u003d791:822#L24\n\nI see you\u0027ve carefully used math.IsNan below, which is good. However, I think code will be less fragile with less diligent coders (like myself) if you use an extra boolean field. Is that too much overhead?\n\nAnother idea is to store exact integer, which has fixed bit representation without caveats (to my limited knowledge) on floating point processors. Since this is a sum of \u003c1 values AND float64 is has \u003e50 bits of precision, \ni\u0027d use 2^50 to mean alias, which buys us to 2^50 commits touching the same file.\nSee also https://en.wikipedia.org/wiki/Double-precision_floating-point_format\n\nYes another trick is to store here an int64 meaning multiple of say 1/2^24.\nie e.ProbSumTimes2P24\nThis supports up to 2^(63-24) commits, which is enough AND:\n * max int64 value means an alias\n * you can use int64 for read/write\n * instead of \n      distance \u003d -math.Log2(e.probSum / float64(denominator))\n   do\n      distance \u003d -math.Log2(e.probSumTimes2P24 / (1\u003c\u003c24) / float64(denominator))\n   or just\n      distance \u003d -math.Log2(e.probSumTimes2P24 / float64(denominator)) + 24\n * instead of \n      file.edges[i].probSum +\u003d p\n   do\n      file.edges[i].probSumTimes2P24 +\u003d int64(p*(1\u003c\u003c24))",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 16
+      },
+      "revId": "1776d510578e6540a473049ff51b37d1148f1ec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87b039a7_37836ba4",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T06:45:51Z",
+      "side": 1,
+      "message": "Followed the \"multiple of 2**24\" suggestion.\n\nrestored \"0 means alias\".",
+      "parentUuid": "33a3a3ba_8d8075fb",
       "range": {
         "startLine": 107,
         "startChar": 0,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1c5176c_b47c106a",
+        "filename": "rts/filegraph/git/graph.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T06:45:51Z",
+      "side": 1,
+      "message": "i will benchmark natural log in next cl",
+      "parentUuid": "266fde0f_53202490",
+      "range": {
+        "startLine": 199,
+        "startChar": 14,
+        "endLine": 199,
+        "endChar": 18
+      },
+      "revId": "1776d510578e6540a473049ff51b37d1148f1ec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2689b7ef_6833065e",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-11-24T03:22:28Z",
       "side": 1,
       "message": "commit?",
+      "range": {
+        "startLine": 129,
+        "startChar": 65,
+        "endLine": 129,
+        "endChar": 72
+      },
+      "revId": "1776d510578e6540a473049ff51b37d1148f1ec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e5ad42e_85323cd5",
+        "filename": "rts/filegraph/git/update.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T06:45:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2689b7ef_6833065e",
       "range": {
         "startLine": 129,
         "startChar": 65,
