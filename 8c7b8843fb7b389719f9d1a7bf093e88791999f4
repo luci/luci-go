@@ -52,6 +52,24 @@
       "parentUuid": "7d0e62d8_9ab450a6",
       "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1cc97e30_6f76b0bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-24T20:30:23Z",
+      "side": 1,
+      "message": "Read https://github.com/golang/go/wiki/CodeReviewComments#receiver-type and I think it make sense to use pointer as the size of Mask will grow proportionally to the # and depth of input fields. I\u0027ll make the change today (maybe tomorrow).",
+      "parentUuid": "4fe9196a_3017e064",
+      "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
