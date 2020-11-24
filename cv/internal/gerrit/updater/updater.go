@@ -19,10 +19,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -31,8 +33,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/tq"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -41,20 +45,98 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
-// UpdateCL fetches latest info from Gerrit.
+func init() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "refresh-gerrit-cl",
+		Prototype: &RefreshGerritCL{},
+		Queue:     "refresh-gerrit-cl",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*RefreshGerritCL)
+
+			var updatedHint time.Time
+			if u := t.GetUpdatedHint(); u != nil {
+				updatedHint = u.AsTime()
+			}
+
+			return refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
+				updatedHint, changelist.CLID(t.GetClidHint()))
+		},
+	})
+}
+
+// Schedule enqueues a TQ task to refresh a Gerrit CL.
+func Schedule(ctx context.Context, luciProject, host string, change int64,
+	updatedHint time.Time, clidHint changelist.CLID) error {
+	// If done within transaction, can't use de-dup.
+	payload := &RefreshGerritCL{
+		LuciProject: luciProject,
+		Host:        host,
+		Change:      change,
+	}
+	task := &tq.Task{
+		Payload: payload,
+		Title:   fmt.Sprintf("refresh-%s-%d", host, change),
+	}
+
+	if clidHint != 0 {
+		task.Title += fmt.Sprintf("[%d]", clidHint)
+		payload.ClidHint = int64(clidHint)
+	}
+	if !updatedHint.IsZero() {
+		payload.UpdatedHint = timestamppb.New(updatedHint)
+		task.Title += fmt.Sprintf("@%s", updatedHint)
+	}
+
+	if datastore.CurrentTransaction(ctx) == nil {
+		ts := updatedHint
+		if updatedHint.IsZero() {
+			ts = clock.Now(ctx).Truncate(blindRefreshInterval).Add(blindRefreshInterval)
+		}
+		task.DeduplicationKey = strings.Join([]string{
+			"v0",
+			luciProject,
+			host, strconv.FormatInt(change, 16),
+			strconv.FormatInt(ts.Unix(), 16)},
+			"\n")
+	}
+	return tq.AddTask(ctx, task)
+}
+
+// blindRefreshInterval sets interval between blind refresh of a Gerrit CL.
+//
+// Doesn't affect refreshes with updatedHint specified.
+const blindRefreshInterval = time.Minute
+
+// refreshExternal fetches latest info from Gerrit.
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed.
 // To force an update, provide as time.Time{} as updatedHint.
-func UpdateCL(ctx context.Context, luciProject, host string, change int64, updatedHint time.Time) (err error) {
+func refreshExternal(ctx context.Context, luciProject, host string, change int64, updatedHint time.Time, clidHint changelist.CLID) (err error) {
 	fetcher := fetcher{
 		luciProject: luciProject,
 		host:        host,
 		change:      change,
 		updatedHint: updatedHint,
+		// TODO(tandrii): take advantage of clidHint when getting existing CL from
+		// datastore.
 	}
-	if fetcher.g, err = gerrit.CurrentClient(ctx, host, luciProject); err != nil {
+	fetcher.externalID, err = changelist.GobID(host, change)
+	if err != nil {
 		return err
+	}
+	switch fetcher.priorCL, err = fetcher.externalID.Get(ctx); {
+	case err == datastore.ErrNoSuchEntity:
+		// proceed straight to update.
+	case err != nil:
+		return err
+	default:
+		switch skip, err := fetcher.shouldSkip(ctx); {
+		case err != nil:
+			return err
+		case skip:
+			return nil
+		}
 	}
 	return fetcher.update(ctx)
 }
@@ -82,11 +164,9 @@ type fetcher struct {
 }
 
 func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
-	switch f.priorCL, err = f.externalID.Get(ctx); {
-	case err == datastore.ErrNoSuchEntity:
+	switch {
+	case f.priorCL == nil:
 		return false, nil
-	case err != nil:
-		return false, err
 	case f.priorCL.Snapshot == nil:
 		// CL is likely created as a dependency and not yet populated.
 		return false, nil
@@ -96,7 +176,9 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 	case f.priorCL.ApplicableConfig == nil:
 		panic(errors.Reason("%s has snapshot but not ApplicableConfig", f).Err())
 
-	case !f.updatedHint.IsZero() && f.priorCL.Snapshot.IsUpToDate(f.luciProject, f.updatedHint):
+	case f.updatedHint.IsZero():
+		return false, nil
+	case f.priorCL.Snapshot.IsUpToDate(f.luciProject, f.updatedHint):
 		ci := f.priorCL.Snapshot.GetGerrit().Info
 		switch acfg, err := gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
 		case err != nil:
@@ -115,16 +197,8 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 }
 
 func (f *fetcher) update(ctx context.Context) (err error) {
-	f.externalID, err = changelist.GobID(f.host, f.change)
-	if err != nil {
+	if f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject); err != nil {
 		return err
-	}
-
-	switch skip, err := f.shouldSkip(ctx); {
-	case err != nil:
-		return err
-	case skip:
-		return nil
 	}
 
 	f.newSnapshot = &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}}
@@ -443,15 +517,20 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 	lock := sync.Mutex{}
 	resolved := make([]*changelist.Dep, 0, len(eids))
 
-	addDep := func(depCL *changelist.CL, kind changelist.DepKind) error {
+	addDep := func(depCL *changelist.CL, eid changelist.ExternalID, kind changelist.DepKind) error {
 		lock.Lock()
-		defer lock.Unlock()
 		resolved = append(resolved, &changelist.Dep{Clid: int64(depCL.ID), Kind: kind})
+		lock.Unlock()
+
 		switch yes, err := depCL.NeedsFetching(ctx, f.luciProject); {
 		case err != nil:
 			return err
 		case yes:
-			// TODO(tandrii): trigger task.
+			depHost, depChange, err := eid.ParseGobID()
+			if err != nil {
+				panic("impossible: by construction, all deps are Gerrit, too")
+			}
+			return Schedule(ctx, f.luciProject, depHost, depChange, time.Time{}, depCL.ID)
 		}
 		return nil
 	}
@@ -472,7 +551,7 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				return addDep(depCL, kind)
+				return addDep(depCL, eid, kind)
 			}
 		}
 	})
