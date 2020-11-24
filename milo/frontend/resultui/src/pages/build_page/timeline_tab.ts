@@ -16,15 +16,14 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import escape from 'lodash-es/escape';
-import { DateTime } from 'luxon';
 import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
-
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';
+
 
 export class TimelineTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -75,7 +74,7 @@ export class TimelineTabElement extends MobxLitElement {
         id: i.toString(),
         group: i.toString(),
         start: step.startTime.toMillis(),
-        end: (step.endTime || new DateTime()).toMillis(),
+        end: (step.endTime || step.renderTime.get()).toMillis(),
         type: 'range',
       }))),
       new DataSet(this.buildState.build.steps.map((step, i) => ({
