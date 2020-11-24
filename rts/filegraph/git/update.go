@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"math"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -102,16 +103,22 @@ func (g *Graph) apply(fileChanges []fileChange) error {
 	// Create edges between each file pair.
 	// This is O(FILES * (FILES + EDGES_PER_FILE))
 
+	// Skip this commit if there is only one file to process,
+	// since it does not provide any signal.
+	if len(files) <= 1 {
+		return nil
+	}
+
+	// For any file in |files|, compute the probability of picking
+	// any other file.
+	p := 1.0 / float64(len(files)-1)
+
 	fileSet := make(map[*node]struct{}, len(files))
 	for _, f := range files {
 		fileSet[f] = struct{}{}
 	}
 	for _, file := range files {
-		file.commits++
-
-		// TODO(nodir): take the commit size into account of the distance.
-		// Smaller commits provide stronger signal of file relatedness.
-		// Specifically, consider incrementing commonCommits by 1/(len(files) - 1).
+		file.probSumDenominator++
 
 		updated := make(map[*node]struct{}, len(files)-1)
 		// Increment the commit count in file's edges that point to other files.
@@ -119,9 +126,10 @@ func (g *Graph) apply(fileChanges []fileChange) error {
 			if _, ok := fileSet[e.to]; ok {
 				updated[e.to] = struct{}{}
 
-				// Increment the common commit count unless it is an alias edge.
-				if e.commonCommits != 0 {
-					file.edges[i].commonCommits++
+				// Add the probability of this file being selected from this comment,
+				// unless it is an alias edge.
+				if !math.IsNaN(e.probSum) {
+					file.edges[i].probSum += p
 				}
 			}
 		}
@@ -131,7 +139,7 @@ func (g *Graph) apply(fileChanges []fileChange) error {
 			if to != file {
 				if _, ok := updated[to]; !ok {
 					file.prepareToAppendEdges()
-					file.edges = append(file.edges, edge{to: to, commonCommits: 1})
+					file.edges = append(file.edges, edge{to: to, probSum: p})
 				}
 			}
 		}
