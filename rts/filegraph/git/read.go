@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 
@@ -99,9 +100,9 @@ func (r *reader) readGraph(g *Graph) error {
 func (r *reader) readNode(n *node) error {
 	r.ordered = append(r.ordered, n)
 
-	// Read the number of commits.
+	// Read the denominator.
 	var err error
-	if n.commits, err = r.readInt(); err != nil {
+	if n.probSumDenominator, err = r.readInt(); err != nil {
 		return err
 	}
 
@@ -162,7 +163,7 @@ func (r *reader) readEdges(n *node) error {
 			n.edges[i].to = r.ordered[index]
 		}
 
-		if n.edges[i].commonCommits, err = r.readInt(); err != nil {
+		if n.edges[i].probSumMultiplied, err = r.readInt64(); err != nil {
 			return err
 		}
 	}
@@ -189,17 +190,35 @@ func (r *reader) readString() (string, error) {
 	return string(r.buf), nil
 }
 
-func (r *reader) readInt() (int, error) {
+func (r *reader) readFloat() (float64, error) {
 	if r.textMode {
 		s, err := r.readLine()
 		if err != nil {
 			return 0, err
 		}
-		return strconv.Atoi(s)
+		return strconv.ParseFloat(s, 64)
+	}
+
+	n, err := binary.ReadUvarint(r.r)
+	return math.Float64frombits(n), err
+}
+
+func (r *reader) readInt() (int, error) {
+	n, err := r.readInt64()
+	return int(n), err
+}
+
+func (r *reader) readInt64() (int64, error) {
+	if r.textMode {
+		s, err := r.readLine()
+		if err != nil {
+			return 0, err
+		}
+		return strconv.ParseInt(s, 10, 64)
 	}
 
 	n, err := binary.ReadVarint(r.r)
-	return int(n), err
+	return n, err
 }
 
 func (r *reader) readLine() (string, error) {
