@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f2cd1f4_50bc958c",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T22:05:56Z",
+      "side": 1,
+      "message": "Oops, copy paste error.",
+      "parentUuid": "2610be5a_6dc9d4a4",
+      "range": {
+        "startLine": 21,
+        "startChar": 51,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c608336_a4310a83",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-24T17:23:45Z",
       "side": 1,
       "message": "is there a reason why this is inconsistent with test result rows? there we have two invocations, and tags",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 26
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b32f1cf2_e8be45ad",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T22:05:56Z",
+      "side": 1,
+      "message": "Yeah I think we should have bother exported and parent invocation ids (and probably realms?). But I\u0027m not sure about invocation tags, will we ever need invocation tags in the artifact table? I think the common usage of this table is to join with the result table.",
+      "parentUuid": "9c608336_a4310a83",
       "range": {
         "startLine": 25,
         "startChar": 2,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5a6225b_b891ad1a",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T22:05:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d8d8b10_5327aad5",
+      "range": {
+        "startLine": 39,
+        "startChar": 62,
+        "endLine": 39,
+        "endChar": 75
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b1fc8f68_08dd8a2b",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-11-24T20:47:40Z",
       "side": 1,
       "message": "\"Encoded as UTF-8. Invalid characters are replaced with the replacement character (U+FFFD).\"",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7aa06d15_0d8760b1",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T22:05:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1fc8f68_08dd8a2b",
       "range": {
         "startLine": 45,
         "startChar": 5,
@@ -147,6 +243,30 @@
       "side": 1,
       "message": "I think it\u0027s a good idea.",
       "parentUuid": "78092067_77a25359",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 21
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8fd590ca_a7b34bda",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T22:05:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d6555ff_b557f9ab",
       "range": {
         "startLine": 36,
         "startChar": 0,
