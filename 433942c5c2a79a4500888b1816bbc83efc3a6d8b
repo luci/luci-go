@@ -33,6 +33,23 @@
       "message": "add a TODO in QueryArtifactsRequest to use ArtifactPredicate?",
       "revId": "433942c5c2a79a4500888b1816bbc83efc3a6d8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bda425b_f4591cf5",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:18:43Z",
+      "side": 1,
+      "message": "do you plan to add validation in the next CL",
+      "revId": "433942c5c2a79a4500888b1816bbc83efc3a6d8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
