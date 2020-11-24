@@ -1,0 +1,57 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
+
+// TextArtifactRow represents a row in a BigQuery table for a text artifact.
+message TextArtifactRow {
+  // Id of the exported invocation this artifact belongs to.
+  //
+  // Note: it's possible that this invocation is not the result's
+  // immediate parent invocation, but the including invocation.
+  // For example if the BigQuery table is for all artifacts of Chromium CI
+  // builds, then the exported invocation is for a CI build, which includes
+  // multiple invocations for swarming tasks within that build.
+  string exported_invocation_id = 1;
+
+  // Id of the parent invocation this artifact belongs to.
+  string parent_invocation_id = 2;
+
+  // Test_id and result_id can identify the test result in the invocation
+  // this artifact belongs to.
+  // They will be empty if the artifact is an invocation-level artifact.
+  string test_id = 3;
+  string result_id = 4;
+
+  // Id of the artifact.
+  string artifact_id = 5;
+
+  // Id of the artifact shard.
+  // Row size limit is 5Mib according to
+  // https://cloud.google.com/bigquery/quotas#streaming_inserts
+  // If the size of the artifact content is larger than that, the data will be
+  // sharded at the nearest previous line break ("\r\n" first, if not exist
+  // then "\n" or "\r").
+  // Shard_id is monotonically increasing and starts at 0.
+  int32 shard_id = 6;
+
+  // Artifact shard content.
+  // Encoded as UTF-8. Invalid characters are replaced with the replacement
+  // character (U+FFFD).
+  string content = 7;
+}
