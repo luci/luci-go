@@ -15,6 +15,7 @@
 package git
 
 import (
+	"math"
 	"testing"
 
 	"go.chromium.org/luci/rts/filegraph"
@@ -121,18 +122,16 @@ func TestGraph(t *testing.T) {
 			r := &EdgeReader{}
 			Convey(`Works`, func() {
 				r.ReadEdges(foo, callback)
-				So(actual, ShouldResemble, []outgoingEdge{{
-					other:    bar,
-					distance: 1,
-				}})
+				So(actual, ShouldHaveLength, 1)
+				So(actual[0].other, ShouldEqual, bar)
+				So(actual[0].distance, ShouldAlmostEqual, -math.Log(0.5))
 			})
 			Convey(`Reversed`, func() {
 				r.Reversed = true
 				r.ReadEdges(foo, callback)
-				So(actual, ShouldResemble, []outgoingEdge{{
-					other:    bar,
-					distance: 2,
-				}})
+				So(actual, ShouldHaveLength, 1)
+				So(actual[0].other, ShouldEqual, bar)
+				So(actual[0].distance, ShouldAlmostEqual, -math.Log(0.25))
 			})
 		})
 

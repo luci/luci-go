@@ -94,6 +94,8 @@ const (
 	probOne   = 1 << probPower
 )
 
+var logProbOne = math.Log(probOne)
+
 // edge is directed edge.
 //
 // If an edge exists from x to y, then a counterpart edge from y to x must also
@@ -208,9 +210,8 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 
 			// Note: probSum is same for incoming and outgoing edges.
 
-			// Add probSumPower because probSum is not divided by the
-			// probOne. Note that probOne and log use the same base.
-			distance = -math.Log2(float64(e.probSum)/float64(denominator)) + probPower
+			// Add logProbOne because probSum is not divided by probOne.
+			distance = -math.Log(float64(e.probSum)/float64(denominator)) + logProbOne
 		}
 		if !callback(e.to, distance) {
 			return
