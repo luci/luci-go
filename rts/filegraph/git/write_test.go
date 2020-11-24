@@ -52,10 +52,10 @@ func TestWrite(t *testing.T) {
 		})
 
 		Convey(`Two direct children`, func() {
-			foo := &node{commits: 1}
-			bar := &node{commits: 2}
-			foo.edges = []edge{{to: bar, commonCommits: 1}}
-			bar.edges = []edge{{to: foo, commonCommits: 1}}
+			foo := &node{probSumDenominator: 1}
+			bar := &node{probSumDenominator: 2}
+			foo.edges = []edge{{to: bar, probSum: probOne}}
+			bar.edges = []edge{{to: foo, probSum: probOne}}
 			g := &Graph{
 				Commit: "deadbeef",
 				root: node{
@@ -71,28 +71,28 @@ func TestWrite(t *testing.T) {
 				"0",        // version
 				"deadbeef", // commit hash
 
-				"0", // number of root commits
+				"0", // root's probSumDenominator
 				"2", // number of root children
 
 				"bar", // name of a root child
-				"2",   // number of bar commits
+				"2",   // bar's probSumDenominator
 				"0",   // number of bar children
 
 				"foo", // name of a root child
-				"1",   // number of foo commits
+				"1",   // foo's probSumDenominator
 				"0",   // number of foo children
 
 				"2", // total number of edges
 
 				"0", // number of root edges
 
-				"1", // number of bar edges
-				"2", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"1",        // number of bar edges
+				"2",        // index of foo
+				"16777216", // probSum for bar->foo
 
-				"1", // number of foo edges
-				"1", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"1",        // number of foo edges
+				"1",        // index of bar
+				"16777216", // probSum for foo->bar
 			)
 		})
 	})
