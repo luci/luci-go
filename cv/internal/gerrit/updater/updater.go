@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"golang.org/x/sync/errgroup"
@@ -433,8 +435,82 @@ func (f *fetcher) setSoftDeps() error {
 
 // resolveDeps resolves to CLID and triggers tasks for each of the soft and GerritGit dep.
 func (f *fetcher) resolveDeps(ctx context.Context) error {
-	// TODO(tandrii): implement.
+	eids, err := f.depsToExternalIDs()
+	if err != nil {
+		return err
+	}
+
+	lock := sync.Mutex{}
+	resolved := make([]*changelist.Dep, 0, len(eids))
+
+	addDep := func(depCL *changelist.CL, kind changelist.DepKind) error {
+		lock.Lock()
+		defer lock.Unlock()
+		resolved = append(resolved, &changelist.Dep{Clid: int64(depCL.ID), Kind: kind})
+		switch yes, err := depCL.NeedsFetching(ctx, f.luciProject); {
+		case err != nil:
+			return err
+		case yes:
+			// TODO(tandrii): trigger task.
+		}
+		return nil
+	}
+
+	// TODO(tandrii): optimize for the typical case where each dep is already known
+	// to CV by sending just 1 multi-Get against CLMap before doing parallel
+	// GetOrInsert calls.
+
+	errs := parallel.WorkPool(10, func(work chan<- func() error) {
+		for eid, kind := range eids {
+			eid, kind := eid, kind
+			work <- func() error {
+				depCL, err := eid.GetOrInsert(ctx, func(*changelist.CL) {
+					// TODO(tandrii): somehow record when CL was inserted,
+					// to put a boundary on how long ProjectManager should wait for
+					// dependency to be fetched.
+				})
+				if err != nil {
+					return err
+				}
+				return addDep(depCL, kind)
+			}
+		}
+	})
+	if errs != nil {
+		// All errors must be transient. Return any one of them.
+		return errs.(errors.MultiError).First()
+	}
+	f.newSnapshot.Deps = resolved
 	return nil
+}
+
+func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepKind, error) {
+	cqdeps := f.newSnapshot.GetGerrit().GetSoftDeps()
+	gitdeps := f.newSnapshot.GetGerrit().GetGitDeps()
+	// Git deps that are immediate parents of the current CL are HARD deps.
+	// Since arbitrary Cq-Depend deps may duplicate those of Git,
+	// avoid accidental downgrading from HARD to SOFT dep by processing Cq-Depend
+	// first and Git deps second.
+	eids := make(map[changelist.ExternalID]changelist.DepKind, len(cqdeps)+len(gitdeps))
+	for _, dep := range cqdeps {
+		eid, err := changelist.GobID(dep.Host, dep.Change)
+		if err != nil {
+			return nil, err
+		}
+		eids[eid] = changelist.DepKind_SOFT
+	}
+	for _, dep := range gitdeps {
+		eid, err := changelist.GobID(f.host, dep.Change)
+		if err != nil {
+			return nil, err
+		}
+		kind := changelist.DepKind_SOFT
+		if dep.Immediate {
+			kind = changelist.DepKind_HARD
+		}
+		eids[eid] = kind
+	}
+	return eids, nil
 }
 
 // ensureNotStale returns error if given Gerrit updated timestamp is older than
