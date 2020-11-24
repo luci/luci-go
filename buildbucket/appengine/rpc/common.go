@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -46,6 +47,12 @@ const (
 	// summaryMardkdownMaxLength is the maximum size of Build.summary_markdown field in bytes.
 	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
 	summaryMarkdownMaxLength = 4 * 1000
+
+	// BuildTokenKey is the key of the gRPC request header where the auth token should be
+	// specified.
+	//
+	// It's used to authenticate build messages, such as UpdateBuild request,
+	BuildTokenKey = "x-build-token"
 )
 
 var (
@@ -217,4 +224,26 @@ func validateCommit(cm *pb.GitilesCommit) error {
 		return errors.Reason("one of id or ref is required").Err()
 	}
 	return nil
+}
+
+// validateBuildToken validates the update token from the header.
+func validateBuildToken(ctx context.Context, b *model.Build) error {
+	if b.UpdateToken == "" {
+		// TODO(crbug.com/1110990) - Use Cloud Secret Manager to validate the request.
+		return appstatus.Errorf(codes.Internal, "build %d has no update_token", b.ID)
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok || len(md.Get(BuildTokenKey)) == 0 {
+		return appstatus.Errorf(codes.Unauthenticated, "authorization header is missing")
+	}
+
+	// validate it against the token stored in the build entity.
+	var tk string
+	for _, tk = range md.Get(BuildTokenKey) {
+		if tk == b.UpdateToken {
+			return nil
+		}
+	}
+	return perm.NotFoundErr(ctx)
 }

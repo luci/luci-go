@@ -288,8 +288,12 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	updatePaths := stringset.NewFromSlice(req.UpdateMask.GetPaths()...)
 
 	// pre-check if the build can be updated before updating it with a transaction.
-	_, err = getBuildForUpdate(ctx, updatePaths, &bm, req)
+	b, err := getBuildForUpdate(ctx, updatePaths, &bm, req)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := validateBuildToken(ctx, b); err != nil {
 		return nil, err
 	}
 
