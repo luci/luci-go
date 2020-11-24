@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "521d5124_08a8827a",
+        "filename": "cv/internal/gerrit/poller/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-24T00:45:14Z",
+      "side": 1,
+      "message": "typo: oneof",
+      "range": {
+        "startLine": 26,
+        "startChar": 65,
+        "endLine": 26,
+        "endChar": 71
+      },
+      "revId": "0cca967e0dba9be7d105f58f91b7292f01caefa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
