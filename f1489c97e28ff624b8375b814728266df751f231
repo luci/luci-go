@@ -138,6 +138,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b3b30908_39d0d78e",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T01:09:12Z",
+      "side": 1,
+      "message": "It needs to be consistent, for example you can\u0027t split on CR if a LF follows. That\u0027s generally the case on Windows, but not other OSes. So I prefer this to be decided up front and explicitly written in the proto as it\u0027ll be painful to change later.\n\nI think this can be encoded as r\u0027(\\r\\n?|\\n)\u0027 or r\u0027(\\r\\n|\\r|\\n)\u0027",
+      "parentUuid": "30ac53b1_bcd3c121",
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "af423a1a_d720df30",
         "filename": "resultdb/proto/bq/artifact_row.proto",
         "patchSetId": 1
@@ -221,6 +239,30 @@
       "side": 1,
       "message": "I think it shouldn\u0027t be in bytes if you want to query artifact content?\n\nProbably we should enforce UTF-8, I\u0027ll update the comment.",
       "parentUuid": "c874aeab_61f8e3bf",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 13
+      },
+      "revId": "f1489c97e28ff624b8375b814728266df751f231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87bc8292_48586342",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T01:09:12Z",
+      "side": 1,
+      "message": "I think it\u0027s fine to enforce UTF-8, it\u0027s been a pain in Swarming Web UI. I dunno about logdog.\n\nJust make this clear, and also describe how invalid bytes should be dropped, I\u0027d recommend replacing them with the replacement character \"�\" (U+FFFD).\n\nhttps://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character\n\nWhile it\u0027s technically not the job here to do so, since it\u0027s part of the API it\u0027s nice to describe it here.",
+      "parentUuid": "a6b520c9_05aee633",
       "range": {
         "startLine": 42,
         "startChar": 5,
