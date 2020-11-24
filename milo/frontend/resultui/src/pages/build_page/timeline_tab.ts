@@ -16,7 +16,6 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import escape from 'lodash-es/escape';
-import { DateTime } from 'luxon';
 import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
@@ -75,7 +74,7 @@ export class TimelineTabElement extends MobxLitElement {
         id: i.toString(),
         group: i.toString(),
         start: step.startTime.toMillis(),
-        end: (step.endTime || new DateTime()).toMillis(),
+        end: (step.endTime || step.renderTime.get()).toMillis(),
         type: 'range',
       }))),
       new DataSet(this.buildState.build.steps.map((step, i) => ({
