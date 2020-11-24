@@ -47,6 +47,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -475,8 +477,8 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*bigquery.StructSaver) {
 	// Print up to 10 errors.
 	for i := 0; i < 10 && i < len(err); i++ {
-		tr := rows[err[i].RowIndex].Struct.(*TestResultRow)
-		logging.Errorf(ctx, "failed to insert row for %s: %s", tr.Name(), err[i].Error())
+		tr := rows[err[i].RowIndex].Struct.(*bqpb.TestResultRow)
+		logging.Errorf(ctx, "failed to insert row for %s: %s", pbutil.TestResultName(tr.Parent.Id, tr.TestId, tr.ResultId), err[i].Error())
 	}
 	if len(err) > 10 {
 		logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
