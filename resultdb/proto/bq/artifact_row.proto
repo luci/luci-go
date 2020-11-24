@@ -1,0 +1,48 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
+
+// ArtifactRow represents a row in a BigQuery table for result of a functional
+// test case.
+message ArtifactRow {
+  // Id of the parent invocation this artifact belongs to.
+  string invocation_id = 1;
+
+  // Test_id and result_id can identify the test result in the invocation
+  // this artifact belongs to.
+  // They will be empty if the artifact is an invocation-level artifact.
+  string test_id = 2;
+  string result_id = 3;
+
+  // Id of the artifact.
+  string artifact_id = 4;
+
+  // Id of the artifact shard.
+  // Row size limit is 5Mib according to
+  // https://cloud.google.com/bigquery/quotas#streaming_inserts
+  // If the size of the artifact content is larger than that, we'll need to
+  // shard it at line breaks ("\r\n" first, if not exist then "\n" or "\r").
+  // Shard_id is monotonically increasing and starts at 0.
+  int32 shard_id = 5;
+
+  // Artifact shard content.
+  // Enforced to utf-8. When encounter invalid bytes, replace them by
+  // replacement characters(U+FFFD).
+  string content = 6;
+}
