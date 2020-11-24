@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94c964be_a9b41dc5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T07:18:04Z",
+      "side": 1,
+      "message": "PTAL. Benchmarks are easier to view in gitiles, e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/3ad5a350d4545067fa19fe2793c3142499b93527",
+      "revId": "c28e02f191dafd2081d6680e51f504925b0d296c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
