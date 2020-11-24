@@ -167,6 +167,10 @@ func RevInfo(ps int) *gerritpb.RevisionInfo {
 	return &gerritpb.RevisionInfo{
 		Number: int32(ps),
 		Kind:   gerritpb.RevisionInfo_REWORK,
+		Files: map[string]*gerritpb.FileInfo{
+			fmt.Sprintf("ps%03d/c.cpp", ps): {Status: gerritpb.FileInfo_W},
+			"shared/s.py":                   {Status: gerritpb.FileInfo_W},
+		},
 	}
 }
 
@@ -314,6 +318,19 @@ func AllRevs() CIModifier {
 				ci.GetRevisions()[Rev(int(ci.GetNumber()), ps)] = RevInfo(ps)
 			}
 		}
+	}
+}
+
+// Files sets ChangeInfo's current revision to contain given files.
+func Files(fs ...string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ri := ci.GetRevisions()[ci.GetCurrentRevision()]
+		m := make(map[string]*gerritpb.FileInfo, len(fs))
+		for _, f := range fs {
+			// CV doesn't actually care what status is.
+			m[f] = &gerritpb.FileInfo{}
+		}
+		ri.Files = m
 	}
 }
 
