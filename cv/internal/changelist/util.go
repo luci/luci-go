@@ -15,6 +15,7 @@
 package changelist
 
 import (
+	"context"
 	"time"
 )
 
@@ -65,4 +66,21 @@ func (a *ApplicableConfig) HasProject(luciProject string) bool {
 		}
 	}
 	return false
+}
+
+// NeedsFetching returns true if the CL is likely out of date and would benefit
+// from fetching in the context of a given project.
+func (cl *CL) NeedsFetching(ctx context.Context, luciProject string) (bool, error) {
+	switch {
+	case cl == nil:
+		panic("CL must be not nil")
+	case cl.Snapshot == nil:
+		return true, nil
+	case cl.Snapshot.GetLuciProject() != luciProject:
+		// TODO(tandrii): verify here which luciProject is allowed to watch the repo.
+		return true, nil
+	default:
+		// TODO(tandrii): add mechanism to refresh purely due to passage of time.
+		return false, nil
+	}
 }
