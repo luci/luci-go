@@ -59,28 +59,28 @@ func TestRead(t *testing.T) {
 				"0",        // version
 				"deadbeef", // commit hash
 
-				"0", // number of root commits
+				"0", // root's sumProbDenomiator.
 				"2", // number of root children
 
 				"bar", // name of a root child
-				"2",   // number of bar commits
+				"2",   // bar's sumProbDenomiator
 				"0",   // number of bar children
 
 				"foo", // name of a root child
-				"1",   // number of foo commits
+				"1",   // foo's sumProbDenomiator
 				"0",   // number of foo children
 
 				"2", // total number of edges
 
 				"0", // number of root edges
 
-				"1", // number of bar edges
-				"2", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"1",        // number of bar edges
+				"2",        // index of foo
+				"16777216", // probSum for bar->foo
 
-				"1", // number of foo edges
-				"1", // index of the other node in edge #1
-				"1", // number of the common commits between foo and bar
+				"1",        // number of foo edges
+				"1",        // index bar
+				"16777216", // probSum for foo->bar
 			)
 
 			So(g.Commit, ShouldResemble, "deadbeef")
@@ -88,21 +88,21 @@ func TestRead(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"foo": {
-						name:     "//foo",
-						commits:  1,
-						copyEdgesOnAppend: true,
+						name:               "//foo",
+						probSumDenominator: 1,
+						copyEdgesOnAppend:  true,
 						edges: []edge{{
-							to:            g.root.children["bar"],
-							commonCommits: 1,
+							to:      g.root.children["bar"],
+							probSum: probOne,
 						}},
 					},
 					"bar": {
-						name:     "//bar",
-						commits:  2,
-						copyEdgesOnAppend: true,
+						name:               "//bar",
+						probSumDenominator: 2,
+						copyEdgesOnAppend:  true,
 						edges: []edge{{
-							to:            g.root.children["foo"],
-							commonCommits: 1,
+							to:      g.root.children["foo"],
+							probSum: probOne,
 						}},
 					},
 				},
@@ -115,15 +115,15 @@ func TestRead(t *testing.T) {
 				"0",        // version
 				"deadbeef", // commit hash
 
-				"0", // number of root commits
+				"0", // root's probSumDenominator
 				"1", // number of root children
 
 				"dir", // name of a root child
-				"0",   // number of dir commits
+				"0",   // dir's probSumDenominator
 				"1",   // number of dir children
 
 				"foo", // name of a dir child
-				"1",   // number of foo commits
+				"1",   // foo's probSumDenominator
 				"0",   // number of foo children
 
 				"0", // total number of edges
@@ -141,8 +141,8 @@ func TestRead(t *testing.T) {
 						name: "//dir",
 						children: map[string]*node{
 							"foo": {
-								name:    "//dir/foo",
-								commits: 1,
+								name:               "//dir/foo",
+								probSumDenominator: 1,
 							},
 						},
 					},

@@ -35,7 +35,7 @@ const magicHeader = 54
 //  version = 0
 //
 //  root = node
-//  node = number-of-commits number-of-children children-sorted-by-base-name
+//  node = prob-sum-denominator number-of-children children-sorted-by-base-name
 //  children-sorted-by-base-name = child*
 //  child = base-name node
 //
@@ -43,12 +43,12 @@ const magicHeader = 54
 //  node-edges = number-of-edges edge*
 //  edge =
 //    index-of-the-adjacent-node-as-found-in-the-file
-//    number-of-common-commits
+//    prob-sum
 //    edges-of-children-sorted-by-base-name
 //  edges-of-children-sorted-by-base-name = edge*
 //
 //  where
-//   all integer types are encoded as uvarint
+//   all integer types are encoded as varint
 //   all strings are encoded as length-prefixed utf8
 //   `*` means "0 or more"
 func (g *Graph) Write(w io.Writer) error {
@@ -102,8 +102,8 @@ func (w *writer) writeNode(n *node) error {
 	w.indices[n] = len(w.indices)
 	w.totalEdges += len(n.edges)
 
-	// Write the number of commits.
-	if err := w.writeInt(n.commits); err != nil {
+	// Write the denomnator.
+	if err := w.writeInt(n.probSumDenominator); err != nil {
 		return err
 	}
 
@@ -138,7 +138,7 @@ func (w *writer) writeEdges(n *node) error {
 		if err := w.writeInt(w.indices[e.to]); err != nil {
 			return err
 		}
-		if err := w.writeInt(e.commonCommits); err != nil {
+		if err := w.writeInt64(int64(e.probSum)); err != nil {
 			return err
 		}
 	}
@@ -169,12 +169,16 @@ func (w *writer) writeString(s string) error {
 }
 
 func (w *writer) writeInt(n int) error {
+	return w.writeInt64(int64(n))
+}
+
+func (w *writer) writeInt64(n int64) error {
 	if w.textMode {
 		_, err := fmt.Fprintln(w.w, n)
 		return err
 	}
 
-	length := binary.PutVarint(w.varintBuf[:], int64(n))
+	length := binary.PutVarint(w.varintBuf[:], n)
 	_, err := w.w.Write(w.varintBuf[:length])
 	return err
 }

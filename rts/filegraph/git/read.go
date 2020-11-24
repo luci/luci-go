@@ -99,9 +99,9 @@ func (r *reader) readGraph(g *Graph) error {
 func (r *reader) readNode(n *node) error {
 	r.ordered = append(r.ordered, n)
 
-	// Read the number of commits.
+	// Read the denominator.
 	var err error
-	if n.commits, err = r.readInt(); err != nil {
+	if n.probSumDenominator, err = r.readInt(); err != nil {
 		return err
 	}
 
@@ -162,9 +162,11 @@ func (r *reader) readEdges(n *node) error {
 			n.edges[i].to = r.ordered[index]
 		}
 
-		if n.edges[i].commonCommits, err = r.readInt(); err != nil {
+		p, err := r.readInt64()
+		if err != nil {
 			return err
 		}
+		n.edges[i].probSum = probability(p)
 	}
 	return nil
 }
@@ -190,16 +192,21 @@ func (r *reader) readString() (string, error) {
 }
 
 func (r *reader) readInt() (int, error) {
+	n, err := r.readInt64()
+	return int(n), err
+}
+
+func (r *reader) readInt64() (int64, error) {
 	if r.textMode {
 		s, err := r.readLine()
 		if err != nil {
 			return 0, err
 		}
-		return strconv.Atoi(s)
+		return strconv.ParseInt(s, 10, 64)
 	}
 
 	n, err := binary.ReadVarint(r.r)
-	return int(n), err
+	return n, err
 }
 
 func (r *reader) readLine() (string, error) {
