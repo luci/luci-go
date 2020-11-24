@@ -134,6 +134,12 @@ type tasksInput struct {
 	Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
 }
 
+func sendSizeBytes(p *swarming.SwarmingRpcsTaskProperties) {
+	if p != nil && p.CasInputRoot != nil && p.CasInputRoot.Digest != nil {
+		p.CasInputRoot.Digest.ForceSendFields = append(p.CasInputRoot.Digest.ForceSendFields, "SizeBytes")
+	}
+}
+
 func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
@@ -155,6 +161,15 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 			request.ParentTaskId = parentTaskID
 		}
 	}
+
+	// Allow to send 0 size bytes for input digest.
+	for _, request := range requests.Requests {
+		sendSizeBytes(request.Properties)
+		for _, slice := range request.TaskSlices {
+			sendSizeBytes(slice.Properties)
+		}
+	}
+
 	return requests.Requests, nil
 }
 
