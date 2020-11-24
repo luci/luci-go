@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6eb0b82_3c9c354d",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T04:41:11Z",
+      "side": 1,
+      "message": "Initially, this logic parsed the dict and checked the issued date and expiration.\n: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2548451/1\n\nHowever, after a discussion, Andrii, Sana, and I agreed that it\u0027s not necessary because\n- the token expiration duration is BUILD_TIMEOUT, 2 days,\n- if the token was expired, the build should have been finalized already, and\n- UpdateBuild() would return an error before this function.",
+      "range": {
+        "startLine": 244,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 13
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
