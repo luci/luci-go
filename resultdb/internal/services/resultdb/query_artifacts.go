@@ -35,8 +35,8 @@ import (
 // validateQueryArtifactsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
-	if err := pbutil.ValidateTestResultPredicate(req.TestResultPredicate); err != nil {
-		return errors.Annotate(err, "test_result_predicate").Err()
+	if err := pbutil.ValidateArtifactPredicate(req.GetPredicate()); err != nil {
+		return errors.Annotate(err, "predicate").Err()
 	}
 	return validateQueryRequest(req)
 }
@@ -68,10 +68,10 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	// Query artifacts.
 	q := artifacts.Query{
 		InvocationIDs:       invs,
-		TestResultPredicate: in.TestResultPredicate,
+		TestResultPredicate: in.Predicate.GetTestResultPredicate(),
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,
-		FollowEdges:         in.FollowEdges,
+		FollowEdges:         in.Predicate.GetFollowEdges(),
 	}
 	arts, token, err := q.Fetch(ctx)
 	if err != nil {
