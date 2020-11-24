@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "65ce390d_409f4bbd",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "078bf3d1_67f7d583",
+      "range": {
+        "startLine": 19,
+        "startChar": 14,
+        "endLine": 19,
+        "endChar": 24
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6119a5f7_4257480b",
         "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
         "patchSetId": 4
@@ -54,6 +78,24 @@
       "writtenOn": "2020-11-23T21:48:15Z",
       "side": 1,
       "message": "Thanks for adding the detailed information here, it\u0027s helpful :-)",
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa1eff1b_ac2a5f16",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:00Z",
+      "side": 1,
+      "message": "This was my user documentation :facepalm in 2019:\n  https://chrome-internal.googlesource.com/infra/infra_internal/+/master/infra_internal/services/cq/utils/cqdepend.py\n\nIt still is 😭",
+      "parentUuid": "6119a5f7_4257480b",
       "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "42cff288_427d519d",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9863b41_9749e184",
+      "range": {
+        "startLine": 68,
+        "startChar": 50,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a7ebd0b8_b863f2cc",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-11-23T21:48:15Z",
       "side": 1,
       "message": "if",
+      "range": {
+        "startLine": 96,
+        "startChar": 21,
+        "endLine": 96,
+        "endChar": 23
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "feed510b_d730124a",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7ebd0b8_b863f2cc",
       "range": {
         "startLine": 96,
         "startChar": 21,
@@ -140,6 +230,30 @@
       "writtenOn": "2020-11-23T23:07:36Z",
       "side": 1,
       "message": "Is this intentional? why 31 bit instead of 32 bit?",
+      "range": {
+        "startLine": 156,
+        "startChar": 41,
+        "endLine": 156,
+        "endChar": 43
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa06891d_1d9028f5",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:00Z",
+      "side": 1,
+      "message": "Good catch. 31 because I am paranoid with overflows of signed int (vs unsigned uint32). But I\u0027ve read the doc and now i\"m comfortable with 32.\n\nHowever, everywhere else Change is 64-bit. So, let\u0027s use 64 and int64 as type.",
+      "parentUuid": "b396f9ce_a3ab7af8",
       "range": {
         "startLine": 156,
         "startChar": 41,
