@@ -64,10 +64,11 @@ type node struct {
 	// See also filegraph.Node.Name().
 	name string
 
-	// commits is the number of commits that touched this file.
-	// Note that if "//foo/bar.cc" is touched, foo's commit count is
-	// not incremented.
-	commits int
+	// probSumDenominator is the denominator for edge.probSum, which results
+	// in the probability that |edge.to| file is relevant to this file.
+	// This is roughly the number of commits that touched this file,
+	// but excludes some commits, see apply() logic.
+	probSumDenominator int
 
 	// edges are outgoing edges.
 	// If an edge exists from x to y, then it must also exist from y to x and must
@@ -91,14 +92,20 @@ type node struct {
 // exist and have the same commonCommits.
 //
 // A special kind of edges is called "alias edge". It is indicated by
-// commonCommits == 0. If edge (x, y) is an alias, then distance(x, y) is 0.
+// probSum being NaN. If edge (x, y) is an alias, then distance(x, y) is 0.
 // Alias edges are used for file renames: the old and the new file are aliases
 // of each other.
 // Alias edges are never downgraded to regular edges - they stay alias because
 // distance 0 is the minimal possible distance.
 type edge struct {
-	to            *node
-	commonCommits int
+	to *node
+
+	// probSum is the sum of the probabilites that `to` appears in a commit,
+	// for each commit that touched the `from` node.
+	// It is explained in doc.go and updated in update.go.
+	//
+	// If it is NaN, then this edge is an alias.
+	probSum float64
 }
 
 func (g *Graph) ensureInitialized() {
@@ -179,21 +186,24 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 	outgoing := !r.Reversed
 	for _, e := range n.edges {
 		distance := 0.0
-		if e.commonCommits == 0 {
+		if math.IsNaN(e.probSum) {
 			// e.to is alias of n. The distance is 0.
 		} else {
-			var sampleSpaceSize int // https://en.wikipedia.org/wiki/Sample_space
+			var denominator int
 			if outgoing {
-				sampleSpaceSize = n.commits
+				denominator = n.probSumDenominator
 			} else {
-				sampleSpaceSize = e.to.commits
+				denominator = e.to.probSumDenominator
+			}
+			if denominator == 0 {
+				continue
 			}
 
 			// TODO(nodir): consider using multiplication in filegraph.Query instead of
 			// calling log2, because the latter is expensive.
 
-			// Note: commonCommits is same for incoming and outgoing edges.
-			distance = -math.Log2(float64(e.commonCommits) / float64(sampleSpaceSize))
+			// Note: probSum is same for incoming and outgoing edges.
+			distance = -math.Log2(e.probSum / float64(denominator))
 		}
 		if !callback(e.to, distance) {
 			return
@@ -230,13 +240,13 @@ func (n *node) sortedChildKeys() []string {
 func (n *node) ensureAlias(to *node) {
 	for i := range n.edges {
 		if n.edges[i].to == to {
-			n.edges[i].commonCommits = 0
+			n.edges[i].probSum = math.NaN()
 			return
 		}
 	}
 
 	n.prepareToAppendEdges()
-	n.edges = append(n.edges, edge{to: to})
+	n.edges = append(n.edges, edge{to: to, probSum: math.NaN()})
 }
 
 // prepareToAppendEdges copies n.edges if n.copyEdgesOnAppend is true.
