@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "165d342c_522b7a44",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T23:59:08Z",
+      "side": 1,
+      "message": "Is this the immediate parent, or the root?",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 21
+      },
+      "revId": "827a4a2a8aaf5a43d7e263f60ea66d06e1e3653e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0344fe95_0e98d7a4",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T23:59:08Z",
+      "side": 1,
+      "message": "Is there any expectation about the format? Can it be empty?",
+      "revId": "827a4a2a8aaf5a43d7e263f60ea66d06e1e3653e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
