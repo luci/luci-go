@@ -1,6 +1,92 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "fac46265_32ae9d24",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "looks fairly useful and generic.\nplease add mask.Mask.MustInclude",
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4cb92ca6_a673c1fb",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "finalStatus :\u003d",
+      "range": {
+        "startLine": 244,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 18
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ee5cd18_f104c32d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "where do you see that the requester is trying to update output fields? \n\nbesides, why buildMask is used in this func to begin with? buildMask is only for reading back",
+      "range": {
+        "startLine": 258,
+        "startChar": 57,
+        "endLine": 258,
+        "endChar": 111
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2636680d_509cf77a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "reading the condition under which Submask can return errors https://godoc.org/go.chromium.org/luci/common/proto/mask#Mask.Submask\ni think we need MustSubmask too",
+      "range": {
+        "startLine": 284,
+        "startChar": 15,
+        "endLine": 284,
+        "endChar": 22
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "2f6ca265_5f035f4b",
@@ -19,6 +105,52 @@
         "startChar": 1,
         "endLine": 288,
         "endChar": 12
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe1b0fe8_2155f12d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "it\u0027s weird that Mask methods operate on raw Mask structs rather than pointers.\nasked a question in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2107188/6#message-016a96e25ef5202a09f0b9c9f549ddbda569997c",
+      "range": {
+        "startLine": 291,
+        "startChar": 46,
+        "endLine": 291,
+        "endChar": 47
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4dc1ebfe_adb95f41",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:48:08Z",
+      "side": 1,
+      "message": "nit: join with prev line?",
+      "range": {
+        "startLine": 292,
+        "startChar": 1,
+        "endLine": 292,
+        "endChar": 5
       },
       "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
