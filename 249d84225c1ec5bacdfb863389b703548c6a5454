@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52494985_cef5e4ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T03:26:22Z",
+      "side": 1,
+      "message": "oh, re-use of tryjobs after a substantial rebase showed itself.\n\nThank you for revert!",
+      "revId": "249d84225c1ec5bacdfb863389b703548c6a5454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
