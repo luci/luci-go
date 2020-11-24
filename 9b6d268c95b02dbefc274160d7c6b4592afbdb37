@@ -16,6 +16,24 @@
       "message": "Hi,\n\nI\u0027d like to point out an issue with the following code.\n\ncwd, err :\u003d os.Getwd()\nSo(err, ShouldBeNil)\nrel, err :\u003d filepath.Rel(cwd, t.TempDir())\n\nOn Windows, if cwd and t.TempDir() are on different drives, filepath.Rel() will fail. If the purpose of this piece of code is just to test any relative path, the following might be sufficient.\n\nrel, err :\u003d filepath.Rel(td, t.TempDir())\n\nThanks,\n\nTyler",
       "revId": "9b6d268c95b02dbefc274160d7c6b4592afbdb37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3642e76_1a048bb1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-24T02:31:31Z",
+      "side": 1,
+      "message": "Thank you for your suggestion, I made https://crrev.com/c/2557059",
+      "parentUuid": "3019476c_4f65befd",
+      "revId": "9b6d268c95b02dbefc274160d7c6b4592afbdb37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
