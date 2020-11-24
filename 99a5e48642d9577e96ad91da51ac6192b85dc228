@@ -138,6 +138,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4d276120_8600db80",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T00:02:11Z",
+      "side": 1,
+      "message": "where do you see a breaking change in that link?\nonly in Go a oneof turns into a new field. Starlark generally looks like Python, and in Python the one-of fields remain fields of the message, e.g. I don\u0027t expect that code to change.",
+      "parentUuid": "914e7552_32402363",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 20
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8ad2c260_21ab51fd",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 2
