@@ -48,6 +48,10 @@ func validateTestObjectPredicate(p testObjectPredicate) error {
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
+	if p == nil {
+		return nil
+	}
+
 	if err := ValidateEnum(int32(p.GetExpectancy()), pb.TestResultPredicate_Expectancy_name); err != nil {
 		return errors.Annotate(err, "expectancy").Err()
 	}
@@ -98,4 +102,12 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	default:
 		panic("impossible")
 	}
+}
+
+func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
+	if p == nil {
+		return nil
+	}
+
+	return ValidateTestResultPredicate(p.GetTestResultPredicate())
 }
