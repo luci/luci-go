@@ -16,6 +16,24 @@
       "message": "does this lock need to be hold till task is triggered? Can we just release it after appending resolved is done?",
       "revId": "18779aeb4502b820d9153610f1c6279038a39289",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7455cf82_c9170fff",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:10:43Z",
+      "side": 1,
+      "message": "Indeed, fixed in the next CL in the stack.\n(the reason lock is held throughout is because I originally appended depCL.ID to the list, and then I realized that triggering task immediately is better)",
+      "parentUuid": "e60ec108_a30c0e1b",
+      "revId": "18779aeb4502b820d9153610f1c6279038a39289",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
