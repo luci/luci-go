@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
@@ -130,6 +131,10 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 		return err
 	}
 
+	if err := f.resolveDeps(ctx); err != nil {
+		return err
+	}
+
 	min, cur, err := gerrit.EquivalentPatchsetRange(f.newSnapshot.GetGerrit().GetInfo())
 	if err != nil {
 		return err
@@ -188,10 +193,16 @@ func (f *fetcher) new(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { return f.fetchFiles(ctx) })
 	eg.Go(func() error { return f.fetchRelated(ctx) })
+	// Meanwhile, compute soft deps. Currently, it's cheap operation.
+	// In the future, it may require sending another RPC to Gerrit,
+	// e.g. to fetch related CLs by topic.
+	if err = f.setSoftDeps(); err != nil {
+		return err
+	}
 	if err = eg.Wait(); err != nil {
 		return err
 	}
-	return errors.New("not implemented")
+	return nil
 }
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
@@ -390,6 +401,40 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 	default:
 		return unhandledError(ctx, err, "failed to fetch files for %s", f)
 	}
+}
+
+// setSoftDeps parses CL description and sets soft deps.
+func (f *fetcher) setSoftDeps() error {
+	ci := f.newSnapshot.GetGerrit().GetInfo()
+	msg := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
+	deps := cqdepend.Parse(msg)
+	if len(deps) == 0 {
+		return nil
+	}
+
+	// Given f.host like "sub-review.x.y.z", compute "-review.x.y.z" suffix.
+	dot := strings.IndexRune(f.host, '.')
+	if dot == -1 || !strings.HasSuffix(f.host[:dot], "-review") {
+		return errors.Reason("Host %s doesn't support Cq-Depend (%s)", f.host, f).Err()
+	}
+	hostSuffix := f.host[dot-len("-review"):]
+
+	softDeps := make([]*changelist.GerritSoftDep, len(deps))
+	for i, d := range deps {
+		depHost := f.host
+		if d.Subdomain != "" {
+			depHost = d.Subdomain + hostSuffix
+		}
+		softDeps[i] = &changelist.GerritSoftDep{Host: depHost, Change: int64(d.Change)}
+	}
+	f.newSnapshot.GetGerrit().SoftDeps = softDeps
+	return nil
+}
+
+// resolveDeps resolves to CLID and triggers tasks for each of the soft and GerritGit dep.
+func (f *fetcher) resolveDeps(ctx context.Context) error {
+	// TODO(tandrii): implement.
+	return nil
 }
 
 // ensureNotStale returns error if given Gerrit updated timestamp is older than
