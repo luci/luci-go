@@ -72,6 +72,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7019595f_6168db45",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-11-24T20:57:40Z",
+      "side": 1,
+      "message": "Are we supposed to accept more than one value here? It seems odd to me that for auth we\u0027re saying \"if any of your tokens match, you\u0027re authorized\".",
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "167985e2_00e05d63",
         "filename": "buildbucket/appengine/rpc/common.go",
         "patchSetId": 5
@@ -129,6 +146,30 @@
       "writtenOn": "2020-11-24T14:28:50Z",
       "side": 1,
       "message": "it\u0027s hard to see this 1 char diff. But also, tk2\u0027s only goal is to be different from tk1, it doesn\u0027t need to be a valid token. How about get rid of t2 here and change L256 with s/t2/\"some other token\"?",
+      "range": {
+        "startLine": 245,
+        "startChar": 64,
+        "endLine": 245,
+        "endChar": 65
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5831d1f_539dd0af",
+        "filename": "buildbucket/appengine/rpc/common_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-11-24T20:57:40Z",
+      "side": 1,
+      "message": "I would just do tk1 :\u003d \"token\" and tk2 :\u003d \"other\" or something like that so it\u0027s exceedingly obvious. Why do you need these to look like the kinds of tokens we\u0027re actually using? From the perspective of this code it\u0027s just a check if the incoming string matches the string in the datastore, without regard for the format of those strings.",
+      "parentUuid": "ec84b9e2_0c21e51a",
       "range": {
         "startLine": 245,
         "startChar": 64,
