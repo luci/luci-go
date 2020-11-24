@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f6ca265_5f035f4b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T04:22:05Z",
+      "side": 1,
+      "message": "bm and updatePaths will also be used in the function that executes the datastore transaction.",
+      "range": {
+        "startLine": 284,
+        "startChar": 1,
+        "endLine": 288,
+        "endChar": 12
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
