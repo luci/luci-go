@@ -204,6 +204,30 @@
       },
       "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0bf17a7_0500f2b8",
+        "filename": "led/job/jobcreate/testdata/bbagent_cas.job.json",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T01:05:21Z",
+      "side": 1,
+      "message": "Excellent!",
+      "parentUuid": "2194c725_2cedd5ff",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 227,
+        "endChar": 4
+      },
+      "revId": "ace1d9f2aa19ea06916eff2747569e75889fa551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
