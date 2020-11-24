@@ -52,6 +52,24 @@
       "parentUuid": "15655e69_cfc8e5f7",
       "revId": "7bbffd9a2d99ba1a26009d6bf087d43dc2e08776",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "efcc1603_57b2862a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1174099
+      },
+      "writtenOn": "2020-11-24T03:53:43Z",
+      "side": 1,
+      "message": "\u003e ping?\n\nI said\n\n\u003e LGTM assuming the answer to (2) is “no.”\n\nand you said\n\n\u003e 2) It does not.\n\nSo I think we’re good here.\n\nBut thanks for the explanation that this is execv only and not fork–exec, and for the explanation that you only care that the fd stays open but don’t actually need to interact with it. This all sounds, well, sound.",
+      "parentUuid": "def99228_14161c0f",
+      "revId": "7bbffd9a2d99ba1a26009d6bf087d43dc2e08776",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
