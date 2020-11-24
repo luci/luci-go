@@ -20,27 +20,34 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// ValidateBigQueryExport returns a non-nil error if bq_export is determined to
+// ValidateBigQueryExport returns a non-nil error if bqExport is determined to
 // be invalid.
-func ValidateBigQueryExport(bq_export *pb.BigQueryExport) error {
+func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	switch {
-	case bq_export.Project == "":
+	case bqExport.Project == "":
 		return errors.Annotate(unspecified(), "project").Err()
-	case bq_export.Dataset == "":
+	case bqExport.Dataset == "":
 		return errors.Annotate(unspecified(), "dataset").Err()
-	case bq_export.Table == "":
+	case bqExport.Table == "":
 		return errors.Annotate(unspecified(), "table").Err()
-	case bq_export.GetTestResults() == nil:
-		return errors.Annotate(unspecified(), "test_results").Err()
 	}
 
-	if bq_export.TestResults.GetPredicate() == nil {
-		return nil
-	}
-
-	if err := ValidateTestResultPredicate(bq_export.TestResults.Predicate); err != nil {
-		return errors.Annotate(err, "test_results: predicate").Err()
+	if err := validateResultType(bqExport); err != nil {
+		return errors.Annotate(err, "result_type").Err()
 	}
 
 	return nil
+}
+
+func validateResultType(bqExport *pb.BigQueryExport) error {
+	switch resultType := bqExport.ResultType.(type) {
+	case *pb.BigQueryExport_TestResults_:
+		return errors.Annotate(ValidateTestResultPredicate(resultType.TestResults.GetPredicate()), "test_results: predicate").Err()
+	case *pb.BigQueryExport_Artifacts_:
+		return errors.Annotate(ValidateArtifactPredicate(resultType.Artifacts.GetPredicate()), "artifacts: predicate").Err()
+	case nil:
+		return unspecified()
+	default:
+		panic("impossible")
+	}
 }
