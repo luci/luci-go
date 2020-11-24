@@ -16,6 +16,69 @@
       "message": "PTAL",
       "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd049c52_2cb90a9d",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:17:57Z",
+      "side": 1,
+      "message": "this looks pretty generic. Can we have it in pbutil than here? maybe we already do?",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 25
+      },
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "527a76cd_9866dd82",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:17:57Z",
+      "side": 1,
+      "message": "maybe invocationProtoToRecord ?",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 32
+      },
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7d425db_2af59c35",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:17:57Z",
+      "side": 1,
+      "message": "did you try running this on your -dev instance? I don\u0027t think it works the way we expect.\nI expected https://godoc.org/go.chromium.org/luci/common/bq#Row to be used here",
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
