@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0210f607_23e7c03f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T21:19:02Z",
+      "side": 1,
+      "message": "I\u0027m about to upload the CL for that change, so omit the TODO here.",
+      "parentUuid": "a7a27136_bb771356",
+      "revId": "433942c5c2a79a4500888b1816bbc83efc3a6d8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1bda425b_f4591cf5",
         "filename": "resultdb/pbutil/invocation_processing.go",
         "patchSetId": 5
@@ -48,6 +66,24 @@
       "writtenOn": "2020-11-24T17:18:43Z",
       "side": 1,
       "message": "do you plan to add validation in the next CL",
+      "revId": "433942c5c2a79a4500888b1816bbc83efc3a6d8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5f53029_ecc9db74",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T21:19:02Z",
+      "side": 1,
+      "message": "Yes, I was thinking that this CL is mainly for proto change. But I think adding validation here is also fine.",
+      "parentUuid": "1bda425b_f4591cf5",
       "revId": "433942c5c2a79a4500888b1816bbc83efc3a6d8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
