@@ -43,8 +43,49 @@ var _ gerrit.Client = (*Client)(nil)
 // Loads a change by id.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
-func (c *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
-	panic("not implemented") // TODO: Implement. Must return a copy.
+func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+
+	change, found := client.f.cs[key(client.host, int(in.GetNumber()))]
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, in.GetNumber())
+	}
+	if status := change.ACLs(OpRead, client.luciProject); status.Code() != codes.OK {
+		return nil, status.Err()
+	}
+
+	qopts := make(map[gerritpb.QueryOption]struct{}, len(in.GetOptions()))
+	for _, qopt := range in.GetOptions() {
+		qopts[qopt] = struct{}{}
+	}
+	has := func(o gerritpb.QueryOption) bool {
+		_, yes := qopts[o]
+		return yes
+	}
+
+	// First, deep copy.
+	ci := &gerritpb.ChangeInfo{}
+	proto.Merge(ci, change.Info)
+	// Second, mutate obeying query options.
+	// TODO(tandrii): support more options as needed.
+
+	switch {
+	case has(gerritpb.QueryOption_ALL_REVISIONS):
+		// Nothing to remove.
+	case has(gerritpb.QueryOption_CURRENT_REVISION):
+		// Remove all but current.
+		for rev := range ci.GetRevisions() {
+			if rev != ci.GetCurrentRevision() {
+				delete(ci.GetRevisions(), rev)
+			}
+		}
+	default:
+		ci.CurrentRevision = "" // Yeah, weirdly, Gerrit doesn't set this unconditionally.
+		ci.Revisions = nil
+	}
+
+	return ci, nil
 }
 
 // Retrieves related changes of a revision.

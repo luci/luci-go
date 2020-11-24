@@ -300,3 +300,54 @@ func TestFiles(t *testing.T) {
 		})
 	})
 }
+
+func TestGetChange(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetChange handling works", t, func() {
+		ci := CI(100100, PS(4), AllRevs())
+		So(ci.GetRevisions(), ShouldHaveLength, 4)
+		f := WithCIs("host", ACLRestricted("infra"), ci)
+
+		ctx := f.Install(context.Background())
+		gc, err := gerrit.CurrentClient(ctx, "host", "infra")
+		So(err, ShouldBeNil)
+
+		Convey("NotFound", func() {
+			_, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 12321})
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Default", func() {
+			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 100100})
+			So(err, ShouldBeNil)
+			So(resp.GetCurrentRevision(), ShouldEqual, "")
+			So(resp.GetRevisions(), ShouldHaveLength, 0)
+			So(resp.GetLabels(), ShouldHaveLength, 0)
+		})
+
+		Convey("CURRENT_REVISION", func() {
+			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+				Number:  100100,
+				Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION}})
+			So(err, ShouldBeNil)
+			So(resp.GetRevisions(), ShouldHaveLength, 1)
+			So(resp.GetRevisions()[resp.GetCurrentRevision()], ShouldNotBeNil)
+		})
+
+		Convey("Full", func() {
+			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
+				Number: 100100,
+				Options: []gerritpb.QueryOption{
+					gerritpb.QueryOption_ALL_REVISIONS,
+					gerritpb.QueryOption_DETAILED_ACCOUNTS,
+					gerritpb.QueryOption_DETAILED_LABELS,
+					gerritpb.QueryOption_SKIP_MERGEABLE,
+					gerritpb.QueryOption_MESSAGES,
+					gerritpb.QueryOption_SUBMITTABLE,
+				}})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, ci)
+		})
+	})
+}
