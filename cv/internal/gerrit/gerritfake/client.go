@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -56,12 +57,9 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 
-	change, found := client.f.cs[key(client.host, int(in.GetNumber()))]
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, in.GetNumber())
-	}
-	if status := change.ACLs(OpRead, client.luciProject); status.Code() != codes.OK {
-		return nil, status.Err()
+	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
+	if err != nil {
+		return nil, err
 	}
 	ps, _, err := change.resolveRevision(in.GetRevisionId())
 	if err != nil {
@@ -115,8 +113,24 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 // Lists the files that were modified, added or deleted in a revision.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
-func (c *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+
+	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
+	if err != nil {
+		return nil, err
+	}
+	_, ri, err := change.resolveRevision(in.GetRevisionId())
+	if err != nil {
+		return nil, err
+	}
+	// Note: for simplicity of fake, use files inside a revision, even though it
+	// differs from what ListFiles may return for merge commit in Gerrit.
+	ret := &gerritpb.ListFilesResponse{}
+	// Deep copy before returning.
+	proto.Merge(ret, &gerritpb.ListFilesResponse{Files: ri.GetFiles()})
+	return ret, nil
 }
 
 // visitNodesDFS visits all nodes reachable from the current node via depth
@@ -140,4 +154,15 @@ func visitNodesDFS(node string, edges map[string][]string, clbk func(node string
 		return clbk(n)
 	}
 	return visit(node)
+}
+
+func (client *Client) getChangeEnforceACLsLocked(change int64) (*Change, error) {
+	ch, found := client.f.cs[key(client.host, int(change))]
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, change)
+	}
+	if status := ch.ACLs(OpRead, client.luciProject); status.Code() != codes.OK {
+		return nil, status.Err()
+	}
+	return ch, nil
 }

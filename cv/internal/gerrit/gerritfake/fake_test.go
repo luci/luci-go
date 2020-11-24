@@ -234,3 +234,69 @@ func sortRelated(r *gerritpb.GetRelatedChangesResponse) {
 	}
 	sort.Slice(r.GetChanges(), func(i, j int) bool { return key(i) < key(j) })
 }
+
+func TestFiles(t *testing.T) {
+	t.Parallel()
+
+	Convey("Files' handling works", t, func() {
+		sortedFiles := func(r *gerritpb.ListFilesResponse) []string {
+			fs := make([]string, 0, len(r.GetFiles()))
+			for f := range r.GetFiles() {
+				fs = append(fs, f)
+			}
+			sort.Strings(fs)
+			return fs
+		}
+		ciDefault := CI(1)
+		ciCustom := CI(2, Files("ps1/cus.tom", "bl.ah"), PS(2), Files("still/custom"))
+		ciNoFiles := CI(3, Files())
+		f := WithCIs("host", ACLRestricted("infra"), ciDefault, ciCustom, ciNoFiles)
+
+		ctx := f.Install(context.Background())
+		gc, err := gerrit.CurrentClient(ctx, "host", "infra")
+		So(err, ShouldBeNil)
+
+		Convey("change or revision NotFound", func() {
+			_, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{Number: 123213, RevisionId: "1"})
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			_, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
+				Number:     ciDefault.GetNumber(),
+				RevisionId: "not existing",
+			})
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Default", func() {
+			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
+				Number:     ciDefault.GetNumber(),
+				RevisionId: ciDefault.GetCurrentRevision(),
+			})
+			So(err, ShouldBeNil)
+			So(sortedFiles(resp), ShouldResemble, []string{"ps001/c.cpp", "shared/s.py"})
+		})
+
+		Convey("Custom", func() {
+			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
+				Number:     ciCustom.GetNumber(),
+				RevisionId: "1",
+			})
+			So(err, ShouldBeNil)
+			So(sortedFiles(resp), ShouldResemble, []string{"bl.ah", "ps1/cus.tom"})
+			resp, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
+				Number:     ciCustom.GetNumber(),
+				RevisionId: "2",
+			})
+			So(err, ShouldBeNil)
+			So(sortedFiles(resp), ShouldResemble, []string{"still/custom"})
+		})
+
+		Convey("NoFiles", func() {
+			resp, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
+				Number:     ciNoFiles.GetNumber(),
+				RevisionId: ciNoFiles.GetCurrentRevision(),
+			})
+			So(err, ShouldBeNil)
+			So(resp.GetFiles(), ShouldHaveLength, 0)
+		})
+	})
+}
