@@ -49,6 +49,69 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7d8d8b10_5327aad5",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T20:47:40Z",
+      "side": 1,
+      "message": "\"the data will be sharded at the nearest previous line break ...\"",
+      "range": {
+        "startLine": 39,
+        "startChar": 62,
+        "endLine": 39,
+        "endChar": 75
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51000e51_2a25eafa",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T20:47:40Z",
+      "side": 1,
+      "message": "Another downside of doing this this way and not sharding always is that we loose streaming support. There\u0027s potentially value in long running tests. I think it\u0027s fine, just have to be a conscious choice. In practice, having large blobs will make casual analysis much faster than a ton of LAG() OVER() statements that are hard to get right.\n\nNodir, any take?",
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1fc8f68_08dd8a2b",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T20:47:40Z",
+      "side": 1,
+      "message": "\"Encoded as UTF-8. Invalid characters are replaced with the replacement character (U+FFFD).\"",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "78092067_77a25359",
         "filename": "resultdb/proto/bq/artifact_row.proto",
         "patchSetId": 5
@@ -60,6 +123,30 @@
       "writtenOn": "2020-11-24T17:23:45Z",
       "side": 1,
       "message": "i think this is fairly specific to text, while not all artifact are text.\nShould we make it clear in the message name, e.g. TextArtifactRow?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 21
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d6555ff_b557f9ab",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-11-24T20:47:40Z",
+      "side": 1,
+      "message": "I think it\u0027s a good idea.",
+      "parentUuid": "78092067_77a25359",
       "range": {
         "startLine": 36,
         "startChar": 0,
