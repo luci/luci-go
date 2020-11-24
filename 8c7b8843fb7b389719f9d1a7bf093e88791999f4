@@ -16,6 +16,24 @@
       "message": "do you remember why we didn\u0027t use pointer in the receivers?",
       "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d0e62d8_9ab450a6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-24T18:46:19Z",
+      "side": 1,
+      "message": "I remember the reason I didn\u0027t use pointer is that none of the function is supposed to modify any value inside the mask. Do you think we should use pointer instead?",
+      "parentUuid": "eb2e9e49_25e88031",
+      "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
