@@ -52,8 +52,10 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 
 		Convey(`Invalid test result predicate`, func() {
 			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
-				Invocations:         []string{"x"},
-				TestResultPredicate: &pb.TestResultPredicate{TestIdRegexp: ")"},
+				Invocations: []string{"x"},
+				Predicate: &pb.ArtifactPredicate{
+					TestResultPredicate: &pb.TestResultPredicate{TestIdRegexp: ")"},
+				},
 			})
 			So(err, ShouldErrLike, `test_result_predicate: test_id_regexp: error parsing regexp`)
 		})
@@ -75,9 +77,11 @@ func TestQueryArtifacts(t *testing.T) {
 			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
 		)
 		req := &pb.QueryArtifactsRequest{
-			Invocations:         []string{"invocations/inv1"},
-			PageSize:            100,
-			TestResultPredicate: &pb.TestResultPredicate{},
+			Invocations: []string{"invocations/inv1"},
+			PageSize:    100,
+			Predicate: &pb.ArtifactPredicate{
+				TestResultPredicate: &pb.TestResultPredicate{},
+			},
 		}
 
 		srv := newTestResultDBService()
