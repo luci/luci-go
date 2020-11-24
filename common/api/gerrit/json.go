@@ -180,6 +180,7 @@ type revisionInfo struct {
 	Number int                  `json:"_number"`
 	Ref    string               `json:"ref"`
 	Files  map[string]*fileInfo `json:"files"`
+	Commit *commitInfo          `json:"commit"`
 }
 
 func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
@@ -189,6 +190,9 @@ func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
 		for i, fi := range ri.Files {
 			ret.Files[i] = fi.ToProto()
 		}
+	}
+	if ri.Commit != nil {
+		ret.Commit = ri.Commit.ToProto()
 	}
 	return ret
 }
@@ -211,6 +215,7 @@ func (c *commitInfo) ToProto() *gerritpb.CommitInfo {
 	return &gerritpb.CommitInfo{
 		Id:      c.Commit,
 		Parents: parents,
+		Message: c.Message,
 		// TODO(tandrii): support other fields once added.
 	}
 }
