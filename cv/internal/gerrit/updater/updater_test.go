@@ -20,7 +20,7 @@ import (
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -50,13 +50,13 @@ func TestRelatedChangeProcessing(t *testing.T) {
 		Convey("Just itself", func() {
 			// This isn't happening today, but CV shouldn't choke if Gerrit changes.
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(111, 3, 3), // No parents.
+				gf.RelatedChange(111, 3, 3), // No parents.
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 
 			err = f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(111, 3, 3, "107_2"),
+				gf.RelatedChange(111, 3, 3, "107_2"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
@@ -64,9 +64,9 @@ func TestRelatedChangeProcessing(t *testing.T) {
 
 		Convey("Has related, but no deps", func() {
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(111, 3, 3, "107_2"),
-				gerritfake.RelatedChange(114, 1, 3, "111_3"),
-				gerritfake.RelatedChange(117, 2, 2, "114_1"),
+				gf.RelatedChange(111, 3, 3, "107_2"),
+				gf.RelatedChange(114, 1, 3, "111_3"),
+				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
@@ -74,25 +74,25 @@ func TestRelatedChangeProcessing(t *testing.T) {
 
 		Convey("Has related, but lacking this change", func() {
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(114, 1, 3, "111_3"),
-				gerritfake.RelatedChange(117, 2, 2, "114_1"),
+				gf.RelatedChange(114, 1, 3, "111_3"),
+				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldErrLike, "Unexpected Gerrit.GetRelatedChangesResponse")
 		})
 		Convey("Has related, and several times itself", func() {
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(111, 2, 2, "107_2"),
-				gerritfake.RelatedChange(111, 3, 3, "107_2"),
-				gerritfake.RelatedChange(114, 1, 3, "111_3"),
+				gf.RelatedChange(111, 2, 2, "107_2"),
+				gf.RelatedChange(111, 3, 3, "107_2"),
+				gf.RelatedChange(114, 1, 3, "111_3"),
 			})
 			So(err, ShouldErrLike, "Unexpected Gerrit.GetRelatedChangesResponse")
 		})
 
 		Convey("1 parent", func() {
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(107, 1, 3, "104_2"),
-				gerritfake.RelatedChange(111, 3, 3, "107_1"),
-				gerritfake.RelatedChange(117, 2, 2, "114_1"),
+				gf.RelatedChange(107, 1, 3, "104_2"),
+				gf.RelatedChange(111, 3, 3, "107_1"),
+				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
@@ -102,13 +102,13 @@ func TestRelatedChangeProcessing(t *testing.T) {
 
 		Convey("Diamond", func() {
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(103, 2, 2),
-				gerritfake.RelatedChange(104, 2, 2, "103_2"),
-				gerritfake.RelatedChange(107, 1, 3, "104_2"),
-				gerritfake.RelatedChange(108, 1, 3, "104_2"),
-				gerritfake.RelatedChange(111, 3, 3, "107_1", "108_1"),
-				gerritfake.RelatedChange(114, 1, 3, "111_3"),
-				gerritfake.RelatedChange(117, 2, 2, "114_1"),
+				gf.RelatedChange(103, 2, 2),
+				gf.RelatedChange(104, 2, 2, "103_2"),
+				gf.RelatedChange(107, 1, 3, "104_2"),
+				gf.RelatedChange(108, 1, 3, "104_2"),
+				gf.RelatedChange(111, 3, 3, "107_1", "108_1"),
+				gf.RelatedChange(114, 1, 3, "111_3"),
+				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
@@ -120,14 +120,14 @@ func TestRelatedChangeProcessing(t *testing.T) {
 		})
 
 		Convey("Same revision, different changes", func() {
-			c104 := gerritfake.RelatedChange(104, 1, 1, "103_2")
-			c105 := gerritfake.RelatedChange(105, 1, 1, "103_2")
+			c104 := gf.RelatedChange(104, 1, 1, "103_2")
+			c105 := gf.RelatedChange(105, 1, 1, "103_2")
 			c105.GetCommit().Id = c104.GetCommit().GetId()
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(103, 2, 2),
+				gf.RelatedChange(103, 2, 2),
 				c104,
 				c105, // should be ignored, somewhat arbitrarily.
-				gerritfake.RelatedChange(111, 3, 3, "104_1"),
+				gf.RelatedChange(111, 3, 3, "104_1"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
@@ -139,10 +139,10 @@ func TestRelatedChangeProcessing(t *testing.T) {
 		Convey("2 parents which are the same change at different revisions", func() {
 			// Actually happened, see https://crbug.com/988309.
 			err := f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
-				gerritfake.RelatedChange(104, 1, 2, "long-ago-merged1"),
-				gerritfake.RelatedChange(107, 1, 1, "long-ago-merged2"),
-				gerritfake.RelatedChange(104, 2, 2, "107_1"),
-				gerritfake.RelatedChange(111, 3, 3, "104_1", "104_2"),
+				gf.RelatedChange(104, 1, 2, "long-ago-merged1"),
+				gf.RelatedChange(107, 1, 1, "long-ago-merged2"),
+				gf.RelatedChange(104, 2, 2, "107_1"),
+				gf.RelatedChange(111, 3, 3, "104_1", "104_2"),
 			})
 			So(err, ShouldBeNil)
 			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
