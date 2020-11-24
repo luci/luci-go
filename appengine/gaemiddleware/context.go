@@ -190,7 +190,7 @@ func (e *Environment) With(ctx context.Context, req *http.Request) context.Conte
 				"CompareAndSwapMulti", "Flush", "Stats")
 		}
 		if !bool(cachedSettings.DisableDSCache) {
-			ctx = dscache.AlwaysFilterRDS(ctx, nil)
+			ctx = dscache.FilterRDS(ctx, nil)
 		}
 	}
 	if e.DSReadOnly {

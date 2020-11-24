@@ -26,11 +26,6 @@ import (
 )
 
 var (
-	// InstanceEnabledStatic allows you to statically (e.g. in an init() function)
-	// bypass this filter by setting it to false. This takes effect when the
-	// application calls IsGloballyEnabled.
-	InstanceEnabledStatic = true
-
 	// LockTimeSeconds is the number of seconds that a "lock" memcache entry will
 	// have its expiration set to. It's set to just over half of the frontend
 	// request handler timeout (currently 60 seconds).
