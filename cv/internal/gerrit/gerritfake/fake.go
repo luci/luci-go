@@ -171,6 +171,11 @@ func RevInfo(ps int) *gerritpb.RevisionInfo {
 			fmt.Sprintf("ps%03d/c.cpp", ps): {Status: gerritpb.FileInfo_W},
 			"shared/s.py":                   {Status: gerritpb.FileInfo_W},
 		},
+		Commit: &gerritpb.CommitInfo{
+			Id:      "",  // Id isn't set by Gerrit. It's set as a key in the revisions map.
+			Parents: nil, // Intentionally omitting parents. CV doesn't read them.
+			Message: "Commit.\n\nDecription.",
+		},
 	}
 }
 
@@ -334,12 +339,45 @@ func Files(fs ...string) CIModifier {
 	}
 }
 
-// TODO(tandrii): implement these and more if needed.
-//  * Project(p)
-//  * Ref(ref)
-//  * AllRevisions -- populates all revisions(aka patchsets).
-//  * Status(s)-- with given status
-//  * UpdateTime(t) -- with givne UpdateTime.
+// Desc sets commit message, aka CL description, for ChangeInfo's current
+// revision.
+func Desc(cldescription string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ri := ci.GetRevisions()[ci.GetCurrentRevision()]
+		ri.GetCommit().Message = cldescription
+	}
+}
+
+// Updated sets .Updated to the given time.
+func Updated(t time.Time) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Updated = timestamppb.New(t)
+	}
+}
+
+// Ref sets .Ref to the given ref.
+func Ref(ref string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		if !strings.HasPrefix(ref, "refs/") {
+			panic(fmt.Errorf("ref must start with 'refs/', but %q given", ref))
+		}
+		ci.Ref = ref
+	}
+}
+
+// Project sets .Project to the given Gerrit project.
+func Project(p string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Project = p
+	}
+}
+
+// Status sets .Status to the given status.
+func Status(s gerritpb.ChangeStatus) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Status = s
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Getters / Mutators
