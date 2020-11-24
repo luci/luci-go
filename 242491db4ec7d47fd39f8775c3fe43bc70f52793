@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df39c923_3d2f167b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T01:11:16Z",
+      "side": 1,
+      "message": "PTAL. This improves the scores\nfrom\n  97% change recall of linux-rel rejections in October\n  25% savings on linux-rel duration data on 2020-10-30\nto\n  98.28% change recall\n  40.33% savings\n",
+      "revId": "242491db4ec7d47fd39f8775c3fe43bc70f52793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
