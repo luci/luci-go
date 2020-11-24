@@ -113,6 +113,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "00069fd5_501382bd",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T01:38:32Z",
+      "side": 1,
+      "message": "Derp. Sorry. Fixed by removing, as you suggested, Quinten.\nYiwei: CV doesn\u0027t care. Wrote this instead.",
+      "parentUuid": "ec6fb932_1ec2e2bc",
+      "range": {
+        "startLine": 321,
+        "startChar": 63,
+        "endLine": 321,
+        "endChar": 75
+      },
+      "revId": "095f12a9a5290510d63e6a74b4139492df33606e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "edade30c_c84eeeb2",
