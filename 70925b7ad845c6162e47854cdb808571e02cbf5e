@@ -22,6 +22,46 @@
       },
       "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec84b9e2_0c21e51a",
+        "filename": "buildbucket/appengine/rpc/common_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T14:28:50Z",
+      "side": 1,
+      "message": "it\u0027s hard to see this 1 char diff. But also, tk2\u0027s only goal is to be different from tk1, it doesn\u0027t need to be a valid token. How about get rid of t2 here and change L256 with s/t2/\"some other token\"?",
+      "range": {
+        "startLine": 245,
+        "startChar": 64,
+        "endLine": 245,
+        "endChar": 65
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0908d3f3_d1234d45",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T14:28:50Z",
+      "side": 1,
+      "message": "Let\u0027s add TODO here, as opposed to inside validateBuildToken\n// TODO(crbug.com/1110990) - Use Cloud Secret Manager to validate the request before loading the build to reject invalid/expired tokens quickly.",
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
