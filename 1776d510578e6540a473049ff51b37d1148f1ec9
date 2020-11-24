@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7597a4a6_38b325cb",
+        "filename": "rts/filegraph/git/doc.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T14:17:56Z",
+      "side": 1,
+      "message": "ah, I misread the formula! Yes, indeed, it\u0027s a probability.",
+      "parentUuid": "8bec2eb9_8d5f1ad3",
+      "range": {
+        "startLine": 26,
+        "startChar": 55,
+        "endLine": 26,
+        "endChar": 66
+      },
+      "revId": "1776d510578e6540a473049ff51b37d1148f1ec9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "33a3a3ba_8d8075fb",
