@@ -89,7 +89,7 @@
 //
 // NOTE: If this memcache Set fails, it's a HARD ERROR. See DANGER ZONE.
 //
-// If the transaction is sucessfully committed (err == nil), then all the locks
+// If the transaction is successfully committed (err == nil), then all the locks
 // will be deleted.
 //
 // The assumption here is that get operations apply all outstanding
@@ -150,8 +150,7 @@
 //
 // So, if memcache is DOWN, you will effectively see tons of errors in the logs,
 // and all cached datastore access will be essentially degraded to a slow
-// read-only state. At this point, you have essentially 3 mitigration
-// strategies:
+// read-only state. At this point, you have essentially 3 mitigation strategies:
 //   - wait for memcache to come back up.
 //   - dynamically disable all memcache access by writing the datastore entry:
 //       /dscache,1 = {"Enable": false}
