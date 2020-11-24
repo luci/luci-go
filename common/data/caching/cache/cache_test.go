@@ -137,9 +137,7 @@ func TestNew(t *testing.T) {
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
 
-		cwd, err := os.Getwd()
-		So(err, ShouldBeNil)
-		rel, err := filepath.Rel(cwd, t.TempDir())
+		rel, err := filepath.Rel(td, t.TempDir())
 		So(err, ShouldBeNil)
 		So(filepath.IsAbs(rel), ShouldBeFalse)
 		_, err = New(pol, rel, h)
