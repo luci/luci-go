@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8e89f1ef_6d0b9b90",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T19:54:42Z",
+      "side": 1,
+      "message": "if you insist on not using Artifact message here, please rename this RPC to not look like AIP-133.\nCurrently it looks like standard Create RPC, but it is not.\n\nre other points:\n\n* Why would we add ContentHash to Artifact message to begin with?\n* It is typical for the same resource message to be used in different RPCs, e.g. Get/List/Update/Create. To accommodate polymorphism, https://google.aip.dev/203 exists. So e.g. Artifact.content could be marked as InputOnly, size_bytes, fetch_url, etc would be OutputOnly. This is a standard practice.\n* Similarly Validation would be context-sensitive, but it needs to take care of only CreateArtifact context. There is no need to validate responses. We have unit tests for that.\n* re ListArtifact reliability: fetching the content would be opt-in, e.g. via a boolean field in the request, or a field mask. \n* ListArtifact wouldn\u0027t return 10k artifacts to begin with - it has a limit. \n\nBatchDownloadArtifacts generally sounds like a good idea though",
+      "parentUuid": "3675b37e_21319347",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "26c4ff9d_6189819e",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 4
