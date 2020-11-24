@@ -3,6 +3,29 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "94b1548a_bc85a523",
+        "filename": "appengine/gaesettings/gaesettings_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:43:35Z",
+      "side": 0,
+      "message": "It has changed because the new implementation skips calling e.g. SetMulti([]) (with empty list of keys) completely.",
+      "range": {
+        "startLine": 109,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 47
+      },
+      "revId": "4cfbc291d4ea3688438f8427b91d76f9488c1d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a610987c_93c6ffac",
         "filename": "gae/filter/dscache/ds_txn_state.go",
         "patchSetId": 1
