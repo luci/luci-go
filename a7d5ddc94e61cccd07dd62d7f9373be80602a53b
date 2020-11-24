@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b69df815_f7059eba",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T01:49:21Z",
+      "side": 1,
+      "message": "TBH, I tried to use proto.Clone, but I couldn\u0027t figure out how to do so correctly with v2 library by just reading docs. So, I went to see how it\u0027s implemented [1] and realized that proto.Merge is actually used there + some slow reflection stuff.\n\n\u003d\u003e proto.Merge is more readable and faster iff you now type of proto messages.\n\n[1] https://github.com/protocolbuffers/protobuf-go/blob/d3470999428befce9bbefe77980ff65ac5a494c4/proto/merge.go#L41",
+      "parentUuid": "64113629_17db72f4",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 29
+      },
+      "revId": "a7d5ddc94e61cccd07dd62d7f9373be80602a53b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87afbd0c_0d7179ae",
