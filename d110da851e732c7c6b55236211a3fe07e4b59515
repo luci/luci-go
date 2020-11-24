@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ed64777_a0b8e158",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:09:10Z",
+      "side": 1,
+      "message": "I want to avoid testing specific impl functions unless they are overly complex -- \nbut stupid bugs notwidthstanding, sorry 😞\nplease, wait for integration test (though I also need gobmap to work)",
+      "parentUuid": "35cd630c_bfe4bd9a",
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d6a12e5_aa5ea082",
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-23T22:04:18Z",
       "side": 1,
       "message": "Should this be f.host[dot-len(\"review\"):] ?",
+      "range": {
+        "startLine": 420,
+        "startChar": 21,
+        "endLine": 420,
+        "endChar": 42
+      },
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b36593b9_630c1e75",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:09:10Z",
+      "side": 1,
+      "message": "definitely!",
+      "parentUuid": "6d6a12e5_aa5ea082",
       "range": {
         "startLine": 420,
         "startChar": 21,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea81065f_eccbdb4a",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d93c441b_46ad2e41",
+      "range": {
+        "startLine": 424,
+        "startChar": 2,
+        "endLine": 424,
+        "endChar": 9
+      },
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "81f38069_bbeeb9d9",
@@ -77,6 +143,30 @@
       "writtenOn": "2020-11-23T23:43:10Z",
       "side": 1,
       "message": "should it be `!\u003d` ?",
+      "range": {
+        "startLine": 425,
+        "startChar": 17,
+        "endLine": 425,
+        "endChar": 19
+      },
+      "revId": "d110da851e732c7c6b55236211a3fe07e4b59515",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "441cea7a_608ac983",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81f38069_bbeeb9d9",
       "range": {
         "startLine": 425,
         "startChar": 17,
