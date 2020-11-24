@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd141c08_ac5738b5",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T19:47:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff2591f6_46c7b767",
+      "range": {
+        "startLine": 85,
+        "startChar": 4,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "d2d4c60ec00a5d7214026a7e705104ed46743c9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec3d674f_da7c9249",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-11-24T18:33:20Z",
       "side": 1,
       "message": "nit: I think we can have an explicit case here that return false, nil when f.updatedHint.IsZero() . It is currently done implicitly as none of the case condition matches if I read correctly.",
+      "revId": "d2d4c60ec00a5d7214026a7e705104ed46743c9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bb03f9d_1a147fb3",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T19:47:33Z",
+      "side": 1,
+      "message": "Correct. Done, readability++.",
+      "parentUuid": "ec3d674f_da7c9249",
       "revId": "d2d4c60ec00a5d7214026a7e705104ed46743c9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
