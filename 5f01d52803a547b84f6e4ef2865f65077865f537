@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3675b37e_21319347",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T19:10:51Z",
+      "side": 1,
+      "message": "I believe that you are suggesting to add `Content`, `ContentHash` into Artifact, and embed it like below\n\n```\nmessage CreateArtifactRequest {\n  string invocation \u003d 1;\n  Artifact artfact \u003d 2;\n}\n```\n\nFor many reasons, I don\u0027t think it\u0027s a good idea to make ListArtifacts() returning the content of \"small\" artifacts. Thus, if we add `Content` and `ContentHash` into Artifact message, then the message will look like mixed of two different field groups that are used for different purposes. It can introduce unnecessary complexity in validation.\n\nFor example,\n1. what if ListArtifacts() returns len(content) !\u003d size_bytes? is it an invalid response?\n2. if len(content) \u003d\u003d 0, but size_bytes \u003e 0. Does it mean that it ListArtifacts() returned an artifact w/o actual contents, or the actual content body length was really 0, but the information stored in size_bytes was incorrect? Maybe, if the artifact is flagged as \"small\", the decision could be different.\n3. fetch_url and fetch_url_expiration don\u0027t make sense to BatchCreateArtifacts(). Thus, we need to explain that the values will be ignored.\n4. What if CreateArtifactRequest has an Artifact message, where len(content) !\u003d size_bytes? For sure that we will, in the proto, document that size_bytes will be ignored in BatchCreateArtifacts().\n\nHere is the reason why we should keep the current ListArtifacts(), but may add BatchDownloadArtifactContents(), if necessary.\n\nA client does not necessarily want to load the contents of all the small artifacts at once. It\u0027s reasonable to assume that clients will prefer to load the content of artifacts in a lazy manner, only if necessary. For example, Milo could load the content of an artifact, only if a user expands a test result. I\u0027d propose to add BatchDownloadArtifactContents() for the case where a client wants to download the contents of multiple artifacts.\n\nListArtifacts() should be able to return a list of artifacts while CAS is in outage. For example, CAS operation is slow due to traffic-control. If ListArtifacts() doesn\u0027t perform CAS operation, the impacts of a short-term CAS outage can be reduced.\n\nClients would prefer to use BatchDownloadArtifacts() over ListArtifacts() if we provided. Let\u0027s say that an invocation has 10k of small artifacts, and each is around 4k, and the total is around 4MB. 4MB doesn\u0027t sound big between Milo and ResultDB. However, it can be considered as a big response between a browser and Milo. If I was the programmer, I\u0027d call ListArtifacts() to get a list of artifacts with the metainformation, shard the artifacts by (displayed-order, size) into multiple groups, and then issue multiple requests to download a number of smaller chunks.",
+      "parentUuid": "15fa06ae_9e3ecf0d",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "26c4ff9d_6189819e",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 4
