@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4692de55_d8c98429",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:05:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1a6e42e_e6cac432",
+      "revId": "a64284817b600f457b85cc5832b45cd7337505d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9135ee33_d8dde122",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-11-23T23:11:18Z",
       "side": 1,
       "message": "Unfinished sentence?",
+      "range": {
+        "startLine": 450,
+        "startChar": 24,
+        "endLine": 450,
+        "endChar": 76
+      },
+      "revId": "a64284817b600f457b85cc5832b45cd7337505d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96126be2_5918ccf3",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:05:06Z",
+      "side": 1,
+      "message": "i meant it as is, but clarified.",
+      "parentUuid": "9135ee33_d8dde122",
       "range": {
         "startLine": 450,
         "startChar": 24,
