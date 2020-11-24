@@ -34,6 +34,24 @@
       "parentUuid": "eb2e9e49_25e88031",
       "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fe9196a_3017e064",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T18:49:56Z",
+      "side": 1,
+      "message": "the downside of not using pointer is that each function call copies entire struct.\nthe reason \"none of the function is supposed to modify any value\" is generally not a reason to use raw struct receivers.\n\nyeah, I think we should change the code to use non-pointers. It results in somewhat weird code: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2557151/comment/fe1b0fe8_2155f12d/",
+      "parentUuid": "7d0e62d8_9ab450a6",
+      "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
