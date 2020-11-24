@@ -285,6 +285,30 @@
       },
       "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6971c36_433b7461",
+        "filename": "cv/internal/gerrit/cqdepend/cqdepend_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-24T02:01:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c342a795_cb31b4be",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 27
+      },
+      "revId": "8dcee0346f0b72744a325a7a6943f072ddf84d00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
