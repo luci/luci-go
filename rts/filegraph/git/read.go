@@ -122,7 +122,7 @@ func (r *reader) readNode(n *node) error {
 		if err != nil {
 			return err
 		}
-		child := &node{}
+		child := &node{parent: n}
 		if n.name == "//" {
 			child.name = n.name + childBaseName
 		} else {

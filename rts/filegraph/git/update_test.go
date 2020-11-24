@@ -44,7 +44,8 @@ func TestApply(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name: "//a",
+						name:   "//a",
+						parent: &g.root,
 					},
 				},
 			})
@@ -61,11 +62,13 @@ func TestApply(t *testing.T) {
 				children: map[string]*node{
 					"a": {
 						name:               "//a",
+						parent:             &g.root,
 						probSumDenominator: 1,
 						edges:              []edge{{to: g.node("//b"), probSum: 1}},
 					},
 					"b": {
 						name:               "//b",
+						parent:             &g.root,
 						probSumDenominator: 1,
 						edges:              []edge{{to: g.node("//a"), probSum: 1}},
 					},
@@ -83,11 +86,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:               "//a",
+							parent:             &g.root,
 							probSumDenominator: 1,
 							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:               "//b",
+							parent:             &g.root,
 							probSumDenominator: 2,
 							edges: []edge{
 								{to: g.node("//a"), probSum: 1},
@@ -95,10 +100,12 @@ func TestApply(t *testing.T) {
 							},
 						},
 						"c": {
-							name: "//c",
+							name:   "//c",
+							parent: &g.root,
 							children: map[string]*node{
 								"d": {
 									name:               "//c/d",
+									parent:             g.node("//c"),
 									probSumDenominator: 1,
 									edges:              []edge{{to: g.node("//b"), probSum: 1}},
 								},
@@ -119,11 +126,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:               "//a",
+							parent:             &g.root,
 							probSumDenominator: 2,
 							edges:              []edge{{to: g.node("//b"), probSum: 2}},
 						},
 						"b": {
 							name:               "//b",
+							parent:             &g.root,
 							probSumDenominator: 2,
 							edges:              []edge{{to: g.node("//a"), probSum: 2}},
 						},
@@ -143,11 +152,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:               "//a",
+							parent:             &g.root,
 							probSumDenominator: 1,
 							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:               "//b",
+							parent:             &g.root,
 							probSumDenominator: 2,
 							edges: []edge{
 								{to: g.node("//a"), probSum: 1},
@@ -156,6 +167,7 @@ func TestApply(t *testing.T) {
 						},
 						"c": {
 							name:               "//c",
+							parent:             &g.root,
 							probSumDenominator: 1,
 							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
@@ -191,11 +203,13 @@ func TestApply(t *testing.T) {
 					children: map[string]*node{
 						"a": {
 							name:               "//a",
+							parent:             &g.root,
 							probSumDenominator: 1,
 							edges:              []edge{{to: g.node("//b"), probSum: 1}},
 						},
 						"b": {
 							name:               "//b",
+							parent:             &g.root,
 							probSumDenominator: 1,
 							edges:              []edge{{to: g.node("//a"), probSum: 1}},
 						},

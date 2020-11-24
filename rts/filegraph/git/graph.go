@@ -64,6 +64,8 @@ type node struct {
 	// See also filegraph.Node.Name().
 	name string
 
+	parent *node
+
 	// probSumDenominator is the denominator for edge.probSum, which results
 	// in the probability that |edge.to| file is relevant to this file.
 	// This is roughly the number of commits that touched this file,
@@ -154,7 +156,7 @@ func (g *Graph) ensureNode(name string) *node {
 			return ret
 		}
 
-		ret := &node{name: name}
+		ret := &node{name: name, parent: cur}
 		if cur.children == nil {
 			cur.children = map[string]*node{}
 		}

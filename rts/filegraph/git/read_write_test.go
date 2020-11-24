@@ -52,20 +52,19 @@ func TestReadWrite(t *testing.T) {
 		})
 
 		Convey(`Two direct children`, func() {
-			foo := &node{name: "//foo", probSumDenominator: 1}
-			bar := &node{name: "//bar", probSumDenominator: 2}
+			g := &Graph{
+				Commit: "deadbeef",
+				root:   node{name: "//"},
+			}
+			foo := &node{parent: &g.root, name: "//foo", probSumDenominator: 1}
+			bar := &node{parent: &g.root, name: "//bar", probSumDenominator: 2}
 			foo.edges = []edge{{to: bar, probSum: 1}}
 			bar.edges = []edge{{to: foo, probSum: 1}}
-			test(&Graph{
-				Commit: "deadbeef",
-				root: node{
-					name: "//",
-					children: map[string]*node{
-						"foo": foo,
-						"bar": bar,
-					},
-				},
-			})
+			g.root.children = map[string]*node{
+				"foo": foo,
+				"bar": bar,
+			}
+			test(g)
 		})
 	})
 }
