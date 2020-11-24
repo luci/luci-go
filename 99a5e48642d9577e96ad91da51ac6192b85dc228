@@ -41,6 +41,53 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2760d19f_2f44e56f",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T00:20:05Z",
+      "side": 1,
+      "message": "Added ArtifactPredicate.\n\nI\u0027ll change QueryArtifacts in a separate CL.",
+      "parentUuid": "a77475af_0d9fa38f",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 169,
+        "endChar": 5
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31095d28_bac58ffa",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T00:20:05Z",
+      "side": 1,
+      "message": "We don\u0027t support this in QueryArtifacts so far. So I think maybe we don\u0027t need this right now - until get feature request from users.",
+      "range": {
+        "startLine": 177,
+        "startChar": 4,
+        "endLine": 178,
+        "endChar": 34
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "01aaf39a_69b11fb9",
@@ -160,6 +207,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "55e867b1_50b36cc3",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T00:20:05Z",
+      "side": 1,
+      "message": "Ah, got it. Done",
+      "parentUuid": "4d276120_8600db80",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 20
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8ad2c260_21ab51fd",
@@ -173,6 +244,30 @@
       "writtenOn": "2020-11-23T22:09:48Z",
       "side": 1,
       "message": "artifacts",
+      "range": {
+        "startLine": 183,
+        "startChar": 14,
+        "endLine": 183,
+        "endChar": 22
+      },
+      "revId": "99a5e48642d9577e96ad91da51ac6192b85dc228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b19e554d_d94dd178",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T00:20:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ad2c260_21ab51fd",
       "range": {
         "startLine": 183,
         "startChar": 14,
