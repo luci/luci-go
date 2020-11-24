@@ -35,7 +35,7 @@ import (
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = dscache.AlwaysFilterRDS(ctx)
+		ctx = dscache.AlwaysFilterRDS(ctx, nil)
 		ctx, tc := testclock.UseTime(ctx, time.Unix(1444945245, 0))
 
 		// Record access to memcache. There should be none.
@@ -115,7 +115,7 @@ func TestWorks(t *testing.T) {
 
 	Convey("Handles namespace switch", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = dscache.AlwaysFilterRDS(ctx)
+		ctx = dscache.AlwaysFilterRDS(ctx, nil)
 
 		namespaced := info.MustNamespace(ctx, "blah")
 

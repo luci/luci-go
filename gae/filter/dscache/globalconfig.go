@@ -120,6 +120,11 @@ func SetGlobalEnable(c context.Context, memcacheEnabled bool) error {
 		cfg.Enable = memcacheEnabled
 		if memcacheEnabled {
 			// when going false -> true, wipe memcache.
+			//
+			// TODO(vadimsh): Either get rid of this or add it to Cache interface.
+			// Unfortunately, getting the active implementation of Cache interface
+			// from here is non-trivial (we'd have put it into `c`, which seems like
+			// an overkill just to support this use case).
 			if err := mc.Flush(c); err != nil {
 				return err
 			}
