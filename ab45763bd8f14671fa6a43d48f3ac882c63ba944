@@ -16,6 +16,24 @@
       "message": "maybe add a comment similar to L152",
       "revId": "ab45763bd8f14671fa6a43d48f3ac882c63ba944",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d61b329c_fb0070cf",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-11-24T04:22:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1145ab7_6af648e1",
+      "revId": "ab45763bd8f14671fa6a43d48f3ac882c63ba944",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
