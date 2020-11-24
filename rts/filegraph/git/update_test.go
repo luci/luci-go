@@ -38,12 +38,12 @@ func TestApply(t *testing.T) {
 				{Path: "a", Status: 'A'},
 			})
 			So(err, ShouldBeNil)
+			// The file is registered, but the commit is otherwise ignored.
 			So(g.root, ShouldResemble, node{
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name:    "//a",
-						commits: 1,
+						name: "//a",
 					},
 				},
 			})
@@ -59,14 +59,14 @@ func TestApply(t *testing.T) {
 				name: "//",
 				children: map[string]*node{
 					"a": {
-						name:    "//a",
-						commits: 1,
-						edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+						name:               "//a",
+						probSumDenominator: 1,
+						edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 					},
 					"b": {
-						name:    "//b",
-						commits: 1,
-						edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+						name:               "//b",
+						probSumDenominator: 1,
+						edges:              []edge{{to: g.node("//a"), probSum: probMultiplier}},
 					},
 				},
 			})
@@ -81,25 +81,25 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
+							name:               "//b",
+							probSumDenominator: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c/d"), commonCommits: 1},
+								{to: g.node("//a"), probSum: probMultiplier},
+								{to: g.node("//c/d"), probSum: probMultiplier},
 							},
 						},
 						"c": {
 							name: "//c",
 							children: map[string]*node{
 								"d": {
-									name:    "//c/d",
-									commits: 1,
-									edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+									name:               "//c/d",
+									probSumDenominator: 1,
+									edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 								},
 							},
 						},
@@ -117,14 +117,14 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 2,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 2}},
+							name:               "//a",
+							probSumDenominator: 2,
+							edges:              []edge{{to: g.node("//b"), probSum: 2 * probMultiplier}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 2}},
+							name:               "//b",
+							probSumDenominator: 2,
+							edges:              []edge{{to: g.node("//a"), probSum: 2 * probMultiplier}},
 						},
 					},
 				})
@@ -141,22 +141,22 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 2,
+							name:               "//b",
+							probSumDenominator: 2,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
-								{to: g.node("//c"), commonCommits: 1},
+								{to: g.node("//a"), probSum: probMultiplier},
+								{to: g.node("//c"), probSum: probMultiplier},
 							},
 						},
 						"c": {
-							name:    "//c",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//c",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 						},
 					},
 				})
@@ -171,22 +171,21 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 1,
+							name:               "//b",
+							probSumDenominator: 1,
 							edges: []edge{
-								{to: g.node("//a"), commonCommits: 1},
+								{to: g.node("//a"), probSum: probMultiplier},
 								{to: g.node("//c")},
 							},
 						},
 						"c": {
-							name:    "//c",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b")}},
+							name:  "//c",
+							edges: []edge{{to: g.node("//b")}},
 						},
 					},
 				})
@@ -201,14 +200,14 @@ func TestApply(t *testing.T) {
 					name: "//",
 					children: map[string]*node{
 						"a": {
-							name:    "//a",
-							commits: 1,
-							edges:   []edge{{to: g.node("//b"), commonCommits: 1}},
+							name:               "//a",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//b"), probSum: probMultiplier}},
 						},
 						"b": {
-							name:    "//b",
-							commits: 1,
-							edges:   []edge{{to: g.node("//a"), commonCommits: 1}},
+							name:               "//b",
+							probSumDenominator: 1,
+							edges:              []edge{{to: g.node("//a"), probSum: probMultiplier}},
 						},
 					},
 				})
