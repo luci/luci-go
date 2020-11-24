@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4c6c04cd_89353994",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "This includes() panics if a given path is an invalid field path.\nHowever, \"MustInclude\" sounds like it would panic if a given path is not included in the mask.\n\n```\n// the mask must include \"path\"?\nmask.MustInclude(\"path\")\n```\n\nI can\u0027t think of a better name, though. I will write a separate CL.",
+      "parentUuid": "fac46265_32ae9d24",
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4cb92ca6_a673c1fb",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 1
@@ -31,6 +49,30 @@
       "writtenOn": "2020-11-24T18:48:08Z",
       "side": 1,
       "message": "finalStatus :\u003d",
+      "range": {
+        "startLine": 244,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 18
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97f79a7a_a6ef331e",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4cb92ca6_a673c1fb",
       "range": {
         "startLine": 244,
         "startChar": 1,
@@ -66,6 +108,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "efb85d70_681010c8",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "\u003e\u003e where do you see that the requester is trying to update output fields? \n\nif Request.UpdatePaths include \"builds.output\", then UpdateBuild() thinks that the request is trying to update the output fields. That\u0027s the existing behaviour. buildMask is made of Request.UpdatePaths.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d391-401\n\n\n\u003e\u003e besides, why buildMask is used in this func to begin with? buildMask is only for reading back\nI\u0027m not sure if I understood your question correctly, but here are the reasons of this code.\n\n(1) getAsync() returns an error, if req.UpdatePaths contain any paths starting with \"build.outputs.\" [1]\n(2) build_mask is made of UpdatePaths,but submask(\"build\").\n(3) This go implementation could also iterates update_paths to find any update_paths with \"build.output\". \n(4) However, the parent call has to make build_mask anyways, and this function can simply use the build_mask to find the inclusiveness.\n(5) Technically, the existing python implementation does not return an error when the update_path has \"build.output\". However, \"build.output\" is a valid update_path, and I believe that UpdateBuild() shouldn\u0027t not allow \"build.output\" for SCHEDULED build, either. [5]\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d397\n[2]: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d409-413\n[5]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/builds_service.proto;l\u003d193",
+      "parentUuid": "9ee5cd18_f104c32d",
+      "range": {
+        "startLine": 258,
+        "startChar": 57,
+        "endLine": 258,
+        "endChar": 111
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2636680d_509cf77a",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 1
@@ -77,6 +143,30 @@
       "writtenOn": "2020-11-24T18:48:08Z",
       "side": 1,
       "message": "reading the condition under which Submask can return errors https://godoc.org/go.chromium.org/luci/common/proto/mask#Mask.Submask\ni think we need MustSubmask too",
+      "range": {
+        "startLine": 284,
+        "startChar": 15,
+        "endLine": 284,
+        "endChar": 22
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cab67e35_7169cce1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "+1. I will add it.",
+      "parentUuid": "2636680d_509cf77a",
       "range": {
         "startLine": 284,
         "startChar": 15,
@@ -135,6 +225,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1854018b_d0a6220b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "I\u0027m confused.\n\nIn this CL, you said \"it\u0027s weird that Mask methods operate on raw Mask structs.\"\nIn crrev.com/2107188, you said \"yeah, I think we should change the code to use non-pointers. It results in somewhat weird code: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2557151/comment/fe1b0fe8_2155f12d/\"\n\nDid you mean that this CL should use and pass buildMask as a non-pointer, because the receiver of the Mask methods are non-pointer, right?",
+      "parentUuid": "fe1b0fe8_2155f12d",
+      "range": {
+        "startLine": 291,
+        "startChar": 46,
+        "endLine": 291,
+        "endChar": 47
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4dc1ebfe_adb95f41",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 1
@@ -146,6 +260,30 @@
       "writtenOn": "2020-11-24T18:48:08Z",
       "side": 1,
       "message": "nit: join with prev line?",
+      "range": {
+        "startLine": 292,
+        "startChar": 1,
+        "endLine": 292,
+        "endChar": 5
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fdfbebc_61785a41",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-24T23:54:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dc1ebfe_adb95f41",
       "range": {
         "startLine": 292,
         "startChar": 1,
