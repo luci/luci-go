@@ -229,6 +229,14 @@ func (c *client) AddReviewer(ctx context.Context, req *gerritpb.AddReviewerReque
 	return rr, nil
 }
 
+func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewerRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	path := fmt.Sprintf("/changes/%s/reviewers/%s/delete", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.AccountId))
+	if _, err := c.call(ctx, "POST", path, url.Values{}, nil, nil, http.StatusNoContent); err != nil {
+		return nil, errors.Annotate(err, "delete reviewer").Err()
+	}
+	return &empty.Empty{}, nil
+}
+
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
 	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
 	var data struct {

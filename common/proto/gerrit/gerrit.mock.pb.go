@@ -295,6 +295,26 @@ func (mr *MockGerritClientMockRecorder) AddReviewer(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritClient)(nil).AddReviewer), varargs...)
 }
 
+// DeleteReviewer mocks base method.
+func (m *MockGerritClient) DeleteReviewer(ctx context.Context, in *DeleteReviewerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteReviewer", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReviewer indicates an expected call of DeleteReviewer.
+func (mr *MockGerritClientMockRecorder) DeleteReviewer(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReviewer", reflect.TypeOf((*MockGerritClient)(nil).DeleteReviewer), varargs...)
+}
+
 // SetReview mocks base method.
 func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, opts ...grpc.CallOption) (*ReviewResult, error) {
 	m.ctrl.T.Helper()
@@ -591,6 +611,21 @@ func (m *MockGerritServer) AddReviewer(arg0 context.Context, arg1 *AddReviewerRe
 func (mr *MockGerritServerMockRecorder) AddReviewer(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReviewer", reflect.TypeOf((*MockGerritServer)(nil).AddReviewer), arg0, arg1)
+}
+
+// DeleteReviewer mocks base method.
+func (m *MockGerritServer) DeleteReviewer(arg0 context.Context, arg1 *DeleteReviewerRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteReviewer", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReviewer indicates an expected call of DeleteReviewer.
+func (mr *MockGerritServerMockRecorder) DeleteReviewer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReviewer", reflect.TypeOf((*MockGerritServer)(nil).DeleteReviewer), arg0, arg1)
 }
 
 // SetReview mocks base method.
