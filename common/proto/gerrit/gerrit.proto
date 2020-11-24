@@ -110,6 +110,11 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#add-reviewer
   rpc AddReviewer(AddReviewerRequest) returns (AddReviewerResult);
 
+  // Deletes a reviewer from a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-reviewer
+  rpc DeleteReviewer(DeleteReviewerRequest) returns (google.protobuf.Empty);
+
   // Set various review bits on a change.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
@@ -712,6 +717,21 @@ message AddReviewerResult {
 
   // Whether adding the reviewer requires confirmation
   bool confirm = 5;
+}
+
+message DeleteReviewerRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // The ID of a single account or group to review the change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+  string account_id = 3;
 }
 
 // Information to set various review bits on a change
