@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f425f52_6fc13696",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:29:31Z",
+      "side": 1,
+      "message": "please add a method-level comment.\nI think currently rpcexplorer will display \" \u003d\u003d Artifacts \u003d\u003d\u003d\u003d\u003d...\" as its description - need a blank line after that",
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15fa06ae_9e3ecf0d",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:29:31Z",
+      "side": 1,
+      "message": "why doesn\u0027t it embed Artifact message like like AIP prescribes? https://google.aip.dev/133#request-message",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26c4ff9d_6189819e",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:29:31Z",
+      "side": 1,
+      "message": "why not `bytes`?",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 280,
+        "endChar": 28
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a402d172_4f54db56",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:29:31Z",
+      "side": 1,
+      "message": "why is this needed? we can compute it ourselves",
+      "range": {
+        "startLine": 282,
+        "startChar": 2,
+        "endLine": 284,
+        "endChar": 0
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecde6a59_d821b407",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-24T17:29:31Z",
+      "side": 1,
+      "message": "nit: MUST match",
+      "range": {
+        "startLine": 295,
+        "startChar": 69,
+        "endLine": 296,
+        "endChar": 20
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
