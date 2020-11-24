@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a610987c_93c6ffac",
+        "filename": "gae/filter/dscache/ds_txn_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:25:14Z",
+      "side": 0,
+      "message": "I made slight algorithmic change here, since I believe the current code is slightly incorrect.\n\nImagine we attempted a transaction that touches entity E1. The transaction failed to land, we retried it, and this time it touched entity E2.\n\nBefore my change the code would:\n1. Lock(E1)\n2. Lock(E2)\n3. Drop([E2]).\n\nAfter my change it would Drop([E1, E2]).\n\nIt\u0027s not a big deal. Locks expire after a while, and while they are held all Getters go through slow code path and hit datastore directly. In general I found dscache to be pretty sloppy in how it treats locks :(",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 56
+      },
+      "revId": "4cfbc291d4ea3688438f8427b91d76f9488c1d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

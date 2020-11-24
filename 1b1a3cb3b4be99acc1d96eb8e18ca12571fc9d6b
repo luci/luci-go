@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24669b03_05ffb5dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:25:14Z",
+      "side": 1,
+      "message": "PTAL, I have a lot of questions though.",
+      "revId": "1b1a3cb3b4be99acc1d96eb8e18ca12571fc9d6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2e27649_7d854db5",
+        "filename": "gae/filter/dscache/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:25:14Z",
+      "side": 1,
+      "message": "I really want to remove this. We never ever used it, and it adds some non-trivial complexity to how dscache will be initialized on non-GAE (where we usually initialize services only in the root context, not in per-request contexts).",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 22
+      },
+      "revId": "1b1a3cb3b4be99acc1d96eb8e18ca12571fc9d6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e6f2550_695a8551",
+        "filename": "gae/filter/dscache/dscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:25:14Z",
+      "side": 1,
+      "message": "I think we need to bump this to like 2 min (or even more), but be more careful with releasing locks on failures.\n\nThe possible scenario right now:\n0. A request has 20 sec of context deadline left.\n1. `Put` starts and creates a lock with 31 sec timeout.\n2. Somewhere in the middle of the datastore operation (before Put commits) the lock expires.\n3. Concurrent `Get` updates the memcache entry to a stale value.\n4. `Put` eventually times out due to the context deadline, but manages to land the change.\n5. It has no time left to drop the lock entry (which is now stale cached entity). \n6. We end up with the spoiled cache.\n\nNote that instead of `Put`, it can be `Commit` there, which can indeed be pretty slow.\n\nI see no harm in bumping this timeout to large values if we are more careful with cleaning locks on errors. Generally there\u0027s no harm (to correctness) in \"leaking\" the lock. Get will be just slow until the lock expires. But locks that expire before the operation finishes are dangerous.",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 21
+      },
+      "revId": "1b1a3cb3b4be99acc1d96eb8e18ca12571fc9d6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8242adf9_8d9883f1",
+        "filename": "gae/filter/dscache/dscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-24T21:25:14Z",
+      "side": 1,
+      "message": "I want to switch to zstd here.",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 16
+      },
+      "revId": "1b1a3cb3b4be99acc1d96eb8e18ca12571fc9d6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
