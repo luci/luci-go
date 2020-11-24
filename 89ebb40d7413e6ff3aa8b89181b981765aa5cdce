@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ac47b95b_258dbf2e",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2020-11-24T00:09:22Z",
+      "side": 1,
+      "message": "It\u0027s because the Gerrit API doesn\u0027t return any content but only a status code.",
+      "parentUuid": "3ca9fa00_03724a0c",
+      "range": {
+        "startLine": 232,
+        "startChar": 116,
+        "endLine": 232,
+        "endChar": 128
+      },
+      "revId": "89ebb40d7413e6ff3aa8b89181b981765aa5cdce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "13ef58b0_09b629df",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 2
@@ -61,6 +85,30 @@
       "side": 1,
       "message": "generally speaking, won\u0027t hurt.\nHave you tested if it works against actual gerrit w/o and w/ URL escape?\n\nAlso, if this allows using a group AND gerrit supports non-native groups here (e.g. mdb/xyz or cria/blah), then you definitely need escaping.",
       "parentUuid": "13ef58b0_09b629df",
+      "range": {
+        "startLine": 233,
+        "startChar": 111,
+        "endLine": 233,
+        "endChar": 120
+      },
+      "revId": "89ebb40d7413e6ff3aa8b89181b981765aa5cdce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "831e1481_50d8a458",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2020-11-24T00:09:22Z",
+      "side": 1,
+      "message": "I tested with \u0026 without URL escape and both of them work. I think the non-native groups are not supported but I\u0027m not sure? Anyway I added the url escape for unexpected cases.",
+      "parentUuid": "7dbe182e_3ee72575",
       "range": {
         "startLine": 233,
         "startChar": 111,
