@@ -426,12 +426,15 @@ message RevisionInfo {
   // The Git reference for the patch set.
   string ref = 4;
 
+  // The commit metadata for the patchset.
+  //
+  // Only set if commit information is requested.
+  CommitInfo commit = 5;
+
   // A map of file paths to FileInfos.
   //
   // Only set if file information is requested.
   map<string, FileInfo> files = 6;
-
-  // TODO(tandrii): Add CommitInfo when needed.
 }
 
 // The CommitInfo entity contains information about a commit.
@@ -449,6 +452,9 @@ message CommitInfo {
   }
   repeated Parent parents = 2;
 
+  // The commit message.
+  // It is not set when CommitInfo is part of the GetRelatedChangesResponse.
+  string message = 3;
   // TODO(tandrii): add other fields when necessary.
 }
 
