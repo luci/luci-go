@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f4034967_c2fad5ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-25T19:22:48Z",
+      "side": 1,
+      "message": "I\u0027ll try to send the CL out today.",
+      "parentUuid": "721ec5ce_65114618",
+      "revId": "2db84efeafa547fa15ab1650b491eab3881df018",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7976f1da_4f271675",
         "filename": "resultdb/internal/services/resultdb/query_artifacts.go",
         "patchSetId": 2
