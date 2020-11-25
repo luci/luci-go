@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"flag"
+	"math"
 	"os"
 	"strings"
 
@@ -48,7 +49,6 @@ func cmdEval() *subcommands.Command {
 				The rationale is that large commits provide a weak signal of file
 				relatedness and are expensive to process, O(N^2).
 			`))
-			r.Flags.Float64Var(&r.fgMaxDistance, "fg-max-distance", 1, "Max distance from tests to the changed files")
 			// TODO(nodir): add -fg-sibling-relevance flag.
 			return r
 		},
@@ -57,10 +57,9 @@ func cmdEval() *subcommands.Command {
 
 type evalRun struct {
 	baseCommandRun
-	ev            eval.Eval
-	checkout      string
-	loadOptions   git.LoadOptions
-	fgMaxDistance float64
+	ev          eval.Eval
+	checkout    string
+	loadOptions git.LoadOptions
 
 	fg *git.Graph
 }
@@ -116,7 +115,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 			// from test files to changed files, and not the other way around.
 			Reversed: true,
 		},
-		MaxDistance: r.fgMaxDistance,
+		MaxDistance: r.ev.MaxDistance,
 	}
 
 	for i, f := range in.ChangedFiles {
@@ -142,9 +141,8 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		}
 	}
 
-	// These are the test files that we should skip.
-	shouldSkip := make(map[filegraph.Node]struct{}, len(in.TestVariants))
-	tvNodes := make([]filegraph.Node, len(in.TestVariants))
+	testDistances := make(map[filegraph.Node]float64, len(in.TestVariants))
+	testNodes := make([]filegraph.Node, len(in.TestVariants))
 	for i, tv := range in.TestVariants {
 		// Android does not have locations.
 		if tv.FileName == "" {
@@ -154,20 +152,21 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		if n == nil {
 			return nil
 		}
-		shouldSkip[n] = struct{}{}
-		tvNodes[i] = n
+		testDistances[n] = math.Inf(1) // unreachable by default
+		testNodes[i] = n
 	}
 
-	// If a changed file is close to a test file, then skip it.
+	found := 0
 	q.Run(func(sp *filegraph.ShortestPath) (keepGoing bool) {
-		delete(shouldSkip, sp.Node)
-		return len(shouldSkip) > 0
+		if _, ok := testDistances[sp.Node]; ok {
+			testDistances[sp.Node] = sp.Distance
+			found++
+		}
+		return found < len(testDistances)
 	})
 
-	for i, tv := range in.TestVariants {
-		if _, ok := shouldSkip[tvNodes[i]]; ok {
-			out.ShouldSkip = append(out.ShouldSkip, tv)
-		}
+	for i, n := range testNodes {
+		out.TestVariantDistances[i] = testDistances[n]
 	}
 	return nil
 }
