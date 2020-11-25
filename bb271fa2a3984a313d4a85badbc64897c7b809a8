@@ -16,6 +16,160 @@
       "message": "PTAL. It is kind of dirty and I have no idea how to unit-test it.",
       "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0952ad4c_db824148",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "lgtm % questions",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "72d767b5_f85bb94f",
+        "filename": "examples/k8s/helloworld/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "I read this separate block as a desire not to have luci/gae/ as a long term goal, right?",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed4d42cb_e22629aa",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "if byte, why not \u0027L\u0027 or even byte(\u0027L\u0027)?",
+      "range": {
+        "startLine": 34,
+        "startChar": 14,
+        "endLine": 34,
+        "endChar": 18
+      },
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3bc2df5_b1a2ad3e",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "... to save on 1 round trip to redis per CAS",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "38d1d859_01f09969",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "I see no error annotation anywhere, presumably intentional. Is this because  naked memcache impl errors are never returned by the dscache layer its callees?",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15cafc42_b887fa04",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "err !\u003d nil implies conn.Err()!\u003d nil?",
+      "range": {
+        "startLine": 146,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 24
+      },
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fc05d6e_be897f36",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "oh, so you are hashing in advance s.t. you can avoid a round trip to redis. 👍",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14ab23d6_3ad3f7bc",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:48:37Z",
+      "side": 1,
+      "message": "here and elsewhere: makes me wish data[] provided always had first byte unused.",
+      "range": {
+        "startLine": 222,
+        "startChar": 12,
+        "endLine": 222,
+        "endChar": 47
+      },
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
