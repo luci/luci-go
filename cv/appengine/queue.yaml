@@ -1,6 +1,5 @@
 queue:
 - name: refresh-project-config
   rate: 1000/m
-queue:
 - name: refresh-gerrit-cl
   rate: 50/s
