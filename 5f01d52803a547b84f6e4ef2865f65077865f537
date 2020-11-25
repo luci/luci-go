@@ -133,6 +133,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cbd1e35d_cff14546",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T16:44:16Z",
+      "side": 1,
+      "message": "it is on the edge of violating https://screenshot.googleplex.com/8HoRwX25u8LQVDi.\n\"On the edge\" because strictly speaking content does not have to be populated, but still feels like a violation.\n\ncontent_hash would definitely be a violation\n\nboth problems can be solved by renaming the RPC",
+      "parentUuid": "a4297771_dc924be2",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c492056a_7e42ff61",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 4
@@ -262,6 +286,30 @@
       "side": 1,
       "message": "We currently use it to check a duplicate before computing the hash of the actual content.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/create_artifact.go;l\u003d374",
       "parentUuid": "a402d172_4f54db56",
+      "range": {
+        "startLine": 282,
+        "startChar": 2,
+        "endLine": 284,
+        "endChar": 0
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18f9d683_02bf59d4",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T16:44:16Z",
+      "side": 1,
+      "message": "in that code, we need the hash before starting streaming to RBE, but we don\u0027t have the hash until we finished reading the request body. There we have a choice of either buffering the contents, or asking the client to provide pre-computed hash. We do the latter.\n\nHere we don\u0027t have to do this because the content is already buffered.",
+      "parentUuid": "3ffbcb83_cea4144b",
       "range": {
         "startLine": 282,
         "startChar": 2,
