@@ -31,7 +31,6 @@ type supportContext struct {
 
 	c            context.Context
 	impl         Cache
-	mr           mathrand.Rand
 	shardsForKey []ShardFunction
 }
 
@@ -51,7 +50,7 @@ func (s *supportContext) numShards(k *ds.Key) int {
 	return ret
 }
 
-func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter) []string {
+func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter, rnd mathrand.Rand) []string {
 	ret := []string(nil)
 	for i, key := range keys {
 		mg := metas.GetSingle(i)
@@ -62,10 +61,14 @@ func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter) []
 		if shards == 0 {
 			continue
 		}
+		shard := 0
+		if shards > 1 {
+			shard = rnd.Intn(shards)
+		}
 		if ret == nil {
 			ret = make([]string, len(keys))
 		}
-		ret[i] = makeMemcacheKey(s.mr.Intn(shards), key)
+		ret[i] = makeMemcacheKey(shard, key)
 	}
 	return ret
 }
@@ -122,9 +125,9 @@ func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 //
 // The random values here are controlled entirely by the application, will never
 // be shown to, or provided by, the user, so this should be fine.
-func (s *supportContext) generateNonce() []byte {
+func generateNonce(rnd mathrand.Rand) []byte {
 	nonce := make([]byte, NonceBytes)
-	_, _ = s.mr.Read(nonce) // This Read will always return len(nonce), nil.
+	_, _ = rnd.Read(nonce) // This Read will always return len(nonce), nil.
 	return nonce
 }
 

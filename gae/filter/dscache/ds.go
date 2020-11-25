@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -47,12 +48,14 @@ func (d *dsCache) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB
 }
 
 func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMultiCB) error {
-	itemKeys := d.mkRandKeys(keys, metas)
+	rnd := mathrand.Get(d.c)
+
+	itemKeys := d.mkRandKeys(keys, metas, rnd)
 	if len(itemKeys) == 0 {
 		return d.RawInterface.GetMulti(keys, metas, cb)
 	}
 
-	nonce := d.generateNonce()
+	nonce := generateNonce(rnd)
 	lockItems, err := d.impl.TryLockAndFetch(d.c, itemKeys, nonce, RefreshLockTimeout)
 	if err != nil {
 		logging.WithError(err).Debugf(d.c, "dscache: GetMulti: TryLockAndFetch")
