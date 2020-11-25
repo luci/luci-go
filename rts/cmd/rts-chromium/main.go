@@ -23,6 +23,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/flag/fixflagpos"
@@ -38,7 +39,13 @@ var logCfg = gologger.LoggerConfig{
 func main() {
 	mathrand.SeedRandomly()
 	authOpt := chromeinfra.DefaultAuthOptions()
-	authOpt.Scopes = append(authOpt.Scopes, bigquery.Scope)
+	authOpt.Scopes = append(authOpt.Scopes, bigquery.Scope, gerrit.OAuthScope)
+
+	cacheDir, err := defaultCacheDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to choose default cache dir: %s", err)
+	}
+
 	app := &cli.Application{
 		Name:  "rts-chromium",
 		Title: "RTS for Chromium.",
@@ -46,7 +53,7 @@ func main() {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
-			cmdPresubmitHistory(&authOpt),
+			cmdPresubmitHistory(&authOpt, cacheDir),
 			cmdEval(),
 
 			{}, // a separator

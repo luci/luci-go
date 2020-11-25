@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/iterator"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -48,19 +49,43 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 		return err
 	}
 
-	for {
-		var row durationRow
-		switch err := it.Next(&row); {
-		case err == iterator.Done:
-			return nil
-		case err != nil:
-			return err
-		default:
-			if err := callback(row.proto()); err != nil {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	populateChanges := make(chan *evalpb.TestDuration)
+	eg.Go(func() error {
+		defer close(populateChanges)
+		for {
+			var row durationRow
+			switch err := it.Next(&row); {
+			case err == iterator.Done:
+				return nil
+			case err != nil:
 				return err
 			}
+
+			select {
+			case populateChanges <- row.proto():
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
+	})
+
+	for i := 0; i < 100; i++ {
+		eg.Go(func() error {
+			for td := range populateChanges {
+				if err := r.populateChangedFiles(ctx, td.Patchsets[0]); err != nil {
+					return err
+				}
+				if err := callback(td); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	}
+
+	return eg.Wait()
 }
 
 type durationRow struct {

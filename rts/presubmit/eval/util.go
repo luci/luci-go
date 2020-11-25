@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/resultdb/pbutil"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 type printer struct {
@@ -48,4 +49,9 @@ func (p *printer) printf(format string, args ...interface{}) {
 func variantString(v map[string]string) string {
 	pairs := pbutil.VariantToStrings(&resultpb.Variant{Def: v})
 	return strings.Join(pairs, " | ")
+}
+
+// psURL returns the patchset URL.
+func psURL(p *evalpb.GerritPatchset) string {
+	return fmt.Sprintf("https://%s/c/%d/%d", p.Change.Host, p.Change.Number, p.Patchset)
 }
