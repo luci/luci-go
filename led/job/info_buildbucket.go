@@ -25,6 +25,7 @@ type bbInfo struct {
 	*Buildbucket
 
 	userPayload *swarmingpb.CASTree
+	casUserPayload *swarmingpb.CASReference
 }
 
 var _ Info = bbInfo{}
@@ -37,9 +38,22 @@ func (b bbInfo) TaskName() string {
 	return b.GetName()
 }
 
-func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
+func (b bbInfo) CurrentIsolated() (*isolated, error) {
+	isolated := &isolated{}
 	if b.userPayload.GetDigest() != "" {
-		ret := *b.userPayload
+		cpy := *b.userPayload
+		isolated.CASTree = &cpy
+	}
+	if b.casUserPayload.GetDigest().GetHash() != "" {
+		cpy := *b.casUserPayload
+		isolated.CASReference = &cpy
+	}
+	return isolated, nil
+}
+
+func (b bbInfo) CurrentCas() (*swarmingpb.CASReference, error) {
+	if b.casUserPayload.GetDigest().GetHash() != "" {
+		ret := *b.casUserPayload
 		return &ret, nil
 	}
 	return nil, nil

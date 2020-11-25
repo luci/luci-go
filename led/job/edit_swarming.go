@@ -28,6 +28,7 @@ type swarmingEditor struct {
 	jd          *Definition
 	sw          *Swarming
 	userPayload *api.CASTree
+	casUserPayload *api.CASReference
 
 	err error
 }
@@ -39,13 +40,10 @@ func newSwarmingEditor(jd *Definition) *swarmingEditor {
 	if sw == nil {
 		panic(errors.New("impossible: only supported for Swarming builds"))
 	}
-	if jd.UserPayload == nil {
-		jd.UserPayload = &api.CASTree{}
-	}
 	if sw.Task == nil {
 		sw.Task = &api.TaskRequest{}
 	}
-	return &swarmingEditor{jd, sw, jd.UserPayload, nil}
+	return &swarmingEditor{jd, sw, jd.UserPayload,  jd.CasUserPayload, nil}
 }
 
 func (swe *swarmingEditor) Close() error {
@@ -75,11 +73,15 @@ func (swe *swarmingEditor) tweakSlices(fn func(*api.TaskSlice) error) {
 
 func (swe *swarmingEditor) ClearCurrentIsolated() {
 	swe.tweak(func() error {
-		swe.userPayload.Digest = ""
+		swe.userPayload = nil
+		swe.jd.UserPayload = nil
+		swe.casUserPayload = nil
+		swe.jd.CasUserPayload = nil
 		return nil
 	})
 	swe.tweakSlices(func(slc *api.TaskSlice) error {
 		slc.Properties.CasInputs = nil
+		slc.Properties.CasInputRoot = nil
 		return nil
 	})
 }
