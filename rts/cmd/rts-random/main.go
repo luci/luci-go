@@ -26,10 +26,8 @@ func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().Unix())
 	eval.Main(ctx, func(ctx context.Context, in eval.Input, out *eval.Output) error {
-		for _, tv := range in.TestVariants {
-			if rand.Intn(2) == 0 {
-				out.ShouldSkip = append(out.ShouldSkip, tv)
-			}
+		for i := range in.TestVariants {
+			out.TestVariantDistances[i] = rand.Float64()
 		}
 		return nil
 	})

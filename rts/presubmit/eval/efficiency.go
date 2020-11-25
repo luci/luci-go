@@ -58,14 +58,14 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
-			var out Output
+			out := &Output{TestVariantDistances: make([]float64, 1)}
 			for td := range r.durationC {
 				// Run the algorithm.
 				in.ChangedFiles = in.ChangedFiles[:0]
 				in.ensureChangedFilesInclude(td.Patchsets...)
 				in.TestVariants[0] = td.TestVariant
-				out.ShouldSkip = out.ShouldSkip[:0]
-				if err := r.Algorithm(ctx, in, &out); err != nil {
+				out.TestVariantDistances[0] = 0
+				if err := r.Algorithm(ctx, in, out); err != nil {
 					return err
 				}
 
@@ -74,7 +74,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 				r.mu.Lock()
 				r.res.Efficiency.TestResults++
 				r.res.Efficiency.SampleDuration += dur
-				if len(out.ShouldSkip) == 0 {
+				if out.TestVariantDistances[0] <= r.MaxDistance {
 					r.res.Efficiency.ForecastDuration += dur
 				}
 				r.maybeReportProgress(ctx)
