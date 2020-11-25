@@ -91,6 +91,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "751c4341_7825315c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T21:42:13Z",
+      "side": 1,
+      "message": "It was my intention that L59 is the only check calling GetBuild().\n\n0 IS is invalid. Thus, if the request could pass L59 check, then the following codes in the same scope don\u0027t have to check if Build is nil or not. Similarly,\n\nL66, use req.UpdateMask.GetPaths()\nL72, uses req.Build.Output.GetGitilesCommit()\nL81, uses req.Build.Steps\nand so on\n\nWDYT?",
+      "parentUuid": "46a19901_dd66f999",
+      "range": {
+        "startLine": 62,
+        "startChar": 12,
+        "endLine": 62,
+        "endChar": 22
+      },
+      "revId": "e7031078824455ac0760767572d1b3ab25c7286b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2a0127b7_2065a2ec",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
