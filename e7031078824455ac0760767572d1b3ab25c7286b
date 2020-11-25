@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "46a19901_dd66f999",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T21:36:50Z",
+      "side": 1,
+      "message": "sorry, I meant it would crash if req is nil.\nnote that L59 protects from that case, while this one doesn\u0027t. This is inconsistent.",
+      "parentUuid": "22733c16_66bb7a56",
+      "range": {
+        "startLine": 62,
+        "startChar": 12,
+        "endLine": 62,
+        "endChar": 22
+      },
+      "revId": "e7031078824455ac0760767572d1b3ab25c7286b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a0127b7_2065a2ec",
