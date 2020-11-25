@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c4cfdea5_d42eaa16",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-25T03:37:39Z",
+      "side": 1,
+      "message": "Those changes were somewhat closely located in previous patch sets.\nreverted those changes for now.",
+      "parentUuid": "34ad3473_f127de99",
+      "range": {
+        "startLine": 12,
+        "startChar": 21,
+        "endLine": 12,
+        "endChar": 37
+      },
+      "revId": "d6418461cfeb1ac96bbeec18dc1d8df6b43e08b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "dff128c5_3d27edc6",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -55,6 +79,24 @@
       "side": 1,
       "message": "Maybe for a different CL since it\u0027s less important, but I noticed it still doesn\u0027t work in an incognito window.",
       "parentUuid": "dff128c5_3d27edc6",
+      "revId": "d6418461cfeb1ac96bbeec18dc1d8df6b43e08b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6ef229f_2e54221f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-25T03:37:39Z",
+      "side": 1,
+      "message": "Will send a different CL later.",
+      "parentUuid": "9066a8c1_7979f3fc",
       "revId": "d6418461cfeb1ac96bbeec18dc1d8df6b43e08b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
