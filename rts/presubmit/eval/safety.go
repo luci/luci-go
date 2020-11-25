@@ -221,12 +221,12 @@ func printLostRejection(p *printer, rej *evalpb.Rejection) error {
 
 	// Print patchsets.
 	if len(rej.Patchsets) == 1 {
-		pf("%s\n", psURL(rej.Patchsets[0]))
+		printLostPatchset(p, rej.Patchsets[0])
 	} else {
 		pf("- patchsets:\n")
 		p.Level++
 		for _, ps := range rej.Patchsets {
-			pf("%s\n", psURL(ps))
+			printLostPatchset(p, ps)
 		}
 		p.Level--
 	}
@@ -235,6 +235,15 @@ func printLostRejection(p *printer, rej *evalpb.Rejection) error {
 
 	p.Level--
 	return p.err
+}
+
+func printLostPatchset(p *printer, ps *evalpb.GerritPatchset) {
+	p.printf("%s\n", psURL(ps))
+	p.Level++
+	for _, f := range ps.ChangedFiles {
+		p.printf("%s\n", f.Path)
+	}
+	p.Level--
 }
 
 // printTestVariants prints tests grouped by variant.
