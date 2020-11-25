@@ -170,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9e5ad31_c9ff76aa",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T22:20:44Z",
+      "side": 1,
+      "message": "MapPart would be unique, I think, and seems less awkward to me (again since the entities together provide a mapping, and each one is just a part).",
+      "parentUuid": "e42f34c3_21d19885",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 16
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d52c882_d3cab384",
@@ -706,6 +730,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "30eb6578_1adf77c6",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T22:20:44Z",
+      "side": 1,
+      "message": "I\u0027m not entirely sure what you\u0027re suggesting; I think we still need to iterate through the GWMs (map part) that were stored and check it somehow against what\u0027s in the latest fetched config groups, if we remove use of hostRepoToGroups and delete all, then we\u0027d be adding all currently stored map parts to the delete list (regardless of whether we delete keys from hostRepoToGroups above), right?",
+      "parentUuid": "a936ec44_8f1047a1",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 157,
+        "endChar": 47
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d712455e_548d1bf1",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 9
@@ -1163,6 +1211,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "624490e5_2435de79",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T22:20:44Z",
+      "side": 1,
+      "message": "Added TODO",
+      "parentUuid": "7847bbd3_6b0e9c4c",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 125,
+        "endChar": 7
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "35af32aa_6bcf9bdf",
         "filename": "cv/internal/gerrit/gobmap/map_test.go",
         "patchSetId": 9
@@ -1174,6 +1246,24 @@
       "writtenOn": "2020-11-25T15:35:22Z",
       "side": 1,
       "message": "can you add another case for refs/branch-heads/beta",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8157b3d9_276171e3",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T22:20:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35af32aa_6bcf9bdf",
       "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -1262,6 +1352,24 @@
       "side": 1,
       "message": "Yes to everything you said % we don\u0027t need to optimize for efficient updates, they are rare.",
       "parentUuid": "349f323e_05cd597f",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19e57199_72436239",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T22:20:44Z",
+      "side": 1,
+      "message": "Added a TODO",
+      "parentUuid": "4d5840a8_a8246f98",
       "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
