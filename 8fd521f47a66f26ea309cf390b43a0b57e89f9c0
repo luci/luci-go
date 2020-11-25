@@ -16,6 +16,69 @@
       "message": "added a comment for ValidateArtifactPredicate",
       "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "81559ea8_275bb538",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:34:25Z",
+      "side": 1,
+      "message": "nits",
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37806056_fefe5c60",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:34:25Z",
+      "side": 1,
+      "message": "other validation code does not annotate with the name of the oneof because the field is unique already.\nExample: ValidateVariantPredicate.\n\nconsider inlining validateResultType in this func since it is not going to be used by any other function",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 46
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85338f91_eb7f3f72",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:34:25Z",
+      "side": 1,
+      "message": "nit: strictly speaking, this and L110-112 are not necessary because both funcs use Getters, but its fine",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 2
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
