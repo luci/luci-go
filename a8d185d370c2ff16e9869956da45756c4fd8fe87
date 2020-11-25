@@ -16,6 +16,624 @@
       "message": "PTAL again",
       "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd583a46_8ee778e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "Very good! I think this patchset is correct, but I think test coverage is lacking.",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ba7e23d_de9e828a",
+        "filename": "cv/internal/gerrit/gobmap/internal/storage.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "^^",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83113b1d_ac2d64c6",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "let\u0027s keep /cv/ block separate at the bottom.",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 58
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f536953_03136a6b",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "maybe mapKind then?",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 16
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d52c882_d3cab384",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "do you want to say that this dupes ID because we need an index on it.",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a88f53e_675efb0e",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "per CV sync discussion, we my have races of 2 concurrent Update calls leading to corrupted data.\nplease add a // TODO to fix it",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "324a1e91_889361bb",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "don\u0027t allocate empty slices needlessly. Better:\nvar toPut, toDelete []*gobWatchMap",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 29
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f9ff38c_4ce74383",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "Exists() !\u003d enabled.\nShall we add .Enabled() function to meta?\nTill then,\n\n    case meta.Status !\u003d config.StatusEnabled:",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "884f413d_f897b23d",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "just inline with L101",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 21
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0cfd9f4_5b412474",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "return err\n\nThe error is already annotated + transiency correctly set.",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 43
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9e36d0b4_ec534b5f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "// TODO: split Delete/Put into batches of ~128 and execute in parallell.\n// Reason: some LUCI projects watch 100s of repos, while Delete/Put are limited to ~500 entities (iiuc).",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd022611_501a98bd",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": ", len(gwms))",
+      "range": {
+        "startLine": 124,
+        "startChar": 41,
+        "endLine": 124,
+        "endChar": 42
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13c2e70a_eb5e9b2b",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "redundant",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 25
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d007a5a2_ec7992ae",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "Simplify:\n\nif existingHashes[hostRepo] \u003d\u003d latestHash {\n  // Already up to date.\n  continue\n}",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 141,
+        "endChar": 3
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91891b28_383b4c16",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "nit: delete?\n(i expected \"either ...1... or ...2...\", but I only see 1)",
+      "range": {
+        "startLine": 152,
+        "startChar": 43,
+        "endLine": 152,
+        "endChar": 49
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ea670d0_8bc40b93",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "you won\u0027t need this if you delete hostRepoToGroups[hostRepo] around L149.\n(yeah, it\u0027s allowed in Go https://golang.org/doc/effective_go.html#for,\nunlike Py/C++)",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 157,
+        "endChar": 47
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d712455e_548d1bf1",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "I\u0027m not sure this is correct in all cases. I prefer to use url.Parse consistently. How about https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2560103 ?",
+      "range": {
+        "startLine": 173,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 39
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51d63d31_53eacd85",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "Paranoid me always prefers to record timestamp *before* the RPC fetching state, since this gives stronger signal on staleness in case of severe slowdowns, which is when it matters the most.\n\nI suspect I spend too much time thinking about this, because clock.Now doesn\u0027t actually give 1ms-scale comparable timestamps across machines (see also amazing go/truetime), and so we are already likely comparing apples to oranges.\n\nside note: the .ExternalUpdatedTime i have in changelist snapshot actually is sourced from go/truetime by Gerrit.",
+      "range": {
+        "startLine": 219,
+        "startChar": 1,
+        "endLine": 219,
+        "endChar": 54
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb1890fa_26153b8f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "var ids []string",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99f74799_277ec87c",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "There is at mots one fallback via config validation. So, you can assign this to fallbackId directly.",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 44
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bf0d290_5c52ca5e",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "nit-imo: inline, \"acp\" variable doesn\u0027t help readability.",
+      "range": {
+        "startLine": 243,
+        "startChar": 36,
+        "endLine": 243,
+        "endChar": 41
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd41bafa_b3ca2b65",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "imo-nit: can also inline.",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 256,
+        "endChar": 24
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ebee41_83a9691a",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "let\u0027s put /cv/ in its own block.",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "25bc3555_8283b781",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "no need.",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 10
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40e1aeee_89cfee64",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "should be handled by ...",
+      "range": {
+        "startLine": 61,
+        "startChar": 57,
+        "endLine": 62,
+        "endChar": 23
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30c40b19_960cb6e7",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "ShouldHaveLength is a bit nicer in case of errors",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7847bbd3_6b0e9c4c",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "consider making helper func around L82 line to reduce boilerplate.\nAlso, strictly speaking, exact hash doesn\u0027t matter for the test, and it\u0027d be great not to depend on specific hash implementation. So, WDYT\n\n    def lookup(host, repo, ref string):\n      ac \u003d Lookup(...) \n      return [config.GetConfiGroup(cid).Name for cid in p.cids for p in ac.Projects]\n\nsuch that here we can use:\n\n  So(lookup(\"chromium-review.googlesource.com\", \"chromium/src\", \"refs/heads/something\"),\n     ShouldResemble,  []string{\"chromium/group_main\"})",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 125,
+        "endChar": 7
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35af32aa_6bcf9bdf",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "can you add another case for refs/branch-heads/beta",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5fb7c0f_47bfaca6",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "let\u0027s do Disable instead\nin practice, we first disable a project, and then eventually garbage-collect it.",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77e221b0_afd12bc0",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T15:35:22Z",
+      "side": 1,
+      "message": "This doesn\u0027t cover actual Update working correctly with puts \u0026 deletes, which is more important.\n\nWDYT about merging this with above test by evolving existing config:\n\n  1. Re-enable the project by updating fallback group name to no longer be fallback.\n    This also adds coverage for matching 2 groups, which I think is missing right now.\n  2. Add new host/repo to the main group and delete ex-fallback group.\n    This adds both deletes \u0026 puts in an update, and also tests multiple hosts.\n\nunrelated to listUpdates, i think we need coverage for \u003e1 LUCI project, maybe\n\n  3. Add new LUCI project watching the previously deleted fallback group.\n\n\nThe upside of the proposed test is that iff we decide later to change implementation to, say, entirely in Redis, we\u0027d only need to change initial setup, not what is being asserted.",
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
