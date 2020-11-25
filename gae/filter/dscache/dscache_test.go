@@ -315,7 +315,7 @@ func TestDSCache(t *testing.T) {
 
 					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
-					So(itm.Flags(), ShouldEqual, ItemUKNONWN)
+					So(itm.Flags(), ShouldEqual, itemFlagUnknown)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
 
@@ -326,7 +326,7 @@ func TestDSCache(t *testing.T) {
 					sekret := []byte("I am a banana")
 					itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
 						SetValue(sekret).
-						SetFlags(uint32(ItemHasData)))
+						SetFlags(itemFlagHasData))
 					So(mc.Set(c, itm), ShouldBeNil)
 
 					o = &object{ID: 1}
@@ -335,7 +335,7 @@ func TestDSCache(t *testing.T) {
 
 					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
-					So(itm.Flags(), ShouldEqual, ItemHasData)
+					So(itm.Flags(), ShouldEqual, itemFlagHasData)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
 
@@ -346,7 +346,7 @@ func TestDSCache(t *testing.T) {
 					sekret := []byte("r@vmarod!#)%9T")
 					itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
 						SetValue(sekret).
-						SetFlags(uint32(ItemHasLock)))
+						SetFlags(itemFlagHasLock))
 					So(mc.Set(c, itm), ShouldBeNil)
 
 					o = &object{ID: 1}
@@ -355,7 +355,7 @@ func TestDSCache(t *testing.T) {
 
 					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
-					So(itm.Flags(), ShouldEqual, ItemHasLock)
+					So(itm.Flags(), ShouldEqual, itemFlagHasLock)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
 
@@ -378,7 +378,7 @@ func TestDSCache(t *testing.T) {
 
 					// Is locked until the next put, forcing all access to the datastore.
 					So(itm.Value(), ShouldResemble, []byte{})
-					So(itm.Flags(), ShouldEqual, ItemHasLock)
+					So(itm.Flags(), ShouldEqual, itemFlagHasLock)
 
 					o.BigData = []byte("hi :)")
 					So(ds.Put(c, o), ShouldBeNil)
@@ -386,7 +386,7 @@ func TestDSCache(t *testing.T) {
 
 					itm, err = mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
-					So(itm.Flags(), ShouldEqual, ItemHasData)
+					So(itm.Flags(), ShouldEqual, itemFlagHasData)
 				})
 
 				Convey("failure on Setting memcache locks is a hard stop", func() {

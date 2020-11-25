@@ -17,18 +17,17 @@ package dscache
 import (
 	"sync"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	mc "go.chromium.org/luci/gae/service/memcache"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/common/errors"
-	log "go.chromium.org/luci/common/logging"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 type dsTxnState struct {
 	sync.Mutex
 
-	toLock   []mc.Item
-	toDelete map[string]struct{}
+	toLock stringset.Set // keys touched in the current txn attempt
+	toDrop stringset.Set // keys ever locked (across all attempts)
 }
 
 // reset sets the transaction state back to its 0 state. This is used so that
@@ -37,27 +36,28 @@ type dsTxnState struct {
 func (s *dsTxnState) reset() {
 	s.Lock()
 	defer s.Unlock()
-	// reduce capacity back to 0, but keep the allocated array. If the transaction
-	// body retries, it'll probably end up re-allocating the same amount of space
-	// anyway.
-	s.toLock = s.toLock[:0]
-	s.toDelete = make(map[string]struct{}, len(s.toDelete))
+
+	s.toLock = stringset.New(s.toLock.Len())
 }
 
-// apply is called right before the trasnaction is about to commit. It's job
+// apply is called right before the transaction is about to commit. It's job
 // is to lock all the to-be-changed memcache keys.
 func (s *dsTxnState) apply(sc *supportContext) error {
 	s.Lock()
 	defer s.Unlock()
 
-	// this is a hard failure. No mutation can occur if we're unable to set
-	// locks out. See "DANGER ZONE" in the docs.
-	err := mc.Set(sc.c, s.toLock...)
-	if err != nil {
-		(log.Fields{log.ErrorKey: err}).Errorf(
-			sc.c, "dscache: HARD FAILURE: dsTxnState.apply(): mc.Set")
+	if s.toLock.Len() != 0 {
+		// We are about to lock some keys. Need to drop them later.
+		s.toDrop = s.toDrop.Union(s.toLock)
+		// This is a hard failure. No mutation can occur if we're unable to set
+		// locks out. See "DANGER ZONE" in the docs.
+		if err := sc.impl.PutLocks(sc.c, s.toLock.ToSlice(), MutationLockTimeout); err != nil {
+			logging.WithError(err).Errorf(sc.c, "dscache: HARD FAILURE: dsTxnState.apply(): PutLocks")
+			return err
+		}
 	}
-	return err
+
+	return nil
 }
 
 // release is called right after a successful transaction completion. It's job
@@ -67,31 +67,15 @@ func (s *dsTxnState) release(sc *supportContext) {
 	s.Lock()
 	defer s.Unlock()
 
-	delKeys := make([]string, 0, len(s.toDelete))
-	for k := range s.toDelete {
-		delKeys = append(delKeys, k)
-	}
-
-	if err := errors.Filter(mc.Delete(sc.c, delKeys...), mc.ErrCacheMiss); err != nil {
-		(log.Fields{log.ErrorKey: err}).Warningf(
-			sc.c, "dscache: txn.release: memcache.Delete")
+	if err := sc.impl.DropLocks(sc.c, s.toDrop.ToSlice()); err != nil {
+		logging.WithError(err).Warningf(sc.c, "dscache: dsTxnState.release: DropLocks")
 	}
 }
 
-func (s *dsTxnState) add(sc *supportContext, keys []*datastore.Key) {
-	lockItems, lockKeys := sc.mkAllLockItems(keys)
-	if lockItems == nil {
-		return
-	}
-
-	s.Lock()
-	defer s.Unlock()
-
-	for i, li := range lockItems {
-		k := lockKeys[i]
-		if _, ok := s.toDelete[k]; !ok {
-			s.toLock = append(s.toLock, li)
-			s.toDelete[k] = struct{}{}
-		}
+func (s *dsTxnState) add(sc *supportContext, keys []*ds.Key) {
+	if itemKeys := sc.mkAllKeys(keys); len(itemKeys) != 0 {
+		s.Lock()
+		defer s.Unlock()
+		s.toLock.AddAll(itemKeys)
 	}
 }

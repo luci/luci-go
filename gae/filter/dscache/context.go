@@ -15,7 +15,7 @@
 package dscache
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
@@ -24,6 +24,7 @@ import (
 
 var dsTxnCacheKey = "holds a *dsCache"
 var dsShardFunctionsKey = "holds []ShardFunction"
+var defaultImpl Cache = memcacheImpl{}
 
 // ShardFunction is a user-controllable function which calculates the number of
 // shards to use for a certain datastore key. The provided key will always be
@@ -45,20 +46,24 @@ func FilterRDS(c context.Context) context.Context {
 	if !IsGloballyEnabled(c) {
 		return c
 	}
-	return AlwaysFilterRDS(c)
+	return AlwaysFilterRDS(c, nil)
 }
 
 // AlwaysFilterRDS installs a caching RawDatastore filter in the context.
 //
 // Unlike FilterRDS it doesn't check GlobalConfig via IsGloballyEnabled call,
 // assuming caller already knows whether filter should be applied or not.
-func AlwaysFilterRDS(c context.Context) context.Context {
+func AlwaysFilterRDS(c context.Context, impl Cache) context.Context {
+	if impl == nil {
+		impl = defaultImpl
+	}
 	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
 		shardFns, _ := c.Value(&dsShardFunctionsKey).([]ShardFunction)
 
 		sc := &supportContext{
 			ds.GetKeyContext(c),
 			c,
+			impl,
 			mathrand.Get(c),
 			shardFns,
 		}

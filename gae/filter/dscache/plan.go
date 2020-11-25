@@ -19,14 +19,14 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
-	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 type facts struct {
 	getKeys   []*ds.Key
 	getMeta   ds.MultiMetaGetter
-	lockItems []mc.Item
+	lockItems []CacheItem
 	nonce     []byte
 }
 
@@ -49,8 +49,10 @@ type plan struct {
 
 	// toSave is the list of memcache items to save the results from the
 	// underlying datastore.GetMulti. It MAY contain nils, which is an indicator
-	// that this entry SHOULD NOT be saved to memcache.
-	toSave []mc.Item
+	// that this entry SHOULD NOT be saved to memcache. Items that are not nils
+	// are necessarily locks owned by us (since we can save only stuff we promised
+	// to save by locking it).
+	toSave []CacheItem
 
 	// decoded is a list of all the decoded property maps. Its length always ==
 	// len(facts.getKeys). After the plan is formed, it may contain nils. These
@@ -70,7 +72,7 @@ type plan struct {
 //   - get and m are the pair of values that will be passed to datastore.GetMulti
 //   - save is the memcache item to save the result back to. If it's nil, then
 //     it will not be saved back to memcache.
-func (p *plan) add(idx int, get *ds.Key, m ds.MetaGetter, save mc.Item) {
+func (p *plan) add(idx int, get *ds.Key, m ds.MetaGetter, save CacheItem) {
 	p.idxMap = append(p.idxMap, idx)
 	p.toGet = append(p.toGet, get)
 
@@ -95,9 +97,9 @@ func (p *plan) empty() bool {
 //   * some entries are 'lock' entries, owned by something else, so we should
 //     get them from datastore and then NOT save them to memcache.
 //
-// Or some combination thereof. This also handles memcache enries with invalid
+// Or some combination thereof. This also handles memcache entries with invalid
 // data in them, cases where items have caching disabled entirely, etc.
-func (d *dsCache) makeFetchPlan(f *facts) *plan {
+func (d *dsCache) makeFetchPlan(f facts) *plan {
 	p := plan{
 		keepMeta: f.getMeta != nil,
 		decoded:  make([]ds.PropertyMap, len(f.lockItems)),
@@ -114,32 +116,25 @@ func (d *dsCache) makeFetchPlan(f *facts) *plan {
 			continue
 		}
 
-		switch FlagValue(lockItm.Flags()) {
-		case ItemHasLock:
-			if bytes.Equal(f.nonce, lockItm.Value()) {
-				// we have the lock
-				p.add(i, getKey, m, lockItm)
-			} else {
-				// someone else has the lock, don't save
-				p.add(i, getKey, m, nil)
-			}
-
-		case ItemHasData:
-			pmap, err := decodeItemValue(lockItm.Value(), d.KeyContext)
+		switch nonce := lockItm.Nonce(); {
+		case bytes.Equal(f.nonce, nonce):
+			// we have the lock, need to fetch and store the items in the cache
+			p.add(i, getKey, m, lockItm)
+		case nonce != nil:
+			// someone else has the lock, don't save
+			p.add(i, getKey, m, nil)
+		default:
+			// this is a data item, just load it, don't touch datastore
+			pmap, err := decodeItemValue(lockItm.Data(), d.KeyContext)
 			switch err {
 			case nil:
 				p.decoded[i] = pmap
 			case ds.ErrNoSuchEntity:
 				p.lme.Assign(i, ds.ErrNoSuchEntity)
 			default:
-				(logging.Fields{"error": err}).Warningf(d.c,
-					"dscache: error decoding %s, %s", lockItm.Key(), getKey)
+				logging.WithError(err).Warningf(d.c, "dscache: error decoding %s, %s", lockItm.Key(), getKey)
 				p.add(i, getKey, m, nil)
 			}
-
-		default:
-			// have some other sort of object, or our AddMulti failed to add this item.
-			p.add(i, getKey, m, nil)
 		}
 	}
 	return &p

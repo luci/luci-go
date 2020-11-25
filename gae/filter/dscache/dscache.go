@@ -16,6 +16,7 @@ package dscache
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
@@ -30,17 +31,21 @@ var (
 	// application calls IsGloballyEnabled.
 	InstanceEnabledStatic = true
 
-	// LockTimeSeconds is the number of seconds that a "lock" memcache entry will
-	// have its expiration set to. It's set to just over half of the frontend
-	// request handler timeout (currently 60 seconds).
-	LockTimeSeconds = 31
+	// MutationLockTimeout is expiration time of a "lock" memcache entry that
+	// protects mutations (Put/Delete/Commit). It should be lager than the maximum
+	// expected duration of datastore mutating operations. Must have seconds
+	// precision.
+	MutationLockTimeout = 120 * time.Second
 
-	// CacheTimeSeconds is the default number of seconds that a cached entity will
-	// be retained (memcache contention notwithstanding). A value of 0 is
-	// infinite. This is #seconds instead of time.Duration, because memcache
-	// truncates expiration to the second, which means a sub-second amount would
-	// actually truncate to an infinite timeout.
-	CacheTimeSeconds = int64((time.Hour * 24).Seconds())
+	// RefreshLockTimeout is expiration time of a "lock" memcache entry that
+	// protects the cache refresh process (during Get). It should be larger than
+	// expected Get duration, but it's not a big deal if the lock expires sooner.
+	// Must have seconds precision.
+	RefreshLockTimeout = 20 * time.Second
+
+	// CacheDuration is the default duration that a cached entity will be retained
+	// (memcache contention notwithstanding). Must have seconds precision.
+	CacheDuration = time.Hour * 24
 
 	// CompressionThreshold is the number of bytes of entity value after which
 	// compression kicks in.
@@ -48,10 +53,6 @@ var (
 
 	// DefaultShards is the default number of key sharding to do.
 	DefaultShards = 1
-
-	// DefaultEnabled indicates whether or not caching is globally enabled or
-	// disabled by default. Can still be overridden by CacheEnableMeta.
-	DefaultEnabled = true
 )
 
 const (
@@ -123,17 +124,81 @@ func (c CompressionType) String() string {
 	}
 }
 
-// FlagValue is used to indicate if a memcache entry currently contains an
-// item or a lock.
-type FlagValue uint32
+// CacheItem represents either a cached datastore entity or a placeholder lock
+// that "promises" that such entity is being fetched now (either by us or by
+// someone else).
+//
+// CacheItem is created by TryLockAndFetch. An item that represents a lock
+// can be "promoted" into either a data item or a permanent lock. Such promoted
+// items are stored by CompareAndSwap.
+type CacheItem interface {
+	// Key is the item's key as passed to TryLockAndFetch.
+	Key() string
 
-// States for a memcache entry. ItemUNKNOWN exists to distinguish the default
-// zero state from a valid state, but shouldn't ever be observed in memcache. .
-const (
-	ItemUKNONWN FlagValue = iota
-	ItemHasData
-	ItemHasLock
-)
+	// Nonce returns nil for data items or a lock nonce for lock items.
+	Nonce() []byte
+
+	// Data returns nil for lock items or an item's data for data items.
+	Data() []byte
+
+	// PromoteToData converts this lock item into a data item.
+	//
+	// Panics if self is not a lock item.
+	PromoteToData(data []byte, exp time.Duration)
+
+	// PromoteToIndefiniteLock converts this lock into an indefinite lock.
+	//
+	// An indefinite lock means that the datastore item is not cacheable for some
+	// reasons and 'Get' should not try to cache it. Such locks are removed by
+	// PutLocks/DropLocks.
+	//
+	// Panics if self is not a lock item.
+	PromoteToIndefiniteLock()
+}
+
+// Cache abstracts a particular memcache implementation.
+//
+// This interface is tightly coupled to the dscache algorithm (rather than
+// trying to emulate a generic cache API) to allow the implementation to be as
+// efficient as possible.
+type Cache interface {
+	// PutLocks is called before mutating entities during Put/Delete/Commit.
+	//
+	// `keys` represent CacheItem keys of all shards of all to-be-mutated
+	// entities. The implementation should unconditionally write locks into all
+	// these keys keys.
+	//
+	// Errors are treated as fatal.
+	PutLocks(ctx context.Context, keys []string, timeout time.Duration) error
+
+	// DropLocks is called after finishing Put/Delete/Commit.
+	//
+	// The implementation should unconditionally remove these keys, thus unlocking
+	// them (if they were locked).
+	//
+	// Errors are logged, but ignored.
+	DropLocks(ctx context.Context, keys []string) error
+
+	// TryLockAndFetch is called before executing Get.
+	//
+	// Each key is either empty, or contains some random shard of a to-be-fetched
+	// entity (one such key per entity). For each non-empty key, if it doesn't
+	// exist yet, the implementation should try to write a lock with the nonce.
+	// It then should fetch all keys (whatever they might be).
+	//
+	// Should always return len(keys) items, even on errors. Items matching empty
+	// keys should be nil. Items that do not exist in the cache should also be
+	// represented by nils.
+	//
+	// Errors are logged, but ignored (i.e. treated as cache misses).
+	TryLockAndFetch(ctx context.Context, keys []string, nonce []byte, timeout time.Duration) ([]CacheItem, error)
+
+	// CompareAndSwap stores promoted items (see CacheItem) in place of locks
+	// they formerly represented iff the cache still has the same locks there.
+	//
+	// Errors are logged, but ignored.
+	CompareAndSwap(ctx context.Context, items []CacheItem) error
+}
 
 // MakeMemcacheKey generates a memcache key for the given datastore Key. This
 // is useful for debugging.

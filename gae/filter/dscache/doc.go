@@ -51,7 +51,7 @@
 // Algorithm - Put and Delete
 //
 // On a Put (or Delete), an empty value is unconditionally written to
-// memcache with a LockTimeSeconds expiration (default 31 seconds), and
+// memcache with a MutationLockTimeout expiration (default 2 min), and
 // a memcache flag value of 0x1 (indicating that it's a put-locked key). The
 // random value is to preclude Get operations from believing that they possess
 // the lock.
@@ -89,7 +89,7 @@
 //
 // NOTE: If this memcache Set fails, it's a HARD ERROR. See DANGER ZONE.
 //
-// If the transaction is sucessfully committed (err == nil), then all the locks
+// If the transaction is successfully committed (err == nil), then all the locks
 // will be deleted.
 //
 // The assumption here is that get operations apply all outstanding
@@ -98,8 +98,8 @@
 //
 // If the transaction succeeds, but RunInTransaction returns an error (which can
 // happen), or if the transaction fails, then the lock entries time out
-// naturally. This will mean 31-ish seconds of direct datastore access, but it's
-// the more-correct thing to do.
+// naturally. This will mean Gets will directly hit datastore until the locks
+// expire, but it's the more-correct thing to do.
 //
 // Gets and Queries in a transaction pass right through without reading or
 // writing memcache.
@@ -112,12 +112,12 @@
 //   - `gae:"$dscache.enable,<true|false>"` - whether or not this entity should
 //      be cached at all. If ommitted, dscache defaults to true.
 //   - `gae:"$dscache.expiration,#seconds"` - the number of seconds of
-//     persistance to use when this item is cached. 0 is infinite. If omitted,
-//     defaults to 0.
+//     persistence to use when this item is cached. 0 is infinite. If omitted,
+//     defaults to CacheDuration.
 //
 // In addition, the application may set a function shardsForKey(key) which
 // returns the number of shards to use for a given datastore key. This function
-// is set with the invocation of FilterRDS.
+// is set with the invocation of AddShardFunctions.
 //
 // Shards have the effect that all write (Put/Delete) operations clear all
 // memcache entries for the given datastore entry, and all reads read (and
@@ -150,8 +150,7 @@
 //
 // So, if memcache is DOWN, you will effectively see tons of errors in the logs,
 // and all cached datastore access will be essentially degraded to a slow
-// read-only state. At this point, you have essentially 3 mitigration
-// strategies:
+// read-only state. At this point, you have essentially 3 mitigation strategies:
 //   - wait for memcache to come back up.
 //   - dynamically disable all memcache access by writing the datastore entry:
 //       /dscache,1 = {"Enable": false}
