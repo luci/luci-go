@@ -87,6 +87,20 @@ message GerritPatchset {
 
   // The patchset number.
   int64 patchset = 2;
+
+  // The files changed in the patchset.
+  repeated SourceFile changed_files = 3;
+}
+
+// Identifies a source file.
+message SourceFile {
+	// The repository identifier.
+	// For googlesource.com repositories, it is a canonical URL, e.g.
+	// https://chromium.googlesource.com/chromium/src
+	string repo = 1;
+
+	// The file relative to the repo root. Starts with "//".
+	string path = 2;
 }
 
 // A single way to run a single test.

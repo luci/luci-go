@@ -26,7 +26,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -44,9 +43,6 @@ type Result struct {
 type evalRun struct {
 	Eval
 
-	auth   *auth.Authenticator
-	gerrit *gerritClient
-
 	// internal mutable state
 	res                      Result
 	buf                      bytes.Buffer
@@ -58,10 +54,6 @@ type evalRun struct {
 }
 
 func (r *evalRun) run(ctx context.Context) error {
-	if err := r.Init(ctx); err != nil {
-		return err
-	}
-
 	// Init internal state.
 	r.res = Result{}
 	r.mostRecentProgressReport = time.Time{}
