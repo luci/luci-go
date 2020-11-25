@@ -682,6 +682,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a936ec44_8f1047a1",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-25T20:43:53Z",
+      "side": 1,
+      "message": "Very cool!",
+      "parentUuid": "3ea670d0_8bc40b93",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 157,
+        "endChar": 47
+      },
+      "revId": "a8d185d370c2ff16e9869956da45756c4fd8fe87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d712455e_548d1bf1",
         "filename": "cv/internal/gerrit/gobmap/map.go",
         "patchSetId": 9
