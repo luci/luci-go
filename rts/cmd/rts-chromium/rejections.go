@@ -80,6 +80,9 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 
 			// Include the patchset-level info only in the first fragment.
 			row.populatePatchsetInfo(rej)
+			if err := r.populateChangedFiles(ctx, rej.Patchsets[0]); err != nil {
+				return err
+			}
 		}
 
 		if err := callback(&evalpb.RejectionFragment{Rejection: rej}); err != nil {

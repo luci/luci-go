@@ -27,22 +27,31 @@ type Algorithm func(context.Context, Input, *Output) error
 // Input is input to an RTS Algorithm.
 type Input struct {
 	// ChangedFiles is a list of files changed in a patchset.
-	ChangedFiles []*SourceFile
+	ChangedFiles []*evalpb.SourceFile
 
 	// The algorithm needs to decide whether to run these test variants.
 	TestVariants []*evalpb.TestVariant
 }
 
-// SourceFile identifies a source file.
-type SourceFile struct {
-	// Repo is a repository identifier.
-	// For googlesource.com repositories, it is a canonical URL, e.g.
-	// https://chromium.googlesource.com/chromium/src
-	Repo string
-
-	// Path to the file relative to the repo root.
-	// Starts with "//".
-	Path string
+// ensureChangedFilesInclude ensures that in.ChangedFiles includes all changed
+// files in all of the patchsets.
+func (in *Input) ensureChangedFilesInclude(pss ...*evalpb.GerritPatchset) {
+	type key struct {
+		repo, path string
+	}
+	set := map[key]struct{}{}
+	for _, f := range in.ChangedFiles {
+		set[key{repo: f.Repo, path: f.Path}] = struct{}{}
+	}
+	for _, ps := range pss {
+		for _, f := range ps.ChangedFiles {
+			k := key{repo: f.Repo, path: f.Path}
+			if _, ok := set[k]; !ok {
+				set[k] = struct{}{}
+				in.ChangedFiles = append(in.ChangedFiles, f)
+			}
+		}
+	}
 }
 
 // Output is the output of an RTS algorithm.

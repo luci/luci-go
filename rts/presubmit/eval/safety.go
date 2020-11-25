@@ -17,17 +17,13 @@ package eval
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"sort"
-	"strings"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
@@ -185,59 +181,16 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
 	// Most RTS algorithms would reject such a patchset, so it represents noise.
 
-	files, err := e.changedFiles(ctx, rej.Patchsets...)
-	switch {
-	case len(files) == 0:
-		// The CL is deleted  => not eligible.
-		return false, nil
-
-	case err != nil:
-		return false, errors.Annotate(err, "failed to read changed files of %s", rej).Err()
-	}
-
 	// Compare the prediction to facts.
 	in := Input{
-		ChangedFiles: files,
 		TestVariants: rej.FailedTestVariants,
 	}
+	in.ensureChangedFilesInclude(rej.Patchsets...)
 	e.out.ShouldSkip = e.out.ShouldSkip[:0]
 	if err := e.Algorithm(ctx, in, &e.out); err != nil {
 		return false, errors.Annotate(err, "RTS algorithm failed").Err()
 	}
 	return true, nil
-}
-
-// changedFiles retrieves changed files of all patchsets in the rejection.
-func (r *evalRun) changedFiles(ctx context.Context, patchsets ...*evalpb.GerritPatchset) ([]*SourceFile, error) {
-	var ret []*SourceFile
-	var mu sync.Mutex
-	err := parallel.FanOutIn(func(workC chan<- func() error) {
-		for _, ps := range patchsets {
-			ps := ps
-			workC <- func() error {
-				changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)
-				if err != nil {
-					return err
-				}
-
-				repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
-
-				mu.Lock()
-				defer mu.Unlock()
-				for _, path := range changedFiles {
-					ret = append(ret, &SourceFile{
-						Repo: repo,
-						Path: "//" + path,
-					})
-				}
-				return nil
-			}
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, err
 }
 
 // printLostRejection prints a rejection that wouldn't be preserved by the

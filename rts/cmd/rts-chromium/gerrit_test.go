@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eval
+package main
 
 import (
 	"reflect"
@@ -31,20 +31,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestPSURL(t *testing.T) {
-	t.Parallel()
-	Convey(`psURL`, t, func() {
-		patchSet := &evalpb.GerritPatchset{
-			Change: &evalpb.GerritChange{
-				Host:   "example.googlesource.com",
-				Number: 123,
-			},
-			Patchset: 4,
-		}
-		So(psURL(patchSet), ShouldEqual, "https://example.googlesource.com/c/123/4")
-	})
-}
 
 func TestGerritClient(t *testing.T) {
 	t.Parallel()
