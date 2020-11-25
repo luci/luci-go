@@ -15,23 +15,20 @@
 package dscache
 
 import (
+	"context"
 	"fmt"
-	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/errors"
-	log "go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/common/logging"
 )
 
 type supportContext struct {
 	ds.KeyContext
 
 	c            context.Context
+	impl         Cache
 	mr           mathrand.Rand
 	shardsForKey []ShardFunction
 }
@@ -97,64 +94,31 @@ func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 }
 
 func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
-	lockItems, lockKeys := s.mkAllLockItems(keys)
-	if lockItems == nil {
+	itemKeys := s.mkAllKeys(keys)
+	if len(itemKeys) == 0 {
 		return f()
 	}
-	if err := mc.Set(s.c, lockItems...); err != nil {
+	if err := s.impl.PutLocks(s.c, itemKeys, MutationLockTimeout); err != nil {
 		// this is a hard failure. No mutation can occur if we're unable to set
 		// locks out. See "DANGER ZONE" in the docs.
-		(log.Fields{log.ErrorKey: err}).Errorf(
-			s.c, "dscache: HARD FAILURE: supportContext.mutation(): mc.SetMulti")
+		logging.WithError(err).Errorf(s.c, "dscache: HARD FAILURE: supportContext.mutation(): PutLocks")
 		return err
 	}
 	err := f()
+	// Note: the mutation can *eventually* succeed even if `err` is non-nil
+	// here. So on errors we pessimistically keep the locks until they expire.
 	if err == nil {
-		if err := errors.Filter(mc.Delete(s.c, lockKeys...), mc.ErrCacheMiss); err != nil {
-			(log.Fields{log.ErrorKey: err}).Debugf(
-				s.c, "dscache: mc.Delete")
+		if err := s.impl.DropLocks(s.c, itemKeys); err != nil {
+			logging.WithError(err).Debugf(s.c, "dscache: DropLocks")
 		}
 	}
 	return err
 }
 
-func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGetter) ([]mc.Item, []byte) {
-	mcKeys := s.mkRandKeys(keys, metas)
-	if len(mcKeys) == 0 {
-		return nil, nil
-	}
-	nonce := s.generateNonce()
-	ret := make([]mc.Item, len(mcKeys))
-	for i, k := range mcKeys {
-		if k == "" {
-			continue
-		}
-		ret[i] = (mc.NewItem(s.c, k).
-			SetFlags(uint32(ItemHasLock)).
-			SetExpiration(time.Second * time.Duration(LockTimeSeconds)).
-			SetValue(nonce))
-	}
-	return ret, nonce
-}
-
-func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]mc.Item, []string) {
-	mcKeys := s.mkAllKeys(keys)
-	if mcKeys == nil {
-		return nil, nil
-	}
-	ret := make([]mc.Item, len(mcKeys))
-	for i := range ret {
-		ret[i] = (mc.NewItem(s.c, mcKeys[i]).
-			SetFlags(uint32(ItemHasLock)).
-			SetExpiration(time.Second * time.Duration(LockTimeSeconds)))
-	}
-	return ret, mcKeys
-}
-
 // generateNonce creates a pseudo-random sequence of bytes for use as a nonce
-// usingthe non-cryptographic PRNG in "math/rand".
+// using the non-cryptographic PRNG in "math/rand".
 //
-// The random values here are controlled entriely by the application, will never
+// The random values here are controlled entirely by the application, will never
 // be shown to, or provided by, the user, so this should be fine.
 func (s *supportContext) generateNonce() []byte {
 	nonce := make([]byte, NonceBytes)

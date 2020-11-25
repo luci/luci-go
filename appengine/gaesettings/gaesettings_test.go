@@ -35,7 +35,7 @@ import (
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = dscache.AlwaysFilterRDS(ctx)
+		ctx = dscache.AlwaysFilterRDS(ctx, nil)
 		ctx, tc := testclock.UseTime(ctx, time.Unix(1444945245, 0))
 
 		// Record access to memcache. There should be none.
@@ -105,17 +105,13 @@ func TestWorks(t *testing.T) {
 		// Memcache must not be used even if dscache is installed in the context.
 		So(mcOps.AddMulti.Total(), ShouldEqual, 0)
 		So(mcOps.GetMulti.Total(), ShouldEqual, 0)
-
-		// TODO(iannucci): There's a bug in dscache that causes calls to memcache
-		// sets and deletes even if dscache is disabled. This should be switched to
-		// 0 when it is fixed (the test will break at that moment).
-		So(mcOps.SetMulti.Total(), ShouldEqual, 3)
-		So(mcOps.DeleteMulti.Total(), ShouldEqual, 3)
+		So(mcOps.SetMulti.Total(), ShouldEqual, 0)
+		So(mcOps.DeleteMulti.Total(), ShouldEqual, 0)
 	})
 
 	Convey("Handles namespace switch", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = dscache.AlwaysFilterRDS(ctx)
+		ctx = dscache.AlwaysFilterRDS(ctx, nil)
 
 		namespaced := info.MustNamespace(ctx, "blah")
 
