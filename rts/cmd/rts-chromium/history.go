@@ -236,7 +236,7 @@ func (r *presubmitHistoryRun) populateChangedFiles(ctx context.Context, ps *eval
 	for i, path := range changedFiles {
 		ps.ChangedFiles[i] = &evalpb.SourceFile{
 			Repo: repo,
-			Path: path,
+			Path: "//" + path,
 		}
 	}
 	return nil
