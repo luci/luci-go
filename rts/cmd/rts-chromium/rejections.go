@@ -49,9 +49,10 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 	// and so are the rejection fragments.
 	// Keep track of the current patchset to detect patchset boundaries.
 	var curChange, curPS int
+	curPSIsDeleted := false
 
 	maybeFinalizeCurrent := func() error {
-		if curChange == 0 {
+		if curChange == 0 || curPSIsDeleted {
 			return nil
 		}
 		return callback(terminalRejectionFragment)
@@ -80,13 +81,20 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 
 			// Include the patchset-level info only in the first fragment.
 			row.populatePatchsetInfo(rej)
-			if err := r.populateChangedFiles(ctx, rej.Patchsets[0]); err != nil {
+			switch err := r.populateChangedFiles(ctx, rej.Patchsets[0]); {
+			case err == errPatchsetDeleted:
+				curPSIsDeleted = true
+			case err != nil:
 				return err
+			default:
+				curPSIsDeleted = false
 			}
 		}
 
-		if err := callback(&evalpb.RejectionFragment{Rejection: rej}); err != nil {
-			return err
+		if !curPSIsDeleted {
+			if err := callback(&evalpb.RejectionFragment{Rejection: rej}); err != nil {
+				return err
+			}
 		}
 
 		curChange = row.Change
