@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1b5b015_6a2f83e0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T19:31:52Z",
+      "side": 1,
+      "message": "I resolved the easy comments; but haven\u0027t addressed all, and agree that the tests are not yet complete.",
+      "revId": "23e2c10d6322e9f7fd5b8d01ecdeddecc3a138a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
