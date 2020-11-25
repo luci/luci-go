@@ -34,8 +34,8 @@ message Groups {
 //
 // For full documentation, see ConfigGroup of api/config/v2/cq.proto.
 message Group {
-  // Config group name.
-  string name = 1;
+  // ConfigGroupID, as stored in ConfigGroup datastore entity.
+  string id = 1;
   // If set, this ConfigGroup will be selected if no other ConfigGroup matches
   // refspec. At most 1 group will have this set (this is validated before
   // config is injected).

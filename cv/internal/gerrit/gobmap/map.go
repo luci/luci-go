@@ -16,43 +16,58 @@ package gobmap
 
 import (
 	"context"
+	"regexp"
+	"strings"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 )
 
-// gobWatchMap contains config groups for a particular LUCI project and
-// host/repo combination.
-//
-// gobWatchMap entities are stored with a parent key of the form
-// (GobWatchMapParent, host/repo), so that all gobWatchMap entities with a
-// particular host/repo can be fetched with an ancestor query; the goal
-// is to have fast reads by host/repo.
-//
-// The gobWatchMap entities as a whole store data used to lookup which
-// host/repo/ref maps to which config group, and the map is updated when a
-// project config is updated.
-type gobWatchMap struct {
+const (
+	mapKind    = "MapPart"
+	parentKind = "MapPartParent"
+)
 
-	// The ID of this GobWatchMap, which contains (host, repo, project).
+// mapPart contains config groups for a particular LUCI project and host/repo
+// combination.
+//
+// MapPart entities are stored with a parent key of the form (MapPartParent,
+// host/repo), so that all mapPart entities with a particular host/repo can be
+// fetched with an ancestor query; the goal is to have fast reads by host/repo.
+//
+// The MapPart entities as a whole store a mapping used to lookup which host,
+// repo and ref maps to which config group; the map is updated when a project
+// config is updated.
+type mapPart struct {
+	_kind string `gae:"$kind,MapPart"`
+
+	// The ID of this MapPart, which is the LUCI project name.
 	ID string `gae:"$id"`
 
 	// LUCI project name.
 	//
-	// This is used when querying for entities to update or remove in the
-	// update operation.
+	// This field contains the same value as ID, and is included so
+	// that we can index on it, and thus filter on it in queries.
 	Project string
 
-	// GobWatchMapParent key. This parent has an ID of the form "host/repo".
+	// MapPartParent key. This parent has an ID of the form "host/repo".
 	Parent *datastore.Key `gae:"$parent"`
 
-	// Groups keeps config groups of a LUCI project applicable to this host/repo.
+	// Groups keeps config groups of a LUCI project applicable to this
+	// host/repo.
 	Groups *internal.Groups
 
-	// ConfigHash is the hash of latest CV config file imported from LUCI Config;
-	// this is updated based on ProjectConfig entity.
+	// ConfigHash is the hash of latest CV project config imported from LUCI
+	// Config; this is updated based on ProjectConfig entity.
 	ConfigHash string `gae:",noindex"`
 }
 
@@ -60,20 +75,125 @@ type gobWatchMap struct {
 // accordingly.
 //
 // This may include adding, removing and modifying entities.
+//
+// TODO(qyearsley): Handle possible race condition; There may be 2 or more
+// concurrent Update calls, which could lead to corrupted data.
 func Update(ctx context.Context, project string) error {
-	// TODO(qyearsley): Implement.
-	// 1. Fetch the current state of the map by querying for all
-	//    GobWatchMap entities for the LUCI project.
-	// 2. Get the latest config from datastore (using the config package).
-	// 3. Determine which GobWatchMap entities need to be modified,
-	//    removed, or added.
-	// Note: for each config group in the config, there is a host, repo,
-	//    and a ref specification. Specifically, if cg is the ConfigGroup,
-	//    cg.Gerrit.Url is the host (plus schema), cg.Gerrit.Projects is a list
-	//    of Gerrit Project messages; within each of those messages is Name
-	//    (i.e. repo), RefRegexp, and RefRegexpExclude). field, which has Url
-	//    field, which is the Gerrit host plus schema.
-	return errors.New("not implemented")
+	var toPut, toDelete []*mapPart
+
+	// Fetch stored GWM entities
+	mps := []*mapPart{}
+	q := datastore.NewQuery(mapKind).Eq("Project", project)
+	if err := datastore.GetAll(ctx, q, &mps); err != nil {
+		return errors.Annotate(err, "failed to get MapPart entities for project %q", project).Tag(transient.Tag).Err()
+	}
+
+	switch meta, err := config.GetLatestMeta(ctx, project); {
+	case err != nil:
+		return err
+	case meta.Status != config.StatusEnabled:
+		// The project was disabled or removed, delete everything.
+		toDelete = mps
+	default:
+		cgs, err := meta.GetConfigGroups(ctx)
+		if err != nil {
+			return err
+		}
+		toPut, toDelete = listUpdates(ctx, mps, cgs, meta.Hash(), project)
+	}
+
+	// TODO(qyearsle): split Delete/Put into batches of ~128 and execute in
+	// parallel. Reason: some LUCI projects watch 100s of repos, while
+	// Delete/Put are limited to ~500 entities.
+	if err := datastore.Delete(ctx, toDelete); err != nil {
+		return errors.Annotate(err, "failed to delete %d MapPart entities when updating project %q",
+			len(toDelete), project).Tag(transient.Tag).Err()
+	}
+	if err := datastore.Put(ctx, toPut); err != nil {
+		return errors.Annotate(err, "failed to put %d MapPart entities when updating project %q",
+			len(toPut), project).Tag(transient.Tag).Err()
+	}
+
+	return nil
+}
+
+// listUpdates determines what needs to be updated.
+//
+// It computes which of the existing MapPart entities should be
+// removed, and which MapPart entities should be put (added or updated).
+func listUpdates(ctx context.Context, mps []*mapPart, latestConfigGroups []*config.ConfigGroup,
+	latestHash, project string) (toPut, toDelete []*mapPart) {
+	// Make a map of host/repo to config hashes for currently
+	// existing MapPart entities; used below.
+	existingHashes := make(map[string]string, len(mps))
+	for _, mp := range mps {
+		hostRepo := mp.Parent.StringID()
+		existingHashes[hostRepo] = mp.ConfigHash
+	}
+
+	// List `internal.Groups` present in the latest config groups.
+	hostRepoToGroups := internalGroups(latestConfigGroups)
+
+	// List MapParts to put; these are those either have
+	// no existing hash yet or a different existing hash.
+	for hostRepo, groups := range hostRepoToGroups {
+		if existingHashes[hostRepo] == latestHash {
+			// Already up to date.
+			continue
+		}
+		mp := &mapPart{
+			ID:         project,
+			Project:    project,
+			Parent:     datastore.MakeKey(ctx, parentKind, hostRepo),
+			Groups:     groups,
+			ConfigHash: latestHash,
+		}
+		toPut = append(toPut, mp)
+	}
+
+	// List MapParts to delete; these are those that currently exist but
+	// have no groups in the latest config.
+	toDelete = []*mapPart{}
+	for _, mp := range mps {
+		hostRepo := mp.Parent.StringID()
+		if _, ok := hostRepoToGroups[hostRepo]; !ok {
+			toDelete = append(toDelete, mp)
+		}
+	}
+
+	return toPut, toDelete
+}
+
+// internalGroups converts config.ConfigGroups to internal.Groups.
+//
+// It returns a map of host/repo to internal.Groups.
+func internalGroups(configGroups []*config.ConfigGroup) map[string]*internal.Groups {
+	ret := make(map[string]*internal.Groups)
+	for _, g := range configGroups {
+		for _, gerrit := range g.Content.Gerrit {
+			// Gerrit hosts are assumed to always use https.
+			// TODO(qyearsley): Use helper function config.GerritHost().
+			host := strings.TrimPrefix(gerrit.Url, "https://")
+			host = strings.TrimSuffix(host, "/")
+			for _, p := range gerrit.Projects {
+				hostRepo := host + "/" + p.Name
+				group := &internal.Group{
+					Id:       string(g.ID),
+					Include:  p.RefRegexp,
+					Exclude:  p.RefRegexpExclude,
+					Fallback: g.Content.Fallback == pb.Toggle_YES,
+				}
+				if groups, ok := ret[hostRepo]; ok {
+					groups.Groups = append(groups.Groups, group)
+				} else {
+					ret[hostRepo] = &internal.Groups{
+						Groups: []*internal.Group{group},
+					}
+				}
+			}
+		}
+	}
+	return ret
 }
 
 // Lookup returns config group IDs which watch the given combination of Gerrit
@@ -87,12 +207,58 @@ func Update(ctx context.Context, project string) error {
 // combination is watched by at most one ConfigGroup, which is why this may
 // return multiple ConfigGroupIDs even for the same LUCI project.
 func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
-	// TODO(qyearsley): Implement:
-	// 1. Fetch all GobWatchMap entities for the given host and repo.
-	//    This should be done with a ancestor query for a host/repo.
-	// 2. For each entity, which represents 1 host/repo/LUCI_project, inspect
-	//    the gobWatchMap.Groups to determine which configs apply.
-	//    If several config groups of a LUCI project match, then all fallback
-	//    groups are ignored.
-	return nil, errors.New("not implemented")
+	now := timestamppb.New(clock.Now(ctx).UTC())
+
+	// Fetch all MapPart entities for the given host and repo.
+	hostRepo := host + "/" + repo
+	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
+	q := datastore.NewQuery(mapKind).Ancestor(parentKey)
+	mps := []*mapPart{}
+	if err := datastore.GetAll(ctx, q, &mps); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch MapParts for %s", hostRepo).Tag(transient.Tag).Err()
+	}
+
+	// For each MapPart entity, inspect the Groups to determine which configs
+	// apply for the given ref.
+	ac := &changelist.ApplicableConfig{UpdateTime: now}
+	for _, mp := range mps {
+		var fallbackId string
+		var ids []string
+		for _, g := range mp.Groups.Groups {
+			if matchesAny(g.Include, ref) && !matchesAny(g.Exclude, ref) {
+				if g.Fallback {
+					fallbackId = g.Id
+				} else {
+					ids = append(ids, g.Id)
+				}
+			}
+		}
+		// If there are two groups that match and one of them has fallback
+		// set to true, then the one with Fallback set to false is the one
+		// to use.
+		if len(ids) == 0 && fallbackId != "" {
+			ids = []string{fallbackId}
+		}
+		if len(ids) != 0 {
+			ac.Projects = append(ac.Projects, &changelist.ApplicableConfig_Project{
+				Name:           mp.Project,
+				ConfigGroupIds: ids,
+			})
+		}
+	}
+	return ac, nil
+}
+
+// matchesAny returns true iff s matches any of the patterns.
+//
+// It is assumed that all patterns have been pre-validated and
+// are valid regexps.
+func matchesAny(patterns []string, s string) bool {
+	for _, pattern := range patterns {
+		if regexp.MustCompile(pattern).MatchString(s) {
+			return true
+		}
+	}
+	return false
+
 }
