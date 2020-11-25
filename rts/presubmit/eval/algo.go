@@ -47,7 +47,13 @@ type SourceFile struct {
 
 // Output is the output of an RTS algorithm.
 type Output struct {
-	// ShouldSkip is the list of test variant that should be skipped.
-	// It must be a subset of Input.TestVariants.
-	ShouldSkip []*evalpb.TestVariant
+	// TestVariantDistances are distances for each Input.TestVariants, in the
+	// same order. A distance is a value betwen 0.0 and +inf, where 0.0 means
+	// the changed files are extremely like to affect the test variant,
+	// and +inf means extremely unlikely.
+	//
+	// When Algorithm() is called, TestVariantDistances is pre-initialized with a
+	// slice with the same length as Input.TestVariants, and filled with zeros.
+	// Thus by default, all tests are executed.
+	TestVariantDistances []float64
 }
