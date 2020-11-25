@@ -17,8 +17,6 @@ package dscache
 import (
 	"context"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
-
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -51,7 +49,6 @@ func FilterRDS(ctx context.Context, impl Cache) context.Context {
 			ds.GetKeyContext(ctx),
 			ctx,
 			impl,
-			mathrand.Get(ctx),
 			shardFns,
 		}
 
