@@ -74,7 +74,10 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 	for i := 0; i < 100; i++ {
 		eg.Go(func() error {
 			for td := range withoutChangedFiles {
-				if err := r.populateChangedFiles(ctx, td.Patchsets[0]); err != nil {
+				switch err := r.populateChangedFiles(ctx, td.Patchsets[0]); {
+				case err == errPatchsetDeleted:
+					continue
+				case err != nil:
 					return err
 				}
 				if err := callback(td); err != nil {
