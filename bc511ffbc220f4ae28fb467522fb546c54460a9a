@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "965abbcf_3d803343",
+        "filename": "led/job/info_buildbucket.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 0,
+      "message": "this is actually wrong for protos:\n  if you regenerate pb.go files, `go vet` will rightfully complain.",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 23
+      },
+      "revId": "bc511ffbc220f4ae28fb467522fb546c54460a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

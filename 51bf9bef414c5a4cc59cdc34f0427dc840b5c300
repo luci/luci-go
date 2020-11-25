@@ -16,6 +16,195 @@
       "message": "Hi, can you help to review this CL? Thanks.\n\n(It might be easier to first take a look at the `func EditIsolated()` in `led/ledcmd/edit_isolated.go`, it’s the core change to leverage rbe-cas as mentioned in the CL’s commit msg. All the changes in other files that had to be made are due to this function.)",
       "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcda40d6_2c2efa2a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "sgtm",
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37a48b54_e64bf796",
+        "filename": "led/job/info.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "use `` for regexps:\n\n    `(.*)\\.appspot\\.com`",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 51
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad01e77b_9deb52a6",
+        "filename": "led/job/info.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "maybe swarmingHostRx + I\u0027d move this const and var right above the func where they are used.",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e048bc0_3c289707",
+        "filename": "led/job/info_buildbucket.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "please do future proof copy with proto.Clone or proto.Merge.\nsame below.\n\n(see also https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2552793/comment/64113629_17db72f4/\nif you figure concise way to use modern proto.Clone, lmk 😊 )",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6147fccc_654fcf5f",
+        "filename": "led/job/info_swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "same copy here.",
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40e379ef_4fdf4fa1",
+        "filename": "led/ledcli/edit_recipe_bundle.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "can you change cmd base interface to always pass authOptions to execute() [1] s.t. you don\u0027t need to do L117.\nThis will keep keep the desired userAgent [2]\nAlso, please keep authClient and authOptions next to each other in args list.\n\n[1] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/ledcli/util.go;l\u003d49?q\u003d%22type%20cmdBaseOptions%20struct%22\u0026ss\u003dchromium\n[2] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/ledcli/util.go;l\u003d100?q\u003d%22type%20cmdBaseOptions%20struct%22\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 116,
+        "startChar": 30,
+        "endLine": 116,
+        "endChar": 37
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91f14033_0b9d973f",
+        "filename": "led/ledcmd/edit_isolated.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "omg",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 61
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5af979a_a0637609",
+        "filename": "led/ledcmd/edit_isolated.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "(like above) please keep authClient and authOptions next to each other in args list.",
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a4e426f_8c7f08c3",
+        "filename": "led/ledcmd/edit_isolated.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T14:00:10Z",
+      "side": 1,
+      "message": "i\u0027m afraid led users may have no idea what\u0027s this about, but I at least it\u0027s code searchable.\nno better porposal.s",
+      "range": {
+        "startLine": 217,
+        "startChar": 53,
+        "endLine": 217,
+        "endChar": 65
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
