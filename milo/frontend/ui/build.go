@@ -41,7 +41,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var crosMainRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
+var crosMainRE = regexp.MustCompile(`^cros/(master_buildbucket_id|parent_buildbucket_id)/(\d+)$`)
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
 // nesting information.
@@ -184,7 +184,7 @@ func (b *Build) RecipeLink() *Link {
 		csHost = "source.corp.google.com"
 	}
 	// TODO(crbug.com/1149540): remove this conditional once the long-term
-    // solution for recipe links has been implemented.
+	// solution for recipe links has been implemented.
 	if projectName == "flutter" {
 		csHost = "cs.opensource.google"
 	}
@@ -234,7 +234,7 @@ func (b *Build) BuildSetLinks() []template.HTML {
 			// This linking is for legacy ChromeOS builders to show a link to their
 			// main builder, it can be removed when these have been transitioned
 			// to parallel CQ.
-			buildbucketId := result[1]
+			buildbucketId := result[2]
 			builderURL := fmt.Sprintf("https://ci.chromium.org/b/%s", buildbucketId)
 			ariaLabel := fmt.Sprintf("Main builder %s", buildbucketId)
 			link := NewLink(buildSet, builderURL, ariaLabel)
