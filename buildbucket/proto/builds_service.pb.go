@@ -373,7 +373,7 @@ type UpdateBuildRequest struct {
 
 	// Build to update, with new field values.
 	Build *Build `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
-	// Build fields to update.
+	// Required. Build fields to update.
 	// See also
 	// https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
 	//
