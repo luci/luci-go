@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcbf1003_cca93d20",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "fb1ccce1_dae1c8b3",
+      "range": {
+        "startLine": 108,
+        "startChar": 20,
+        "endLine": 108,
+        "endChar": 33
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ad15bcd9_588a31c8",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-24T20:09:40Z",
       "side": 1,
       "message": "nit: reuse the result. Also \u0027ok\u0027 check is not necessary:\n\n  md, _ :\u003d metadata.FromIncomingContext(ctx)\n  buildToks :\u003d md.Get(BuildTokenKey)\n  if len(buildToks) !\u003d 0 {\n     ...\n  }\n\n  for _, tk :\u003d range buildToks {\n     ...\n  }",
+      "range": {
+        "startLine": 237,
+        "startChar": 15,
+        "endLine": 237,
+        "endChar": 36
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e7003ed_a058c9a0",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad15bcd9_588a31c8",
       "range": {
         "startLine": 237,
         "startChar": 15,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "566725a0_8ec99d48",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37f6502f_9d97bbad",
+      "range": {
+        "startLine": 238,
+        "startChar": 49,
+        "endLine": 238,
+        "endChar": 82
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7019595f_6168db45",
@@ -87,6 +159,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "af4a4f91_4e2f1784",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Generally speaking, there is no guarantee that the header key is exclusively used by this module only. A request could be parsed through multiple layers, and each could have put a token with the header key for own use.\n\nOf course, we don\u0027t have such a case. I removed the loop to use the first value. (Why not the last one? it\u0027s a random pick.)",
+      "parentUuid": "7019595f_6168db45",
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "167985e2_00e05d63",
@@ -100,6 +190,30 @@
       "writtenOn": "2020-11-24T20:09:40Z",
       "side": 1,
       "message": "Strictly speaking this should use https://golang.org/pkg/crypto/subtle/#ConstantTimeCompare otherwise it is possible to \"guess\" the token by measuring how fast request fails (it will require a lot of trials though).",
+      "range": {
+        "startLine": 244,
+        "startChar": 5,
+        "endLine": 244,
+        "endChar": 24
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58ef2067_ea1280c2",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Used ConstantTimeCompare().",
+      "parentUuid": "167985e2_00e05d63",
       "range": {
         "startLine": 244,
         "startChar": 5,
@@ -180,6 +294,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a0dda20_efc31f1e",
+        "filename": "buildbucket/appengine/rpc/common_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Good point. Initially, I implemented a logic to extract the public part and validate the issued timestamp and expiration duration. Thus, it was necessary to make tokens a valid Base64 string with a fixed header and length.\nhttps://crrev.com/c/2548451/1/buildbucket/appengine/rpc/common.go#257\n\nI replaced the tokens with simple strings.",
+      "parentUuid": "e5831d1f_539dd0af",
+      "range": {
+        "startLine": 245,
+        "startChar": 64,
+        "endLine": 245,
+        "endChar": 65
+      },
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0908d3f3_d1234d45",
@@ -193,6 +331,24 @@
       "writtenOn": "2020-11-24T14:28:50Z",
       "side": 1,
       "message": "Let\u0027s add TODO here, as opposed to inside validateBuildToken\n// TODO(crbug.com/1110990) - Use Cloud Secret Manager to validate the request before loading the build to reject invalid/expired tokens quickly.",
+      "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d674c33b_2977abe4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T01:40:50Z",
+      "side": 1,
+      "message": "Moved.\nAlso, filed a separate bug, crbug.com/1152628, to unblock UpdateBuild from this work.",
+      "parentUuid": "0908d3f3_d1234d45",
       "revId": "70925b7ad845c6162e47854cdb808571e02cbf5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
