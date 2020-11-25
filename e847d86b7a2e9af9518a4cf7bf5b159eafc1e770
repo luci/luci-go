@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f90ba85_b9c31889",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:55:29Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 273,
+        "startChar": 1,
+        "endLine": 273,
+        "endChar": 3
+      },
+      "revId": "e847d86b7a2e9af9518a4cf7bf5b159eafc1e770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

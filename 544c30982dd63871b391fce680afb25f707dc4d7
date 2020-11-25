@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "62550e48_45e383fb",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:55:29Z",
+      "side": 1,
+      "message": "ah, no, that\u0027s not what I meant, but I can see how this can be confusing.\nMust here is a proposed prefix for the panicking version of the function, similar to: https://godoc.org/text/template#Must\nwe also use MustFoo in resultdb code: https://source.chromium.org/search?q\u003dMust%5Cw%2B%5C(%20f:resultdb\u0026sq\u003d\nand the mask package itself uses it too: https://godoc.org/go.chromium.org/luci/common/proto/mask#MustFromReadMask\n\nI meant MustIncludes, not MustInclude, but this is still somewhat confusing. Ideas about a better name?",
+      "parentUuid": "4c6c04cd_89353994",
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4cb92ca6_a673c1fb",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 1
@@ -120,6 +138,30 @@
       "side": 1,
       "message": "\u003e\u003e where do you see that the requester is trying to update output fields? \n\nif Request.UpdatePaths include \"builds.output\", then UpdateBuild() thinks that the request is trying to update the output fields. That\u0027s the existing behaviour. buildMask is made of Request.UpdatePaths.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d391-401\n\n\n\u003e\u003e besides, why buildMask is used in this func to begin with? buildMask is only for reading back\nI\u0027m not sure if I understood your question correctly, but here are the reasons of this code.\n\n(1) getAsync() returns an error, if req.UpdatePaths contain any paths starting with \"build.outputs.\" [1]\n(2) build_mask is made of UpdatePaths,but submask(\"build\").\n(3) This go implementation could also iterates update_paths to find any update_paths with \"build.output\". \n(4) However, the parent call has to make build_mask anyways, and this function can simply use the build_mask to find the inclusiveness.\n(5) Technically, the existing python implementation does not return an error when the update_path has \"build.output\". However, \"build.output\" is a valid update_path, and I believe that UpdateBuild() shouldn\u0027t not allow \"build.output\" for SCHEDULED build, either. [5]\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d397\n[2]: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d409-413\n[5]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/builds_service.proto;l\u003d193",
       "parentUuid": "9ee5cd18_f104c32d",
+      "range": {
+        "startLine": 258,
+        "startChar": 57,
+        "endLine": 258,
+        "endChar": 111
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43d6b44e_0b2ecd22",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:55:29Z",
+      "side": 1,
+      "message": "sorry, somehow I thought buildMask is based on the reading mask.\n\nI think my confusion stems from the fact that we propagate both buildMask and updatePaths. Why do we need both? e.g. updatePaths.Has(\"build.status\") could be replaced with buildMask.MustIncludes(\"status\")?",
+      "parentUuid": "efb85d70_681010c8",
       "range": {
         "startLine": 258,
         "startChar": 57,
@@ -237,6 +279,30 @@
       "side": 1,
       "message": "I\u0027m confused.\n\nIn this CL, you said \"it\u0027s weird that Mask methods operate on raw Mask structs.\"\nIn crrev.com/2107188, you said \"yeah, I think we should change the code to use non-pointers. It results in somewhat weird code: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2557151/comment/fe1b0fe8_2155f12d/\"\n\nDid you mean that this CL should use and pass buildMask as a non-pointer, because the receiver of the Mask methods are non-pointer, right?",
       "parentUuid": "fe1b0fe8_2155f12d",
+      "range": {
+        "startLine": 291,
+        "startChar": 46,
+        "endLine": 291,
+        "endChar": 47
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cccf1c3d_ea1b211a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:55:29Z",
+      "side": 1,
+      "message": "sorry, I mistyped in that CL. I meant \"we should change the code to use pointers\"",
+      "parentUuid": "1854018b_d0a6220b",
       "range": {
         "startLine": 291,
         "startChar": 46,
