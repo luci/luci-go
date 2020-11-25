@@ -17,19 +17,28 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/time/rate"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -71,6 +80,8 @@ type presubmitHistoryRun struct {
 	minDuration      time.Duration
 	minCLFlakes      int
 
+	gerrit *gerritClient
+
 	authenticator *auth.Authenticator
 	authOpt       *auth.Options
 
@@ -107,8 +118,12 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 
 	r.authenticator = auth.NewAuthenticator(ctx, auth.InteractiveLogin, *r.authOpt)
 
-	// Create the history file.
 	var err error
+	if r.gerrit, err = r.newGerritClient(); err != nil {
+		return r.done(errors.Annotate(err, "failed to init Gerrit client").Err())
+	}
+
+	// Create the history file.
 	if r.w, err = history.CreateFile(r.out); err != nil {
 		return r.done(errors.Annotate(err, "failed to create the output file").Err())
 	}
@@ -204,4 +219,55 @@ func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquer
 		{Name: "test_id_regexp", Value: prepRe(r.testIDRegex)},
 	}
 	return q, nil
+}
+
+// populateChangedFiles populates ps.ChangedFiles.
+// TODO(nodir): delete this function, gerrit.go and cache.go in February 2021,
+// when we have enough BigQuery data with gerrit info.
+func (r *presubmitHistoryRun) populateChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) error {
+	changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)
+	if err != nil {
+		return err
+	}
+
+	repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
+
+	ps.ChangedFiles = make([]*evalpb.SourceFile, len(changedFiles))
+	for i, path := range changedFiles {
+		ps.ChangedFiles[i] = &evalpb.SourceFile{
+			Repo: repo,
+			Path: path,
+		}
+	}
+	return nil
+}
+
+// newGerritClient creates a new gitiles client. Does not mutate r.
+func (r *presubmitHistoryRun) newGerritClient() (*gerritClient, error) {
+	transport, err := r.authenticator.Transport()
+	if err != nil {
+		return nil, err
+	}
+
+	ucd, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := &http.Client{Transport: transport}
+	return &gerritClient{
+		listFilesRPC: func(ctx context.Context, host string, req *gerritpb.ListFilesRequest) (*gerritpb.ListFilesResponse, error) {
+			client, err := gerrit.NewRESTClient(httpClient, host, true)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to create a Gerrit client").Err()
+			}
+			return client.ListFiles(ctx, req)
+		},
+		fileListCache: cache{
+			dir:       filepath.Join(ucd, "chrome-rts", "gerrit-changed-files"),
+			memory:    lru.New(1024),
+			valueType: reflect.TypeOf(changedFiles{}),
+		},
+		limiter: rate.NewLimiter(10, 1),
+	}, nil
 }
