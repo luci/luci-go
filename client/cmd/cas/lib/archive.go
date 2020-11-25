@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
@@ -128,14 +127,14 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	start := time.Now()
 
-	rootDg, chunkers, _, err := client.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
+	rootDg, entries, _, err := client.ComputeMerkleTree(root, &is, filemetadata.NewNoopCache())
 	if err != nil {
 		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	start = time.Now()
-	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
+	uploadedDigests, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
@@ -157,10 +156,10 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 			uploadedSet[d] = struct{}{}
 		}
 
-		notUploaded := make([]int64, 0, len(chunkers)-len(uploadedDigests))
-		for _, d := range chunkers {
-			if _, ok := uploadedSet[d.Digest()]; !ok {
-				notUploaded = append(notUploaded, d.Digest().Size)
+		notUploaded := make([]int64, 0, len(entries)-len(uploadedDigests))
+		for _, e := range entries {
+			if _, ok := uploadedSet[e.Digest]; !ok {
+				notUploaded = append(notUploaded, e.Digest.Size)
 			}
 		}
 
