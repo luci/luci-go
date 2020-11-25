@@ -185,7 +185,7 @@ message UpdateBuildRequest {
   // Build to update, with new field values.
   Build build = 1;
 
-  // Build fields to update.
+  // Required. Build fields to update.
   // See also
   // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
   //
