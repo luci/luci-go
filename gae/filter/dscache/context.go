@@ -40,22 +40,22 @@ type ShardFunction func(*ds.Key) (shards int, ok bool)
 // FilterRDS installs a caching RawDatastore filter in the context.
 //
 // It uses the given `impl` to actually do caching. If nil, uses GAE Memcache.
-func FilterRDS(c context.Context, impl Cache) context.Context {
+func FilterRDS(ctx context.Context, impl Cache) context.Context {
 	if impl == nil {
 		impl = defaultImpl
 	}
-	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
-		shardFns, _ := c.Value(&dsShardFunctionsKey).([]ShardFunction)
+	return ds.AddRawFilters(ctx, func(ctx context.Context, rds ds.RawInterface) ds.RawInterface {
+		shardFns, _ := ctx.Value(&dsShardFunctionsKey).([]ShardFunction)
 
 		sc := &supportContext{
-			ds.GetKeyContext(c),
-			c,
+			ds.GetKeyContext(ctx),
+			ctx,
 			impl,
-			mathrand.Get(c),
+			mathrand.Get(ctx),
 			shardFns,
 		}
 
-		v := c.Value(&dsTxnCacheKey)
+		v := ctx.Value(&dsTxnCacheKey)
 		if v == nil {
 			return &dsCache{rds, sc}
 		}
@@ -72,14 +72,14 @@ func FilterRDS(c context.Context, impl Cache) context.Context {
 //   ctx = AddShardFunctions(ctx, A, B, C)
 //   ctx = AddShardFunctions(ctx, D, E, F)
 //
-// Would evaulate `D, E, F, A, B, C`
-func AddShardFunctions(c context.Context, shardFns ...ShardFunction) context.Context {
-	cur, _ := c.Value(&dsShardFunctionsKey).([]ShardFunction)
+// Would evaluate `D, E, F, A, B, C`
+func AddShardFunctions(ctx context.Context, shardFns ...ShardFunction) context.Context {
+	cur, _ := ctx.Value(&dsShardFunctionsKey).([]ShardFunction)
 	new := make([]ShardFunction, 0, len(cur)+len(shardFns))
 	for _, fn := range shardFns {
 		if fn == nil {
 			panic("nil function provided to AddShardFunctions")
 		}
 	}
-	return context.WithValue(c, &dsShardFunctionsKey, append(append(new, shardFns...), cur...))
+	return context.WithValue(ctx, &dsShardFunctionsKey, append(append(new, shardFns...), cur...))
 }
