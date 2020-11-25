@@ -55,6 +55,7 @@ var (
 	}
 )
 
+// validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
@@ -274,7 +275,13 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	updatePaths := stringset.NewFromSlice(req.UpdateMask.GetPaths()...)
 
 	// pre-check if the build can be updated before updating it with a transaction.
-	if _, err = getBuildForUpdate(ctx, updatePaths, bm, req); err != nil {
+	b, err := getBuildForUpdate(ctx, updatePaths, bm, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
+	if err := validateBuildToken(ctx, b); err != nil {
 		return nil, err
 	}
 
