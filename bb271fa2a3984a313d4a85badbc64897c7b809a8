@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44ce38a9_5c17b9b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-25T02:17:09Z",
+      "side": 1,
+      "message": "PTAL. It is kind of dirty and I have no idea how to unit-test it.",
+      "revId": "bb271fa2a3984a313d4a85badbc64897c7b809a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
