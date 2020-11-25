@@ -46,7 +46,7 @@ func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
 
 	Convey(`FlattenToSwarming`, t, func() {
-		fixture, err := os.Open("jobcreate/testdata/bbagent.job.json")
+		fixture, err := os.Open("jobcreate/testdata/bbagent_iso.job.json")
 		So(err, ShouldBeNil)
 		defer fixture.Close()
 

@@ -159,7 +159,8 @@
         "execution_timeout_secs": "1800",
         "inputs_ref": {
           "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip"
+          "namespace": "default-gzip",
+          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15"
         },
         "grace_period_secs": "30",
         "caches": [
@@ -336,7 +337,8 @@
         "execution_timeout_secs": "1800",
         "inputs_ref": {
           "isolatedserver": "https://isolateserver-dev.appspot.com",
-          "namespace": "default-gzip"
+          "namespace": "default-gzip",
+          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15"
         },
         "grace_period_secs": "30",
         "caches": [
