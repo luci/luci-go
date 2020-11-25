@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
+import { comparer } from 'mobx';
+import { createTransformer, expr, fromPromise, FULFILLED } from 'mobx-utils';
 
 /**
  * Manually coded type definition and classes for resultdb service.
@@ -219,6 +221,32 @@ export class ResultDb {
       req,
     ) as Artifact;
   }
+
+  /**
+   * Returns the cached artifacts of an invocation.
+   * If the artifacts are not cached yet,
+   * 1. return null, and
+   * 2. fetch the artifacts, and
+   * 3. once the artifacts are fetched, notifies the subscribers with the new
+   * artifacts
+   *
+   * @param invName: Invocation Name.
+   * @return artifacts of the invocation (if cached) or null.
+   */
+  getCachedArtifactsOfInv = createTransformer(
+    (invName: string) => {
+      const artifactRes = expr(() => {
+        const artifacts = this
+          .listArtifacts({parent: invName})
+          .then((res) => res.artifacts || []);
+        return fromPromise(artifacts);
+      });
+      return artifactRes.state === FULFILLED ? artifactRes.value : null;
+    },
+    {
+      equals: comparer.shallow,
+    },
+  );
 
   private call(method: string, message: object) {
     return this.prpcClient.call(
