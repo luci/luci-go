@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3aa96c40_74fb7c96",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-25T10:06:32Z",
+      "side": 1,
+      "message": "Will it be more convenient if the key type is string? (I thin this is the digest hash in practice?)",
+      "range": {
+        "startLine": 81,
+        "startChar": 25,
+        "endLine": 81,
+        "endChar": 28
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
