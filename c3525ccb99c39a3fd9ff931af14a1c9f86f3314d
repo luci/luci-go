@@ -22,6 +22,30 @@
       },
       "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29c4d671_c5ed1538",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-25T22:45:45Z",
+      "side": 1,
+      "message": "How about we\n1. Change the prefix to `inv-level: `, or\n2. Add a subsection `Invocation-level Artifacts:` under the artifacts entry, or\n3. Rename the current `Artifacts:` entry to `Result Artifacts:` and add an `Inv-level Artifacts` entry?",
+      "parentUuid": "8065c49b_dfac2f9c",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
