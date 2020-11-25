@@ -33,6 +33,24 @@
       "message": "are these sorted? If not, i\u0027d sort them.",
       "revId": "219a6268b894138e556ef313639442244d090911",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b83b3340_ab63af2d",
+        "filename": "rts/presubmit/eval/safety.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T23:36:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee588198_79e31712",
+      "revId": "219a6268b894138e556ef313639442244d090911",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
