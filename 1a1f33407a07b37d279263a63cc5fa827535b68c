@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1024ee9c_a99c6ff6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-11-25T00:01:45Z",
+      "side": 1,
+      "message": "Follow up for https://crrev.com/c/2557037/comment/dba69b9a_a09e86b1",
+      "revId": "1a1f33407a07b37d279263a63cc5fa827535b68c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
