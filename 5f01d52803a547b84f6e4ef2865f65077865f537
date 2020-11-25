@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b6084f7_69185fc8",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f425f52_6fc13696",
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "15fa06ae_9e3ecf0d",
@@ -91,6 +109,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a4297771_dc924be2",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "How about\n\n```\nmessage CreateArtifactRequest {\n  Artifact artifact \u003d 1;\n  bytes content \u003d 2;\n  string content_hash \u003d 3;\n}\n\nmessage DownloadArtifactsResponse {\n  Artifact artifact \u003d 1;\n  bytes content \u003d 2;\n}\n```\n\nThen, field `content` appears in the request message of applicable RPCs only.",
+      "parentUuid": "8e89f1ef_6d0b9b90",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c492056a_7e42ff61",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 4
@@ -102,6 +144,30 @@
       "writtenOn": "2020-11-24T19:59:15Z",
       "side": 1,
       "message": "So the size limit is for reference only and we won\u0027t validate the size of the artifact? Same question to the sum size below.",
+      "range": {
+        "startLine": 279,
+        "startChar": 54,
+        "endLine": 279,
+        "endChar": 60
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70368627_6b9035c6",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "The problem is that it\u0027s hard to validate the size in a pRPC handler. This is to protect a pRPC server from a large artifact content. However, if a request was dispatched to a pRPC handler, the entire contents of the uploaded artifacts have been already loaded onto the memory. There is no point of validating the size and rejecting the fully loaded request.\n\nWe can limit the maximum size of an HTTP request at the HTTP server level. We may be able to apply the limit for a specific URL(method) only, but it may not be trivial work. \n\nThis is a general problem that we already have. Clients are probably able to oom our services by spamming large requests to any methods, even if we didn\u0027t add BatchCreateArtifacts(). The default limit for request body size is 10MB, and I didn\u0027t find luci/server/server.go uses MaxBytesReader to apply a custom limit.\n: https://golang.org/src/net/http/request.go#L1227\n\nHopefully, good clients will upload artifacts with the raw-HTTP interface, which don\u0027t load the entire content into a single byte buffer, but chunk-by-chunk to stream contents between request.body and CAS.ByteStream.\n\nWe won\u0027t be able to prevent clients from uploading large artifacts via BatchCreateArtifacts(). However, we can probably add monitoring metrics to report bad clients so that we can file a bug to ask clients to fix the problem.:)",
+      "parentUuid": "c492056a_7e42ff61",
       "range": {
         "startLine": 279,
         "startChar": 54,
@@ -135,6 +201,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "07867a11_bd55df3c",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "Updated to `bytes`.",
+      "parentUuid": "26c4ff9d_6189819e",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 280,
+        "endChar": 28
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a402d172_4f54db56",
@@ -158,6 +248,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ffbcb83_cea4144b",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "We currently use it to check a duplicate before computing the hash of the actual content.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/create_artifact.go;l\u003d374",
+      "parentUuid": "a402d172_4f54db56",
+      "range": {
+        "startLine": 282,
+        "startChar": 2,
+        "endLine": 284,
+        "endChar": 0
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ecde6a59_d821b407",
@@ -171,6 +285,30 @@
       "writtenOn": "2020-11-24T17:29:31Z",
       "side": 1,
       "message": "nit: MUST match",
+      "range": {
+        "startLine": 295,
+        "startChar": 69,
+        "endLine": 296,
+        "endChar": 20
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9ddda9e_7d4fb1ae",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T08:37:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecde6a59_d821b407",
       "range": {
         "startLine": 295,
         "startChar": 69,
