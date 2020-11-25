@@ -184,7 +184,7 @@ func (b *Build) RecipeLink() *Link {
 		csHost = "source.corp.google.com"
 	}
 	// TODO(crbug.com/1149540): remove this conditional once the long-term
-    // solution for recipe links has been implemented.
+	// solution for recipe links has been implemented.
 	if projectName == "flutter" {
 		csHost = "cs.opensource.google"
 	}
@@ -632,7 +632,6 @@ var (
 							href="/ui/p/{{.Builder.Project}}/builders/{{.Builder.Bucket}}/{{.Builder.Builder}}/b{{.Id}}"
 						{{end}}
 					>Switch to the new build page!</a>
-					(Note: from 1 Dec 2020, this page will redirect by default.)
 				</div>`))
 )
 
