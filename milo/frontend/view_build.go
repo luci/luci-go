@@ -145,10 +145,10 @@ func getShowNewBuildPagePrefCookie(c *router.Context) bool {
 	case nil:
 		return cookie.Value == "true"
 	case http.ErrNoCookie:
-		return false
+		return true
 	default:
 		logging.WithError(err).Errorf(c.Context, "failed to read showNewBuildPagePref cookie")
-		return false
+		return true
 	}
 }
 
