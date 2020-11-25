@@ -70,6 +70,24 @@
       "parentUuid": "4fe9196a_3017e064",
       "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62136a10_ce45f98e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:54:33Z",
+      "side": 1,
+      "message": "correcting myself: above I meant \"I think we should change the code to use pointers\" not \"not-pointers\" of course",
+      "parentUuid": "1cc97e30_6f76b0bc",
+      "revId": "8c7b8843fb7b389719f9d1a7bf093e88791999f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
