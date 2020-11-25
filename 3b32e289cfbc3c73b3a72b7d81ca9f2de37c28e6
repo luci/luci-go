@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb986d71_707a323f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-25T06:40:20Z",
+      "side": 1,
+      "message": "Could we make this expire, say, a month after clicking the link?",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
