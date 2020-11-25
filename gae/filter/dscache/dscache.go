@@ -15,21 +15,15 @@
 package dscache
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha1"
-	"encoding/base64"
-	"fmt"
 	"time"
-
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
-var (
+const (
 	// MutationLockTimeout is expiration time of a "lock" memcache entry that
-	// protects mutations (Put/Delete/Commit). It should be lager than the maximum
-	// expected duration of datastore mutating operations. Must have seconds
-	// precision.
+	// protects mutations (Put/Delete/Commit). It should be larger than the
+	// maximum expected duration of datastore mutating operations. Must have
+	// seconds precision.
 	MutationLockTimeout = 120 * time.Second
 
 	// RefreshLockTimeout is expiration time of a "lock" memcache entry that
@@ -48,9 +42,10 @@ var (
 
 	// DefaultShards is the default number of key sharding to do.
 	DefaultShards = 1
-)
 
-const (
+	// MaxShards is the maximum number of shards a single entity can have.
+	MaxShards = 256
+
 	// MemcacheVersion will be incremented in the event that the in-memcache
 	// representation of the cache data is modified.
 	MemcacheVersion = "1"
@@ -59,26 +54,14 @@ const (
 	//   gae:<version>:<shard#>:<base64_std_nopad(sha1(datastore.Key))>
 	KeyFormat = "gae:" + MemcacheVersion + ":%x:%s"
 
-	// Sha1B64Padding is the number of padding characters a base64 encoding of
-	// a sha1 has.
-	Sha1B64Padding = 1
-
-	// MaxShards is the maximum number of shards a single entity can have.
-	MaxShards = 256
-
-	// MaxShardsLen is the number of characters in the key the shard field
-	// occupies.
-	MaxShardsLen = len("ff")
-
-	// InternalGAEPadding is the estimated internal padding size that GAE takes
-	// per memcache line.
-	//   https://cloud.google.com/appengine/docs/go/memcache/#Go_Limits
-	InternalGAEPadding = 96
-
 	// ValueSizeLimit is the maximum encoded size a datastore key+entry may
 	// occupy. If a datastore entity is too large, it will have an indefinite
 	// lock which will cause all clients to fetch it from the datastore.
-	ValueSizeLimit = (1000 * 1000) - InternalGAEPadding - MaxShardsLen
+	//
+	// See https://cloud.google.com/appengine/docs/go/memcache/#Go_Limits
+	// 80 is approximately the internal GAE padding. 36 is maximum length of our
+	// keys.
+	ValueSizeLimit = (1024 * 1024) - 80 - 36
 
 	// CacheEnableMeta is the gae metadata key name for whether or not dscache
 	// is enabled for an entity type at all.
@@ -91,29 +74,6 @@ const (
 	// NonceBytes is the number of bytes to use in the 'lock' nonce.
 	NonceBytes = 8
 )
-
-// internalValueSizeLimit is a var for testing purposes.
-var internalValueSizeLimit = ValueSizeLimit
-
-// CompressionType is the type of compression a single memcache entry has.
-type CompressionType byte
-
-// Types of compression. ZlibCompression uses "compress/zlib".
-const (
-	NoCompression CompressionType = iota
-	ZlibCompression
-)
-
-func (c CompressionType) String() string {
-	switch c {
-	case NoCompression:
-		return "NoCompression"
-	case ZlibCompression:
-		return "ZlibCompression"
-	default:
-		return fmt.Sprintf("UNKNOWN_CompressionType(%d)", c)
-	}
-}
 
 // CacheItem represents either a cached datastore entity or a placeholder lock
 // that "promises" that such entity is being fetched now (either by us or by
@@ -189,20 +149,4 @@ type Cache interface {
 	//
 	// Errors are logged, but ignored.
 	CompareAndSwap(ctx context.Context, items []CacheItem) error
-}
-
-// MakeMemcacheKey generates a memcache key for the given datastore Key. This
-// is useful for debugging.
-func MakeMemcacheKey(shard int, k *datastore.Key) string {
-	return fmt.Sprintf(KeyFormat, shard, HashKey(k))
-}
-
-// HashKey generates just the hashed portion of the MemcacheKey.
-func HashKey(k *datastore.Key) string {
-	dgst := sha1.Sum(datastore.Serialize.ToBytes(k))
-	buf := bytes.Buffer{}
-	enc := base64.NewEncoder(base64.StdEncoding, &buf)
-	_, _ = enc.Write(dgst[:])
-	enc.Close()
-	return buf.String()[:buf.Len()-Sha1B64Padding]
 }
