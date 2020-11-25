@@ -301,6 +301,9 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			return nil, errors.Annotate(err, "failed to buildCASInputSpec").Err()
 		}
 		rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to computeMerkleTree").Err()
+		}
 		rootDgs = append(rootDgs, rootDg)
 		entries = append(entries, entrs...)
 	}
