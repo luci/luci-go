@@ -39,21 +39,8 @@ type ShardFunction func(*ds.Key) (shards int, ok bool)
 
 // FilterRDS installs a caching RawDatastore filter in the context.
 //
-// It does nothing if IsGloballyEnabled returns false. That way it is possible
-// to disable the cache in runtime (e.g. in case memcache service is having
-// issues).
-func FilterRDS(c context.Context) context.Context {
-	if !IsGloballyEnabled(c) {
-		return c
-	}
-	return AlwaysFilterRDS(c, nil)
-}
-
-// AlwaysFilterRDS installs a caching RawDatastore filter in the context.
-//
-// Unlike FilterRDS it doesn't check GlobalConfig via IsGloballyEnabled call,
-// assuming caller already knows whether filter should be applied or not.
-func AlwaysFilterRDS(c context.Context, impl Cache) context.Context {
+// It uses the given `impl` to actually do caching. If nil, uses GAE Memcache.
+func FilterRDS(c context.Context, impl Cache) context.Context {
 	if impl == nil {
 		impl = defaultImpl
 	}
