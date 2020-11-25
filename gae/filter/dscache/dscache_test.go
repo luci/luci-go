@@ -115,7 +115,7 @@ func TestDSCache(t *testing.T) {
 			So(ds.Get(underCtx, &o), ShouldBeNil)
 			So(o.Value, ShouldEqual, "hi")
 
-			itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 			So(err, ShouldEqual, mc.ErrCacheMiss)
 
 			o = object{ID: 1}
@@ -133,7 +133,7 @@ func TestDSCache(t *testing.T) {
 				// unless you want a crappy cache.
 				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
 
-				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 				So(err, ShouldBeNil)
 				So(itm.Value(), ShouldResemble, encoded)
 
@@ -145,7 +145,7 @@ func TestDSCache(t *testing.T) {
 				o := object{ID: 1}
 				So(ds.Delete(c, ds.KeyForObj(c, &o)), ShouldBeNil)
 
-				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 				So(err, ShouldEqual, mc.ErrCacheMiss)
 				So(ds.Get(c, &o), ShouldEqual, ds.ErrNoSuchEntity)
 
@@ -170,10 +170,10 @@ func TestDSCache(t *testing.T) {
 			So(ds.Put(c, &o), ShouldBeNil)
 			So(ds.Get(c, &o), ShouldBeNil)
 
-			itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 			So(err, ShouldBeNil)
 
-			So(itm.Value()[0], ShouldEqual, ZlibCompression)
+			So(itm.Value()[0], ShouldEqual, compressionZlib)
 			So(len(itm.Value()), ShouldEqual, 653) // a bit smaller than 4k
 
 			// ensure the next Get comes from the cache
@@ -207,9 +207,9 @@ func TestDSCache(t *testing.T) {
 					return nil
 				}, nil), ShouldBeNil)
 
-				_, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 1})))
+				_, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 1})))
 				So(err, ShouldEqual, mc.ErrCacheMiss)
-				_, err = mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 2})))
+				_, err = mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 2})))
 				So(err, ShouldEqual, mc.ErrCacheMiss)
 				o := &object{ID: 1}
 				So(ds.Get(c, o), ShouldBeNil)
@@ -290,7 +290,7 @@ func TestDSCache(t *testing.T) {
 				So(ds.Put(c, &model{ID: 1, Value: "mooo"}), ShouldBeNil)
 				So(ds.Get(c, &model{ID: 1}), ShouldBeNil)
 
-				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &model{ID: 1})))
+				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &model{ID: 1})))
 				So(err, ShouldBeNil)
 
 				clk.Add(10 * time.Second)
@@ -305,7 +305,7 @@ func TestDSCache(t *testing.T) {
 				So(ds.Put(c, o), ShouldBeNil)
 
 				sekret := []byte("I am a banana")
-				itm := mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).SetValue(sekret)
+				itm := mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).SetValue(sekret)
 				So(mc.Set(c, itm), ShouldBeNil)
 
 				o = &object{ID: 1}
@@ -323,7 +323,7 @@ func TestDSCache(t *testing.T) {
 				So(ds.Put(c, o), ShouldBeNil)
 
 				sekret := []byte("I am a banana")
-				itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
+				itm := (mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).
 					SetValue(sekret).
 					SetFlags(itemFlagHasData))
 				So(mc.Set(c, itm), ShouldBeNil)
@@ -343,7 +343,7 @@ func TestDSCache(t *testing.T) {
 				So(ds.Put(c, o), ShouldBeNil)
 
 				sekret := []byte("r@vmarod!#)%9T")
-				itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
+				itm := (mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).
 					SetValue(sekret).
 					SetFlags(itemFlagHasLock))
 				So(mc.Set(c, itm), ShouldBeNil)
@@ -372,7 +372,7 @@ func TestDSCache(t *testing.T) {
 				o.BigData = nil
 				So(ds.Get(c, o), ShouldBeNil)
 
-				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, o)))
+				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, o)))
 				So(err, ShouldBeNil)
 
 				// Is locked until the next put, forcing all access to the datastore.
@@ -408,12 +408,6 @@ func TestDSCache(t *testing.T) {
 			Convey("verify numShards caps at MaxShards", func() {
 				sc := supportContext{shardsForKey: []ShardFunction{shardObjFn}}
 				So(sc.numShards(ds.KeyForObj(c, &shardObj{ID: 9001})), ShouldEqual, MaxShards)
-			})
-
-			Convey("CompressionType.String", func() {
-				So(NoCompression.String(), ShouldEqual, "NoCompression")
-				So(ZlibCompression.String(), ShouldEqual, "ZlibCompression")
-				So(CompressionType(100).String(), ShouldEqual, "UNKNOWN_CompressionType(100)")
 			})
 		})
 	})

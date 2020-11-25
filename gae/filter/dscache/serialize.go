@@ -22,20 +22,27 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
+type compressionType byte
+
+const (
+	compressionNone compressionType = iota
+	compressionZlib
+)
+
 func encodeItemValue(pm ds.PropertyMap) []byte {
 	pm, _ = pm.Save(false)
 
 	buf := bytes.Buffer{}
 	// errs can't happen, since we're using a byte buffer.
-	_ = buf.WriteByte(byte(NoCompression))
+	_ = buf.WriteByte(byte(compressionNone))
 	_ = ds.Serialize.PropertyMap(&buf, pm)
 
 	data := buf.Bytes()
 	if buf.Len() > CompressionThreshold {
 		buf2 := bytes.NewBuffer(make([]byte, 0, len(data)))
-		_ = buf2.WriteByte(byte(ZlibCompression))
+		_ = buf2.WriteByte(byte(compressionZlib))
 		writer := zlib.NewWriter(buf2)
-		_, _ = writer.Write(data[1:]) // skip the NoCompression byte
+		_, _ = writer.Write(data[1:]) // skip the compressionNone byte
 		writer.Close()
 		data = buf2.Bytes()
 	}
@@ -53,7 +60,7 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		return nil, err
 	}
 
-	if CompressionType(compTypeByte) == ZlibCompression {
+	if compressionType(compTypeByte) == compressionZlib {
 		reader, err := zlib.NewReader(buf)
 		if err != nil {
 			return nil, err
