@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -55,6 +56,16 @@ var (
 	}
 )
 
+func includes(m *mask.Mask, path string) mask.Inclusiveness {
+	incl, err := m.Includes(path)
+	if err != nil {
+		// This is probably a bug in the server code.
+		panic(fmt.Sprintf("invalid field path %q: %s", path, err))
+	}
+	return incl
+}
+
+// validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
@@ -217,7 +228,7 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 	return nil
 }
 
-func getBuildForUpdate(ctx context.Context, updatePaths stringset.Set, buildMask mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+func getBuildForUpdate(ctx context.Context, updatePaths stringset.Set, buildMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
 	build, err := getBuild(ctx, req.Build.Id)
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
@@ -242,7 +253,7 @@ func getBuildForUpdate(ctx context.Context, updatePaths stringset.Set, buildMask
 		}
 
 		if len(updatePaths) > 0 {
-			switch buildMask.MustIncludes("output") {
+			switch includes(buildMask, "output") {
 			case mask.IncludePartially, mask.IncludeEntirely:
 				return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
 			}
@@ -270,11 +281,20 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
-	bm := um.MustSubmask("build")
+	bm, err := um.Submask("build")
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
+	}
 	updatePaths := stringset.NewFromSlice(req.UpdateMask.GetPaths()...)
 
 	// pre-check if the build can be updated before updating it with a transaction.
-	if _, err = getBuildForUpdate(ctx, updatePaths, bm, req); err != nil {
+	b, err := getBuildForUpdate(ctx, updatePaths, &bm, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
+	if err := validateBuildToken(ctx, b); err != nil {
 		return nil, err
 	}
 
