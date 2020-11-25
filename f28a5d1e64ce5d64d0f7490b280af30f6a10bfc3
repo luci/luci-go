@@ -16,6 +16,23 @@
       "message": "apologies for another embarrassing bug. Can\u0027t wait to delete this code.",
       "revId": "f28a5d1e64ce5d64d0f7490b280af30f6a10bfc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "309d86a2_4db77ff0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T23:28:49Z",
+      "side": 1,
+      "message": "btw, are there many deleted patchsets?",
+      "revId": "f28a5d1e64ce5d64d0f7490b280af30f6a10bfc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
