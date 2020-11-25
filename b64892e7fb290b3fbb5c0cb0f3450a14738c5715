@@ -87,6 +87,30 @@
       },
       "revId": "b64892e7fb290b3fbb5c0cb0f3450a14738c5715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c295edb_2e9b70a0",
+        "filename": "cv/internal/config/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T18:47:09Z",
+      "side": 1,
+      "message": "The TODO Yiwei is referencing is supposed to call the code Quinten referenced.\n\nHowever, this panic here is still very useful in tests, IMO.",
+      "parentUuid": "0f022782_55c60681",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 75
+      },
+      "revId": "b64892e7fb290b3fbb5c0cb0f3450a14738c5715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
