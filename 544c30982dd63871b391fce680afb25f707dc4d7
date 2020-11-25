@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e2828797_b3ad06c8",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T18:25:24Z",
+      "side": 1,
+      "message": "How about MustValidIncludes()? It doesn\u0027t sound super intuitive, but if readers ask themselves \"what\u0027s valid inclusiveness??\" and take a look at the function doc, then that\u0027s enough, I think. WDYT?",
+      "parentUuid": "62550e48_45e383fb",
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4cb92ca6_a673c1fb",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 1
@@ -162,6 +180,30 @@
       "side": 1,
       "message": "sorry, somehow I thought buildMask is based on the reading mask.\n\nI think my confusion stems from the fact that we propagate both buildMask and updatePaths. Why do we need both? e.g. updatePaths.Has(\"build.status\") could be replaced with buildMask.MustIncludes(\"status\")?",
       "parentUuid": "efb85d70_681010c8",
+      "range": {
+        "startLine": 258,
+        "startChar": 57,
+        "endLine": 258,
+        "endChar": 111
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "174d4fd4_8995f0e4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T18:25:24Z",
+      "side": 1,
+      "message": "It was because I worried about * in the expression.\n\nI actually asked the same question to myself when I looked at https://crrev.com/c/1539264, and I thought that \"build.status\" must be explicitly specified, not via wildcard matching.\n\nIIUC, FieldMask.Includes() returns IncludeEntirely, if the mask expression is empty. Therefore, if update_paths is None, the field mask will match with all, and it\u0027s the existing behaviour of UpdatePath().\n\nI actually have the same pattern of code for \"steps\" and \"outputs\" in my child CL. \nQ. Should this code consider that the requester is attempting to update the status\n(1) if req.update_paths is None\n(2) if req.update_paths has \"*.status\"?\n\nMy child CL al uses update_paths for steps and outputs. I guess the same rule applies to all.",
+      "parentUuid": "43d6b44e_0b2ecd22",
       "range": {
         "startLine": 258,
         "startChar": 57,
@@ -303,6 +345,30 @@
       "side": 1,
       "message": "sorry, I mistyped in that CL. I meant \"we should change the code to use pointers\"",
       "parentUuid": "1854018b_d0a6220b",
+      "range": {
+        "startLine": 291,
+        "startChar": 46,
+        "endLine": 291,
+        "endChar": 47
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fa00fe5_5a675bef",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T18:25:24Z",
+      "side": 1,
+      "message": "I see. Then, I will keep this CL with the current patchset, which uses a non-pointer receiver, but wait for the change to be made in a separate CL.",
+      "parentUuid": "cccf1c3d_ea1b211a",
       "range": {
         "startLine": 291,
         "startChar": 46,
