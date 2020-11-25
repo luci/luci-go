@@ -393,6 +393,24 @@ func TestIncludes(t *testing.T) {
 			testIncludes([]string{"msg.str"}, "msg.num", Exclude)
 		})
 	})
+
+	Convey("Test MustIncludes", t, func() {
+		testMustIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			actual := m.MustIncludes(path)
+			So(actual, ShouldEqual, expectedIncl)
+		}
+
+		Convey("works", func() {
+			testMustIncludes([]string{}, "str", IncludeEntirely)
+		})
+
+		Convey("panics", func() {
+			// expected delimiter: .; got @'
+			So(func() { testMustIncludes([]string{}, "str@", IncludeEntirely) }, ShouldPanic)
+		})
+	})
 }
 
 func TestMerge(t *testing.T) {
@@ -542,12 +560,13 @@ func TestMerge(t *testing.T) {
 }
 
 func TestSubmask(t *testing.T) {
+	buildMask := func(paths ...string) Mask {
+		m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
+		So(err, ShouldBeNil)
+		return m
+	}
+
 	Convey("Test submask", t, func() {
-		buildMask := func(paths ...string) Mask {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
-			return m
-		}
 		Convey("when path is partially included", func() {
 			actual, err := buildMask("msg.msgs.*.str").Submask("msg")
 			So(err, ShouldBeNil)
@@ -566,6 +585,21 @@ func TestSubmask(t *testing.T) {
 			actual, err := buildMask("msgs.*.str").Submask("msgs.*")
 			So(err, ShouldBeNil)
 			assertMaskEqual(actual, buildMask("str"))
+		})
+	})
+
+	Convey("Test MustSubmask", t, func() {
+		m := buildMask("msg.msg.str")
+
+		Convey("works", func() {
+			assertMaskEqual(m.MustSubmask("msg.msg"), buildMask("str"))
+		})
+
+		Convey("panics", func() {
+			// the given path "str" is excluded from mask
+			So(func() { m.MustSubmask("str") }, ShouldPanic)
+			// expected delimiter: .; got @'
+			So(func() { m.MustSubmask("str@") }, ShouldPanic)
 		})
 	})
 }

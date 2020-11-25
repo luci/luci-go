@@ -312,6 +312,17 @@ func (m Mask) Includes(path string) (Inclusiveness, error) {
 	return incl, nil
 }
 
+// MustIncludes tells the Inclusiveness of a field value at the given path.
+//
+// This is essentially the same as Includes, but panics if the given path is invalid.
+func (m Mask) MustIncludes(path string) Inclusiveness {
+	incl, err := m.Includes(path)
+	if err != nil {
+		panic(fmt.Sprintf("MustIncludes(%q): %s", path, err))
+	}
+	return incl
+}
+
 // includesImpl implements Includes(). It returns the computed inclusiveness
 // and the leaf mask that includes the path if IncludeEntirely, or the
 // intermediate mask that the last segment of path represents if
@@ -441,6 +452,18 @@ func (m Mask) Submask(path string) (Mask, error) {
 	default:
 		return Mask{}, fmt.Errorf("unknown Inclusiveness: %d", incl)
 	}
+}
+
+// MustSubmask returns a sub-mask given a path from the received mask to it.
+//
+// This is essentially the same as Submask, but panics if the given path is invalid or
+// exlcuded from the received mask.
+func (m Mask) MustSubmask(path string) Mask {
+	sm, err := m.Submask(path)
+	if err != nil {
+		panic(fmt.Sprintf("MustSubmask(%q): %s", path, err))
+	}
+	return sm
 }
 
 // IsEmpty reports whether a mask is of empty value. Such mask implies keeping
