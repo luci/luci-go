@@ -55,7 +55,12 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
 
-	ret = &job.Definition{UserPayload: &swarmingpb.CASTree{}}
+	ret = &job.Definition{
+		UserPayload: &swarmingpb.CASTree{},
+		CasUserPayload: &swarmingpb.CASReference{
+			Digest:&swarmingpb.Digest{},
+		},
+	}
 	name = "led: " + name
 
 	switch detectMode(r) {
@@ -130,34 +135,71 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		}
 	}
 
-	// ensure isolate source consistency
+	// ensure isolate/rbe-cas source consistency
 	for i, slice := range r.TaskSlices {
 		ir := slice.Properties.InputsRef
-		if ir == nil {
-			continue
-		}
-
-		if ret.UserPayload.Digest == "" {
-			ret.UserPayload.Digest = ir.Isolated
-		} else if ret.UserPayload.Digest != ir.Isolated {
-			return nil, errors.Reason("isolate hash inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Digest, ir.Isolated).Err()
-		}
-
-		if ret.UserPayload.Server == "" {
-			ret.UserPayload.Server = ir.Isolatedserver
-		} else if ret.UserPayload.Server != ir.Isolatedserver {
-			return nil, errors.Reason("isolate server inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Server, ir.Isolatedserver).Err()
-		}
-
-		if ret.UserPayload.Namespace == "" {
-			ret.UserPayload.Namespace = ir.Namespace
-		} else if ret.UserPayload.Namespace != ir.Namespace {
-			return nil, errors.Reason("isolate namespace inconsistency in slice %d: %q != %q",
-				i, ret.UserPayload.Namespace, ir.Namespace).Err()
+		cir := slice.Properties.CasInputRoot
+		switch {
+		case ir != nil && cir != nil:
+			return nil, errors.Reason("task slice %d: both isolate and rbe-cas specified", i).Err()
+		case ir != nil:
+			if err := populateIsoPayload(ret.UserPayload, ir); err != nil {
+				return nil, errors.Annotate(err, "task slice %d", i).Err()
+			}
+		case cir != nil:
+			if err := populateCasPayload(ret.CasUserPayload, cir); err != nil {
+				return nil, errors.Annotate(err, "task slice %d", i).Err()
+			}
 		}
 	}
-
+	// drop user_payload or cas_user_payload
+	if ret.UserPayload.Digest == "" {
+		ret.UserPayload = nil
+	} else {
+		ret.CasUserPayload = nil
+	}
 	return ret, err
+}
+
+func populateIsoPayload(iso *swarmingpb.CASTree, ir *swarming.SwarmingRpcsFilesRef) error {
+	if iso.Digest == "" {
+		iso.Digest = ir.Isolated
+	} else if iso.Digest != ir.Isolated {
+		return errors.Reason("isolate hash inconsistency: %q != %q", iso.Digest, ir.Isolated).Err()
+	}
+
+	if iso.Server == "" {
+		iso.Server = ir.Isolatedserver
+	} else if iso.Server != ir.Isolatedserver {
+		return errors.Reason("isolate server inconsistency: %q != %q", iso.Server, ir.Isolatedserver).Err()
+	}
+
+	if iso.Namespace == "" {
+		iso.Namespace = ir.Namespace
+	} else if iso.Namespace != ir.Namespace {
+		return errors.Reason("isolate namespace inconsistency: %q != %q", iso.Namespace, ir.Namespace).Err()
+	}
+	return nil
+}
+
+func populateCasPayload(cas *swarmingpb.CASReference, cir *swarming.SwarmingRpcsCASReference) error {
+	if cas.CasInstance == "" {
+		cas.CasInstance = cir.CasInstance
+	} else if cas.CasInstance != cir.CasInstance {
+		return errors.Reason("RBE-CAS instance inconsistency: %q != %q", cas.CasInstance, cir.CasInstance).Err()
+	}
+
+	if cas.Digest.Hash != "" && (cir.Digest == nil || cir.Digest.Hash != cas.Digest.Hash) {
+		return errors.Reason("RBE-CAS digest hash inconsistency: %+v != %+v", cas.Digest, cir.Digest).Err()
+	} else if cir.Digest != nil {
+		cas.Digest.Hash = cir.Digest.Hash
+	}
+
+	if cas.Digest.SizeBytes != 0 && (cir.Digest == nil || cir.Digest.SizeBytes != cas.Digest.SizeBytes) {
+		return errors.Reason("RBE-CAS digest size bytes inconsistency: %+v != %+v", cas.Digest, cir.Digest).Err()
+	} else if cir.Digest != nil {
+		cas.Digest.SizeBytes = cir.Digest.SizeBytes
+	}
+
+	return nil
 }
