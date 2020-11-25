@@ -15,13 +15,18 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"google.golang.org/grpc/metadata"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -225,6 +230,36 @@ func TestValidateTags(t *testing.T) {
 				Position: 1,
 			}
 			So(validateCommitWithRef(cm), ShouldBeNil)
+		})
+	})
+}
+
+func TestValidateBuildToken(t *testing.T) {
+	t.Parallel()
+
+	Convey("validateBuildToken", t, func() {
+		ctx := context.Background()
+		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
+		b := &model.Build{}
+		tk1 := "a token"
+		tk2 := "b token"
+
+		Convey("Works", func() {
+			b.UpdateToken = tk1
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk1))
+			So(validateBuildToken(ctx, b), ShouldBeNil)
+		})
+
+		Convey("Fails", func() {
+			Convey("if unmatched", func() {
+				b.UpdateToken = tk1
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk2))
+				So(validateBuildToken(ctx, b), ShouldNotBeNil)
+			})
+			Convey("if missing", func() {
+				b.UpdateToken = tk1
+				So(validateBuildToken(ctx, b), ShouldNotBeNil)
+			})
 		})
 	})
 }
