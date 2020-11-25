@@ -46,6 +46,30 @@
       },
       "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2b5a175_78f04e0d",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T23:32:13Z",
+      "side": 1,
+      "message": "1. Generally sgtm, but I don\u0027t know if users would understand what is \"inv-level\". Many of them don\u0027t know what invocation is\n2. subsection - meaning sub-node of the Artifacts node? This sounds like more clicking/clutter\n3. Generally sgtm, but sounds more complicated than (1) because we have two nodes.\n\nRe problem (1): I think we have to provide some tooltip with an explanation. It would cover the typical use case: all logs from the same swarming task, since users know what swarming task is.\n\nso I prefer (1) with a tooltip,\n\nalso consider a variation of (1) where instead of \"inv-level\" we display some icon that users will get used to. The rationale is once they are used to, \"inv-level\" provides the same amount of information as a small icon, but with more letters.",
+      "parentUuid": "29c4d671_c5ed1538",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
