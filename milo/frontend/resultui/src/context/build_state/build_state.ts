@@ -56,7 +56,7 @@ export class BuildState {
     if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
     // Since response can be different when queried at different time,
     // establish a dependency on timestamp.
@@ -80,7 +80,7 @@ export class BuildState {
   @computed
   private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
 
     const buildsPromises = this.build.buildSets

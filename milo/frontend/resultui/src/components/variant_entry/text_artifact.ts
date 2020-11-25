@@ -36,7 +36,7 @@ export class TextArtifactElement extends MobxLitElement {
   @computed
   private get contentRes(): IPromiseBasedObservable<string> {
     if (!this.fetchUrl) {
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
     return fromPromise(fetch(this.fetchUrl).then((res) => res.text()));
   }
