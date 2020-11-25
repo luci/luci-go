@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44b8fe86_0ddba7f9",
+        "filename": "cv/internal/config/store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6e1c4f0c_e975cff8",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 1
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3845e917_249f6cb9",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e4c637e_59cbf04b",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Ah, yes, good point!",
+      "parentUuid": "3845e917_249f6cb9",
+      "range": {
+        "startLine": 49,
+        "startChar": 31,
+        "endLine": 50,
+        "endChar": 57
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3dc5838a_9bb077f4",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-11-20T03:52:49Z",
       "side": 1,
       "message": "Project",
+      "range": {
+        "startLine": 77,
+        "startChar": 46,
+        "endLine": 77,
+        "endChar": 52
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfa355dd_7350443a",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3dc5838a_9bb077f4",
       "range": {
         "startLine": 77,
         "startChar": 46,
@@ -133,6 +205,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6428fb8d_7c25fc1c",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20917c19_195988c7",
+      "range": {
+        "startLine": 79,
+        "startChar": 79,
+        "endLine": 79,
+        "endChar": 80
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a72f90ff_97ff849f",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7d3744f_22c4089b",
+      "range": {
+        "startLine": 79,
+        "startChar": 92,
+        "endLine": 79,
+        "endChar": 95
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b46449c_53751c7b",
@@ -146,6 +266,30 @@
       "writtenOn": "2020-11-20T03:52:49Z",
       "side": 1,
       "message": "per comment above, .ID should just LUCI project.\nTo get host/repo, use gwm.Parent.StringID()",
+      "range": {
+        "startLine": 102,
+        "startChar": 19,
+        "endLine": 102,
+        "endChar": 46
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6de1320c_c293f5ef",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b46449c_53751c7b",
       "range": {
         "startLine": 102,
         "startChar": 19,
@@ -173,6 +317,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "560fa5ea_c14576e9",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8dc5d23b_f632ddfd",
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9d0a1b6_f6d772eb",
@@ -186,6 +348,30 @@
       "writtenOn": "2020-11-20T03:52:49Z",
       "side": 1,
       "message": "that\u0027s goo, but you also need to compute those which need to be updated. It\u0027s ore efficient to do it within this function.\n\nSince updates in datastore are equivalent to additions, i think it\u0027d be better to return \n  (toPut, toDelete []*gobWatchMap)",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 114,
+        "endChar": 35
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22ecc5e0_d902752a",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9d0a1b6_f6d772eb",
       "range": {
         "startLine": 113,
         "startChar": 1,
@@ -219,6 +405,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0fec7ad_ea07e982",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98951214_3264c657",
+      "range": {
+        "startLine": 146,
+        "startChar": 24,
+        "endLine": 146,
+        "endChar": 65
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9d998d73_a6e40d7e",
@@ -242,6 +452,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "85fe8e6c_ce8cafa1",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d998d73_a6e40d7e",
+      "range": {
+        "startLine": 156,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 18
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "74c06044_c7fd3923",
@@ -255,6 +489,30 @@
       "writtenOn": "2020-11-20T03:52:49Z",
       "side": 1,
       "message": "this should be inside the outer for loop.",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 2
+      },
+      "revId": "0f304177413a3f33104f284433083d0863de751f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51d071ec_cd9bd596",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T08:33:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74c06044_c7fd3923",
       "range": {
         "startLine": 170,
         "startChar": 1,
