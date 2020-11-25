@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a09f6eb_a32edf73",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-25T21:11:45Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/fuchsia/builders/try/fuchsia-arm64-release/b8863071874016634224/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n",
+      "revId": "5a913d9bb0426a2d6f9595359bbf8456183531ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
