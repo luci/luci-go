@@ -44,9 +44,6 @@ export class ImageDiffArtifactPage extends MobxLitElement {
 
   @computed
   private get diffArtifactRes() {
-    if (!this.appState.resultDb) {
-      return fromPromise(Promise.race([]));
-    }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.diffArtifactName}));
   }
   @computed private get diffArtifact() {
@@ -55,9 +52,6 @@ export class ImageDiffArtifactPage extends MobxLitElement {
 
   @computed
   private get expectedArtifactRes() {
-    if (!this.appState.resultDb) {
-      return fromPromise(Promise.race([]));
-    }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.expectedArtifactName}));
   }
   @computed private get expectedArtifact() {
@@ -66,9 +60,6 @@ export class ImageDiffArtifactPage extends MobxLitElement {
 
   @computed
   private get actualArtifactRes() {
-    if (!this.appState.resultDb) {
-      return fromPromise(Promise.race([]));
-    }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.actualArtifactName}));
   }
   @computed private get actualArtifact() {

@@ -53,10 +53,10 @@ export class BuildState {
 
   @computed
   get buildReq(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
+    if (!this.builder || this.buildNumOrId === undefined) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
     // Since response can be different when queried at different time,
     // establish a dependency on timestamp.
@@ -80,7 +80,7 @@ export class BuildState {
   @computed
   private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
-      return fromPromise(new Promise(() => {}));
+      return fromPromise(Promise.race([]));
     }
 
     const buildsPromises = this.build.buildSets
@@ -88,7 +88,7 @@ export class BuildState {
       // the commit/gitiles/ buildsets, and we don't need to ask Buildbucket
       // twice.
       .filter((b) => !b.startsWith('commit/git/'))
-      .map((b) => this.appState.buildsService!.searchBuilds({
+      .map((b) => this.appState.buildsService.searchBuilds({
         predicate: {tags: [{key: 'buildset', value: b}]},
         fields: '*',
         pageSize: 1000,
@@ -122,7 +122,7 @@ export class BuildState {
 
   @computed({keepAlive: true})
   get queryBlamelistResIterFn() {
-    if (this.isDisposed || !this.appState.milo || !this.build) {
+    if (this.isDisposed || !this.build) {
       return async function*() { await Promise.race([]); };
     }
     if (!this.build.input.gitilesCommit) {

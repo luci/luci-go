@@ -174,7 +174,7 @@ const SERVICE = 'luci.resultdb.v1.ResultDB';
 export class ResultDb {
   private prpcClient: PrpcClient;
 
-  constructor(readonly host: string, accessToken: string) {
+  constructor(readonly host: string, accessToken?: string) {
     this.prpcClient = new PrpcClient({host, accessToken});
   }
 

@@ -93,7 +93,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private async cancelBuild(reason: string) {
-    await this.appState.buildsService!.cancelBuild({
+    await this.appState.buildsService.cancelBuild({
       id: this.buildState.build!.id,
       summaryMarkdown: reason,
     });
@@ -101,7 +101,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private async retryBuild() {
-    const build = await this.appState.buildsService!.scheduleBuild({
+    const build = await this.appState.buildsService.scheduleBuild({
       templateBuildId: this.buildState.build!.id,
     });
     Router.go(getURLForBuild(build));
