@@ -70,6 +70,30 @@
       },
       "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a5aa1d9_2c26ab76",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-25T23:40:08Z",
+      "side": 1,
+      "message": "Is there some language we can use that would be more intuitive for our users? What if we just had something like:\n\n* \u003ca\u003esyslog.txt\u003c/a\u003e (from entire Swarming run)",
+      "parentUuid": "f2b5a175_78f04e0d",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
