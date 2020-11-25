@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "22733c16_66bb7a56",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T21:29:59Z",
+      "side": 1,
+      "message": "GetPaths() will return nil, if the receiver object is nil. update_build_test.go has a unit test with a nil mask,",
+      "parentUuid": "a52e562e_be109d52",
+      "range": {
+        "startLine": 62,
+        "startChar": 12,
+        "endLine": 62,
+        "endChar": 22
+      },
+      "revId": "e7031078824455ac0760767572d1b3ab25c7286b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a0127b7_2065a2ec",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0b4f14d_70591409",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T21:29:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a0127b7_2065a2ec",
+      "range": {
+        "startLine": 243,
+        "startChar": 37,
+        "endLine": 243,
+        "endChar": 60
+      },
+      "revId": "e7031078824455ac0760767572d1b3ab25c7286b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "76a01749_3362208d",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-11-25T21:25:23Z",
       "side": 1,
       "message": "update_mask: %s",
+      "range": {
+        "startLine": 271,
+        "startChar": 55,
+        "endLine": 271,
+        "endChar": 57
+      },
+      "revId": "e7031078824455ac0760767572d1b3ab25c7286b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d268ad69_b99e5c6a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-25T21:29:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76a01749_3362208d",
       "range": {
         "startLine": 271,
         "startChar": 55,
