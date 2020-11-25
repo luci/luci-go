@@ -3,6 +3,75 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "516ee37a_0262ab2a",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-25T21:13:12Z",
+      "side": 1,
+      "message": "This is an implementation, which callers shouldn\u0027t care.\nAny better name? e.g. localKVS, embeddedKVS",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 10
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b611de5f_21aa26dc",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-25T21:13:12Z",
+      "side": 1,
+      "message": "Shall we add a link to the doc?\nhttps://pkg.go.dev/go.etcd.io/bbolt/#DB",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 65
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed8e60a1_23d6bb50",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-25T21:13:12Z",
+      "side": 1,
+      "message": "This is more than close.\nShall we separate operations? e.g. clean",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 2
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3aa96c40_74fb7c96",
         "filename": "client/cmd/cas/lib/cache.go",
         "patchSetId": 4
@@ -19,6 +88,29 @@
         "startChar": 25,
         "endLine": 81,
         "endChar": 28
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0eed03b5_89185f7a",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-25T21:13:12Z",
+      "side": 1,
+      "message": "`set` is more common for kvs?",
+      "range": {
+        "startLine": 81,
+        "startChar": 21,
+        "endLine": 81,
+        "endChar": 24
       },
       "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
