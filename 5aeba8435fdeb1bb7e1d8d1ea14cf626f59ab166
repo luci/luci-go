@@ -46,6 +46,30 @@
       },
       "revId": "5aeba8435fdeb1bb7e1d8d1ea14cf626f59ab166",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b975608a_da35991f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-25T06:01:55Z",
+      "side": 1,
+      "message": "Yeah. It may annoy those users but it\u0027s still only one click to opt out again. More importantly, since the old UI will go away eventually, it nudges those users into giving the new UI another try and hopefully providing feedback if they still don\u0027t like it.\n\nFor the warning, I reckon we should do it later once we have a date for turndown of the legacy UI.\n\nThat reminds me, though: we should also change the legacy banner message in this CL (at least removing the date).",
+      "parentUuid": "0a567c80_566a01ab",
+      "range": {
+        "startLine": 144,
+        "startChar": 41,
+        "endLine": 144,
+        "endChar": 61
+      },
+      "revId": "5aeba8435fdeb1bb7e1d8d1ea14cf626f59ab166",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
