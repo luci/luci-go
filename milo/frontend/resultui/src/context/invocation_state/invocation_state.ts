@@ -60,8 +60,7 @@ export class InvocationState {
 
   @computed
   get invocationRes(): IPromiseBasedObservable<Invocation> {
-    if (!this.appState.resultDb || !this.invocationName) {
-      // Returns a promise that never resolves when resultDb isn't ready.
+    if (!this.invocationName) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getInvocation({name: this.invocationName}));
@@ -77,8 +76,7 @@ export class InvocationState {
 
   @computed
   private get invArtifactsRes(): IPromiseBasedObservable<QueryArtifactsResponse> {
-    if (!this.appState.resultDb || !this.invocationName) {
-      // Returns a promise that never resolves when resultDb isn't ready.
+    if (!this.invocationName) {
       return fromPromise(Promise.race([]));
     }
     const req = {
@@ -104,7 +102,7 @@ export class InvocationState {
   @observable.ref selectedNode!: TestNode;
 
   @computed private get testResultBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.invocationName) {
       return async function*() { yield Promise.race([]); };
     }
     return iter.teeAsync(streamTestResultBatches(
@@ -120,7 +118,7 @@ export class InvocationState {
   }
 
   @computed private get testExonerationBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.invocationName) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestExonerationBatches(

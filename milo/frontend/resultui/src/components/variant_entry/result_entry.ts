@@ -54,10 +54,6 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed
   private get artifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
-    if (!this.appState.resultDb) {
-      // Returns a promise that never resolves when resultDb isn't ready.
-      return fromPromise(new Promise(() => {}));
-    }
     // TODO(weiweilin): handle pagination.
     return fromPromise(this.appState.resultDb.listArtifacts({parent: this.testResult.name}));
   }

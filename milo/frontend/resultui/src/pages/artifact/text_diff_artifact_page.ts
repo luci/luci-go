@@ -37,9 +37,6 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
 
   @computed
   private get artifactRes() {
-    if (!this.appState.resultDb) {
-      return fromPromise(Promise.race([]));
-    }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.artifactName}));
   }
   @computed private get artifact() {
@@ -48,7 +45,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
 
   @computed
   private get contentRes() {
-    if (!this.appState.resultDb || !this.artifact) {
+    if (!this.artifact) {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle refresh.

@@ -27,26 +27,17 @@ export class AppState {
   @observable.ref selectedTabId = '';
 
   @computed
-  get resultDb(): ResultDb | null {
-    if (!this.accessToken) {
-      return null;
-    }
+  get resultDb(): ResultDb {
     return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
   }
 
   @computed
-  get milo(): MiloInternal | null {
-    if (!this.accessToken) {
-      return null;
-    }
+  get milo(): MiloInternal {
     return new MiloInternal(this.accessToken);
   }
 
   @computed
-  get buildsService(): BuildsService | null {
-    if (!this.accessToken) {
-      return null;
-    }
+  get buildsService(): BuildsService {
     return new BuildsService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
   }
 }
