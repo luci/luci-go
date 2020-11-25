@@ -14,7 +14,6 @@
 
 """Defines luci.tree_closer(...) rule."""
 
-load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "notifiable")

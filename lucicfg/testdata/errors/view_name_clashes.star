@@ -11,7 +11,7 @@ luci.console_view(name = "Some view", repo = "https://some.repo")
 # Traceback (most recent call last):
 #   //testdata/errors/view_name_clashes.star: in <toplevel>
 #   ...
-# Error: luci.milo_view("Some view") is redeclared, previous declaration:
+# Error in add_node: luci.milo_view("Some view") is redeclared, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/errors/view_name_clashes.star: in <toplevel>
 #   ...

@@ -25,7 +25,7 @@ luci.gitiles_poller(
 # Traceback (most recent call last):
 #   //testdata/errors/poller_builder_clash.star: in <toplevel>
 #   ...
-# Error: luci.triggerer("b/clashing name") is redeclared, previous declaration:
+# Error in add_node: luci.triggerer("b/clashing name") is redeclared, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/errors/poller_builder_clash.star: in <toplevel>
 #   ...
