@@ -26,11 +26,6 @@ import (
 )
 
 var (
-	// InstanceEnabledStatic allows you to statically (e.g. in an init() function)
-	// bypass this filter by setting it to false. This takes effect when the
-	// application calls IsGloballyEnabled.
-	InstanceEnabledStatic = true
-
 	// MutationLockTimeout is expiration time of a "lock" memcache entry that
 	// protects mutations (Put/Delete/Commit). It should be lager than the maximum
 	// expected duration of datastore mutating operations. Must have seconds
@@ -95,10 +90,6 @@ const (
 
 	// NonceBytes is the number of bytes to use in the 'lock' nonce.
 	NonceBytes = 8
-
-	// GlobalEnabledCheckInterval is how frequently IsGloballyEnabled should check
-	// the globalEnabled datastore entry.
-	GlobalEnabledCheckInterval = 5 * time.Minute
 )
 
 // internalValueSizeLimit is a var for testing purposes.

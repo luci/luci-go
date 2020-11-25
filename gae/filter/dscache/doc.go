@@ -150,22 +150,7 @@
 //
 // So, if memcache is DOWN, you will effectively see tons of errors in the logs,
 // and all cached datastore access will be essentially degraded to a slow
-// read-only state. At this point, you have essentially 3 mitigation strategies:
-//   - wait for memcache to come back up.
-//   - dynamically disable all memcache access by writing the datastore entry:
-//       /dscache,1 = {"Enable": false}
-//     in the default namespace. This can be done by invoking the
-//     SetDynamicGlobalEnable method. This can take up to 5 minutes to take
-//     effect. If you have very long-running backend requests, you may need to
-//     cycle them to have it take effect. This dynamic bit is read essentially
-//     once per http request (when FilteRDS is called on the context).
-//   - push a new version of the application disabling the cache filter
-//     by setting InstanceEnabledStatic to false in an init() function.
-//
-// On every dscache.FilterRDS invocation, it takes the opportunity to fetch this
-// datastore value, if it hasn't been fetched in the last
-// GlobalEnabledCheckInterval time (5 minutes). This equates to essentially once
-// per http request, per 5 minutes, per instance.
+// read-only state.
 //
 // AppEngine's memcache reserves the right to evict keys at any moment. This is
 // especially true for shared memcache, which is subject to pressures outside of
