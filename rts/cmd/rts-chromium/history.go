@@ -221,13 +221,18 @@ func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquer
 	return q, nil
 }
 
+var errPatchsetDeleted = errors.New("patchset deleted")
+
 // populateChangedFiles populates ps.ChangedFiles.
 // TODO(nodir): delete this function, gerrit.go and cache.go in February 2021,
 // when we have enough BigQuery data with gerrit info.
 func (r *presubmitHistoryRun) populateChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) error {
 	changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
+	case len(changedFiles) == 0:
+		return errPatchsetDeleted
 	}
 
 	repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
