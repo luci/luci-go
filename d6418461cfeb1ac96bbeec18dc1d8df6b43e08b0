@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "34ad3473_f127de99",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-25T03:20:46Z",
+      "side": 1,
+      "message": "Does the Promise.race([]) have any role in fixing this bug?",
+      "range": {
+        "startLine": 12,
+        "startChar": 21,
+        "endLine": 12,
+        "endChar": 37
+      },
+      "revId": "d6418461cfeb1ac96bbeec18dc1d8df6b43e08b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "dff128c5_3d27edc6",
