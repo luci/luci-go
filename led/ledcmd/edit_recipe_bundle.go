@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
@@ -86,7 +87,7 @@ const RecipeDirectory = "kitchen-checkout"
 // It isolates the recipes from the repository in the given working directory
 // into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
-func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Definition, opts *EditRecipeBundleOpts) error {
+func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Definition, opts *EditRecipeBundleOpts, authOpts auth.Options) error {
 	if jd.GetSwarming() != nil {
 		return errors.New("ledcmd.EditRecipeBundle is only available for Buildbucket tasks")
 	}
@@ -111,7 +112,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 		}
 		logging.Infof(ctx, "isolating recipes")
 		return nil
-	})
+	}, authOpts)
 	if err != nil {
 		return err
 	}

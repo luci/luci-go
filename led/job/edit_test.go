@@ -29,7 +29,7 @@ func TestClearCurrentIsolated(t *testing.T) {
 
 	runCases(t, `ClearCurrentIsolated`, []testCase{
 		{
-			name: "basic",
+			name: "basic with isolate input",
 			fn: func(jd *Definition) {
 				jd.UserPayload = &api.CASTree{
 					Digest:    "deadbeef",
@@ -56,7 +56,42 @@ func TestClearCurrentIsolated(t *testing.T) {
 
 				iso, err := jd.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(iso, ShouldBeNil)
+				So(iso, ShouldResemble, &isolated{})
+			},
+		},
+		{
+			name: "basic with rbe-cas input",
+			fn: func(jd *Definition) {
+				jd.CasUserPayload = &api.CASReference{
+					CasInstance: "instance",
+					Digest: &api.Digest{
+						Hash: "hash",
+						SizeBytes: 1,
+					},
+				}
+				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
+					if slc.Properties == nil {
+						slc.Properties = &api.TaskProperties{}
+					}
+					slc.Properties.CasInputRoot = &api.CASReference{
+						CasInstance: "instance",
+						Digest: &api.Digest{
+							Hash:      "hash",
+							SizeBytes: 1,
+						},
+					}
+				}
+				SoEdit(jd, func(je Editor) {
+					je.ClearCurrentIsolated()
+				})
+
+				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
+					So(slc.Properties.CasInputRoot, ShouldBeNil)
+				}
+
+				iso, err := jd.Info().CurrentIsolated()
+				So(err, ShouldBeNil)
+				So(iso, ShouldResemble, &isolated{})
 			},
 		},
 	})
