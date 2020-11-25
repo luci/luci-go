@@ -20,10 +20,10 @@
 // same commit. The core idea is that relevant files tend to be
 // modified together.
 //
-//  Distance(x, y) = -log2(P(y is relevant to x))
+//  Distance(x, y) = -log(P(y is relevant to x))
 //  P(y is relevant to x) := sum(1/(len(c.files)-1) for c in x.commits if y in c.files) / len(x.commits)
 //
-// or in English, distance from x to y is -log2 of the probability that y
+// or in English, distance from x to y is -log of the probability that y
 // appears in a commit that touches x and is chosen randomly and independently.
 // There are more nuances to this formula, e.g. file removals are not counted
 // towards len(commit.files), and commits with len(files) = 1 or
