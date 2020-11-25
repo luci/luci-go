@@ -104,7 +104,7 @@ export class InvocationState {
   @observable.ref selectedNode!: TestNode;
 
   @computed private get testResultBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.appState.resultDb || !this.invocationName) {
       return async function*() { yield Promise.race([]); };
     }
     return iter.teeAsync(streamTestResultBatches(
@@ -120,7 +120,7 @@ export class InvocationState {
   }
 
   @computed private get testExonerationBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.appState.resultDb || !this.invocationName) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestExonerationBatches(

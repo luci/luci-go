@@ -23,12 +23,15 @@ import { ResultDb } from '../../services/resultdb';
  * Records the app-level state.
  */
 export class AppState {
-  @observable.ref accessToken = '';
+  // null means the access token is uninitialized (i.e. we don't know whether
+  // the user is logged in or not).
+  // '' means there's no access token (i.e. the user is not logged in).
+  @observable.ref accessToken: string | null = null;
   @observable.ref selectedTabId = '';
 
   @computed
   get resultDb(): ResultDb | null {
-    if (!this.accessToken) {
+    if (this.accessToken === null) {
       return null;
     }
     return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
@@ -36,7 +39,7 @@ export class AppState {
 
   @computed
   get milo(): MiloInternal | null {
-    if (!this.accessToken) {
+    if (this.accessToken === null) {
       return null;
     }
     return new MiloInternal(this.accessToken);
@@ -44,7 +47,7 @@ export class AppState {
 
   @computed
   get buildsService(): BuildsService | null {
-    if (!this.accessToken) {
+    if (this.accessToken === null) {
       return null;
     }
     return new BuildsService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
