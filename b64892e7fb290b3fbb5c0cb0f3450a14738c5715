@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e945d58a_d68a016c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T18:36:25Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "b64892e7fb290b3fbb5c0cb0f3450a14738c5715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd7e570c_37b1f00d",
@@ -14,6 +31,30 @@
       "writtenOn": "2020-11-25T18:30:57Z",
       "side": 1,
       "message": "Maybe we should check this during CV config ingestion instead?",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 75
+      },
+      "revId": "b64892e7fb290b3fbb5c0cb0f3450a14738c5715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b95076f_6ca27e10",
+        "filename": "cv/internal/config/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-25T18:36:25Z",
+      "side": 1,
+      "message": "Looks like it\u0027s validated here:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cq/appengine/config/config.go;l\u003d202\n\nBut I think it\u0027s good to check in both places, and it seems right that this should be a panic.",
+      "parentUuid": "dd7e570c_37b1f00d",
       "range": {
         "startLine": 35,
         "startChar": 0,
