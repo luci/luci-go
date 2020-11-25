@@ -70,6 +70,30 @@
       },
       "revId": "5aeba8435fdeb1bb7e1d8d1ea14cf626f59ab166",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4696f6bc_15cf1b76",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-25T06:20:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b975608a_da35991f",
+      "range": {
+        "startLine": 144,
+        "startChar": 41,
+        "endLine": 144,
+        "endChar": 61
+      },
+      "revId": "5aeba8435fdeb1bb7e1d8d1ea14cf626f59ab166",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
