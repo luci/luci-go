@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7e81c00_2e50185b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T01:44:03Z",
+      "side": 1,
+      "message": "derp. Thanks, Vadim \u0026 Yiwei 😊",
+      "revId": "6824915e95649190b2914144fa94ff9d1c284d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
