@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -54,10 +55,12 @@ var (
 	}
 )
 
-// validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
+	}
+	if len(req.UpdateMask.GetPaths()) == 0 {
+		return errors.Reason("build.update_mask: required").Err()
 	}
 
 	for _, p := range req.UpdateMask.GetPaths() {
@@ -217,6 +220,38 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 	return nil
 }
 
+func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+	build, err := getBuild(ctx, req.Build.Id)
+	if err != nil {
+		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+			return nil, err
+		}
+		return nil, appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.Build.Id, err)
+	}
+
+	if protoutil.IsEnded(build.Status) {
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
+	}
+
+	finalStatus := build.Proto.Status
+	if buildMask.MustIncludes("status") == mask.IncludeEntirely {
+		finalStatus = req.Build.Status
+	}
+
+	// ensure that a SCHEDULED build does not have steps or output.
+	if finalStatus == pb.Status_SCHEDULED {
+		if buildMask.MustIncludes("steps") != mask.Exclude {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
+		}
+
+		if buildMask.MustIncludes("output") != mask.Exclude {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
+		}
+	}
+
+	return build, nil
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	switch can, err := perm.CanUpdateBuild(ctx); {
@@ -228,9 +263,19 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 
 	var bs model.BuildSteps
 	if err := validateUpdate(req, &bs); err != nil {
-		return nil, appstatus.BadRequest(err)
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
 	bs.Build = datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id})
+	um, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "update_mask: %s", err)
+	}
+	bm := um.MustSubmask("build")
+
+	// pre-check if the build can be updated before updating it with a transaction.
+	if _, err = getBuildForUpdate(ctx, bm, req); err != nil {
+		return nil, err
+	}
 
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }

@@ -26,7 +26,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -51,15 +53,6 @@ func TestValidateUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
 		Convey("succeeds", func() {
-			Convey("with nil mask", func() {
-				So(validateUpdate(req, nil), ShouldBeNil)
-			})
-
-			Convey("with empty path", func() {
-				req.UpdateMask = &field_mask.FieldMask{}
-				So(validateUpdate(req, nil), ShouldBeNil)
-			})
-
 			Convey("with valid paths", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"build.tags",
@@ -73,6 +66,15 @@ func TestValidateUpdate(t *testing.T) {
 		})
 
 		Convey("fails", func() {
+			Convey("with nil mask", func() {
+				So(validateUpdate(req, nil), ShouldErrLike, "build.update_mask: required")
+			})
+
+			Convey("without paths", func() {
+				req.UpdateMask = &field_mask.FieldMask{}
+				So(validateUpdate(req, nil), ShouldErrLike, "build.update_mask: required")
+			})
+
 			Convey("with nil request", func() {
 				So(validateUpdate(nil, nil), ShouldErrLike, "build.id: required")
 			})
@@ -315,6 +317,83 @@ func TestValidateStep(t *testing.T) {
 					setTS(t, addTS(t, time.Hour), t, t)
 					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
 				})
+			})
+		})
+	})
+}
+
+func TestGetBuildForUpdate(t *testing.T) {
+	t.Parallel()
+	buildMask := func(req *pb.UpdateBuildRequest) mask.Mask {
+		fm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+		So(err, ShouldBeNil)
+		return fm.MustSubmask("build")
+	}
+
+	Convey("getBuildForUpdate", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		build := &model.Build{
+			ID: 1,
+			Proto: pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_SCHEDULED,
+			},
+			CreateTime: testclock.TestRecentTimeUTC,
+		}
+		So(datastore.Put(ctx, build), ShouldBeNil)
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+
+		Convey("works", func() {
+			b, err := getBuildForUpdate(ctx, buildMask(req), req)
+			So(err, ShouldBeNil)
+			So(&b.Proto, ShouldResembleProto, &build.Proto)
+
+			Convey("with build.steps", func() {
+				req.Build.Status = pb.Status_STARTED
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.steps"}}
+				_, err = getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeNil)
+			})
+			Convey("with build.output", func() {
+				req.Build.Status = pb.Status_STARTED
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.output"}}
+				_, err = getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("fails", func() {
+			Convey("if build doesn't exist", func() {
+				req.Build.Id = 2
+				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeRPCNotFound)
+			})
+
+			Convey("if ended", func() {
+				build.Proto.Status = pb.Status_SUCCESS
+				So(datastore.Put(ctx, build), ShouldBeNil)
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
+				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeRPCFailedPrecondition, "cannot update an ended build")
+			})
+
+			Convey("with build.steps", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
+				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeRPCInvalidArgument, "cannot update steps of a SCHEDULED build")
+			})
+			Convey("with build.output", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
+				_, err := getBuildForUpdate(ctx, buildMask(req), req)
+				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
 			})
 		})
 	})
