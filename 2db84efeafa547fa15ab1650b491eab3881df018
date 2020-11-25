@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "2db84efeafa547fa15ab1650b491eab3881df018",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9217e410_35e86a4e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:36:14Z",
+      "side": 1,
+      "message": "this is a breaking change for \nhttps://source.chromium.org/search?q\u003dQueryArtifacts%20-f:resultdb\n+Weiwei\n\nat the same time, I think we agree to switch to ListArtifacts in that code, so this CL might have to wait for the switch",
+      "revId": "2db84efeafa547fa15ab1650b491eab3881df018",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
