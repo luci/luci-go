@@ -23,6 +23,9 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
+// internalValueSizeLimit is a var for testing purposes.
+var internalValueSizeLimit = ValueSizeLimit
+
 type dsCache struct {
 	ds.RawInterface
 
