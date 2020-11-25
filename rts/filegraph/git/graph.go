@@ -206,7 +206,7 @@ func (r *EdgeReader) ReadEdges(from filegraph.Node, callback func(to filegraph.N
 				denominator = e.to.probSumDenominator
 			}
 			// TODO(nodir): consider using multiplication in filegraph.Query instead of
-			// calling log2, because the latter is expensive.
+			// calling log, because the latter is expensive.
 
 			// Note: probSum is same for incoming and outgoing edges.
 
