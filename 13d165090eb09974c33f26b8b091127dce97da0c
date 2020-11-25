@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7973ecdb_69ed219f",
+        "filename": "gae/filter/dscache/dscache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T02:22:18Z",
+      "side": 1,
+      "message": "diff looks insane to review. I assume you just removed the the test that chekcs global config, rihgt?",
+      "revId": "13d165090eb09974c33f26b8b091127dce97da0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

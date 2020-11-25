@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87e49dc3_81571d6a",
+        "filename": "gae/filter/dscache/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T02:22:18Z",
+      "side": 0,
+      "message": "I think this is actually useful bit.",
+      "range": {
+        "startLine": 152,
+        "startChar": 7,
+        "endLine": 153,
+        "endChar": 18
+      },
+      "revId": "05a1264dd2e31d6d138332d6f0ea815075f33c9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
