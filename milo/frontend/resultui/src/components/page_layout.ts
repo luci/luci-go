@@ -13,14 +13,12 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { Router } from '@vaadin/router';
 import { css, customElement, html, LitElement, property } from 'lit-element';
 
 import '../components/signin';
 import { UserUpdateEvent } from '../components/signin';
 import { AppState, provideAppState } from '../context/app_state/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
-import { router } from '../routes';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {
@@ -76,11 +74,6 @@ export class PageLayoutElement extends LitElement {
             .gAuth=${this.gAuth}
             @user-update=${(e: UserUpdateEvent) => {
               this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
-              if (!this.appState.accessToken) {
-                const searchParams = new URLSearchParams();
-                searchParams.set('redirect', window.location.href);
-                Router.go(`${router.urlForName('login')}?${searchParams}`);
-              }
             }}
           ></milo-signin>` : ''}
         </div>
