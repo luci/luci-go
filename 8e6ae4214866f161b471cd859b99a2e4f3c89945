@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15042698_5fcf1fe2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T08:35:43Z",
+      "side": 1,
+      "message": "PTAL. This CL looks large, but most of file changes are removals, and the added code is actually old code and to-be-deleted in February, because the changed files are now in Gerrit. Still, it is important to make this refactoring sooner to simplify further changes in the evaluation framework.",
+      "revId": "8e6ae4214866f161b471cd859b99a2e4f3c89945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
