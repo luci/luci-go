@@ -22,6 +22,30 @@
       },
       "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04f38cd5_c53a79c3",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-25T06:56:08Z",
+      "side": 1,
+      "message": "I am not sure if I agree on this:\n1. This is not a usual behavior. If I were the user, I would expect the option persist.\n2. If a user switch to the legacy page, it is likely that the new page is not as useful for them. In such cases, I suspect some more proactive approaches (like showing them a panel asking what\u0027s wrong, or reaching out to them directly), will provide us more information about what went wrong than silently switching them to the new page again.",
+      "parentUuid": "bb986d71_707a323f",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
