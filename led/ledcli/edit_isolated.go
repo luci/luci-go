@@ -74,7 +74,8 @@ func (c *cmdEditIsolated) execute(ctx context.Context, authClient *http.Client, 
 	} else {
 		xform = ledcmd.ProgramIsolatedTransformer(c.transformProgram...)
 	}
-	return inJob, ledcmd.EditIsolated(ctx, authClient, inJob, xform)
+	authOpts, _ := c.authFlags.Options()
+	return inJob, ledcmd.EditIsolated(ctx, authClient, inJob, xform, authOpts)
 }
 
 func (c *cmdEditIsolated) Run(a subcommands.Application, args []string, env subcommands.Env) int {
