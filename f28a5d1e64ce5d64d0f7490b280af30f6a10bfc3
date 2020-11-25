@@ -33,6 +33,24 @@
       "message": "btw, are there many deleted patchsets?",
       "revId": "f28a5d1e64ce5d64d0f7490b280af30f6a10bfc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68bb1396_a6386a2d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T23:34:11Z",
+      "side": 1,
+      "message": "the answer was in my terminal, but now it is lost. IDK. I could add logging, but it would not be entirely correct 😞",
+      "parentUuid": "309d86a2_4db77ff0",
+      "revId": "f28a5d1e64ce5d64d0f7490b280af30f6a10bfc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
