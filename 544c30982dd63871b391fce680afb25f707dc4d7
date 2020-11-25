@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c893a995_c6b050a9",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T18:44:07Z",
+      "side": 1,
+      "message": "idk, this doesn\u0027t look much more readable, but also it is for sure less consistent. \nI am OK with MustIncludes. Besides, you already wrote that CL. Resolving.",
+      "parentUuid": "e2828797_b3ad06c8",
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4cb92ca6_a673c1fb",
@@ -204,6 +222,30 @@
       "side": 1,
       "message": "It was because I worried about * in the expression.\n\nI actually asked the same question to myself when I looked at https://crrev.com/c/1539264, and I thought that \"build.status\" must be explicitly specified, not via wildcard matching.\n\nIIUC, FieldMask.Includes() returns IncludeEntirely, if the mask expression is empty. Therefore, if update_paths is None, the field mask will match with all, and it\u0027s the existing behaviour of UpdatePath().\n\nI actually have the same pattern of code for \"steps\" and \"outputs\" in my child CL. \nQ. Should this code consider that the requester is attempting to update the status\n(1) if req.update_paths is None\n(2) if req.update_paths has \"*.status\"?\n\nMy child CL al uses update_paths for steps and outputs. I guess the same rule applies to all.",
       "parentUuid": "43d6b44e_0b2ecd22",
+      "range": {
+        "startLine": 258,
+        "startChar": 57,
+        "endLine": 258,
+        "endChar": 111
+      },
+      "revId": "544c30982dd63871b391fce680afb25f707dc4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a943d8a3_55238962",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T18:44:07Z",
+      "side": 1,
+      "message": "i think you discovered an uncovered edge case: we never want to accept an empty update mask, but the validation code in \nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/validation.py;l\u003d283\ndid not prevent that. We should reject such request. I think it is safe to add that code now because the only client of UpdateBuild RPC always specifies an update mask.\n\n*.status is not a valid field path in an update mask. The star can be only in the end.",
+      "parentUuid": "174d4fd4_8995f0e4",
       "range": {
         "startLine": 258,
         "startChar": 57,
