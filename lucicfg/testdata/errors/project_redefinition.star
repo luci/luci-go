@@ -6,7 +6,7 @@ luci.project(name = "another")
 # Traceback (most recent call last):
 #   //testdata/errors/project_redefinition.star: in <toplevel>
 #   ...
-# Error: luci.project("...") is redeclared, previous declaration:
+# Error in add_node: luci.project("...") is redeclared, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/errors/project_redefinition.star: in <toplevel>
 #   ...

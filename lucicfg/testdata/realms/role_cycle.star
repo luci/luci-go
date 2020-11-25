@@ -15,4 +15,4 @@ luci.custom_role(
 # Traceback (most recent call last):
 #   //testdata/realms/role_cycle.star: in <toplevel>
 #   ...
-# Error: relation "extends" between luci.custom_role("customRole/r1") and luci.custom_role("customRole/r2") introduces a cycle
+# Error in add_edge: relation "extends" between luci.custom_role("customRole/r1") and luci.custom_role("customRole/r2") introduces a cycle

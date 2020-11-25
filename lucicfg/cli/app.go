@@ -21,6 +21,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"go.starlark.net/resolve"
+	"gopkg.in/yaml.v2"
 
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
@@ -44,6 +45,9 @@ func Main(params base.Parameters, args []string) int {
 	resolve.AllowNestedDef = true
 	resolve.AllowFloat = true
 	resolve.AllowSet = true
+
+	// We prefer not to wrap lines in generated YAML.
+	yaml.FutureLineWrap()
 
 	// A hack to allow '#!/usr/bin/env lucicfg'. On Linux the shebang line can
 	// have at most two arguments, so we can't use '#!/usr/bin/env lucicfg gen'.

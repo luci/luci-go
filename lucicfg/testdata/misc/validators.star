@@ -39,8 +39,8 @@ def test_validate_float():
     assert.fails(lambda: call("a", "1"), 'bad "a": got string, want float or int')
     assert.fails(lambda: call("a", []), 'bad "a": got list, want float or int')
     assert.fails(lambda: call("a", None, default = "1", required = False), 'bad "a": got string, want float or int')
-    assert.fails(lambda: call("a", 123, min = 124.5), 'bad "a": 123 should be >= 124.5')
-    assert.fails(lambda: call("a", 123, max = 122.5), 'bad "a": 123 should be <= 122.5')
+    assert.fails(lambda: call("a", 123, min = 124.5), 'bad "a": 123.0 should be >= 124.5')
+    assert.fails(lambda: call("a", 123, max = 122.5), 'bad "a": 123.0 should be <= 122.5')
 
 def test_validate_bool():
     call = validate.bool

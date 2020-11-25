@@ -21,4 +21,4 @@ luci.builder(
 # Traceback (most recent call last):
 #   //testdata/errors/bad_builder_props.star: in <toplevel>
 #   ...
-# Error: to_json: unsupported type struct
+# Error in to_json: to_json: unsupported type struct

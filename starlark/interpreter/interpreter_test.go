@@ -327,8 +327,7 @@ Error: invalid call of non-function (NoneType)`)
 		So(normalizeErr(err), ShouldEqual, `Traceback (most recent call last):
   //main.star: in <toplevel>
   //main.star: in f
-  <builtin>: in exec
-Error: exec //exec.star failed: Traceback (most recent call last):
+Error in exec: exec //exec.star failed: Traceback (most recent call last):
   //exec.star: in <toplevel>
   //exec.star: in f
 Error: invalid call of non-function (NoneType)`)

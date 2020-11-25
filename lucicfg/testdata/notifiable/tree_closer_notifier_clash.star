@@ -13,7 +13,7 @@ luci.notifier(
 # Traceback (most recent call last):
 #   //testdata/notifiable/tree_closer_notifier_clash.star: in <toplevel>
 #   ...
-# Error: luci.notifiable("some name") is redeclared, previous declaration:
+# Error in add_node: luci.notifiable("some name") is redeclared, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/notifiable/tree_closer_notifier_clash.star: in <toplevel>
 #   ...
