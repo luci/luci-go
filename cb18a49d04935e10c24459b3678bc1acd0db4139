@@ -97,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ffbf6116_e6c00c8e",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:16:11Z",
+      "side": 1,
+      "message": "we might or we might not. The problem with exported_invocation_id is that it is not extensible / not future-proof: if we ever needs tags or realms, we will have to add exported_invocation_realm, exported_invocation_tags, parent_invocation_realms, parent_invocation_tags, which would be awkward. Why not make it future proof? For the consumer, it is the same number of characters they have to type: exported_invocation.id vs exported_invocation_id\n\nalso this is inconsistent with TestResult, so can be confusing/annoying to the users. Why not make it consistent?",
+      "parentUuid": "b32f1cf2_e8be45ad",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 26
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7d8d8b10_5327aad5",
         "filename": "resultdb/proto/bq/artifact_row.proto",
         "patchSetId": 5
@@ -155,6 +179,24 @@
         "endLine": 39,
         "endChar": 75
       },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce1103b2_23cafde1",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-25T17:16:11Z",
+      "side": 1,
+      "message": "note that we plan to export these rows not when artifact are being written, but when an invocation is finalized. This is because the set of included invocations is mutable, so an indirect artifact child can be excluded from an invocation after the artifact is written. This kind of precludes streaming.\n\nI am not sure I understood your point about large blobs. FWIU the intention here is to cut only artifacts that reach the limit, so blobs\u003c5MB will stay whole.",
+      "parentUuid": "51000e51_2a25eafa",
       "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
