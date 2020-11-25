@@ -27,10 +27,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/uploadinfo"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -294,28 +294,28 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 
 	fmCache := filemetadata.NewSingleFlightCache()
 	var rootDgs []digest.Digest
-	var chunkers []*chunker.Chunker
+	var entries []*uploadinfo.Entry
 	for _, o := range opts {
 		execRoot, is, err := buildCASInputSpec(o)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to buildCASInputSpec").Err()
 		}
-		rootDg, chks, _, err := cl.ComputeMerkleTree(execRoot, is, chunker.DefaultChunkSize, fmCache)
+		rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
 		rootDgs = append(rootDgs, rootDg)
-		chunkers = append(chunkers, chks...)
+		entries = append(entries, entrs...)
 	}
-	uploadedDgs, err := cl.UploadIfMissing(ctx, chunkers...)
+	uploadedDgs, err := cl.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return nil, err
 	}
 
 	if al != nil {
 		missing := int64(len(uploadedDgs))
-		hits := int64(len(chunkers)) - missing
+		hits := int64(len(entries)) - missing
 		bytesPushed := int64(0)
 		bytesTotal := int64(0)
-		for _, c := range chunkers {
-			bytesTotal += c.Digest().Size
+		for _, e := range entries {
+			bytesTotal += e.Digest.Size
 		}
 		for _, dg := range uploadedDgs {
 			bytesPushed += dg.Size
