@@ -16,6 +16,8 @@ package dscache
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -63,7 +65,7 @@ func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter) []
 		if ret == nil {
 			ret = make([]string, len(keys))
 		}
-		ret[i] = MakeMemcacheKey(s.mr.Intn(shards), key)
+		ret[i] = makeMemcacheKey(s.mr.Intn(shards), key)
 	}
 	return ret
 }
@@ -84,7 +86,7 @@ func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 	ret := make([]string, 0, size)
 	for i, key := range keys {
 		if !key.IsIncomplete() {
-			keySuffix := HashKey(key)
+			keySuffix := hashKey(key)
 			for shard := 0; shard < nums[i]; shard++ {
 				ret = append(ret, fmt.Sprintf(KeyFormat, shard, keySuffix))
 			}
@@ -124,4 +126,15 @@ func (s *supportContext) generateNonce() []byte {
 	nonce := make([]byte, NonceBytes)
 	_, _ = s.mr.Read(nonce) // This Read will always return len(nonce), nil.
 	return nonce
+}
+
+// makeMemcacheKey generates a memcache key for the given datastore Key.
+func makeMemcacheKey(shard int, k *ds.Key) string {
+	return fmt.Sprintf(KeyFormat, shard, hashKey(k))
+}
+
+// hashKey generates just the hashed portion of the memcache key.
+func hashKey(k *ds.Key) string {
+	dgst := sha1.Sum(ds.Serialize.ToBytes(k))
+	return base64.RawStdEncoding.EncodeToString(dgst[:])
 }

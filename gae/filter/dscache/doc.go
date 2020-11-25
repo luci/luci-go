@@ -39,10 +39,10 @@
 //     could start showing collisions at this probability in as small as a 26GB
 //     cache (and also MD5 sucks).
 //
-// The memcache value is a compression byte, indicating the scheme (See
-// CompressionType), followed by the encoded (and possibly compressed) value.
-// Encoding is done with datastore.PropertyMap.Write(). The memcache value
-// may also be the empty byte sequence, indicating that this entity is deleted.
+// The memcache value is a compression byte, indicating the scheme, followed by
+// the encoded (and possibly compressed) value. Encoding is done with
+// datastore.PropertyMap.Write(). The memcache value may also be the empty byte
+// sequence, indicating that this entity is deleted.
 //
 // The memcache entry may also have a 'flags' value set to one of the following:
 //   - 0 "entity" (cached value)
