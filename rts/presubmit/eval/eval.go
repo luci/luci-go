@@ -36,6 +36,12 @@ type Eval struct {
 	// The algorithm to evaluate.
 	Algorithm Algorithm
 
+	// MaxDistance is the maximum distance to run a test.
+	// If a test is further than this, it is skipped.
+	// TODO(nodir): automatically compute the optimal MaxDistance based on
+	// MinChangeRecall and MinTestRecall.
+	MaxDistance float64
+
 	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
 	Concurrency int
@@ -53,6 +59,9 @@ type Eval struct {
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
+	// The default value of 0.5 makes sense for those algorithms that
+	// use distance between 0.0 and 1.0.
+	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, "Max distance from tests to the changed files")
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")

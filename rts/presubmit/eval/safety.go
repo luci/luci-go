@@ -144,7 +144,13 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			}
 
 			// All tests were skipped => the rejection is lost.
-			lostRejection := len(e.out.ShouldSkip) == len(rej.FailedTestVariants)
+			lostRejection := true
+			for _, dist := range e.out.TestVariantDistances {
+				if dist <= e.MaxDistance {
+					lostRejection = false
+					break
+				}
+			}
 
 			e.mu.Lock()
 			cr.TotalRejections++
@@ -155,8 +161,14 @@ func (e *safetyEval) eval(ctx context.Context) error {
 				if lostRejection {
 					cr.LostRejections = append(cr.LostRejections, rej)
 				}
-				for _, tv := range e.out.ShouldSkip {
-					tr.LostFailures = append(tr.LostFailures, LostTestFailure{Rejection: rej, TestVariant: tv})
+				for i, dist := range e.out.TestVariantDistances {
+					if dist > e.MaxDistance {
+						tr.LostFailures = append(tr.LostFailures, LostTestFailure{
+							Rejection: rej,
+							// Note: this assumes that in.TestVariants == rej.FailedTestVariants
+							TestVariant: rej.FailedTestVariants[i],
+						})
+					}
 				}
 			}
 
@@ -170,7 +182,6 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			}
 		}
 	}
-
 }
 
 func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection) (eligible bool, err error) {
@@ -181,12 +192,19 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
 	// Most RTS algorithms would reject such a patchset, so it represents noise.
 
-	// Compare the prediction to facts.
+	// Select tests.
 	in := Input{
 		TestVariants: rej.FailedTestVariants,
 	}
 	in.ensureChangedFilesInclude(rej.Patchsets...)
-	e.out.ShouldSkip = e.out.ShouldSkip[:0]
+	if cap(e.out.TestVariantDistances) < len(in.TestVariants) {
+		e.out.TestVariantDistances = make([]float64, len(in.TestVariants))
+	} else {
+		e.out.TestVariantDistances = e.out.TestVariantDistances[:len(in.TestVariants)]
+		for i := range e.out.TestVariantDistances {
+			e.out.TestVariantDistances[i] = 0
+		}
+	}
 	if err := e.Algorithm(ctx, in, &e.out); err != nil {
 		return false, errors.Annotate(err, "RTS algorithm failed").Err()
 	}
