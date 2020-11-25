@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "819dd9fb_7afc6bda",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-25T05:56:51Z",
+      "side": 1,
+      "message": "nit: \u0027call C\u0027?",
+      "range": {
+        "startLine": 305,
+        "startChar": 47,
+        "endLine": 305,
+        "endChar": 48
+      },
+      "revId": "b26e7d3073cb23f621a6d68c8c55f375b0767039",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
