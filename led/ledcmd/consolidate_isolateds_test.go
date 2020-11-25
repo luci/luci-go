@@ -178,7 +178,7 @@ func TestConsolidateIsolateSources(t *testing.T) {
 				So(ConsolidateIsolateSources(ctx, nil, job), ShouldBeNil)
 				curIso, err := job.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(curIso, ShouldBeNil)
+				So(curIso.CASTree, ShouldBeNil)
 			})
 
 			Convey(`with UserPayload`, func() {
@@ -197,7 +197,7 @@ func TestConsolidateIsolateSources(t *testing.T) {
 
 				curIso, err := job.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(curIso, ShouldResemble, client.tree(dgst))
+				So(curIso.CASTree, ShouldResemble, client.tree(dgst))
 			})
 
 			Convey(`with individual isolates`, func() {
@@ -218,7 +218,7 @@ func TestConsolidateIsolateSources(t *testing.T) {
 					client.tree(dgst1))
 
 				curIso, err := job.Info().CurrentIsolated()
-				So(err, ShouldErrLike, "contains multiple isolateds")
+				So(err, ShouldErrLike, "contains multiple isolate inputs")
 				So(curIso, ShouldBeNil)
 			})
 
@@ -236,7 +236,7 @@ func TestConsolidateIsolateSources(t *testing.T) {
 
 				curIso, err := job.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(curIso, ShouldResemble, client.pushIso(client.mkIso(
+				So(curIso.CASTree, ShouldResemble, client.pushIso(client.mkIso(
 					"user_payload", "file contents",
 					"slice_content", "some stuff",
 				)))
