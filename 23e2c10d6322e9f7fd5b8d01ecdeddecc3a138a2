@@ -16,6 +16,46 @@
       "message": "I resolved the easy comments; but haven\u0027t addressed all, and agree that the tests are not yet complete.",
       "revId": "23e2c10d6322e9f7fd5b8d01ecdeddecc3a138a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf4785fc_e7f45ebb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T20:03:37Z",
+      "side": 1,
+      "message": "given timing, I\u0027m fine with landing this as is, since afais it\u0027s already correct \u0026 will allow me to test my code, and you can work on TODOs once you are back.",
+      "revId": "23e2c10d6322e9f7fd5b8d01ecdeddecc3a138a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba3bae28_a9904cfc",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-25T20:03:37Z",
+      "side": 1,
+      "message": "not necessary.",
+      "range": {
+        "startLine": 95,
+        "startChar": 6,
+        "endLine": 95,
+        "endChar": 24
+      },
+      "revId": "23e2c10d6322e9f7fd5b8d01ecdeddecc3a138a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
