@@ -29,10 +29,11 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/cv/internal"
-	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/cv/internal"
+	"go.chromium.org/luci/cv/internal/config"
 )
 
 // Poke schedules the next poll via task queue.
@@ -216,12 +217,11 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 // in RAM only.
 func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 	s.ConfigHash = meta.Hash()
-	// TODO(tandrii): load configGroups and set up SubPollers.
-	s.SubPollers = &SubPollers{
-		SubPollers: []*SubPoller{
-			{},
-		},
+	cgs, err := meta.GetConfigGroups(ctx)
+	if err != nil {
+		return err
 	}
+	s.SubPollers = &SubPollers{SubPollers: partitionConfig(cgs)}
 	return nil
 }
 
