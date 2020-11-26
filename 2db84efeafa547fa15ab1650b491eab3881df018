@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c905e32_79125b71",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-26T23:40:59Z",
+      "side": 1,
+      "message": "the CL is merged. I\u0027ll deploy it on Monday Sydney time.",
+      "parentUuid": "f4034967_c2fad5ab",
+      "revId": "2db84efeafa547fa15ab1650b491eab3881df018",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7976f1da_4f271675",
