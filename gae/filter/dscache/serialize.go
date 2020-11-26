@@ -19,6 +19,8 @@ import (
 	"compress/zlib"
 	"io/ioutil"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/internal/zstd"
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -27,6 +29,7 @@ type compressionType byte
 const (
 	compressionNone compressionType = iota
 	compressionZlib
+	compressionZstd
 )
 
 func encodeItemValue(pm ds.PropertyMap, pfx []byte) ([]byte, error) {
@@ -56,35 +59,47 @@ func encodeItemValue(pm ds.PropertyMap, pfx []byte) ([]byte, error) {
 
 	// Compress into the new buffer.
 	buf2.Write(pfx)
-	buf2.WriteByte(byte(compressionZlib))
-	writer := zlib.NewWriter(buf2)
-	writer.Write(data)
-	writer.Close()
-
-	return buf2.Bytes(), nil
+	buf2.WriteByte(byte(compressionZstd))
+	return zstd.EncodeAll(data, buf2.Bytes()), nil
 }
 
 func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 	if len(val) == 0 {
 		return nil, ds.ErrNoSuchEntity
 	}
-	buf := bytes.NewBuffer(val)
-	compTypeByte, err := buf.ReadByte()
-	if err != nil {
-		return nil, err
+	if len(val) < 1 {
+		return nil, errors.Reason("missing the compression type byte").Err()
 	}
 
-	if compressionType(compTypeByte) == compressionZlib {
-		reader, err := zlib.NewReader(buf)
+	compTypeByte, data := val[0], val[1:]
+
+	switch compressionType(compTypeByte) {
+	case compressionNone:
+		// already decompressed
+
+	case compressionZlib:
+		reader, err := zlib.NewReader(bytes.NewBuffer(data))
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
-		data, err := ioutil.ReadAll(reader)
+		if data, err = ioutil.ReadAll(reader); err != nil {
+			return nil, err
+		}
+		if err = reader.Close(); err != nil {
+			return nil, err
+		}
+
+	case compressionZstd:
+		// Assume 2x compression.
+		var err error
+		data, err = zstd.DecodeAll(data, make([]byte, 0, len(data)*2))
 		if err != nil {
 			return nil, err
 		}
-		buf = bytes.NewBuffer(data)
+
+	default:
+		return nil, errors.Reason("unknown compression scheme #%d", compTypeByte).Err()
 	}
-	return ds.Deserializer{KeyContext: kc}.PropertyMap(buf)
+
+	return ds.Deserializer{KeyContext: kc}.PropertyMap(bytes.NewBuffer(data))
 }

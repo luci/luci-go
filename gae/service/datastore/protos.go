@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/klauspost/compress/zstd"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/gae/internal/zstd"
 )
 
 // protoOption specifies how to handle field implementing proto.Message.
@@ -69,26 +70,6 @@ const (
 
 var errInvalidProtoPrefix = fmt.Errorf("invalid gae proto serialization or unrecognized compression scheme")
 
-// Globally shared zstd encoder and decoder. We use only their EncodeAll and
-// DecodeAll methods which are allowed to be used concurrently. Internally, both
-// the encode and the decoder have worker pools (limited by GOMAXPROCS) and each
-// concurrent EncodeAll/DecodeAll call temporary consumes one worker (so overall
-// we do not run more jobs that we have cores for).
-var (
-	zstdEncoder *zstd.Encoder
-	zstdDecoder *zstd.Decoder
-)
-
-func init() {
-	var err error
-	if zstdEncoder, err = zstd.NewWriter(nil); err != nil {
-		panic(err) // this is impossible
-	}
-	if zstdDecoder, err = zstd.NewReader(nil); err != nil {
-		panic(err) // this is impossible
-	}
-}
-
 func protoToProperty(pb proto.Message, opt protoOption) (prop Property, err error) {
 	blob := make([]byte, 1, 16)
 	// proto can't marshall to io.Writer, so might as well serialize it now,
@@ -110,7 +91,7 @@ func protoToProperty(pb proto.Message, opt protoOption) (prop Property, err erro
 		// allocate new buffer for compressed data, hoping for ~2x compression.
 		blob = make([]byte, 1, len(pbblob)/2)
 		write1ByteProtoOpt(blob, protoBinOptZSTD)
-		blob = zstdEncoder.EncodeAll(pbblob, blob)
+		blob = zstd.EncodeAll(pbblob, blob)
 		prop = MkPropertyNI(blob)
 		return
 	default:
@@ -137,7 +118,7 @@ func protoFromProperty(field reflect.Value, prop Property, opt protoOption) erro
 		case protoBinOptNoCompress == binOpt:
 			blob = blob[1:]
 		case protoBinOptZSTD == binOpt:
-			if blob, err = zstdDecoder.DecodeAll(blob[1:], nil); err != nil {
+			if blob, err = zstd.DecodeAll(blob[1:], nil); err != nil {
 				return err
 			}
 		default:
