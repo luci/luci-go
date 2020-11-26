@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -70,51 +71,55 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		var toCas []CacheItem
 		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(j int, pm ds.PropertyMap, err error) {
 			i := p.idxMap[j]
-			toSave := p.toSave[j]
 
-			data := []byte(nil)
-
-			// true: save entity to memcache
-			// false: lock entity in memcache forever
-			shouldSave := true
 			if err == nil {
 				p.decoded[i] = pm
-				if toSave != nil {
-					data = encodeItemValue(pm)
-					if len(data) > internalValueSizeLimit {
-						shouldSave = false
-						logging.Warningf(
-							d.c, "dscache: encoded entity too big (%d/%d)!",
-							len(data), internalValueSizeLimit)
-					}
-				}
 			} else {
 				p.lme.Assign(i, err)
 				if err != ds.ErrNoSuchEntity {
 					return
 				}
+				pm = nil
 			}
 
-			if toSave != nil {
-				if shouldSave {
-					// The item was successfully encoded and should be able to fit into
-					// the cache.
-					mg := metas.GetSingle(i)
-					expSecs := ds.GetMetaDefault(mg, CacheExpirationMeta, int64(CacheDuration.Seconds())).(int64)
-					toSave.PromoteToData(data, time.Duration(expSecs)*time.Second)
+			toSave := p.toSave[j]
+			if toSave == nil {
+				return
+			}
+
+			expiry := time.Duration(ds.GetMetaDefault(
+				metas.GetSingle(i),
+				CacheExpirationMeta,
+				int64(CacheDuration.Seconds()),
+			).(int64)) * time.Second
+
+			if pm == nil {
+				// Missing entities are denoted by an empty data buffer.
+				toSave.PromoteToData(toSave.Prefix(), expiry)
+			} else {
+				// Serialize and compress the PropertyMap, bail if too large.
+				buf, err := encodeItemValue(pm, toSave.Prefix())
+				if err == nil && len(buf) > internalValueSizeLimit {
+					err = errors.Reason("encoded entity too big (%d > %d)", len(buf), internalValueSizeLimit).Err()
+				}
+				if err == nil {
+					// The item should be able to fit into the cache.
+					toSave.PromoteToData(buf, expiry)
 				} else {
-					// The item is most likely too big to be cached. Set a lock with an
-					// infinite timeout. No one else should try to serialize this item to
-					// memcache until something Put/Delete's it.
+					// The item is "broken". No one else should try to serialize this item
+					// until something Put/Delete's it. Set a lock on it.
+					logging.WithError(err).Warningf(d.c, "dscache: PropertyMap serialization error")
 					toSave.PromoteToIndefiniteLock()
 				}
-				toCas = append(toCas, toSave)
 			}
+			toCas = append(toCas, toSave)
 		})
+
 		if err != nil {
 			// TODO(vadimsh): Should we drop locks owned by us?
 			return err
 		}
+
 		if len(toCas) > 0 {
 			// Store stuff we fetched back into memcache unless someone (like
 			// a concurrent Put) deleted our locks already.

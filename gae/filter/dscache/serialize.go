@@ -29,25 +29,39 @@ const (
 	compressionZlib
 )
 
-func encodeItemValue(pm ds.PropertyMap) []byte {
-	pm, _ = pm.Save(false)
-
-	buf := bytes.Buffer{}
-	// errs can't happen, since we're using a byte buffer.
-	_ = buf.WriteByte(byte(compressionNone))
-	_ = ds.Serialize.PropertyMap(&buf, pm)
-
-	data := buf.Bytes()
-	if buf.Len() > CompressionThreshold {
-		buf2 := bytes.NewBuffer(make([]byte, 0, len(data)))
-		_ = buf2.WriteByte(byte(compressionZlib))
-		writer := zlib.NewWriter(buf2)
-		_, _ = writer.Write(data[1:]) // skip the compressionNone byte
-		writer.Close()
-		data = buf2.Bytes()
+func encodeItemValue(pm ds.PropertyMap, pfx []byte) ([]byte, error) {
+	var err error
+	if pm, err = pm.Save(false); err != nil {
+		return nil, err
 	}
 
-	return data
+	// Try to write as uncompressed first. Capacity of 256 is picked arbitrarily.
+	// Most entities are pretty small.
+	buf := bytes.NewBuffer(make([]byte, 0, 256))
+	buf.Write(pfx)
+	buf.WriteByte(byte(compressionNone))
+	if err := ds.Serialize.PropertyMap(buf, pm); err != nil {
+		return nil, err
+	}
+
+	// If it is small enough, we are done.
+	if buf.Len() <= CompressionThreshold {
+		return buf.Bytes(), nil
+	}
+
+	// If too big, grab a new buffer and compress data there. Preallocate a new
+	// buffer assuming 2x compression.
+	data := buf.Bytes()[len(pfx)+1:] // skip pfx and compressionNone byte
+	buf2 := bytes.NewBuffer(make([]byte, 0, len(data)/2))
+
+	// Compress into the new buffer.
+	buf2.Write(pfx)
+	buf2.WriteByte(byte(compressionZlib))
+	writer := zlib.NewWriter(buf2)
+	writer.Write(data)
+	writer.Close()
+
+	return buf2.Bytes(), nil
 }
 
 func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
