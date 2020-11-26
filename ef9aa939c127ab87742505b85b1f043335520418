@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6941fe79_55af9795",
+        "filename": "gae/filter/dscache/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-11-26T01:47:50Z",
+      "side": 0,
+      "message": "This code assumed anything other than zlib is uncompressed \u003e_\u003c So it is now dangerous to deploy zstd change: old code will try to deserialize it as PropertyMap without decompressions. Who knows what it will find...\n\nMaybe we should make the compression algorithm configuration (e.g. via a global variable) and use zstd only with Redis?",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 54
+      },
+      "revId": "ef9aa939c127ab87742505b85b1f043335520418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
