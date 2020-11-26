@@ -94,6 +94,30 @@
       },
       "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "901af74b_a327c5fe",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-26T04:59:44Z",
+      "side": 1,
+      "message": "The fact that it\u0027s implemented as a cookie is still irrelevant to the user though. It\u0027s just an automated way of doing what we\u0027re already doing manually in this CL -- resetting the user\u0027s choice.\n\nThinking about it some more, maybe it\u0027s better to just do it manually so we can be more intentional about it. Let\u0027s just set the cookie to 1 year expiry, by which time the old UI should be long gone.",
+      "parentUuid": "31c57ee2_482402be",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
