@@ -105,8 +105,7 @@ func (r *evalRun) run(ctx context.Context) error {
 }
 
 func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
-	// Start Dijstra from the modified files and try to find all test files,
-	// but do not walk further than r.fgMaxDistance.
+	// Run Dijkstra from the modified files and try to find all test files.
 
 	q := &filegraph.Query{
 		Sources: make([]filegraph.Node, len(in.ChangedFiles)),
@@ -115,7 +114,6 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 			// from test files to changed files, and not the other way around.
 			Reversed: true,
 		},
-		MaxDistance: r.ev.MaxDistance,
 	}
 
 	for i, f := range in.ChangedFiles {
@@ -141,7 +139,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		}
 	}
 
-	testDistances := make(map[filegraph.Node]float64, len(in.TestVariants))
+	selections := make(map[filegraph.Node]eval.TestSelection, len(in.TestVariants))
 	testNodes := make([]filegraph.Node, len(in.TestVariants))
 	for i, tv := range in.TestVariants {
 		// Android does not have locations.
@@ -152,21 +150,32 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		if n == nil {
 			return nil
 		}
-		testDistances[n] = math.Inf(1) // unreachable by default
+		selections[n] = eval.TestSelection{
+			Distance: math.Inf(1), // unreachable by default
+		}
 		testNodes[i] = n
 	}
 
 	found := 0
+	rank := 0
 	q.Run(func(sp *filegraph.ShortestPath) (keepGoing bool) {
-		if _, ok := testDistances[sp.Node]; ok {
-			testDistances[sp.Node] = sp.Distance
+		rank++
+		if _, ok := selections[sp.Node]; ok {
+			selections[sp.Node] = eval.TestSelection{
+				Distance: sp.Distance,
+				Rank:     rank,
+			}
 			found++
+			if found == len(selections) {
+				// We have found everything.
+				return false
+			}
 		}
-		return found < len(testDistances)
+		return sp.Distance < r.ev.MaxDistance || rank <= r.ev.MinRun
 	})
 
 	for i, n := range testNodes {
-		out.TestVariantDistances[i] = testDistances[n]
+		out.TestVariantSelections[i] = selections[n]
 	}
 	return nil
 }

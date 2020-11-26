@@ -56,14 +56,30 @@ func (in *Input) ensureChangedFilesInclude(pss ...*evalpb.GerritPatchset) {
 
 // Output is the output of an RTS algorithm.
 type Output struct {
-	// TestVariantDistances are distances for Input.TestVariants, in the same
-	// order. A distance is a non-negative value, where 0.0 means
-	// the changed files are extremely likely to affect the test variant,
-	// and +inf means extremely unlikely.
-	// Given a distance threshold, too-far away tests are skipped.
+	// TestVariantSelections are distance and rank for Input.TestVariants,
+	// in the same order.
 	//
-	// When Algorithm() is called, TestVariantDistances is pre-initialized with a
-	// slice with the same length as Input.TestVariants, and filled with zeros.
-	// Thus by default, all tests are selected.
-	TestVariantDistances []float64
+	// When Algorithm() is called, TestVariantSelections is pre-initialized
+	// with a slice with the same length as Input.TestVariants, and zero elements.
+	// Thus by default, all tests are selected (distance=0) and unranked (rank=0).
+	TestVariantSelections []TestSelection
+}
+
+// TestSelection is RTS algorithm output for a particular test.
+type TestSelection struct {
+	// Distance is a non-negative number, where 0.0 means the changed files are
+	// extremely likely to affect the test variant, and +inf means extremely
+	// unlikely. Given a distance threshold, too-far away tests are skipped.
+	Distance float64
+
+	// Rank is one-based index of the test in the list of all existing tests
+	// sorted by distance.
+	// Zero means rank is unknown, e.g. if the algorithm is not aware of other
+	// tests.
+	//
+	// For example, three tests exists in the codebase: T1, T2 and T3.
+	// Their distances are 1, 2 and 3, respectively.
+	// Input.TestVariants has only one element and it refers to T2.
+	// Then Output.TestVariantSelections[0].Rank should be 2.
+	Rank int
 }
