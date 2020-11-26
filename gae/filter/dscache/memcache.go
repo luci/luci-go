@@ -128,6 +128,10 @@ func (m memcacheItem) Data() []byte {
 	return nil
 }
 
+func (m memcacheItem) Prefix() []byte {
+	return nil
+}
+
 func (m memcacheItem) PromoteToData(data []byte, exp time.Duration) {
 	if m.item.Flags() != itemFlagHasLock {
 		panic("only locks should be promoted")

@@ -92,7 +92,12 @@ type CacheItem interface {
 	// Data returns nil for lock items or an item's data for data items.
 	Data() []byte
 
+	// Prefix should be written to the data buffer passed to PromoteToData.
+	Prefix() []byte
+
 	// PromoteToData converts this lock item into a data item.
+	//
+	// `data` must start with whatever Prefix() returned.
 	//
 	// Panics if self is not a lock item.
 	PromoteToData(data []byte, exp time.Duration)
