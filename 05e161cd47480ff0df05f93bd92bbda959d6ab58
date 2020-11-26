@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86befa76_729529c9",
+        "filename": "gae/filter/dscache/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-26T14:15:47Z",
+      "side": 1,
+      "message": "nit: i think iota is dangerous here, because someone may reorder this by accident and all tests will likely pass, but we\u0027d get prod errors in practice. So, I hardcoded values in my protos.go code.",
+      "revId": "05e161cd47480ff0df05f93bd92bbda959d6ab58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5da9f5b8_bd1d1e90",
+        "filename": "gae/filter/dscache/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-26T14:15:47Z",
+      "side": 1,
+      "message": "I don\u0027t think this is useful, actually, I think ztsd will allocate based on first frame size,\n(though I hvae no idea how many frames we can have): https://github.com/klauspost/compress/blob/ff4a4acf3be7ac7b0b1c3381000e0216eb9e956f/zstd/decoder.go#L324\n\nBtw, why don\u0027t we always write sizeof(uncompressed data) right after compressionZstd prefix?\nCosts only 4 bytes but avoids allocs.\nDisclaimer: i forced myself not to do this for my datastore protos work to avoid getting bogged in it, but since we are in micro-optimization mode...",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 95,
+        "endChar": 64
+      },
+      "revId": "05e161cd47480ff0df05f93bd92bbda959d6ab58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

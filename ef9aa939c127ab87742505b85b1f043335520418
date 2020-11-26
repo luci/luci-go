@@ -22,6 +22,30 @@
       },
       "revId": "ef9aa939c127ab87742505b85b1f043335520418",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e83c1673_c4e1a906",
+        "filename": "gae/filter/dscache/serialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-11-26T14:15:47Z",
+      "side": 0,
+      "message": "I checked what PropetyMap can read... turns out it can panic[1] on invalid bytes of memcache iff number it reads is a negative, while it expects a positive number of rows [2].\nIn fact, if you feed it the first 4 \"magic\" bytes of zstd (ie  28 b5 2f fd), it\u0027ll choke on the very first byte [3].\nSo, it\u0027s not perfect, but at least it won\u0027t silently read bad data.\n\n[1] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/gae/service/datastore/deserialize.go;l\u003d216?q\u003ddatastore%2Fdeserialize.go%20panicIf\n[2] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/data/cmpbin/number.go;l\u003d116?q\u003dcmpBin%20ReadUint\n[3] https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2560208 \n\nDo you remember that we have to re-deploy all GAE apps anyway due to change in auth library to use newer APIs?\nPerhaps we can take advantage of that to first deploy non-buggy code that would treat unknown compTypeByte as cacheMiss. Meanwhile, we can temporary signal via CacheImpl whether zstd can be used. Redis impl will do so from day 1, and ~Feb 2021, we can probably remove the hack and always encode with zstd.",
+      "parentUuid": "6941fe79_55af9795",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 54
+      },
+      "revId": "ef9aa939c127ab87742505b85b1f043335520418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
