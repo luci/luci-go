@@ -41,7 +41,9 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var crosMainRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
+// TODO (crbug.com/1148834): Remove master_buildbucket_id after
+// https://crrev.com/c/2560220 lands.
+var crosMainRE = regexp.MustCompile(`^cros/(?:master_buildbucket_id|parent_buildbucket_id)/(\d+)$`)
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
 // nesting information.
@@ -184,7 +186,7 @@ func (b *Build) RecipeLink() *Link {
 		csHost = "source.corp.google.com"
 	}
 	// TODO(crbug.com/1149540): remove this conditional once the long-term
-    // solution for recipe links has been implemented.
+	// solution for recipe links has been implemented.
 	if projectName == "flutter" {
 		csHost = "cs.opensource.google"
 	}
