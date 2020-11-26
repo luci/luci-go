@@ -140,15 +140,15 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	}
 }
 
-func getShowNewBuildPagePrefCookie(c *router.Context) bool {
-	switch cookie, err := c.Request.Cookie("showNewBuildPagePref"); err {
+func getShowNewBuildPageCookie(c *router.Context) bool {
+	switch cookie, err := c.Request.Cookie("showNewBuildPage"); err {
 	case nil:
 		return cookie.Value == "true"
 	case http.ErrNoCookie:
-		return false
+		return true
 	default:
-		logging.WithError(err).Errorf(c.Context, "failed to read showNewBuildPagePref cookie")
-		return false
+		logging.WithError(err).Errorf(c.Context, "failed to read showNewBuildPage cookie")
+		return true
 	}
 }
 
