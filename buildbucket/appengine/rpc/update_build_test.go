@@ -23,6 +23,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -401,6 +403,7 @@ func TestGetBuildForUpdate(t *testing.T) {
 
 func TestUpdateBuild(t *testing.T) {
 	t.Parallel()
+	tk := "a token"
 
 	Convey("UpdateBuild", t, func() {
 		srv := &Builds{}
@@ -411,12 +414,66 @@ func TestUpdateBuild(t *testing.T) {
 			),
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
-		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		// create and save a sample build in the datastore
+		build := &model.Build{
+			ID: 1,
+			Proto: pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_STARTED,
+			},
+			CreateTime:  testclock.TestRecentTimeUTC,
+			UpdateToken: tk,
+		}
+		So(datastore.Put(ctx, build), ShouldBeNil)
+		req := &pb.UpdateBuildRequest{
+			Build:      &pb.Build{Id: 1},
+			UpdateMask: &field_mask.FieldMask{Paths: []string{""}},
+		}
+		m := mask.MustFromReadMask(&pb.Build{}, "output.properties", "steps")
 
 		Convey("permission deined, if sender is not in updater group", func() {
 			s.Identity = "anonymous:anonymous"
 			_, err := srv.UpdateBuild(ctx, req)
 			So(err, ShouldHaveRPCCode, codes.PermissionDenied)
+		})
+
+		Convey("build.output.properties", func() {
+			props, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			So(err, ShouldBeNil)
+			req.Build.Output = &pb.Build_Output{Properties: props}
+			req.UpdateMask.Paths[0] = "build.output.properties"
+
+			_, err = srv.UpdateBuild(ctx, req)
+
+			So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+			So(model.LoadBuildDetails(ctx, m, req.Build), ShouldBeNil)
+			So(req.Build.Output.Properties, ShouldResembleProtoJSON, `{"key": "value"}`)
+		})
+
+		Convey("build.steps", func() {
+			step := &pb.Step{
+				Name:      "step",
+				StartTime: &timestamppb.Timestamp{Seconds: 1},
+				EndTime:   &timestamppb.Timestamp{Seconds: 12},
+				Status:    pb.Status_SUCCESS,
+			}
+			req.Build.Steps = []*pb.Step{step}
+			req.UpdateMask.Paths[0] = "build.steps"
+
+			_, err := srv.UpdateBuild(ctx, req)
+
+			So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+			So(model.LoadBuildDetails(ctx, m, req.Build), ShouldBeNil)
+			So(req.Build.Steps[0], ShouldResembleProto, step)
 		})
 	})
 }

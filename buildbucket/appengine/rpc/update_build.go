@@ -253,6 +253,35 @@ func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateB
 	return build, nil
 }
 
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask mask.Mask, steps *model.BuildSteps) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		b, err := getBuildForUpdate(ctx, buildMask, req)
+		if err != nil {
+			return err
+		}
+
+		// output.properties
+		if req.Build.Output.GetProperties() != nil && buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
+			outProp := &model.BuildOutputProperties{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, b),
+				Proto: model.DSStruct{*req.Build.Output.Properties},
+			}
+			if err := datastore.Put(ctx, outProp); err != nil {
+				return errors.Annotate(err, "failed to store build(%d).output.properties", b.ID).Err()
+			}
+		}
+
+		// steps
+		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
+			if err := datastore.Put(ctx, steps); err != nil {
+				return errors.Annotate(err, "failed to store build(%d).steps", b.ID).Err()
+			}
+		}
+		return nil
+	}, nil)
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	switch can, err := perm.CanUpdateBuild(ctx); {
@@ -281,6 +310,10 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 
 	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
 	if err := validateBuildToken(ctx, b); err != nil {
+		return nil, err
+	}
+
+	if err := updateEntities(ctx, req, bm, &bs); err != nil {
 		return nil, err
 	}
 
