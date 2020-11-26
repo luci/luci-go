@@ -309,6 +309,30 @@
       },
       "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c651fdf_abba80d2",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-11-26T05:13:29Z",
+      "side": 1,
+      "message": "Updated the presentation to use multiple sections instead.\nPostfix doesn\u0027t work very well when it\u0027s long. Because all the invocation-level artifacts will be coming from the same invocation and it gets repetitive.\nAlso added invocation types (Buildbucket build/Swarming task).\nThought about adding links to the invocations but I don\u0027t think the link would be very useful. Also, users would expect a link with text \"Swarming task\" will take them to the swarming page rather than an invocation page.",
+      "parentUuid": "3c3dd810_7ba34f17",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
