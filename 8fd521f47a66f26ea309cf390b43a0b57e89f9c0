@@ -79,6 +79,29 @@
       },
       "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76156530_c9d7f29a",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-26T20:30:52Z",
+      "side": 1,
+      "message": "the abstraction level here seems misaligned with the abstraction level in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2553162/7//COMMIT_MSG#7\nthere we have text artifacts, but here arbitrary artifacts\nI think the must be aligned.\n\nmaybe rename this field to text_artifacts?",
+      "range": {
+        "startLine": 166,
+        "startChar": 14,
+        "endLine": 166,
+        "endChar": 23
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
