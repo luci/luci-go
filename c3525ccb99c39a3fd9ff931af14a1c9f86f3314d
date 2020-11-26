@@ -142,6 +142,30 @@
       },
       "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "044daa6b_14d712c1",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-26T01:49:35Z",
+      "side": 1,
+      "message": "the suffix sounds fine too, but I wonder if it will raise questions without a tooltip (e.g. shared with whom?)",
+      "parentUuid": "dac8ef50_ab15a095",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
