@@ -46,6 +46,30 @@
       },
       "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a5deb199_65be5d64",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-26T04:21:31Z",
+      "side": 1,
+      "message": "True, that\u0027s a good idea.\n\nMy reasoning for suggesting this is that it effectively gives users a nudge back to the new page every month. Since we\u0027ll probably be turning off the old page in, say, 4 months time, that\u0027s only a few nudges. We could also consider a longer time period, like 2 months.\n\nThe other reason is that it\u0027d be nice to have the cookie not sitting around forever. If we\u0027re not going to use cookie expiry as a nudge mechanism, how about a 1-year expiry?",
+      "parentUuid": "04f38cd5_c53a79c3",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
