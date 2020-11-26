@@ -221,7 +221,7 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 	return nil
 }
 
-func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
 	build, err := getBuild(ctx, req.Build.Id)
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
