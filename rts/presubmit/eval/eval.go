@@ -37,10 +37,20 @@ type Eval struct {
 	Algorithm Algorithm
 
 	// MaxDistance is the maximum distance to run a test.
-	// If a test is further than this, it is skipped.
+	// If a test's distance is <= MaxDistance, then it is executed, regardless of
+	// MinRun.
+	//
 	// TODO(nodir): automatically compute the optimal MaxDistance based on
 	// MinChangeRecall and MinTestRecall.
 	MaxDistance float64
+
+	// MinRun is the minimum number of ranked tests to run.
+	// If a test's rank <= MinRun, then it is executed, regardless of MaxDistance.
+	// Multiple tests may have the same rank.
+	//
+	// TODO(nodir): automatically compute the optimal MinRun based on
+	// MinChangeRecall and MinTestRecall.
+	MinRun int
 
 	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
@@ -62,6 +72,7 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	// The default value of 0.5 makes sense for those algorithms that
 	// use distance between 0.0 and 1.0.
 	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, "Max distance from tests to the changed files")
+	fs.IntVar(&e.MinRun, "min-run", 0, "Minimum number of ranked tests to run")
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
@@ -107,4 +118,8 @@ func (f *historyFileInputFlag) Set(val string) error {
 
 func (f *historyFileInputFlag) String() string {
 	return f.path
+}
+
+func (e *Eval) shouldRun(s Affectedness) bool {
+	return s.Distance <= e.MaxDistance || (s.Rank != 0 && s.Rank <= e.MinRun)
 }
