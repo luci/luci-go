@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9c2384a_666404cb",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-26T05:57:55Z",
+      "side": 1,
+      "message": "I think this can be replaced with Date.now().\n\nhttps://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now",
+      "range": {
+        "startLine": 209,
+        "startChar": 37,
+        "endLine": 209,
+        "endChar": 57
+      },
+      "revId": "a457b1e4dbe087e3cbec36f9d41386c5a955da55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
