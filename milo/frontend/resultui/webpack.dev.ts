@@ -33,9 +33,9 @@ const config: webpack.Configuration = merge(common, {
       cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
     },
     before: (app) => {
-      const appConfigs = require('./dev-configs/configs.json');
       app.get('/configs.js', async (_req, res) => {
         res.set('content-type', 'application/javascript');
+        const appConfigs = JSON.parse(fs.readFileSync('./dev-configs/configs.json', 'utf8'));
         const configsTemplate = fs.readFileSync('./configs.template.js', 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
@@ -44,9 +44,14 @@ const config: webpack.Configuration = merge(common, {
         res.send(config);
       });
 
-      const localDevConfigs = require('./dev-configs/local-dev-configs.json');
       app.use(/^(?!\/(ui|static\/(dist|styles))\/).*/, createProxyMiddleware({
-        target: localDevConfigs.milo.url,
+        // This attribute is required. However the value will be overridden by
+        // the router option. So the value doesn't matter.
+        target: 'https://luci-milo-dev.appspot.com',
+        router: () => {
+          const localDevConfigs = JSON.parse(fs.readFileSync('./dev-configs/local-dev-configs.json', 'utf8'));
+          return localDevConfigs.milo.url;
+        },
         changeOrigin: true,
       }));
     },
