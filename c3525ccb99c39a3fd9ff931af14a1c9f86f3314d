@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "114b3e00_e767517b",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-26T03:53:46Z",
+      "side": 1,
+      "message": "Ack, thanks.",
+      "parentUuid": "3ee7f5ad_c36dfae7",
+      "range": {
+        "startLine": 55,
+        "startChar": 14,
+        "endLine": 55,
+        "endChar": 30
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8065c49b_dfac2f9c",
@@ -253,6 +277,30 @@
       "side": 1,
       "message": "I don\u0027t think we should use (global). Because they are not global. It\u0027s just shared between results attached to the same invocation.\n\n\u003e If that\u0027s no good, I\u0027d lean towards the option that gives the most clarity to users, even if it results in more code complexity, i.e. \"from entire (Swarming task|build|invocation)\" as appropriate.\nI would prefer this option too. But my worry is that we may not able to have an exhaustive list. What should the fallback be?",
       "parentUuid": "04429292_02b4f54c",
+      "range": {
+        "startLine": 160,
+        "startChar": 59,
+        "endLine": 160,
+        "endChar": 63
+      },
+      "revId": "c3525ccb99c39a3fd9ff931af14a1c9f86f3314d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c3dd810_7ba34f17",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-26T03:53:46Z",
+      "side": 1,
+      "message": "I was thinking \"invocation\" would be the fallback if we don\u0027t have something more specific. \"build\" and \"Swarming task\" should cover most cases, I\u0027d imagine?\n\nDoes resultdb specify the possible prefixes that could be used?",
+      "parentUuid": "62faa22a_028b73e7",
       "range": {
         "startLine": 160,
         "startChar": 59,
