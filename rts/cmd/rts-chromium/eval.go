@@ -126,10 +126,6 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 			// This CL changes the way tests run or their configurations.
 			// Run all tests.
 			return nil
-		case strings.HasPrefix(f.Path, "//base/"):
-			// Base affects everything. Run all tests.
-			// TODO(nodir): revisit this.
-			return nil
 		case f.Path == "//DEPS":
 			// The full list of modified files is not available, and the
 			// graph does not include DEPSed file changes anyway.
