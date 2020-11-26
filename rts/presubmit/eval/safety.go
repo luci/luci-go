@@ -143,14 +143,19 @@ func (e *safetyEval) eval(ctx context.Context) error {
 				return errors.Annotate(err, "failed to process rejection %q", rej).Err()
 			}
 
-			// All tests were skipped => the rejection is lost.
-			lostRejection := true
-			for _, dist := range e.out.TestVariantDistances {
-				if dist <= e.MaxDistance {
-					lostRejection = false
-					break
+			// Compute affectedness for the entire rejection.
+			// The rejection is preserved if at least one test run, so find the
+			// closest test and the highest-ranked test.
+			rejAffectedness := Affectedness{Distance: math.Inf(1)}
+			for _, af := range e.out.TestVariantAffectedness {
+				if rejAffectedness.Distance > af.Distance {
+					rejAffectedness.Distance = af.Distance
+				}
+				if rejAffectedness.Rank < af.Rank {
+					rejAffectedness.Rank = af.Rank
 				}
 			}
+			preservedRejection := e.shouldRun(rejAffectedness)
 
 			e.mu.Lock()
 			cr.TotalRejections++
@@ -158,11 +163,11 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			if eligible {
 				cr.EligibleRejections++
 				tr.EligibleFailures += len(rej.FailedTestVariants)
-				if lostRejection {
+				if !preservedRejection {
 					cr.LostRejections = append(cr.LostRejections, rej)
 				}
-				for i, dist := range e.out.TestVariantDistances {
-					if dist > e.MaxDistance {
+				for i, af := range e.out.TestVariantAffectedness {
+					if !e.shouldRun(af) {
 						tr.LostFailures = append(tr.LostFailures, LostTestFailure{
 							Rejection: rej,
 							// Note: this assumes that in.TestVariants == rej.FailedTestVariants
@@ -175,7 +180,7 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			e.maybeReportProgress(ctx)
 			e.mu.Unlock()
 
-			if eligible && lostRejection && e.LogLostRejections {
+			if eligible && !preservedRejection && e.LogLostRejections {
 				buf.Reset()
 				printLostRejection(p, rej)
 				logging.Infof(ctx, "%s", buf.Bytes())
@@ -197,12 +202,12 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 		TestVariants: rej.FailedTestVariants,
 	}
 	in.ensureChangedFilesInclude(rej.Patchsets...)
-	if cap(e.out.TestVariantDistances) < len(in.TestVariants) {
-		e.out.TestVariantDistances = make([]float64, len(in.TestVariants))
+	if cap(e.out.TestVariantAffectedness) < len(in.TestVariants) {
+		e.out.TestVariantAffectedness = make([]Affectedness, len(in.TestVariants))
 	} else {
-		e.out.TestVariantDistances = e.out.TestVariantDistances[:len(in.TestVariants)]
-		for i := range e.out.TestVariantDistances {
-			e.out.TestVariantDistances[i] = 0
+		e.out.TestVariantAffectedness = e.out.TestVariantAffectedness[:len(in.TestVariants)]
+		for i := range e.out.TestVariantAffectedness {
+			e.out.TestVariantAffectedness[i] = Affectedness{}
 		}
 	}
 	if err := e.Algorithm(ctx, in, &e.out); err != nil {
