@@ -70,6 +70,30 @@
       },
       "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31c57ee2_482402be",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-26T04:38:41Z",
+      "side": 1,
+      "message": "I agree. I think that 1 month is probably a bit too short. I think a period of 2 months balance the need to migrate users to the new build page without frustrating the users too much. We may combine it with other approaches to urge users to use the new build page. I will make the change.\n\nBut from the users\u0027 stand point, I think they may not be necessarily aware that we are using cookies to store their preferences (we may very well use datastore, etc... to persist their pref). So I guess it may come off as a surprise to them when the cookie expires. Perhaps we should make it more clear, like changing the text to \u0027Switch to use legacy page for 2 months\u0027, or things like that.",
+      "parentUuid": "a5deb199_65be5d64",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
