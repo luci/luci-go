@@ -118,6 +118,30 @@
       },
       "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "778dbaba_ae31dbf1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-11-26T05:41:40Z",
+      "side": 1,
+      "message": "Set the cookies to 1 year",
+      "parentUuid": "901af74b_a327c5fe",
+      "range": {
+        "startLine": 208,
+        "startChar": 76,
+        "endLine": 208,
+        "endChar": 110
+      },
+      "revId": "3b32e289cfbc3c73b3a72b7d81ca9f2de37c28e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
