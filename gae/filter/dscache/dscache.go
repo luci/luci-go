@@ -15,6 +15,7 @@
 package dscache
 
 import (
+	"bytes"
 	"context"
 	"time"
 )
@@ -94,8 +95,10 @@ type CacheItem interface {
 
 	// PromoteToData converts this lock item into a data item.
 	//
+	// `buf` is guaranteed to be from Cache.AllocBuffer.
+	//
 	// Panics if self is not a lock item.
-	PromoteToData(data []byte, exp time.Duration)
+	PromoteToData(buf *bytes.Buffer, exp time.Duration)
 
 	// PromoteToIndefiniteLock converts this lock into an indefinite lock.
 	//
@@ -149,4 +152,12 @@ type Cache interface {
 	//
 	// Errors are logged, but ignored.
 	CompareAndSwap(ctx context.Context, items []CacheItem) error
+
+	// AllocBuffer allocates a buffer to hold a serialized entity.
+	//
+	// The returned buffer may have some data already written to it. It should
+	// be preserved by the caller. This buffer is eventually passed to
+	// CacheItem's PromoteToData, which expects to find the originally written
+	// data there.
+	AllocBuffer(cap int) *bytes.Buffer
 }

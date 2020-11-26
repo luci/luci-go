@@ -15,6 +15,7 @@
 package dscache
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -108,6 +109,10 @@ func (memcacheImpl) CompareAndSwap(ctx context.Context, items []CacheItem) error
 	return memcache.CompareAndSwap(ctx, mcItems...)
 }
 
+func (memcacheImpl) AllocBuffer(cap int) *bytes.Buffer {
+	return bytes.NewBuffer(make([]byte, 0, cap))
+}
+
 // Implement CacheItem interface for memcacheItem.
 
 func (m memcacheItem) Key() string {
@@ -128,13 +133,13 @@ func (m memcacheItem) Data() []byte {
 	return nil
 }
 
-func (m memcacheItem) PromoteToData(data []byte, exp time.Duration) {
+func (m memcacheItem) PromoteToData(data *bytes.Buffer, exp time.Duration) {
 	if m.item.Flags() != itemFlagHasLock {
 		panic("only locks should be promoted")
 	}
 	m.item.SetFlags(itemFlagHasData)
 	m.item.SetExpiration(exp)
-	m.item.SetValue(data)
+	m.item.SetValue(data.Bytes())
 }
 
 func (m memcacheItem) PromoteToIndefiniteLock() {
