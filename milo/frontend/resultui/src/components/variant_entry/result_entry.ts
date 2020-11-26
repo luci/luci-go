@@ -17,11 +17,10 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import '../../context/artifact/artifact_provider';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
@@ -37,7 +36,6 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
   @observable.ref appState!: AppState;
-  @observable.ref invocationState!: InvocationState;
 
   @observable.ref private _expanded = false;
   @computed get expanded() { return this._expanded; }
@@ -53,7 +51,23 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref private tagExpanded = false;
 
   @computed
-  private get artifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
+  private get parentInvName() {
+    return /^(invocations\/.+?)\/.+$/.exec(this.testResult.name)![1];
+  }
+
+  @computed
+  private get parentInvType() {
+    if (this.parentInvName.startsWith('build-')) {
+      return 'Buildbucket build';
+    }
+    if (this.parentInvName.startsWith('task-')) {
+      return 'Swarming task';
+    }
+    return 'invocation';
+  }
+
+  @computed
+  private get resultArtifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
     if (!this.appState.resultDb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
@@ -62,20 +76,31 @@ export class ResultEntryElement extends MobxLitElement {
     return fromPromise(this.appState.resultDb.listArtifacts({parent: this.testResult.name}));
   }
 
-  @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
+  @computed private get resultArtifacts() {
+    return this.resultArtifactsRes.state === FULFILLED
+      ? this.resultArtifactsRes.value.artifacts || []
+      : [];
+  }
+
+  @computed private get invArtifacts() {
+    if (!this.appState.resultDb) {
+      return [];
+    }
+    return this.appState.resultDb.getCachedArtifactsOfInv(this.parentInvName) || [];
+  }
 
   @computed private get artifactsMapping() {
-    return new Map(this.artifacts.map(obj => [obj.artifactId, obj]));
+    return new Map(this.resultArtifacts.map(obj => [obj.artifactId, obj]));
   }
 
   @computed private get textDiffArtifact() {
-    return this.artifacts.find((a) => a.artifactId === 'text_diff');
+    return this.resultArtifacts.find((a) => a.artifactId === 'text_diff');
   }
   @computed private get imageDiffArtifactGroup() {
     return {
-      'expected': this.artifacts.find((a) => a.artifactId === 'expected_image'),
-      'actual': this.artifacts.find((a) => a.artifactId === 'actual_image'),
-      'diff': this.artifacts.find((a) => a.artifactId === 'image_diff'),
+      'expected': this.resultArtifacts.find((a) => a.artifactId === 'expected_image'),
+      'actual': this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
+      'diff': this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
     };
   }
 
@@ -125,41 +150,28 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  private renderResultLevelArtifacts() {
-    if (this.artifacts.length === 0) {
+  private renderArtifacts() {
+    const artifactCount = this.resultArtifacts.length + this.invArtifacts.length;
+    if (artifactCount === 0) {
       return html``;
     }
 
     return html`
       <milo-expandable-entry .hideContentRuler=${true}>
         <span slot="header">
-          Artifacts: <span class="greyed-out">${this.artifacts.length}</span>
+          Artifacts: <span class="greyed-out">${artifactCount}</span>
         </span>
-        <ul id="artifact-list" slot="content">
-          ${this.artifacts.map((artifact) => html`
+        <ul slot="content">
+          ${this.resultArtifacts.map((artifact) => html`
           <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
           <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
           `)}
-        </ul>
-      </milo-expandable-entry>
-    `;
-  }
-
-  private renderInvLevelArtifacts() {
-    const invArtifacts = this.invocationState.invArtifacts;
-    if (invArtifacts.length === 0) {
-      return html``;
-    }
-
-    return html`
-      <milo-expandable-entry .hideContentRuler=${true}>
-        <span slot="header">
-          Invocation Artifacts: <span class="greyed-out">${invArtifacts.length}</span>
-        </span>
-        <ul id="artifact-list" slot="content">
-          ${invArtifacts.map(({invId, artifact}) => html`
+          ${this.invArtifacts.map((artifact) => html`
           <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-          <li><a href=${artifact.fetchUrl} target="_blank">${invId}/${artifact.artifactId}</a></li>
+          <li>
+            <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
+            (from entire ${this.parentInvType})
+          </li>
           `)}
         </ul>
       </milo-expandable-entry>
@@ -184,8 +196,7 @@ export class ResultEntryElement extends MobxLitElement {
       >
       </milo-image-diff-artifact>
       `}
-      ${this.renderResultLevelArtifacts()}
-      ${this.renderInvLevelArtifacts()}
+      ${this.renderArtifacts()}
       ${this.renderTags()}
     `;
   }
@@ -259,8 +270,6 @@ export class ResultEntryElement extends MobxLitElement {
 
 customElement('milo-result-entry')(
   consumeAppState(
-    consumeInvocationState(
-      ResultEntryElement,
-    ),
+    ResultEntryElement,
   ),
 );
