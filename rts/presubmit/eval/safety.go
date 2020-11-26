@@ -145,8 +145,8 @@ func (e *safetyEval) eval(ctx context.Context) error {
 
 			// All tests were skipped => the rejection is lost.
 			lostRejection := true
-			for _, dist := range e.out.TestVariantDistances {
-				if dist <= e.MaxDistance {
+			for _, s := range e.out.TestVariantSelections {
+				if e.shouldRun(s) {
 					lostRejection = false
 					break
 				}
@@ -161,8 +161,8 @@ func (e *safetyEval) eval(ctx context.Context) error {
 				if lostRejection {
 					cr.LostRejections = append(cr.LostRejections, rej)
 				}
-				for i, dist := range e.out.TestVariantDistances {
-					if dist > e.MaxDistance {
+				for i, s := range e.out.TestVariantSelections {
+					if !e.shouldRun(s) {
 						tr.LostFailures = append(tr.LostFailures, LostTestFailure{
 							Rejection: rej,
 							// Note: this assumes that in.TestVariants == rej.FailedTestVariants
@@ -197,12 +197,12 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 		TestVariants: rej.FailedTestVariants,
 	}
 	in.ensureChangedFilesInclude(rej.Patchsets...)
-	if cap(e.out.TestVariantDistances) < len(in.TestVariants) {
-		e.out.TestVariantDistances = make([]float64, len(in.TestVariants))
+	if cap(e.out.TestVariantSelections) < len(in.TestVariants) {
+		e.out.TestVariantSelections = make([]TestSelection, len(in.TestVariants))
 	} else {
-		e.out.TestVariantDistances = e.out.TestVariantDistances[:len(in.TestVariants)]
-		for i := range e.out.TestVariantDistances {
-			e.out.TestVariantDistances[i] = 0
+		e.out.TestVariantSelections = e.out.TestVariantSelections[:len(in.TestVariants)]
+		for i := range e.out.TestVariantSelections {
+			e.out.TestVariantSelections[i] = TestSelection{}
 		}
 	}
 	if err := e.Algorithm(ctx, in, &e.out); err != nil {
