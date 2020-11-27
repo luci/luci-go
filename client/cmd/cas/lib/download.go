@@ -250,7 +250,10 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			return nil
 		})
 	}
-	err = eg.Wait()
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
 
 	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
 
@@ -272,7 +275,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		}
 	}
 
-	return err
+	return nil
 }
 
 func (r *downloadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
