@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c68203c_a5faa217",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-27T08:09:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "516ee37a_0262ab2a",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 10
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b611de5f_21aa26dc",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f57c3ca_b4163ef1",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-27T08:09:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b611de5f_21aa26dc",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 65
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ed8e60a1_23d6bb50",
@@ -60,6 +108,30 @@
       "writtenOn": "2020-11-25T21:13:12Z",
       "side": 1,
       "message": "This is more than close.\nShall we separate operations? e.g. clean",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 2
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c0c5175_55d0ee98",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-27T08:09:52Z",
+      "side": 1,
+      "message": "let me handle this in upper layer (cas client or run_isolated.py)",
+      "parentUuid": "ed8e60a1_23d6bb50",
       "range": {
         "startLine": 70,
         "startChar": 0,
@@ -111,6 +183,54 @@
         "startChar": 21,
         "endLine": 81,
         "endChar": 24
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d050ea43_8c6573df",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-27T08:09:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0eed03b5_89185f7a",
+      "range": {
+        "startLine": 81,
+        "startChar": 21,
+        "endLine": 81,
+        "endChar": 24
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08dec026_ed67a623",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-27T08:09:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3aa96c40_74fb7c96",
+      "range": {
+        "startLine": 81,
+        "startChar": 25,
+        "endLine": 81,
+        "endChar": 28
       },
       "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
