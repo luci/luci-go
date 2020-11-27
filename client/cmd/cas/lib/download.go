@@ -116,6 +116,7 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	ch := make(chan struct{}, runtime.NumCPU())
 
 	for _, dst := range dsts {
+		dst := dst
 		src := srcs[dst.Digest]
 		ch <- struct{}{}
 		eg.Go(func() (err error) {
