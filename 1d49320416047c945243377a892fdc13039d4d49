@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fad3baa_c6357373",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-27T09:50:54Z",
+      "side": 1,
+      "message": "Cool!",
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98b38767_11e5a002",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-27T09:50:54Z",
+      "side": 1,
+      "message": "Add a comment of why?",
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b0f00b2_7af2b879",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-27T09:50:54Z",
+      "side": 1,
+      "message": "nit: dir !\u003d root, since dir is the variable here?",
+      "range": {
+        "startLine": 105,
+        "startChar": 6,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
