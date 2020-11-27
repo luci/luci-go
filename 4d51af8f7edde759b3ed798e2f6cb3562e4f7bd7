@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff3c000d_b1a83238",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-27T10:06:44Z",
+      "side": 1,
+      "message": "I have a few questions regarding this approach:\n\n1. Reading all the small files to RAM could lead to OOM. I think it\u0027s better to have a max cap on the small files buffer, and copy the files by batches.\n2. I think we should consider both the file size and the number of times it\u0027s been duplicated. It doesn\u0027t really make sense to read files into the RAM if it\u0027s not duplicated?\n3. unit tests?",
+      "revId": "4d51af8f7edde759b3ed798e2f6cb3562e4f7bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
