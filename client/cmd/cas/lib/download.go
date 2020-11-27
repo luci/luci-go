@@ -18,10 +18,12 @@ import (
 	"context"
 	"crypto"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -110,12 +112,26 @@ func createDirectories(outputs map[string]*client.TreeOutput) error {
 }
 
 func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.Digest]*client.TreeOutput) error {
+	logger := logging.Get(ctx)
 	eg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
 
+	const smallFileSize = 16 * 1024 * 1024 // 16MiB
+
+	// copy small files via memory to avoid duplicate file read.
+	var smallFiles []*client.TreeOutput
+
+	start := time.Now()
+
+	// copy large files first.
 	for _, dst := range dsts {
+		if dst.Digest.Size <= smallFileSize {
+			smallFiles = append(smallFiles, dst)
+			continue
+		}
+
 		dst := dst
 		src := srcs[dst.Digest]
 		ch <- struct{}{}
@@ -133,8 +149,85 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 			return nil
 		})
 	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
 
-	return eg.Wait()
+	logger.Infof("copy large files took %s", time.Since(start))
+
+	// read files to memory
+
+	start = time.Now()
+
+	var mu sync.Mutex
+	contents := make(map[digest.Digest][]byte)
+
+	sort.Slice(smallFiles, func(i, j int) bool {
+		return smallFiles[i].Digest.Hash < smallFiles[j].Digest.Hash
+	})
+
+	for i, file := range smallFiles {
+		if i > 0 && smallFiles[i-1].Digest == file.Digest {
+			continue
+		}
+		file := file
+		ch <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ch }()
+			src := srcs[file.Digest]
+			b, err := ioutil.ReadFile(src.Path)
+			if err != nil {
+				return errors.Annotate(err, "failed to read file %s", src.Path).Err()
+			}
+			mu.Lock()
+			contents[file.Digest] = b
+			mu.Unlock()
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	logger.Infof("read small files took %s", time.Since(start))
+
+	// write files from memory
+
+	start = time.Now()
+
+	sort.Slice(smallFiles, func(i, j int) bool {
+		return smallFiles[i].Path < smallFiles[j].Path
+	})
+
+	for _, file := range smallFiles {
+		file := file
+		ch <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ch }()
+
+			mode := 0o600
+			if file.IsExecutable {
+				mode = 0o700
+			}
+			b, ok := contents[file.Digest]
+			if !ok {
+				return errors.Reason("content not found for %s", file.Path).Err()
+			}
+
+			if err := ioutil.WriteFile(file.Path, b, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to write file %s", file.Path).Err()
+			}
+
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	logger.Infof("write small files took %s", time.Since(start))
+
+	return nil
 }
 
 // doDownload downloads directory tree from the CAS server.
