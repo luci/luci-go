@@ -190,6 +190,8 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	if err := createDirectories(outputs); err != nil {
 		return err
 	}
+	logger.Infof("finish createDirectories, took %s", time.Since(start))
+	start = time.Now()
 
 	// Files have the same digest are downloaded only once, so we need to
 	// copy duplicates files later.
