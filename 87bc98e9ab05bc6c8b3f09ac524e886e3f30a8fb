@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6060453_aa8becd3",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-27T07:14:18Z",
+      "side": 1,
+      "message": "this code should not be reached if build mask includes output.properties, but output properties is nil,\nso I think this check belongs to validation, while here we check only the mask.",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 264,
+        "endChar": 48
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f62b46bf_8163d2b3",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-27T07:14:18Z",
+      "side": 1,
+      "message": "looks magical. should be a constant.\n\nstepping back, in https://godoc.org/go.chromium.org/luci/gae/service/datastore I see examples like \"$id,1\" which probably means that you can declare \"1\" once and for all. Would that work? If yes, this change probably belongs to a separate (parent?) CL",
+      "range": {
+        "startLine": 266,
+        "startChar": 11,
+        "endLine": 266,
+        "endChar": 12
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b74b9bcd_52290860",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-27T07:14:18Z",
+      "side": 1,
+      "message": "these puts are serial, and separate RPCs. Why not make them one, in the end?",
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db38e039_fc62b2b7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-27T07:14:18Z",
+      "side": 1,
+      "message": "build id is same for the entire UpdateBuild RPC, i.e. not specific to this code.\nConsider logging build id in the beginning of UpdateBuild instead.",
+      "range": {
+        "startLine": 271,
+        "startChar": 54,
+        "endLine": 271,
+        "endChar": 58
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d23eb59a_d9f739ed",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-27T07:14:18Z",
+      "side": 1,
+      "message": "this one is odd here. Nothing in this function relies on this line, and instead another function (updateEntities) does, and this is fairly implicit.\nAlso updateEntities also calls KeyForObj. Perhaps this line can be moved into updateEntities, and make only one KeyForObj call?",
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
