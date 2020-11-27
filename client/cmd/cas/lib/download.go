@@ -113,9 +113,10 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	eg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O operations.
-	ch := make(chan struct{}, runtime.NumCPU())
+	ch := make(chan struct{}, runtime.NumCPU()*2)
 
 	for _, dst := range dsts {
+		dst := dst
 		src := srcs[dst.Digest]
 		ch <- struct{}{}
 		eg.Go(func() (err error) {
