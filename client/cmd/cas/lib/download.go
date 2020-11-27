@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -115,7 +116,15 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
 
+	// Copy small files via memory to avoid duplicate file read.
+	smallFiles := make(map[digest.Digest][]*client.TreeOutput)
+
 	for _, dst := range dsts {
+		if dst.Digest.Size < 128*1024*1024 {
+			smallFiles[dst.Digest] = append(smallFiles[dst.Digest], dst)
+			continue
+		}
+
 		dst := dst
 		src := srcs[dst.Digest]
 		ch <- struct{}{}
@@ -128,6 +137,33 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 
 			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
 				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
+			}
+
+			return nil
+		})
+	}
+
+	for dg, files := range smallFiles {
+		dg, files := dg, files
+		ch <- struct{}{}
+		src := srcs[dg]
+		eg.Go(func() error {
+			defer func() { <-ch }()
+
+			b, err := ioutil.ReadFile(src.Path)
+			if err != nil {
+				return errors.Annotate(err, "failed to read file %s", src.Path).Err()
+			}
+
+			for _, file := range files {
+				mode := 0o600
+				if file.IsExecutable {
+					mode = 0o700
+				}
+
+				if err := ioutil.WriteFile(file.Path, b, os.FileMode(mode)); err != nil {
+					return errors.Annotate(err, "failed to write file %s", file.Path).Err()
+				}
 			}
 
 			return nil
