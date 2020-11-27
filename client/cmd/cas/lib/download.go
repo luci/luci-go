@@ -87,25 +87,74 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func createDirectories(outputs map[string]*client.TreeOutput) error {
-	dirs := make([]string, 0, len(outputs))
+func createDirectories(ctx context.Context, outputs map[string]*client.TreeOutput) error {
+	logger := logging.Get(ctx)
+
+	start := time.Now()
+	dirset := make(map[string]struct{})
 	for path, output := range outputs {
+		var dir string
 		if output.IsEmptyDirectory {
-			dirs = append(dirs, path)
+			dir = path
 		} else {
-			dirs = append(dirs, filepath.Dir(path))
+			dir = filepath.Dir(path)
+		}
+
+		for {
+			if _, ok := dirset[dir]; ok {
+				break
+			}
+			dirset[dir] = struct{}{}
+			dir = filepath.Dir(dir)
 		}
 	}
+
+	dirs := make([]string, 0, len(dirset))
+	for dir := range dirset {
+		dirs = append(dirs, dir)
+	}
+
 	sort.Strings(dirs)
 
-	for i, dir := range dirs {
-		if i > 0 && dirs[i-1] == dir {
-			continue
+	logger.Infof("preprocess took %s", time.Since(start))
+	start = time.Now()
+
+	var eg errgroup.Group
+	// limit the number of concurrent I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	for len(dirs) > 0 {
+		chunkSize := 1024
+		if len(dirs) < chunkSize {
+			chunkSize = len(dirs)
 		}
-		if err := os.MkdirAll(dir, 0o700); err != nil {
-			return errors.Annotate(err, "failed to create directory").Err()
-		}
+
+		chunk := dirs[:chunkSize]
+		ch <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ch }()
+
+			if err := os.MkdirAll(chunk[0], 0o700); err != nil {
+				return errors.Annotate(err, "failed to create dir").Err()
+			}
+
+			for _, dir := range chunk[1:] {
+				if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
+					return errors.Annotate(err, "failed to create directory").Err()
+				}
+			}
+
+			return nil
+		})
+		dirs = dirs[chunkSize:]
 	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	logger.Infof("dir creation took %s", time.Since(start))
+
 	return nil
 }
 
@@ -187,7 +236,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
-	if err := createDirectories(outputs); err != nil {
+	if err := createDirectories(ctx, outputs); err != nil {
 		return err
 	}
 	logger.Infof("finish createDirectories, took %s", time.Since(start))
