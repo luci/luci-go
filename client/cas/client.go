@@ -56,7 +56,7 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).
-		casConcurrency = runtime.NumCPU()
+		casConcurrency = runtime.NumCPU() * 3 / 2
 	}
 
 	cl, err := client.NewClient(ctx, instance,
