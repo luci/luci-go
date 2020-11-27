@@ -109,6 +109,33 @@ func createDirectories(outputs map[string]*client.TreeOutput) error {
 	return nil
 }
 
+func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.Digest]*client.TreeOutput) error {
+	eg, _ := errgroup.WithContext(ctx)
+
+	// limit the number of concurrent I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	for _, dst := range dsts {
+		src := srcs[dst.Digest]
+		ch <- struct{}{}
+		eg.Go(func() (err error) {
+			defer func() { <-ch }()
+			mode := 0o600
+			if dst.IsExecutable {
+				mode = 0o700
+			}
+
+			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
+			}
+
+			return nil
+		})
+	}
+
+	return eg.Wait()
+}
+
 // doDownload downloads directory tree from the CAS server.
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
@@ -227,34 +254,9 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 
 	start = time.Now()
-	eg, _ := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent I/O threads.
-	ch := make(chan struct{}, runtime.NumCPU())
-
-	for _, dup := range dups {
-		src := to[dup.Digest]
-		dst := dup
-		ch <- struct{}{}
-		eg.Go(func() (err error) {
-			defer func() { <-ch }()
-			mode := 0o600
-			if dst.IsExecutable {
-				mode = 0o700
-			}
-
-			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
-				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
-			}
-
-			return nil
-		})
-	}
-
-	if err := eg.Wait(); err != nil {
+	if err := copyFiles(ctx, dups, to); err != nil {
 		return err
 	}
-
 	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
 
 	if dsj := r.dumpStatsJSON; dsj != "" {
