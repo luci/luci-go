@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cfabd918_c48a1550",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:51:36Z",
+      "side": 1,
+      "message": "Even though they\u0027re private, I think that the methods `fetch`, `fetchInner`, and some others below are long enough that they could use a function comment.",
+      "range": {
+        "startLine": 109,
+        "startChar": 27,
+        "endLine": 109,
+        "endChar": 32
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc822919_9f117ee5",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:51:36Z",
+      "side": 1,
+      "message": "taken",
+      "range": {
+        "startLine": 157,
+        "startChar": 18,
+        "endLine": 157,
+        "endChar": 22
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac9ec162_1f7b3d22",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:51:36Z",
+      "side": 1,
+      "message": "Looks like this comment needs to be updated; it doesn\u0027t return a slice, and it also doesn\u0027t modify the input slice.",
+      "range": {
+        "startLine": 255,
+        "startChar": 32,
+        "endLine": 255,
+        "endChar": 49
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
