@@ -16,6 +16,24 @@
       "message": "should the level depend on whether err!\u003dnil?",
       "revId": "0e7112ab6e53ba8c1122c11eb3e05c4d08f5d420",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd604433_3b2d2949",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-11-30T23:24:32Z",
+      "side": 1,
+      "message": "yes. https://crrev.com/c/2566930 sent.",
+      "parentUuid": "97dc5d7a_b158aafe",
+      "revId": "0e7112ab6e53ba8c1122c11eb3e05c4d08f5d420",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
