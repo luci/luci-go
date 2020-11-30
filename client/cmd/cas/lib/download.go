@@ -124,14 +124,38 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 	logger.Infof("preprocess took %s", time.Since(start))
 	start = time.Now()
 
-	if err := os.MkdirAll(root, 0o700); err != nil {
-		return errors.Annotate(err, "failed to create root dir").Err()
+	var eg errgroup.Group
+	// limit the number of concurrent I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	for len(dirs) > 0 {
+		chunkSize := 1024
+		if len(dirs) < chunkSize {
+			chunkSize = len(dirs)
+		}
+
+		chunk := dirs[:chunkSize]
+		ch <- struct{}{}
+		eg.Go(func() error {
+			defer func() { <-ch }()
+
+			if err := os.MkdirAll(chunk[0], 0o700); err != nil {
+				return errors.Annotate(err, "failed to create dir").Err()
+			}
+
+			for _, dir := range chunk[1:] {
+				if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
+					return errors.Annotate(err, "failed to create directory").Err()
+				}
+			}
+
+			return nil
+		})
+		dirs = dirs[chunkSize:]
 	}
 
-	for _, dir := range dirs {
-		if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
-			return errors.Annotate(err, "failed to create directory").Err()
-		}
+	if err := eg.Wait(); err != nil {
+		return err
 	}
 
 	logger.Infof("dir creation took %s", time.Since(start))
