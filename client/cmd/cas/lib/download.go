@@ -84,28 +84,58 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
 
+	r.dir = filepath.Clean(r.dir)
+
 	return nil
 }
 
-func createDirectories(outputs map[string]*client.TreeOutput) error {
-	dirs := make([]string, 0, len(outputs))
+func createDirectories(ctx context.Context, root string, outputs map[string]*client.TreeOutput) error {
+	logger := logging.Get(ctx)
+
+	start := time.Now()
+
+	dirset := make(map[string]struct{})
+
+	// Extract unique directory paths for optimization.
 	for path, output := range outputs {
+		var dir string
 		if output.IsEmptyDirectory {
-			dirs = append(dirs, path)
+			dir = path
 		} else {
-			dirs = append(dirs, filepath.Dir(path))
+			dir = filepath.Dir(path)
+		}
+
+		for dir != root {
+			if _, ok := dirset[dir]; ok {
+				break
+			}
+			dirset[dir] = struct{}{}
+			dir = filepath.Dir(dir)
 		}
 	}
+
+	dirs := make([]string, 0, len(dirset))
+	for dir := range dirset {
+		dirs = append(dirs, dir)
+	}
+
 	sort.Strings(dirs)
 
-	for i, dir := range dirs {
-		if i > 0 && dirs[i-1] == dir {
-			continue
-		}
-		if err := os.MkdirAll(dir, 0o700); err != nil {
+	logger.Infof("preprocess took %s", time.Since(start))
+	start = time.Now()
+
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		return errors.Annotate(err, "failed to create root dir").Err()
+	}
+
+	for _, dir := range dirs {
+		if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
 			return errors.Annotate(err, "failed to create directory").Err()
 		}
 	}
+
+	logger.Infof("dir creation took %s", time.Since(start))
+
 	return nil
 }
 
@@ -187,7 +217,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
-	if err := createDirectories(outputs); err != nil {
+	if err := createDirectories(ctx, r.dir, outputs); err != nil {
 		return err
 	}
 	logger.Infof("finish createDirectories, took %s", time.Since(start))
