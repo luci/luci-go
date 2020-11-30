@@ -45,6 +45,46 @@
       },
       "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83092edc_2a32def8",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T07:08:48Z",
+      "side": 1,
+      "message": "doDownload() is already long. Can you consider extracting small logics?\n- copySmallFilesFromCache()\n- downloadAndCache()\n...",
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70586fba_774d0161",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T07:08:48Z",
+      "side": 1,
+      "message": "I guess this part can be extracted as a function? e.g. cacheOutput(...)",
+      "range": {
+        "startLine": 375,
+        "startChar": 0,
+        "endLine": 411,
+        "endChar": 4
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
