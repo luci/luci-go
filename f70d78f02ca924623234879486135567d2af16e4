@@ -1,0 +1,262 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21b96333_351ad5f1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "LGTM although I didn\u0027t look in detail at some parts of it, Yiwei should review too.",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56725493_a55eb506",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "Can this line be removed?",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "652f8da3_8d65375a",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "Gerrit",
+      "range": {
+        "startLine": 119,
+        "startChar": 29,
+        "endLine": 119,
+        "endChar": 34
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70813cd7_a0a38984",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "i.e.",
+      "range": {
+        "startLine": 120,
+        "startChar": 41,
+        "endLine": 120,
+        "endChar": 43
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a43844f5_5a3286dd",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "chooses",
+      "range": {
+        "startLine": 151,
+        "startChar": 17,
+        "endLine": 151,
+        "endChar": 23
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bea15041_2b6bf6ae",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "How big of a number is int64(pollInterval)? It must be greater than (1 \u003c\u003c 32), I guess?",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2976b1ef_74125f13",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "or maybe \"supersedes\"",
+      "range": {
+        "startLine": 213,
+        "startChar": 18,
+        "endLine": 213,
+        "endChar": 24
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e37495c_1c089478",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 42,
+        "startChar": 40,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19e733e5_470d11d4",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "projectOffset is a nice way of avoiding bursts of requests, and this is an interesting and nicew way of testing the uniform-ish-ness of it",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 53
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dd25791_44d466d0",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "Optionally + \"/\"",
+      "range": {
+        "startLine": 190,
+        "startChar": 24,
+        "endLine": 190,
+        "endChar": 29
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc2157e3_eb6002f8",
+        "filename": "cv/internal/gerrit/poller/tasks.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 28,
+        "startChar": 12,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "625465c7_4f5740e0",
+        "filename": "cv/internal/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:08:29Z",
+      "side": 1,
+      "message": "severe",
+      "range": {
+        "startLine": 23,
+        "startChar": 36,
+        "endLine": 23,
+        "endChar": 43
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
