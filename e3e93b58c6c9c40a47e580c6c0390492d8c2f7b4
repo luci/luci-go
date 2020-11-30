@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5477c71_16e19335",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-30T05:51:29Z",
+      "side": 1,
+      "message": "since the slice is always empty at this point, suggest:\n\nblamelistPins \u003d []string{protoutil.GitilesBuildSet(gc)}",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 70
+      },
+      "revId": "e3e93b58c6c9c40a47e580c6c0390492d8c2f7b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a92d192e_0315956a",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-11-30T05:51:29Z",
+      "side": 1,
+      "message": "Out of curiosity, what\u0027s the reason for adding this to BuildSummary (which was designed for rendering consoles) rather than just reading the output properties directly in Typescript?\n\nIf there\u0027s a good reason to cache it here, let\u0027s update the BuildSummary documentation accordingly. (It probably needs updating anyway since it references a bunch of obsolete Buildbot stuff).",
+      "range": {
+        "startLine": 123,
+        "startChar": 1,
+        "endLine": 123,
+        "endChar": 23
+      },
+      "revId": "e3e93b58c6c9c40a47e580c6c0390492d8c2f7b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
