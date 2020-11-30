@@ -30,9 +30,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -180,8 +183,8 @@ func TestPoller(t *testing.T) {
 
 		const lProject = "chromium"
 		const gHost = "chromium-review.example.com"
-		const gRepo = "infra/inra"
-		epoch := testclock.TestRecentTimeLocal
+		const gRepo = "infra/infra"
+		var epoch = time.Date(2020, time.February, 2, 10, 30, 00, 0, time.Local)
 		ctx, tclock := testclock.UseTime(topCtx, epoch)
 		tclock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
 			// Move fake time forward whenever someone's waiting for it.
@@ -194,6 +197,9 @@ func TestPoller(t *testing.T) {
 		if testing.Verbose() {
 			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 		}
+		gfake := gf.Fake{}
+		ctx = gfake.Install(ctx)
+
 		ctx, tqScheduler := tq.TestingContext(ctx, nil)
 		testcfg := config.TestController{}
 
@@ -214,21 +220,118 @@ func TestPoller(t *testing.T) {
 		Convey("with existing project config, establishes task chain", func() {
 			testcfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			So(Poke(ctx, lProject), ShouldBeNil)
-			for i := 0; i < 3; i++ {
-				// Execute next poll task.
+			// Execute next poll task, which should result in full poll.
+			tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+			st := mustGetState(lProject)
+			So(st.EVersion, ShouldEqual, 1)
+			fullPollStamp := timestamppb.New(tclock.Now())
+			So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+				Host:         gHost,
+				OrProjects:   []string{gRepo},
+				LastFullTime: fullPollStamp,
+			}})
+			// Ensure follow up task has been created.
+			So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
+
+			Convey("with CLs", func() {
+				getCL := func(host string, change int) *changelist.CL {
+					eid, err := changelist.GobID(host, int64(change))
+					So(err, ShouldBeNil)
+					cl, err := eid.Get(ctx)
+					if err == datastore.ErrNoSuchEntity {
+						return nil
+					}
+					So(err, ShouldBeNil)
+					return cl
+				}
+				gfake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
+					gf.CI(31, gf.CQ(+2), gf.Project(gRepo), gf.Updated(tclock.Now())),
+					// This CL was updated about the same time as last poll. It shouldbe
+					// discovered during next incremental poll.
+					gf.CI(32, gf.CQ(+1), gf.Project(gRepo), gf.Updated(tclock.Now().Add(time.Second))),
+					// This suddently appearing CL won't be discovered until next full poll.
+					gf.CI(33, gf.CQ(+2), gf.Project(gRepo), gf.Updated(tclock.Now().Add(-time.Hour))),
+
+					// No CQ+1 or CQ+2 vote yet.
+					gf.CI(34, gf.Project(gRepo)),
+
+					// Wrong repo.
+					gf.CI(41, gf.CQ(+2), gf.Project("not-matched"), gf.Updated(tclock.Now())),
+				))
+
+				Convey("performs incremental polls", func() {
+					// Execute next poll task, it should be incremental.
+					tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+					st = mustGetState(lProject)
+					So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+						Host:         gHost,
+						OrProjects:   []string{gRepo},
+						LastFullTime: fullPollStamp,
+						LastIncrTime: timestamppb.New(tclock.Now()),
+					}})
+					// 1 for the future poll + 2 immediate to update CLs 31, 32.
+					So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1+2)
+					// Run all tasks.
+					tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+					// Due to CL update task de-dup, regardless of what next incremental
+					// poll discovered, there shouldn't more CL update tasks.
+					So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
+					// But there should be 2 CLs.
+					So(getCL(gHost, 31), ShouldNotBeNil)
+					So(getCL(gHost, 32), ShouldNotBeNil)
+					So(getCL(gHost, 33), ShouldBeNil)
+					So(getCL(gHost, 34), ShouldBeNil)
+
+					Convey("and full polls every fullPollInterval", func() {
+						So(fullPollInterval, ShouldBeGreaterThan, 2*pollInterval)
+						tclock.Add(fullPollInterval - 2*pollInterval)
+						// Update 2 changes in the mean time.
+						gfake.MutateChange(gHost, 34, func(c *gf.Change) {
+							gf.Updated(tclock.Now())(c.Info)
+							gf.CQ(+2)(c.Info)
+						})
+						gfake.MutateChange(gHost, 32, func(c *gf.Change) {
+							gf.Updated(tclock.Now())(c.Info)
+						})
+
+						tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+						st = mustGetState(lProject)
+						So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
+							Host:         gHost,
+							OrProjects:   []string{gRepo},
+							LastFullTime: timestamppb.New(tclock.Now()),
+						}})
+						// 1 for the future poll + 3 for CL for 33 and 34 and again 32.
+						So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 4)
+						tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+						So(getCL(gHost, 33), ShouldNotBeNil)
+						So(getCL(gHost, 34), ShouldNotBeNil)
+						So(getCL(gHost, 32).EVersion, ShouldEqual, 2) // was updated.
+					})
+				})
+			})
+			return
+
+			Convey("notices updated config and resets SubPollers state", func() {
+				before := mustGetState(lProject)
+				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
+				testcfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
 				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
-				// Ensure follow up task has been created.
-				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
-				st := mustGetState(lProject)
-				So(st.EVersion, ShouldEqual, i+1)
-				So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
-					// TODO(tandrii): assert subpollers state changed.
+				after := mustGetState(lProject)
+				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
+				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
 					{
-						Host:       gHost,
-						OrProjects: []string{gRepo},
+						Host:                gHost,
+						CommonProjectPrefix: "shared",
+						LastFullTime:        timestamppb.New(tclock.Now()),
+					},
+					{
+						Host:         gHost,
+						OrProjects:   []string{gRepo},
+						LastFullTime: timestamppb.New(tclock.Now()),
 					},
 				})
-			}
+			})
 
 			Convey("disabled project => remove poller state & stop task chain", func() {
 				testcfg.Disable(ctx, lProject)
@@ -237,25 +340,13 @@ func TestPoller(t *testing.T) {
 				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
 
-			Convey("notices updated config", func() {
-				before := mustGetState(lProject)
-				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
-				testcfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
+			Convey("deleted => remove poller state & stop task chain", func() {
+				testcfg.Delete(ctx, lProject)
 				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
-				after := mustGetState(lProject)
-				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
-				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
-					// TODO(tandrii): assert subpollers state changed.
-					{
-						Host:                gHost,
-						CommonProjectPrefix: "shared",
-					},
-					{
-						Host:       gHost,
-						OrProjects: []string{gRepo},
-					},
-				})
+				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 0)
+				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
+
 		})
 	})
 }

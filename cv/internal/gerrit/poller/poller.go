@@ -200,7 +200,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		for i, sp := range stateBefore.SubPollers.GetSubPollers() {
 			i, sp := i, sp
 			work <- func() error {
-				errs[i] = subpoll(ctx, sp)
+				errs[i] = subpoll(ctx, luciProject, sp)
 				return nil
 			}
 		}
@@ -236,12 +236,6 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 		return err
 	}
 	s.SubPollers = &SubPollers{SubPollers: partitionConfig(cgs)}
-	return nil
-}
-
-// subpoll queries Gerrit and updates the state of individual SubPoller.
-func subpoll(ctx context.Context, sp *SubPoller) error {
-	// TODO(tandrii): implement.
 	return nil
 }
 
