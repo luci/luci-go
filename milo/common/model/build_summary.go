@@ -116,6 +116,12 @@ type BuildSummary struct {
 	// See https://chromium.googlesource.com/infra/infra/+/HEAD/appengine/cr-buildbucket/doc/index.md#buildset-tag
 	BuildSet []string
 
+	// The gitiles commits associated with this Build, if any.
+	//
+	// Example:
+	//   commit/gitiles/<host>/<project/path>/+/<commit>
+	BlamelistPins []string
+
 	// Created is the time when the Build was first created. Due to pending
 	// queues, this may be substantially before Summary.Start.
 	Created time.Time
