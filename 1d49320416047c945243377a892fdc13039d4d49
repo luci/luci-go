@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ead81b51_2ab0f72f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T02:25:29Z",
+      "side": 1,
+      "message": "This improves Linux and Mac too.",
+      "parentUuid": "35398b11_c84f410d",
+      "range": {
+        "startLine": 9,
+        "startChar": 28,
+        "endLine": 9,
+        "endChar": 38
+      },
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8ed0fc1f_3d6669a1",
         "filename": "/COMMIT_MSG",
         "patchSetId": 8
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-30T00:50:37Z",
       "side": 1,
       "message": "Is this because there are extra checks in MkdirAll?",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 52
+      },
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1265e70d_caa20b77",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T02:25:29Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "8ed0fc1f_3d6669a1",
       "range": {
         "startLine": 10,
         "startChar": 0,
@@ -81,6 +129,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66c97a30_905f890f",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T02:25:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98b38767_11e5a002",
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6b0f00b2_7af2b879",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-11-27T09:50:54Z",
       "side": 1,
       "message": "nit: dir !\u003d root, since dir is the variable here?",
+      "range": {
+        "startLine": 105,
+        "startChar": 6,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "1d49320416047c945243377a892fdc13039d4d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1e6efed_ec8a51a3",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T02:25:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b0f00b2_7af2b879",
       "range": {
         "startLine": 105,
         "startChar": 6,
