@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50acdc3e_37481861",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T06:59:41Z",
+      "side": 1,
+      "message": "Why is the performance flipped on macOS?",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 33
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba19257d_8e9379dd",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T06:59:41Z",
+      "side": 1,
+      "message": "Can you elaborate in which situation callers want to provide custom cache file?\nCan it be hardcoded in the cas client?",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
