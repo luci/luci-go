@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "864a05a2_5f142762",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T08:10:18Z",
+      "side": 1,
+      "message": "Not sure. I think macOS bot doesn\u0027t have stable performance but let me not take care that here.\nhttps://chromium-swarm.appspot.com/task?id\u003d5030f18f5184ec10",
+      "parentUuid": "50acdc3e_37481861",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 33
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ba19257d_8e9379dd",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 7
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-30T06:59:41Z",
       "side": 1,
       "message": "Can you elaborate in which situation callers want to provide custom cache file?\nCan it be hardcoded in the cas client?",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48f19691_bac0e823",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T08:10:18Z",
+      "side": 1,
+      "message": "\u003e Can you elaborate in which situation callers want to provide custom cache file?\n\nWhen cas client handles many small files?\n\n\u003e Can it be hardcoded in the cas client?\n\nI don\u0027t do that because I will specify explicit path from caller. I will make run_isolated.py manage this cache file. Files under cache-dir were removed if failed to verify by run_isolated.py.",
+      "parentUuid": "ba19257d_8e9379dd",
       "range": {
         "startLine": 65,
         "startChar": 30,
@@ -66,6 +114,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c3c90fc4_fa84651b",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T08:10:18Z",
+      "side": 1,
+      "message": "I extracted copySmallFilesFromCache part.",
+      "parentUuid": "83092edc_2a32def8",
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "70586fba_774d0161",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 7
@@ -77,6 +143,30 @@
       "writtenOn": "2020-11-30T07:08:48Z",
       "side": 1,
       "message": "I guess this part can be extracted as a function? e.g. cacheOutput(...)",
+      "range": {
+        "startLine": 375,
+        "startChar": 0,
+        "endLine": 411,
+        "endChar": 4
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0285222b_1ae641c0",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-11-30T08:10:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70586fba_774d0161",
       "range": {
         "startLine": 375,
         "startChar": 0,
