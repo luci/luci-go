@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2e031d2_a380f8e0",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T03:11:18Z",
+      "side": 1,
+      "message": "How many directories are there in the extreme case?\nI guess it\u0027s \u003c 1024 in many cases?\n\nI\u0027m wondering if this is over optimizing only for the extreme case.",
+      "range": {
+        "startLine": 132,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 19
+      },
+      "revId": "127cc6031d404c2dadbc579a64c13e6bd0682cac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
