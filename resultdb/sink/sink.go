@@ -350,7 +350,7 @@ func (s *Server) Shutdown(ctx context.Context) (err error) {
 		if err != nil {
 			msg = fmt.Sprintf("with %q", err)
 		}
-		logging.Errorf(ctx, "SinkServer: shutdown completed %s", msg)
+		logging.Infof(ctx, "SinkServer: shutdown completed %s", msg)
 	}()
 
 	if atomic.LoadInt32(&s.started) == 0 {
