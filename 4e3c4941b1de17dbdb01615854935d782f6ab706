@@ -142,6 +142,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d374d933_bcd52e9e",
+        "filename": "client/cmd/cas/lib/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T00:37:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6c0c5175_55d0ee98",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 2
+      },
+      "revId": "4e3c4941b1de17dbdb01615854935d782f6ab706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3aa96c40_74fb7c96",
