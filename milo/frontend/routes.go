@@ -84,7 +84,7 @@ func Run(templatePath string) {
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
 
 	buildPageMW := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-		shouldShowNewBuildPage := getShowNewBuildPagePrefCookie(c)
+		shouldShowNewBuildPage := getShowNewBuildPageCookie(c)
 		if shouldShowNewBuildPage {
 			redirect("/ui/p/:project/builders/:bucket/:builder/:numberOrId", http.StatusFound)(c)
 		} else {

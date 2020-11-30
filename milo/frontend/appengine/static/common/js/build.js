@@ -56,7 +56,7 @@ $(document).ready(function() {
   }
 
   $('#new-build-page-link').on('click', () => {
-    setCookie('showNewBuildPagePref', true);
+    setCookie('showNewBuildPage', true);
     return true;
   });
 
