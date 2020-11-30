@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2270cc9c_356e09f2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:30:09Z",
+      "side": 1,
+      "message": "LGTM, makes sense overall and I think the test looks good.",
+      "revId": "9289c4125e4d95b7198a6bfed00f9db7ba7b7711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca8a2327_58fbd592",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:30:09Z",
+      "side": 1,
+      "message": "Note, this will only ever be used with ConfigGroups of one project, right?\n\nAnd most projects are small and have only a small number of repos, so for most projects, this will return one subpoller - but some are large, like chromiumos and potentially others later. Is that right?",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "9289c4125e4d95b7198a6bfed00f9db7ba7b7711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9309ba1_27c69583",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-11-30T22:30:09Z",
+      "side": 1,
+      "message": "remainingRepos",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 14
+      },
+      "revId": "9289c4125e4d95b7198a6bfed00f9db7ba7b7711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
