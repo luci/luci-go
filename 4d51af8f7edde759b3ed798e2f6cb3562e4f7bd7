@@ -16,6 +16,70 @@
       "message": "I have a few questions regarding this approach:\n\n1. Reading all the small files to RAM could lead to OOM. I think it\u0027s better to have a max cap on the small files buffer, and copy the files by batches.\n2. I think we should consider both the file size and the number of times it\u0027s been duplicated. It doesn\u0027t really make sense to read files into the RAM if it\u0027s not duplicated?\n3. unit tests?",
       "revId": "4d51af8f7edde759b3ed798e2f6cb3562e4f7bd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f7843c7_fc9814cd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T01:07:01Z",
+      "side": 1,
+      "message": "+1 to count duplication.\n\n\u003e RAM OOM\nI\u0027m wondering if it can write to destinations right after loading content so that it doesn\u0027t need to hold all contents in memory. But the sorts may be necessary for the improvement?",
+      "parentUuid": "ff3c000d_b1a83238",
+      "revId": "4d51af8f7edde759b3ed798e2f6cb3562e4f7bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1f7e4af_aadcf20d",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T01:07:01Z",
+      "side": 1,
+      "message": "Please add explanation for the steps and why.",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 14
+      },
+      "revId": "4d51af8f7edde759b3ed798e2f6cb3562e4f7bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62a292a9_0f527505",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T01:07:01Z",
+      "side": 1,
+      "message": "Does the improvement come from this sort, and the other sort before small file writes?",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 167,
+        "endChar": 3
+      },
+      "revId": "4d51af8f7edde759b3ed798e2f6cb3562e4f7bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
