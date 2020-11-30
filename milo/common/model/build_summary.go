@@ -56,15 +56,9 @@ const currentManifestKeyVersion = 0
 // InvalidBuildIDURL is returned if a BuildID cannot be parsed and a URL generated.
 const InvalidBuildIDURL = "#invalid-build-id"
 
-// BuildSummary is a datastore model which is used for storing staandardized
-// summarized build data, and is used for backend-agnostic views (i.e. builders,
-// console). It contains only data that:
-//   * is necessary to render these simplified views
-//   * is present in all implementations (buildbot, buildbucket)
-//
-// This entity will live as a child of the various implementation's
-// representations of a build (e.g. buildbotBuild). It has various 'tag' fields
-// so that it can be queried by the various backend-agnostic views.
+// BuildSummary is a datastore model which is used for storing standardized
+// summarized build data, and is used to provide fast access to build data for
+// certain operations (i.e. rendering builders/consoles, computing blamelists).
 type BuildSummary struct {
 	// _id for a BuildSummary is always 1
 	_ int64 `gae:"$id,1"`
@@ -115,6 +109,12 @@ type BuildSummary struct {
 	//
 	// See https://chromium.googlesource.com/infra/infra/+/HEAD/appengine/cr-buildbucket/doc/index.md#buildset-tag
 	BuildSet []string
+
+	// The gitiles commits associated with this Build, if any.
+	//
+	// Example:
+	//   commit/gitiles/<host>/<project/path>/+/<commit>
+	BlamelistPins []string
 
 	// Created is the time when the Build was first created. Due to pending
 	// queues, this may be substantially before Summary.Start.
