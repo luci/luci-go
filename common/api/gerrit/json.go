@@ -19,7 +19,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -63,23 +62,6 @@ type ownerInfo struct {
 	Account accountInfo `json:"account,omitempty"`
 }
 
-type timestamp struct {
-	time.Time
-}
-
-func (t *timestamp) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", t.Time.UTC().Format(gerritTimestampLayout))), nil
-}
-
-func (t *timestamp) UnmarshalJSON(b []byte) error {
-	parsedTime, err := time.Parse(gerritTimestampLayout, strings.Trim(string(b), "\""))
-	if err != nil {
-		return errors.Annotate(err, "parse gerrit timestamp").Err()
-	}
-	t.Time = parsedTime
-	return nil
-}
-
 // changeInfo represents JSON for a gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
 	Number   int64                 `json:"_number"`
@@ -96,8 +78,8 @@ type changeInfo struct {
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
 	Messages        []changeMessageInfo            `json:"messages"`
-	Created         timestamp                      `json:"created"`
-	Updated         timestamp                      `json:"updated"`
+	Created         Timestamp                      `json:"created"`
+	Updated         Timestamp                      `json:"updated"`
 	Submittable     bool                           `json:"submittable,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
@@ -143,7 +125,7 @@ type changeMessageInfo struct {
 	ID         string                `json:"id"`
 	Author     *gerritpb.AccountInfo `json:"author"`
 	RealAuthor *gerritpb.AccountInfo `json:"real_author"`
-	Date       timestamp             `json:"date"`
+	Date       Timestamp             `json:"date"`
 	Message    string                `json:"message"`
 }
 
