@@ -86,19 +86,21 @@ type Scheduler struct {
 	// Receives the same context as passed to Run.
 	TaskFailed func(ctx context.Context, task *Task)
 
-	m         sync.Mutex         // a global lock protecting everything
-	clock     clock.Clock        // used to make sure only one clock is used
-	nextID    int64              // for generating task names
-	seen      stringset.Set      // names of all tasks scheduled ever
-	tasks     tasksHeap          // scheduled tasks, earliest to execute first
-	executing map[*Task]struct{} // tasks being executed right now
-	wg        sync.WaitGroup     // tracks 'executing' set
-	wakeUp    chan struct{}      // used to wake up Run
+	m                sync.Mutex         // a global lock protecting everything
+	clock            clock.Clock        // used to make sure only one clock is used
+	nextID           int64              // for generating task names
+	seen             stringset.Set      // names of all tasks scheduled ever
+	tasks            tasksHeap          // scheduled tasks, earliest to execute first
+	executing        map[*Task]struct{} // tasks being executed right now
+	recentlyFinished []*Task            // tasks recently finished and not yet examined by Run
+	wg               sync.WaitGroup     // tracks 'executing' set
+	wakeUp           chan struct{}      // used to wake up Run
 }
 
 // Task represents an enqueued or executing task.
 type Task struct {
-	Payload proto.Message // a clone of the original AddTask payload, if available
+	TaskClassID string        // TaskClass.ID passed in RegisterTaskClass.
+	Payload     proto.Message // a clone of the original AddTask payload, if available
 
 	Task    *taskspb.Task           // a clone of the Cloud Tasks task as passed to Submit
 	Message *pubsubpb.PubsubMessage // a clone of the PubSub message as passed to Submit
@@ -222,6 +224,7 @@ func (s *Scheduler) Submit(ctx context.Context, p *reminder.Payload) error {
 		return err
 	}
 
+	task.TaskClassID = p.TaskClass
 	if p.Raw != nil {
 		task.Payload = proto.Clone(p.Raw)
 	}
@@ -333,10 +336,11 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 		defer s.m.Unlock()
 		close(s.wakeUp)
 		s.wakeUp = nil
+		s.recentlyFinished = nil
 	}()
 
 	// Waits for all initiated executing tasks to finish before returning.
-	defer s.wg.Wait()
+	s.wg.Wait()
 
 	parallelExec := false
 	for _, opt := range opts {
@@ -446,6 +450,7 @@ func (s *Scheduler) tryDequeueTask(ctx context.Context) (t *Task, eta time.Time,
 		}
 
 		if !reenqueued {
+			s.recentlyFinished = append(s.recentlyFinished, task)
 			s.wakeUpLocked() // to let Run examine stop conditions
 		}
 	}
@@ -485,9 +490,22 @@ func (s *Scheduler) evalRetryLocked(t *Task) (retry bool, delay time.Duration) {
 func (s *Scheduler) shouldStop(opts []RunOption) bool {
 	s.m.Lock()
 	defer s.m.Unlock()
+
+	recentlyFinished := s.recentlyFinished
+	s.recentlyFinished = s.recentlyFinished[:0]
+
 	for _, opt := range opts {
-		if _, ok := opt.(stopWhenDrained); ok && len(s.tasks) == 0 && len(s.executing) == 0 {
-			return true
+		switch v := opt.(type) {
+		case stopWhenDrained:
+			if len(s.tasks) == 0 && len(s.executing) == 0 {
+				return true
+			}
+		case stopAfterTask:
+			for _, t := range recentlyFinished {
+				if v.taskClassID == t.TaskClassID {
+					return true
+				}
+			}
 		}
 	}
 	return false
