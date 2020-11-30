@@ -49,6 +49,53 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "80f11a96_b2a7c51a",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T09:50:33Z",
+      "side": 1,
+      "message": "That would make the logic easier to read.",
+      "parentUuid": "589b8268_9df21472",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 21
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7cfb917_af8c8a0b",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T09:50:33Z",
+      "side": 1,
+      "message": "What is this assignment?",
+      "range": {
+        "startLine": 250,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 19
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "813ceeb5_e8813c72",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 8

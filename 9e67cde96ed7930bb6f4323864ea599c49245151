@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5d6b347_86eb34c9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T09:50:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "864a05a2_5f142762",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 33
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba19257d_8e9379dd",
@@ -95,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b91c951_bc9b15bb",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T09:50:33Z",
+      "side": 1,
+      "message": "I see.\nrun_isolated.py needs to know the file name, and it needs to be in a different directory from the existing cache dir...\n\nnit:\nCan the option name be called \"--kvs-db\" or \"--kvs-file\" etc?\n\"Small files\" may be an implementation detail?",
+      "parentUuid": "48f19691_bac0e823",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "83092edc_2a32def8",
@@ -126,6 +174,24 @@
       "side": 1,
       "message": "I extracted copySmallFilesFromCache part.",
       "parentUuid": "83092edc_2a32def8",
+      "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c49980b_9c7a9742",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-11-30T09:50:33Z",
+      "side": 1,
+      "message": "Thanks",
+      "parentUuid": "c3c90fc4_fa84651b",
       "revId": "9e67cde96ed7930bb6f4323864ea599c49245151",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
