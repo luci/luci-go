@@ -18,6 +18,9 @@ import (
 	"context"
 	"encoding/base64"
 	"sync"
+	"time"
+
+	"go.chromium.org/luci/common/logging"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -42,6 +45,8 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 
 	pageSize := adjustPageSize(req.PageSize)
 
+	start := time.Now()
+
 	// Fetch one more commit to check whether there are more commits in the
 	// blamelist.
 	opts := &git.LogOptions{Limit: pageSize + 1, WithFiles: true}
@@ -49,6 +54,11 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	if err != nil {
 		return nil, err
 	}
+
+	elapsed := time.Since(start)
+	logging.Infof(ctx, "%s", elapsed)
+
+	start2 := time.Now()
 
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", common.LegacyBuilderIDString(req.Builder))
 	blameLength := len(commits)
@@ -75,7 +85,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 			c <- func() error {
 				// Check whether this commit has an associated build.
 				hasAssociatedBuild := false
-				err := datastore.Run(ctx, q.Eq("BuildSet", protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
+				err := datastore.Run(ctx, q.Eq("BlamelistBuildSet", protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
 					switch build.Summary.Status {
 					case model.InfraFailure, model.Expired, model.Canceled:
 						return nil
@@ -99,6 +109,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 			}
 		}
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +131,9 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	if blameLength < len(commits) {
 		precedingCommit = commits[blameLength]
 	}
+
+	elapsed2 := time.Since(start2)
+	logging.Infof(ctx, "%s", elapsed2)
 
 	return &milopb.QueryBlamelistResponse{
 		Commits:         commits[:blameLength],

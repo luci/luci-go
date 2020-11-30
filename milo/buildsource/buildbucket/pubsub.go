@@ -96,6 +96,7 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"tags",
 		"infra.swarming",
 		"input.experimental",
+		"input.gitiles_commit",
 		"critical",
 	},
 }
@@ -123,14 +124,45 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 	buildKey := datastore.MakeKey(c, "buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
 	swarming := b.GetInfra().GetSwarming()
 
+	type OutputProperties struct {
+		BlamelistPins []*buildbucketpb.GitilesCommit `json:"$recipe_engine/milo/blamelist_pins"`
+	}
+	var outputProperties OutputProperties
+	propertiesJSON, err := b.GetOutput().GetProperties().MarshalJSON()
+	err = json.Unmarshal(propertiesJSON, &outputProperties)
+	if err != nil {
+		logging.Debugf(c, "failed to decode test build set")
+		return nil, err
+	}
+
+	var blamelistBS []string
+	pivot := 0
+	if gc := b.GetInput().GetGitilesCommit(); gc != nil {
+		blamelistBS = make([]string, len(outputProperties.BlamelistPins)+1)
+		blamelistBS[pivot] = protoutil.GitilesBuildSet(gc)
+		logging.Debugf(c, "added BlamelistBuildSet")
+		pivot++
+	} else {
+		blamelistBS = make([]string, len(outputProperties.BlamelistPins))
+	}
+
+	for _, gc := range outputProperties.BlamelistPins {
+		blamelistBS[pivot] = protoutil.GitilesBuildSet(gc)
+		pivot++
+	}
+
+	logging.Debugf(c, "BuildID: %s", "buildbucket/"+buildAddress)
+	logging.Debugf(c, "has BlamelistBuildSet: %t", len(blamelistBS) > 0)
+
 	bs := &model.BuildSummary{
-		ProjectID:  b.Builder.Project,
-		BuildKey:   buildKey,
-		BuilderID:  common.LegacyBuilderIDString(b.Builder),
-		BuildID:    "buildbucket/" + buildAddress,
-		BuildSet:   protoutil.BuildSets(b),
-		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
-		Created:    mustTimestamp(b.CreateTime),
+		ProjectID:         b.Builder.Project,
+		BuildKey:          buildKey,
+		BuilderID:         common.LegacyBuilderIDString(b.Builder),
+		BuildID:           "buildbucket/" + buildAddress,
+		BuildSet:          protoutil.BuildSets(b),
+		BlamelistBuildSet: blamelistBS,
+		ContextURI:        []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
+		Created:           mustTimestamp(b.CreateTime),
 		Summary: model.Summary{
 			Start:  mustTimestamp(b.StartTime),
 			End:    mustTimestamp(b.EndTime),
