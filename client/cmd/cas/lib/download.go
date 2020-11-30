@@ -84,87 +84,29 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
 
-	r.dir = filepath.Clean(r.dir)
-
 	return nil
 }
 
-func createDirectories(ctx context.Context, root string, outputs map[string]*client.TreeOutput) error {
-	logger := logging.Get(ctx)
-
-	start := time.Now()
-
-	dirset := make(map[string]struct{})
-
-	// Extract unique directory paths for optimization.
+func createDirectories(outputs map[string]*client.TreeOutput) error {
+	dirs := make([]string, 0, len(outputs))
 	for path, output := range outputs {
-		var dir string
 		if output.IsEmptyDirectory {
-			dir = path
+			dirs = append(dirs, path)
 		} else {
-			dir = filepath.Dir(path)
-		}
-
-		for dir != root {
-			if _, ok := dirset[dir]; ok {
-				break
-			}
-			dirset[dir] = struct{}{}
-			dir = filepath.Dir(dir)
+			dirs = append(dirs, filepath.Dir(path))
 		}
 	}
-
-	dirs := make([]string, 0, len(dirset))
-	for dir := range dirset {
-		dirs = append(dirs, dir)
-	}
-
 	sort.Strings(dirs)
 
-	logger.Infof("preprocess took %s", time.Since(start))
-	start = time.Now()
-
-	if err := os.MkdirAll(root, 0o700); err != nil {
-		return errors.Annotate(err, "failed to create root dir").Err()
-	}
-
-	for _, dir := range dirs {
-		if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
+	for i, dir := range dirs {
+		if i > 0 && dirs[i-1] == dir {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return errors.Annotate(err, "failed to create directory").Err()
 		}
 	}
-
-	logger.Infof("dir creation took %s", time.Since(start))
-
 	return nil
-}
-
-func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.Digest]*client.TreeOutput) error {
-	eg, _ := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent I/O operations.
-	ch := make(chan struct{}, runtime.NumCPU())
-
-	for _, dst := range dsts {
-		dst := dst
-		src := srcs[dst.Digest]
-		ch <- struct{}{}
-		eg.Go(func() (err error) {
-			defer func() { <-ch }()
-			mode := 0o600
-			if dst.IsExecutable {
-				mode = 0o700
-			}
-
-			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
-				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
-			}
-
-			return nil
-		})
-	}
-
-	return eg.Wait()
 }
 
 // doDownload downloads directory tree from the CAS server.
@@ -217,11 +159,9 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
-	if err := createDirectories(ctx, r.dir, outputs); err != nil {
+	if err := createDirectories(outputs); err != nil {
 		return err
 	}
-	logger.Infof("finish createDirectories, took %s", time.Since(start))
-	start = time.Now()
 
 	// Files have the same digest are downloaded only once, so we need to
 	// copy duplicates files later.
@@ -257,7 +197,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			to[output.Digest] = output
 		}
 	}
-	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dups), len(to), time.Since(start))
+	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dirs), len(to), time.Since(start))
 
 	start = time.Now()
 	if err := c.DownloadFiles(ctx, "", to); err != nil {
@@ -287,9 +227,31 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 
 	start = time.Now()
-	if err := copyFiles(ctx, dups, to); err != nil {
-		return err
+	eg, _ := errgroup.WithContext(ctx)
+
+	// limit the number of concurrent I/O threads.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	for _, dup := range dups {
+		src := to[dup.Digest]
+		dst := dup
+		ch <- struct{}{}
+		eg.Go(func() (err error) {
+			defer func() { <-ch }()
+			mode := 0o600
+			if dst.IsExecutable {
+				mode = 0o700
+			}
+
+			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
+			}
+
+			return nil
+		})
 	}
+	err = eg.Wait()
+
 	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
 
 	if dsj := r.dumpStatsJSON; dsj != "" {
@@ -310,7 +272,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (r *downloadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
