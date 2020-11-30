@@ -24,7 +24,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -86,24 +85,6 @@ type ChangeMessageInfo struct {
 	Date       Timestamp   `json:"date"`
 	Message    string      `json:"message"`
 	Tag        string      `json:"tag,omitempty"`
-}
-
-// Timestamp is given in UTC and has the format 'yyyy-mm-dd hh:mm:ss.fffffffff' where
-// 'ffffffffff' represents nanoseconds.
-type Timestamp struct {
-	time.Time
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (ts *Timestamp) UnmarshalJSON(input []byte) error {
-	strInput := strings.Trim(string(input), `"`)
-	newTime, err := time.Parse("2006-01-02 15:04:05.000000000", strInput)
-	if err != nil {
-		return err
-	}
-
-	ts.Time = newTime
-	return nil
 }
 
 // LabelInfo contains information about a label on a change, always
