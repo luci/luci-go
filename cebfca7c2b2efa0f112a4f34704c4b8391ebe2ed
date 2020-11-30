@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acf53b91_6a611476",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-30T23:44:58Z",
+      "side": 1,
+      "message": "thanks",
+      "revId": "cebfca7c2b2efa0f112a4f34704c4b8391ebe2ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0be9dcd2_219eec59",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-11-30T23:44:58Z",
+      "side": 1,
+      "message": "nit:\n\n  logging.Errorf(ctx, \"SinkServer: shutdown failed: %s\", err)\n\nusually %q isn\u0027t used for errors",
+      "revId": "cebfca7c2b2efa0f112a4f34704c4b8391ebe2ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
