@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c5ace58_9c706965",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-30T09:32:46Z",
+      "side": 1,
+      "message": "This reminds me of https://crrev.com/c/2563051. i feel like this CL supersedes that one, but the same optimization could be applied?",
+      "range": {
+        "startLine": 217,
+        "startChar": 3,
+        "endLine": 217,
+        "endChar": 5
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "589b8268_9df21472",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-30T09:32:46Z",
+      "side": 1,
+      "message": "I was going to suggest to add unit tests to this, because the logic seems a bit convoluted. But how about we decompose this into smaller functions:\n\n1. split outputs into two parts: small files (if `kvs !\u003d nil \u0026\u0026 output.Digest.Size \u003c\u003d smallFileThreshold`) and normal files\n2. for small files, store into kvs concurrently\n3. for large files, create hard links",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 21
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "813ceeb5_e8813c72",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-11-30T09:32:46Z",
+      "side": 1,
+      "message": "eg.Wait()?",
+      "range": {
+        "startLine": 284,
+        "startChar": 3,
+        "endLine": 284,
+        "endChar": 10
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
