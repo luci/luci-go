@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2438bf7_04de3169",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfabd918_c48a1550",
+      "range": {
+        "startLine": 109,
+        "startChar": 27,
+        "endLine": 109,
+        "endChar": 32
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc822919_9f117ee5",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-30T22:51:36Z",
       "side": 1,
       "message": "taken",
+      "range": {
+        "startLine": 157,
+        "startChar": 18,
+        "endLine": 157,
+        "endChar": 22
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2757bab4_218261c5",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc822919_9f117ee5",
       "range": {
         "startLine": 157,
         "startChar": 18,
@@ -87,6 +135,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e369157_442f990e",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Great question! I actually documented that, but somehow lost that bit 😞 Added to PagingListQuery.\n\ntl;dr nothing bad, since there is implicit AND for predicates. Compare:\nhttps://chromium-review.googlesource.com/q/project:infra/luci/luci-go+before:%25222020-10-10%2522+before:%25222020-09-09%2522\nhttps://chromium-review.googlesource.com/q/project:infra/luci/luci-go+before:%25222020-09-09%2522+before:%25222020-10-10%2522+\nhttps://chromium-review.googlesource.com/q/project:infra/luci/luci-go+before:%25222020-10-10%2522\n\nHowever, specifying before/after in query is less efficient than specifying it via PagingListChangesOptions.",
+      "parentUuid": "7fea6a5c_6a2ec559",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "650c6e91_3f58ed7e",
@@ -104,6 +170,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d84fc37b_d80fe81b",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "650c6e91_3f58ed7e",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ac9ec162_1f7b3d22",
@@ -117,6 +201,54 @@
       "writtenOn": "2020-11-30T22:51:36Z",
       "side": 1,
       "message": "Looks like this comment needs to be updated; it doesn\u0027t return a slice, and it also doesn\u0027t modify the input slice.",
+      "range": {
+        "startLine": 255,
+        "startChar": 32,
+        "endLine": 255,
+        "endChar": 49
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ce9ac9a_f78926d9",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac9ec162_1f7b3d22",
+      "range": {
+        "startLine": 255,
+        "startChar": 32,
+        "endLine": 255,
+        "endChar": 49
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9970d135_cc885a0e",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac9ec162_1f7b3d22",
       "range": {
         "startLine": 255,
         "startChar": 32,
@@ -150,6 +282,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b46b16e_a95c7abf",
+        "filename": "common/api/gerrit/list_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2b98ab2_b5cb5c76",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b78d9cc9_107aa4a7",
@@ -163,6 +319,24 @@
       "writtenOn": "2020-12-01T06:31:39Z",
       "side": 1,
       "message": "Is this assertion intentional?",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78b7b8df_256b38f8",
+        "filename": "common/api/gerrit/list_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:33:22Z",
+      "side": 1,
+      "message": "Yes, for both reading purposes (now is set like ~100 LOC above) and for faster fixing of the test iff now is accidentally modified above. Documented.",
+      "parentUuid": "b78d9cc9_107aa4a7",
       "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
