@@ -45,6 +45,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
 
@@ -52,17 +53,27 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 )
 
-// ModuleOptions are empty for now but exist to make the gaeemulation interface
-// similar to interfaces of other modules.
-type ModuleOptions struct{}
+// ModuleOptions contain configuration of the GAE Emulation server module
+type ModuleOptions struct {
+	DSCache string // currently either "disable" (default) or "redis"
+}
 
 // Register registers the command line flags.
-func (o *ModuleOptions) Register(f *flag.FlagSet) {}
+func (o *ModuleOptions) Register(f *flag.FlagSet) {
+	f.StringVar(
+		&o.DSCache,
+		"ds-cache",
+		o.DSCache,
+		`What datastore caching layer to use ("disable" or "redis").`,
+	)
+}
 
 // NewModule returns a server module that adds implementation of
-// some https://godoc.org/go.chromium.org/luci/gae APIs to the global server context.
+// some https://godoc.org/go.chromium.org/luci/gae APIs to the global server
+// context.
 func NewModule(opts *ModuleOptions) module.Module {
 	if opts == nil {
 		opts = &ModuleOptions{}
@@ -93,6 +104,27 @@ func (*gaeModule) Name() string {
 
 // Initialize is part of module.Module interface.
 func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
+	// Use zstd in luci/server's dscache. It will be default at some point.
+	dscache.UseZstd = true
+
+	var cacheImpl dscache.Cache
+	switch m.opts.DSCache {
+	case "", "disable":
+		// don't use caching
+	case "redis":
+		// TODO(vadimsh): This assumes `redisconn` server module is registered
+		// before `gaeemulation`. In theory it is possible to teach server.Server
+		// about dependencies between modules, so it always initializes them in
+		// the correct order. It is not implemented yet.
+		pool := redisconn.GetPool(ctx)
+		if pool == nil {
+			return nil, errors.Reason("can't use `-ds-cache redis`: redisconn module is not configured").Err()
+		}
+		cacheImpl = redisCache{pool: pool}
+	default:
+		return nil, errors.Reason("unsupported -ds-cache %q", m.opts.DSCache).Err()
+	}
+
 	var client *datastore.Client
 	if opts.CloudProject != "" {
 		var err error
@@ -105,7 +137,12 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 		ProjectID: opts.CloudProject,
 		DS:        client, // if nil, datastore calls will fail gracefully(-ish)
 	}
-	return txndefer.FilterRDS(cfg.Use(ctx)), nil
+
+	ctx = cfg.Use(ctx)
+	if cacheImpl != nil {
+		ctx = dscache.FilterRDS(ctx, cacheImpl)
+	}
+	return txndefer.FilterRDS(ctx), nil
 }
 
 // initDSClient sets up Cloud Datastore client that uses AsSelf server token
