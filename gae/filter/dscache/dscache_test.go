@@ -73,7 +73,7 @@ func noCacheObjFn(k *ds.Key) (amt int, ok bool) {
 func init() {
 	ds.WritePropertyMapDeterministic = true
 
-	internalValueSizeLimit = 2048
+	internalValueSizeLimit = CompressionThreshold + 2048
 }
 
 func TestDSCache(t *testing.T) {
@@ -160,7 +160,7 @@ func TestDSCache(t *testing.T) {
 
 		Convey("compression works", func() {
 			o := object{ID: 2, Value: `¯\_(ツ)_/¯`}
-			data := make([]byte, 4000)
+			data := make([]byte, CompressionThreshold+1)
 			for i := range data {
 				const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"
 				data[i] = alpha[i%len(alpha)]
@@ -173,16 +173,36 @@ func TestDSCache(t *testing.T) {
 			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 			So(err, ShouldBeNil)
 
-			So(itm.Value()[0], ShouldEqual, compressionZlib)
-			So(len(itm.Value()), ShouldEqual, 653) // a bit smaller than 4k
+			algo := compressionZlib
+			if UseZstd {
+				algo = compressionZstd
+			}
+			So(itm.Value()[0], ShouldEqual, algo)
+			So(len(itm.Value()), ShouldBeLessThan, len(data))
 
-			// ensure the next Get comes from the cache
-			So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
+			Convey("uses compressed cache entry", func() {
+				// ensure the next Get comes from the cache
+				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
 
-			o = object{ID: 2}
-			So(ds.Get(c, &o), ShouldBeNil)
-			So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
-			So(o.BigData, ShouldResemble, data)
+				o = object{ID: 2}
+				So(ds.Get(c, &o), ShouldBeNil)
+				So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
+				So(o.BigData, ShouldResemble, data)
+			})
+
+			Convey("skips unknown compression algo", func() {
+				blob := append([]byte(nil), itm.Value()...)
+				blob[0] = 123 // unknown algo
+				itm.SetValue(blob)
+
+				So(mc.Set(c, itm), ShouldBeNil)
+
+				// Should fallback to fetching from datastore.
+				o = object{ID: 2}
+				So(ds.Get(c, &o), ShouldBeNil)
+				So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
+				So(o.BigData, ShouldResemble, data)
+			})
 		})
 
 		Convey("transactions", func() {
