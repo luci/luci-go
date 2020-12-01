@@ -43,6 +43,121 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a4acd3d7_fba17ce3",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Nit: you could remove the blank line on 249, or move this comment down (it applies to the switch block right?)",
+      "range": {
+        "startLine": 247,
+        "startChar": 0,
+        "endLine": 249,
+        "endChar": 0
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1260ad98_d36982ea",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Optionally, perhaps use a more specific name like listChangesQuery. I know the query for changes is special (it\u0027s the query that\u0027s typed into the search box in the Gerrit UI), but gerritfake/client.go contains things for lots of different types of requests with different query parameters.",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 268,
+        "endChar": 16
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75f64c7c_b423594c",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "If you decided to use a more specific name for query above, this could also be renamed, e.g. parseListChangesQuery",
+      "range": {
+        "startLine": 292,
+        "startChar": 5,
+        "endLine": 292,
+        "endChar": 15
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0dc0583_dc7d1a68",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Optionally, maybe mustBeInClause or mustBeOutsideClause, or mustBeInParens/mustBeOutsideParens",
+      "range": {
+        "startLine": 308,
+        "startChar": 1,
+        "endLine": 308,
+        "endChar": 13
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "379e4546_ce8182c0",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "It\u0027s the case that queries can\u0027t have nested parentheses?",
+      "range": {
+        "startLine": 326,
+        "startChar": 0,
+        "endLine": 327,
+        "endChar": 21
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "73576145_7512051e",
         "filename": "cv/internal/gerrit/gerritfake/client.go",
         "patchSetId": 4
@@ -174,6 +289,70 @@
         "startChar": 0,
         "endLine": 426,
         "endChar": 26
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "edd3597c_02bacb3c",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "IMO setVote and setLabel are also good; and/or the description could say \"...sets a label to the given value by the given users.\"",
+      "parentUuid": "32e097ff_2d9337c8",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 426,
+        "endChar": 26
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8725dfb_c0cfb7a4",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Suggestion: could you add tests to show what happens when the query string is invalid?",
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13b9aa3d_7ee4416a",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Order",
+      "range": {
+        "startLine": 409,
+        "startChar": 10,
+        "endLine": 409,
+        "endChar": 16
       },
       "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"

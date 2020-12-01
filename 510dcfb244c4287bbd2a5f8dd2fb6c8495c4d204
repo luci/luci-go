@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c7196a76_bf334b66",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 410,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T21:50:08Z",
+      "side": 1,
+      "message": "Or: Vote adds votes on a label by the given user(s) on the latest patchset.",
+      "revId": "510dcfb244c4287bbd2a5f8dd2fb6c8495c4d204",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
