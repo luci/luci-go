@@ -16,6 +16,29 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9064/overview",
       "revId": "c9f7dfcca9ff56233bcb05ef40309cfeb0e7c773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f4471ea_869a3dd4",
+        "filename": "milo/frontend/resultui/src/components/log.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-01T06:03:12Z",
+      "side": 1,
+      "message": "suggested tiny ux improvement: it would be nicer if the square brackets were outside the \u003ca\u003e tags here, so it\u0027s clear that the [raw] is a separate link.",
+      "range": {
+        "startLine": 36,
+        "startChar": 7,
+        "endLine": 36,
+        "endChar": 12
+      },
+      "revId": "c9f7dfcca9ff56233bcb05ef40309cfeb0e7c773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
