@@ -252,7 +252,8 @@ func (f *fetcher) new(ctx context.Context) error {
 	case codes.PermissionDenied:
 		return errors.New("not implemented")
 	default:
-		return unhandledError(ctx, err, "failed to fetch %s", f)
+
+		return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 	}
 
 	switch ci.GetStatus() {
@@ -298,7 +299,7 @@ func (f *fetcher) fetchRelated(ctx context.Context) error {
 		// when re-fetching ChangeInfo.
 		return errors.Annotate(err, "failed to fetch related changes for %s", f).Tag(transient.Tag).Err()
 	default:
-		return unhandledError(ctx, err, "failed to fetch related changes for %s", f)
+		return gerrit.UnhandledError(ctx, err, "failed to fetch related changes for %s", f)
 	}
 }
 
@@ -475,7 +476,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 		return errors.Annotate(err, "failed to fetch files for %s", f).Tag(transient.Tag).Err()
 
 	default:
-		return unhandledError(ctx, err, "failed to fetch files for %s", f)
+		return gerrit.UnhandledError(ctx, err, "failed to fetch files for %s", f)
 	}
 }
 
@@ -607,41 +608,6 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 		return nil
 	}
 	return errors.Reason("Fetched stale Gerrit data").Tag(transient.Tag).Err()
-}
-
-// unhandledError is used to process and annotate Gerrit errors.
-func unhandledError(ctx context.Context, err error, format string, args ...interface{}) error {
-	msg := fmt.Sprintf(format, args...)
-	ann := errors.Annotate(err, msg)
-	switch code := grpcutil.Code(err); code {
-	case
-		codes.OK,
-		codes.PermissionDenied,
-		codes.NotFound,
-		codes.FailedPrecondition:
-		// These must be handled before.
-		logging.Errorf(ctx, "FIXME unhandled Gerrit error: %s while %s", err, msg)
-		return ann.Err()
-
-	case
-		codes.InvalidArgument,
-		codes.Unauthenticated:
-		// This must not happen in practice unless there is a bug in CV or Gerrit.
-		logging.Errorf(ctx, "FIXME bug in CV: %s while %s", err, msg)
-		return ann.Err()
-
-	case codes.Unimplemented:
-		// This shouldn't happen in production, but may happen in development
-		// if gerrit.NewRESTClient doesn't actually implement fully the option
-		// or entire method that CV is coded to work with.
-		logging.Errorf(ctx, "FIXME likely bug in CV: %s while %s", err, msg)
-		return ann.Err()
-
-	default:
-		// Assume transient. If this turns out non-transient, then its code must be
-		// handled explicitly above.
-		return ann.Tag(transient.Tag).Err()
-	}
 }
 
 func (f *fetcher) gerritProjectIfKnown() string {
