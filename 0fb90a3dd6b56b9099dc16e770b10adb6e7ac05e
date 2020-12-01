@@ -39,6 +39,30 @@
       },
       "revId": "0fb90a3dd6b56b9099dc16e770b10adb6e7ac05e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e558d59a_ed1e637c",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T22:11:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5689811_ba2f9a41",
+      "range": {
+        "startLine": 22,
+        "startChar": 69,
+        "endLine": 22,
+        "endChar": 79
+      },
+      "revId": "0fb90a3dd6b56b9099dc16e770b10adb6e7ac05e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
