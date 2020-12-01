@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7c6c04e_277ce619",
+        "filename": "resultdb/internal/proto/ui/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Copied from the gen.go in proto/v1. I can remove it for now and add it back if we need it later.",
+      "parentUuid": "4d2a3ede_9a03e980",
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2164f55b_7dc2e9d2",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-12-01T07:07:02Z",
       "side": 1,
       "message": "indent\n\nin general, it looks like this file was copied from the doc verbatim. Please imagine that you wrote it in a proto file for the first time. How would it look like?\n\nguidance: https://google.aip.dev/192",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 7
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2773478f_fe503427",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2164f55b_7dc2e9d2",
       "range": {
         "startLine": 32,
         "startChar": 5,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b1040ff_f0ef35a9",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79555400_48c07a6f",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 16
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c7e83240_35e360f5",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-12-01T07:07:02Z",
       "side": 1,
       "message": "this is not needed for our highest-priority problems. let\u0027s focus on those first.\nlet\u0027s omit this until we implement this.",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 37
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8d6e87e_deb41e10",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7e83240_35e360f5",
       "range": {
         "startLine": 60,
         "startChar": 0,
@@ -150,6 +240,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "551f67cf_83979f6b",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21d1e288_7840c14f",
+      "range": {
+        "startLine": 107,
+        "startChar": 14,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8e47150e_7857b2a6",
@@ -163,6 +277,30 @@
       "writtenOn": "2020-12-01T07:07:02Z",
       "side": 1,
       "message": "remove\n\nall of this is output only",
+      "range": {
+        "startLine": 116,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 17
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4436a06f_5dcdc65c",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e47150e_7857b2a6",
       "range": {
         "startLine": 116,
         "startChar": 0,
@@ -196,6 +334,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01946d77_14ddb370",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3882965_1866b731",
+      "range": {
+        "startLine": 120,
+        "startChar": 32,
+        "endLine": 120,
+        "endChar": 77
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ceb7c4d1_aca4f051",
@@ -209,6 +371,30 @@
       "writtenOn": "2020-12-01T07:07:02Z",
       "side": 1,
       "message": "omit for now? maybe replace with a TODO so that it explains why we have a bundle",
+      "range": {
+        "startLine": 134,
+        "startChar": 41,
+        "endLine": 139,
+        "endChar": 51
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a23fdb85_140e78e7",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ceb7c4d1_aca4f051",
       "range": {
         "startLine": 134,
         "startChar": 41,
@@ -242,6 +428,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5268c0b_7f0412fa",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff625898_3249af60",
+      "range": {
+        "startLine": 147,
+        "startChar": 26,
+        "endLine": 147,
+        "endChar": 40
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "70f22b91_825819f7",
@@ -255,6 +465,30 @@
       "writtenOn": "2020-12-01T07:07:02Z",
       "side": 1,
       "message": "nit: plural",
+      "range": {
+        "startLine": 152,
+        "startChar": 43,
+        "endLine": 152,
+        "endChar": 54
+      },
+      "revId": "0fb5cabe433c8f12680b59ca4d5e05663e7dc640",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bccc370_78f4c199",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:47:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70f22b91_825819f7",
       "range": {
         "startLine": 152,
         "startChar": 43,
