@@ -16,6 +16,24 @@
       "message": "Why did we need to keep it in the first place?",
       "revId": "6c0abba4f45f5baf64903499ed73a45e9264f28c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3cc34c9_6ef97f05",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-01T05:09:25Z",
+      "side": 0,
+      "message": "I didn\u0027t know if removing this will cause any backward compatibility problem. But it seems to be fine.",
+      "parentUuid": "594675c8_5325e2a7",
+      "revId": "6c0abba4f45f5baf64903499ed73a45e9264f28c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
