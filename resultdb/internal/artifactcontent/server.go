@@ -288,3 +288,53 @@ func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactNam
 	expiration = now.Add(artifactNameTokenKind.Expiration)
 	return
 }
+
+// Options is artifact server configuration.
+type Options struct {
+	// InsecureSelfURLs is set to true to use http:// (not https://) for URLs
+	// pointing back to ResultDB.
+	InsecureSelfURLs bool
+
+	// ContentHostnameMap maps a Host header of GetArtifact request to a host name
+	// to use for all user-content URLs.
+	//
+	// Special key "*" indicates a fallback.
+	ContentHostnameMap map[string]string
+
+	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
+	// storage. Example: "projects/luci-resultdb/instances/artifacts".
+	ArtifactRBEInstance string
+}
+
+// NewArtifactContentServer creates an artifact content server.
+func NewArtifactContentServer(ctx context.Context, opts Options) (*Server, error) {
+	if opts.ArtifactRBEInstance == "" {
+		return nil, errors.Reason("opts.ArtifactRBEInstance is required").Err()
+	}
+
+	conn, err := RBEConn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bs := bytestream.NewByteStreamClient(conn)
+
+	contentServer := &Server{
+		InsecureURLs: opts.InsecureSelfURLs,
+		HostnameProvider: func(requestHost string) string {
+			if host, ok := opts.ContentHostnameMap[requestHost]; ok {
+				return host
+			}
+			return opts.ContentHostnameMap["*"]
+		},
+
+		ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+			return bs.Read(ctx, req)
+		},
+		RBECASInstanceName: opts.ArtifactRBEInstance,
+	}
+
+	if err := contentServer.Init(ctx); err != nil {
+		return nil, err
+	}
+	return contentServer, nil
+}

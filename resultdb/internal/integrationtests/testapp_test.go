@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
@@ -162,9 +163,11 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	err = resultdb.InitServer(resultdbServer, resultdb.Options{
-		ArtifactRBEInstance: "projects/luci-resultdb-dev/instances/artifacts",
-		InsecureSelfURLs:    true,
-		ContentHostnameMap:  map[string]string{"*": "localhost"},
+		artifactcontent.Options{
+			ArtifactRBEInstance: "projects/luci-resultdb-dev/instances/artifacts",
+			InsecureSelfURLs:    true,
+			ContentHostnameMap:  map[string]string{"*": "localhost"},
+		},
 	})
 	if err != nil {
 		return err
