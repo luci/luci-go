@@ -62,6 +62,29 @@
       },
       "revId": "9289c4125e4d95b7198a6bfed00f9db7ba7b7711",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "532001db_e6b6a26f",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T01:52:23Z",
+      "side": 1,
+      "message": "memory efficiency 👍",
+      "range": {
+        "startLine": 104,
+        "startChar": 0,
+        "endLine": 123,
+        "endChar": 0
+      },
+      "revId": "9289c4125e4d95b7198a6bfed00f9db7ba7b7711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
