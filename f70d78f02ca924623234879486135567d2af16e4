@@ -75,6 +75,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "26031b76_65c75687",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad3fba26_96a98b24",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 6
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2dc15620_704dcc4a",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56725493_a55eb506",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cebb3b7b_b961c59a",
@@ -145,6 +187,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a29aedc8_d421d55f",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "652f8da3_8d65375a",
+      "range": {
+        "startLine": 119,
+        "startChar": 29,
+        "endLine": 119,
+        "endChar": 34
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "70813cd7_a0a38984",
@@ -158,6 +224,30 @@
       "writtenOn": "2020-11-30T22:08:29Z",
       "side": 1,
       "message": "i.e.",
+      "range": {
+        "startLine": 120,
+        "startChar": 41,
+        "endLine": 120,
+        "endChar": 43
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18e22d7c_e58e44f5",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70813cd7_a0a38984",
       "range": {
         "startLine": 120,
         "startChar": 41,
@@ -437,6 +527,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d8fcaeb_03c28f98",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Rounding is not required -- it\u0027s done automatically by the gae/service/datastore layer.\n\nIf you are wondering why I did it in changelist code -- here you go: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2567210\ntl;dr because I returned newly inserted object, but I don\u0027t do it here.",
+      "parentUuid": "51d3d994_dbd78d1e",
+      "range": {
+        "startLine": 268,
+        "startChar": 24,
+        "endLine": 268,
+        "endChar": 44
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e37495c_1c089478",
@@ -450,6 +564,30 @@
       "writtenOn": "2020-11-30T22:08:29Z",
       "side": 1,
       "message": "spelling",
+      "range": {
+        "startLine": 42,
+        "startChar": 40,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34d4d996_6bffd349",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e37495c_1c089478",
       "range": {
         "startLine": 42,
         "startChar": 40,
@@ -507,6 +645,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cab160a6_a65f9bb6",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "thank you, though my university professors probably won\u0027t be proud.",
+      "parentUuid": "c1f7560b_882b5cf1",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 53
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6dd25791_44d466d0",
@@ -530,6 +692,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c453020_a2b97eca",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dd25791_44d466d0",
+      "range": {
+        "startLine": 190,
+        "startChar": 24,
+        "endLine": 190,
+        "endChar": 29
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc2157e3_eb6002f8",
@@ -543,6 +729,30 @@
       "writtenOn": "2020-11-30T22:08:29Z",
       "side": 1,
       "message": "del",
+      "range": {
+        "startLine": 28,
+        "startChar": 12,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "421c1c5f_5a2c4477",
+        "filename": "cv/internal/gerrit/poller/tasks.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc2157e3_eb6002f8",
       "range": {
         "startLine": 28,
         "startChar": 12,

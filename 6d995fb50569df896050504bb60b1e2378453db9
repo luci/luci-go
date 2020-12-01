@@ -39,6 +39,30 @@
       },
       "revId": "6d995fb50569df896050504bb60b1e2378453db9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a5d2c2c_090ec5a7",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:13:24Z",
+      "side": 1,
+      "message": "totally accidental, reverted. Thanks!\nInterestingly enough, changing to New32a failed the test on distribution.\nSo, I didn\u0027t like just 16-bit of low quality entropy, so I reworked the algo to work in all cases.\nPTAL again % sorry for this.\n\nNote: in the future CLs (not yet uploaded) this func will actually have to be moved off this package and I expect to re-use for more than just GoB polling.",
+      "parentUuid": "a000aef5_ae08700b",
+      "range": {
+        "startLine": 157,
+        "startChar": 10,
+        "endLine": 157,
+        "endChar": 15
+      },
+      "revId": "6d995fb50569df896050504bb60b1e2378453db9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
