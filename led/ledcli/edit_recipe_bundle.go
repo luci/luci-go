@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"go.chromium.org/luci/auth"
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
@@ -113,11 +114,11 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 	return
 }
 
-func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
-	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, inJob, &ledcmd.EditRecipeBundleOpts{
+func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, authOpts auth.Options, inJob *job.Definition) (out interface{}, err error) {
+	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, authOpts, inJob, &ledcmd.EditRecipeBundleOpts{
 		Overrides:  c.overrides,
 		DebugSleep: c.debugSleep,
-	})
+	},)
 }
 
 func (c *cmdEditRecipeBundle) Run(a subcommands.Application, args []string, env subcommands.Env) int {

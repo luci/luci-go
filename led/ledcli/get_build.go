@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"go.chromium.org/luci/auth"
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
@@ -81,7 +82,7 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 	return errors.Annotate(err, "bad <buildbucket_build_id>").Err()
 }
 
-func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetBuild(ctx, authClient, ledcmd.GetBuildOpts{
 		BuildbucketHost: c.bbHost,
 		BuildID:         c.buildID,

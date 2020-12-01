@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/auth"
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
@@ -67,7 +68,7 @@ func (c *cmdGetSwarm) validateFlags(ctx context.Context, positionals []string, e
 	return errors.Annotate(pingHost(c.swarmingHost), "swarming host").Err()
 }
 
-func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetFromSwarmingTask(ctx, authClient, ledcmd.GetFromSwarmingTaskOpts{
 		Name:         fmt.Sprintf("led get-swarm %s", c.taskID),
 		PinBotID:     c.pinBotID,

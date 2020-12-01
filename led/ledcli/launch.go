@@ -19,6 +19,7 @@ import (
 	"os"
 	"strings"
 
+	"go.chromium.org/luci/auth"
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
@@ -81,7 +82,7 @@ func (c *cmdLaunch) validateFlags(ctx context.Context, _ []string, _ subcommands
 	return
 }
 
-func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	uid, err := ledcmd.GetUID(ctx, c.authenticator)
 	if err != nil {
 		return nil, err
