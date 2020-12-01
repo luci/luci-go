@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b9cb03e_33657e27",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "The proto shows that it\u0027s a valid mask, but I have no idea how this field mask is used.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/builds_service.proto;l\u003d193\n\nFor example, can a client send an update build request to update \"build.output.properties\" with mask \"build.output\"?",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 22
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

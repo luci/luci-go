@@ -24,6 +24,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "16e3ad53_5fe0da9c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "b6060453_aa8becd3",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 264,
+        "endChar": 48
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2f3bc96_6a4b8d94",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "Yes, you are right, and Milo already uses it.\nI will update all in https://source.chromium.org/search?q\u003d%22ID%20is%20always%201%22\u0026ss\u003dchromium%2Finfra%2Finfra in a separate CL.",
+      "parentUuid": "b6060453_aa8becd3",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 264,
+        "endChar": 48
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f62b46bf_8163d2b3",
@@ -37,6 +85,30 @@
       "writtenOn": "2020-11-27T07:14:18Z",
       "side": 1,
       "message": "looks magical. should be a constant.\n\nstepping back, in https://godoc.org/go.chromium.org/luci/gae/service/datastore I see examples like \"$id,1\" which probably means that you can declare \"1\" once and for all. Would that work? If yes, this change probably belongs to a separate (parent?) CL",
+      "range": {
+        "startLine": 266,
+        "startChar": 11,
+        "endLine": 266,
+        "endChar": 12
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b0be259_3f53fe2f",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "Yes, you are right, and Milo already uses it.\nI will update all in https://source.chromium.org/search?q\u003d%22ID%20is%20always%201%22\u0026ss\u003dchromium%2Finfra%2Finfra in a separate CL.",
+      "parentUuid": "f62b46bf_8163d2b3",
       "range": {
         "startLine": 266,
         "startChar": 11,
@@ -64,6 +136,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8f8e177_69bdce18",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b74b9bcd_52290860",
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db38e039_fc62b2b7",
@@ -87,6 +177,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b857fcd_5b2957f4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "good idea. thanks. done",
+      "parentUuid": "db38e039_fc62b2b7",
+      "range": {
+        "startLine": 271,
+        "startChar": 54,
+        "endLine": 271,
+        "endChar": 58
+      },
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d23eb59a_d9f739ed",
@@ -100,6 +214,24 @@
       "writtenOn": "2020-11-27T07:14:18Z",
       "side": 1,
       "message": "this one is odd here. Nothing in this function relies on this line, and instead another function (updateEntities) does, and this is fairly implicit.\nAlso updateEntities also calls KeyForObj. Perhaps this line can be moved into updateEntities, and make only one KeyForObj call?",
+      "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8db0ea61_311a7a15",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:10:05Z",
+      "side": 1,
+      "message": "Yes, it makes sense to move it to updateEntities. Done",
+      "parentUuid": "d23eb59a_d9f739ed",
       "revId": "87bc98e9ab05bc6c8b3f09ac524e886e3f30a8fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
