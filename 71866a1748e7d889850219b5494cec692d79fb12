@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7304bf6_b63aafa5",
+        "filename": "server/gaeemulation/rediscache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T13:52:45Z",
+      "side": 1,
+      "message": "👍 i didn\u0027t grok this at first.",
+      "range": {
+        "startLine": 236,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 2
+      },
+      "revId": "71866a1748e7d889850219b5494cec692d79fb12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
