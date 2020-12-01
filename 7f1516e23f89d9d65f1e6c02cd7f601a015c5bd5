@@ -116,6 +116,30 @@
       },
       "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f847403_e3b508de",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T20:26:07Z",
+      "side": 1,
+      "message": "I think so. For example, stderr could be empty, but a test harness may still like to upload the empty stderr. It will look more intuitive than absence of stderr. WDYT?\n\nOne thing I questioned to myself was whether this content could be omitted if content is nil. The sha256 hash of an empty string is not an empty string. Therefore, we could still require clients to specify the hash always. but its possible a waste of space. Recorder can have an if statement to treat it specially.",
+      "parentUuid": "bcd09b16_8ee0d53e",
+      "range": {
+        "startLine": 286,
+        "startChar": 33,
+        "endLine": 286,
+        "endChar": 79
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
