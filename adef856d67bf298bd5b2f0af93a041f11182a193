@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a391c461_1ac027eb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "+1. Wondering if it\u0027s possible for us to use antlr to define the grammar and let it generate the parser for us.\n\nhttps://www.antlr.org/",
+      "range": {
+        "startLine": 19,
+        "startChar": 10,
+        "endLine": 19,
+        "endChar": 62
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff5d5d21_4bfce3b9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "Haven\u0027t checked the test. Will look soon.",
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73576145_7512051e",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "Should we use gerritpb.ChangeStatus_CHANGE_STATUS_INVALID instead?",
+      "range": {
+        "startLine": 386,
+        "startChar": 18,
+        "endLine": 386,
+        "endChar": 19
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f377b06c_5e3e180b",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "Will there be a escaped double quote char inside the quoted string?",
+      "range": {
+        "startLine": 422,
+        "startChar": 17,
+        "endLine": 422,
+        "endChar": 56
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "febcbb1c_5bd85701",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "This seems weird. I think we should panic if there\u0027s no end quote. Is this the Gerrit behavior?",
+      "range": {
+        "startLine": 423,
+        "startChar": 3,
+        "endLine": 423,
+        "endChar": 63
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3448632c_27fbbfb3",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "This seems weird. Is this the Gerrit behavior? Maybe we can return error if double quote doesn\u0027t close?",
+      "range": {
+        "startLine": 423,
+        "startChar": 3,
+        "endLine": 423,
+        "endChar": 63
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50dcb535_0e4bdc68",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "Maybe \n\n```\nswitch c {\n  case \u0027:\u0027: \n    consume(i + 1)\n    return\n  case \u0027 \u0027: \n    consume(i)\n    return\n}\n```\n \nas you always TrimLeft before getting the next token and this way, you don\u0027t need to TrimRight on L355\u0026362",
+      "range": {
+        "startLine": 434,
+        "startChar": 0,
+        "endLine": 437,
+        "endChar": 4
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32e097ff_2d9337c8",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T21:09:37Z",
+      "side": 1,
+      "message": "I would expect this becomes `li.Value +\u003d int32(val)` if this function is called `Vote`? If it overrides the existing votes, I think we can rename this func to `setVote` or `setLabel`?",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 426,
+        "endChar": 26
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
