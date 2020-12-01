@@ -150,6 +150,7 @@ export class TestResultsTabElement extends MobxLitElement {
       <hr class="divider">
       ` : html ``}
       ${this.renderIntegrationHint()}
+      ${this.renderLoadMore()}
       ${this.renderVariants(unexpectedVariants)}
       ${this.renderVariants(flakyVariants)}
       ${this.renderVariants(exoneratedVariants)}
@@ -159,15 +160,22 @@ export class TestResultsTabElement extends MobxLitElement {
 
   private renderIntegrationHint() {
     const state = this.invocationState;
-    return this.configsStore.userConfigs.hints.showResultDbIntegrationHint && !state.testLoader.isLoading? html `
+    return this.configsStore.userConfigs.hints.showTestResultsHint && !state.testLoader.isLoading? html `
       <div class="list-entry">
+        <p>
         Don't see results of your test framework here?
         This might be because they are not integrated with ResultDB yet.
         Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+        </p>
+        Known issues:
+        <ul id="knownissues">
+          <li>Test result tab is currently slow: <a href="https://crbug.com/1114935">crbug.com/1114935</a>.</li>
+          <li>Sometimes no test failures are displayed at first load: <a href="https://crbug.com/1111683">crbug.com/1111683</a>. You may need to click on "Load More" link.</li>
+        </ul>
         <span
           id="hide-hint"
           @click=${() => {
-            this.configsStore.userConfigs.hints.showResultDbIntegrationHint = false;
+            this.configsStore.userConfigs.hints.showTestResultsHint = false;
             this.configsStore.save();
           }}
         >Don't show again</span>
@@ -191,6 +199,33 @@ export class TestResultsTabElement extends MobxLitElement {
         ></milo-variant-entry>
       `)}
       ${variants.length !== 0 ? html`<hr class="divider">` : ''}
+    `;
+  }
+
+  private renderLoadMore() {
+    const state = this.invocationState;
+    return html`
+      <div id="loadmore" class="list-entry">
+        <span>Showing ${state.selectedNode.testCount} tests.</span>
+        <span
+          id="load"
+          style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
+        >
+          <span
+            id="load-more"
+            style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
+            @click=${this.loadNextPage}
+          >
+            Load More
+          </span>
+          <span
+            style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
+          >
+            Loading <milo-dot-spinner></milo-dot-spinner>
+          </span>
+          <mwc-icon class="inline-icon" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
+        </span>
+      </div>
     `;
   }
 
@@ -222,27 +257,6 @@ export class TestResultsTabElement extends MobxLitElement {
       ></milo-hotkey>
       <div id="test-result-view" tabindex="-1">
         ${this.renderAllVariants()}
-        <div class="list-entry">
-          <span>Showing ${state.selectedNode.testCount} tests.</span>
-          <span
-            id="load"
-            style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
-          >
-            <span
-              id="load-more"
-              style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
-              @click=${this.loadNextPage}
-            >
-              Load More
-            </span>
-            <span
-              style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
-            >
-              Loading <milo-dot-spinner></milo-dot-spinner>
-            </span>
-            <mwc-icon class="inline-icon" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
-          </span>
-        </div>
       </div>
     `;
   }
@@ -280,6 +294,11 @@ export class TestResultsTabElement extends MobxLitElement {
       height: 28px;
       padding: 5px 10px 3px 10px;
     }
+
+    #loadmore {
+      padding-bottom: 5px;
+    }
+
     milo-test-filter {
       margin: 5px;
       margin-bottom: 0px;
@@ -329,9 +348,12 @@ export class TestResultsTabElement extends MobxLitElement {
       vertical-align: bottom;
     }
     #hide-hint {
-      margin-left: 5px;
       color: var(--active-text-color);
       cursor: pointer;
+    }
+    #knownissues{
+      margin-top: 3px;
+      margin-bottom: 3px;
     }
   `;
 }
