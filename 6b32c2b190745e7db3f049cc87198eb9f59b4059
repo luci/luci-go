@@ -22,6 +22,30 @@
       },
       "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3886fdd0_db3a9eab",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:25:51Z",
+      "side": 1,
+      "message": "The answer is no, because the code checks the mask with INCLUDES_ENTIRELY.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d425\n\nI was wondering the intended usage of the mask, \"build.output\".",
+      "parentUuid": "5b9cb03e_33657e27",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 22
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
