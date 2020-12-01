@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f1fb8d0_88db776a",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-01T02:31:45Z",
+      "side": 0,
+      "message": "why?",
+      "range": {
+        "startLine": 339,
+        "startChar": 1,
+        "endLine": 339,
+        "endChar": 7
+      },
+      "revId": "e08e7df8641b48894a5fb98b662fcefc4718ccb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
