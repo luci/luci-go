@@ -280,6 +280,9 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 	if cl.ID != 0 || cl.ExternalID != eid || cl.EVersion != 1 {
 		panic(errors.New("populate changed ID or ExternalID or EVersion, but must not do this."))
 	}
+	// datastore.Put will do RoundTime on its own, but without affecting our `cl`
+	// object. Since `cl` object is passed outside, do rounding here s.t. it has
+	// exact same data as would have been read from datastore right after the Put.
 	cl.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 
 	if err := datastore.Put(ctx, cl); err != nil {
