@@ -22,8 +22,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -88,7 +90,7 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	return nil
 }
 
-func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetBuilder(ctx, authClient, ledcmd.GetBuildersOpts{
 		BuildbucketHost: c.bbHost,
 		Bucket:          c.bucket,

@@ -25,8 +25,10 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/led/job"
 )
 
@@ -86,7 +88,7 @@ const RecipeDirectory = "kitchen-checkout"
 // It isolates the recipes from the repository in the given working directory
 // into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
-func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Definition, opts *EditRecipeBundleOpts) error {
+func EditRecipeBundle(ctx context.Context, authClient *http.Client,  authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
 	if jd.GetSwarming() != nil {
 		return errors.New("ledcmd.EditRecipeBundle is only available for Buildbucket tasks")
 	}
@@ -101,7 +103,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 	}
 	logging.Debugf(ctx, "using recipes.py: %q", recipesPy)
 
-	err = EditIsolated(ctx, authClient, jd, func(ctx context.Context, dir string) error {
+	err = EditIsolated(ctx, authClient, authOpts, jd, func(ctx context.Context, dir string) error {
 		logging.Infof(ctx, "bundling recipes")
 		bundlePath := filepath.Join(dir, RecipeDirectory)
 		// Remove existing bundled recipes, if any. Ignore the error.

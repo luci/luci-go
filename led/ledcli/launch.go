@@ -23,9 +23,11 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -81,7 +83,7 @@ func (c *cmdLaunch) validateFlags(ctx context.Context, _ []string, _ subcommands
 	return
 }
 
-func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	uid, err := ledcmd.GetUID(ctx, c.authenticator)
 	if err != nil {
 		return nil, err
