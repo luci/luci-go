@@ -386,13 +386,13 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			root = "x:\\dir"
 		}
-		_, _, _, err := LoadIsolateForConfig(root, isoData, nil)
+		_, _, err := LoadIsolateForConfig(root, isoData, nil)
 		So(err, ShouldNotBeNil)
 		Convey(fmt.Sprintf("Verify error message: %s", err), func() {
 			So(err.Error(), ShouldContainSubstring, "variables were missing")
 			So(err.Error(), ShouldContainSubstring, "bit")
 			So(err.Error(), ShouldContainSubstring, "OS")
-			_, _, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
+			_, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "variables were missing")
 			So(err.Error(), ShouldContainSubstring, "OS")
@@ -409,18 +409,16 @@ func TestLoadIsolateForConfig(t *testing.T) {
 			root = "x:\\dir"
 		}
 		vars := map[string]string{"bit": "64", "OS": "linux"}
-		cmd, deps, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		deps, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")})
 
 		// Case win64, matches only first condition.
 		vars = map[string]string{"bit": "64", "OS": "win"}
-		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
@@ -428,18 +426,16 @@ func TestLoadIsolateForConfig(t *testing.T) {
 
 		// Case mac64, matches only second condition.
 		vars = map[string]string{"bit": "64", "OS": "mac"}
-		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(cmd, ShouldResemble, []string{"python", "32orMac64"})
 		So(deps, ShouldBeEmpty)
 
 		// Case win32, both first and second condition match.
 		vars = map[string]string{"bit": "32", "OS": "win"}
-		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(cmd, ShouldResemble, []string{"python", "32orMac64"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
@@ -464,20 +460,19 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 
 		// Test failures.
 		absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")
-		_, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
+		_, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
 		So(err, ShouldNotBeNil)
 
-		_, _, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
+		_, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
 			[]byte(sampleIsolateDataWithIncludes), nil)
 		So(err, ShouldNotBeNil)
 
 		// Test Successful loading.
 		// Case mac32, matches only second condition from main isolate and one in included.
 		vars := map[string]string{"bit": "64", "OS": "linux"}
-		cmd, deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
+		deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, tmpDir)
-		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
 			filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
