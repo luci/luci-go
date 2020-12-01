@@ -143,26 +143,37 @@ func TestQueryBlamelist(t *testing.T) {
 			{Id: "commit1"},
 		}
 
-		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, commitID string) *model.BuildSummary {
+		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, commitID string, additionalBlamelistPins ...string) *model.BuildSummary {
 			builderID := common.LegacyBuilderIDString(builder)
 			buildID := fmt.Sprintf("%s/%d", builderID, buildNum)
+			buildSet := protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
+				Host:    "fake_gitiles_host",
+				Project: "fake_gitiles_project",
+				Id:      commitID,
+			})
+			blamelistPins := append(additionalBlamelistPins, buildSet)
 			return &model.BuildSummary{
-				BuildKey:  datastore.MakeKey(c, "build", buildID),
-				ProjectID: builder.Project,
-				BuilderID: builderID,
-				BuildID:   buildID,
-				BuildSet: []string{protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
-					Host:    "fake_gitiles_host",
-					Project: "fake_gitiles_project",
-					Id:      commitID,
-				})},
+				BuildKey:      datastore.MakeKey(c, "build", buildID),
+				ProjectID:     builder.Project,
+				BuilderID:     builderID,
+				BuildID:       buildID,
+				BuildSet:      []string{buildSet},
+				BlamelistPins: blamelistPins,
 			}
 		}
 
 		builds := []*model.BuildSummary{
-			createFakeBuild(builder1, 1, "commit8"),
+			createFakeBuild(builder1, 1, "commit8", protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
+				Host:    "fake_gitiles_host",
+				Project: "other_fake_gitiles_project",
+				Id:      "commit3",
+			})),
 			createFakeBuild(builder2, 1, "commit7"),
-			createFakeBuild(builder1, 2, "commit5"),
+			createFakeBuild(builder1, 2, "commit5", protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
+				Host:    "fake_gitiles_host",
+				Project: "other_fake_gitiles_project",
+				Id:      "commit1",
+			})),
 			createFakeBuild(builder1, 3, "commit3"),
 		}
 
@@ -358,6 +369,29 @@ func TestQueryBlamelist(t *testing.T) {
 					So(res.PrecedingCommit, ShouldBeZeroValue)
 				})
 			})
+		})
+
+		Convey(`get blamelist of other projects`, func() {
+			req := &milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "fake_gitiles_host",
+					Project: "other_fake_gitiles_project",
+					Id:      "commit3",
+				},
+				Builder:             builder1,
+				MultiProjectSupport: true,
+			}
+			gitMock.
+				EXPECT().
+				Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+				Return(commits[5:], nil)
+
+			res, err := srv.QueryBlamelist(c, req)
+			So(err, ShouldBeNil)
+			So(res.Commits, ShouldHaveLength, 2)
+			So(res.Commits[0].Id, ShouldEqual, "commit3")
+			So(res.Commits[1].Id, ShouldEqual, "commit2")
+			So(res.PrecedingCommit.Id, ShouldEqual, "commit1")
 		})
 	})
 }
