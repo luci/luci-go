@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
-	"go.chromium.org/luci/resultdb/internal/services/resultdb"
+	"go.chromium.org/luci/resultdb/internal/services/ui"
 )
 
 func main() {
-	opts := resultdb.Options{
+	opts := ui.Options{
 		artifactcontent.Options{
 			ContentHostnameMap: map[string]string{},
 		},
@@ -49,6 +49,6 @@ func main() {
 	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	internal.Main(func(srv *server.Server) error {
-		return resultdb.InitServer(srv, opts)
+		return ui.InitServer(srv, opts)
 	})
 }

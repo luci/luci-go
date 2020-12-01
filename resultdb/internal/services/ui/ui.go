@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package ui
 
 import (
 	"context"
@@ -25,23 +25,23 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 )
 
-// resultDBServer implements pb.ResultDBServer.
+// uiServer implements uipb.UIServer.
 //
-// It does not return gRPC-native errors; use DecoratedResultDB with
+// It does not return gRPC-native errors; use DecoratedUI with
 // internal.CommonPostlude.
-type resultDBServer struct {
+type uiServer struct {
 	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
 }
 
-// Options is resultdb server configuration.
+// Options is ui server configuration.
 type Options struct {
 	artifactcontent.Options
 }
 
-// InitServer initializes a resultdb server.
+// InitServer initializes a ui server.
 func InitServer(srv *server.Server, opts Options) error {
 	contentServer, err := artifactcontent.NewArtifactContentServer(srv.Context, opts.Options)
 	if err != nil {
@@ -57,25 +57,13 @@ func InitServer(srv *server.Server, opts Options) error {
 		contentServer.InstallHandlers(srv.VirtualHost(host))
 	}
 
-	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
-		Service: &resultDBServer{
+	uipb.RegisterUIServer(srv.PRPC, &uipb.DecoratedUI{
+		Service: &uiServer{
 			generateArtifactURL: contentServer.GenerateSignedURL,
 		},
 		Postlude: internal.CommonPostlude,
 	})
 
-	// Register an empty Recorder server only to make the discovery service
-	// list it.
-	// The actual traffic will be directed to another deployment, i.e. this
-	// binary will never see Recorder RPCs.
-	// TODO(nodir): replace this hack with a separate discovery Deployment that
-	// dynamically fetches discovery documents from other deployments and
-	// returns their union.
-	pb.RegisterRecorderServer(srv.PRPC, nil)
-	pb.RegisterDeriverServer(srv.PRPC, nil)
-
 	srv.PRPC.AccessControl = prpc.AllowOriginAll
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	srv.PRPC.HackFixFieldMasksForJSON = true
 	return nil
 }
