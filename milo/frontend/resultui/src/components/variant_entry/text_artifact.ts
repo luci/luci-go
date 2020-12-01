@@ -63,6 +63,9 @@ export class TextArtifactElement extends MobxLitElement {
     #load {
       color: var(--active-text-color);
     }
+    pre {
+      white-space: pre-wrap;
+    }
   `;
 }
 
