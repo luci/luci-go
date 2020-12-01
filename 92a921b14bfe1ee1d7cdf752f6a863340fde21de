@@ -22,6 +22,30 @@
       },
       "revId": "92a921b14bfe1ee1d7cdf752f6a863340fde21de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fc00850_97a08cd8",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-01T04:42:56Z",
+      "side": 1,
+      "message": "Renamed to BuildSummary.BlamelistPins.",
+      "parentUuid": "6ea3a041_caacc1a6",
+      "range": {
+        "startLine": 75,
+        "startChar": 23,
+        "endLine": 75,
+        "endChar": 36
+      },
+      "revId": "92a921b14bfe1ee1d7cdf752f6a863340fde21de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
