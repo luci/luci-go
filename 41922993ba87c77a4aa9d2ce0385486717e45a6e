@@ -22,6 +22,30 @@
       },
       "revId": "41922993ba87c77a4aa9d2ce0385486717e45a6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "497d65b8_515d8f06",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T18:55:37Z",
+      "side": 1,
+      "message": "max(u64) \u003d\u003d 2^64-1, ie max bit set is 63rd. 1\u003c\u003c64 will lead to overflow.\nbut i\u0027m using singed int64, so -1 \u003d\u003e 62.",
+      "parentUuid": "a07f8811_4cb6b5a0",
+      "range": {
+        "startLine": 168,
+        "startChar": 22,
+        "endLine": 168,
+        "endChar": 24
+      },
+      "revId": "41922993ba87c77a4aa9d2ce0385486717e45a6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
