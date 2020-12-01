@@ -19,14 +19,23 @@ import (
 	"compress/zlib"
 	"io/ioutil"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/internal/zstd"
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
+
+// UseZstd, if true, instructs the dscache to use zstd algorithm for compression
+// instead of zlib.
+//
+// Already compressed zlib entities are supported even when UseZstd is true.
+var UseZstd = false
 
 type compressionType byte
 
 const (
-	compressionNone compressionType = iota
-	compressionZlib
+	compressionNone compressionType = 0
+	compressionZlib compressionType = 1
+	compressionZstd compressionType = 2
 )
 
 func encodeItemValue(pm ds.PropertyMap, pfx []byte) ([]byte, error) {
@@ -54,37 +63,64 @@ func encodeItemValue(pm ds.PropertyMap, pfx []byte) ([]byte, error) {
 	data := buf.Bytes()[len(pfx)+1:] // skip pfx and compressionNone byte
 	buf2 := bytes.NewBuffer(make([]byte, 0, len(data)/2))
 
+	// Use zlib in legacy applications that didn't opt-in into using zstd.
+	algo := compressionZlib
+	if UseZstd {
+		algo = compressionZstd
+	}
+
 	// Compress into the new buffer.
 	buf2.Write(pfx)
-	buf2.WriteByte(byte(compressionZlib))
-	writer := zlib.NewWriter(buf2)
-	writer.Write(data)
-	writer.Close()
-
-	return buf2.Bytes(), nil
+	buf2.WriteByte(byte(algo))
+	switch algo {
+	case compressionZlib:
+		writer := zlib.NewWriter(buf2)
+		writer.Write(data)
+		writer.Close()
+		return buf2.Bytes(), nil
+	case compressionZstd:
+		return zstd.EncodeAll(data, buf2.Bytes()), nil
+	default:
+		panic("impossible")
+	}
 }
 
 func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 	if len(val) == 0 {
 		return nil, ds.ErrNoSuchEntity
 	}
-	buf := bytes.NewBuffer(val)
-	compTypeByte, err := buf.ReadByte()
-	if err != nil {
-		return nil, err
+	if len(val) < 1 {
+		return nil, errors.Reason("missing the compression type byte").Err()
 	}
 
-	if compressionType(compTypeByte) == compressionZlib {
-		reader, err := zlib.NewReader(buf)
+	compTypeByte, data := val[0], val[1:]
+
+	switch compressionType(compTypeByte) {
+	case compressionNone:
+		// already decompressed
+
+	case compressionZlib:
+		reader, err := zlib.NewReader(bytes.NewBuffer(data))
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
-		data, err := ioutil.ReadAll(reader)
+		if data, err = ioutil.ReadAll(reader); err != nil {
+			return nil, err
+		}
+		if err = reader.Close(); err != nil {
+			return nil, err
+		}
+
+	case compressionZstd:
+		var err error
+		data, err = zstd.DecodeAll(data, nil)
 		if err != nil {
 			return nil, err
 		}
-		buf = bytes.NewBuffer(data)
+
+	default:
+		return nil, errors.Reason("unknown compression scheme #%d", compTypeByte).Err()
 	}
-	return ds.Deserializer{KeyContext: kc}.PropertyMap(buf)
+
+	return ds.Deserializer{KeyContext: kc}.PropertyMap(bytes.NewBuffer(data))
 }

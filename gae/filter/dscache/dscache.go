@@ -38,7 +38,7 @@ const (
 
 	// CompressionThreshold is the number of bytes of entity value after which
 	// compression kicks in.
-	CompressionThreshold = 860
+	CompressionThreshold = 16 * 1024
 
 	// DefaultShards is the default number of key sharding to do.
 	DefaultShards = 1
