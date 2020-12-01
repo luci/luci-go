@@ -29,9 +29,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
