@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9de3d4c9_1dcb0c3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T23:03:06Z",
+      "side": 1,
+      "message": "Haven\u0027t finished reviewing yet, but quick question: Are all of the changes in query.go covered by poller_test?",
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "480daf5a_9d6fcf12",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T23:03:06Z",
+      "side": 1,
+      "message": "Nit: \"Too low of a value here\", or perhaps \"A value that\u0027s too low here\"",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eeccad27_7aa950da",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T23:03:06Z",
+      "side": 1,
+      "message": "interested",
+      "range": {
+        "startLine": 186,
+        "startChar": 49,
+        "endLine": 186,
+        "endChar": 58
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
