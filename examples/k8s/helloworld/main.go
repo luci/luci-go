@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -40,8 +42,8 @@ import (
 func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
-		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 	}
 
@@ -95,11 +97,35 @@ func main() {
 				http.Error(c.Writer, err.Error(), 500)
 				return
 			}
-			fmt.Fprintf(c.Writer, "%d", n)
+			fmt.Fprintf(c.Writer, "%d\n", n)
+		})
+
+		srv.Routes.GET("/inc", router.MiddlewareChain{}, func(c *router.Context) {
+			ctx := c.Context
+
+			ent := TestEntity{ID: "test"}
+			if err := datastore.Get(ctx, &ent); err != nil && err != datastore.ErrNoSuchEntity {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			ent.Value += 1
+			if err := datastore.Put(ctx, &ent); err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+
+			fmt.Fprintf(c.Writer, "%d\n", ent.Value)
 		})
 
 		return nil
 	})
+}
+
+type TestEntity struct {
+	ID    string `gae:"$id"`
+	Value int64  `gae:",noindex"`
+
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 type greeterServer struct{}
