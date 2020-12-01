@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e801c1e8_7995cf16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T23:07:13Z",
+      "side": 1,
+      "message": "Yes 😊\n\nWell, I didn\u0027t check for propagation of errors, but these tests in Go are much less valuable than in Python, especially if error is just bubbled up.\n\nI also glanced at the coverage info while testing it and I don\u0027t think I\u0027m missing any important use case.",
+      "parentUuid": "9de3d4c9_1dcb0c3a",
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "480daf5a_9d6fcf12",
