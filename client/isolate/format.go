@@ -55,9 +55,6 @@ var osPathSeparator = string(os.PathSeparator)
 //    'conditions': [
 //      ['OS=="vms" and foo=42', {
 //        'variables': {
-//          'command': [
-//            ...
-//          ],
 //          'files': [
 //            ...
 //          ],
@@ -121,7 +118,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 // relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (
 	[]string, string, error) {
-	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
+	// Load the .isolate file, process its conditions, retrieve dependencies.
 	isolate, err := LoadIsolateAsConfig(isolateDir, content)
 	if err != nil {
 		return nil, "", err
@@ -180,8 +177,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 // that we have.
 //
 // This class doesn't hold isolateDir, since it is dependent on the final
-// configuration selected. It is implicitly dependent on which .isolate defines
-// the 'command' that will take effect.
+// configuration selected.
 type Configs struct {
 	// ConfigVariables contains names only, sorted by name; the order is same as in byConfig.
 	ConfigVariables []string
@@ -345,9 +341,6 @@ func newConfigSettings(variables variables, isolateDir string) *ConfigSettings {
 // A new instance is not created and self or rhs is returned if the other
 // object is the empty object.
 //
-// self has priority over rhs for Command. Use the same IsolateDir as the
-// one having a Command.
-//
 // Dependencies listed in rhs are patch adjusted ONLY if they don't start with
 // a path variable, e.g. the characters '<('.
 func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
@@ -462,8 +455,7 @@ func (p *condition) UnmarshalJSON(data []byte) error {
 
 // variables represents variable as part of condition or top level in an isolate file.
 type variables struct {
-	Command []string `json:"command"`
-	Files   []string `json:"files"`
+	Files []string `json:"files"`
 }
 
 // variableValue holds a single value of a string or an int,
@@ -937,7 +929,7 @@ func pythonToGoString(left []rune) (string, []rune, error) {
 }
 
 func (v *variables) isEmpty() bool {
-	return len(v.Command) == 0 && len(v.Files) == 0
+	return len(v.Files) == 0
 }
 
 // configName defines a config as an ordered set of bound and unbound variable values.
