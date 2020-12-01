@@ -93,6 +93,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 
 	err = parallel.WorkPool(32, func(workCh chan<- func() error) {
 		for _, task := range tasks {
+			task := task
 			workCh <- func() error {
 				if err := tq.AddTask(ctx, task); err != nil {
 					logging.WithError(err).Errorf(ctx, "Failed to submit refresh task for project %q", task.Payload.(*RefreshProjectConfigTask).GetProject())
