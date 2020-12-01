@@ -21,6 +21,7 @@ import { consumeContext, provideContext } from '../../libs/context';
 export interface UserConfigs {
   hints: {
     showResultDbIntegrationHint: boolean;
+    showTestResultsHint: boolean;
   };
   steps: {
     showSucceededSteps: boolean;
@@ -36,6 +37,7 @@ export interface UserConfigs {
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   hints: {
     showResultDbIntegrationHint: true,
+    showTestResultsHint: true,
   },
   steps: Object.freeze({
     showSucceededSteps: true,
