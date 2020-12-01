@@ -99,27 +99,11 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 			return nil, err
 		}
 	}
-	// If the .isolate contains command, ignore any command in child .isolate.
-	rootHasCommand := false
-	for _, pair := range out.byConfig {
-		if len(pair.value.Command) > 0 {
-			rootHasCommand = true
-			break
-		}
-	}
 	// Load the includes. Process them in reverse so the last one take precedence.
 	for i := len(processedIsolate.includes) - 1; i >= 0; i-- {
 		included, err := loadIncludedIsolate(isolateDir, processedIsolate.includes[i])
 		if err != nil {
 			return nil, err
-		}
-		if rootHasCommand {
-			// Strip any command in the imported isolate. It is because the chosen
-			// command is not related to the one in the top-most .isolate, since the
-			// configuration is flattened.
-			for _, pair := range included.byConfig {
-				pair.value.Command = nil
-			}
 		}
 		if out, err = out.union(included); err != nil {
 			return nil, err
@@ -335,8 +319,6 @@ func (c *Configs) expandConfigVariables(newConfigVars []string) []configPair {
 type ConfigSettings struct {
 	// Files is the list of dependencies. The items use '/' as a path separator.
 	Files []string
-	// Command is the actual command to run.
-	Command []string
 	// IsolateDir is the path where to start the command from.
 	// It uses the OS' native path separator and it must be an absolute path.
 	IsolateDir string
@@ -351,7 +333,6 @@ func newConfigSettings(variables variables, isolateDir string) *ConfigSettings {
 	}
 	c := &ConfigSettings{
 		make([]string, len(variables.Files)),
-		variables.Command,
 		isolateDir,
 	}
 	copy(c.Files, variables.Files)
@@ -384,18 +365,8 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 
 	// Takes the difference between the two isolateDir. Note that while
 	// isolateDir is in native path case, all other references are in posix.
-	useRHS := false
-	var command []string
-	if len(lhs.Command) > 0 {
-		useRHS = false
-		command = lhs.Command
-	} else if len(rhs.Command) > 0 {
-		useRHS = true
-		command = rhs.Command
-	} else {
-		// If self doesn't define any file, use rhs.
-		useRHS = len(lhs.Files) == 0
-	}
+	// If self doesn't define any file, use rhs.
+	useRHS := len(lhs.Files) == 0
 
 	lRelCwd, rRelCwd := lhs.IsolateDir, rhs.IsolateDir
 	lFiles, rFiles := lhs.Files, rhs.Files
@@ -433,7 +404,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		files = append(files, f)
 	}
 	sort.Strings(files)
-	return &ConfigSettings{files, command, lRelCwd}, nil
+	return &ConfigSettings{files, lRelCwd}, nil
 }
 
 // Private details.
