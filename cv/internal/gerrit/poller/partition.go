@@ -101,7 +101,7 @@ func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*Su
 		return subpollers
 	}
 
-	// Split remainingRepos into SubPollers minimizing max of repos per SubPoller.
+	// Split remaningRepos into SubPollers minimizing max of repos per SubPoller.
 	// Note that rounding up positive int division is (x-1)/y + 1.
 	neededSubPollers := (len(remainingRepos)-1)/maxReposPerQuery + 1
 	maxPerSubPoller := (len(remainingRepos)-1)/neededSubPollers + 1
