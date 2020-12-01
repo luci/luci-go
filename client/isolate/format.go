@@ -132,15 +132,15 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 // the information unprocessed but filtered for the specific OS.
 //
 // Returns:
-//   command, dependencies, relDir, error.
+//   dependencies, relDir, error.
 //
 // relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (
-	[]string, []string, string, error) {
+	[]string, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
 	isolate, err := LoadIsolateAsConfig(isolateDir, content)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, "", err
 	}
 	cn := configName{}
 	var missingVars []string
@@ -154,12 +154,12 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	if len(missingVars) > 0 {
 		sort.Strings(missingVars)
 		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
-		return nil, nil, "", err
+		return nil, "", err
 	}
 	// A configuration is to be created with all the combinations of free variables.
 	config, err := isolate.GetConfig(cn)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, "", err
 	}
 	dependencies := config.Files
 	relDir := config.IsolateDir
@@ -170,7 +170,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 		}
 		relDir = strings.Replace(relDir, "/", osPathSeparator, -1)
 	}
-	return config.Command, dependencies, relDir, nil
+	return dependencies, relDir, nil
 }
 
 func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
