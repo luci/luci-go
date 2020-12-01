@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d43e0d2e_e1c3245c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T07:08:41Z",
+      "side": 1,
+      "message": "why is it a separate k8s service? can it be in the \"resultdb\" k8s service?",
+      "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
