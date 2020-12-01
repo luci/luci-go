@@ -89,6 +89,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "79d55b7c_8d2859d6",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-01T02:57:46Z",
+      "side": 1,
+      "message": "By \"backward compatibility\" I wanted to refer to line 61-62 of the same file.\n\nI think as window.localStorage may contain `showResultDbIntegrationHint`, it may fail if UserConfigs does not contain such field. But I am not 100% sure. I will test to see if we can safely remove the field or not.",
+      "parentUuid": "23c34030_82970a88",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a3305e6d_475baea3",
