@@ -26,6 +26,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	gerritapi "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
@@ -192,7 +193,7 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 	return errors.Annotate(err, "invalid URL_TO_CHANGESET").Err()
 }
 
-func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	return inJob, inJob.HighLevelEdit(func(je job.HighLevelEditor) {
 		if c.remove {
 			je.RemoveGerritChange(c.gerritChange)
