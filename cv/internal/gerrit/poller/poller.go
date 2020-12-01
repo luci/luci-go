@@ -248,12 +248,11 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 // in RAM only.
 func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 	s.ConfigHash = meta.Hash()
-	// TODO(tandrii): load configGroups and set up SubPollers.
-	s.SubPollers = &SubPollers{
-		SubPollers: []*SubPoller{
-			{},
-		},
+	cgs, err := meta.GetConfigGroups(ctx)
+	if err != nil {
+		return err
 	}
+	s.SubPollers = &SubPollers{SubPollers: partitionConfig(cgs)}
 	return nil
 }
 

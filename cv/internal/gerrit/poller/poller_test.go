@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjectOffset(t *testing.T) {
@@ -119,6 +121,66 @@ func TestSchedule(t *testing.T) {
 	})
 }
 
+func TestPartitionConfig(t *testing.T) {
+	t.Parallel()
+
+	Convey("partitionConfig works", t, func() {
+
+		Convey("groups by prefix if possible", func() {
+			// makeCfgs merges several projects configs into one just to re-use
+			// singleRepoConfig.
+			makeCfgs := func(cfgs ...*cfgpb.Config) (ret []*config.ConfigGroup) {
+				for _, cfg := range cfgs {
+					for _, cg := range cfg.GetConfigGroups() {
+						ret = append(ret, &config.ConfigGroup{Content: cg})
+					}
+				}
+				return
+			}
+			cgs := makeCfgs(singleRepoConfig("h1", "infra/222", "infra/111"))
+			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+				{Host: "h1", OrProjects: []string{"infra/111", "infra/222"}},
+			})
+
+			cgs = append(cgs, makeCfgs(singleRepoConfig("h1", sharedPrefixRepos("infra", 30)...))...)
+			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+				{Host: "h1", CommonProjectPrefix: "infra"},
+			})
+			cgs = append(cgs, makeCfgs(singleRepoConfig("h2", "infra/499", "infra/132"))...)
+			So(partitionConfig(cgs), ShouldResembleProto, []*SubPoller{
+				{Host: "h1", CommonProjectPrefix: "infra"},
+				{Host: "h2", OrProjects: []string{"infra/132", "infra/499"}},
+			})
+		})
+
+		Convey("evenly distributes repos among SubPollers", func() {
+			So(minReposPerPrefixQuery, ShouldBeGreaterThan, 5)
+			repos := stringset.New(23)
+			repos.AddAll(sharedPrefixRepos("a", 5))
+			repos.AddAll(sharedPrefixRepos("b", 5))
+			repos.AddAll(sharedPrefixRepos("c", 3))
+			repos.AddAll(sharedPrefixRepos("d", 5))
+			repos.AddAll(sharedPrefixRepos("e", 5))
+			subpollers := partitionHostRepos(
+				"host",
+				repos.ToSlice(), // effectively shuffles repos
+				7,               // at most 7 per query.
+			)
+			So(subpollers, ShouldHaveLength, 4) // 7*3 < 23 < 7*4
+
+			for _, sp := range subpollers {
+				// Ensure each has 5..6 repos instead max of 7.
+				So(len(sp.GetOrProjects()), ShouldBeBetweenOrEqual, 5, 6)
+				So(sort.StringsAreSorted(sp.GetOrProjects()), ShouldBeTrue)
+				repos.DelAll(sp.GetOrProjects())
+			}
+
+			// Ensure no overlaps or missed repos.
+			So(repos.ToSortedSlice(), ShouldResemble, []string{})
+		})
+	})
+}
+
 func TestPoller(t *testing.T) {
 	t.Parallel()
 
@@ -173,8 +235,15 @@ func TestPoller(t *testing.T) {
 				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				// Ensure follow up task has been created.
 				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
-				So(mustGetState(lProject).EVersion, ShouldEqual, i+1)
-				// TODO(tandrii): assert subpollers state changed.
+				st := mustGetState(lProject)
+				So(st.EVersion, ShouldEqual, i+1)
+				So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+					// TODO(tandrii): assert subpollers state changed.
+					{
+						Host:       gHost,
+						OrProjects: []string{gRepo},
+					},
+				})
 			}
 
 			Convey("disabled project => remove poller state & stop task chain", func() {
@@ -186,33 +255,54 @@ func TestPoller(t *testing.T) {
 
 			Convey("notices updated config", func() {
 				before := mustGetState(lProject)
-				testcfg.Update(ctx, lProject, singleRepoConfig(gHost, gRepo+"/subrepo"))
+				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
+				testcfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
 				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				after := mustGetState(lProject)
 				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
-				// TODO(tandrii): assert subpollers state changed.
+				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+					// TODO(tandrii): assert subpollers state changed.
+					{
+						Host:                gHost,
+						CommonProjectPrefix: "shared",
+					},
+					{
+						Host:       gHost,
+						OrProjects: []string{gRepo},
+					},
+				})
 			})
 		})
 	})
 }
 
-func singleRepoConfig(gHost, gRepo string) *cfgpb.Config {
+func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
+	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
+	for i, gRepo := range gRepos {
+		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{
+			Name:      gRepo,
+			RefRegexp: []string{"refs/heads/main"},
+		}
+	}
 	return &cfgpb.Config{
 		ConfigGroups: []*cfgpb.ConfigGroup{
 			{
 				Name: "main",
 				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
 					{
-						Url: "https://" + gHost + "/",
-						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
-							{
-								Name:      gRepo,
-								RefRegexp: []string{"refs/heads/main"},
-							},
-						},
+						Url:      "https://" + gHost + "/",
+						Projects: projects,
 					},
 				},
 			},
 		},
 	}
+}
+
+func sharedPrefixRepos(prefix string, n int) []string {
+	rs := make([]string, n)
+	for i := range rs {
+		rs[i] = fmt.Sprintf("%s/%03d", prefix, i)
+	}
+	return rs
 }
