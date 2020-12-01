@@ -63,6 +63,30 @@
       },
       "revId": "c9f7dfcca9ff56233bcb05ef40309cfeb0e7c773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "524038c7_2bb82dde",
+        "filename": "milo/frontend/resultui/src/components/log.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-01T06:41:24Z",
+      "side": 1,
+      "message": "I think this is incorrect; you still need the brackets to be invisible if it\u0027s not stdout/stderr. Suggest moving the display style into a \u003cspan\u003e around the brackets.",
+      "parentUuid": "1c42b112_ac4f0dcd",
+      "range": {
+        "startLine": 36,
+        "startChar": 7,
+        "endLine": 36,
+        "endChar": 12
+      },
+      "revId": "c9f7dfcca9ff56233bcb05ef40309cfeb0e7c773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
