@@ -33,6 +33,24 @@
       "message": "nit:\n\n  logging.Errorf(ctx, \"SinkServer: shutdown failed: %s\", err)\n\nusually %q isn\u0027t used for errors",
       "revId": "cebfca7c2b2efa0f112a4f34704c4b8391ebe2ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5410ef05_c1e4c7a5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T00:12:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0be9dcd2_219eec59",
+      "revId": "cebfca7c2b2efa0f112a4f34704c4b8391ebe2ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
