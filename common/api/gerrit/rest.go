@@ -49,10 +49,6 @@ const (
 	// contentTypeText is the http header content-type value for plain text body.
 	contentTypeText = "application/x-www-form-urlencoded; charset=UTF-8"
 
-	// gerritTimestampLayout is the timestamp format used in Gerrit.
-	// See: https://gerrit-review.googlesource.com/Documentation/rest-api.html#timestamp
-	gerritTimestampLayout = "2006-01-02 15:04:05.000000000"
-
 	// defaultQueryLimit is the default limit for ListChanges, and
 	// maxQueryLimit is the maximum allowed limit. If either of these are
 	// changed, the proto comments should also be updated.
