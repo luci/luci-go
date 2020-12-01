@@ -551,6 +551,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3115274d_0d76c46f",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T18:35:30Z",
+      "side": 1,
+      "message": "Got it. Thanks for explaining.",
+      "parentUuid": "9d8fcaeb_03c28f98",
+      "range": {
+        "startLine": 268,
+        "startChar": 24,
+        "endLine": 268,
+        "endChar": 44
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e37495c_1c089478",

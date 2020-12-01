@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a07f8811_4cb6b5a0",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T18:35:30Z",
+      "side": 1,
+      "message": "why 55? should this be 64-7 \u003d 57?",
+      "range": {
+        "startLine": 168,
+        "startChar": 22,
+        "endLine": 168,
+        "endChar": 24
+      },
+      "revId": "41922993ba87c77a4aa9d2ce0385486717e45a6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
