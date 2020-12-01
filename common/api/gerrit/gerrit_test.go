@@ -36,7 +36,7 @@ func TestGerritURL(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		}
 
-		f("wtf/\\is\this")
+		f("what/\\is\this")
 		f("https://example.com/")
 		f("http://bad-protocol-review.googlesource.com/")
 		f("no-protocol-review.googlesource.com/")

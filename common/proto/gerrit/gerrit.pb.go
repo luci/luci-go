@@ -673,6 +673,9 @@ type ListChangesRequest struct {
 	// Caps the number of results to return. Required.
 	//
 	// Defaults to 25 if not provided; maximum value 1000.
+	//
+	// Use luci/common/api/gerrit:PagingListChanges wrapper if you need to fetch
+	// more or all changes.
 	Limit int64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// The number of changes to skip from the start, for pagination.
 	//
@@ -5191,6 +5194,8 @@ type GerritClient interface {
 	ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
 	//
+	// TODO(tandrii): recommend a paging query.
+	//
 	// Note, although the Gerrit API supports multiple queries, for which
 	// it can return multiple lists of changes, this is not a foreseen use-case
 	// so this API just includes one query with one returned list of changes.
@@ -5612,6 +5617,8 @@ type GerritServer interface {
 	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
 	ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
+	//
+	// TODO(tandrii): recommend a paging query.
 	//
 	// Note, although the Gerrit API supports multiple queries, for which
 	// it can return multiple lists of changes, this is not a foreseen use-case
