@@ -472,12 +472,12 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 		So(err, ShouldBeNil)
-		So(dir, ShouldResemble, tmpDir)
+		So(dir, ShouldResemble, filepath.Join(tmpDir, "inc"))
 		So(deps, ShouldResemble, []string{
-			"64linuxOrWin",
+			filepath.Join("..", "64linuxOrWin"),
 			filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
-			filepath.Join("inc", "inc_file"),
+			"inc_file",
 		})
 	})
 }
@@ -486,7 +486,6 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should properly handle config setting merging.`, t, func() {
 		left := &ConfigSettings{
-			Command:    []string{"left takes precedence"},
 			Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
 			IsolateDir: absToOS("/tmp/bar"),              // In native path.
 		}
@@ -497,7 +496,6 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 
 		out, err := left.union(right)
 		So(err, ShouldBeNil)
-		So(out.Command, ShouldResemble, left.Command)
 		So(out.IsolateDir, ShouldResemble, left.IsolateDir)
 		So(left.IsolateDir, ShouldResemble, absToOS("/tmp/bar"))
 		So(out.Files, ShouldResemble, []string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"})
@@ -512,17 +510,15 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 			IsolateDir: absToOS("/tmp/bar"),              // In native path.
 		}
 		right := &ConfigSettings{
-			Command:    []string{"right takes precedence"},
 			Files:      []string{"../ri/g/ht", "bar/"},
 			IsolateDir: absToOS("/var/lib"),
 		}
 
 		out, err := left.union(right)
 		So(err, ShouldBeNil)
-		So(out.Command, ShouldResemble, right.Command)
-		So(out.IsolateDir, ShouldResemble, right.IsolateDir)
+		So(out.IsolateDir, ShouldResemble, left.IsolateDir)
 		So(right.IsolateDir, ShouldResemble, absToOS("/var/lib"))
-		So(out.Files, ShouldResemble, []string{"../../le/f/t", "../../tmp/bar/foo/", "../ri/g/ht", "bar/"})
+		So(out.Files, ShouldResemble, []string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"})
 	})
 }
 
