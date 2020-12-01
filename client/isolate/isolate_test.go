@@ -141,18 +141,6 @@ func TestArchive(t *testing.T) {
 				'../link',
 			],
 		},
-		'conditions': [
-			['OS=="amiga"', {
-				'variables': {
-					'command': ['amiga'],
-				},
-			}],
-			['OS=="win"', {
-				'variables': {
-					'command': ['win'],
-				},
-			}],
-		],
 	}`
 		isolatePath := filepath.Join(fooDir, "baz.isolate")
 		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
