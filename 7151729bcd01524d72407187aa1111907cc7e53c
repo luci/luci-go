@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8ef8f61b_18a42562",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-12-01T06:57:34Z",
+      "side": 1,
+      "message": "This already doesn\u0027t read the same value twice. smallFileHashes is unique.",
+      "parentUuid": "f3165a99_09953aeb",
+      "range": {
+        "startLine": 217,
+        "startChar": 3,
+        "endLine": 217,
+        "endChar": 5
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "589b8268_9df21472",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 8
