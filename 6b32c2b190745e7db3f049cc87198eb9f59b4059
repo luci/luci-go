@@ -46,6 +46,76 @@
       },
       "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5516e71a_8a8eec79",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:03:34Z",
+      "side": 1,
+      "message": "if the mask is \"build.output\", then Includes(\"build.output.properties\") returns INCLUDES_ENTIRELY\n\nso this kind of means that if the mask is \"build.output\" we should check both properties and gitiles commit. I guess, consider structuring the code the same way as the updating code (for loop with a switch statement -\u003e bunch of \"if includes foobar\" stateements)\n\nat the same time, not sure we need to bother if nobody sends \"build.output\". If kitchen or bbagent do (quick code search), we can simply prohibit \"build.output\"",
+      "parentUuid": "3886fdd0_db3a9eab",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 22
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d1f6e85_ba889372",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:03:34Z",
+      "side": 1,
+      "message": "not necessarily\n\nstepping back, it seems we can simply return this error to the caller without annotating because we aren\u0027t adding anything that the caller doesn\u0027t know already. I think instead we can update the callsite to annotate the error with \"updating build entities failed\" or something like that",
+      "range": {
+        "startLine": 285,
+        "startChar": 70,
+        "endLine": 285,
+        "endChar": 88
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "882dbc7f_bec32253",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:03:34Z",
+      "side": 1,
+      "message": "nit: could just use req.GetBuild().GetId() here.\n\nless conditional code \u003d\u003e better\n\nif someone sends 0, logs would show that explicitly, instead of the oncall inferring \"aha! no log means it was zero\"",
+      "range": {
+        "startLine": 302,
+        "startChar": 68,
+        "endLine": 302,
+        "endChar": 81
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
