@@ -96,6 +96,8 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"tags",
 		"infra.swarming",
 		"input.experimental",
+		"input.gitiles_commit",
+		"output.properties",
 		"critical",
 	},
 }
@@ -123,14 +125,37 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 	buildKey := datastore.MakeKey(c, "buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
 	swarming := b.GetInfra().GetSwarming()
 
+	type OutputProperties struct {
+		BlamelistPins []*buildbucketpb.GitilesCommit `json:"$recipe_engine/milo/blamelist_pins"`
+	}
+	var outputProperties OutputProperties
+	propertiesJSON, err := b.GetOutput().GetProperties().MarshalJSON()
+	err = json.Unmarshal(propertiesJSON, &outputProperties)
+	if err != nil {
+		logging.Warningf(c, "failed to decode test build set")
+		return nil, err
+	}
+
+	var blamelistPins []string
+	if len(outputProperties.BlamelistPins) > 0 {
+		blamelistPins = make([]string, len(outputProperties.BlamelistPins))
+		for i, gc := range outputProperties.BlamelistPins {
+			blamelistPins[i] = protoutil.GitilesBuildSet(gc)
+		}
+	} else if gc := b.GetInput().GetGitilesCommit(); gc != nil {
+		// Fallback to Input.GitilesCommit when there are no blamelist pins.
+		blamelistPins = []string{protoutil.GitilesBuildSet(gc)}
+	}
+
 	bs := &model.BuildSummary{
-		ProjectID:  b.Builder.Project,
-		BuildKey:   buildKey,
-		BuilderID:  common.LegacyBuilderIDString(b.Builder),
-		BuildID:    "buildbucket/" + buildAddress,
-		BuildSet:   protoutil.BuildSets(b),
-		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
-		Created:    mustTimestamp(b.CreateTime),
+		ProjectID:     b.Builder.Project,
+		BuildKey:      buildKey,
+		BuilderID:     common.LegacyBuilderIDString(b.Builder),
+		BuildID:       "buildbucket/" + buildAddress,
+		BuildSet:      protoutil.BuildSets(b),
+		BlamelistPins: blamelistPins,
+		ContextURI:    []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
+		Created:       mustTimestamp(b.CreateTime),
 		Summary: model.Summary{
 			Start:  mustTimestamp(b.StartTime),
 			End:    mustTimestamp(b.EndTime),

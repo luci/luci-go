@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
@@ -118,6 +119,22 @@ func TestPubSub(t *testing.T) {
 			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
 			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
 
+			propertiesMap := map[string]interface{}{
+				"$recipe_engine/milo/blamelist_pins": []interface{}{
+					map[string]interface{}{
+						"host":    "chromium.googlesource.com",
+						"id":      "8930f18245df678abc944376372c77ba5e2a658b",
+						"project": "angle/angle",
+					},
+					map[string]interface{}{
+						"host":    "chromium.googlesource.com",
+						"id":      "07033c702f81a75dfc2d83888ba3f8b354d0e920",
+						"project": "chromium/src",
+					},
+				},
+			}
+			properties, _ := structpb.NewStruct(propertiesMap)
+
 			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
 				Id:         1234,
 				Status:     buildbucketpb.Status_STARTED,
@@ -131,6 +148,9 @@ func TestPubSub(t *testing.T) {
 				},
 				Input: &buildbucketpb.Build_Input{
 					Experimental: true,
+				},
+				Output: &buildbucketpb.Build_Output{
+					Properties: properties,
 				},
 			}, nil).AnyTimes()
 
@@ -156,6 +176,10 @@ func TestPubSub(t *testing.T) {
 				})
 				So(buildAct.Created, ShouldResemble, RefTime.Add(2*time.Hour))
 				So(buildAct.Experimental, ShouldBeTrue)
+				So(buildAct.BlamelistPins, ShouldResemble, []string{
+					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
+					"commit/gitiles/chromium.googlesource.com/chromium/src/+/07033c702f81a75dfc2d83888ba3f8b354d0e920",
+				})
 
 				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
 				err = datastore.Get(c, &blder)
@@ -186,7 +210,13 @@ func TestPubSub(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "fake_builder",
 				},
-				Input: &buildbucketpb.Build_Input{},
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Id:      "8930f18245df678abc944376372c77ba5e2a658b",
+						Project: "angle/angle",
+					},
+				},
 			}, nil).AnyTimes()
 
 			h := httptest.NewRecorder()
@@ -217,6 +247,9 @@ func TestPubSub(t *testing.T) {
 				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
 				So(blder.LastFinishedStatus, ShouldResemble, model.Success)
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
+				So(buildAct.BlamelistPins, ShouldResemble, []string{
+					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
+				})
 			})
 
 			Convey("results in earlier update not being ingested", func() {
