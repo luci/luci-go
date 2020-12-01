@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "23c34030_82970a88",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T02:38:08Z",
+      "side": 1,
+      "message": "backward compatibility with what?\nthis information is erased when TS is compiled to JS, so this declaration is noop because no TS code is using this property.",
+      "parentUuid": "04fd20ce_848130aa",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a3305e6d_475baea3",
