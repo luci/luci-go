@@ -140,6 +140,30 @@
       },
       "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbdbd9da_3d489012",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T20:27:24Z",
+      "side": 1,
+      "message": "err, \"I questioned to myself was whether this *content_hash* could be omitted if content is nil.\"",
+      "parentUuid": "9f847403_e3b508de",
+      "range": {
+        "startLine": 286,
+        "startChar": 33,
+        "endLine": 286,
+        "endChar": 79
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
