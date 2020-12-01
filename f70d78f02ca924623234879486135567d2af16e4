@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "99eb0bdb_d4ccbbce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Still not done with all comments, but I changed the algo for important code. PTAL again, please.",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "56725493_a55eb506",
@@ -71,6 +88,30 @@
       "writtenOn": "2020-11-30T23:18:13Z",
       "side": 1,
       "message": "Is this for time skew?",
+      "range": {
+        "startLine": 57,
+        "startChar": 30,
+        "endLine": 57,
+        "endChar": 57
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ec33d40_4823de28",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Well, 10ms is pretty big clock skew for Google systems, but we noticed previously with LUCI Scheduler that sometimes tasks get executed earlier than intended. This should have been since fixed, but I want to re-verify.",
+      "parentUuid": "cebb3b7b_b961c59a",
       "range": {
         "startLine": 57,
         "startChar": 30,
@@ -173,6 +214,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eed93a5f_c6edb9d2",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a43844f5_5a3286dd",
+      "range": {
+        "startLine": 151,
+        "startChar": 17,
+        "endLine": 151,
+        "endChar": 23
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91143342_be590194",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "well, yes, but my statement is also correct 😊",
+      "parentUuid": "4c59cfc5_e4fc18d1",
+      "range": {
+        "startLine": 151,
+        "startChar": 51,
+        "endLine": 151,
+        "endChar": 71
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bea15041_2b6bf6ae",
@@ -186,6 +275,24 @@
       "writtenOn": "2020-11-30T22:08:29Z",
       "side": 1,
       "message": "How big of a number is int64(pollInterval)? It must be greater than (1 \u003c\u003c 32), I guess?",
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b088118a_293d5979",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Oh, that\u0027s a great question. So, yes, it\u0027s 10s \u003d 1e10ns ~\u003d 10*(2^30) \nso between 2^32 and 2^34. In fact the reason I choose 32-bits was to avoid overflows. But the real problem now is that this function breaks for values below 4s, which are highly likely. So, I\u0027ve redone this. PTAL again!",
+      "parentUuid": "bea15041_2b6bf6ae",
       "revId": "f70d78f02ca924623234879486135567d2af16e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -236,6 +343,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bee1696_c7d0af94",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2976b1ef_74125f13",
+      "range": {
+        "startLine": 213,
+        "startChar": 18,
+        "endLine": 213,
+        "endChar": 24
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "770d9308_e058c4ea",
@@ -249,6 +380,30 @@
       "writtenOn": "2020-11-30T23:18:13Z",
       "side": 1,
       "message": "Should this be errors.First() according to the annotated message?",
+      "range": {
+        "startLine": 219,
+        "startChar": 25,
+        "endLine": 219,
+        "endChar": 28
+      },
+      "revId": "f70d78f02ca924623234879486135567d2af16e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e88656b_d7075b98",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:41:13Z",
+      "side": 1,
+      "message": "Yes, of course!",
+      "parentUuid": "770d9308_e058c4ea",
       "range": {
         "startLine": 219,
         "startChar": 25,
