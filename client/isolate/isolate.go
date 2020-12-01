@@ -214,16 +214,9 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	if err != nil {
 		return nil, "", nil, err
 	}
-	cmd, deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
+	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
 		return nil, "", nil, err
-	}
-
-	// Expand variables in the commands.
-	for i := range cmd {
-		if cmd[i], err = ReplaceVariables(cmd[i], opts); err != nil {
-			return nil, "", nil, err
-		}
 	}
 
 	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
@@ -247,7 +240,7 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	_, deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
+	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
 		return nil, "", err
 	}
