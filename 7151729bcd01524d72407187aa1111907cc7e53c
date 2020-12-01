@@ -120,6 +120,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "476d50df_9a317e57",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-12-01T06:58:53Z",
+      "side": 1,
+      "message": "Ah yeah, ignore what i said",
+      "parentUuid": "57443243_f82276d3",
+      "range": {
+        "startLine": 217,
+        "startChar": 3,
+        "endLine": 217,
+        "endChar": 5
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "589b8268_9df21472",
