@@ -39,6 +39,30 @@
       },
       "revId": "a0e7d0408aad87e620c0184d6d041bb048cf5869",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61261a91_828d5df0",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T23:10:09Z",
+      "side": 1,
+      "message": "it stops goroutine that is blocked on a channel, thus removes memory leak. For tests, it\u0027s not crucial, but in prod code, it\u0027s pretty important. LogDog, i think, suffers from a lot of stray goroutines like this.",
+      "parentUuid": "0dda1b16_28641e1c",
+      "range": {
+        "startLine": 74,
+        "startChar": 9,
+        "endLine": 74,
+        "endChar": 15
+      },
+      "revId": "a0e7d0408aad87e620c0184d6d041bb048cf5869",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
