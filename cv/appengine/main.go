@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
@@ -38,6 +39,7 @@ import (
 func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(), // must come before gaeemulation
 		gaeemulation.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
