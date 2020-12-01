@@ -56,7 +56,7 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
 // It returns a default mask with all fields except summary_html if readMask is
 // empty.
-func ListMask(readMask *field_mask.FieldMask) (mask.Mask, error) {
+func ListMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
 	if len(readMask.GetPaths()) == 0 {
 		return defaultListMask, nil
 	}
@@ -69,7 +69,7 @@ type Query struct {
 	Predicate     *pb.TestResultPredicate
 	PageSize      int // must be positive
 	PageToken     string
-	Mask          mask.Mask
+	Mask          *mask.Mask
 }
 
 func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {

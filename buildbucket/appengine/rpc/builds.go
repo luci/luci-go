@@ -53,7 +53,7 @@ var defMask = mask.MustFromReadMask(&pb.Build{},
 )
 
 // TODO(crbug/1042991): Move to a common location.
-func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
+func getFieldMask(fields *field_mask.FieldMask) (*mask.Mask, error) {
 	if len(fields.GetPaths()) == 0 {
 		return defMask, nil
 	}
@@ -61,13 +61,13 @@ func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 }
 
 // getBuildsSubMask returns the sub mask for "builds.*"
-func getBuildsSubMask(fields *field_mask.FieldMask) (mask.Mask, error) {
+func getBuildsSubMask(fields *field_mask.FieldMask) (*mask.Mask, error) {
 	if len(fields.GetPaths()) == 0 {
 		return defMask, nil
 	}
 	m, err := mask.FromFieldMask(fields, &pb.SearchBuildsResponse{}, false, false)
 	if err != nil {
-		return mask.Mask{}, err
+		return nil, err
 	}
 	return m.Submask("builds.*")
 }
