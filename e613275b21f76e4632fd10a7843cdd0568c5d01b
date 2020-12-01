@@ -51,6 +51,24 @@
       "parentUuid": "d43e0d2e_e1c3245c",
       "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b7302ec_253c47e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T21:58:22Z",
+      "side": 1,
+      "message": "yes. It is a coincedent that we currently have k8s service per proto service. The reason to have recorder separated from resultdb is because recorder handles much more traffic (go/resultdb-arch). The reason decorator is separate is because we indent to delete it altogether. I am not aware of a reason for resultdb to be separate from ui.",
+      "parentUuid": "163a41ed_9d1924a1",
+      "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
