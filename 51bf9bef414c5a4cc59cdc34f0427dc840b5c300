@@ -176,6 +176,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9095e2f0_e3ee8fbb",
+        "filename": "led/job/info_buildbucket.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T03:20:30Z",
+      "side": 1,
+      "message": "Yes it is 😊 I actually found it myself, it turns in earlier attempts I consistently forgot to put `*` in the type assertion, hence failing miserably.",
+      "parentUuid": "977669d4_c4d8f846",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6147fccc_654fcf5f",
