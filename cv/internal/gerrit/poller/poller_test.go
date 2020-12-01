@@ -15,24 +15,18 @@
 package poller
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -77,43 +71,45 @@ func TestSchedule(t *testing.T) {
 
 	Convey("schedule works", t, func() {
 		const project = "chromium"
-		ctx, tclock := testclock.UseTime(context.Background(),
-			testclock.TestRecentTimeLocal.Truncate(pollInterval))
-		ctx, tqScheduler := tq.TestingContext(ctx, nil)
+
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
 
 		Convey("schedule works", func() {
 			So(schedule(ctx, project, time.Time{}), ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
+			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 
-			first := tqScheduler.Tasks().Payloads()[0].(*PollGerritTask)
+			first := ct.TQ.Tasks().Payloads()[0].(*PollGerritTask)
 			So(first.GetLuciProject(), ShouldEqual, project)
 			firstETA := first.GetEta().AsTime()
 			So(firstETA.UnixNano(), ShouldBeBetweenOrEqual,
-				tclock.Now().UnixNano(), tclock.Now().Add(pollInterval).UnixNano())
+				ct.Clock.Now().UnixNano(), ct.Clock.Now().Add(pollInterval).UnixNano())
 
 			Convey("idempotency via task deduplication", func() {
 				So(schedule(ctx, project, time.Time{}), ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 
 				Convey("but only for the same project", func() {
 					So(schedule(ctx, "another project", time.Time{}), ShouldBeNil)
-					So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 2)
-					So(tqScheduler.Tasks().Payloads()[1].(*PollGerritTask).GetLuciProject(), ShouldEqual,
+					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 2)
+					So(ct.TQ.Tasks().Payloads()[1].(*PollGerritTask).GetLuciProject(), ShouldEqual,
 						"another project")
 				})
 			})
 
 			Convey("schedule next poll", func() {
 				So(schedule(ctx, project, firstETA), ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 2)
-				So(tqScheduler.Tasks().Payloads()[1].(*PollGerritTask).GetEta().AsTime(),
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 2)
+				So(ct.TQ.Tasks().Payloads()[1].(*PollGerritTask).GetEta().AsTime(),
 					ShouldEqual, firstETA.Add(pollInterval))
 
 				Convey("from a delayed prior poll", func() {
-					tclock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
+					ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
 					So(schedule(ctx, project, firstETA), ShouldBeNil)
-					So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 3)
-					So(tqScheduler.Tasks().Payloads()[2].(*PollGerritTask).GetEta().AsTime(),
+					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 3)
+					So(ct.TQ.Tasks().Payloads()[2].(*PollGerritTask).GetEta().AsTime(),
 						ShouldEqual, firstETA.Add(2*pollInterval))
 				})
 			})
@@ -185,33 +181,13 @@ func TestPoller(t *testing.T) {
 	t.Parallel()
 
 	Convey("Polling & task scheduling works", t, func() {
-		// TODO(tandrii): turn this into a re-usable test setup across CV.
-
-		// 10s failsafe for broken tests. Change it to 1ms when debugging.
-		topCtx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		defer func() {
-			So(topCtx.Err(), ShouldBeNil)
-			cancel()
-		}()
-
 		const lProject = "chromium"
 		const gHost = "chromium-review.example.com"
-		const gRepo = "infra/inra"
-		epoch := testclock.TestRecentTimeLocal
-		ctx, tclock := testclock.UseTime(topCtx, epoch)
-		tclock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
-			// Move fake time forward whenever someone's waiting for it.
-			tclock.Add(dur)
-		})
+		const gRepo = "infra/infra"
 
-		ctx = memory.Use(ctx)
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
-		ctx, tqScheduler := tq.TestingContext(ctx, nil)
-		testcfg := config.TestController{}
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
 
 		mustGetState := func(lProject string) *state {
 			st := &state{LuciProject: lProject}
@@ -221,20 +197,20 @@ func TestPoller(t *testing.T) {
 
 		Convey("without project config, it's a noop", func() {
 			So(Poke(ctx, lProject), ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
-			tqScheduler.Run(ctx, tqtesting.StopWhenDrained())
-			So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 0)
+			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 			So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
 		Convey("with existing project config, establishes task chain", func() {
-			testcfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+			ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			So(Poke(ctx, lProject), ShouldBeNil)
 			for i := 0; i < 3; i++ {
 				// Execute next poll task.
-				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				// Ensure follow up task has been created.
-				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 1)
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 				st := mustGetState(lProject)
 				So(st.EVersion, ShouldEqual, i+1)
 				So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
@@ -246,18 +222,11 @@ func TestPoller(t *testing.T) {
 				})
 			}
 
-			Convey("disabled project => remove poller state & stop task chain", func() {
-				testcfg.Disable(ctx, lProject)
-				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
-				So(tqScheduler.Tasks().Payloads(), ShouldHaveLength, 0)
-				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
-			})
-
 			Convey("notices updated config", func() {
 				before := mustGetState(lProject)
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
-				testcfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
-				tqScheduler.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				after := mustGetState(lProject)
 				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
 				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
@@ -271,6 +240,20 @@ func TestPoller(t *testing.T) {
 						OrProjects: []string{gRepo},
 					},
 				})
+			})
+
+			Convey("disabled project => remove poller state & stop task chain", func() {
+				ct.Cfg.Disable(ctx, lProject)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
+				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+			})
+
+			Convey("deleted => remove poller state & stop task chain", func() {
+				ct.Cfg.Delete(ctx, lProject)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
+				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
 		})
 	})
