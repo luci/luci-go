@@ -22,6 +22,30 @@
       },
       "revId": "bc511ffbc220f4ae28fb467522fb546c54460a9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5023ffb0_77195b6e",
+        "filename": "led/job/info_buildbucket.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 0,
+      "message": "Thanks. TIL, there is a mutex in MessageState which prevents to copy the proto msg.",
+      "parentUuid": "965abbcf_3d803343",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 23
+      },
+      "revId": "bc511ffbc220f4ae28fb467522fb546c54460a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -81,6 +81,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a66663c4_385940b0",
+        "filename": "led/job/info.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37a48b54_e64bf796",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 51
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "842b9bcb_69d27b4d",
+        "filename": "led/job/info.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad01e77b_9deb52a6",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8e048bc0_3c289707",
@@ -94,6 +142,30 @@
       "writtenOn": "2020-11-25T14:00:10Z",
       "side": 1,
       "message": "please do future proof copy with proto.Clone or proto.Merge.\nsame below.\n\n(see also https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2552793/comment/64113629_17db72f4/\nif you figure concise way to use modern proto.Clone, lmk 😊 )",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "977669d4_c4d8f846",
+        "filename": "led/job/info_buildbucket.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "I use proto.Clone with type assertion. Not sure if this is what you mean for the concise way.",
+      "parentUuid": "8e048bc0_3c289707",
       "range": {
         "startLine": 44,
         "startChar": 2,
@@ -121,6 +193,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bb150b7_85790309",
+        "filename": "led/job/info_swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6147fccc_654fcf5f",
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "40e379ef_4fdf4fa1",
@@ -134,6 +224,30 @@
       "writtenOn": "2020-11-25T14:00:10Z",
       "side": 1,
       "message": "can you change cmd base interface to always pass authOptions to execute() [1] s.t. you don\u0027t need to do L117.\nThis will keep keep the desired userAgent [2]\nAlso, please keep authClient and authOptions next to each other in args list.\n\n[1] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/ledcli/util.go;l\u003d49?q\u003d%22type%20cmdBaseOptions%20struct%22\u0026ss\u003dchromium\n[2] https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/ledcli/util.go;l\u003d100?q\u003d%22type%20cmdBaseOptions%20struct%22\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 116,
+        "startChar": 30,
+        "endLine": 116,
+        "endChar": 37
+      },
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5eaa39b3_2f976311",
+        "filename": "led/ledcli/edit_recipe_bundle.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "Make sense. I\u0027ve changed the execute().",
+      "parentUuid": "40e379ef_4fdf4fa1",
       "range": {
         "startLine": 116,
         "startChar": 30,
@@ -180,6 +294,24 @@
       "writtenOn": "2020-11-25T14:00:10Z",
       "side": 1,
       "message": "(like above) please keep authClient and authOptions next to each other in args list.",
+      "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8c7a968_a7935627",
+        "filename": "led/ledcmd/edit_isolated.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-01T01:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5af979a_a0637609",
       "revId": "51bf9bef414c5a4cc59cdc34f0427dc840b5c300",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
