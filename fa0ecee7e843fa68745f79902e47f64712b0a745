@@ -47,6 +47,63 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc53ad43_d03a736c",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T06:31:39Z",
+      "side": 1,
+      "message": "Good thinking. This is really an edge case.",
+      "range": {
+        "startLine": 169,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 34
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7fea6a5c_6a2ec559",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T06:31:39Z",
+      "side": 1,
+      "message": "What will happen if request.GetQuery() already contains after or before query parameteres?",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "650c6e91_3f58ed7e",
+        "filename": "common/api/gerrit/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T06:31:39Z",
+      "side": 1,
+      "message": "I think this is already guaranteed in L120",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ac9ec162_1f7b3d22",
@@ -66,6 +123,46 @@
         "endLine": 255,
         "endChar": 49
       },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c2b98ab2_b5cb5c76",
+        "filename": "common/api/gerrit/list_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T06:31:39Z",
+      "side": 1,
+      "message": "2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b78d9cc9_107aa4a7",
+        "filename": "common/api/gerrit/list_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T06:31:39Z",
+      "side": 1,
+      "message": "Is this assertion intentional?",
       "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
