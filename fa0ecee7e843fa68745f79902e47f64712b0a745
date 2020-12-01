@@ -339,6 +339,24 @@
       "parentUuid": "b78d9cc9_107aa4a7",
       "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7c1680f_d1874ed4",
+        "filename": "common/api/gerrit/list_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T18:43:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "78b7b8df_256b38f8",
+      "revId": "fa0ecee7e843fa68745f79902e47f64712b0a745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
