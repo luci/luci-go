@@ -19,7 +19,6 @@ package sink
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -346,11 +345,11 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Shutdown(ctx context.Context) (err error) {
 	logging.Infof(ctx, "SinkServer: shutdown started")
 	defer func() {
-		msg := "successfully"
-		if err != nil {
-			msg = fmt.Sprintf("with %q", err)
+		if err == nil {
+			logging.Infof(ctx, "SinkServer: shutdown completed successfully")
+		} else {
+			logging.Errorf(ctx, "SinkServer: shutdown failed: %s", err)
 		}
-		logging.Infof(ctx, "SinkServer: shutdown completed %s", msg)
 	}()
 
 	if atomic.LoadInt32(&s.started) == 0 {
