@@ -1,4 +1,7 @@
 queue:
+- name: poll-gerrit
+  rate: 10/s
+queue:
 - name: refresh-project-config
   rate: 1000/m
 - name: refresh-gerrit-cl
