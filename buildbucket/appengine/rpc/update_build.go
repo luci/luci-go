@@ -224,7 +224,7 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 	return nil
 }
 
-func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
+func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
 	build, err := getBuild(ctx, req.Build.Id)
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
@@ -256,7 +256,7 @@ func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateB
 	return build, nil
 }
 
-func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask mask.Mask, steps *model.BuildSteps) error {
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *mask.Mask, steps *model.BuildSteps) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		b, err := getBuildForUpdate(ctx, buildMask, req)
 		if err != nil {

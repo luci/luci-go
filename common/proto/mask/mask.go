@@ -82,7 +82,7 @@ type Mask struct {
 	// example above has keys "a" and "b", and values are Mask objects and the
 	// Mask object "b" maps to will have a single child "c". All types of segment
 	// (i.e. int, bool, string, star) will be converted to string.
-	children map[string]Mask
+	children map[string]*Mask
 }
 
 // FromFieldMask parses a field mask to a mask.
@@ -97,13 +97,13 @@ type Mask struct {
 //
 // If isUpdateMask is set to true, a repeated field is allowed only as the last
 // field in a path string.
-func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (Mask, error) {
+func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (*Mask, error) {
 	descriptor := proto.MessageReflect(targetMsg).Descriptor()
 	parsedPaths := make([]path, len(fieldMask.GetPaths()))
 	for i, p := range fieldMask.GetPaths() {
 		parsedPath, err := parsePath(p, descriptor, isFieldNameJSON)
 		if err != nil {
-			return Mask{}, err
+			return nil, err
 		}
 		parsedPaths[i] = parsedPath
 	}
@@ -114,7 +114,7 @@ func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isF
 // isUpdateMask as false, that accepts field mask a variadic paths and
 // that panics if the mask is invalid.
 // It is useful when the mask is hardcoded.
-func MustFromReadMask(targetMsg proto.Message, paths ...string) Mask {
+func MustFromReadMask(targetMsg proto.Message, paths ...string) *Mask {
 	ret, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, targetMsg, false, false)
 	if err != nil {
 		panic(err)
@@ -123,26 +123,26 @@ func MustFromReadMask(targetMsg proto.Message, paths ...string) Mask {
 }
 
 // All returns a field mask that selects all fields.
-func All(targetMsg proto.Message) Mask {
+func All(targetMsg proto.Message) *Mask {
 	return MustFromReadMask(targetMsg, "*")
 }
 
 // fromParsedPaths constructs a mask tree from a slice of parsed paths.
-func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, isUpdateMask bool) (Mask, error) {
-	root := Mask{
+func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, isUpdateMask bool) (*Mask, error) {
+	root := &Mask{
 		descriptor: desc,
-		children:   map[string]Mask{},
+		children:   make(map[string]*Mask),
 	}
 	for _, p := range normalizePaths(parsedPaths) {
 		curNode := root
 		curNodeName := ""
 		for _, seg := range p {
 			if curNode.isRepeated && isUpdateMask {
-				return Mask{}, fmt.Errorf("update mask allows a repeated field only at the last position; field: %s is not last", curNodeName)
+				return nil, fmt.Errorf("update mask allows a repeated field only at the last position; field: %s is not last", curNodeName)
 			}
 			if _, ok := curNode.children[seg]; !ok {
-				child := Mask{
-					children: map[string]Mask{},
+				child := &Mask{
+					children: make(map[string]*Mask),
 				}
 				switch curDesc := curNode.descriptor; {
 				case curDesc.IsMapEntry():
@@ -220,7 +220,7 @@ func removeTrailingStars(paths []path) []path {
 // If mask is empty, this is a noop. It returns error when the supplied
 // message is nil or has a different message descriptor from that of mask.
 // It uses Includes to decide what to trim, see its doc.
-func (m Mask) Trim(msg proto.Message) error {
+func (m *Mask) Trim(msg proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
@@ -232,7 +232,7 @@ func (m Mask) Trim(msg proto.Message) error {
 	return nil
 }
 
-func (m Mask) trimImpl(reflectMsg protoreflect.Message) {
+func (m *Mask) trimImpl(reflectMsg protoreflect.Message) {
 	reflectMsg.Range(func(fieldDesc protoreflect.FieldDescriptor, fieldVal protoreflect.Value) bool {
 		fieldName := string(fieldDesc.Name())
 		switch incl, _ := m.includesImpl(path{fieldName}); incl {
@@ -264,7 +264,7 @@ func (m Mask) trimImpl(reflectMsg protoreflect.Message) {
 	})
 }
 
-func (m Mask) trimMap(protoMap protoreflect.Map, valueKind protoreflect.Kind) {
+func (m *Mask) trimMap(protoMap protoreflect.Map, valueKind protoreflect.Kind) {
 	protoMap.Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
 		keyString := k.String()
 		switch incl, _ := m.includesImpl(path{keyString}); {
@@ -303,7 +303,7 @@ const (
 //
 // The path must have canonical field names, i.e. not JSON names.
 // Returns error if path parsing fails.
-func (m Mask) Includes(path string) (Inclusiveness, error) {
+func (m *Mask) Includes(path string) (Inclusiveness, error) {
 	parsedPath, err := parsePath(path, m.descriptor, false)
 	if err != nil {
 		return Exclude, err
@@ -315,7 +315,7 @@ func (m Mask) Includes(path string) (Inclusiveness, error) {
 // MustIncludes tells the Inclusiveness of a field value at the given path.
 //
 // This is essentially the same as Includes, but panics if the given path is invalid.
-func (m Mask) MustIncludes(path string) Inclusiveness {
+func (m *Mask) MustIncludes(path string) Inclusiveness {
 	incl, err := m.Includes(path)
 	if err != nil {
 		panic(fmt.Sprintf("MustIncludes(%q): %s", path, err))
@@ -327,7 +327,7 @@ func (m Mask) MustIncludes(path string) Inclusiveness {
 // and the leaf mask that includes the path if IncludeEntirely, or the
 // intermediate mask that the last segment of path represents if
 // IncludePartially or an empty mask if Exclude.
-func (m Mask) includesImpl(p path) (Inclusiveness, Mask) {
+func (m *Mask) includesImpl(p path) (Inclusiveness, *Mask) {
 	if len(m.children) == 0 {
 		return IncludeEntirely, m
 	}
@@ -337,7 +337,8 @@ func (m Mask) includesImpl(p path) (Inclusiveness, Mask) {
 		return IncludePartially, m
 	}
 
-	incl, inclMask := Exclude, Mask{}
+	var incl Inclusiveness
+	var inclMask *Mask
 	// star child should also be examined.
 	// e.g. children are {"a": {"b": {}}, "*": {"c": {}}}
 	// If seg is 'x', we should check the star child.
@@ -358,7 +359,7 @@ func (m Mask) includesImpl(p path) (Inclusiveness, Mask) {
 // Empty field will be merged as long as they are present in the mask. Repeated
 // fields or map fields will be overwritten entirely. Partial updates are not
 // supported for such field.
-func (m Mask) Merge(src, dest proto.Message) error {
+func (m *Mask) Merge(src, dest proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
@@ -374,7 +375,7 @@ func (m Mask) Merge(src, dest proto.Message) error {
 	return nil
 }
 
-func (m Mask) mergeImpl(src, dest protoreflect.Message) {
+func (m *Mask) mergeImpl(src, dest protoreflect.Message) {
 	for seg, submask := range m.children {
 		// star field is not supported for update mask so this won't be nil
 		fieldDesc := m.descriptor.Fields().ByName(protoreflect.Name(seg))
@@ -429,7 +430,7 @@ func cloneValue(v protoreflect.Value, kind protoreflect.Kind) protoreflect.Value
 //
 // Returns error if path parsing fails or path is excluded from the received
 // mask.
-func (m Mask) Submask(path string) (Mask, error) {
+func (m *Mask) Submask(path string) (*Mask, error) {
 	ctx := &parseCtx{
 		curDescriptor: m.descriptor,
 		isList:        m.isRepeated && !(m.descriptor != nil && m.descriptor.IsMapEntry()),
@@ -437,20 +438,20 @@ func (m Mask) Submask(path string) (Mask, error) {
 
 	parsedPath, err := parsePathWithContext(path, ctx, false)
 	if err != nil {
-		return Mask{}, err
+		return nil, err
 	}
 	switch incl, inclMask := m.includesImpl(parsedPath); incl {
 	case IncludeEntirely:
-		return Mask{
+		return &Mask{
 			descriptor: ctx.curDescriptor,
 			isRepeated: ctx.isList || (ctx.curDescriptor != nil && ctx.curDescriptor.IsMapEntry()),
 		}, nil
 	case Exclude:
-		return Mask{}, fmt.Errorf("the given path %q is excluded from mask", path)
+		return nil, fmt.Errorf("the given path %q is excluded from mask", path)
 	case IncludePartially:
 		return inclMask, nil
 	default:
-		return Mask{}, fmt.Errorf("unknown Inclusiveness: %d", incl)
+		return nil, fmt.Errorf("unknown Inclusiveness: %d", incl)
 	}
 }
 
@@ -458,7 +459,7 @@ func (m Mask) Submask(path string) (Mask, error) {
 //
 // This is essentially the same as Submask, but panics if the given path is invalid or
 // exlcuded from the received mask.
-func (m Mask) MustSubmask(path string) Mask {
+func (m *Mask) MustSubmask(path string) *Mask {
 	sm, err := m.Submask(path)
 	if err != nil {
 		panic(fmt.Sprintf("MustSubmask(%q): %s", path, err))
@@ -469,8 +470,8 @@ func (m Mask) MustSubmask(path string) Mask {
 // IsEmpty reports whether a mask is of empty value. Such mask implies keeping
 // everything when calling Trim, merging nothing when calling Merge and always
 // returning IncludeEntirely when calling Includes
-func (m Mask) IsEmpty() bool {
-	return m.descriptor == nil && !m.isRepeated && len(m.children) == 0
+func (m *Mask) IsEmpty() bool {
+	return m == nil || (m.descriptor == nil && !m.isRepeated && len(m.children) == 0)
 }
 
 // checkMsgHaveDesc validates that the descriptor of given proto reflect message

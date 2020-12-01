@@ -60,14 +60,14 @@ func TestNormalizePath(t *testing.T) {
 
 func TestFromFieldMask(t *testing.T) {
 	Convey("From", t, func() {
-		parse := func(paths []string, isUpdateMask bool) (Mask, error) {
+		parse := func(paths []string, isUpdateMask bool) (*Mask, error) {
 			return FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, isUpdateMask)
 		}
 
 		Convey("empty field mask", func() {
 			actual, err := parse([]string{}, false)
 			So(err, ShouldBeNil)
-			assertMaskEqual(actual, Mask{
+			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
 			})
 		})
@@ -75,15 +75,15 @@ func TestFromFieldMask(t *testing.T) {
 		Convey("field mask with scalar and message fields", func() {
 			actual, err := parse([]string{"str", "num", "msg.num"}, false)
 			So(err, ShouldBeNil)
-			assertMaskEqual(actual, Mask{
+			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
-				children: map[string]Mask{
-					"str": {},
-					"num": {},
+				children: map[string]*Mask{
+					"str": &Mask{},
+					"num": &Mask{},
 					"msg": {
 						descriptor: testMsgDescriptor,
-						children: map[string]Mask{
-							"num": {},
+						children: map[string]*Mask{
+							"num": &Mask{},
 						},
 					},
 				},
@@ -92,17 +92,17 @@ func TestFromFieldMask(t *testing.T) {
 		Convey("field mask with map field", func() {
 			actual, err := parse([]string{"map_str_msg.some_key.str", "map_str_num.another_key"}, false)
 			So(err, ShouldBeNil)
-			assertMaskEqual(actual, Mask{
+			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
-				children: map[string]Mask{
-					"map_str_msg": {
+				children: map[string]*Mask{
+					"map_str_msg": &Mask{
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_msg")).Message(),
 						isRepeated: true,
-						children: map[string]Mask{
-							"some_key": {
+						children: map[string]*Mask{
+							"some_key": &Mask{
 								descriptor: testMsgDescriptor,
-								children: map[string]Mask{
-									"str": {},
+								children: map[string]*Mask{
+									"str": &Mask{},
 								},
 							},
 						},
@@ -110,8 +110,8 @@ func TestFromFieldMask(t *testing.T) {
 					"map_str_num": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_num")).Message(),
 						isRepeated: true,
-						children: map[string]Mask{
-							"another_key": {},
+						children: map[string]*Mask{
+							"another_key": &Mask{},
 						},
 					},
 				},
@@ -120,22 +120,22 @@ func TestFromFieldMask(t *testing.T) {
 		Convey("field mask with repeated field", func() {
 			actual, err := parse([]string{"nums", "msgs.*.str"}, false)
 			So(err, ShouldBeNil)
-			assertMaskEqual(actual, Mask{
+			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
-				children: map[string]Mask{
+				children: map[string]*Mask{
 					"msgs": {
 						descriptor: testMsgDescriptor,
 						isRepeated: true,
-						children: map[string]Mask{
-							"*": {
+						children: map[string]*Mask{
+							"*": &Mask{
 								descriptor: testMsgDescriptor,
-								children: map[string]Mask{
-									"str": {},
+								children: map[string]*Mask{
+									"str": &Mask{},
 								},
 							},
 						},
 					},
-					"nums": {
+					"nums": &Mask{
 						isRepeated: true,
 					},
 				},
@@ -535,7 +535,8 @@ func TestMerge(t *testing.T) {
 		Convey("empty mask", func() {
 			src := &testMsg{Num: 1}
 			dest := &testMsg{Num: 2}
-			So(Mask{}.Merge(src, dest), ShouldBeNil)
+			m := &Mask{}
+			So(m.Merge(src, dest), ShouldBeNil)
 			So(dest, ShouldResembleProto, &testMsg{Num: 2})
 		})
 		Convey("multiple fields", func() {
@@ -560,7 +561,7 @@ func TestMerge(t *testing.T) {
 }
 
 func TestSubmask(t *testing.T) {
-	buildMask := func(paths ...string) Mask {
+	buildMask := func(paths ...string) *Mask {
 		m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
 		So(err, ShouldBeNil)
 		return m
@@ -575,7 +576,7 @@ func TestSubmask(t *testing.T) {
 		Convey("when path is entirely included", func() {
 			actual, err := buildMask("msg").Submask("msg.msgs.*.msg")
 			So(err, ShouldBeNil)
-			assertMaskEqual(actual, Mask{descriptor: testMsgDescriptor})
+			assertMaskEqual(actual, &Mask{descriptor: testMsgDescriptor})
 		})
 		Convey("Error when path is excluded", func() {
 			_, err := buildMask("msg.msg.str").Submask("str")
@@ -604,9 +605,9 @@ func TestSubmask(t *testing.T) {
 	})
 }
 
-// TODO(yiwzhang): ShouldBeResemble will hit infinite loop when comparing
+// TODO(yiwzhang): ShouldResemble will hit infinite loop when comparing
 // descriptor. Comparing the full name of message as a temporary workaround
-func assertMaskEqual(actual Mask, expect Mask) {
+func assertMaskEqual(actual *Mask, expect *Mask) {
 	if expect.descriptor == nil {
 		So(actual.descriptor, ShouldBeNil)
 	} else {
