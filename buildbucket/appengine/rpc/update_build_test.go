@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -404,6 +405,19 @@ func TestGetBuildForUpdate(t *testing.T) {
 func TestUpdateBuild(t *testing.T) {
 	t.Parallel()
 	tk := "a token"
+	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
+		b, err := getBuild(ctx, bid)
+		So(err, ShouldBeNil)
+		// ensure that the below fields were cleared when the build was saved.
+		So(b.Proto.Tags, ShouldBeNil)
+		So(b.Proto.Steps, ShouldBeNil)
+		if b.Proto.Output != nil {
+			So(b.Proto.Output.Properties, ShouldBeNil)
+		}
+		m := mask.MustFromReadMask(&pb.Build{}, "output.properties", "steps", "tags")
+		So(model.LoadBuildDetails(ctx, m, &b.Proto), ShouldBeNil)
+		return b
+	}
 
 	Convey("UpdateBuild", t, func() {
 		srv := &Builds{}
@@ -438,7 +452,6 @@ func TestUpdateBuild(t *testing.T) {
 			Build:      &pb.Build{Id: 1},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{""}},
 		}
-		m := mask.MustFromReadMask(&pb.Build{}, "output.properties", "steps")
 
 		Convey("permission deined, if sender is not in updater group", func() {
 			s.Identity = "anonymous:anonymous"
@@ -455,8 +468,8 @@ func TestUpdateBuild(t *testing.T) {
 			_, err = srv.UpdateBuild(ctx, req)
 
 			So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
-			So(model.LoadBuildDetails(ctx, m, req.Build), ShouldBeNil)
-			So(req.Build.Output.Properties, ShouldResembleProtoJSON, `{"key": "value"}`)
+			b := getBuildWithDetails(ctx, req.Build.Id)
+			So(b.Proto.Output.Properties, ShouldResembleProtoJSON, `{"key": "value"}`)
 		})
 
 		Convey("build.steps", func() {
@@ -472,8 +485,20 @@ func TestUpdateBuild(t *testing.T) {
 			_, err := srv.UpdateBuild(ctx, req)
 
 			So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
-			So(model.LoadBuildDetails(ctx, m, req.Build), ShouldBeNil)
-			So(req.Build.Steps[0], ShouldResembleProto, step)
+			b := getBuildWithDetails(ctx, req.Build.Id)
+			So(b.Proto.Steps[0], ShouldResembleProto, step)
+		})
+
+		Convey("build.tags", func() {
+			tag := &pb.StringPair{Key: "resultdb", Value: "enabled"}
+			req.Build.Tags = []*pb.StringPair{tag}
+			req.UpdateMask.Paths[0] = "build.tags"
+
+			_, err := srv.UpdateBuild(ctx, req)
+
+			So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+			b := getBuildWithDetails(ctx, req.Build.Id)
+			So(b.Tags[0], ShouldEqual, strpair.Format("resultdb", "enabled"))
 		})
 	})
 }

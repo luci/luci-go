@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
@@ -280,12 +281,30 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask m
 			toSave = append(toSave, steps)
 		}
 
+		// merge the tags of the build entity with the request.
+		if len(req.Build.GetTags()) > 0 && buildMask.MustIncludes("tags") == mask.IncludeEntirely {
+			tags := stringset.NewFromSlice(b.Tags...)
+			for _, tag := range req.Build.GetTags() {
+				tags.Add(strpair.Format(tag.Key, tag.Value))
+			}
+			b.Tags = tags.ToSortedSlice()
+		}
+
+		// clear the request fields stored in other entities/fields.
+		req.Build.Tags = nil
+		req.Build.Steps = nil
+		buildMask.Merge(req.Build, &b.Proto)
+		if req.Build.Output != nil {
+			b.Proto.Output.Properties = nil
+		}
+
 		if len(toSave) > 0 {
 			if err := datastore.Put(ctx, toSave); err != nil {
 				return err
 			}
 		}
 		return nil
+
 	}, nil)
 }
 
