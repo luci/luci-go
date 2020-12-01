@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "9afad0765c55209a1419a8fc4b0fc2016c54d1ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "30598fe6_cc0c8ea8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-01T00:23:43Z",
+      "side": 1,
+      "message": "Oh, this explains weird behavior I saw when I first deployed your code but I forgot to investigate.",
+      "revId": "9afad0765c55209a1419a8fc4b0fc2016c54d1ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
