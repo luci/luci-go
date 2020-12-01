@@ -24,6 +24,7 @@ import { observable } from 'mobx';
 import '../../components/build_step_entry';
 import '../../components/code_mirror_editor';
 import '../../components/link';
+import '../../components/log';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
@@ -295,6 +296,19 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderBuildLogs() {
+    const logs = this.buildState.build?.output?.logs;
+    if (!logs) {
+      return html``;
+    }
+    return html `
+      <h3>Build Logs</h3>
+      <ul>
+        ${logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
+      </ul>
+    `;
+  }
+
   protected render() {
     const build = this.buildState.build;
     if (!build) {
@@ -344,6 +358,7 @@ export class OverviewTabElement extends MobxLitElement {
         </div>
         <div class="second-column">
           ${this.renderTags()}
+          ${this.renderBuildLogs()}
           ${this.renderProperties('Input Properties', build.input.properties)}
           ${this.renderProperties('Output Properties', build.output.properties)}
         </div>

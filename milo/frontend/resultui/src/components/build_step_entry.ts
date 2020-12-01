@@ -20,8 +20,8 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
+import '../components/log';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
-import { getLogdogRawUrl } from '../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
@@ -82,16 +82,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
         ${renderMarkdown(this.step.summary)}
       </div>
       <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
-        ${this.logs.map((log) => html`
-        <li>
-          <a href=${log.viewUrl} target="_blank">${log.name}</a>
-          <a
-            style=${styleMap({'display': ['stdout', 'stderr'].indexOf(log.name) !== -1 ? '' : 'none'})}
-            href=${getLogdogRawUrl(log.url)}
-            target="_blank"
-          >[raw]</a>
-        </li>
-        `)}
+        ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
       ${this.step.children?.map((child, i) => html`
       <milo-build-step-entry
