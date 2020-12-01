@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aff90bb1_4d2b5c16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T21:56:14Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "0fb90a3dd6b56b9099dc16e770b10adb6e7ac05e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5689811_ba2f9a41",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T21:56:14Z",
+      "side": 1,
+      "message": "it looks like now we have two internalpb packages living in different directories. Was this intentional?\n\nconsider either renaming this to uipb, or moving these files to internal/proto/ dir",
+      "range": {
+        "startLine": 22,
+        "startChar": 69,
+        "endLine": 22,
+        "endChar": 79
+      },
+      "revId": "0fb90a3dd6b56b9099dc16e770b10adb6e7ac05e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
