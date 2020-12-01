@@ -54,14 +54,21 @@ export class TextArtifactElement extends MobxLitElement {
       </div>
       `;
     }
+    const c = `/b/s/w/ir/out/Release/content_shell --disable-site-isolation-trials --run-web-tests --ignore-certificate-errors-spki-list=Nxvaj3+bY3oVrTc+Jp7m3E3sB1n3lXtnMDCyBsqEXiY=,55qC1nKu2A88ESbFmk5sTPQS/ScG+8DD7P+2bgFA9iM=,0Rt4mT6SJXojEMHTnKnlJ/hBKMBcI4kteBlhR1eTTdk= --user-data-dir --enable-crash-reporter --crash-dumps-dir=/b/s/w/ir/out/Release/crash-dumps - /b/s/w/ir/third_party/blink/web_tests/bluetooth/descriptor/writeValue/gen-io-op-garbage-collection-ran-during-error.html`;
+    // return html`
+    //     <pre>${this.content}</pre>
+    // `;
     return html`
-        <pre>${this.content}</pre>
+        <pre>${c}</pre>
     `;
   }
 
   static styles = css`
     #load {
       color: var(--active-text-color);
+    }
+    pre {
+      white-space: pre-wrap;
     }
   `;
 }
