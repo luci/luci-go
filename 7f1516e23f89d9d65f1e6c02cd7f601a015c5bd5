@@ -69,6 +69,53 @@
       },
       "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f72050b8_43c6c176",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T20:21:31Z",
+      "side": 1,
+      "message": "Ah, right...",
+      "parentUuid": "faf5ca14_6e27627d",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 284,
+        "endChar": 20
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bcd09b16_8ee0d53e",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T20:21:31Z",
+      "side": 1,
+      "message": "Should we accept artifact without content at all?",
+      "range": {
+        "startLine": 286,
+        "startChar": 33,
+        "endLine": 286,
+        "endChar": 79
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
