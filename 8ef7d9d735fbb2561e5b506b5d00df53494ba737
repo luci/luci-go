@@ -3,6 +3,46 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "75d42273_fd0cd389",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T05:05:08Z",
+      "side": 1,
+      "message": "this mutates input, which is rather unexpected. Why not mutate a shallow copy?",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cff09ded_9113ca17",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T05:05:08Z",
+      "side": 1,
+      "message": "also input properties",
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0e87199a_2b69d643",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
@@ -14,6 +54,30 @@
       "writtenOn": "2020-12-01T02:47:56Z",
       "side": 1,
       "message": "https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d439-442\n\nThe original python code clears req.Build.Output.Properties and then call merge(): [1]\nI guess the python implementation is ok with merging the messages when\n- mask has \"build.output.properties\", but\n- req.Build.Output.Properties is None\n\n\nHowever, this causes a panic in Go.\n```\n  // clear the request fields before merge.\n  if req.Build.Output !\u003d nil {\n    req.Build.Output.Properties \u003d nil\n  }\n  buildMask.Merge(req.Build, \u0026b.Proto) # panic()\n```\n\nUnlike req.Build.Tags and req.Build.Steps, req.Build.Output.Properties is treated as a scalar value and merge() panics at https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/mask/mask.go;l\u003d406\nhttps://paste.googleplex.com/6220605289398272\n\nyiwzhang@ and nodir@, is this an intended behaviour?",
+      "range": {
+        "startLine": 297,
+        "startChar": 2,
+        "endLine": 299,
+        "endChar": 3
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de62719d_57542728",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T05:05:08Z",
+      "side": 1,
+      "message": "in python, proto properties are initialized lazily, so `req.output.properties` always returns a message object (without crashing).\n\nthis looks like a bug in mask package",
+      "parentUuid": "0e87199a_2b69d643",
       "range": {
         "startLine": 297,
         "startChar": 2,
