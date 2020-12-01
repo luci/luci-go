@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07550953_2665fba1",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T22:48:58Z",
+      "side": 1,
+      "message": "In order to understand this I had to look back and reference SubPoller, which has a comment saying \"Exactly one of (or_projects, common_project_prefix) must be specified.\"\n\nOptionally you could add either/both\n - an assertion that CommonProjectPrefix must not be empty\n - a short comment saying that if OrProjects is missing, then SubPoller has a CommonProjectPrefix instead",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1de1992_bda08342",
+        "filename": "cv/internal/gerrit/poller/query_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T22:48:58Z",
+      "side": 1,
+      "message": "del if unused",
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "acad7441_77d8bcd6",
+        "filename": "cv/internal/gerrit/poller/query_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-01T22:48:58Z",
+      "side": 1,
+      "message": "Maybe add a test for the invalid case where CommonProjectPrefix and OrProjects is empty, then we\u0027ll get some sort of query like `projects:\"\"` which matches all projects, I suppose.",
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
