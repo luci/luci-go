@@ -16,6 +16,115 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/inv/task-chromium-swarm.appspot.com-4e077136a786e711-batch-11/test-results?expected\u003dfalse\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n\nNote: In the demo,I hardcoded a smaller page size, so the load more button can appear.",
       "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f52cb0a9_2574daec",
+        "filename": "milo/frontend/resultui/src/context/app_state/user_configs.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:12:22Z",
+      "side": 1,
+      "message": "is this still used?",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3305e6d_475baea3",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:12:22Z",
+      "side": 1,
+      "message": "Currently \"Don\u0027t see results of your test framework\" and \"Known issues\" are in the same paragraph, so some users might skip the entire paragraph because the beginning of the paragraph is irrelevant.\n\nCould we use \u003cp\u003e instead?",
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3db61895_08906fe8",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:12:22Z",
+      "side": 1,
+      "message": "without looking at the link, it is hard to tell whether I want to click on \"slow\", and hard to predict where it is going to take me. Consider\n\n  Test result tab is currently slow: \u003ca href\u003d\"https://crbug.com/1114935\"\u003ecrbug.com/1114935\u003c/a\u003e.\n\nsame below",
+      "range": {
+        "startLine": 171,
+        "startChar": 32,
+        "endLine": 171,
+        "endChar": 77
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfbd38c9_0668a216",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:12:22Z",
+      "side": 1,
+      "message": "remove. The biggest problem is that sometimes no test test failures are displayed, at all. This is different from \"all are not displayed\".\n\nalternatively, \"Sometimes no test failures are displayed at first load\".",
+      "range": {
+        "startLine": 172,
+        "startChar": 24,
+        "endLine": 172,
+        "endChar": 28
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d544b5a_9f8942d4",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-01T01:12:22Z",
+      "side": 1,
+      "message": "nit: on\n?",
+      "range": {
+        "startLine": 172,
+        "startChar": 96,
+        "endLine": 172,
+        "endChar": 98
+      },
+      "revId": "47fd76321d77b7b96be27ec584a95dcbfb831236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
