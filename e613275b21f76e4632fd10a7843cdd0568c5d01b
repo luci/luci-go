@@ -33,6 +33,24 @@
       "message": "why is it a separate k8s service? can it be in the \"resultdb\" k8s service?",
       "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "163a41ed_9d1924a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-01T21:40:18Z",
+      "side": 1,
+      "message": "From the proto we defined a new UI service. So I thought it means we\u0027ll need a separate k8s service. Do you mean we can use the same k8s service for multiple RPC services?",
+      "parentUuid": "d43e0d2e_e1c3245c",
+      "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
