@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "20d2e28f_4ba0487d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T01:58:05Z",
+      "side": 1,
+      "message": "I see. Thanks for the info. I will send a separate CL to cover it.",
+      "parentUuid": "5516e71a_8a8eec79",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 22
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d1f6e85_ba889372",
@@ -95,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a91c2215_a71e97c5",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T01:58:05Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "7d1f6e85_ba889372",
+      "range": {
+        "startLine": 285,
+        "startChar": 70,
+        "endLine": 285,
+        "endChar": 88
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "882dbc7f_bec32253",
@@ -108,6 +156,30 @@
       "writtenOn": "2020-12-01T01:03:34Z",
       "side": 1,
       "message": "nit: could just use req.GetBuild().GetId() here.\n\nless conditional code \u003d\u003e better\n\nif someone sends 0, logs would show that explicitly, instead of the oncall inferring \"aha! no log means it was zero\"",
+      "range": {
+        "startLine": 302,
+        "startChar": 68,
+        "endLine": 302,
+        "endChar": 81
+      },
+      "revId": "6b32c2b190745e7db3f049cc87198eb9f59b4059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e073a320_f0185cb3",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-01T01:58:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "882dbc7f_bec32253",
       "range": {
         "startLine": 302,
         "startChar": 68,
