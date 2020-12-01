@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -68,7 +69,9 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 		switch p {
 		case "build.output":
 		case "build.output.properties":
-			// TODO(crbug/1110990): Validate properties.
+			if req.Build.Output.GetProperties() == nil {
+				return errors.Reason("build.output.properties: unspecified").Err()
+			}
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
 				return errors.Annotate(err, "build.output.gitiles_commit").Err()
@@ -253,6 +256,39 @@ func getBuildForUpdate(ctx context.Context, buildMask mask.Mask, req *pb.UpdateB
 	return build, nil
 }
 
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask mask.Mask, steps *model.BuildSteps) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		b, err := getBuildForUpdate(ctx, buildMask, req)
+		if err != nil {
+			return err
+		}
+		toSave := []interface{}{b}
+		bk := datastore.KeyForObj(ctx, b)
+
+		// output.properties
+		if buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
+			toSave = append(toSave, &model.BuildOutputProperties{
+				ID:    1,
+				Build: bk,
+				Proto: model.DSStruct{*req.Build.Output.Properties},
+			})
+		}
+
+		// steps
+		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
+			steps.Build = bk
+			toSave = append(toSave, steps)
+		}
+
+		if len(toSave) > 0 {
+			if err := datastore.Put(ctx, toSave); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil)
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	switch can, err := perm.CanUpdateBuild(ctx); {
@@ -261,12 +297,12 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	case !can:
 		return nil, appstatus.Errorf(codes.PermissionDenied, "%q not permitted to update build", auth.CurrentIdentity(ctx))
 	}
+	logging.Infof(ctx, "Received an UpdateBuild request for build-%d", req.GetBuild().GetId())
 
 	var bs model.BuildSteps
 	if err := validateUpdate(req, &bs); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
-	bs.Build = datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id})
 	um, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "update_mask: %s", err)
@@ -282,6 +318,10 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
 	if err := validateBuildToken(ctx, b); err != nil {
 		return nil, err
+	}
+
+	if err := updateEntities(ctx, req, bm, &bs); err != nil {
+		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
