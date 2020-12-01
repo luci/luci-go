@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,6 +31,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 
@@ -42,7 +46,12 @@ func TestScheduler(t *testing.T) {
 	Convey("With scheduler", t, func() {
 		var epoch = testclock.TestRecentTimeUTC
 
-		ctx, tc := testclock.UseTime(context.Background(), epoch)
+		ctx := context.Background()
+		if testing.Verbose() {
+			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		}
+
+		ctx, tc := testclock.UseTime(ctx, epoch)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			if testclock.HasTags(t, ClockTag) {
 				tc.Add(d)
@@ -71,7 +80,7 @@ func TestScheduler(t *testing.T) {
 			So(sched.Tasks(), ShouldBeEmpty)
 		}
 
-		enqueue := func(payload, name string, eta time.Time) codes.Code {
+		enqueue := func(payload, name string, eta time.Time, taskClassID string) codes.Code {
 			req := &taskspb.CreateTaskRequest{
 				Parent: "projects/zzz/locations/zzz/queues/zzz",
 				Task: &taskspb.Task{
@@ -88,16 +97,20 @@ func TestScheduler(t *testing.T) {
 			if !eta.IsZero() {
 				req.Task.ScheduleTime = timestamppb.New(eta)
 			}
+			if taskClassID == "" {
+				taskClassID = "default-task-class"
+			}
 			return status.Code(sched.Submit(ctx, &reminder.Payload{
+				TaskClass:         taskClassID,
 				CreateTaskRequest: req,
 			}))
 		}
 
 		Convey("One by one tasks", func() {
-			So(enqueue("1", "name", time.Time{}), ShouldEqual, codes.OK)
-			So(enqueue("2", "name", time.Time{}), ShouldEqual, codes.AlreadyExists)
-			So(enqueue("3", "", time.Time{}), ShouldEqual, codes.OK)
-			So(enqueue("4", "", time.Time{}), ShouldEqual, codes.OK)
+			So(enqueue("1", "name", time.Time{}, ""), ShouldEqual, codes.OK)
+			So(enqueue("2", "name", time.Time{}, ""), ShouldEqual, codes.AlreadyExists)
+			So(enqueue("3", "", time.Time{}, ""), ShouldEqual, codes.OK)
+			So(enqueue("4", "", time.Time{}, ""), ShouldEqual, codes.OK)
 
 			run(3)
 
@@ -107,11 +120,11 @@ func TestScheduler(t *testing.T) {
 		Convey("Task chain", func() {
 			exec.execute = func(payload string, t *Task) bool {
 				if len(payload) < 3 {
-					enqueue(payload+".", "", time.Time{})
+					enqueue(payload+".", "", time.Time{}, "")
 				}
 				return true
 			}
-			enqueue(".", "", time.Time{})
+			enqueue(".", "", time.Time{}, "")
 			run(3)
 			So(orderByPayload(exec.tasks), ShouldResemble, []string{".", "..", "..."})
 		})
@@ -119,8 +132,8 @@ func TestScheduler(t *testing.T) {
 		Convey("Tasks with ETA", func() {
 			now := clock.Now(ctx)
 			for i := 2; i >= 0; i-- {
-				enqueue(fmt.Sprintf("B %d", i), fmt.Sprintf("B %d", i), now.Add(time.Duration(i)*time.Millisecond))
-				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond))
+				enqueue(fmt.Sprintf("B %d", i), fmt.Sprintf("B %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
+				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
 			So(payloads(exec.tasks), ShouldResemble, []string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"})
@@ -136,7 +149,7 @@ func TestScheduler(t *testing.T) {
 				return t.Attempts == 4
 			}
 
-			enqueue(".", "", time.Time{})
+			enqueue(".", "", time.Time{}, "")
 			run(4)
 			So(payloads(exec.tasks), ShouldHaveLength, 4)
 
@@ -156,7 +169,7 @@ func TestScheduler(t *testing.T) {
 				return false
 			}
 
-			enqueue(".", "", time.Time{})
+			enqueue(".", "", time.Time{}, "")
 			run(10)
 			So(payloads(exec.tasks), ShouldHaveLength, 10)
 
@@ -176,8 +189,8 @@ func TestScheduler(t *testing.T) {
 
 			now := clock.Now(ctx)
 			for i := 2; i >= 0; i-- {
-				enqueue(fmt.Sprintf("B %d", i), fmt.Sprintf("B %d", i), now.Add(time.Duration(i)*time.Millisecond))
-				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond))
+				enqueue(fmt.Sprintf("B %d", i), fmt.Sprintf("B %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
+				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
 			So(payloads(exec.tasks), ShouldResemble, []string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"})
@@ -196,23 +209,82 @@ func TestScheduler(t *testing.T) {
 
 			Convey("Stops after executing a pending task", func() {
 				exec.execute = func(string, *Task) bool { return true }
-				enqueue("1", "", epoch.Add(5*time.Second))
+				enqueue("1", "", epoch.Add(5*time.Second), "")
 				sched.Run(ctx, StopWhenDrained())
 				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 5*time.Second)
 				So(exec.tasks, ShouldHaveLength, 1)
 			})
 
 			Convey("Stops after draining", func() {
-				exec.execute = func(title string, _ *Task) bool {
-					if title == "1" {
-						enqueue("2", "", clock.Now(ctx).Add(5*time.Second))
+				exec.execute = func(payload string, _ *Task) bool {
+					if payload == "1" {
+						enqueue("2", "", clock.Now(ctx).Add(5*time.Second), "")
 					}
 					return true
 				}
-				enqueue("1", "", epoch.Add(5*time.Second))
+				enqueue("1", "", epoch.Add(5*time.Second), "")
 				sched.Run(ctx, StopWhenDrained())
 				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 10*time.Second)
 				So(exec.tasks, ShouldHaveLength, 2)
+			})
+		})
+
+		Convey("Run(StopAfterTask)", func() {
+			Convey("Stops immediately after the right task if ran serially", func() {
+				enqueue("1", "", epoch.Add(3*time.Second), "classA")
+				enqueue("2", "", epoch.Add(6*time.Second), "classB")
+				enqueue("3", "", epoch.Add(9*time.Second), "classB")
+				sched.Run(ctx, StopAfterTask("classB"))
+				So(payloads(exec.tasks), ShouldResemble, []string{"1", "2"})
+
+				Convey("Doesn't take into account previously executed tasks", func() {
+					sched.Run(ctx, StopAfterTask("classB"))
+					So(payloads(exec.tasks), ShouldResemble, []string{"1", "2", "3"})
+				})
+			})
+
+			Convey("Stops immediately after the right task in a chain if ran serially", func() {
+				exec.execute = func(payload string, _ *Task) bool {
+					switch payload {
+					case "1":
+						enqueue("2", "", clock.Now(ctx).Add(5*time.Second), "classB")
+					case "2":
+						enqueue("3", "", clock.Now(ctx).Add(5*time.Second), "classB")
+					}
+					return true
+				}
+				enqueue("1", "", time.Time{}, "classA")
+				sched.Run(ctx, StopAfterTask("classB"))
+				So(payloads(exec.tasks), ShouldResemble, []string{"1", "2"})
+			})
+
+			Convey("Stops eventually if ran in parallel", func() {
+				// Generate task tree:
+				//             Z
+				//       ZA         ZB
+				//    ZAA  ZAB   ZBA  ZBB
+				exec.execute = func(payload string, _ *Task) bool {
+					if len(payload) <= 3 {
+						enqueue(payload+"A", "", time.Time{}, "classA")
+						enqueue(payload+"B", "", time.Time{}, "classB")
+					}
+					return true
+				}
+				enqueue("Z", "", time.Time{}, "classZ")
+
+				sched.Run(ctx, StopAfterTask("classA"), ParallelExecute())
+				// At least Z and at least one of ZA, ZAA, ZBA must have been executed.
+				exec.waitForTasks(2)
+				exec.m.Lock()
+				ps := payloads(exec.tasks)
+				exec.m.Unlock()
+				found := false
+				for _, p := range ps {
+					if strings.HasSuffix(p, "A") {
+						found = true
+					}
+				}
+				So(found, ShouldBeTrue)
 			})
 		})
 	})
@@ -291,8 +363,10 @@ func TestTaskList(t *testing.T) {
 type testExecutor struct {
 	ctx     context.Context
 	execute func(payload string, t *Task) bool
-	tasks   []*Task
 	ch      chan *Task
+
+	m     sync.Mutex
+	tasks []*Task
 }
 
 func (exe *testExecutor) Execute(ctx context.Context, t *Task, done func(retry bool)) {
@@ -303,7 +377,9 @@ func (exe *testExecutor) Execute(ctx context.Context, t *Task, done func(retry b
 		success = exe.execute(t.Task.GetHttpRequest().Url, t)
 	}
 
+	exe.m.Lock()
 	exe.tasks = append(exe.tasks, t)
+	exe.m.Unlock()
 	exe.ch <- t
 	done(!success)
 }

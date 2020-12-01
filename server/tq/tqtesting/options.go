@@ -21,7 +21,6 @@ type RunOption interface {
 
 // TODO(vadimsh): Add more stop conditions when needed:
 //  StopBeforeTask(taskKind)
-//  StopAfterTask(taskKind)
 
 // StopWhenDrained will stop the scheduler after it finishes executing the
 // last task and there are no more tasks scheduled.
@@ -36,6 +35,18 @@ func StopWhenDrained() RunOption {
 type stopWhenDrained struct{}
 
 func (stopWhenDrained) isOption() {}
+
+// StopAfterTask will stop the scheduler after it finishes executing the task of
+// matching task class ID.
+func StopAfterTask(taskClassID string) RunOption {
+	return stopAfterTask{taskClassID}
+}
+
+type stopAfterTask struct {
+	taskClassID string
+}
+
+func (stopAfterTask) isOption() {}
 
 // ParallelExecute instructs the scheduler to call executor's Execute method
 // in a separate goroutine instead of serially in Run.
