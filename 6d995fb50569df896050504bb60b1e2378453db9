@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3ce12d9_f52988f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T01:57:22Z",
+      "side": 1,
+      "message": "algo lgtm",
+      "revId": "6d995fb50569df896050504bb60b1e2378453db9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a000aef5_ae08700b",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T01:57:22Z",
+      "side": 1,
+      "message": "Is there a reason you move from fnv-1a to fnv-1?",
+      "range": {
+        "startLine": 157,
+        "startChar": 10,
+        "endLine": 157,
+        "endChar": 15
+      },
+      "revId": "6d995fb50569df896050504bb60b1e2378453db9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
