@@ -24,8 +24,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -113,8 +115,8 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 	return
 }
 
-func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
-	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, inJob, &ledcmd.EditRecipeBundleOpts{
+func (c *cmdEditRecipeBundle) execute(ctx context.Context, authClient *http.Client, authOpts auth.Options, inJob *job.Definition) (out interface{}, err error) {
+	return inJob, ledcmd.EditRecipeBundle(ctx, authClient, authOpts, inJob, &ledcmd.EditRecipeBundleOpts{
 		Overrides:  c.overrides,
 		DebugSleep: c.debugSleep,
 	})
