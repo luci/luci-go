@@ -29,6 +29,7 @@ import (
 // by faking or mocking only relevant methods.
 type Client interface {
 	CLReaderClient
+	QueryClient
 }
 
 // Client must be a subset of gerritpb.Client.
@@ -74,6 +75,18 @@ type CLReaderClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 	ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error)
+}
+
+// QueryClient defines a subset of Gerrit API used by CV to query for CLs.
+type QueryClient interface {
+	// Lists changes that match a query.
+	//
+	// Note, although the Gerrit API supports multiple queries, for which
+	// it can return multiple lists of changes, this is not a foreseen use-case
+	// so this API just includes one query with one returned list of changes.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+	ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error)
 }
 
 // ClientFactory creates Client tied to Gerrit host and LUCI project.
