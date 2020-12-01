@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -35,6 +36,13 @@ import (
 // It does not return gRPC-native errors; use DecoratedResultDB with
 // internal.CommonPostlude.
 type resultDBServer struct {
+	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
+}
+
+// uiServer implements uipb.UIServer.
+//
+// It does not return gRPC-native errors; use DecoratedUI with internal.CommonPostlude.
+type uiServer struct {
 	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
 }
 
@@ -73,6 +81,13 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
 		Service: &resultDBServer{
+			generateArtifactURL: contentServer.GenerateSignedURL,
+		},
+		Postlude: internal.CommonPostlude,
+	})
+
+	uipb.RegisterUIServer(srv.PRPC, &uipb.DecoratedUI{
+		Service: &uiServer{
 			generateArtifactURL: contentServer.GenerateSignedURL,
 		},
 		Postlude: internal.CommonPostlude,
