@@ -110,6 +110,30 @@
       },
       "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e9766de_aac2df70",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-01T08:23:40Z",
+      "side": 1,
+      "message": "Yup, this seems to be a bug in mask package that nil(i.e. not set) message is not handled correctly. I will look into this tomorrow.",
+      "parentUuid": "de62719d_57542728",
+      "range": {
+        "startLine": 297,
+        "startChar": 2,
+        "endLine": 299,
+        "endChar": 3
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
