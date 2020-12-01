@@ -33,7 +33,6 @@ func TestConditionJson(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should properly support JSON in conditional section of file.`, t, func() {
 		c := condition{Condition: "OS == \"Linux\""}
-		c.Variables.Command = []string{"python", "generate", "something"}
 		c.Variables.Files = []string{"generated"}
 		jsonData, err := json.Marshal(&c)
 		So(err, ShouldBeNil)
@@ -314,7 +313,6 @@ const sampleIsolateData = `
 	'conditions': [
 		['(OS=="linux" and bit==64) or OS=="win"', {
 			'variables': {
-				'command': ['python', '64linuxOrWin'],
 				'files': [
 					'64linuxOrWin',
 					'<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)',
@@ -323,7 +321,6 @@ const sampleIsolateData = `
 		}],
 		['bit==32 or (OS=="mac" and bit==64)', {
 			'variables': {
-				'command': ['python', '32orMac64'],
 				'read_only': 2,
 			},
 		}],
@@ -335,7 +332,6 @@ const sampleIncIsolateData = `
 	'conditions': [
 		['OS=="linux" or OS=="win" or OS=="mac"', {
 			'variables': {
-				'command': ['to', 'be', 'ignored'],
 				'files': [
 					'inc_file',
 					'<(DIR)/inc_unittest',
