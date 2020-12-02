@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
+	"google.golang.org/grpc/codes"
+
+	gerritutil "go.chromium.org/luci/common/api/gerrit"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
 
@@ -348,6 +351,158 @@ func TestGetChange(t *testing.T) {
 				}})
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, ci)
+		})
+	})
+}
+
+func TestListChanges(t *testing.T) {
+	t.Parallel()
+
+	Convey("ListChanges works", t, func() {
+		f := WithCIs("empty", ACLRestricted("empty"))
+		ctx := f.Install(context.Background())
+
+		mustCurrentClient := func(host, luciProject string) gerrit.QueryClient {
+			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		listChangeIDs := func(client gerrit.QueryClient, req *gerritpb.ListChangesRequest) []int {
+			out, err := client.ListChanges(ctx, req)
+			So(err, ShouldBeNil)
+			So(out.GetMoreChanges(), ShouldBeFalse)
+			ids := make([]int, len(out.GetChanges()))
+			for i, ch := range out.GetChanges() {
+				ids[i] = int(ch.GetNumber())
+				if i > 0 {
+					// Ensure monotonically non-decreasing update timestamps.
+					prior := out.GetChanges()[i-1]
+					So(prior.GetUpdated().AsTime().Before(ch.GetUpdated().AsTime()), ShouldBeFalse)
+				}
+			}
+			return ids
+		}
+
+		f.AddFrom(WithCIs("chrome-internal", ACLRestricted("infra-internal"),
+			CI(9001, Project("infra/infra-internal")),
+			CI(9002, Project("infra/infra-internal")),
+		))
+
+		Convey("ACLs enforced", func() {
+			So(listChangeIDs(mustCurrentClient("chrome-internal", "spy"),
+				&gerritpb.ListChangesRequest{}), ShouldResemble, []int{})
+			So(listChangeIDs(mustCurrentClient("chrome-internal", "infra-internal"),
+				&gerritpb.ListChangesRequest{}), ShouldResemble, []int{9002, 9001})
+		})
+
+		var epoch = time.Date(2011, time.February, 3, 4, 5, 6, 7, time.UTC)
+		u0 := Updated(epoch)
+		u1 := Updated(epoch.Add(time.Minute))
+		u2 := Updated(epoch.Add(2 * time.Minute))
+		f.AddFrom(WithCIs("chromium", ACLPublic(),
+			CI(8001, u1, Project("infra/infra"), Vote("Commit-Queue", +2)),
+			CI(8002, u2, Project("infra/luci/luci-go"), Vote("Commit-Queue", +1), Vote("Code-Review", -1)),
+			CI(8003, u0, Project("infra/luci/luci-go"), Status("MERGED"), Vote("Code-Review", +1)),
+		))
+
+		Convey("Order and limit", func() {
+			g := mustCurrentClient("chromium", "anyone")
+			So(listChangeIDs(g, &gerritpb.ListChangesRequest{}), ShouldResemble, []int{8002, 8001, 8003})
+
+			out, err := g.ListChanges(ctx, &gerritpb.ListChangesRequest{Limit: 2})
+			So(err, ShouldBeNil)
+			So(out.GetMoreChanges(), ShouldBeTrue)
+			So(out.GetChanges()[0].GetNumber(), ShouldEqual, 8002)
+			So(out.GetChanges()[1].GetNumber(), ShouldEqual, 8001)
+		})
+
+		Convey("Filtering works", func() {
+			query := func(q string) []int {
+				return listChangeIDs(mustCurrentClient("chromium", "anyone"),
+					&gerritpb.ListChangesRequest{Query: q})
+			}
+			Convey("before/after", func() {
+				So(gerritutil.FormatTime(epoch), ShouldResemble, `"2011-02-03 04:05:06.000000007"`)
+				So(query(`before:"2011-02-03 04:05:06.000000006"`), ShouldResemble, []int{})
+				// 1 ns later
+				So(query(`before:"2011-02-03 04:05:06.000000007"`), ShouldResemble, []int{8003})
+				So(query(` after:"2011-02-03 04:05:06.000000007"`), ShouldResemble, []int{8002, 8001, 8003})
+				// 1 minute later
+				So(query(` after:"2011-02-03 04:06:06.000000007"`), ShouldResemble, []int{8002, 8001})
+				// 1 minute later
+				So(query(` after:"2011-02-03 04:07:06.000000007"`), ShouldResemble, []int{8002})
+				// Surround middle CL:
+				So(query(``+
+					` after:"2011-02-03 04:05:30.000000000" `+
+					`before:"2011-02-03 04:06:30.000000000"`), ShouldResemble, []int{8001})
+			})
+			Convey("Project prefix", func() {
+				So(query(`projects:"inf"`), ShouldResemble, []int{8002, 8001, 8003})
+				So(query(`projects:"infra/"`), ShouldResemble, []int{8002, 8001, 8003})
+				So(query(`projects:"infra/luci"`), ShouldResemble, []int{8002, 8003})
+				So(query(`projects:"typo"`), ShouldResemble, []int{})
+			})
+			Convey("Project exact", func() {
+				So(query(`project:"infra/infra"`), ShouldResemble, []int{8001})
+				So(query(`project:"infra"`), ShouldResemble, []int{})
+				So(query(`(project:"infra/infra" OR project:"infra/luci/luci-go")`), ShouldResemble,
+					[]int{8002, 8001, 8003})
+			})
+			Convey("Status", func() {
+				So(query(`status:new`), ShouldResemble, []int{8002, 8001})
+				So(query(`status:abandoned`), ShouldResemble, []int{})
+				So(query(`status:merged`), ShouldResemble, []int{8003})
+			})
+			Convey("label", func() {
+				So(query(`label:Commit-Queue>0`), ShouldResemble, []int{8002, 8001})
+				So(query(`label:Commit-Queue>1`), ShouldResemble, []int{8001})
+				So(query(`label:Code-Review>-1`), ShouldResemble, []int{8003})
+			})
+			Convey("Typical CV query", func() {
+				So(query(`label:Commit-Queue>0 status:NEW project:"infra/infra"`),
+					ShouldResemble, []int{8001})
+				So(query(`label:Commit-Queue>0 status:NEW projects:"infra"`),
+					ShouldResemble, []int{8002, 8001})
+				So(query(`label:Commit-Queue>0 status:NEW projects:"infra"`+
+					` after:"2011-02-03 04:06:30.000000000" `+
+					`before:"2011-02-03 04:08:30.000000000"`), ShouldResemble, []int{8002})
+				So(query(`label:Commit-Queue>0 status:NEW `+
+					`(project:"infra" OR project:"infra/luci/luci-go")`+
+					` after:"2011-02-03 04:06:30.000000000" `+
+					`before:"2011-02-03 04:08:30.000000000"`), ShouldResemble, []int{8002})
+			})
+		})
+
+		Convey("Bad queries", func() {
+			test := func(query string) error {
+				client, err := gerrit.CurrentClient(ctx, "infra", "chromium")
+				So(err, ShouldBeNil)
+				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
+				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `invalid query argument`)
+				return err
+			}
+
+			So(test(`"unmatched quote`), ShouldErrLike, `invalid query argument "\"unmatched quote"`)
+			So(test(`status:new "unmatched`), ShouldErrLike, `unrecognized token "\"unmatched`)
+			So(test(`project:"unmatched`), ShouldErrLike, `"project:\"unmatched": expected quoted string`)
+			So(test(`project:raw/not/supported`), ShouldErrLike, `expected quoted string`)
+			So(test(`project:"one" OR project:"two"`), ShouldErrLike, `"OR" must be inside ()`)
+			So(test(`project:"one" project:"two")`), ShouldErrLike, `"project:" must be inside ()`)
+			// This error can be better, but UX isn't essential for a fake.
+			So(test(`(project:"one" OR`), ShouldErrLike, `"" must be outside of ()`)
+
+			So(test(`status:rand-om`), ShouldErrLike, `unrecognized status "rand-om"`)
+			So(test(`status:0`), ShouldErrLike, `unrecognized status "0"`)
+			So(test(`label:0`), ShouldErrLike, `invalid label: 0`)
+			So(test(`label:Commit-Queue`), ShouldErrLike, `invalid label: Commit-Queue`)
+
+			// Note these are actually allowed in Gerrit.
+			So(test(`label:Commit-Queue<1`), ShouldErrLike, `invalid label: Commit-Queue<1`)
+			So(test(`before:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
+			So(test(` after:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
+			So(test(`before:"2019-20-01"`), ShouldErrLike, `failed to parse Gerrit timestamp "\"2019-20-01\""`)
 		})
 	})
 }
