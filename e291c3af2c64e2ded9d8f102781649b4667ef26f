@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a065c365_10898a82",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-02T04:01:38Z",
+      "side": 1,
+      "message": "Suggest adding a comment explaining why this is necessary, in case someone stumbles across it later. It\u0027s not super obvious.",
+      "range": {
+        "startLine": 81,
+        "startChar": 8,
+        "endLine": 81,
+        "endChar": 64
+      },
+      "revId": "e291c3af2c64e2ded9d8f102781649b4667ef26f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
