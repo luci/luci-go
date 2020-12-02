@@ -36,6 +36,46 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "937b4e2f_1a5dc808",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T02:26:18Z",
+      "side": 1,
+      "message": "Well done",
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8204cf35_462b0726",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T02:26:18Z",
+      "side": 1,
+      "message": "Del?",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "480daf5a_9d6fcf12",
@@ -55,6 +95,23 @@
         "endLine": 57,
         "endChar": 22
       },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "955e81a7_3185d31e",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T02:26:18Z",
+      "side": 1,
+      "message": "nit: add empty line above for consistency",
       "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
