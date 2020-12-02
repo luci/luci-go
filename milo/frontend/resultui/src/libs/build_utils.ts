@@ -40,8 +40,12 @@ export function getLegacyURLForBuild(builder: BuilderID , buildNumOrId: string) 
   return `${getURLForBuilder(builder)}/${buildNumOrId}`;
 }
 
+export function getGitilesRepoURL(commit: Pick<GitilesCommit, 'host' | 'project'>) {
+  return `https://${commit.host}/${commit.project}`;
+}
+
 export function getURLForGitilesCommit(commit: GitilesCommit): string {
-  return `https://${commit.host}/${commit.project}/+/${commit.id}`;
+  return `${getGitilesRepoURL(commit)}/+/${commit.id}`;
 }
 
 export function getURLForGerritChange(change: GerritChange): string {

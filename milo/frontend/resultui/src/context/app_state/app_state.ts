@@ -28,6 +28,7 @@ export class AppState {
   // '' means there's no access token (i.e. the user is not logged in).
   @observable.ref accessToken: string | null = null;
   @observable.ref selectedTabId = '';
+  @observable.ref selectedBlamelistPinIndex = 0;
 
   @computed
   get resultDb(): ResultDb | null {
