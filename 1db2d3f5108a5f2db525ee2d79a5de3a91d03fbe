@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b148284b_6433454f",
+        "filename": "gae/service/datastore/pls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1812,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T21:07:49Z",
+      "side": 1,
+      "message": "TBH, I wanted this to be nil. I still do, but I\u0027m not sure it\u0027s a good idea. Thoughts?\n\nIf it\u0027s a good idea, then the only consistent way I can think is:\nMsg: nil -\u003e serialize -\u003e no property at all\nMsg: \u0026{} -\u003e serialize -\u003e Property(\"Msg\": \"serialized empty value\")",
+      "range": {
+        "startLine": 1812,
+        "startChar": 31,
+        "endLine": 1812,
+        "endChar": 48
+      },
+      "revId": "1db2d3f5108a5f2db525ee2d79a5de3a91d03fbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
