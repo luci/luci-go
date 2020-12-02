@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0584d835_5adb7d01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-02T03:05:25Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Mac%20FYI%20dEQP%20Release%20Intel/135101/blamelist\n",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
