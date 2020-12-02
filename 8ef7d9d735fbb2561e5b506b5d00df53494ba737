@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b6c21d2e_582aad4f",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-02T05:36:55Z",
+      "side": 1,
+      "message": "\u003e Another solution is to exclude those fields in the ProprtyLoadSaver interface. \n\nNot sure about this. This might lead to us not noticing that we accidentally set fields that we don\u0027t indent to set (i.e. a bug).\n\nThe problem is at \u003cthis level\u003e of abstraction. I think the solution should be somewhere here too, not deeper in the datastore layer.\n\nI think it is possible to implement a generic function that makes a shallow copy, using https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect\nThen https://godoc.org/go.chromium.org/luci/common/proto would be a good place for such a function.\n\nbtw, i just realized this bug is less innocuous that it may seem:\nthis func is retried in case of a transaction abort. Imagine this happens. Then Tags are set to nil, and and L285 condition is evaluated to false, so L286-290 does not run on the second try \u003d\u003e tags are lost.\n\nre clearing steps after merging: this is not great because we would be cloning all steps and output properties (which are the biggest part of the build), and throw that away. And it would happen on each UpdateBuild request. This is pretty wasteful.\n\n----\n\nan alternative to shallow copy, we could mutate the mask to exclude steps and output properties from it. So that Merge() does not try to copy. It would be something like\n\n  buildEntityMask :\u003d buildMask.Clone()\n  buildEntityMask.Del(\"steps\")\n  buildEntityMask.Del(\"output.properties\")\n  ...\n  buildEntityMask.Merge(req.Build, \u0026b.Proto)\n\n(note: these mask methods currently do not exist)",
+      "parentUuid": "9d072a4b_5095f665",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cff09ded_9113ca17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
