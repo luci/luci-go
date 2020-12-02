@@ -53,6 +53,17 @@ func TestCache(t *testing.T) {
 		So(keys, ShouldResemble, []string{"key1", "key2"})
 		So(values, ShouldResemble, []string{"value1", "value2"})
 
+		keys = nil
+		values = nil
+		k.ForEach(func(key string, value []byte) error {
+			keys = append(keys, key)
+			values = append(values, string(value))
+			return nil
+		})
+
+		So(keys, ShouldResemble, []string{"key1", "key2", "key3"})
+		So(values, ShouldResemble, []string{"value1", "value2", "value3"})
+
 		So(k.Close(), ShouldBeNil)
 	})
 }
