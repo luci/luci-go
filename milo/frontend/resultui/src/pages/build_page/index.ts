@@ -24,7 +24,7 @@ import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
-import { getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
+import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -88,13 +88,25 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     this.buildState.buildNumOrId = this.buildNumOrId;
 
     this.disposers.push(autorun(() => {
-      const bpd = this.buildState.build;
-      if (!bpd) {
+      const build = this.buildState.build;
+      if (!build) {
         return;
       }
-      this.invocationState.invocationId = bpd.infra?.resultdb?.invocation
+      this.invocationState.invocationId = build.infra?.resultdb?.invocation
         ?.slice('invocations/'.length) || '';
       this.invocationState.initialized = true;
+
+      // If the input gitiles commit is in the blamelist pins, select it.
+      // Otherwise, select the first blamelist pin.
+      const buildInputCommitRepo = build.input.gitilesCommit
+        ? getGitilesRepoURL(build.input.gitilesCommit)
+        : null;
+      let selectedBlamelistPinIndex = build.blamelistPins
+        .findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;
+      if (selectedBlamelistPinIndex === -1) {
+        selectedBlamelistPinIndex = 0;
+      }
+      this.appState.selectedBlamelistPinIndex = selectedBlamelistPinIndex;
     }));
 
     this.disposers.push((reaction(

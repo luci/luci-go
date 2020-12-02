@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { getGitilesRepoURL } from '../../libs/build_utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { BuildExt } from '../../models/build_ext';
-import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
+import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
@@ -47,7 +47,7 @@ export class BuildState {
     // is set to true so they no longer subscribes to any external observable.
     // tslint:disable: no-unused-expression
     this.relatedBuilds;
-    this.queryBlamelistResIterFn;
+    this.queryBlamelistResIterFns;
     // tslint:enable: no-unused-expression
   }
 
@@ -120,18 +120,14 @@ export class BuildState {
     return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
-  @computed({keepAlive: true})
-  get queryBlamelistResIterFn() {
-    if (this.isDisposed || !this.appState.milo || !this.build) {
+  private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport=false) {
+    if (!this.appState.milo || !this.build) {
       return async function*() { await Promise.race([]); };
     }
-    if (!this.build.input.gitilesCommit) {
-      return async function*() {};
-    }
-
     let req: QueryBlamelistRequest = {
-      gitilesCommit: this.build.input.gitilesCommit,
+      gitilesCommit,
       builder: this.build.builder,
+      multiProjectSupport,
     };
     const milo = this.appState.milo;
     async function* streamBlamelist() {
@@ -143,6 +139,26 @@ export class BuildState {
       } while (res.nextPageToken);
     }
     return iter.teeAsync(streamBlamelist());
+  }
+
+  @computed
+  private get inputCommitRepo() {
+    if (!this.build?.input.gitilesCommit) {
+      return null;
+    }
+    return getGitilesRepoURL(this.build.input.gitilesCommit);
+  }
+
+  @computed({keepAlive: true})
+  get queryBlamelistResIterFns() {
+    if (this.isDisposed || !this.build) {
+      return [];
+    }
+
+    return this.build.blamelistPins.map((pin) => {
+      const pinRepo = getGitilesRepoURL(pin);
+      return this.getQueryBlamelistResIterFn(pin, pinRepo !== this.inputCommitRepo);
+    });
   }
 
   // Refresh all data that depends on the timestamp.
