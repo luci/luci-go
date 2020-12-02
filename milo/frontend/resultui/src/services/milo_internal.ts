@@ -25,6 +25,7 @@ import { BuilderID, GitilesCommit } from './buildbucket';
 export interface QueryBlamelistRequest {
   readonly gitilesCommit: GitilesCommit;
   readonly builder: BuilderID;
+  readonly multiProjectSupport: boolean;
   readonly pageSize?: number;
   readonly pageToken?: string;
 }

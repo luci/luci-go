@@ -15,7 +15,7 @@
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
-import { Build, BuilderID, BuildInfra, BuildInput, BuildOutput, BuildStatus, Executable, StringPair } from '../services/buildbucket';
+import { Build, BuilderID, BuildInfra, BuildInput, BuildOutput, BuildStatus, Executable, GitilesCommit, StringPair } from '../services/buildbucket';
 import { Link } from './link';
 import { StepExt } from './step_ext';
 
@@ -89,6 +89,14 @@ export class BuildExt {
     return this.tags
       .filter((tag) => tag.key === 'buildset')
       .map((tag) => tag.value);
+  }
+
+  @computed get blamelistPins(): GitilesCommit[] {
+    const blamelistPins = this.output.properties['$recipe_engine/milo/blamelist_pins'] as GitilesCommit[] || [];
+    if (blamelistPins.length === 0 && this.input.gitilesCommit) {
+      blamelistPins.push(this.input.gitilesCommit);
+    }
+    return blamelistPins;
   }
 
   @computed get recipeLink(): Link {
