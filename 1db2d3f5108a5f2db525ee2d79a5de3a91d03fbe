@@ -22,6 +22,30 @@
       },
       "revId": "1db2d3f5108a5f2db525ee2d79a5de3a91d03fbe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02e6610a_09a40da4",
+        "filename": "gae/service/datastore/pls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1812,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-02T21:10:59Z",
+      "side": 1,
+      "message": "\u003e TBH, I wanted this to be nil. I still do, but I\u0027m not sure it\u0027s a good idea. Thoughts?\nWhy do you think it is not a good idea? Seems more correct to me...\n\n\u003e \n\u003e If it\u0027s a good idea, then the only consistent way I can think is:\n\u003e Msg: nil -\u003e serialize -\u003e no property at all\n\u003e Msg: \u0026{} -\u003e serialize -\u003e Property(\"Msg\": \"serialized empty value\")\n\nlgtm",
+      "parentUuid": "b148284b_6433454f",
+      "range": {
+        "startLine": 1812,
+        "startChar": 31,
+        "endLine": 1812,
+        "endChar": 48
+      },
+      "revId": "1db2d3f5108a5f2db525ee2d79a5de3a91d03fbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
