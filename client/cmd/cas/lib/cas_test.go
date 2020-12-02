@@ -29,6 +29,7 @@ import (
 )
 
 func TestArchiveDownload(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	Convey(`Upload and download`, t, func() {
