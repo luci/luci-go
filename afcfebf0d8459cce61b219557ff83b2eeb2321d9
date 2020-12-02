@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5e9a5a1f_147e2d1a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T22:55:35Z",
+      "side": 1,
+      "message": "Sorry, I didn\u0027t get any time to look into it yesterday. Thank you for digging into it. It rally save lots of effort for me to figure out what\u0027s happening with your finding. I\u0027ve uploaded the fix in https://crrev.com/c/2569944 .\n\nAlso, in your description, you said that \n\n\u003e If output.Properties is set with nil or \u0026structpb.Struct{}, cloneValue() at [1] is happy to make a copy of it. However, the panic is from dest.Set() at [1].\n\nI was able to reproduce the error when I set build.Output.Properties \u003d nil but not \u0026structpb.Struct{}. However, can you verify it is the case you\u0027ve observed with mask \"output.properties\"? That would be a different bug.",
+      "parentUuid": "b6a29679_347b3c90",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 65
+      },
+      "revId": "afcfebf0d8459cce61b219557ff83b2eeb2321d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "99aca4b8_47cfb9e5",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 7
