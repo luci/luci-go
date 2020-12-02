@@ -41,9 +41,10 @@ func TestArchiveDownload(t *testing.T) {
 
 		uploaded := t.TempDir()
 		layout := map[string]string{
-			"a":      "a",
-			"b/c":    "bc",
-			"empty/": "",
+			"a":          "a",
+			"b/c":        "bc",
+			"large_file": string(make([]byte, smallFileThreshold+1)),
+			"empty/":     "",
 		}
 		So(testfs.Build(uploaded, layout), ShouldBeNil)
 
@@ -56,10 +57,22 @@ func TestArchiveDownload(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		var dr downloadRun
-		dr.digest = string(digest)
-		dr.dir = t.TempDir()
-		err = dr.doDownload(ctx)
-		So(err, ShouldBeNil)
+		download := func() {
+			dr.digest = string(digest)
+			dr.dir = t.TempDir()
+			err = dr.doDownload(ctx)
+			So(err, ShouldBeNil)
+		}
+
+		Convey("use kvs", func() {
+			dr.kvs = filepath.Join(t.TempDir(), "kvs")
+			download()
+		})
+
+		Convey("not use kvs", func() {
+			// do not set kvs.
+			download()
+		})
 
 		downloaded, err := testfs.Collect(dr.dir)
 		So(err, ShouldBeNil)
