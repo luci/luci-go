@@ -16,6 +16,24 @@
       "message": "Del",
       "revId": "f2ea197f9222e7c6c2719286e771147bbf1b2ae4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8db9351e_e647ba1c",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T12:58:21Z",
+      "side": 1,
+      "message": "Del what? the whole field?",
+      "parentUuid": "5d7ce09a_72b4de2d",
+      "revId": "f2ea197f9222e7c6c2719286e771147bbf1b2ae4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
