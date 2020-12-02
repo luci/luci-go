@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-import { computed, observable } from 'mobx';
+import { computed, IReactionDisposer, observable, reaction } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { getGitilesRepoURL } from '../../libs/build_utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { BuildExt } from '../../models/build_ext';
-import { Build, BuilderID, GetBuildRequest } from '../../services/buildbucket';
+import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
 import { AppState } from '../app_state/app_state';
 
@@ -29,10 +29,26 @@ import { AppState } from '../app_state/app_state';
 export class BuildState {
   @observable.ref builder?: BuilderID;
   @observable.ref buildNumOrId?: string;
+  @observable.ref selectedBlamelistPinIndex = 0;
 
   @observable.ref private timestamp = Date.now();
 
-  constructor(private appState: AppState) {}
+  private disposers: IReactionDisposer[] = [];
+
+  constructor(private appState: AppState) {
+    // If the input gitiles commit is in the blamelist pins, select it.
+    // Otherwise, select the first blamelist pin.
+    this.disposers.push(reaction(
+      () => this.build,
+      () => {
+        this.selectedBlamelistPinIndex = this.build?.blamelistPins
+          .findIndex((pin) => getGitilesRepoURL(pin) === this.inputCommitRepo) || 0;
+        if (this.selectedBlamelistPinIndex === -1) {
+          this.selectedBlamelistPinIndex = 0;
+        }
+      }),
+    );
+  }
 
   @observable.ref private isDisposed = false;
 
@@ -41,13 +57,14 @@ export class BuildState {
    * Must be called before the object is GCed.
    */
   dispose() {
+    this.disposers.forEach((disposer) => disposer());
     this.isDisposed = true;
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
     // tslint:disable: no-unused-expression
     this.relatedBuilds;
-    this.queryBlamelistResIterFn;
+    this.queryBlamelistResIterFns;
     // tslint:enable: no-unused-expression
   }
 
@@ -120,18 +137,14 @@ export class BuildState {
     return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
-  @computed({keepAlive: true})
-  get queryBlamelistResIterFn() {
-    if (this.isDisposed || !this.appState.milo || !this.build) {
+  private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport=false) {
+    if (!this.appState.milo || !this.build) {
       return async function*() { await Promise.race([]); };
     }
-    if (!this.build.input.gitilesCommit) {
-      return async function*() {};
-    }
-
     let req: QueryBlamelistRequest = {
-      gitilesCommit: this.build.input.gitilesCommit,
+      gitilesCommit,
       builder: this.build.builder,
+      multiProjectSupport,
     };
     const milo = this.appState.milo;
     async function* streamBlamelist() {
@@ -143,6 +156,45 @@ export class BuildState {
       } while (res.nextPageToken);
     }
     return iter.teeAsync(streamBlamelist());
+  }
+
+  @computed
+  private get inputCommitRepo() {
+    if (!this.build?.input.gitilesCommit) {
+      return null;
+    }
+    return getGitilesRepoURL(this.build.input.gitilesCommit);
+  }
+
+  @computed
+  get selectedBlamelistPin() {
+    return this.build?.blamelistPins[this.selectedBlamelistPinIndex];
+  }
+
+  @computed
+  get selectedBlamelistPinRepoURL() {
+    if (!this.selectedBlamelistPin) {
+      return null;
+    }
+    return getGitilesRepoURL(this.selectedBlamelistPin);
+  }
+
+  @computed({keepAlive: true})
+  private get queryBlamelistResIterFns() {
+    if (this.isDisposed || !this.build) {
+      return [];
+    }
+
+    return this.build.blamelistPins.map((pin) => {
+      const pinRepo = getGitilesRepoURL(pin);
+      return this.getQueryBlamelistResIterFn(pin, pinRepo !== this.inputCommitRepo);
+    });
+  }
+
+  @computed({keepAlive: true})
+  get queryBlamelistResIterFn() {
+    return this.queryBlamelistResIterFns[this.selectedBlamelistPinIndex]
+      || async function*() { yield Promise.race([]); };
   }
 
   // Refresh all data that depends on the timestamp.
