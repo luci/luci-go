@@ -494,6 +494,18 @@ func TestMerge(t *testing.T) {
 				},
 			})
 		})
+		Convey("nil message", func() {
+			src := &testMsg{
+				Msg: nil,
+			}
+			dest := &testMsg{
+				Msg: &testMsg{
+					Str: "def",
+				},
+			}
+			testMerge([]string{"msg"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{})
+		})
 		Convey("map field ", func() {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
@@ -529,6 +541,20 @@ func TestMerge(t *testing.T) {
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
+				},
+			})
+		})
+		Convey("map field (value is nil message)", func() {
+			src := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": nil,
+				},
+			}
+			dest := &testMsg{}
+			testMerge([]string{"map_str_msg"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": nil,
 				},
 			})
 		})
