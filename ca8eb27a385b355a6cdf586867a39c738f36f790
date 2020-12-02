@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2e8dc57d_608517a7",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-02T04:23:14Z",
+      "side": 1,
+      "message": "You are right. AppState is a better place for this. Moved selectedBlamelistPinIndex to appState and other selected blamelist pin related properties to the blamelist tab.",
+      "parentUuid": "8d62cf8a_07ec4e09",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "23d1367d_e05521bd",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 3
