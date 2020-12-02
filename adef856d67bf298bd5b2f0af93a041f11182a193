@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "33ad1b05_e0e36d0d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "derp. I keep forgetting about antlr. Yeah, definitely worth a look since you can feed it EBNF grammar as is!\n\nI did look at https://github.com/golang/tools/blob/master/cmd/goyacc/testdata/expr/expr.yd, but it looks too complex for what I wanted.",
+      "parentUuid": "a391c461_1ac027eb",
+      "range": {
+        "startLine": 19,
+        "startChar": 10,
+        "endLine": 19,
+        "endChar": 62
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ff5d5d21_4bfce3b9",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 4
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "58a3c813_f861f7b9",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Yep!",
+      "parentUuid": "a4acd3d7_fba17ce3",
+      "range": {
+        "startLine": 247,
+        "startChar": 0,
+        "endLine": 249,
+        "endChar": 0
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1260ad98_d36982ea",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-12-01T21:50:08Z",
       "side": 1,
       "message": "Optionally, perhaps use a more specific name like listChangesQuery. I know the query for changes is special (it\u0027s the query that\u0027s typed into the search box in the Gerrit UI), but gerritfake/client.go contains things for lots of different types of requests with different query parameters.",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 268,
+        "endChar": 16
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26593017_6864700f",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "true. Done. Also below one.",
+      "parentUuid": "1260ad98_d36982ea",
       "range": {
         "startLine": 268,
         "startChar": 5,
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08a67d4c_6b3441ef",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75f64c7c_b423594c",
+      "range": {
+        "startLine": 292,
+        "startChar": 5,
+        "endLine": 292,
+        "endChar": 15
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a0dc0583_dc7d1a68",
@@ -123,6 +219,30 @@
       "writtenOn": "2020-12-01T21:50:08Z",
       "side": 1,
       "message": "Optionally, maybe mustBeInClause or mustBeOutsideClause, or mustBeInParens/mustBeOutsideParens",
+      "range": {
+        "startLine": 308,
+        "startChar": 1,
+        "endLine": 308,
+        "endChar": 13
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fffc82b1_b5ac909f",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0dc0583_dc7d1a68",
       "range": {
         "startLine": 308,
         "startChar": 1,
@@ -156,6 +276,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "946e4f38_3a9857e1",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "i suspect nested is allowed, but for CV current needs, it is not necessary.",
+      "parentUuid": "379e4546_ce8182c0",
+      "range": {
+        "startLine": 326,
+        "startChar": 0,
+        "endLine": 327,
+        "endChar": 21
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "73576145_7512051e",
@@ -179,6 +323,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "03ba911d_b8646fa3",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73576145_7512051e",
+      "range": {
+        "startLine": 386,
+        "startChar": 18,
+        "endLine": 386,
+        "endChar": 19
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f377b06c_5e3e180b",
@@ -192,6 +360,30 @@
       "writtenOn": "2020-12-01T21:09:37Z",
       "side": 1,
       "message": "Will there be a escaped double quote char inside the quoted string?",
+      "range": {
+        "startLine": 422,
+        "startChar": 17,
+        "endLine": 422,
+        "endChar": 56
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52e13a7b_85cacd7b",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Not in CQ generated one. Generally, probably yes.",
+      "parentUuid": "f377b06c_5e3e180b",
       "range": {
         "startLine": 422,
         "startChar": 17,
@@ -248,6 +440,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de1789e6_a5510b3c",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "For a generic tokenizer, probably yes. In this case, it\u0027ll be converted to error immediately.",
+      "parentUuid": "3448632c_27fbbfb3",
+      "range": {
+        "startLine": 423,
+        "startChar": 3,
+        "endLine": 423,
+        "endChar": 63
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8313b913_704889d4",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "febcbb1c_5bd85701",
+      "range": {
+        "startLine": 423,
+        "startChar": 3,
+        "endLine": 423,
+        "endChar": 63
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "50dcb535_0e4bdc68",
@@ -261,6 +501,30 @@
       "writtenOn": "2020-12-01T21:09:37Z",
       "side": 1,
       "message": "Maybe \n\n```\nswitch c {\n  case \u0027:\u0027: \n    consume(i + 1)\n    return\n  case \u0027 \u0027: \n    consume(i)\n    return\n}\n```\n \nas you always TrimLeft before getting the next token and this way, you don\u0027t need to TrimRight on L355\u0026362",
+      "range": {
+        "startLine": 434,
+        "startChar": 0,
+        "endLine": 437,
+        "endChar": 4
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32776192_936873c6",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "50dcb535_0e4bdc68",
       "range": {
         "startLine": 434,
         "startChar": 0,
@@ -320,6 +584,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a8a5a8f6_5c55ef48",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Hm, and I like short \"Vote\" 😊\nIn Gerrit, Voting means overriding, even though +1 and +2 notation is uesd.\nThis LabelInfo struct is actually a min/max agregation  of vote values.\n\nI updated the doc though.\n\nAlso, I\u0027ve just realized that this LabelInfo is not sufficient enough info for CV, as CV needs to recognize votes by different users. Can we keep current name till then?",
+      "parentUuid": "edd3597c_02bacb3c",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 426,
+        "endChar": 26
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e8725dfb_c0cfb7a4",
         "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
         "patchSetId": 4
@@ -331,6 +619,24 @@
       "writtenOn": "2020-12-01T21:50:08Z",
       "side": 1,
       "message": "Suggestion: could you add tests to show what happens when the query string is invalid?",
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ad1bf79_1b345ecb",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Oh, yeah. Sorry, totally forgot about it. Done.",
+      "parentUuid": "e8725dfb_c0cfb7a4",
       "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -348,6 +654,30 @@
       "writtenOn": "2020-12-01T21:50:08Z",
       "side": 1,
       "message": "Order",
+      "range": {
+        "startLine": 409,
+        "startChar": 10,
+        "endLine": 409,
+        "endChar": 16
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ce4d9c8_3d45b1de",
+        "filename": "cv/internal/gerrit/gerritfake/fake_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T00:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13b9aa3d_7ee4416a",
       "range": {
         "startLine": 409,
         "startChar": 10,
