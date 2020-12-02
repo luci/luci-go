@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8cba0fc7_6c310cc2",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-02T03:42:01Z",
+      "side": 1,
+      "message": "If user switch between different tabs, they probably would want the repo selection to be persisted.",
+      "parentUuid": "35bc0522_4fcefafe",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "23d1367d_e05521bd",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 3
@@ -48,6 +66,24 @@
       "writtenOn": "2020-12-02T03:34:47Z",
       "side": 1,
       "message": "nits: Can we move those functions below the constructor for readability?",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcd7c3e1_2b0a58a7",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-02T03:42:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23d1367d_e05521bd",
       "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -65,6 +101,24 @@
       "writtenOn": "2020-12-02T03:34:47Z",
       "side": 1,
       "message": "What is the advantage of using Pick instead of just using GitilesCommit?",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad2fd5b0_a36f6b84",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-02T03:42:01Z",
+      "side": 1,
+      "message": "We can pass an object with only \u0027host\u0027 and \u0027project\u0027 properties. Although this feature is not currently used.",
+      "parentUuid": "ce16e803_0b6208a4",
       "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
