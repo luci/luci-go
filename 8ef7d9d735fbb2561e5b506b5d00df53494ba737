@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9d072a4b_5095f665",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-12-02T03:31:13Z",
+      "side": 1,
+      "message": "I think that if Save moved Proto.Tags to Tags that would be fine, and if it threw an error if Proto.Steps were set, that would also be fine. But because steps are stored in an entirely different entity, it can\u0027t move Proto.Steps to the correct place, all it can do is clear it. If Save blindly clears fields then it could result in incorrect behavior because ensuring that Proto.Steps is stored in a separate BuildSteps entity now happens in a different place than clearing Proto.Steps.\n\nInstead of clearing req.Build.Steps can\u0027t you just clear b.Proto.Steps after the merge below?",
+      "parentUuid": "b6bc9d4a_236068ab",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cff09ded_9113ca17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
