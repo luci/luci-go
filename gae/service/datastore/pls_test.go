@@ -1807,6 +1807,11 @@ var testCases = []testCase{
 		loadErr: `gae: cannot load field "Msg" into a "datastore.WithProtoCompress`,
 	},
 	{
+		desc: "protos encoding: - nil => save => load => empty message",
+		src:  &WithProtoDefault{Msg: nil},
+		want: &WithProtoDefault{Msg: &testprotos.Msg{}},
+	},
+	{
 		desc: "protos encoding: - (skip) option is respected",
 		src:  &WithProtoOmitted{Omitted: &testprotos.Msg{Str: "skipped"}},
 		want: &WithProtoOmitted{Omitted: nil},
