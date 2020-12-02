@@ -15,13 +15,17 @@
 package lib
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -33,6 +37,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
+	"go.chromium.org/luci/common/data/embeddedkvs"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	isol "go.chromium.org/luci/common/isolated"
@@ -40,6 +45,8 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
+
+const smallFileThreshold = 128 * 1024 // 128KiB
 
 // CmdDownload returns an object for the `download` subcommand.
 func CmdDownload(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -57,6 +64,7 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
 			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump download stats to json file.")
+			c.Flags.StringVar(&c.kvs, "kvs-file", "", "Cache file for small files.")
 			return &c
 		},
 	}
@@ -70,6 +78,8 @@ type downloadRun struct {
 
 	cacheDir      string
 	cachePolicies cache.Policies
+
+	kvs string
 }
 
 func (r *downloadRun) parse(a subcommands.Application, args []string) error {
@@ -82,6 +92,10 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 
 	if r.cacheDir == "" && !r.cachePolicies.IsDefault() {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
+	}
+
+	if r.kvs != "" && r.cacheDir == "" {
+		return errors.New("if small-files-cache is set, cache-dir should be set")
 	}
 
 	r.dir = filepath.Clean(r.dir)
@@ -167,6 +181,130 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	return eg.Wait()
 }
 
+func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*client.TreeOutput) error {
+	smallFileHashes := make([]string, 0, len(smallFiles))
+	for smallFile := range smallFiles {
+		smallFileHashes = append(smallFileHashes, smallFile)
+	}
+
+	var mu sync.Mutex
+
+	// limit the number of concurrent I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	// Sort hashes by one of corresponding file path.
+	sort.Slice(smallFileHashes, func(i, j int) bool {
+		filei := smallFiles[smallFileHashes[i]][0]
+		filej := smallFiles[smallFileHashes[j]][0]
+		return filei.Path < filej.Path
+	})
+
+	// Extract small files from kvs.
+	return kvs.GetMulti(smallFileHashes, func(key string, value []byte) error {
+		ch <- struct{}{}
+		defer func() { <-ch }()
+
+		mu.Lock()
+		files := smallFiles[key]
+		delete(smallFiles, key)
+		mu.Unlock()
+
+		for _, file := range files {
+			mode := 0o600
+			if file.IsExecutable {
+				mode = 0o700
+			}
+			if err := ioutil.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to write file").Err()
+			}
+		}
+
+		return nil
+	})
+}
+
+func cacheSmallFiles(kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
+	var eg errgroup.Group
+
+	bufferPool := sync.Pool{
+		New: func() interface{} {
+			return &bytes.Buffer{}
+		},
+	}
+	// limit the number of concurrent I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
+
+	for _, output := range outputs {
+		output := output
+
+		eg.Go(func() error {
+			buf := bufferPool.Get().(*bytes.Buffer)
+			buf.Reset()
+			defer bufferPool.Put(buf)
+
+			b, err := func() ([]byte, error) {
+				ch <- struct{}{}
+				defer func() { <-ch }()
+
+				f, err := os.Open(output.Path)
+				if err != nil {
+					return nil, errors.Annotate(err, "failed to open file").Err()
+				}
+				defer f.Close()
+
+				if _, err := io.Copy(buf, f); err != nil {
+					return nil, errors.Annotate(err, "failed to read file").Err()
+				}
+
+				return buf.Bytes(), nil
+			}()
+
+			if err != nil {
+				return err
+			}
+			return kvs.Set(output.Digest.Hash, b)
+		})
+	}
+
+	return eg.Wait()
+}
+
+func cacheOutputFiles(diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[digest.Digest]*client.TreeOutput) error {
+	var smallOutputs, largeOutputs []*client.TreeOutput
+
+	for _, output := range outputs {
+		if kvs != nil && output.Digest.Size <= smallFileThreshold {
+			smallOutputs = append(smallOutputs, output)
+		} else {
+			largeOutputs = append(largeOutputs, output)
+		}
+	}
+
+	// This is to utilize locality of disk access.
+	sort.Slice(smallOutputs, func(i, j int) bool {
+		return smallOutputs[i].Path < smallOutputs[j].Path
+	})
+
+	sort.Slice(largeOutputs, func(i, j int) bool {
+		return largeOutputs[i].Path < largeOutputs[j].Path
+	})
+
+	if kvs != nil {
+		if err := cacheSmallFiles(kvs, smallOutputs); err != nil {
+			return err
+		}
+	}
+
+	for _, output := range largeOutputs {
+		if err := diskcache.AddFileWithoutValidation(
+			isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
+			return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
+		}
+	}
+
+	return nil
+}
+
 // doDownload downloads directory tree from the CAS server.
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
@@ -217,6 +355,15 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
+	var kvs *embeddedkvs.KVS
+	if r.kvs != "" {
+		kvs, err = embeddedkvs.New(r.kvs)
+		if err != nil {
+			return err
+		}
+		defer kvs.Close()
+	}
+
 	if err := createDirectories(ctx, r.dir, outputs); err != nil {
 		return err
 	}
@@ -227,6 +374,8 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	// copy duplicates files later.
 	var dups []*client.TreeOutput
 
+	smallFiles := make(map[string][]*client.TreeOutput)
+
 	for path, output := range outputs {
 		if output.IsEmptyDirectory {
 			continue
@@ -236,6 +385,11 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			if err := os.Symlink(output.SymlinkTarget, path); err != nil {
 				return errors.Annotate(err, "failed to create symlink").Err()
 			}
+			continue
+		}
+
+		if kvs != nil && output.Digest.Size <= smallFileThreshold {
+			smallFiles[output.Digest.Hash] = append(smallFiles[output.Digest.Hash], output)
 			continue
 		}
 
@@ -260,6 +414,27 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dups), len(to), time.Since(start))
 
 	start = time.Now()
+
+	if kvs != nil {
+		if err := copySmallFilesFromCache(kvs, smallFiles); err != nil {
+			return err
+		}
+	}
+
+	// Process non-cached files.
+	for _, files := range smallFiles {
+		for _, file := range files {
+			if _, ok := to[file.Digest]; ok {
+				dups = append(dups, file)
+			} else {
+				to[file.Digest] = file
+			}
+		}
+	}
+
+	logger.Infof("finished copy small files from cache (if any), to: %d, took %s", len(to), time.Since(start))
+
+	start = time.Now()
 	if err := c.DownloadFiles(ctx, "", to); err != nil {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
@@ -267,21 +442,8 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	if diskcache != nil {
 		start = time.Now()
-		outputs := make([]*client.TreeOutput, 0, len(to))
-		for _, output := range to {
-			outputs = append(outputs, output)
-		}
-
-		// This is to utilize locality of disk access.
-		sort.Slice(outputs, func(i, j int) bool {
-			return outputs[i].Path < outputs[j].Path
-		})
-
-		for _, output := range outputs {
-			if err := diskcache.AddFileWithoutValidation(
-				isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
-				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
-			}
+		if err := cacheOutputFiles(diskcache, kvs, to); err != nil {
+			return err
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
 	}
