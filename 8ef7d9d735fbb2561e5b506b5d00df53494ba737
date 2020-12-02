@@ -146,6 +146,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8c846d11_1e3183c4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-02T06:52:13Z",
+      "side": 1,
+      "message": "sgtm, but please add a TODO to delete nilifyReqBuildDetails. The code should be honest that this is a temporary hack.\n\n(nilifyReqBuildDetails does look bad, but if it is temporary, then it is fine)",
+      "parentUuid": "daf3b3f4_27b2f381",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cff09ded_9113ca17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
