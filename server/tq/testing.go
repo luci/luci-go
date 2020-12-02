@@ -47,8 +47,10 @@ type directExecutor struct {
 }
 
 func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
+	retry := false
+	defer done(retry)
+
 	if t.Message != nil {
-		done(false)
 		panic("Executing PubSub tasks is not supported yet") // break tests loudly
 	}
 
@@ -75,5 +77,5 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 	info.ExecutionCount = t.Attempts - 1
 
 	err := e.d.handlePush(ctx, body, info)
-	done(Retry.In(err) || transient.Tag.In(err))
+	retry = Retry.In(err) || transient.Tag.In(err)
 }
