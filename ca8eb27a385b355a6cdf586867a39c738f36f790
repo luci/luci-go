@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8d62cf8a_07ec4e09",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-02T03:51:34Z",
+      "side": 1,
+      "message": "I am fine keeping it as-is, but I also thinks that we may overuse the concept of BuildState (which represents the state of a build), and `selectedBlamelistPinIndex` has little to do with it. I know we have AppState (with properties like `selectedTabId`), would this better be fit in there?",
+      "parentUuid": "8cba0fc7_6c310cc2",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "23d1367d_e05521bd",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 3
@@ -119,6 +137,24 @@
       "side": 1,
       "message": "We can pass an object with only \u0027host\u0027 and \u0027project\u0027 properties. Although this feature is not currently used.",
       "parentUuid": "ce16e803_0b6208a4",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2acee070_5a7d2702",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-02T03:51:34Z",
+      "side": 1,
+      "message": "I assume that it maybe useful for testing purpose (so we don\u0027t need to create a big object).",
+      "parentUuid": "ad2fd5b0_a36f6b84",
       "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
