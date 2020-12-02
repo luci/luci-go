@@ -122,6 +122,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "daf3b3f4_27b2f381",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T06:09:32Z",
+      "side": 1,
+      "message": "My last response was written before reading nodir@ last comment.\n\n\u003e\u003e an alternative to shallow copy, we could mutate the mask to exclude steps and output properties from it. So that Merge() does not try to copy. It would be something like\n\nYeah, I thought about it, but decided to choose the current trick with defer(), instead of reconstructing the field masks. If nilifyReqBuildDetails() doesn\u0027t look too bad, I\u0027d like to push the current patchset, and then replace nilifyReqBuildDetails() with mask.Del() later.\n\nWDYT?",
+      "parentUuid": "5ffc2abc_a6f1a965",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cff09ded_9113ca17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3

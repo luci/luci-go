@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72afad61_d62907bd",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T06:09:32Z",
+      "side": 1,
+      "message": "yiwzhang@, I debugged the panic a bit, and found that the problem is structpb.\nIf output.Properties is set with nil or \u0026structpb.Struct{}, cloneValue() at [1] is happy to make a copy of it. However, the panic is from dest.Set() at [1].\n\nstructpb.Struct{} is Message-Kind, and has a member field, Fields: [2]\nIf a structpb.Structpb is constructed without Fields, then Fields is set with nil. and dest.Set() panics with \"field buildbucket.v2.Build.Output.properties has invalid nil pointer\".\n\nIn other words, dest.Set() complains that a given Message has a field with nil. I believe that this can happen for any Message-kind with nil field. Python mask implementation doesn\u0027t have this problem because it simply calls CopyFrom when src is a Message-kind. [3]\n\nI fixed this problem simply removing `len(submask.children) \u003e 0` from [4]\nHowever, I am not sure if it\u0027s a correct patch or not, and didn\u0027t use it in this CL.\nI hope this helps finding a fix for it.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/mask/mask.go;l\u003d407\n[2]: https://godoc.org/google.golang.org/protobuf/types/known/structpb#Struct\n[3]: https://source.chromium.org/chromium/infra/infra/+/master:luci/appengine/components/components/protoutil/field_masks.py;l\u003d219\n[4]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/mask/mask.go;l\u003d401",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 65
+      },
+      "revId": "afcfebf0d8459cce61b219557ff83b2eeb2321d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
