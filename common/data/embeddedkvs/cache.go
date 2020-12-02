@@ -99,3 +99,17 @@ func (k *KVS) GetMulti(keys []string, fn func(key string, value []byte) error) e
 
 	return nil
 }
+
+// ForEach executes a function for each key/value pair in KVS.
+func (k *KVS) ForEach(fn func(key string, value []byte) error) error {
+	err := k.db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket(bucketName)
+		return bucket.ForEach(func(key, value []byte) error {
+			return fn(string(key), value)
+		})
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to iterate").Err()
+	}
+	return nil
+}
