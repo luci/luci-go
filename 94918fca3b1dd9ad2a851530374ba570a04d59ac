@@ -76,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "80855434_124f13dd",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:09:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8204cf35_462b0726",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "480daf5a_9d6fcf12",
@@ -89,6 +113,30 @@
       "writtenOn": "2020-12-01T23:03:06Z",
       "side": 1,
       "message": "Nit: \"Too low of a value here\", or perhaps \"A value that\u0027s too low here\"",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1fd6877_4028e654",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:09:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "480daf5a_9d6fcf12",
       "range": {
         "startLine": 57,
         "startChar": 5,
@@ -116,6 +164,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "709933cd_a3c96e66",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:09:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "955e81a7_3185d31e",
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eeccad27_7aa950da",
@@ -129,6 +195,30 @@
       "writtenOn": "2020-12-01T23:03:06Z",
       "side": 1,
       "message": "interested",
+      "range": {
+        "startLine": 186,
+        "startChar": 49,
+        "endLine": 186,
+        "endChar": 58
+      },
+      "revId": "94918fca3b1dd9ad2a851530374ba570a04d59ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8808decc_f3b67ebe",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:09:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eeccad27_7aa950da",
       "range": {
         "startLine": 186,
         "startChar": 49,
