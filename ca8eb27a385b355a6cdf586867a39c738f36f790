@@ -16,6 +16,57 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Mac%20FYI%20dEQP%20Release%20Intel/135101/blamelist\n",
       "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35bc0522_4fcefafe",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-02T03:34:47Z",
+      "side": 1,
+      "message": "I am not sure if putting `selectedBlamelistPinIndex` in BuildState is good, because BuildState is shared among everything, and `selectedBlamelistPinIndex` seems to be a property for the blamelist tab. What are your reasons for putting it here?",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23d1367d_e05521bd",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-02T03:34:47Z",
+      "side": 1,
+      "message": "nits: Can we move those functions below the constructor for readability?",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce16e803_0b6208a4",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-02T03:34:47Z",
+      "side": 1,
+      "message": "What is the advantage of using Pick instead of just using GitilesCommit?",
+      "revId": "ca8eb27a385b355a6cdf586867a39c738f36f790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
