@@ -22,6 +22,30 @@
       },
       "revId": "afcfebf0d8459cce61b219557ff83b2eeb2321d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6a29679_347b3c90",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T06:11:42Z",
+      "side": 1,
+      "message": "I used `emptyStruct` to avoid the panic.",
+      "parentUuid": "72afad61_d62907bd",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 65
+      },
+      "revId": "afcfebf0d8459cce61b219557ff83b2eeb2321d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
