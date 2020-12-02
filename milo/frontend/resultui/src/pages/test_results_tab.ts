@@ -77,8 +77,13 @@ export class TestResultsTabElement extends MobxLitElement {
     this.disposers.push(reaction(
       () => this.invocationState.testLoader,
       (testLoader) => {
-        this.loadNextPage();
         this.invocationState.selectedNode = testLoader.node;
+        // The previous instance of the test results tab could've triggered
+        // the loading operation already. In that case we don't want to load
+        // more test results.
+        if (this.invocationState.selectedNode.testCount === 0 && !this.invocationState.testLoader.isLoading) {
+          this.loadNextPage();
+        }
       },
       {fireImmediately: true},
     ));
