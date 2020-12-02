@@ -22,6 +22,30 @@
       },
       "revId": "e1d74d9f9206d380890fdd3e7050c8ebe9fa4f79",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "182a3ad1_4a777086",
+        "filename": "client/cmd/cas/lib/cas_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-12-02T05:49:48Z",
+      "side": 1,
+      "message": "This may required `smallFileThreshold` to be configureable, though.\nSo it\u0027s optional.",
+      "parentUuid": "a01b00c7_f69e8253",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 52
+      },
+      "revId": "e1d74d9f9206d380890fdd3e7050c8ebe9fa4f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
