@@ -67,7 +67,6 @@ func init() {
 // Schedule enqueues a TQ task to refresh a Gerrit CL.
 func Schedule(ctx context.Context, luciProject, host string, change int64,
 	updatedHint time.Time, clidHint changelist.CLID) error {
-	// If done within transaction, can't use de-dup.
 	payload := &RefreshGerritCL{
 		LuciProject: luciProject,
 		Host:        host,
@@ -87,6 +86,7 @@ func Schedule(ctx context.Context, luciProject, host string, change int64,
 		task.Title += fmt.Sprintf("@%s", updatedHint)
 	}
 
+	// If done within transaction, can't use de-dup.
 	if datastore.CurrentTransaction(ctx) == nil {
 		ts := updatedHint
 		if updatedHint.IsZero() {
@@ -602,7 +602,7 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 	switch {
 	case !f.updatedHint.IsZero() && f.updatedHint.After(t):
 		logging.Errorf(ctx, "Fetched last Gerrit update of %s, but %s expected", t, f.updatedHint)
-	case storedTS != nil && storedTS.AsTime().Before(t):
+	case storedTS != nil && storedTS.AsTime().After(t):
 		logging.Errorf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored", t, storedTS.AsTime())
 	default:
 		return nil
