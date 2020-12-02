@@ -87,6 +87,24 @@
       "parentUuid": "8b7302ec_253c47e4",
       "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c32dabe_e2b970ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-02T00:09:47Z",
+      "side": 1,
+      "message": "the benefit is a clear boundary between internal do-not-use no-guarantees API and the public API with backward compatibility guarantees",
+      "parentUuid": "b8ab5d5d_3b05aa64",
+      "revId": "e613275b21f76e4632fd10a7843cdd0568c5d01b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
