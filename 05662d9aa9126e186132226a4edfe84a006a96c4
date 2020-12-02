@@ -16,6 +16,24 @@
       "message": "So it\u0027s impossible to clear tags (\"tags\" specified in mask + tags not provided)? Just confirming that this is what Python does.",
       "revId": "05662d9aa9126e186132226a4edfe84a006a96c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e25c643a_48a9c9f5",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T05:38:56Z",
+      "side": 1,
+      "message": "As far as I can see, py-UpdateBuild() cannot clear Tags.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d433-442",
+      "parentUuid": "a4fde09e_2540163f",
+      "revId": "05662d9aa9126e186132226a4edfe84a006a96c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

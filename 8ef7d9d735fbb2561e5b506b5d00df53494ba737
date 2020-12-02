@@ -98,6 +98,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5ffc2abc_a6f1a965",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T05:38:56Z",
+      "side": 1,
+      "message": "mask.Merge() merges map and slice by appending elements from src to dst. The python implementation cleared the field to avoid unnecessary memory operations, I guess?\n\nI used a trick with defer(). PTAL.",
+      "parentUuid": "9d072a4b_5095f665",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 23
+      },
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cff09ded_9113ca17",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
@@ -109,6 +133,24 @@
       "writtenOn": "2020-12-01T05:05:08Z",
       "side": 1,
       "message": "also input properties",
+      "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c0d8764_e13f60a1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T05:38:56Z",
+      "side": 1,
+      "message": "input is not a valid mask for UpdateMask.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/builds_service.proto;l\u003d193-200\n\nIf input is not in the mask, mask.Merge() won\u0027t merge it, whether the request.Input actually has value or not.",
+      "parentUuid": "cff09ded_9113ca17",
       "revId": "8ef7d9d735fbb2561e5b506b5d00df53494ba737",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
