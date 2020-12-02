@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b2f6624_af1afc41",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T23:00:49Z",
+      "side": 1,
+      "message": "CL totally changed, please PTAL.",
+      "revId": "1db2d3f5108a5f2db525ee2d79a5de3a91d03fbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b148284b_6433454f",
@@ -62,6 +79,30 @@
       "side": 1,
       "message": "\u003e \u003e TBH, I wanted this to be nil. I still do, but I\u0027m not sure it\u0027s a good idea. Thoughts?\n\u003e Why do you think it is not a good idea? Seems more correct to me...\nSame here. I would also expect if I save a nil message, I\u0027ll load a nil message.",
       "parentUuid": "02e6610a_09a40da4",
+      "range": {
+        "startLine": 1812,
+        "startChar": 31,
+        "endLine": 1812,
+        "endChar": 48
+      },
+      "revId": "1db2d3f5108a5f2db525ee2d79a5de3a91d03fbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94ca72d1_26b82f0d",
+        "filename": "gae/service/datastore/pls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1812,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T23:00:49Z",
+      "side": 1,
+      "message": "Done! PTAL.",
+      "parentUuid": "dd864d1a_5cbdec54",
       "range": {
         "startLine": 1812,
         "startChar": 31,
