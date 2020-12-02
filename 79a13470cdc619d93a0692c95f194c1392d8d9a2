@@ -16,6 +16,46 @@
       "message": "PTAL.\n\nReplacement of https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2567574",
       "revId": "79a13470cdc619d93a0692c95f194c1392d8d9a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce779913_fee02ec6",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-02T00:12:58Z",
+      "side": 1,
+      "message": "incorrect",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 53
+      },
+      "revId": "79a13470cdc619d93a0692c95f194c1392d8d9a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1eae62b9_85f55438",
+        "filename": "resultdb/internal/services/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-02T00:12:58Z",
+      "side": 1,
+      "message": "we won\u0027t need this until Gerrit team implements CI Reboot, and Source team starts implementing Test Result presentation in Gerrit.\n\nlet\u0027s add this when we need this.",
+      "revId": "79a13470cdc619d93a0692c95f194c1392d8d9a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
