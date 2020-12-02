@@ -74,6 +74,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "474d4c0f_11724ca2",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-02T23:11:32Z",
+      "side": 1,
+      "message": "I cannot reproduce the panic with \u0026structpb.Struct{}, either. Perhaps, it was crashing due to my debugging code. Thanks for the fix.",
+      "parentUuid": "5e9a5a1f_147e2d1a",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 65
+      },
+      "revId": "afcfebf0d8459cce61b219557ff83b2eeb2321d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "99aca4b8_47cfb9e5",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 7
