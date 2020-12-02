@@ -16,6 +16,8 @@ package lib
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -25,6 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/data/embeddedkvs"
 	"go.chromium.org/luci/common/testing/testfs"
 )
 
@@ -41,9 +44,10 @@ func TestArchiveDownload(t *testing.T) {
 
 		uploaded := t.TempDir()
 		layout := map[string]string{
-			"a":      "a",
-			"b/c":    "bc",
-			"empty/": "",
+			"a":          "a",
+			"b/c":        "bc",
+			"large_file": string(make([]byte, smallFileThreshold+1)),
+			"empty/":     "",
 		}
 		So(testfs.Build(uploaded, layout), ShouldBeNil)
 
@@ -58,8 +62,41 @@ func TestArchiveDownload(t *testing.T) {
 		var dr downloadRun
 		dr.digest = string(digest)
 		dr.dir = t.TempDir()
-		err = dr.doDownload(ctx)
-		So(err, ShouldBeNil)
+
+		Convey("use cache", func() {
+			dr.kvs = filepath.Join(t.TempDir(), "kvs")
+			dr.cacheDir = filepath.Join(t.TempDir(), "cache")
+			err = dr.doDownload(ctx)
+			So(err, ShouldBeNil)
+
+			kvs, err := embeddedkvs.New(dr.kvs)
+			So(err, ShouldBeNil)
+			var keys []string
+			var values []string
+			So(kvs.ForEach(func(key string, value []byte) error {
+				keys = append(keys, key)
+				values = append(values, string(value))
+				return nil
+			}), ShouldBeNil)
+
+			sha256hex := func(value string) string {
+				h := sha256.Sum256([]byte(value))
+				return hex.EncodeToString(h[:])
+			}
+
+			So(keys, ShouldResemble, []string{
+				sha256hex("bc"),
+				sha256hex("a"),
+			})
+			So(values, ShouldResemble, []string{"bc", "a"})
+			So(kvs.Close(), ShouldBeNil)
+		})
+
+		Convey("not use kvs", func() {
+			// do not set kvs.
+			err = dr.doDownload(ctx)
+			So(err, ShouldBeNil)
+		})
 
 		downloaded, err := testfs.Collect(dr.dir)
 		So(err, ShouldBeNil)
