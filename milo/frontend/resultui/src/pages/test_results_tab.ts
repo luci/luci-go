@@ -77,8 +77,10 @@ export class TestResultsTabElement extends MobxLitElement {
     this.disposers.push(reaction(
       () => this.invocationState.testLoader,
       (testLoader) => {
-        this.loadNextPage();
         this.invocationState.selectedNode = testLoader.node;
+        if (this.invocationState.selectedNode.testCount === 0) {
+          this.loadNextPage();
+        }
       },
       {fireImmediately: true},
     ));
