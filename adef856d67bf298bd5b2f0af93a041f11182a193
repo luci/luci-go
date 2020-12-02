@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "49b1f47b_da0c4551",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T01:34:33Z",
+      "side": 1,
+      "message": "I\u0027ve used it in Java before. Works pretty well for simple grammar. I think we can land it as is now and explore the this option during production freeze :)",
+      "parentUuid": "33ad1b05_e0e36d0d",
+      "range": {
+        "startLine": 19,
+        "startChar": 10,
+        "endLine": 19,
+        "endChar": 62
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ff5d5d21_4bfce3b9",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 4
@@ -596,6 +620,30 @@
       "side": 1,
       "message": "Hm, and I like short \"Vote\" 😊\nIn Gerrit, Voting means overriding, even though +1 and +2 notation is uesd.\nThis LabelInfo struct is actually a min/max agregation  of vote values.\n\nI updated the doc though.\n\nAlso, I\u0027ve just realized that this LabelInfo is not sufficient enough info for CV, as CV needs to recognize votes by different users. Can we keep current name till then?",
       "parentUuid": "edd3597c_02bacb3c",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 426,
+        "endChar": 26
+      },
+      "revId": "adef856d67bf298bd5b2f0af93a041f11182a193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ad74731_704ba29f",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-02T01:34:33Z",
+      "side": 1,
+      "message": "derp..  My mind was short-circuited and somehow I mis-interpreted value as how many people/users have voted on this label. scratch this comment and `Vote` is a good function name.",
+      "parentUuid": "a8a5a8f6_5c55ef48",
       "range": {
         "startLine": 425,
         "startChar": 0,
