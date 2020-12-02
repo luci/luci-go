@@ -139,14 +139,25 @@ func (f *Fake) AddFrom(other *Fake) *Fake {
 	other.m.Lock()
 	defer other.m.Unlock()
 
+	if f.cs == nil {
+		f.cs = make(map[string]*Change, len(other.cs))
+	}
 	for k, c := range other.cs {
 		if f.cs[k] != nil {
 			panic(fmt.Errorf("change %s defined in both fakes", k))
 		}
 		f.cs[k] = c
 	}
+
+	if f.childrenOf == nil {
+		f.childrenOf = make(map[string][]string, len(other.childrenOf))
+	}
 	for k, vs := range other.childrenOf {
 		f.childrenOf[k] = append(f.childrenOf[k], vs...)
+	}
+
+	if f.parentsOf == nil {
+		f.parentsOf = make(map[string][]string, len(other.parentsOf))
 	}
 	for k, vs := range other.parentsOf {
 		f.parentsOf[k] = append(f.parentsOf[k], vs...)
@@ -427,6 +438,11 @@ func Vote(label string, value int, users ...string) CIModifier {
 			li.Value = int32(value)
 		}
 	}
+}
+
+// CQ is a shorthand for Vote("Commit-Queue", ...).
+func CQ(value int, users ...string) CIModifier {
+	return Vote("Commit-Queue", value, users...)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
