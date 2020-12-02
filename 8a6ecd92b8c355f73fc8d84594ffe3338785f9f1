@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1b5ca9c_89644b99",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:05:32Z",
+      "side": 1,
+      "message": "assertion added.\ncomment added.",
+      "parentUuid": "07550953_2665fba1",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a1de1992_bda08342",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de3dd431_a8d08176",
+        "filename": "cv/internal/gerrit/poller/query_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:05:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1de1992_bda08342",
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "acad7441_77d8bcd6",
@@ -71,6 +113,24 @@
       "writtenOn": "2020-12-01T22:48:58Z",
       "side": 1,
       "message": "Maybe add a test for the invalid case where CommonProjectPrefix and OrProjects is empty, then we\u0027ll get some sort of query like `projects:\"\"` which matches all projects, I suppose.",
+      "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2423741_69a3f03d",
+        "filename": "cv/internal/gerrit/poller/query_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-02T13:05:32Z",
+      "side": 1,
+      "message": "No need and no value in it. Subpollers are constructed in the same package. Added a panic saying this.",
+      "parentUuid": "acad7441_77d8bcd6",
       "revId": "8a6ecd92b8c355f73fc8d84594ffe3338785f9f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
