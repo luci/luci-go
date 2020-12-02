@@ -16,13 +16,19 @@ package gerritfake
 
 import (
 	"context"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	gerritutil "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -40,6 +46,57 @@ var _ gerrit.Client = (*Client)(nil)
 ///////////////////////////////////////////////////////////////////////////////
 // Read RPCs
 
+// Lists changes that match a query.
+//
+// Note, although the Gerrit API supports multiple queries, for which
+// it can return multiple lists of changes, this is not a foreseen use-case
+// so this API just includes one query with one returned list of changes.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
+	if in.GetOffset() != 0 {
+		return nil, status.New(codes.Unimplemented, "Offset is not supported by GerritFake").Err()
+	}
+	q, err := parseListChangesQuery(in.GetQuery())
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+
+	changes := make([]*gerritpb.ChangeInfo, 0, len(client.f.cs))
+	for _, ch := range client.f.cs {
+		switch {
+		case ch.Host != client.host:
+		case ch.ACLs(OpRead, client.luciProject).Code() != codes.OK:
+		case !q.matches(ch):
+		default:
+			changes = append(changes, applyChangeOpts(ch, in.GetOptions()))
+		}
+	}
+	// Sort from the most recently to least recently updated,
+	// and if equal, deterministically disambiguate on change number to avoid
+	// flaky tests.
+	sort.Slice(changes, func(i, j int) bool {
+		l := changes[i].GetUpdated().AsTime()
+		r := changes[j].GetUpdated().AsTime()
+		switch {
+		case l.Before(r):
+			return false
+		case l.After(r):
+			return true
+		default:
+			return changes[i].GetNumber() > changes[j].GetNumber()
+		}
+	})
+	res := &gerritpb.ListChangesResponse{Changes: changes}
+	if in.GetLimit() > 0 && int64(len(changes)) > in.GetLimit() {
+		res.Changes = changes[:in.GetLimit()]
+		res.MoreChanges = true
+	}
+	return res, nil
+}
+
 // Loads a change by id.
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
@@ -47,45 +104,11 @@ func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeReque
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
 
-	change, found := client.f.cs[key(client.host, int(in.GetNumber()))]
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, in.GetNumber())
+	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
+	if err != nil {
+		return nil, err
 	}
-	if status := change.ACLs(OpRead, client.luciProject); status.Code() != codes.OK {
-		return nil, status.Err()
-	}
-
-	qopts := make(map[gerritpb.QueryOption]struct{}, len(in.GetOptions()))
-	for _, qopt := range in.GetOptions() {
-		qopts[qopt] = struct{}{}
-	}
-	has := func(o gerritpb.QueryOption) bool {
-		_, yes := qopts[o]
-		return yes
-	}
-
-	// First, deep copy.
-	ci := &gerritpb.ChangeInfo{}
-	proto.Merge(ci, change.Info)
-	// Second, mutate obeying query options.
-	// TODO(tandrii): support more options as needed.
-
-	switch {
-	case has(gerritpb.QueryOption_ALL_REVISIONS):
-		// Nothing to remove.
-	case has(gerritpb.QueryOption_CURRENT_REVISION):
-		// Remove all but current.
-		for rev := range ci.GetRevisions() {
-			if rev != ci.GetCurrentRevision() {
-				delete(ci.GetRevisions(), rev)
-			}
-		}
-	default:
-		ci.CurrentRevision = "" // Yeah, weirdly, Gerrit doesn't set this unconditionally.
-		ci.Revisions = nil
-	}
-
-	return ci, nil
+	return applyChangeOpts(change, in.GetOptions()), nil
 }
 
 // Retrieves related changes of a revision.
@@ -206,4 +229,218 @@ func (client *Client) getChangeEnforceACLsLocked(change int64) (*Change, error) 
 		return nil, status.Err()
 	}
 	return ch, nil
+}
+
+func applyChangeOpts(change *Change, opts []gerritpb.QueryOption) *gerritpb.ChangeInfo {
+	qopts := make(map[gerritpb.QueryOption]struct{}, len(opts))
+	for _, qopt := range opts {
+		qopts[qopt] = struct{}{}
+	}
+	has := func(o gerritpb.QueryOption) bool {
+		_, yes := qopts[o]
+		return yes
+	}
+
+	// First, deep copy.
+	ci := &gerritpb.ChangeInfo{}
+	proto.Merge(ci, change.Info)
+
+	// Second, mutate obeying query options.
+	// TODO(tandrii): support more options as needed.
+	switch {
+	case has(gerritpb.QueryOption_ALL_REVISIONS):
+		// Nothing to remove.
+	case has(gerritpb.QueryOption_CURRENT_REVISION):
+		// Remove all but current.
+		for rev := range ci.GetRevisions() {
+			if rev != ci.GetCurrentRevision() {
+				delete(ci.GetRevisions(), rev)
+			}
+		}
+	default:
+		ci.CurrentRevision = "" // Yeah, weirdly, Gerrit doesn't set this unconditionally.
+		ci.Revisions = nil
+	}
+
+	return ci
+}
+
+type parsedListChangesQuery struct {
+	after         time.Time
+	before        time.Time
+	status        gerritpb.ChangeStatus
+	projectPrefix string
+	projects      stringset.Set
+	label         struct {
+		name              string
+		minValueExclusive int
+	}
+}
+
+// parseListChangesQuery parses ListChangesRequest.Query for CV needs.
+//
+// It has lots of shortcomings:
+//  * silently allows to repeat and overwrite prior instance of predicate,
+//    e.g. "status:new status:merged" is treated as "status:merged".
+//  * restricts (.. OR .. ) clauses only to project: predicates
+//  * doesn't support OR without ()
+//  * and many others.
+//
+// TODO(tandrii): this should be replaced by a proper library solution,
+// perhaps the only implementing parsing & evaluation of https://aip.dev/160
+// filtering proposal, which should suffice.
+func parseListChangesQuery(query string) (p *parsedListChangesQuery, err error) {
+	defer func() {
+		if err != nil {
+			err = errors.Annotate(err, "invalid query argument %q", query).Err()
+			p = nil
+		}
+	}()
+
+	mustUnquote := func(quoted string) string {
+		l := len(quoted)
+		if l <= 2 || quoted[0] != '"' || quoted[l-1] != '"' {
+			err = errors.Reason("expected quoted string, but got %q", quoted).Err()
+		}
+		return quoted[1 : l-1]
+	}
+	inClause := false
+	mustBeInClause := func(tok string) {
+		if !inClause {
+			err = errors.Reason("%q must be inside ()", tok).Err()
+		}
+	}
+	mustBeOutClause := func(tok string) {
+		if inClause {
+			err = errors.Reason("%q must be outside of ()", tok).Err()
+		}
+	}
+
+	p = &parsedListChangesQuery{}
+	tokenizer := queryTokenizer{query}
+	for {
+		switch tok := tokenizer.next(); tok {
+		case "":
+			mustBeOutClause(tok)
+			return
+		case "(":
+			mustBeOutClause(tok)
+			inClause = true
+		case ")":
+			mustBeInClause(tok)
+			inClause = false
+		case "OR":
+			mustBeInClause(tok)
+
+		// TODO(tandrii): check for duplicate predicates here and below.
+		case "project:":
+			if p.projects.Len() > 0 {
+				mustBeInClause(tok)
+			} else {
+				p.projects = stringset.New(1)
+			}
+			p.projects.Add(mustUnquote(tokenizer.next()))
+		case "projects:":
+			mustBeOutClause(tok)
+			p.projectPrefix = mustUnquote(tokenizer.next())
+		case "after:":
+			mustBeOutClause(tok)
+			// gerritutil.ParseTime checks quotes.
+			p.after, err = gerritutil.ParseTime(tokenizer.next())
+		case "before:":
+			mustBeOutClause(tok)
+			p.before, err = gerritutil.ParseTime(tokenizer.next())
+		case "status:":
+			mustBeOutClause(tok)
+			tok = tokenizer.next()
+			if v, ok := gerritpb.ChangeStatus_value[strings.ToUpper(tok)]; !ok {
+				err = errors.Reason("unrecognized status %q", tok).Err()
+			} else {
+				p.status = gerritpb.ChangeStatus(v)
+			}
+		case "label:":
+			tok = tokenizer.next()
+			switch parts := strings.SplitN(tok, ">", 2); {
+			case len(parts) != 2 || parts[0] == "" || parts[1] == "":
+				err = errors.Reason("invalid label: %s", tok).Err()
+			default:
+				p.label.name = parts[0]
+				p.label.minValueExclusive, err = strconv.Atoi(parts[1])
+			}
+		default:
+			err = errors.Reason("unrecognized token %q", tok).Err()
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (p *parsedListChangesQuery) matches(c *Change) bool {
+	switch {
+	// after/before are inclusive in Gerrit.
+	case !p.after.IsZero() && p.after.After(c.Info.GetUpdated().AsTime()):
+	case !p.before.IsZero() && p.before.Before(c.Info.GetUpdated().AsTime()):
+	case p.projects.Len() > 0 && !p.projects.Has(c.Info.GetProject()):
+	case p.projectPrefix != "" && !strings.HasPrefix(c.Info.GetProject(), p.projectPrefix):
+	case p.status != gerritpb.ChangeStatus_CHANGE_STATUS_INVALID && c.Info.GetStatus() != p.status:
+	case !p.matchesLabel(c):
+	default:
+		return true
+	}
+	return false
+}
+
+func (p *parsedListChangesQuery) matchesLabel(c *Change) bool {
+	switch li, exists := c.Info.GetLabels()[p.label.name]; {
+	case p.label.name == "":
+		return true
+	case !exists:
+		return false
+	case li.GetValue() <= int32(p.label.minValueExclusive):
+		return false
+	default:
+		return true
+	}
+}
+
+type queryTokenizer struct {
+	remaining string
+}
+
+func (q *queryTokenizer) next() (token string) {
+	consume := func(l int) {
+		token, q.remaining = q.remaining[:l], q.remaining[l:]
+	}
+
+	q.remaining = strings.TrimLeft(q.remaining, " ")
+	switch {
+	case q.remaining == "":
+	case q.remaining[0] == '(' || q.remaining[0] == ')':
+		consume(1)
+	case q.remaining[0] == '"':
+		if endQuote := strings.IndexRune(q.remaining[1:], '"'); endQuote == -1 {
+			// No matching closing ", so consume the rest of the string.
+			consume(len(q.remaining))
+		} else {
+			consume(1 + endQuote + 1)
+		}
+	case len(q.remaining) == 1:
+		consume(1)
+	case q.remaining[:2] == "OR":
+		consume(2)
+	default:
+		for i, c := range q.remaining {
+			switch c {
+			case ':':
+				consume(i + 1)
+				return
+			case ' ':
+				consume(i)
+				return
+			}
+		}
+		consume(len(q.remaining))
+	}
+	return
 }

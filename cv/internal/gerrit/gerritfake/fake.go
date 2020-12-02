@@ -134,7 +134,24 @@ func WithCIs(host string, acls AccessCheck, cis ...*gerritpb.ChangeInfo) *Fake {
 // on several hosts, e.g.:
 //   fake := WithCIs(hostA, aclA, ciA1, ciA2).AddFrom(hostB, aclB, ciB1)
 func (f *Fake) AddFrom(other *Fake) *Fake {
-	panic("TODO(tandrii): implement")
+	f.m.Lock()
+	defer f.m.Unlock()
+	other.m.Lock()
+	defer other.m.Unlock()
+
+	for k, c := range other.cs {
+		if f.cs[k] != nil {
+			panic(fmt.Errorf("change %s defined in both fakes", k))
+		}
+		f.cs[k] = c
+	}
+	for k, vs := range other.childrenOf {
+		f.childrenOf[k] = append(f.childrenOf[k], vs...)
+	}
+	for k, vs := range other.parentsOf {
+		f.parentsOf[k] = append(f.parentsOf[k], vs...)
+	}
+	return f
 }
 
 type CIModifier func(ci *gerritpb.ChangeInfo)
@@ -373,9 +390,42 @@ func Project(p string) CIModifier {
 }
 
 // Status sets .Status to the given status.
-func Status(s gerritpb.ChangeStatus) CIModifier {
+// Either a string or value of gerritpb.ChangeStatus.
+func Status(s interface{}) CIModifier {
 	return func(ci *gerritpb.ChangeInfo) {
-		ci.Status = s
+		switch v := s.(type) {
+		case gerritpb.ChangeStatus:
+			ci.Status = v
+			return
+		case string:
+			if i, exists := gerritpb.ChangeStatus_value[v]; exists {
+				ci.Status = gerritpb.ChangeStatus(i)
+				return
+			}
+		}
+		panic(fmt.Errorf("unrecognized status %v", s))
+	}
+}
+
+// Vote sets a label to the given value by the given user(s) on the latest
+// patchset.
+func Vote(label string, value int, users ...string) CIModifier {
+	if len(users) > 0 {
+		panic("not implemented yet")
+	}
+	return func(ci *gerritpb.ChangeInfo) {
+		if ci.GetLabels() == nil {
+			ci.Labels = map[string]*gerritpb.LabelInfo{
+				label: {Value: int32(value)},
+			}
+			return
+		}
+		switch li, ok := ci.GetLabels()[label]; {
+		case !ok:
+			ci.GetLabels()[label] = &gerritpb.LabelInfo{Value: int32(value)}
+		case li.GetValue() < int32(value):
+			li.Value = int32(value)
+		}
 	}
 }
 
