@@ -24,6 +24,7 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { getGitilesRepoURL } from '../../libs/build_utils';
 import { GitCommit } from '../../services/milo_internal';
 
 export class BlamelistTabElement extends MobxLitElement {
@@ -41,14 +42,8 @@ export class BlamelistTabElement extends MobxLitElement {
   }
 
   @computed
-  private get repoUrl() {
-    const gitilesCommit = this.buildState.build!.input.gitilesCommit!;
-    return `https://${gitilesCommit!.host}/${gitilesCommit.project}`;
-  }
-
-  @computed
   private get latestCommitId() {
-    return this.buildState.build?.input.gitilesCommit?.id;
+    return this.buildState.selectedBlamelistPin?.id;
   }
 
   @computed
@@ -75,10 +70,10 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @computed
   private get gitilesLink() {
-      if (this.revisionRange && this.repoUrl) {
-          return `${this.repoUrl}/+log/${this.revisionRange}`;
-      }
-      return ``;
+    if (this.revisionRange && this.buildState.selectedBlamelistPinRepoURL) {
+      return `${this.buildState.selectedBlamelistPinRepoURL}/+log/${this.revisionRange}`;
+    }
+    return '';
   }
 
   private disposer = () => {};
@@ -101,6 +96,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
   private loadNextPage = async () => {
     this.isLoading = true;
+    this.endOfPage = false;
     const iter = await this.queryBlamelistResIter.next();
     if (iter.done) {
       this.endOfPage = true;
@@ -121,7 +117,7 @@ export class BlamelistTabElement extends MobxLitElement {
   private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
   protected render() {
-    if (this.buildState.build && !this.buildState.build.input.gitilesCommit) {
+    if (this.buildState.build && !this.buildState.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">
           Blamelist is not available because the build has no associated gitiles commit.<br>
@@ -131,10 +127,33 @@ export class BlamelistTabElement extends MobxLitElement {
 
     return html`
       <div id="header">
-        <div id="blamelist-summary">
-          <span style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
-            ${this.blamelistSummary}
-          </span>
+        <div id="repo-selector">
+          <label for="repo-select">Repo:</label>
+          <select
+            id="repo-select"
+            @input=${(e: InputEvent) => this.buildState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value)}
+          >
+            ${this.buildState.build?.blamelistPins.map((pin, i) => html`
+            <option value=${i} ?selected=${this.buildState.selectedBlamelistPinIndex === i}>${getGitilesRepoURL(pin)}</option>
+            `)}
+          </select>
+        </div>
+        <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllEntries(true)}
+          >Expand All</mwc-button>
+          <mwc-button
+            class="action-button"
+            dense unelevated
+            @click=${() => this.toggleAllEntries(false)}
+          >Collapse All</mwc-button>
+        </milo-hotkey>
+      </div>
+      <div id="main">
+        <div id="blamelist-summary" class="list-entry" style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
+          <span>${this.blamelistSummary}</span>
           <a href="${this.gitilesLink}" target="_blank" style=${styleMap({'display': this.gitilesLink ? '' : 'none'})}>
             [view in Gitiles]
           </a>
@@ -151,24 +170,11 @@ export class BlamelistTabElement extends MobxLitElement {
             </span>
           </span>
         </div>
-        <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
-          <mwc-button
-            class="action-button"
-            dense unelevated
-            @click=${() => this.toggleAllEntries(true)}
-          >Expand All</mwc-button>
-          <mwc-button
-            class="action-button"
-            dense unelevated
-            @click=${() => this.toggleAllEntries(false)}
-          >Collapse All</mwc-button>
-        </milo-hotkey>
-      </div>
-      <div id="main">
+        <hr class="divider" style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
         ${this.commits.map((commit, i) => html`
         <milo-commit-entry
           .number=${i + 1}
-          .repoUrl=${this.repoUrl}
+          .repoUrl=${this.buildState.selectedBlamelistPinRepoURL}
           .commit=${commit}
           .expanded=${false}
         ></milo-commit-entry>
@@ -210,6 +216,23 @@ export class BlamelistTabElement extends MobxLitElement {
       grid-gap: 5px;
       height: 28px;
       padding: 5px 10px;
+    }
+
+    #repo-selector {
+      white-space: nowrap;
+    }
+    #repo-select {
+      display: inline-block;
+      width: 450px;
+      padding: .3rem .5rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--light-text-color);
+      background-clip: padding-box;
+      border: 1px solid var(--divider-color);
+      border-radius: .25rem;
+      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      text-overflow: ellipsis
     }
 
     #blamelist-summary {
