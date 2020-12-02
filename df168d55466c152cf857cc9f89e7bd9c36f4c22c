@@ -46,6 +46,30 @@
       },
       "revId": "df168d55466c152cf857cc9f89e7bd9c36f4c22c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53bbae5c_7416c812",
+        "filename": "common/data/embeddedkvs/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-12-02T04:47:34Z",
+      "side": 1,
+      "message": "Let me mark as resolved since this is nit for my preference.\n\n---\nI agree if it fits in the same line like `if err :\u003d foo(); err { ... }`.\nBut it becomes multiple lines in this case.",
+      "parentUuid": "6da447e6_6a5ec9e5",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 17
+      },
+      "revId": "df168d55466c152cf857cc9f89e7bd9c36f4c22c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
