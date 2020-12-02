@@ -217,6 +217,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "98390ec6_efecc6a8",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-12-02T05:40:33Z",
+      "side": 1,
+      "message": "I added test in cas_test.go using kvs.",
+      "parentUuid": "81c5fbe0_f9df9f73",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 21
+      },
+      "revId": "7151729bcd01524d72407187aa1111907cc7e53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f7cfb917_af8c8a0b",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 8
