@@ -137,7 +137,7 @@ export interface Log {
 
 export interface Step {
   readonly name: string;
-  readonly startTime: string;
+  readonly startTime?: string;
   readonly endTime?: string;
   readonly status: BuildStatus;
   readonly logs?: Log[];
