@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5562537a_a0848b41",
+        "filename": "server/gaeemulation/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:20:28Z",
+      "side": 0,
+      "message": "TBH\u003c I expected this TODO to remain in code for a long time, but I appears you really want to write a graph algo 😊",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 50
+      },
+      "revId": "96e8068638cbe01e494003e81cf438ab785a22e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
