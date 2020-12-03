@@ -47,32 +47,15 @@ export class OverviewTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'overview';
   }
 
-  private renderStatusTime() {
+  private renderActionButtons() {
     const build = this.buildState.build!;
 
     return html`
-      <div id="status">
-        Build
-        <i class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
-          ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown status'}
-        </i>
-        ${(() => { switch (build.status) {
-        case BuildStatus.Scheduled:
-          return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
-        case BuildStatus.Started:
-          return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
-        case BuildStatus.Canceled:
-          return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
-        case BuildStatus.Failure:
-        case BuildStatus.InfraFailure:
-        case BuildStatus.Success:
-          return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
-        default:
-          return '';
-        }})()}
+      <h3>Actions</h3>
+      <div>
         ${build.endTime ?
-          html`<mwc-button dense unelevated @click=${() => this.showRetryDialog = true}>Retry</mwc-button>` :
-          html`<mwc-button dense unelevated @click=${() => this.showCancelDialog = true}>Cancel</mwc-button>`}
+          html`<mwc-button dense unelevated @click=${() => this.showRetryDialog = true}>Retry Build</mwc-button>` :
+          html`<mwc-button dense unelevated @click=${() => this.showCancelDialog = true}>Cancel Build</mwc-button>`}
       </div>
     `;
   }
@@ -111,11 +94,15 @@ export class OverviewTabElement extends MobxLitElement {
   private renderSummary() {
     const build = this.buildState.build!;
     if (!build.summaryMarkdown) {
-      return html``;
+      return html`
+        <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}">
+          <div id="status">Build ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'status unknown'}</div>
+        </div>
+      `;
     }
 
     return html`
-      <div id="summary-html">
+      <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}">
         ${renderMarkdown(build.summaryMarkdown)}
       </div>
     `;
@@ -127,30 +114,20 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <div>
         <h3>Input</h3>
-        <table>
-          ${input.gitilesCommit ? html`
-            <tr>
-              <td>Revision:</td>
-              <td>
-                <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
-                ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
-              </td>
-            </tr>
-          ` : ''}
-          ${(input.gerritChanges || []).map((gc) => html`
-            <tr>
-              <td>Patch:</td>
-              <td>
-                <a href=${getURLForGerritChange(gc)}>
-                  ${gc.change} (ps #${gc.patchset})
-                </a>
-              </td>
-            </tr>
-          `)}
-        </table>
-      </div>
+        ${input.gitilesCommit ? html`
+          <div>Revision:
+            <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
+            ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
+          </div>
+        ` : ''}
+        ${(input.gerritChanges || []).map((gc) => html`
+          <div>Patch:
+            <a href=${getURLForGerritChange(gc)}>
+              ${gc.change} (ps #${gc.patchset})
+            </a>
+          </div>
+        `)}
     `;
   }
 
@@ -158,22 +135,18 @@ export class OverviewTabElement extends MobxLitElement {
     const build = this.buildState.build!;
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
     return html`
-      <div>
-        <h3>Infra</h3>
-        <table>
-          <tr><td>Buildbucket ID:</td><td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} target="_blank"></td></tr>
-          ${build.infra?.swarming ? html`
-          <tr>
-            <td>Swarming Task:</td>
-            <td>${build.infra.swarming.taskId ? html`<a href=${getURLForSwarmingTask(build.infra.swarming)}>${build.infra.swarming.taskId}</a>`: 'N/A'}</td>
-          </tr>
-          <tr>
-            <td>Bot:</td>
-            <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
-          </tr>
-          ` : ''}
-          <tr><td>Recipe:</td><td><milo-link .link=${build.recipeLink} target="_blank"></milo-link></td></tr>
-        </table>
+      <h3>Infra</h3>
+      <div class="key-value-list">
+        <div class="key">Buildbucket ID:</div>
+        <div class="value"><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} target="_blank"></div>
+        ${build.infra?.swarming ? html`
+        <div class="key">Swarming Task:</div>
+        <div class="value">${build.infra.swarming.taskId ? html`<a href=${getURLForSwarmingTask(build.infra.swarming)}>${build.infra.swarming.taskId}</a>`: 'N/A'}</div>
+        <div class="key">Bot:</div>
+        <div class="value">${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</div>
+        ` : ''}
+        <div class="key">Recipe:</div>
+        <div class="value"><milo-link .link=${build.recipeLink} target="_blank"></milo-link></div>
       </div>
     `;
   }
@@ -239,21 +212,18 @@ export class OverviewTabElement extends MobxLitElement {
     const build = this.buildState.build!;
 
     return html`
-      <div>
-        <h3>Timing</h3>
-        <table>
-          <tr><td>Created:</td><td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td></tr>
-          <tr><td>Started:</td><td>${build.startTime && (build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) || 'N/A'}</td></tr>
-          <tr><td>Ended:</td><td>${build.endTime && (build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) || 'N/A'}</td></tr>
-          <tr>
-            <td>Pending:</td>
-            <td>${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}${!build.startTime && ' (and counting)' || ''}</td>
-          </tr>
-          <tr>
-            <td>Execution:</td>
-            <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}${!build.endTime && build.startTime && ' (and counting)' || ''}</td>
-          </tr>
-        </table>
+      <h3>Timing</h3>
+      <div class="key-value-list">
+        <div class="key">Created:</div>
+        <div class="value">${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</div>
+        <div class="key">Started:</div>
+        <div class="value">${build.startTime && (build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) || 'N/A'}</div>
+        <div class="key">Ended:</div>
+        <div class="value">${build.endTime && (build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) || 'N/A'}</div>
+        <div class="key">Pending:</div>
+        <div class="value">${build.pendingDuration && displayDuration(build.pendingDuration) || 'N/A'}${!build.startTime && ' (and counting)' || ''}</div>
+        <div class="key">Execution:</div>
+        <div class="value">${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}${!build.endTime && build.startTime && ' (and counting)' || ''}</div>
       </div>
     `;
   }
@@ -264,14 +234,12 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <div>
-        <h3>Tags</h3>
-        <div id="tags">
-          ${tags.map((tag) => html`
-          <div class="key">${tag.key}:</div>
-          <div class="value">${tag.value}</div>
-          `)}
-        </div>
+      <h3>Tags</h3>
+      <div class="key-value-list">
+        ${tags.map((tag) => html`
+        <div class="key">${tag.key}:</div>
+        <div class="value">${tag.value}</div>
+        `)}
       </div>
     `;
   }
@@ -286,13 +254,11 @@ export class OverviewTabElement extends MobxLitElement {
     };
 
     return html`
-      <div>
-        <h3>${header}</h3>
-        <milo-code-mirror-editor
-          .value=${JSON.stringify(properties, undefined, 2)}
-          .options=${{...editorOptions}}
-        ></milo-code-mirror-editor>
-      </div>
+      <h3>${header}</h3>
+      <milo-code-mirror-editor
+        .value=${JSON.stringify(properties, undefined, 2)}
+        .options=${{...editorOptions}}
+      ></milo-code-mirror-editor>
     `;
   }
 
@@ -347,14 +313,14 @@ export class OverviewTabElement extends MobxLitElement {
       </mwc-dialog>
       <div id="main">
         <div class="first-column">
-          ${this.renderStatusTime()}
           ${this.renderCanaryWarning()}
           ${this.renderSummary()}
+          <!-- TODO(crbug/1116824): render failed tests -->
+          ${this.renderSteps()}
           ${this.renderInput()}
           ${this.renderInfra()}
           ${this.renderTiming()}
-          <!-- TODO(crbug/1116824): render failed tests -->
-          ${this.renderSteps()}
+          ${this.renderActionButtons()}
         </div>
         <div class="second-column">
           ${this.renderTags()}
@@ -368,42 +334,62 @@ export class OverviewTabElement extends MobxLitElement {
 
   static styles = css`
     #main {
-      margin: 5px 24px;
+      margin: 10px 16px;
     }
     @media screen and (min-width: 1500px) {
       #main {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 1fr 1fr;
         grid-gap: 20px;
       }
-      .first-column {
-        max-width: 900px;
-      }
+      .first-column,
       .second-column {
         overflow: hidden;
       }
     }
 
+    h3 {
+      margin-block: 20px 10px;
+    }
+
+    #summary-html {
+      background-color: var(--block-background-color);
+      padding: 0 10px;
+      clear: both;
+      overflow-wrap: break-word;
+    }
+    #summary-html.scheduled {
+      border: 1px solid var(--scheduled-color);
+      background-color: var(--scheduled-bg-color);
+    }
+    #summary-html.started {
+      border: 1px solid var(--started-color);
+      background-color: var(--started-bg-color);
+    }
+    #summary-html.success {
+      border: 1px solid var(--success-color);
+      background-color: var(--success-bg-color);
+    }
+    #summary-html.failure {
+      border: 1px solid var(--failure-color);
+      background-color: var(--failure-bg-color);
+    }
+    #summary-html.infra-failure {
+      border: 1px solid var(--critical-failure-color);
+      background-color: var(--critical-failure-bg-color);
+    }
+    #summary-html.canceled {
+      border: 1px solid var(--canceled-color);
+      background-color: var(--canceled-bg-color);
+    }
+    #summary-html pre {
+      white-space: pre-wrap;
+    }
+    #summary-html * {
+      margin-block: 10px;
+    }
     #status {
       font-weight: 500;
-    }
-    .status.scheduled {
-      color: var(--scheduled-color);
-    }
-    .status.started {
-      color: var(--started-color);
-    }
-    .status.success {
-      color: var(--success-color);
-    }
-    .status.failure {
-      color: var(--failure-color);
-    }
-    .status.infra-failure {
-      color: var(--critical-failure-color);
-    }
-    .status.canceled {
-      color: var(--canceled-color);
     }
 
     :host > mwc-dialog {
@@ -413,39 +399,24 @@ export class OverviewTabElement extends MobxLitElement {
       width: 500px;
       height: 200px;
     }
-    mwc-button {
-      transform: scale(0.8);
-      vertical-align: middle;
-    }
 
     #canary-warning {
       background-color: var(--warning-color);
       font-weight: 500;
     }
 
-    #summary-html {
-      background-color: var(--block-background-color);
-      padding: 5px;
-      clear: both;
-      overflow-wrap: break-word;
-    }
-
-    #summary-html pre {
-      white-space: pre-wrap;
-    }
-
-    #tags {
+    .key-value-list {
       display: grid;
       grid-template-columns: auto 1fr;
     }
-    #tags div {
+    .key-value-list div {
       clear: both;
       overflow-wrap: anywhere;
     }
-    #tags .value {
-      margin-left: 5px;
+    .key-value-list .value {
+      margin-left: 10px;
     }
-    #tags>div {
+    .key-value-list>div {
       margin-top: 1px;
       margin-bottom: 1px;
     }
