@@ -252,7 +252,7 @@ func TestPushHandler(t *testing.T) {
 				So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 200)
 			})
 			Convey("Unknown", func() {
-				So(call(`{"class": "unknown", "body": {}}`), ShouldEqual, 202)
+				So(call(`{"class": "unknown", "body": {}}`), ShouldEqual, 404)
 			})
 		})
 
@@ -261,27 +261,27 @@ func TestPushHandler(t *testing.T) {
 				So(call(`{"type": "google.protobuf.Empty", "body": {}}`), ShouldEqual, 200)
 			})
 			Convey("Totally unknown", func() {
-				So(call(`{"type": "unknown", "body": {}}`), ShouldEqual, 202)
+				So(call(`{"type": "unknown", "body": {}}`), ShouldEqual, 404)
 			})
 			Convey("Not a registered task", func() {
-				So(call(`{"type": "google.protobuf.Duration", "body": {}}`), ShouldEqual, 202)
+				So(call(`{"type": "google.protobuf.Duration", "body": {}}`), ShouldEqual, 404)
 			})
 		})
 
 		Convey("Not a JSON body", func() {
-			So(call(`blarg`), ShouldEqual, 202)
+			So(call(`blarg`), ShouldEqual, 400)
 		})
 
 		Convey("Bad envelope", func() {
-			So(call(`{}`), ShouldEqual, 202)
+			So(call(`{}`), ShouldEqual, 400)
 		})
 
 		Convey("Missing message body", func() {
-			So(call(`{"class": "test-1"}`), ShouldEqual, 202)
+			So(call(`{"class": "test-1"}`), ShouldEqual, 400)
 		})
 
 		Convey("Bad message body", func() {
-			So(call(`{"class": "test-1", "body": "huh"}`), ShouldEqual, 202)
+			So(call(`{"class": "test-1", "body": "huh"}`), ShouldEqual, 400)
 		})
 
 		Convey("Handler asks for retry", func() {
@@ -301,7 +301,7 @@ func TestPushHandler(t *testing.T) {
 
 		Convey("No handler", func() {
 			ref.(*taskClassImpl).Handler = nil
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 404)
 		})
 	})
 }

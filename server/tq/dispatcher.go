@@ -217,8 +217,8 @@ type TaskClass struct {
 	//
 	// It is used to decide how to deserialize and route the task. Changing IDs of
 	// existing task classes is a disruptive operation, make sure the queue is
-	// drained first. The dispatcher will permanently fail all Cloud Tasks with
-	// unrecognized class IDs.
+	// drained first. The dispatcher will reject Cloud Tasks with unrecognized
+	// class IDs with HTTP 404 error (casing Cloud Tasks to retry them later).
 	//
 	// Required.
 	ID string
@@ -231,7 +231,8 @@ type TaskClass struct {
 	//
 	// It is safe to arbitrarily change this type as long as JSONPB encoding of
 	// the previous type can be decoded using the new type. The dispatcher will
-	// permanently fail Cloud Tasks with bodies it can't deserialize.
+	// reject Cloud Tasks with bodies it can't deserialize with HTTP 400 error
+	// (causing Cloud Tasks to retry them later).
 	//
 	// Required.
 	Prototype proto.Message
@@ -410,6 +411,13 @@ type Task struct {
 //
 // See Handler doc for more details.
 var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
+
+// Used to override HTTP status of some errors.
+var (
+	httpStatusKey = errors.NewTagKey("http status override")
+	httpStatus404 = errors.TagValue{Key: httpStatusKey, Value: 404}
+	httpStatus400 = errors.TagValue{Key: httpStatusKey, Value: 400}
+)
 
 // Handler is called to handle one enqueued task.
 //
@@ -711,7 +719,11 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		case transient.Tag.In(err):
 			httpReply(c, 500, "Transient error", err)
 		default:
-			httpReply(c, 202, "Fatal error", err)
+			status := 202
+			if code, ok := errors.TagValueIn(httpStatusKey, err); ok {
+				status = code.(int)
+			}
+			httpReply(c, status, "Fatal error", err)
 		}
 	})
 }
@@ -1088,7 +1100,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "bad_request")
-		return errors.Annotate(err, "not a valid JSON body").Err()
+		return errors.Annotate(err, "not a valid JSON body").Tag(httpStatus400).Err()
 	}
 
 	// Find the matching registered task class. Newer tasks always have `class`
@@ -1101,7 +1113,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	} else if env.Type != "" {
 		cls, h, err = d.classByTyp(env.Type)
 	} else {
-		err = errors.Reason("malformed task body, no class").Err()
+		err = errors.Reason("malformed task body, no class").Tag(httpStatus400).Err()
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
@@ -1124,13 +1136,13 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 
 	if h == nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "no_handler")
-		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
+		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Tag(httpStatus404).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "bad_payload")
-		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
+		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Tag(httpStatus400).Err()
 	}
 
 	ctx = context.WithValue(ctx, &executionInfoKey, &info)
@@ -1165,7 +1177,7 @@ func (d *Dispatcher) classByID(id string) (*taskClassImpl, Handler, error) {
 	if cls := d.clsByID[id]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Err()
+	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Tag(httpStatus404).Err()
 }
 
 // classByMsg returns a task class given proto message or an error if no
@@ -1180,7 +1192,7 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 	if cls := d.clsByTyp[typ]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Tag(httpStatus404).Err()
 }
 
 // classByTyp returns a task class given proto message name or an error if no
@@ -1191,14 +1203,14 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	msgTyp, _ := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typ))
 	if msgTyp == nil {
-		return nil, nil, errors.Reason("no proto message %q is registered", typ).Err()
+		return nil, nil, errors.Reason("no proto message %q is registered", typ).Tag(httpStatus404).Err()
 	}
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByTyp[msgTyp]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Tag(httpStatus404).Err()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
