@@ -16,6 +16,7 @@ package job
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -59,7 +60,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 		Convey(`bbagent`, func() {
 			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
-
+			fmt.Printf("%v", bbJob)
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.Tags, ShouldResemble, []string{

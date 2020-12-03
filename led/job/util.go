@@ -15,9 +15,12 @@
 package job
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
 
+	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -58,4 +61,21 @@ func updateStringPairList(list *[]*api.StringPair, updates map[string]string) {
 		newList = append(newList, &api.StringPair{Key: key, Value: value})
 	}
 	*list = newList
+}
+
+const (
+	casInstanceTemplate = "projects/%s/instances/default_instance"
+)
+
+var (
+	swarmingHostRx = regexp.MustCompile(`(.*)\.appspot\.com`)
+)
+
+// Convert a swarming host name to cas instance name.
+func ToCasInstance(swarmingHost string) (string, error) {
+	match := swarmingHostRx.FindStringSubmatch(swarmingHost)
+	if match == nil {
+		return "", errors.New("invalid swarming host in job definition")
+	}
+	return fmt.Sprintf(casInstanceTemplate, match[1]), nil
 }
