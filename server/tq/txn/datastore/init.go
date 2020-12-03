@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/lessor"
 )
@@ -37,7 +38,8 @@ var impl dsDB
 
 func init() {
 	db.Register(db.Impl{
-		Kind: impl.Kind(),
+		Kind:   impl.Kind(),
+		Module: gaeemulation.ModuleName,
 		ProbeForTxn: func(ctx context.Context) db.DB {
 			if datastore.CurrentTransaction(ctx) != nil {
 				return impl

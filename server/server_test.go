@@ -49,9 +49,11 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/experiments"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var fakeUser = &auth.User{
@@ -417,6 +419,98 @@ func TestOptions(t *testing.T) {
 	})
 }
 
+func TestResolveDependencies(t *testing.T) {
+	t.Parallel()
+
+	a := module.RegisterName("a")
+	b := module.RegisterName("b")
+	c := module.RegisterName("c")
+	d := module.RegisterName("d")
+
+	mod := func(n module.Name, deps ...module.Dependency) module.Module {
+		return &testModule{name: n, deps: deps}
+	}
+
+	resolve := func(mods ...module.Module) ([]string, error) {
+		resolved, err := resolveDependencies(mods)
+		if err != nil {
+			return nil, err
+		}
+		names := make([]string, len(resolved))
+		for i, m := range resolved {
+			names[i] = m.Name().String()
+		}
+		return names, nil
+	}
+
+	Convey("Works at all", t, func() {
+		names, err := resolve(
+			mod(a, module.RequiredDependency(c), module.RequiredDependency(b)),
+			mod(b, module.RequiredDependency(c)),
+			mod(c),
+		)
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"c", "b", "a"})
+	})
+
+	Convey("Preserves original order if no deps", t, func() {
+		names, err := resolve(mod(a), mod(b), mod(c))
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"a", "b", "c"})
+	})
+
+	Convey("Two disjoint trees", t, func() {
+		names, err := resolve(
+			mod(a, module.RequiredDependency(b)), mod(b),
+			mod(c, module.RequiredDependency(d)), mod(d),
+		)
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"b", "a", "d", "c"})
+	})
+
+	Convey("Dup dependency is fine", t, func() {
+		names, err := resolve(
+			mod(a, module.RequiredDependency(c), module.RequiredDependency(c)),
+			mod(b, module.RequiredDependency(c), module.RequiredDependency(c)),
+			mod(c),
+		)
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"c", "a", "b"})
+	})
+
+	Convey("Cycle", t, func() {
+		names, err := resolve(
+			mod(a, module.RequiredDependency(b)),
+			mod(b, module.RequiredDependency(c)),
+			mod(c, module.RequiredDependency(a)),
+		)
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"c", "b", "a"})
+	})
+
+	Convey("Skips optional missing deps", t, func() {
+		names, err := resolve(
+			mod(a, module.OptionalDependency(c), module.RequiredDependency(b)),
+			mod(b, module.OptionalDependency(c)),
+		)
+		So(err, ShouldBeNil)
+		So(names, ShouldResemble, []string{"b", "a"})
+	})
+
+	Convey("Detects dups", t, func() {
+		_, err := resolve(mod(a), mod(b), mod(a))
+		So(err, ShouldErrLike, "duplicate module")
+	})
+
+	Convey("Checks required deps", t, func() {
+		_, err := resolve(
+			mod(a, module.RequiredDependency(b), module.RequiredDependency(c)),
+			mod(b, module.RequiredDependency(c)),
+		)
+		So(err, ShouldErrLike, `module "a" requires module "c"`)
+	})
+}
+
 func BenchmarkServer(b *testing.B) {
 	srv, err := newTestServer(context.Background(), nil)
 	if err != nil {
@@ -622,6 +716,21 @@ func (s *testServer) get(uri string, headers map[string]string) (resp string, er
 	case <-done:
 	}
 	return
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type testModule struct {
+	name module.Name
+	deps []module.Dependency
+}
+
+func (m *testModule) Name() module.Name { return m.name }
+
+func (m *testModule) Dependencies() []module.Dependency { return m.deps }
+
+func (m *testModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
+	return ctx, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

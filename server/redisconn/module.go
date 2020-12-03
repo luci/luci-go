@@ -25,6 +25,9 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/redisconn")
+
 // ModuleOptions contain configuration of the Redis server module.
 type ModuleOptions struct {
 	RedisAddr string // Redis server to connect to as "host:port"
@@ -79,8 +82,13 @@ type redisModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*redisModule) Name() string {
-	return "go.chromium.org/luci/server/redisconn"
+func (*redisModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*redisModule) Dependencies() []module.Dependency {
+	return nil
 }
 
 // Initialize is part of module.Module interface.

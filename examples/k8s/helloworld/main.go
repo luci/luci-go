@@ -42,8 +42,8 @@ import (
 func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
-		redisconn.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 	}
 

@@ -35,7 +35,8 @@ var impl spanDB
 
 func init() {
 	db.Register(db.Impl{
-		Kind: impl.Kind(),
+		Kind:   impl.Kind(),
+		Module: span.ModuleName,
 		ProbeForTxn: func(ctx context.Context) db.DB {
 			if span.RW(ctx) != nil {
 				return impl

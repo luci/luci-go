@@ -32,6 +32,9 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/config/server/cfgmodule")
+
 // A scope expected in access tokens from the LUCI Config service.
 const configValidationAuthScope = "https://www.googleapis.com/auth/userinfo.email"
 
@@ -111,8 +114,13 @@ type serverModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*serverModule) Name() string {
-	return "go.chromium.org/luci/config/server/cfgmodule"
+func (*serverModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*serverModule) Dependencies() []module.Dependency {
+	return nil
 }
 
 // Initialize is part of module.Module interface.

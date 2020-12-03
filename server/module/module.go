@@ -29,13 +29,15 @@ import (
 // It is generally a stateful object constructed from some configuration. It can
 // be hooked to the server in server.New(...) or server.Main(...).
 type Module interface {
-	// Name is a name of this module for logs and internal maps.
+	// Name is a name of this module for logs and dependency relations.
 	//
-	// Usually it is a full name of the go package that implements the module, but
-	// it can be arbitrary as long as it is unique within a server. Attempting to
-	// register two identically named modules results in a fatal error during
-	// the server startup.
-	Name() string
+	// Usually a package that implements the module registers module's name as
+	// a public global variable (so other packages can refer to it) and this
+	// method just returns it.
+	Name() Name
+
+	// Dependencies returns dependencies (required and optional) of this module.
+	Dependencies() []Dependency
 
 	// Initialize is called during the server startup after the core functionality
 	// is initialized, but before the server enters the serving loop.

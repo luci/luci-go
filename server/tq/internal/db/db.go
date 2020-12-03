@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
@@ -73,6 +74,9 @@ type Impl struct {
 	// Must match Kind() of the produced DB instance.
 	Kind string
 
+	// Module is name of the server module with DB implementation.
+	Module module.Name
+
 	// ProbeForTxn "probes" a context for an active transaction, returning a DB
 	// that can be used to transactionally submit reminders or nil if this is not
 	// a transactional context.
@@ -109,6 +113,13 @@ func Kinds() []string {
 		kinds[i] = impl.Kind
 	}
 	return kinds
+}
+
+// VisitImpls calls the callback for all registered implementation.
+func VisitImpls(cb func(db *Impl)) {
+	for i := range impls {
+		cb(&impls[i])
+	}
 }
 
 // TxnDB returns a Database that matches the context or nil.

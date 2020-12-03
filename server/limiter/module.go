@@ -25,6 +25,9 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/limiter")
+
 const defaultMaxConcurrentRPCs = 100000 // e.g. unlimited
 
 // ModuleOptions contains configuration of the server module that installs
@@ -80,8 +83,13 @@ type serverModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*serverModule) Name() string {
-	return "go.chromium.org/luci/server/limiter"
+func (*serverModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*serverModule) Dependencies() []module.Dependency {
+	return nil
 }
 
 // Initialize is part of module.Module interface.
