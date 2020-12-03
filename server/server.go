@@ -83,7 +83,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/iotools"
@@ -690,14 +689,16 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
 	}
 
-	// Initialize all extra modules. Note that names aren't really used yet, but
-	// we still want to guarantee they are unique to avoid issues in the future.
-	seen := stringset.New(len(mods))
+	// Sort modules by their initialization order based on declared dependencies,
+	// discover unfulfilled required dependencies.
+	sorted, err := resolveDependencies(mods)
+	if err != nil {
+		return srv, err
+	}
+
+	// Initialize all modules in their topological order.
 	host := moduleHostImpl{srv: srv}
-	for _, m := range mods {
-		if !seen.Add(m.Name()) {
-			return srv, errors.Reason("duplicate module %q", m.Name()).Err()
-		}
+	for _, m := range sorted {
 		switch ctx, err := m.Initialize(srv.Context, &host, srv.Options.hostOptions()); {
 		case err != nil:
 			return srv, errors.Annotate(err, "failed to initialize module %q", m.Name()).Err()
@@ -1979,4 +1980,53 @@ func isHealthCheckRequest(r *http.Request) bool {
 		}
 	}
 	return false
+}
+
+// resolveDependencies sorts modules based on their dependencies.
+//
+// Discovers unfulfilled required dependencies.
+func resolveDependencies(mods []module.Module) ([]module.Module, error) {
+	// Build a map: module.Name => module.Module
+	modules := make(map[module.Name]module.Module, len(mods))
+	for _, m := range mods {
+		if _, ok := modules[m.Name()]; ok {
+			return nil, errors.Reason("duplicate module %q", m.Name()).Err()
+		}
+		modules[m.Name()] = m
+	}
+
+	// Ensure all required dependencies exist, throw away missing optional
+	// dependencies. The result is a directed graph that can be topo-sorted.
+	graph := map[module.Name][]module.Name{}
+	for _, m := range mods {
+		for _, d := range m.Dependencies() {
+			name := d.Dependency()
+			if _, exists := modules[name]; !exists {
+				if !d.Required() {
+					continue
+				}
+				return nil, errors.Reason("module %q requires module %q which is not provided", m.Name(), name).Err()
+			}
+			graph[m.Name()] = append(graph[m.Name()], name)
+		}
+	}
+
+	sorted := make([]module.Module, 0, len(graph))
+	visited := make(map[module.Name]bool, len(graph))
+
+	var visit func(n module.Name)
+	visit = func(n module.Name) {
+		if !visited[n] {
+			visited[n] = true
+			for _, dep := range graph[n] {
+				visit(dep)
+			}
+			sorted = append(sorted, modules[n])
+		}
+	}
+
+	for _, m := range mods {
+		visit(m.Name())
+	}
+	return sorted, nil
 }

@@ -39,8 +39,8 @@ import (
 func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
-		redisconn.NewModuleFromFlags(), // must come before gaeemulation
 		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 
