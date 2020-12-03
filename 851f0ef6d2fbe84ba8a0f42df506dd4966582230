@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e140a929_4d1a2cd9",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-03T23:17:58Z",
+      "side": 1,
+      "message": "is this the right default? it means we drop a task by default.\n\nunder what circumstances we want to drop a task? I feel like this should be an explicit choice.",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
