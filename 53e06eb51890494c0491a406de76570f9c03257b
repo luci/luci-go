@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "53e06eb51890494c0491a406de76570f9c03257b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b359212_92ea00a5",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 404,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-03T01:21:22Z",
+      "side": 1,
+      "message": "this is OK if len(submask.children) \u003d\u003d 0,\n\nbut if not, the intention is to merge (not replace). I think in that case we should do nothing.",
+      "range": {
+        "startLine": 404,
+        "startChar": 4,
+        "endLine": 404,
+        "endChar": 25
+      },
+      "revId": "53e06eb51890494c0491a406de76570f9c03257b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97d33008_a8d8b25e",
+        "filename": "common/proto/mask/mask_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 509,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-03T01:21:22Z",
+      "side": 1,
+      "message": "i think we need a case with mask \"msg.num\" and nil msg",
+      "revId": "53e06eb51890494c0491a406de76570f9c03257b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
