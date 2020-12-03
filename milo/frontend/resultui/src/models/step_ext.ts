@@ -14,7 +14,7 @@
 
 // tslint:disable: variable-name
 
-import { DateTime } from 'luxon';
+import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
 import { renderMarkdownUnsanitized } from '../libs/utils';
@@ -26,7 +26,7 @@ import { BuildStatus, Log, Step } from '../services/buildbucket';
  */
 export class StepExt {
   readonly name: string;
-  readonly startTime: DateTime;
+  readonly startTime: DateTime | null;
   readonly endTime: DateTime | null;
   readonly status: BuildStatus;
   readonly logs?: Log[] | undefined;
@@ -43,8 +43,8 @@ export class StepExt {
     }
 
     this.name = step.name;
-    this.startTime = DateTime.fromISO(step.startTime);
-    this.endTime = step.endTime ? DateTime.fromISO(step.endTime): null;
+    this.startTime = step.startTime ? DateTime.fromISO(step.startTime) : null;
+    this.endTime = step.endTime ? DateTime.fromISO(step.endTime) : null;
     this.status = step.status;
     this.logs = step.logs;
     this.summaryMarkdown = step.summaryMarkdown;
@@ -78,6 +78,9 @@ export class StepExt {
   }
 
   @computed get duration() {
+    if (!this.startTime) {
+      return Duration.fromMillis(0);
+    }
     return (this.endTime || this.renderTime.get()).diff(this.startTime);
   }
 

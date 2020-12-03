@@ -73,7 +73,7 @@ export class TimelineTabElement extends MobxLitElement {
         content: '',
         id: i.toString(),
         group: i.toString(),
-        start: step.startTime.toMillis(),
+        start: (step.startTime || step.renderTime.get()).toMillis(),
         end: (step.endTime || step.renderTime.get()).toMillis(),
         type: 'range',
       }))),

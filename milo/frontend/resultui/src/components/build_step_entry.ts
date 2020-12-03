@@ -23,7 +23,7 @@ import '../components/copy_to_clipboard';
 import '../components/log';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
-import { displayDuration } from '../libs/time_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { StepExt } from '../models/step_ext';
 import './expandable_entry';
@@ -95,6 +95,19 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     `;
   }
 
+  private renderDuration() {
+    if (!this.step.duration) {
+      return html``;
+    }
+    return html`
+      <span id="duration"
+        title="Started: ${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}${this.step.endTime ? `
+Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
+        ${displayDuration(this.step.duration)}
+      </span>
+    `;
+  }
+
   protected render() {
     if (this.prerender) {
       return html`<div id="place-holder"></div>`;
@@ -118,7 +131,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
-          <span id="duration">${displayDuration(this.step.duration)}</span>
+          ${this.renderDuration()}
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
