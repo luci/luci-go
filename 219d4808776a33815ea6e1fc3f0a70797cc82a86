@@ -3,6 +3,29 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0d130b98_4d6150d8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T06:09:30Z",
+      "side": 1,
+      "message": "Hope we don\u0027t🙏",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 6
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "babeedcd_90e017f9",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -55,6 +78,46 @@
         "endLine": 196,
         "endChar": 23
       },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c4332a1_35dcc0fe",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T06:09:30Z",
+      "side": 1,
+      "message": "Maybe just AsDepMeta?",
+      "range": {
+        "startLine": 212,
+        "startChar": 1,
+        "endLine": 212,
+        "endChar": 13
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6e0d72e_a46e2ae3",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T06:09:30Z",
+      "side": 1,
+      "message": "Curious: why would the project that `cl` belongs to show up in the AsDepMeta? Isn\u0027t this LUCI project guaranteed to have access to `cl`? Otherwise, CV won\u0027t be able to see this CL at the first place as Gerrit poller won\u0027t return such cl.",
       "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
