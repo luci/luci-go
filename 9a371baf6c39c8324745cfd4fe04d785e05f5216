@@ -16,6 +16,24 @@
       "message": "LGTM; you could also perhaps add a test case with an invalid snapshot and assert that a panic occurs on insert/update.",
       "revId": "9a371baf6c39c8324745cfd4fe04d785e05f5216",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e93fbca5_8aa7c4a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T21:52:21Z",
+      "side": 1,
+      "message": "Nah, too little to gain: if this code is wrong, CV will still work. This code is primarily for faster feedback during development. I think it can actually be deleted cl mutating code is solid.",
+      "parentUuid": "0fca2113_301c3ee1",
+      "revId": "9a371baf6c39c8324745cfd4fe04d785e05f5216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
