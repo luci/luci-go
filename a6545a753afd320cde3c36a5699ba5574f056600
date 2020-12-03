@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9cc3503_1fff3062",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-03T05:03:15Z",
+      "side": 1,
+      "message": "nit: this is two other cases. consider flatter (\u003dsimpler):\n\n  switch srcNil :\u003d !srcVal.Message().IsValid(); {\n  case srcNil \u0026\u0026 !dest.Get(fieldDesc).Message().IsValid():\n    ...\n  case srcNil \u0026\u0026 len(submask.children) \u003d\u003d 0:\n    ...\n  case len(submask.children) \u003d\u003d 0:\n    ...\n  default:\n    ...\n  }",
+      "range": {
+        "startLine": 406,
+        "startChar": 4,
+        "endLine": 406,
+        "endChar": 6
+      },
+      "revId": "a6545a753afd320cde3c36a5699ba5574f056600",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
