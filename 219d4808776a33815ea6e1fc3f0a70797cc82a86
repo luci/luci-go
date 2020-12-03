@@ -94,6 +94,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a8e1eaa_2d6d990f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:04:00Z",
+      "side": 1,
+      "message": "Brilliant! Changed 😊 Now I really like \"AddDependentMeta\" instead of \"AddAsDepMeta\".",
+      "parentUuid": "4c5fec8e_65778b6b",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5bac04cb_ea611708",
@@ -107,6 +125,30 @@
       "writtenOn": "2020-12-02T21:05:54Z",
       "side": 1,
       "message": "Is this used? If so, change spelling to ...Addition",
+      "range": {
+        "startLine": 196,
+        "startChar": 5,
+        "endLine": 196,
+        "endChar": 23
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac28b5a6_2acc91f7",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:04:00Z",
+      "side": 1,
+      "message": "Not used. Gone.",
+      "parentUuid": "5bac04cb_ea611708",
       "range": {
         "startLine": 196,
         "startChar": 5,
@@ -154,6 +196,30 @@
       "side": 1,
       "message": "Originally used that, but I thought it may look like setting it here will completely override the stored AsDepMeta,\nso renamed to \"Add\". Do you think it\u0027s not helpful / not worth it?",
       "parentUuid": "8c4332a1_35dcc0fe",
+      "range": {
+        "startLine": 212,
+        "startChar": 1,
+        "endLine": 212,
+        "endChar": 13
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5caa41e6_5546b55d",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:04:00Z",
+      "side": 1,
+      "message": "Renamed to AddDependentMeta. I think this the clearest.",
+      "parentUuid": "3195b287_ac4ebd32",
       "range": {
         "startLine": 212,
         "startChar": 1,
@@ -212,6 +278,24 @@
       "writtenOn": "2020-12-02T21:05:54Z",
       "side": 1,
       "message": "Nit: add blank line between paragraphs",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "074975ea_378aeac7",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:04:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba551414_5afaf27c",
       "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
