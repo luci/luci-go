@@ -22,6 +22,30 @@
       },
       "revId": "a6545a753afd320cde3c36a5699ba5574f056600",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da650cba_62844e7b",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T06:53:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9cc3503_1fff3062",
+      "range": {
+        "startLine": 406,
+        "startChar": 4,
+        "endLine": 406,
+        "endChar": 6
+      },
+      "revId": "a6545a753afd320cde3c36a5699ba5574f056600",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
