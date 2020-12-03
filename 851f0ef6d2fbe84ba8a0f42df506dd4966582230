@@ -46,6 +46,30 @@
       },
       "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e2abfdd_c3912e0f",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-03T23:53:11Z",
+      "side": 1,
+      "message": "dropping a task unintentionally is expensive, because it is permanent.\nit is very easy to unintentionally not mark an error is transient (because this is now what people normally do). I think the default should be we retry, so that the developer has time to fix the situation, redeploy their code.\n\ni propose read transient.Tag and drop the task if only if the tag is there AND its value is false. This is in contrast to treating absence of tag as not-permanent.",
+      "parentUuid": "3b4eefa1_d6d3e088",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
