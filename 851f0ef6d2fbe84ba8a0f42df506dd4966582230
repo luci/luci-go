@@ -70,6 +70,30 @@
       },
       "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "38f68cf6_ab20aee7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-03T23:57:54Z",
+      "side": 1,
+      "message": "I have never seen transient.Tag used with `false` value. I\u0027m not even sure how to set it. If you insist on this route then we need to change tq.Retry tag into tq.Fatal or something.",
+      "parentUuid": "1e2abfdd_c3912e0f",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
