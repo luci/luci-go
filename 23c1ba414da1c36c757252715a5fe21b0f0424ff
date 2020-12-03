@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a75c4ef2_87cadf52",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-03T08:32:29Z",
+      "side": 1,
+      "message": "PTAL at the demo and let me know any feedback. This CL doesn\u0027t move anything off the overview tab yet; planning to think about that later.\n\nOld: https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9110/overview\nNew: https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9110/overview",
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
