@@ -398,13 +398,20 @@ func (m *Mask) mergeImpl(src, dest protoreflect.Message) {
 			})
 			dest.Set(fieldDesc, newField)
 
-		case len(submask.children) > 0 && fieldDesc.Kind() == protoreflect.MessageKind:
-			// only singular message field can be merged partially
-			submask.mergeImpl(srcVal.Message(), dest.Mutable(fieldDesc).Message())
+		case fieldDesc.Kind() == protoreflect.MessageKind:
+			if len(submask.children) == 0 {
+				if srcVal.Message().IsValid() {
+					dest.Set(fieldDesc, cloneValue(srcVal, fieldDesc.Kind()))
+				} else {
+					dest.Clear(fieldDesc) // nil message
+				}
+			} else {
+				// only singular message field can be merged partially
+				submask.mergeImpl(srcVal.Message(), dest.Mutable(fieldDesc).Message())
+			}
 
 		default:
-			// scalar value
-			dest.Set(fieldDesc, cloneValue(srcVal, kind))
+			dest.Set(fieldDesc, srcVal) // scalar value
 		}
 	}
 }
