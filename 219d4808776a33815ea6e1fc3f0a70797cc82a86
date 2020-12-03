@@ -142,6 +142,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3195b287_ac4ebd32",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T15:54:00Z",
+      "side": 1,
+      "message": "Originally used that, but I thought it may look like setting it here will completely override the stored AsDepMeta,\nso renamed to \"Add\". Do you think it\u0027s not helpful / not worth it?",
+      "parentUuid": "8c4332a1_35dcc0fe",
+      "range": {
+        "startLine": 212,
+        "startChar": 1,
+        "endLine": 212,
+        "endChar": 13
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c6e0d72e_a46e2ae3",
         "filename": "cv/internal/changelist/model.go",
         "patchSetId": 1
@@ -153,6 +177,24 @@
       "writtenOn": "2020-12-03T06:09:30Z",
       "side": 1,
       "message": "Curious: why would the project that `cl` belongs to show up in the AsDepMeta? Isn\u0027t this LUCI project guaranteed to have access to `cl`? Otherwise, CV won\u0027t be able to see this CL at the first place as Gerrit poller won\u0027t return such cl.",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55584c6e_32bc0aff",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T15:54:00Z",
+      "side": 1,
+      "message": "`cl` belongs to (LUCI) project is a CV construct. Gerrit has no idea about it, and in fact can be misconfigured.\n\nThis is actually common during initial CQ set up or an addition of a new project. Once ACLs are fixed, CV happily snapshot a CL and store it here.",
+      "parentUuid": "c6e0d72e_a46e2ae3",
       "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
