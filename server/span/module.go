@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/span")
+
 // ModuleOptions contain configuration of the Cloud Spanner server module.
 type ModuleOptions struct {
 	SpannerEndpoint string // the Spanner endpoint to connect to
@@ -91,8 +94,13 @@ type spannerModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*spannerModule) Name() string {
-	return "go.chromium.org/luci/server/span"
+func (*spannerModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*spannerModule) Dependencies() []module.Dependency {
+	return nil
 }
 
 // Initialize is part of module.Module interface.

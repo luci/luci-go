@@ -25,8 +25,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 
+	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/tqtesting"
 )
+
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/tq")
 
 // ModuleOptions contain configuration of the TQ server module.
 //
@@ -270,8 +274,17 @@ type tqModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*tqModule) Name() string {
-	return "go.chromium.org/luci/server/tq"
+func (*tqModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*tqModule) Dependencies() []module.Dependency {
+	var deps []module.Dependency
+	db.VisitImpls(func(db *db.Impl) {
+		deps = append(deps, module.RequiredDependency(db.Module))
+	})
+	return deps
 }
 
 // Initialize is part of module.Module interface.
