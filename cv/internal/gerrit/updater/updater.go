@@ -159,8 +159,7 @@ type fetcher struct {
 	externalID changelist.ExternalID
 	priorCL    *changelist.CL
 
-	newSnapshot *changelist.Snapshot
-	newAcfg     *changelist.ApplicableConfig
+	toUpdate changelist.UpdateFields
 }
 
 func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
@@ -203,7 +202,7 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 		return err
 	}
 
-	f.newSnapshot = &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}}
+	f.toUpdate.Snapshot = &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}}
 	// TODO(tandrii): optimize for existing CL case.
 	if err := f.new(ctx); err != nil {
 		return err
@@ -213,16 +212,13 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 		return err
 	}
 
-	min, cur, err := gerrit.EquivalentPatchsetRange(f.newSnapshot.GetGerrit().GetInfo())
+	min, cur, err := gerrit.EquivalentPatchsetRange(f.toUpdate.Snapshot.GetGerrit().GetInfo())
 	if err != nil {
 		return err
 	}
-	f.newSnapshot.MinEquivalentPatchset = int32(min)
-	f.newSnapshot.Patchset = int32(cur)
-	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), changelist.UpdateFields{
-		Snapshot:         f.newSnapshot,
-		ApplicableConfig: f.newAcfg,
-	})
+	f.toUpdate.Snapshot.MinEquivalentPatchset = int32(min)
+	f.toUpdate.Snapshot.Patchset = int32(cur)
+	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate)
 }
 
 // new efficiently fetches new snapshot from Gerrit.
@@ -249,8 +245,8 @@ func (f *fetcher) new(ctx context.Context) error {
 		if err := f.ensureNotStale(ctx, ci.GetUpdated()); err != nil {
 			return err
 		}
-		f.newSnapshot.GetGerrit().Info = ci
-		f.newSnapshot.ExternalUpdateTime = ci.GetUpdated()
+		f.toUpdate.Snapshot.GetGerrit().Info = ci
+		f.toUpdate.Snapshot.ExternalUpdateTime = ci.GetUpdated()
 	case codes.NotFound:
 		// Either no access OR CL was deleted.
 		return errors.New("not implemented")
@@ -412,7 +408,7 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 			Immediate: i < thisParentsCount,
 		})
 	}
-	f.newSnapshot.GetGerrit().GitDeps = deps
+	f.toUpdate.Snapshot.GetGerrit().GitDeps = deps
 	return nil
 }
 
@@ -470,7 +466,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 			}
 		}
 		sort.Strings(fs)
-		f.newSnapshot.GetGerrit().Files = fs
+		f.toUpdate.Snapshot.GetGerrit().Files = fs
 		return nil
 
 	case codes.PermissionDenied, codes.NotFound:
@@ -487,7 +483,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 
 // setSoftDeps parses CL description and sets soft deps.
 func (f *fetcher) setSoftDeps() error {
-	ci := f.newSnapshot.GetGerrit().GetInfo()
+	ci := f.toUpdate.Snapshot.GetGerrit().GetInfo()
 	msg := ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage()
 	deps := cqdepend.Parse(msg)
 	if len(deps) == 0 {
@@ -509,7 +505,7 @@ func (f *fetcher) setSoftDeps() error {
 		}
 		softDeps[i] = &changelist.GerritSoftDep{Host: depHost, Change: int64(d.Change)}
 	}
-	f.newSnapshot.GetGerrit().SoftDeps = softDeps
+	f.toUpdate.Snapshot.GetGerrit().SoftDeps = softDeps
 	return nil
 }
 
@@ -565,13 +561,13 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		// All errors must be transient. Return any one of them.
 		return errs.(errors.MultiError).First()
 	}
-	f.newSnapshot.Deps = resolved
+	f.toUpdate.Snapshot.Deps = resolved
 	return nil
 }
 
 func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepKind, error) {
-	cqdeps := f.newSnapshot.GetGerrit().GetSoftDeps()
-	gitdeps := f.newSnapshot.GetGerrit().GetGitDeps()
+	cqdeps := f.toUpdate.Snapshot.GetGerrit().GetSoftDeps()
+	gitdeps := f.toUpdate.Snapshot.GetGerrit().GetGitDeps()
 	// Git deps that are immediate parents of the current CL are HARD deps.
 	// Since arbitrary Cq-Depend deps may duplicate those of Git,
 	// avoid accidental downgrading from HARD to SOFT dep by processing Cq-Depend
@@ -619,7 +615,7 @@ func (f *fetcher) gerritProjectIfKnown() string {
 	if project := f.priorSnapshot().GetGerrit().GetInfo().GetProject(); project != "" {
 		return project
 	}
-	if project := f.newSnapshot.GetGerrit().GetInfo().GetProject(); project != "" {
+	if project := f.toUpdate.Snapshot.GetGerrit().GetInfo().GetProject(); project != "" {
 		return project
 	}
 	return ""
@@ -647,9 +643,9 @@ func (f *fetcher) priorAcfg() *changelist.ApplicableConfig {
 }
 
 func (f *fetcher) mustHaveCurrentRevision() string {
-	switch ci := f.newSnapshot.GetGerrit().GetInfo(); {
+	switch ci := f.toUpdate.Snapshot.GetGerrit().GetInfo(); {
 	case ci == nil:
-		panic("ChangeInfo must be already fetched into newSnapshot")
+		panic("ChangeInfo must be already fetched into toUpdate.Snapshot")
 	case ci.GetCurrentRevision() == "":
 		panic("ChangeInfo must have CurrentRevision populated.")
 	default:

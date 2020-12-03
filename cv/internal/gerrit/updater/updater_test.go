@@ -32,19 +32,21 @@ func TestRelatedChangeProcessing(t *testing.T) {
 	Convey("setGitDeps works", t, func() {
 		ctx := context.Background()
 		f := fetcher{
-			change:      111,
-			host:        "host",
-			newSnapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}},
+			change: 111,
+			host:   "host",
+			toUpdate: changelist.UpdateFields{
+				Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}},
+			},
 		}
 
 		Convey("No related changes", func() {
 			err := f.setGitDeps(ctx, nil)
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 
 			err = f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 		})
 
 		Convey("Just itself", func() {
@@ -53,13 +55,13 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(111, 3, 3), // No parents.
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 
 			err = f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 				gf.RelatedChange(111, 3, 3, "107_2"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 		})
 
 		Convey("Has related, but no deps", func() {
@@ -69,7 +71,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
 		})
 
 		Convey("Has related, but lacking this change", func() {
@@ -95,7 +97,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
 				{Change: 107, Immediate: true},
 			})
 		})
@@ -111,7 +113,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
 				{Change: 107, Immediate: true},
 				{Change: 108, Immediate: true},
 				{Change: 104, Immediate: false},
@@ -130,7 +132,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(111, 3, 3, "104_1"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
 				{Change: 104, Immediate: true},
 				{Change: 103, Immediate: false},
 			})
@@ -145,7 +147,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(111, 3, 3, "104_1", "104_2"),
 			})
 			So(err, ShouldBeNil)
-			So(f.newSnapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
+			So(f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
 				{Change: 104, Immediate: true},
 				{Change: 107, Immediate: false},
 			})
