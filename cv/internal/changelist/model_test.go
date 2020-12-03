@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
@@ -149,12 +148,18 @@ func TestUpdate(t *testing.T) {
 		Convey("new CL is created", func() {
 			snap := makeSnapshot(epoch)
 			acfg := makeApplicableConfig(epoch)
-			err := Update(ctx, eid, 0 /* unknown CLID */, snap, acfg)
+			asdep := makeDependentMeta(epoch)
+			err := Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{
+				Snapshot:         snap,
+				ApplicableConfig: acfg,
+				AddDependentMeta: asdep,
+			})
 			So(err, ShouldBeNil)
 			cl, err := eid.Get(ctx)
 			So(err, ShouldBeNil)
 			So(cl.Snapshot, ShouldResembleProto, snap)
 			So(cl.ApplicableConfig, ShouldResembleProto, acfg)
+			So(cl.AsDepMeta, ShouldResembleProto, asdep)
 			So(cl.EVersion, ShouldEqual, 1)
 		})
 
@@ -163,11 +168,12 @@ func TestUpdate(t *testing.T) {
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
 				// no snapshot attached yet
 				cl.ApplicableConfig = acfg
+				cl.AsDepMeta = makeDependentMeta(epoch, luciProject, "another-project")
 			})
 			So(err, ShouldBeNil)
 
 			snap := makeSnapshot(epoch)
-			err = Update(ctx, eid, 0 /* unknown CLID */, snap, nil /*don't change acfg*/)
+			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap})
 			So(err, ShouldBeNil)
 
 			cl2, err := eid.Get(ctx)
@@ -176,10 +182,14 @@ func TestUpdate(t *testing.T) {
 			So(cl2.EVersion, ShouldEqual, 2)
 			So(cl2.Snapshot, ShouldResembleProto, snap)
 			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(epoch))
+			// 1 entry should have been removed due to matching snapshot's project.
+			asdep := makeDependentMeta(epoch, "another-project")
+			So(cl2.AsDepMeta, ShouldResembleProto, asdep)
 
 			Convey("with known CLID", func() {
 				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
-				err = Update(ctx, "" /*unspecified externalID*/, cl.ID, nil /*don't change snapshot*/, acfg2)
+				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
+					UpdateFields{ApplicableConfig: acfg2})
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
@@ -188,12 +198,15 @@ func TestUpdate(t *testing.T) {
 				So(cl3.EVersion, ShouldEqual, 3)
 				So(cl3.Snapshot, ShouldResembleProto, snap)
 				So(cl3.ApplicableConfig, ShouldResembleProto, acfg2)
+				So(cl3.AsDepMeta, ShouldResembleProto, asdep)
 			})
 
 			Convey("skip if not newer", func() {
-				snapOld := makeSnapshot(epoch.Add(-time.Minute))
-				acfgOld := makeApplicableConfig(epoch.Add(-time.Minute))
-				err = Update(ctx, "", cl.ID, snapOld, acfgOld)
+				err = Update(ctx, "", cl.ID, UpdateFields{
+					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
+					ApplicableConfig: makeApplicableConfig(epoch.Add(-time.Minute)),
+					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
+				})
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
@@ -202,6 +215,39 @@ func TestUpdate(t *testing.T) {
 				So(cl3.EVersion, ShouldEqual, 2)
 				So(cl3.Snapshot, ShouldResembleProto, snap)
 				So(cl3.ApplicableConfig, ShouldResembleProto, acfg)
+				So(cl3.AsDepMeta, ShouldResembleProto, asdep)
+			})
+
+			Convey("adds/updates AsDepMeta", func() {
+				asdep3 := makeDependentMeta(epoch.Add(time.Minute), "another-project", "2nd")
+				err = Update(ctx, "", cl.ID, UpdateFields{AddDependentMeta: asdep3})
+				So(err, ShouldBeNil)
+				cl3, err := eid.Get(ctx)
+				So(err, ShouldBeNil)
+				So(cl3.AsDepMeta, ShouldResembleProto, asdep3)
+
+				err = Update(ctx, "", cl.ID, UpdateFields{
+					AddDependentMeta: makeDependentMeta(epoch.Add(time.Hour), "2nd", "3rd"),
+				})
+				So(err, ShouldBeNil)
+				cl4, err := eid.Get(ctx)
+				So(err, ShouldBeNil)
+				So(cl4.AsDepMeta, ShouldResembleProto, &DependentMeta{
+					ByProject: map[string]*DependentMeta_Meta{
+						"another-project": {
+							UpdateTime: timestamppb.New(epoch.Add(time.Minute)),
+							NoAccess:   true,
+						},
+						"2nd": {
+							UpdateTime: timestamppb.New(epoch.Add(time.Hour)),
+							NoAccess:   true,
+						},
+						"3rd": {
+							UpdateTime: timestamppb.New(epoch.Add(time.Hour)),
+							NoAccess:   true,
+						},
+					},
+				})
 			})
 		})
 	})
@@ -241,19 +287,24 @@ func TestConcurrentUpdate(t *testing.T) {
 
 		wg := sync.WaitGroup{}
 		wg.Add(N)
-		delays := mathrand.Perm(ctx, N) // 0,1,...,N-1
-		for _, d := range delays {
+		for d := 0; d < N; d++ {
 			// Simulate opposing Snapshot and ApplicableConfig timestamps for better
 			// test coverage.
-			snapTS := epoch.Add(time.Minute * time.Duration(d))
-			acfgTS := epoch.Add(time.Minute * time.Duration(N-1-d))
+
+			// For a co-prime p,N:
+			//   assert sorted(set([((p*d)%N) for d in xrange(N)])) == range(N)
+			// 47, 59, 67 are actual primes.
+			snapTS := epoch.Add(time.Minute * time.Duration((47*d)%N))
+			acfgTS := epoch.Add(time.Minute * time.Duration((59*d)%N))
+			asdepTS := epoch.Add(time.Minute * time.Duration((67*d)%N))
 			go func() {
 				defer wg.Done()
 				snap := makeSnapshot(snapTS)
 				acfg := makeApplicableConfig(acfgTS)
+				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
-					if err = Update(ctx, eid, 0, snap, acfg); err == nil {
+					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
@@ -275,6 +326,7 @@ func TestConcurrentUpdate(t *testing.T) {
 		latestTS := epoch.Add((N - 1) * time.Minute)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
 		So(cl.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(latestTS))
+		So(cl.AsDepMeta, ShouldResembleProto, makeDependentMeta(latestTS, "another-project"))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot
 		// calls (one per worker, iff they did exactly in the increasing order of
 		// the ExternalUpdateTime).
@@ -282,6 +334,8 @@ func TestConcurrentUpdate(t *testing.T) {
 		So(cl.EVersion, ShouldBeLessThan, N+1)
 	})
 }
+
+const luciProject = "luci-project"
 
 func makeSnapshot(updatedTime time.Time) *Snapshot {
 	return &Snapshot{
@@ -297,6 +351,7 @@ func makeSnapshot(updatedTime time.Time) *Snapshot {
 				},
 			},
 		}},
+		LuciProject: luciProject,
 	}
 }
 
@@ -304,7 +359,21 @@ func makeApplicableConfig(updatedTime time.Time) *ApplicableConfig {
 	return &ApplicableConfig{
 		UpdateTime: timestamppb.New(updatedTime),
 		Projects: []*ApplicableConfig_Project{
-			{Name: "luci_project", ConfigGroupIds: []string{"blah"}},
+			{Name: luciProject, ConfigGroupIds: []string{"blah"}},
 		},
 	}
+}
+
+func makeDependentMeta(updatedTime time.Time, projects ...string) *DependentMeta {
+	if len(projects) == 0 {
+		projects = []string{luciProject}
+	}
+	a := &DependentMeta{ByProject: make(map[string]*DependentMeta_Meta, len(projects))}
+	for _, p := range projects {
+		a.ByProject[p] = &DependentMeta_Meta{
+			NoAccess:   true,
+			UpdateTime: timestamppb.New(updatedTime),
+		}
+	}
+	return a
 }

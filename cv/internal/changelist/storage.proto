@@ -161,3 +161,40 @@ message ApplicableConfig {
   }
   repeated Project projects = 2;
 }
+
+// DependentMeta stores metadata per LUCI project about this CL being a
+// dependency of another one in the context of the specific LUCI project.
+//
+// This is necessary because soft dependencies (e.g. via CQ-Depend)
+// can be arbitrary CL references (e.g. any GoBID), which aren't alone
+// sufficient to determine ApplicableConfig. Thus, code review has to be
+// queried first for CL details.
+//
+// In ideal case, code review responds with CL details, CV can verify that CL
+// is watched by the current project, and then save Snapshot and
+// ApplicableConfig.
+//
+// However, codereview may respond with an 403/404 error, s.t. CV can't
+// determine an ApplicableConfig, but CV needs to persist the 403/404 error
+// fact somehow s.t. it differs from yet-to-be-fetched CL.
+//
+// To illustrate, consider dependency of CL 200000 specified via
+//    CQ-Depend: chrome-internal:184849
+// in the context of `infra-internal` project. CV first needs to fetch 184849
+// details from Gerrit authenticating as `infra-internal`. This CL doesn't
+// belong to any infra repo, and as such `infra-internal` project-scoped
+// account doesn't have READ access to it, so Gerrit responds with 404.
+// This fact is stored in .DependentMeta["infra-internal"] = 404. Later,
+// ProjectManager will read this fact, and respond on CL 200000 that CQ-Depend
+// footer is wrong.
+message DependentMeta {
+  message Meta {
+    // If true, means this CL doesn't exist or it isn't accessible to the
+    // specific LUCI project.
+    bool no_access = 1;
+    // The timestamp when this was computed.
+    google.protobuf.Timestamp update_time = 2;
+  }
+  // Maps LUCI Project to metadata.
+  map<string, Meta> by_project = 1;
+}
