@@ -88,11 +88,11 @@ type CL struct {
 	// ApplicableConfig keeps track of configs applicable to the CL.
 	ApplicableConfig *ApplicableConfig
 
-	// AsDepMeta stores metadata per LUCI project about this CL being a dependency
+	// DependentMeta stores metadata per LUCI project about this CL being a dependency
 	// of another CL in the context of the specific LUCI project.
 	//
 	// See description in protobuf type with the same name.
-	AsDepMeta *DependentMeta
+	DependentMeta *DependentMeta
 
 	// UpdateTime is exact time of when this entity was last updated.
 	//
@@ -227,11 +227,11 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 		cl.Snapshot = s
 		changed = true
 		// Wipe out corresponding AsDepMeta entry if any.
-		if m := cl.AsDepMeta.GetByProject(); m != nil {
+		if m := cl.DependentMeta.GetByProject(); m != nil {
 			if _, exists := m[s.GetLuciProject()]; exists {
 				delete(m, s.GetLuciProject())
 				if len(m) == 0 {
-					cl.AsDepMeta = nil
+					cl.DependentMeta = nil
 				}
 			}
 		}
@@ -239,11 +239,11 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 
 	switch {
 	case u.AddDependentMeta == nil:
-	case cl.AsDepMeta == nil || cl.AsDepMeta.GetByProject() == nil:
-		cl.AsDepMeta = u.AddDependentMeta
+	case cl.DependentMeta == nil || cl.DependentMeta.GetByProject() == nil:
+		cl.DependentMeta = u.AddDependentMeta
 		changed = true
 	default:
-		e := cl.AsDepMeta.GetByProject()
+		e := cl.DependentMeta.GetByProject()
 		for lProject, ameta := range u.AddDependentMeta.GetByProject() {
 			emeta, exists := e[lProject]
 			if !exists || emeta.GetUpdateTime().AsTime().Before(ameta.GetUpdateTime().AsTime()) {
@@ -281,7 +281,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID CLID, fields UpdateFi
 				_, err = insert(ctx, eid, func(cl *CL) {
 					cl.Snapshot = fields.Snapshot
 					cl.ApplicableConfig = fields.ApplicableConfig
-					cl.AsDepMeta = fields.AddDependentMeta
+					cl.DependentMeta = fields.AddDependentMeta
 				})
 				return err
 			case err != nil:
