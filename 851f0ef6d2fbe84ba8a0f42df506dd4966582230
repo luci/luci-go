@@ -22,6 +22,30 @@
       },
       "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b4eefa1_d6d3e088",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-03T23:27:24Z",
+      "side": 1,
+      "message": "We want to drop the task on fatal errors from the registered task handler. If the handler wants to retry a task on error, it can tag the error with either transient.Tag or tq.Retry tags. See https://godoc.org/go.chromium.org/luci/server/tq#Handler\n\nHow else do we communicate \"task failed to be processed and should be dropped\"? Returning an error is a natural way to signal errors. Such errors are logged and recorded in monitoring metrics etc. Asking handlers to return nil on fatal errors would mean we\u0027ll lose this information.",
+      "parentUuid": "e140a929_4d1a2cd9",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
