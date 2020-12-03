@@ -61,6 +61,41 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4c5fec8e_65778b6b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-03T15:03:03Z",
+      "side": 1,
+      "message": "Oh, I see! That makes more sense now.\n\nThe opposite of dependency (the thing being depended on) is usually dependent (the thing that depends on others). So it could also bbe DependentMeta.",
+      "parentUuid": "f5cb4d5c_0d5a269e",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eaaf3166_ce5bfb8d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-03T15:03:03Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5bac04cb_ea611708",
         "filename": "cv/internal/changelist/model.go",
         "patchSetId": 1
