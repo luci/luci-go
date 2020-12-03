@@ -202,7 +202,10 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 		return err
 	}
 
-	f.toUpdate.Snapshot = &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}}}
+	f.toUpdate.Snapshot = &changelist.Snapshot{
+		Kind:        &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}},
+		LuciProject: f.luciProject,
+	}
 	// TODO(tandrii): optimize for existing CL case.
 	if err := f.new(ctx); err != nil {
 		return err

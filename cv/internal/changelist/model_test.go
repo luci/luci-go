@@ -58,7 +58,7 @@ func TestCL(t *testing.T) {
 
 		Convey("create", func() {
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
-				cl.Snapshot = &Snapshot{Patchset: 1}
+				cl.Snapshot = makeSnapshot(epoch)
 			})
 
 			Convey("GetOrInsert succeed", func() {
@@ -68,8 +68,6 @@ func TestCL(t *testing.T) {
 				So(cl.ID, ShouldNotEqual, 0)
 				So(cl.EVersion, ShouldEqual, 1)
 				So(cl.UpdateTime, ShouldResemble, epoch)
-
-				So(cl.Snapshot.Patchset, ShouldEqual, 1)
 			})
 
 			Convey("Get exists", func() {
@@ -351,7 +349,9 @@ func makeSnapshot(updatedTime time.Time) *Snapshot {
 				},
 			},
 		}},
-		LuciProject: luciProject,
+		MinEquivalentPatchset: 1,
+		Patchset:              2,
+		LuciProject:           luciProject,
 	}
 }
 

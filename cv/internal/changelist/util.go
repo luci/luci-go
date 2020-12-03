@@ -84,3 +84,23 @@ func (cl *CL) NeedsFetching(ctx context.Context, luciProject string) (bool, erro
 		return false, nil
 	}
 }
+
+// PanicIfNotValid checks that Snapshot stored has required fields set.
+func (s *Snapshot) PanicIfNotValid() {
+	switch {
+	case s == nil:
+	case s.GetExternalUpdateTime() == nil:
+		panic("missing ExternalUpdateTime")
+	case s.GetLuciProject() == "":
+		panic("missing LuciProject")
+	case s.GetMinEquivalentPatchset() == 0:
+		panic("missing MinEquivalentPatchset")
+	case s.GetPatchset() == 0:
+		panic("missing Patchset")
+
+	case s.GetGerrit() == nil:
+		panic("Gerrit is required, until CV supports more code reviews")
+	case s.GetGerrit().GetInfo() == nil:
+		panic("Gerrit.Info is required, until CV supports more code reviews")
+	}
+}
