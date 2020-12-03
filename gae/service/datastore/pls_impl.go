@@ -300,18 +300,28 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag
 		}
 
 		prop := Property{}
+		omit := false
 		switch st.convertMethod {
 		case convertProp:
 			prop, err = v.Addr().Interface().(PropertyConverter).ToProperty()
 		case convertProto:
-			prop, err = protoToProperty(v.Interface().(proto.Message), st.protoOption)
+			if v.IsNil() {
+				// Don't emit a property for a nil proto message, such that load won't
+				// set proto field value to an empty message.
+				omit = true
+			} else {
+				prop, err = protoToProperty(v.Interface().(proto.Message), st.protoOption)
+			}
 		case convertDefault:
 			err = prop.SetValue(v.Interface(), si)
 		default:
 			panic(fmt.Errorf("unknown convertMethod: %d", st.convertMethod))
 		}
-		if err != nil {
+		switch {
+		case err != nil:
 			return err
+		case omit:
+			return nil
 		}
 
 		// If we're a slice, or we are members in a slice, then use a PropertySlice.
@@ -402,6 +412,9 @@ func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 			}
 			return prop.Value(), true
 		case convertProto:
+			if f.IsNil() {
+				return nil, false
+			}
 			prop, err := protoToProperty(f.Interface().(proto.Message), st.protoOption)
 			if err != nil {
 				return nil, false

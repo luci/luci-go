@@ -1807,8 +1807,30 @@ var testCases = []testCase{
 		loadErr: `gae: cannot load field "Msg" into a "datastore.WithProtoCompress`,
 	},
 	{
-		desc: "protos encoding: - (skip) option is respected",
-		src:  &WithProtoOmitted{Omitted: &testprotos.Msg{Str: "skipped"}},
+		desc: "protos encoding: - nil is omitted from PropertyMap",
+		src:  &WithProtoDefault{Msg: nil},
+		want: PropertyMap{},
+	},
+	{
+		desc: "protos encoding: - nil is omitted from PropertyMap: save/load",
+		src:  &WithProtoDefault{Msg: nil},
+		want: &WithProtoDefault{Msg: nil},
+	},
+	{
+		desc: "protos encoding: - empty msg is kept in PropertyMap",
+		src:  &WithProtoDefault{Msg: &testprotos.Msg{}},
+		want: PropertyMap{
+			"Msg": mpNI([]byte{protoBinOptNoCompress}), // just prefix.
+		},
+	},
+	{
+		desc: "protos encoding: - empty msg is kept in PropertyMap: save/load",
+		src:  &WithProtoDefault{Msg: &testprotos.Msg{}},
+		want: &WithProtoDefault{Msg: &testprotos.Msg{}},
+	},
+	{
+		desc: "protos encoding: - (omit) option is respected",
+		src:  &WithProtoOmitted{Omitted: &testprotos.Msg{Str: "omit"}},
 		want: &WithProtoOmitted{Omitted: nil},
 	},
 	{
