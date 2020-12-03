@@ -16,6 +16,24 @@
       "message": "lgtm, but looks like gerrit poller already depends on the old behavior?",
       "revId": "550e346de6bad12b125a071faf0f6c22ed743bb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c36cd9e5_a5297fbc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:09:59Z",
+      "side": 1,
+      "message": "Yes, i disabled that test.",
+      "parentUuid": "670a7f61_c62cf75b",
+      "revId": "550e346de6bad12b125a071faf0f6c22ed743bb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
