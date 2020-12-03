@@ -56,6 +56,9 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/gaeemulation")
+
 // ModuleOptions contain configuration of the GAE Emulation server module
 type ModuleOptions struct {
 	DSCache string // currently either "disable" (default) or "redis"
@@ -98,8 +101,15 @@ type gaeModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*gaeModule) Name() string {
-	return "go.chromium.org/luci/server/gaeemulation"
+func (*gaeModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*gaeModule) Dependencies() []module.Dependency {
+	return []module.Dependency{
+		module.OptionalDependency(redisconn.ModuleName), // for dscache, if enabled
+	}
 }
 
 // Initialize is part of module.Module interface.
@@ -112,10 +122,6 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 	case "", "disable":
 		// don't use caching
 	case "redis":
-		// TODO(vadimsh): This assumes `redisconn` server module is registered
-		// before `gaeemulation`. In theory it is possible to teach server.Server
-		// about dependencies between modules, so it always initializes them in
-		// the correct order. It is not implemented yet.
 		pool := redisconn.GetPool(ctx)
 		if pool == nil {
 			return nil, errors.Reason("can't use `-ds-cache redis`: redisconn module is not configured").Err()

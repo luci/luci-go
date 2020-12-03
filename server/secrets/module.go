@@ -30,6 +30,9 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
+// ModuleName can be used to refer to this module when declaring dependencies.
+var ModuleName = module.RegisterName("go.chromium.org/luci/server/secrets")
+
 // ModuleOptions contain configuration of the secrets server module.
 type ModuleOptions struct {
 	// RootSecret points to the root secret key used to derive all other secrets.
@@ -111,8 +114,13 @@ type serverModule struct {
 }
 
 // Name is part of module.Module interface.
-func (*serverModule) Name() string {
-	return "go.chromium.org/luci/server/secrets"
+func (*serverModule) Name() module.Name {
+	return ModuleName
+}
+
+// Dependencies is part of module.Module interface.
+func (*serverModule) Dependencies() []module.Dependency {
+	return nil
 }
 
 // Initialize is part of module.Module interface.
