@@ -52,6 +52,24 @@
       "parentUuid": "8db9351e_e647ba1c",
       "revId": "f2ea197f9222e7c6c2719286e771147bbf1b2ae4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d6cdf62_82a5587f",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:11:04Z",
+      "side": 1,
+      "message": "GoConvey is used, actually. See \"So\" below.",
+      "parentUuid": "d70be5d8_b2e5a574",
+      "revId": "f2ea197f9222e7c6c2719286e771147bbf1b2ae4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
