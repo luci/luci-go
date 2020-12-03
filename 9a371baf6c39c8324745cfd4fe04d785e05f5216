@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fca2113_301c3ee1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-03T17:16:00Z",
+      "side": 1,
+      "message": "LGTM; you could also perhaps add a test case with an invalid snapshot and assert that a panic occurs on insert/update.",
+      "revId": "9a371baf6c39c8324745cfd4fe04d785e05f5216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
