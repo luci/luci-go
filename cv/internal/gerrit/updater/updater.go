@@ -190,7 +190,9 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 		default:
 			// CL is no longer watched by the given luciProject, even though
 			// snapshot is considered up-to-date.
-			return true, changelist.Update(ctx, "", f.priorCL.ID, nil /*keep snapshot as is*/, acfg)
+			return true, changelist.Update(ctx, "", f.priorCL.ID, changelist.UpdateFields{
+				ApplicableConfig: acfg,
+			})
 		}
 	}
 	return false, nil
@@ -217,7 +219,10 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 	}
 	f.newSnapshot.MinEquivalentPatchset = int32(min)
 	f.newSnapshot.Patchset = int32(cur)
-	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.newSnapshot, f.newAcfg)
+	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), changelist.UpdateFields{
+		Snapshot:         f.newSnapshot,
+		ApplicableConfig: f.newAcfg,
+	})
 }
 
 // new efficiently fetches new snapshot from Gerrit.

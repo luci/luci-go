@@ -88,6 +88,12 @@ type CL struct {
 	// ApplicableConfig keeps track of configs applicable to the CL.
 	ApplicableConfig *ApplicableConfig
 
+	// AsDepMeta stores metadata per LUCI project about this CL being a dependency
+	// of another CL in the context of the specific LUCI project.
+	//
+	// See description in protobuf type with the same name.
+	AsDepMeta *DependentMeta
+
 	// UpdateTime is exact time of when this entity was last updated.
 	//
 	// It's not indexed to avoid hot areas in the index.
@@ -187,27 +193,83 @@ func Delete(ctx context.Context, id CLID) error {
 	return nil
 }
 
-// Update updates CL entity with Snapshot and ApplicableConfig.
+// UpdateFields defines what parts of CL metadata to update.
+//
+// At least one field must be specified.
+type UpdateFields struct {
+	// Snapshot overwrites existing CL snapshot if newer according to its
+	// .ExternalUpdateTime.
+	Snapshot *Snapshot
+	// ApplicableConfig overwrites existing CL ApplicableConfig if newer
+	// accordingto to its .UpdateTime.
+	ApplicableConfig *ApplicableConfig
+
+	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
+	// Doesn't affect metadata stored for projects not referenced here.
+	AddDependentMeta *DependentMeta
+}
+
+func (u UpdateFields) IsValid() bool {
+	return (u.Snapshot != nil ||
+		u.ApplicableConfig != nil ||
+		len(u.AddDependentMeta.GetByProject()) > 0)
+}
+
+func (u UpdateFields) apply(cl *CL) (changed bool) {
+	if u.ApplicableConfig != nil && !cl.ApplicableConfig.IsUpToDate(
+		u.ApplicableConfig.GetUpdateTime().AsTime()) {
+		cl.ApplicableConfig = u.ApplicableConfig
+		changed = true
+	}
+
+	if s := u.Snapshot; s != nil && !cl.Snapshot.IsUpToDate(
+		s.GetLuciProject(), s.GetExternalUpdateTime().AsTime()) {
+		cl.Snapshot = s
+		changed = true
+		// Wipe out corresponding AsDepMeta entry if any.
+		if m := cl.AsDepMeta.GetByProject(); m != nil {
+			if _, exists := m[s.GetLuciProject()]; exists {
+				delete(m, s.GetLuciProject())
+				if len(m) == 0 {
+					cl.AsDepMeta = nil
+				}
+			}
+		}
+	}
+
+	switch {
+	case u.AddDependentMeta == nil:
+	case cl.AsDepMeta == nil || cl.AsDepMeta.GetByProject() == nil:
+		cl.AsDepMeta = u.AddDependentMeta
+		changed = true
+	default:
+		e := cl.AsDepMeta.GetByProject()
+		for lProject, ameta := range u.AddDependentMeta.GetByProject() {
+			emeta, exists := e[lProject]
+			if !exists || emeta.GetUpdateTime().AsTime().Before(ameta.GetUpdateTime().AsTime()) {
+				e[lProject] = ameta
+				changed = true
+			}
+		}
+	}
+	return
+}
+
+// Update updates CL entity.
 //
 // Either ExternalID or a known CLID must be provided.
-// Either new Snapshot or ApplicableConfig must be provided.
 //
 // If CLID is not known and CL for provided ExternalID doesn't exist,
-// then a new CL is created with the given Snapshot & ApplicableConfig.
-//
-// Otherwise, an existing CL entity will be updated iff either:
-//  * if snapshot is given and it is more recent than what is already stored,
-//    as measured by ExternalUpdateTime.
-//  * same but for ApplicableConfig and ApplicableConfig.UpdateTime,
-//    respectively.
+// then a new CL is created with values from UpdateFields.
+// Otherwise, an existing CL entity will be updated as documented in UpdateFields.
 //
 // TODO(tandrii): emit notification events.
-func Update(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snapshot, acfg *ApplicableConfig) error {
+func Update(ctx context.Context, eid ExternalID, knownCLID CLID, fields UpdateFields) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known CLID must be provided")
 	}
-	if snapshot == nil && acfg == nil {
-		panic("either new snapshot or new ApplicableConfig must be provided")
+	if !fields.IsValid() {
+		panic("must specify at least one UpdateFields field")
 	}
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -217,8 +279,9 @@ func Update(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snaps
 			case err == datastore.ErrNoSuchEntity:
 				// Insert new entity.
 				_, err = insert(ctx, eid, func(cl *CL) {
-					cl.Snapshot = snapshot
-					cl.ApplicableConfig = acfg
+					cl.Snapshot = fields.Snapshot
+					cl.ApplicableConfig = fields.ApplicableConfig
+					cl.AsDepMeta = fields.AddDependentMeta
 				})
 				return err
 			case err != nil:
@@ -231,17 +294,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID CLID, snapshot *Snaps
 			return err
 		}
 		// Update exsting entity.
-		return update(ctx, cl, func(cl *CL) (changed bool) {
-			if snapshot != nil && !cl.Snapshot.IsUpToDate(snapshot.GetLuciProject(), snapshot.GetExternalUpdateTime().AsTime()) {
-				cl.Snapshot = snapshot
-				changed = true
-			}
-			if acfg != nil && !cl.ApplicableConfig.IsUpToDate(acfg.GetUpdateTime().AsTime()) {
-				cl.ApplicableConfig = acfg
-				changed = true
-			}
-			return
-		})
+		return update(ctx, cl, fields.apply)
 	}, nil)
 	return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
 }
