@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f5cb4d5c_0d5a269e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T00:53:13Z",
+      "side": 1,
+      "message": "I thought since this in the context of a CL:\n  DepMeta reads like it\u0027s about this CL\u0027s dependencies\nHence I as wanted to emphasize this CL as AsDep of other CL(s).\n\nBetter names welcome!",
+      "parentUuid": "babeedcd_90e017f9",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5bac04cb_ea611708",
         "filename": "cv/internal/changelist/model.go",
         "patchSetId": 1
