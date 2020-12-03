@@ -230,6 +230,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db869432_68f6e859",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T18:54:03Z",
+      "side": 1,
+      "message": "Nice",
+      "parentUuid": "5caa41e6_5546b55d",
+      "range": {
+        "startLine": 212,
+        "startChar": 1,
+        "endLine": 212,
+        "endChar": 13
+      },
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6e0d72e_a46e2ae3",
@@ -261,6 +285,24 @@
       "side": 1,
       "message": "`cl` belongs to (LUCI) project is a CV construct. Gerrit has no idea about it, and in fact can be misconfigured.\n\nThis is actually common during initial CQ set up or an addition of a new project. Once ACLs are fixed, CV happily snapshot a CL and store it here.",
       "parentUuid": "c6e0d72e_a46e2ae3",
+      "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fbe5fc0_4ebb264f",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-03T18:54:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "55584c6e_32bc0aff",
       "revId": "219d4808776a33815ea6e1fc3f0a70797cc82a86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
