@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "417e8e8a_d9e4430e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "The number of edge cases is huge, so I don\u0027t have high confidence here.\nThanks for working through this. ",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e179b885_966f91f1",
+        "filename": "led/job/job.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "nit: Shouldn\u0027t \n$ gofmt -w \nautoformat this?",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 1
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0d2d139_29e6179c",
+        "filename": "led/job/job.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "nit: i think grouping these tow makes sense, since one of them is going away in Q1.",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "565e2e84_cc61fd3b",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "iiuc, this is sha2(\u0027\u0027), right?\ndoes it mean empty Merkle tree?\n\n(either way worth documenting)",
+      "range": {
+        "startLine": 27,
+        "startChar": 14,
+        "endLine": 27,
+        "endChar": 78
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e3aaea9_fd393338",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "my brain melted 😞 Indeed, looking forward to that time.",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92e7b50e_646aff70",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-03T16:48:24Z",
+      "side": 1,
+      "message": "when would this be the case? Isn\u0027t L164 already covering this case and if not, shouldn\u0027t this be moved there?",
+      "range": {
+        "startLine": 180,
+        "startChar": 4,
+        "endLine": 180,
+        "endChar": 55
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
