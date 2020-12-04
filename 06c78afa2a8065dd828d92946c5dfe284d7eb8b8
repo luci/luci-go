@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "160c4c13_2fa436bc",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-12-04T06:21:37Z",
+      "side": 1,
+      "message": "Sorry I still don\u0027t understand why you\u0027re doing this. Why can\u0027t you set b.Proto.Tags \u003d nil and b.Proto.Steps \u003d nil instead of touching req.Build? b.Proto is not a pointer so req.Build remains untouched. In fact you\u0027re already doing this for b.Proto.Output.Properties below.",
+      "revId": "06c78afa2a8065dd828d92946c5dfe284d7eb8b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
