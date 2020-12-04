@@ -71,7 +71,7 @@ func (c *Compressed) FromSpanner(b *Buffer) error {
 		// *c might be pointing to an existing memory buffer.
 		// Try to reuse it for decoding.
 		var err error
-		if *c, err = decompress(b.ByteSlice, *c); err != nil {
+		if *c, err = Decompress(b.ByteSlice, *c); err != nil {
 			return err
 		}
 	}
@@ -85,7 +85,7 @@ func compress(data []byte) []byte {
 	return zstdEncoder.EncodeAll(data, out)
 }
 
-func decompress(src, dest []byte) ([]byte, error) {
+func Decompress(src, dest []byte) ([]byte, error) {
 	if !bytes.HasPrefix(src, zstdHeader) {
 		return nil, errors.Reason("expected ztd header").Err()
 	}

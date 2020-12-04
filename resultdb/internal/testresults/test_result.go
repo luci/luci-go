@@ -98,8 +98,8 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	}
 
 	tr.SummaryHtml = string(summaryHTML)
-	populateExpectedField(tr, maybeUnexpected)
-	populateDurationField(tr, micros)
+	PopulateExpectedField(tr, maybeUnexpected)
+	PopulateDurationField(tr, micros)
 	populateTestLocation(tr, testLocationFileName, testLocationLine)
 	if err := populateTestMetadata(tr, tmd); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
@@ -107,14 +107,16 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	return tr, nil
 }
 
-func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
+// PopulateDurationField populates tr.Duration from NullInt64.
+func PopulateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 	tr.Duration = nil
 	if micros.Valid {
 		tr.Duration = ptypes.DurationProto(time.Duration(1000 * micros.Int64))
 	}
 }
 
-func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
+// PopulateExpectedField populates tr.Expected from NullBool.
+func PopulateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
 }
 
