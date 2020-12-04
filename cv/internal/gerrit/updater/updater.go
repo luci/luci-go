@@ -58,8 +58,12 @@ func init() {
 				updatedHint = u.AsTime()
 			}
 
-			return refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
+			err := refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
 				updatedHint, changelist.CLID(t.GetClidHint()))
+			if !transient.Tag.In(err) {
+				err = tq.Fatal.Apply(err)
+			}
+			return err
 		},
 	})
 }

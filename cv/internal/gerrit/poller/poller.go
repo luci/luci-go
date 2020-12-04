@@ -98,6 +98,9 @@ func init() {
 			task := payload.(*PollGerritTask)
 			if err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime()); err != nil {
 				errors.Log(ctx, err)
+				if !transient.Tag.In(err) {
+					err = tq.Fatal.Apply(err)
+				}
 				return err
 			}
 			return nil
