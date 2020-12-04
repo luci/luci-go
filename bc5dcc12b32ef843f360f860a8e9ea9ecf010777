@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67f29d43_a0f172c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-04T01:55:16Z",
+      "side": 1,
+      "message": "Replaced Retry tag with Fatal tag, PTAL.",
+      "revId": "bc5dcc12b32ef843f360f860a8e9ea9ecf010777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
