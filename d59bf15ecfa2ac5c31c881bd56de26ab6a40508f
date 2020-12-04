@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a74c6b0_2042d367",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-04T21:47:16Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "d59bf15ecfa2ac5c31c881bd56de26ab6a40508f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5080623e_5ddb77e6",
+        "filename": "cv/internal/gerrit/updater/updater_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-04T21:47:16Z",
+      "side": 1,
+      "message": "okThenErr5xx",
+      "range": {
+        "startLine": 210,
+        "startChar": 4,
+        "endLine": 210,
+        "endChar": 16
+      },
+      "revId": "d59bf15ecfa2ac5c31c881bd56de26ab6a40508f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b957578_d3beda91",
+        "filename": "cv/internal/gerrit/updater/updater_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-04T21:47:16Z",
+      "side": 1,
+      "message": "why doesn\u0027t `if calls \u003d\u003d 0` work here?",
+      "range": {
+        "startLine": 211,
+        "startChar": 8,
+        "endLine": 211,
+        "endChar": 34
+      },
+      "revId": "d59bf15ecfa2ac5c31c881bd56de26ab6a40508f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
