@@ -68,7 +68,7 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 	case (meta.Status == config.StatusDisabled ||
 		meta.Status == config.StatusNotExists):
 		if err = datastore.Delete(ctx, &state{LuciProject: luciProject}); err != nil {
-			return errors.Annotate(err, "failed to disable poller for %q", luciProject).Tag(tq.Retry).Err()
+			return errors.Annotate(err, "failed to disable poller for %q", luciProject).Err()
 		}
 		return nil
 	case meta.Status == config.StatusEnabled:
