@@ -16,11 +16,21 @@ package updater
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -153,4 +163,96 @@ func TestRelatedChangeProcessing(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestUpdateCLWorks(t *testing.T) {
+	t.Parallel()
+
+	Convey("Updating CL works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const lProject = "infra"
+		const gHost = "chromium"
+		const gRepo = "depot_tools"
+
+		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		gobmap.Update(ctx, lProject)
+
+		Convey("No access or permission denied", func() {
+			assertDependentMetaOnly := func(change int) {
+				cl := getCL(ctx, gHost, change)
+				So(cl.Snapshot, ShouldBeNil)
+				So(cl.ApplicableConfig, ShouldBeNil)
+				So(cl.DependentMeta.GetByProject()[lProject].GetUpdateTime().AsTime(),
+					ShouldResemble, ct.Clock.Now().UTC())
+			}
+			So(refreshExternal(ctx, lProject, gHost, 404, time.Time{}, 0), ShouldBeNil)
+			assertDependentMetaOnly(404)
+			So(refreshExternal(ctx, lProject, gHost, 403, time.Time{}, 0), ShouldBeNil)
+			assertDependentMetaOnly(403)
+		})
+
+		Convey("Unhandled Gerrit error results in no CL update", func() {
+			ci500 := gf.CI(500, gf.Project(gRepo), gf.Ref("refs/heads/main"))
+			err5xx := func(gf.Operation, string) *status.Status {
+				return status.New(codes.Internal, "boo")
+			}
+			Convey("fail to fetch change details", func() {
+				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
+				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
+				cl := getCL(ctx, gHost, 500)
+				So(cl, ShouldBeNil)
+			})
+
+			Convey("fail to get filelist", func() {
+				calls := int32(0)
+				okThenErr5xx := func(o gf.Operation, p string) *status.Status {
+					if atomic.AddInt32(&calls, 1) == 1 {
+						return status.New(codes.OK, "")
+					} else {
+						return err5xx(o, p)
+					}
+				}
+				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx, ci500))
+				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
+				cl := getCL(ctx, gHost, 500)
+				So(cl, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func getCL(ctx context.Context, host string, change int) *changelist.CL {
+	eid, err := changelist.GobID(host, int64(change))
+	So(err, ShouldBeNil)
+	cl, err := eid.Get(ctx)
+	if err == datastore.ErrNoSuchEntity {
+		return nil
+	}
+	So(err, ShouldBeNil)
+	return cl
+}
+
+func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
+	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
+	for i, gRepo := range gRepos {
+		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{
+			Name:      gRepo,
+			RefRegexp: []string{"refs/heads/main"},
+		}
+	}
+	return &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: "main",
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url:      "https://" + gHost + "/",
+						Projects: projects,
+					},
+				},
+			},
+		},
+	}
 }

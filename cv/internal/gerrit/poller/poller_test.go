@@ -272,8 +272,7 @@ func TestPoller(t *testing.T) {
 					So(getCL(gHost, 33), ShouldBeNil)
 					So(getCL(gHost, 34), ShouldBeNil)
 
-					// TODO(tandrii): fix & re-enable.
-					SkipConvey("and full polls every fullPollInterval", func() {
+					Convey("and full polls every fullPollInterval", func() {
 						So(fullPollInterval, ShouldBeGreaterThan, 2*pollInterval)
 						ct.Clock.Add(fullPollInterval - 2*pollInterval)
 						// Update 2 changes in the mean time.
