@@ -16,6 +16,41 @@
       "message": "(TBH I hate this, it is now easy to make \"fork bombs\" when a task does a bunch of work submitting other tasks and then fails. tq distributed sweeper was one such case).",
       "revId": "42caa5014f9d3ffdd72f0a993651918b85ce44f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9930515d_692e021e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-04T02:51:32Z",
+      "side": 1,
+      "message": "ub",
+      "revId": "42caa5014f9d3ffdd72f0a993651918b85ce44f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fda76b46_b0a716b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-04T02:51:32Z",
+      "side": 1,
+      "message": "such things should always use deduplication key for sub-tasks,\nregardless of this CL.",
+      "parentUuid": "4ff1d947_ff0e842f",
+      "revId": "42caa5014f9d3ffdd72f0a993651918b85ce44f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
