@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "31a95c32_d1795cc8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-04T22:23:57Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "1f127ad193ff2abda4aa6ef088951c9c7100877b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "360b5615_1492d605",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-04T22:23:57Z",
+      "side": 1,
+      "message": "Weiwei, these are the test result fields to be included in TestResultBundle.Result. Among them InvocationId and ResultId are used to populate TesultResult.Name.\n\nIs there any other field you need and not included here?\n\nAlso I think you may want some ordering for the results so the results displayed on UI will be deterministic. WDYT?",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 223,
+        "endChar": 7
+      },
+      "revId": "1f127ad193ff2abda4aa6ef088951c9c7100877b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
