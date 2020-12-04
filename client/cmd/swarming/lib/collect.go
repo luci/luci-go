@@ -198,8 +198,8 @@ func (c *collectRun) Parse(args *[]string) error {
 		}
 	}
 	for _, arg := range *args {
-		if !regexp.MustCompile("^[a-z0-9]+$").MatchString(arg) {
-			return errors.Reason("task ID %q must contain only [a-z0-9]", arg).Err()
+		if !regexp.MustCompile("^[a-f0-9]+$").MatchString(arg) {
+			return errors.Reason("task ID %q must be hex ([a-f0-9])", arg).Err()
 		}
 	}
 	if len(*args) == 0 {
