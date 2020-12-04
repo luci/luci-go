@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f6072e3_319b445c",
+        "filename": "cv/internal/gerrit/updater/updater_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-04T22:04:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5080623e_5ddb77e6",
+      "range": {
+        "startLine": 210,
+        "startChar": 4,
+        "endLine": 210,
+        "endChar": 16
+      },
+      "revId": "d59bf15ecfa2ac5c31c881bd56de26ab6a40508f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3b957578_d3beda91",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-12-04T21:47:16Z",
       "side": 1,
       "message": "why doesn\u0027t `if calls \u003d\u003d 0` work here?",
+      "range": {
+        "startLine": 211,
+        "startChar": 8,
+        "endLine": 211,
+        "endChar": 34
+      },
+      "revId": "d59bf15ecfa2ac5c31c881bd56de26ab6a40508f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "413b4df9_f7a4aa8f",
+        "filename": "cv/internal/gerrit/updater/updater_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-04T22:04:14Z",
+      "side": 1,
+      "message": "Because RPCs to list files and list related changes are concurrent.",
+      "parentUuid": "3b957578_d3beda91",
       "range": {
         "startLine": 211,
         "startChar": 8,
