@@ -94,6 +94,30 @@
       },
       "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "672d9c81_ed47a45f",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-04T00:03:53Z",
+      "side": 1,
+      "message": "\u003e I have never seen transient.Tag used with `false` value. I\u0027m not even sure how to set it. \n\nit is transient.Tag.Off()\n\n\u003e If you insist on this route then we need to change tq.Retry tag into tq.Fatal or something.\n\nthat\u0027s fine too, as long as the default is to retry",
+      "parentUuid": "38f68cf6_ab20aee7",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
