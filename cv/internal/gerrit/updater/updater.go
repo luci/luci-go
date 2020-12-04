@@ -169,9 +169,6 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 	case f.priorCL.Snapshot == nil:
 		// CL is likely created as a dependency and not yet populated.
 		return false, nil
-
-	case f.priorCL.Snapshot.GetGerrit().GetInfo() == nil:
-		panic(errors.Reason("%s has snapshot without Gerrit Info", f).Err())
 	case f.priorCL.ApplicableConfig == nil:
 		panic(errors.Reason("%s has snapshot but not ApplicableConfig", f).Err())
 
@@ -189,9 +186,11 @@ func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
 		default:
 			// CL is no longer watched by the given luciProject, even though
 			// snapshot is considered up-to-date.
-			return true, changelist.Update(ctx, "", f.priorCL.ID, changelist.UpdateFields{
+			// TODO(tandrii): refactor. This code to changelist.Update smells.
+			err := changelist.Update(ctx, "", f.priorCL.ID, changelist.UpdateFields{
 				ApplicableConfig: acfg,
 			})
+			return true, err
 		}
 	}
 	return false, nil
@@ -202,25 +201,10 @@ func (f *fetcher) update(ctx context.Context) (err error) {
 		return err
 	}
 
-	f.toUpdate.Snapshot = &changelist.Snapshot{
-		Kind:        &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{}},
-		LuciProject: f.luciProject,
-	}
 	// TODO(tandrii): optimize for existing CL case.
 	if err := f.new(ctx); err != nil {
 		return err
 	}
-
-	if err := f.resolveDeps(ctx); err != nil {
-		return err
-	}
-
-	min, cur, err := gerrit.EquivalentPatchsetRange(f.toUpdate.Snapshot.GetGerrit().GetInfo())
-	if err != nil {
-		return err
-	}
-	f.toUpdate.Snapshot.MinEquivalentPatchset = int32(min)
-	f.toUpdate.Snapshot.Patchset = int32(cur)
 	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate)
 }
 
@@ -248,17 +232,45 @@ func (f *fetcher) new(ctx context.Context) error {
 		if err := f.ensureNotStale(ctx, ci.GetUpdated()); err != nil {
 			return err
 		}
-		f.toUpdate.Snapshot.GetGerrit().Info = ci
-		f.toUpdate.Snapshot.ExternalUpdateTime = ci.GetUpdated()
-	case codes.NotFound:
+	case codes.NotFound, codes.PermissionDenied:
 		// Either no access OR CL was deleted.
-		return errors.New("not implemented")
-	case codes.PermissionDenied:
-		return errors.New("not implemented")
+		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
+			ByProject: map[string]*changelist.DependentMeta_Meta{
+				f.luciProject: {
+					NoAccess:   true,
+					UpdateTime: timestamppb.New(clock.Now(ctx)),
+				},
+			},
+		}
+		return nil
 	default:
-
 		return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 	}
+
+	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
+	switch {
+	case err != nil:
+		return err
+	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
+		logging.Warningf(ctx, "%s is not watched by the %q project", f, f.luciProject)
+		return nil
+	}
+
+	f.toUpdate.Snapshot = &changelist.Snapshot{
+		LuciProject:        f.luciProject,
+		ExternalUpdateTime: ci.GetUpdated(),
+		Kind: &changelist.Snapshot_Gerrit{
+			Gerrit: &changelist.Gerrit{
+				Info: ci,
+			},
+		},
+	}
+	min, cur, err := gerrit.EquivalentPatchsetRange(ci)
+	if err != nil {
+		return err
+	}
+	f.toUpdate.Snapshot.MinEquivalentPatchset = int32(min)
+	f.toUpdate.Snapshot.Patchset = int32(cur)
 
 	switch ci.GetStatus() {
 	case gerritpb.ChangeStatus_NEW:
@@ -281,6 +293,9 @@ func (f *fetcher) new(ctx context.Context) error {
 		return err
 	}
 	if err = eg.Wait(); err != nil {
+		return err
+	}
+	if err := f.resolveDeps(ctx); err != nil {
 		return err
 	}
 	return nil
