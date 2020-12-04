@@ -118,6 +118,30 @@
       },
       "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc5c0df3_34e6977e",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-04T00:05:45Z",
+      "side": 1,
+      "message": "actually, yeah, specialized tags are better because someone somewhere might mark an error as transient with an intention unrelated to the task retry (since transient.Tag is generic)",
+      "parentUuid": "672d9c81_ed47a45f",
+      "range": {
+        "startLine": 722,
+        "startChar": 13,
+        "endLine": 722,
+        "endChar": 16
+      },
+      "revId": "851f0ef6d2fbe84ba8a0f42df506dd4966582230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
