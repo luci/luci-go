@@ -333,7 +333,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 
 		if !c.defaultFlags.Quiet {
 			fmt.Println("To collect results use:")
-			fmt.Printf("  swarming collect -server %s -output-dir out -task-summary-json summary.json -requests-json %s\n", c.serverURL, c.dumpJSON)
+			fmt.Printf("  %s collect -server %s -output-dir out -task-summary-json summary.json -requests-json %s\n", os.Args[0], c.serverURL, c.dumpJSON)
 		}
 	} else if !c.defaultFlags.Quiet {
 		fmt.Println("To collect results use:")
