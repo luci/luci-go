@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/server/tq/internal/db"
@@ -196,7 +197,11 @@ func sweepTaskRouting(disp *Dispatcher, opts DistributedSweeperOptions, exec swe
 		RoutingPrefix: opts.TaskPrefix,
 		TargetHost:    opts.TaskHost,
 		Handler: func(ctx context.Context, msg proto.Message) error {
-			return exec(ctx, msg.(*tqpb.SweepTask))
+			err := exec(ctx, msg.(*tqpb.SweepTask))
+			if err != nil && !transient.Tag.In(err) {
+				err = Fatal.Apply(err)
+			}
+			return err
 		},
 	})
 	return func(ctx context.Context, task *tqpb.SweepTask) error {

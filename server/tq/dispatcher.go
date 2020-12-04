@@ -217,8 +217,8 @@ type TaskClass struct {
 	//
 	// It is used to decide how to deserialize and route the task. Changing IDs of
 	// existing task classes is a disruptive operation, make sure the queue is
-	// drained first. The dispatcher will permanently fail all Cloud Tasks with
-	// unrecognized class IDs.
+	// drained first. The dispatcher will reject Cloud Tasks with unrecognized
+	// class IDs with HTTP 404 error (casing Cloud Tasks to retry them later).
 	//
 	// Required.
 	ID string
@@ -231,7 +231,8 @@ type TaskClass struct {
 	//
 	// It is safe to arbitrarily change this type as long as JSONPB encoding of
 	// the previous type can be decoded using the new type. The dispatcher will
-	// permanently fail Cloud Tasks with bodies it can't deserialize.
+	// reject Cloud Tasks with bodies it can't deserialize with HTTP 400 error
+	// (causing Cloud Tasks to retry them later).
 	//
 	// Required.
 	Prototype proto.Message
@@ -405,37 +406,27 @@ type Task struct {
 	ETA time.Time
 }
 
-// Retry is an error tag used to indicate that the handler wants the task to
-// be redelivered later.
+// Fatal is an error tag used to indicate that the handler wants the task to
+// be dropped.
 //
 // See Handler doc for more details.
-var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
+var Fatal = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped")}
+
+// Used to override HTTP status of some errors.
+var (
+	httpStatusKey = errors.NewTagKey("http status override")
+	httpStatus404 = errors.TagValue{Key: httpStatusKey, Value: 404}
+	httpStatus400 = errors.TagValue{Key: httpStatusKey, Value: 400}
+)
 
 // Handler is called to handle one enqueued task.
 //
-// If the returned error is tagged with Retry tag, the request finishes with
-// HTTP status 429, indicating to the backend that it should attempt to execute
-// the task later (which it may or may not do, depending on retry config). Same
-// happens if the error is transient (i.e. tagged with the transient.Tag),
-// except the request finishes with HTTP status 500. This difference allows to
-// distinguish "expected" retry requests (errors tagged with Retry) from
-// "unexpected" ones (errors tagged with transient.Tag).
+// If it returns an error tagged with Fatal tag, the task will be dropped with
+// HTTP 202 reply to Cloud Tasks. Otherwise it will be retried later (per the
+// queue configuration) with HTTP 429 reply.
 //
-// Retry tag should be used **only** if the handler is fully aware of the retry
-// semantics and it **explicitly** wants the task to be retried because it can't
-// be processed right now and the handler expects that the retry may help.
-//
-// For a contrived example, if the handler can process the task only after 2 PM,
-// but it is 01:55 PM now, the handler should return an error tagged with Retry
-// to indicate this. On the other hand, if the handler failed to process the
-// task due to an RPC timeout or some other exceptional transient situation, it
-// should return an error tagged with transient.Tag.
-//
-// Note that it is OK (and often desirable) to tag an error with both Retry and
-// transient.Tag. Such errors propagate through the call stack as transient,
-// until they reach Dispatcher, which treats them as retriable.
-//
-// An untagged error (or success) marks the task as "done", it won't be retried.
+// Errors tagged with transient.Tag result in HTTP 500 replies. They also
+// trigger a retry.
 type Handler func(ctx context.Context, payload proto.Message) error
 
 // ExecutionInfo is parsed from incoming task's metadata.
@@ -701,17 +692,8 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		body, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
 			httpReply(c, 500, "Failed to read the request", err)
-			return
-		}
-		switch err := d.handlePush(c.Context, body, parseHeaders(c.Request.Header)); {
-		case err == nil:
-			httpReply(c, 200, "OK", nil)
-		case Retry.In(err):
-			httpReply(c, 429, "The handler asked for retry", err)
-		case transient.Tag.In(err):
-			httpReply(c, 500, "Transient error", err)
-		default:
-			httpReply(c, 202, "Fatal error", err)
+		} else {
+			replyWithErr(c, d.handlePush(c.Context, body, parseHeaders(c.Request.Header)))
 		}
 	})
 }
@@ -732,14 +714,11 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 	}
 
 	r.GET(path, mw, func(c *router.Context) {
-		switch err := d.Sweep(c.Context); {
-		case err == nil:
-			httpReply(c, 200, "OK", nil)
-		case transient.Tag.In(err):
-			httpReply(c, 500, "Transient error", err)
-		default:
-			httpReply(c, 202, "Fatal error", err)
+		err := d.Sweep(c.Context)
+		if err != nil && !transient.Tag.In(err) {
+			err = Fatal.Apply(err)
 		}
+		replyWithErr(c, err)
 	})
 }
 
@@ -1088,7 +1067,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "bad_request")
-		return errors.Annotate(err, "not a valid JSON body").Err()
+		return errors.Annotate(err, "not a valid JSON body").Tag(httpStatus400).Err()
 	}
 
 	// Find the matching registered task class. Newer tasks always have `class`
@@ -1101,7 +1080,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	} else if env.Type != "" {
 		cls, h, err = d.classByTyp(env.Type)
 	} else {
-		err = errors.Reason("malformed task body, no class").Err()
+		err = errors.Reason("malformed task body, no class").Tag(httpStatus400).Err()
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
@@ -1124,13 +1103,13 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 
 	if h == nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "no_handler")
-		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
+		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Tag(httpStatus404).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, "bad_payload")
-		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
+		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Tag(httpStatus400).Err()
 	}
 
 	ctx = context.WithValue(ctx, &executionInfoKey, &info)
@@ -1141,12 +1120,12 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 
 	result := "OK"
 	switch {
-	case Retry.In(err):
-		result = "retry"
+	case Fatal.In(err):
+		result = "fatal"
 	case transient.Tag.In(err):
 		result = "transient"
 	case err != nil:
-		result = "fatal"
+		result = "retry"
 	}
 
 	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result)
@@ -1165,7 +1144,7 @@ func (d *Dispatcher) classByID(id string) (*taskClassImpl, Handler, error) {
 	if cls := d.clsByID[id]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Err()
+	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Tag(httpStatus404).Err()
 }
 
 // classByMsg returns a task class given proto message or an error if no
@@ -1180,7 +1159,7 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 	if cls := d.clsByTyp[typ]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Tag(httpStatus404).Err()
 }
 
 // classByTyp returns a task class given proto message name or an error if no
@@ -1191,14 +1170,14 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	msgTyp, _ := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typ))
 	if msgTyp == nil {
-		return nil, nil, errors.Reason("no proto message %q is registered", typ).Err()
+		return nil, nil, errors.Reason("no proto message %q is registered", typ).Tag(httpStatus404).Err()
 	}
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByTyp[msgTyp]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Tag(httpStatus404).Err()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1375,4 +1354,22 @@ func httpReply(c *router.Context, code int, msg string, err error) {
 		logging.Errorf(c.Context, "%s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
+}
+
+// replyWithErr calls httpReply deriving status code from `err`.
+func replyWithErr(c *router.Context, err error) {
+	switch {
+	case err == nil:
+		httpReply(c, 200, "OK", nil)
+	case Fatal.In(err):
+		httpReply(c, 202, "Fatal error", err)
+	case transient.Tag.In(err):
+		httpReply(c, 500, "Transient error", err)
+	default:
+		status := 429
+		if code, ok := errors.TagValueIn(httpStatusKey, err); ok {
+			status = code.(int)
+		}
+		httpReply(c, status, "Error", err)
+	}
 }

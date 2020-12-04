@@ -21,7 +21,6 @@ import (
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq/tqtesting"
 )
 
@@ -77,5 +76,5 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 	info.ExecutionCount = t.Attempts - 1
 
 	err := e.d.handlePush(ctx, body, info)
-	retry = Retry.In(err) || transient.Tag.In(err)
+	retry = err != nil && !Fatal.In(err)
 }
