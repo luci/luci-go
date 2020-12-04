@@ -15,6 +15,7 @@
 package spanutil
 
 import (
+	"fmt"
 	"reflect"
 
 	"cloud.google.com/go/spanner"
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -109,6 +111,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.StringSlice
 	case proto.Message:
 		spanPtr = &b.ByteSlice
+	case *uipb.TestVariantStatus:
+		spanPtr = &b.Int64
 	default:
 		spanPtr = goPtr
 	}
@@ -170,8 +174,10 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			panic(err)
 		}
 
+	case *uipb.TestVariantStatus:
+		*goPtr = uipb.TestVariantStatus(b.Int64)
 	default:
-		panic("impossible")
+		panic(fmt.Sprintf("impossible %q", goPtr))
 	}
 	return nil
 }
