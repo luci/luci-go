@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "859f230d_e711de92",
+        "filename": "client/cmd/swarming/lib/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-12-04T04:53:16Z",
+      "side": 1,
+      "message": "must be hex?",
+      "range": {
+        "startLine": 202,
+        "startChar": 40,
+        "endLine": 202,
+        "endChar": 62
+      },
+      "revId": "b70ce777482f3879fdea3c15a64337fe75095ccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
