@@ -209,7 +209,8 @@ type UpdateFields struct {
 	AddDependentMeta *DependentMeta
 }
 
-func (u UpdateFields) IsValid() bool {
+// IsEmpty returns true if no updates are necessary.
+func (u UpdateFields) IsEmpty() bool {
 	return (u.Snapshot != nil ||
 		u.ApplicableConfig != nil ||
 		len(u.AddDependentMeta.GetByProject()) > 0)
@@ -268,7 +269,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID CLID, fields UpdateFi
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known CLID must be provided")
 	}
-	if !fields.IsValid() {
+	if !fields.IsEmpty() {
 		panic("must specify at least one UpdateFields field")
 	}
 
