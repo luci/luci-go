@@ -100,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea694c73_f49d5ba5",
+        "filename": "led/job/job.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-05T01:55:18Z",
+      "side": 1,
+      "message": "Ah, ACK!",
+      "parentUuid": "3af008e8_51171a48",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "565e2e84_cc61fd3b",
@@ -219,6 +237,30 @@
       "side": 1,
       "message": "No, L164 doesn\u0027t cover it. Because of the default block (L157), a casUserPayload with casInstance and empty hash can still go to the L164.  Then this line of code can capture that situation.",
       "parentUuid": "92e7b50e_646aff70",
+      "range": {
+        "startLine": 180,
+        "startChar": 4,
+        "endLine": 180,
+        "endChar": 55
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41fff9fb_ac5514e7",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-05T01:55:18Z",
+      "side": 1,
+      "message": "Oh yes. This really is hard code 😞",
+      "parentUuid": "4465db46_08dfbfa9",
       "range": {
         "startLine": 180,
         "startChar": 4,
