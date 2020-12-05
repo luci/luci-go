@@ -148,6 +148,20 @@ func TestQueryTestVariants(t *testing.T) {
 						"16/T6/e3b0c44298fc1c14",
 					})
 				})
+
+				Convey(`paging works`, func() {
+					q.PageSize = 3
+					_, token := mustFetch(q)
+					So(token, ShouldEqual, pagination.Token("FLAKY", "T2", "e3b0c44298fc1c14"))
+
+					q.PageToken = token
+					tvs, nextToken := mustFetch(q)
+					So(getTvStrings(tvs), ShouldResemble, []string{
+						"2/T5/c467ccce5a16dc72",
+						"3/T1/e3b0c44298fc1c14",
+					})
+					So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+				})
 			})
 		})
 
