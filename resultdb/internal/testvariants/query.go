@@ -17,13 +17,16 @@ package testvariants
 import (
 	"bytes"
 	"context"
+	"strconv"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -35,6 +38,8 @@ import (
 type Query struct {
 	InvocationIDs invocations.IDSet
 	PageSize      int // must be positive
+	// Populated by test variant status, test id and variant hash.
+	PageToken string
 }
 
 // tvResult matches the result STRUCT of a test variant from the query.
@@ -79,8 +84,32 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		panic("PageSize < 0")
 	}
 
+	var unexpected bool
+	switch parts, err := pagination.ParseToken(q.PageToken); {
+	case err != nil:
+		return err
+	case len(parts) == 0:
+		unexpected = true
+	case len(parts) != 3:
+		return pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
+	default:
+		tvStatusInt, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return pagination.InvalidToken(err)
+		}
+		if _, ok := uipb.TestVariantStatus_name[int32(tvStatusInt)]; !ok {
+			return pagination.InvalidToken(errors.Reason("unrecognized test variant status: %d", tvStatusInt).Err())
+		}
+		unexpected = uipb.TestVariantStatus(int32(tvStatusInt)) != uipb.TestVariantStatus_EXPECTED
+	}
+
 	var sql bytes.Buffer
-	if err := queryTmpl.Execute(&sql, nil); err != nil {
+	input := struct {
+		Unexpected bool
+	}{
+		unexpected,
+	}
+	if err := queryTmpl.Execute(&sql, input); err != nil {
 		return err
 	}
 	st := spanner.NewStatement(sql.String())
@@ -111,6 +140,10 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		}
 
 		//Populate tv.Exonerations
+		if tv.Status == uipb.TestVariantStatus_EXPECTED {
+			// No exoneration for test variants with only expected results.
+			return f(tv)
+		}
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
 			var expBytes []byte
@@ -133,8 +166,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		panic("PageSize <= 0")
 	}
 
-	// TODO(crbug.com/1112127): query expected results.
-	// TODO(crbug.com/1112127): add paging.
+	// TODO(crbug.com/1112127): populate next page token.
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	err = q.run(ctx, func(tv *uipb.TestVariant) error {
 		tvs = append(tvs, tv)
@@ -150,7 +182,11 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 // queryTmpl is a set of templates that generate the SQL statements to query test variants.
 var queryTmpl = template.Must(template.New("testVariants").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
+{{if .Unexpected}}
 	{{template "testVariantsWithUnexpectedResultsTmpl" .}}
+{{else}}
+	{{template "testVariantsWithOnlyExpectedResultsTmpl" .}}
+{{end}}
 LIMIT @limit
 
 {{define "testVariantsWithUnexpectedResultsTmpl"}}
@@ -206,6 +242,29 @@ LIMIT @limit
 	{{template "columns"}}
 	FROM testVariantsWithUnexpectedResults
 	ORDER BY TvStatus, TestId, VariantHash
+{{end}}
+
+{{define "testVariantsWithOnlyExpectedResultsTmpl"}}
+	WITH testVariantsWithOnlyExpectedResults AS (
+		SELECT
+			TestId,
+			VariantHash,
+			ANY_VALUE(Variant) Variant,
+			16 TvStatus, -- "EXPECTED"
+			COUNTIF(IsUnexpected) num_unexpected,
+			{{template "testResults"}},
+			-- Placeholder for exonerationExplanations. So that Spanner knows
+			-- the right SQL type to infer.
+			[SAFE_CAST("" AS BYTES)] exonerationExplanations
+		FROM TestResults
+		WHERE InvocationId in UNNEST(@invIDs)
+		GROUP BY TestId, VariantHash
+		HAVING num_unexpected = 0
+		ORDER BY TestId, VariantHash
+	)
+	{{template "columns"}}
+	FROM testVariantsWithOnlyExpectedResults
+	ORDER BY TestId, VariantHash
 {{end}}
 
 {{define "testResults"}}
