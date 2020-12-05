@@ -83,12 +83,19 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		panic("PageSize < 0")
 	}
 
+	params := map[string]interface{}{
+		"invIDs": q.InvocationIDs,
+		"limit":  q.PageSize,
+	}
 	var unexpected bool
 	switch parts, err := pagination.ParseToken(q.PageToken); {
 	case err != nil:
 		return err
 	case len(parts) == 0:
 		unexpected = true
+		params["afterTvStatus"] = 0
+		params["afterTestId"] = ""
+		params["afterVariantHash"] = ""
 	case len(parts) != 3:
 		return pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
 	default:
@@ -97,6 +104,9 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 			return pagination.InvalidToken(errors.Reason("unrecognized test variant status: %s", parts[0]).Err())
 		}
 		unexpected = uipb.TestVariantStatus(status) != uipb.TestVariantStatus_EXPECTED
+		params["afterTvStatus"] = int(status)
+		params["afterTestId"] = parts[1]
+		params["afterVariantHash"] = parts[2]
 	}
 
 	var sql bytes.Buffer
@@ -109,10 +119,7 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		return err
 	}
 	st := spanner.NewStatement(sql.String())
-	st.Params = map[string]interface{}{
-		"invIDs": q.InvocationIDs,
-		"limit":  q.PageSize,
-	}
+	st.Params = params
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -162,7 +169,6 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		panic("PageSize <= 0")
 	}
 
-	// TODO(crbug.com/1112127): populate next page token.
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	err = q.run(ctx, func(tv *uipb.TestVariant) error {
 		tvs = append(tvs, tv)
@@ -172,6 +178,20 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		tvs = nil
 		return
 	}
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(tvs) == q.PageSize {
+		last := tvs[q.PageSize-1]
+		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
+	}
+
+	// If we got less than one page of test variants with unexpected results,
+	// compute the nextPageToken for test variants with only expected results.
+	// TODO(crbug.com/1112127): Return unexpected and expected results in the same page.
+	if tvs[0].Status != uipb.TestVariantStatus_EXPECTED && len(tvs) < q.PageSize {
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
+	}
+
 	return
 }
 
@@ -237,6 +257,12 @@ LIMIT @limit
 
 	{{template "columns"}}
 	FROM testVariantsWithUnexpectedResults
+	{{/* Apply the page token */}}
+	WHERE (
+		(TvStatus > @afterTvStatus) OR
+		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TvStatus, TestId, VariantHash
 {{end}}
 
@@ -260,6 +286,11 @@ LIMIT @limit
 	)
 	{{template "columns"}}
 	FROM testVariantsWithOnlyExpectedResults
+	{{/* Apply the page token */}}
+	WHERE (
+		(TestId > @afterTestId) OR
+		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TestId, VariantHash
 {{end}}
 
