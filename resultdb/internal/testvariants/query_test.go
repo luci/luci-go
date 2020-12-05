@@ -142,10 +142,24 @@ func TestQueryTestVariants(t *testing.T) {
 				})
 
 				Convey(`Expected works`, func() {
-					q.PageToken = pagination.Token("16", "", "")
+					q.PageToken = pagination.Token("EXPECTED", "", "")
 					So(mustFetchTvStrings(q), ShouldResemble, []string{
 						"16/T3/e3b0c44298fc1c14",
 						"16/T6/e3b0c44298fc1c14",
+					})
+				})
+
+				Convey(`paging works`, func() {
+					q.PageSize = 3
+					_, token := mustFetch(q)
+					parts, _ := pagination.ParseToken(token)
+					fmt.Println(parts[0], parts[1], parts[2])
+					So(token, ShouldEqual, pagination.Token("FLAKY", "T2", "e3b0c44298fc1c14"))
+
+					q.PageToken = token
+					So(mustFetchTvStrings(q), ShouldResemble, []string{
+						"2/T5/c467ccce5a16dc72",
+						"3/T1/e3b0c44298fc1c14",
 					})
 				})
 			})
@@ -154,12 +168,6 @@ func TestQueryTestVariants(t *testing.T) {
 		Convey(`Page Token`, func() {
 			Convey(`wrong number of parts`, func() {
 				q.PageToken = pagination.Token("testId", "variantHash")
-				_, _, err := q.Fetch(ctx)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
-			})
-
-			Convey(`first part not int`, func() {
-				q.PageToken = pagination.Token("unexpected", "testId", "variantHash")
 				_, _, err := q.Fetch(ctx)
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 			})
