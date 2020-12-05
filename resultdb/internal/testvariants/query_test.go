@@ -148,6 +148,14 @@ func TestQueryTestVariants(t *testing.T) {
 						"16/T6/e3b0c44298fc1c14",
 					})
 				})
+
+				Convey(`paging works`, func() {
+					q.PageToken = pagination.Token("2", "T2", "e3b0c44298fc1c14")
+					So(mustFetchTvStrings(q), ShouldResemble, []string{
+						"2/T5/c467ccce5a16dc72",
+						"3/T1/e3b0c44298fc1c14",
+					})
+				})
 			})
 		})
 
