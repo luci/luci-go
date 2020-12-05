@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "483ba0b0_d497d881",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-05T06:39:20Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd13101a_65ca7615",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-05T06:39:20Z",
+      "side": 1,
+      "message": "I\u0027m thinking of returning test variants with only expected results in the same page of test variants with unexpected results, the benefit is to make sure all pages have pageSize test variants.\n\nBut on the other hand, if we don\u0027t do that, then UI can easily tell when all the test variants with unexpected results have been fetched, and all the remainders are for expected only ones.\n\nWeiwei, WDYT?",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 85
+      },
+      "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
