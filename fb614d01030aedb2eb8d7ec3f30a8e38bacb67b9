@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54a248fb_a47d28c1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-05T03:07:52Z",
+      "side": 1,
+      "message": "I have no idea how it would look though.",
+      "range": {
+        "startLine": 11,
+        "startChar": 24,
+        "endLine": 11,
+        "endChar": 70
+      },
+      "revId": "fb614d01030aedb2eb8d7ec3f30a8e38bacb67b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee8275d8_7ffb35f2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-05T03:07:52Z",
+      "side": 1,
+      "message": "I\u0027m considering doing the same for GKE too. By default requests will have 1m timeout, but TQ handlers will have 10m.",
+      "range": {
+        "startLine": 12,
+        "startChar": 44,
+        "endLine": 13,
+        "endChar": 51
+      },
+      "revId": "fb614d01030aedb2eb8d7ec3f30a8e38bacb67b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
