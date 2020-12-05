@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d61c147f_064f1089",
+        "filename": "led/job/job.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-05T00:38:25Z",
+      "side": 1,
+      "message": "thx for noticing it. I forgot to turn on the autoformat for it.",
+      "parentUuid": "e179b885_966f91f1",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 1
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0d2d139_29e6179c",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-12-03T16:48:24Z",
       "side": 1,
       "message": "nit: i think grouping these tow makes sense, since one of them is going away in Q1.",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3af008e8_51171a48",
+        "filename": "led/job/job.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-05T00:38:25Z",
+      "side": 1,
+      "message": "The reason for keeping rbeCasInput and isoInput separately is due to the python part - http://crrev.com/c/2573421. So in future, the unused isoInput related code in go and py can be directly deleted easier, compared with the mixing them into one prop.",
+      "parentUuid": "c0d2d139_29e6179c",
       "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -83,6 +125,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "98e58b1d_f9cbb889",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-05T00:38:25Z",
+      "side": 1,
+      "message": "It\u0027s the sha256 value of an empty string. We need to specify it in oder to have the output on the RBE-CAS as mentioned in the migration doc - https://screenshot.googleplex.com/6aBp4PNeftg9KyT.\n\nI\u0027ve added a comment.",
+      "parentUuid": "565e2e84_cc61fd3b",
+      "range": {
+        "startLine": 27,
+        "startChar": 14,
+        "endLine": 27,
+        "endChar": 78
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1e3aaea9_fd393338",
         "filename": "led/job/jobexport/swarming.go",
         "patchSetId": 5
@@ -94,6 +160,24 @@
       "writtenOn": "2020-12-03T16:48:24Z",
       "side": 1,
       "message": "my brain melted 😞 Indeed, looking forward to that time.",
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04b2a798_3302f5fa",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-05T00:38:25Z",
+      "side": 1,
+      "message": "Yeah, it\u0027s very tricky. The complexity is brought in as led tool allows users directly to change the job.json file. We need to cover all corner cases. \n\nThat\u0027s also why I\u0027m thinking the release process needs to be very carefully.",
+      "parentUuid": "1e3aaea9_fd393338",
       "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -111,6 +195,30 @@
       "writtenOn": "2020-12-03T16:48:24Z",
       "side": 1,
       "message": "when would this be the case? Isn\u0027t L164 already covering this case and if not, shouldn\u0027t this be moved there?",
+      "range": {
+        "startLine": 180,
+        "startChar": 4,
+        "endLine": 180,
+        "endChar": 55
+      },
+      "revId": "81642bb12c0166f0d9b3a6d6ed80b0a8007dca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4465db46_08dfbfa9",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-05T00:38:25Z",
+      "side": 1,
+      "message": "No, L164 doesn\u0027t cover it. Because of the default block (L157), a casUserPayload with casInstance and empty hash can still go to the L164.  Then this line of code can capture that situation.",
+      "parentUuid": "92e7b50e_646aff70",
       "range": {
         "startLine": 180,
         "startChar": 4,
