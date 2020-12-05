@@ -21,9 +21,18 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api"
 )
 
+var (
+	// In order to have swarming service to upload output to RBE-CAS when no inputs.
+	dummyCasDigest = &swarming.SwarmingRpcsDigest{
+		Hash:            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		SizeBytes:       0,
+		ForceSendFields: []string{"SizeBytes"},
+	}
+)
+
 // ToSwarmingNewTask renders a swarming proto task to a
 // SwarmingRpcsNewTaskRequest.
-func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree, casUserPayload *apipb.CASReference) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	task := sw.Task
 	ret := &swarming.SwarmingRpcsNewTaskRequest{
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
@@ -43,16 +52,37 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 	}
 
 	upDigest := userPayload.GetDigest()
+	cupDigest := casUserPayload.GetDigest()
+
+	if upDigest != "" && cupDigest != nil {
+		return nil, errors.New("can't have both isolate and RBE-CAS digests")
+	}
 
 	for i, slice := range task.TaskSlices {
 		props := slice.Properties
 
-		slcDgst := props.GetCasInputs().GetDigest()
-
-		if slcDgst != "" && upDigest != "" && slcDgst != upDigest {
+		slcIsoDgst := props.GetCasInputs().GetDigest()
+		slcCasDgst := props.GetCasInputRoot().GetDigest()
+		// validate all isolate and rbe-cas related fields.
+		if slcIsoDgst != "" && slcCasDgst != nil {
+			return nil, errors.Reason("slice %d isn't allowed to define both CasInputs and CasInputRoot", i).Err()
+		}
+		if slcIsoDgst != "" && upDigest != "" && slcIsoDgst != upDigest {
 			return nil, errors.Reason(
 				"slice %d defines CasInputs, but job.UserPayload is also defined. "+
 					"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i).Err()
+		}
+		if slcCasDgst != nil && cupDigest != nil &&
+			(slcCasDgst.Hash != cupDigest.Hash || slcCasDgst.SizeBytes != cupDigest.SizeBytes) {
+			return nil, errors.Reason(
+				"slice %d defines CasInputRoot, but job.CasUserPayload is also defined. "+
+					"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i).Err()
+		}
+		if slcIsoDgst != "" && cupDigest != nil {
+			return nil, errors.Reason("slice %d defines CasInput, but job defines cas user payload.", i).Err()
+		}
+		if slcCasDgst != nil && upDigest != "" {
+			return nil, errors.Reason("slice %d defines CasInputRoot, but job defines isolate user payload.", i).Err()
 		}
 
 		toAdd := &swarming.SwarmingRpcsTaskSlice{
@@ -89,36 +119,65 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 			}
 		}
 
-		// This is really awkward!
+		// If we have isolate digest info, add the isolate info into task slice props.
+		// Otherwise, if we have rbe-cas digest info, use that info.
+		// Otherwise, if none of the above info exists, populate a dummy rbe-cas prop.
 		//
-		//   If the slice has a digest, then we always use all that info.
-		//   Otherwise if the job-global "UserPayload" has a digest, then use all of
-		//     that info.
-		//   Otherwise, if the slice has just namespace/server info, then use that.
-		//   Finally, fall back to the server info in UserPayload
+		// The digest info in the slice will be used first. If it's not there, then
+		// fall back to use the info in job-global "UserPayload" or "CasUserPayload"
 		//
-		// Isn't isolate so simple?
-		var isoToUse *apipb.CASTree
-		sliceIso := props.CasInputs
-		jobIso := userPayload
+		// (The twisted logic will look a little bit better, after completely getting rid of isolate.)
+
 		switch {
-		case sliceIso.GetDigest() != "":
-			isoToUse = sliceIso
-
-		case jobIso.GetDigest() != "":
-			isoToUse = jobIso
-
-		case sliceIso.GetServer() != "" || sliceIso.GetNamespace() != "":
-			isoToUse = sliceIso
-
-		default:
-			isoToUse = jobIso
-		}
-		if isoToUse != nil {
+		case slcIsoDgst != "":
 			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
-				Isolated:       isoToUse.Digest,
-				Isolatedserver: isoToUse.Server,
-				Namespace:      isoToUse.Namespace,
+				Isolated:       userPayload.Digest,
+				Isolatedserver: userPayload.Server,
+				Namespace:      userPayload.Namespace,
+			}
+		case upDigest != "":
+			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
+				Isolated:       props.CasInputs.Digest,
+				Isolatedserver: props.CasInputs.Server,
+				Namespace:      props.CasInputs.Namespace,
+			}
+		default:
+			var casToUse *apipb.CASReference
+			sliceCas := props.CasInputRoot
+			jobCas := casUserPayload
+			switch {
+			case sliceCas.GetDigest().GetHash() != "":
+				casToUse = sliceCas
+			case jobCas.GetDigest().GetHash() != "":
+				casToUse = jobCas
+			case sliceCas.GetCasInstance() != "":
+				casToUse = sliceCas
+			default:
+				casToUse = jobCas
+			}
+
+			if casToUse != nil {
+				toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
+					CasInstance: casToUse.CasInstance,
+					Digest: &swarming.SwarmingRpcsDigest{
+						Hash:            casToUse.Digest.GetHash(),
+						SizeBytes:       casToUse.Digest.GetSizeBytes(),
+						ForceSendFields: []string{"SizeBytes"}, // in case SizeBytes value is 0.
+					},
+				}
+			} else {
+				// populate a dummy CasInputRoot in order to use RBE-CAS.
+				casIns, err := job.ToCasInstance(sw.Hostname)
+				if err != nil {
+					return nil, err
+				}
+				toAdd.Properties.CasInputRoot = &swarming.SwarmingRpcsCASReference{
+					CasInstance: casIns,
+					Digest:      dummyCasDigest,
+				}
+			}
+			if toAdd.Properties.CasInputRoot.Digest.Hash == "" {
+				toAdd.Properties.CasInputRoot.Digest = dummyCasDigest
 			}
 		}
 
