@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "900dd6f9_672bb34d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-06T21:15:53Z",
+      "side": 1,
+      "message": "What is the reason for this? I think summaryHTML is not the complete replacement of status.",
+      "range": {
+        "startLine": 9,
+        "startChar": 2,
+        "endLine": 9,
+        "endChar": 50
+      },
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a75c4ef2_87cadf52",
