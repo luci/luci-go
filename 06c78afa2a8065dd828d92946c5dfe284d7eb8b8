@@ -34,6 +34,24 @@
       "parentUuid": "160c4c13_2fa436bc",
       "revId": "06c78afa2a8065dd828d92946c5dfe284d7eb8b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f1cd9e5_a586d945",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-12-06T07:02:29Z",
+      "side": 1,
+      "message": "I\u0027d say who cares, deferring a function to restore the nil\u0027ed values seems more complex compared to the time we\u0027re saving not copying fields unnecessarily. Especially since we\u0027re coming from Python so virtually any implementation here should be an improvement.",
+      "parentUuid": "155d1707_e771ea60",
+      "revId": "06c78afa2a8065dd828d92946c5dfe284d7eb8b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
