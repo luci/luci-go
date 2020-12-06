@@ -16,6 +16,8 @@ package updater
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -171,12 +173,12 @@ func TestUpdateCLWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("Updating CL works", t, func() {
-		// TODO(tandrii): test processing dependencies.
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const lProject = "infra"
 		const gHost = "chromium-review.example.com"
+		const gHostInternal = "internal-review.example.com"
 		const gRepo = "depot_tools"
 
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
@@ -219,8 +221,13 @@ func TestUpdateCLWorks(t *testing.T) {
 		})
 
 		Convey("Fetch for the first time", func() {
-			ci := gf.CI(123, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.Files("a.cpp", "c/b.py"))
-			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+			ci := gf.CI(123, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+				gf.Files("a.cpp", "c/b.py"), gf.Desc("T.\n\nCq-Depend: 101"))
+			ciParent := gf.CI(122, gf.Desc("Z\n\nCq-Depend: must-be-ignored:47"))
+			ciGrandpa := gf.CI(121, gf.Desc("Z\n\nCq-Depend: must-be-ignored:46"))
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci, ciParent, ciGrandpa))
+			ct.GFake.SetDependsOn(gHost, ci, ciParent)
+			ct.GFake.SetDependsOn(gHost, ciParent, ciGrandpa)
 
 			So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
@@ -231,6 +238,47 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
 			So(cl.Snapshot.GetLuciProject(), ShouldEqual, lProject)
 			So(cl.Snapshot.GetExternalUpdateTime(), ShouldResembleProto, ci.GetUpdated())
+			So(cl.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto,
+				[]*changelist.GerritGitDep{
+					{Change: 122, Immediate: true},
+					{Change: 121},
+				})
+			So(cl.Snapshot.GetGerrit().GetSoftDeps(), ShouldResembleProto,
+				[]*changelist.GerritSoftDep{
+					{Change: 101, Host: gHost},
+				})
+
+			// Each of the dep should have an existing CL + a task schedule.
+			expectedDeps := []*changelist.Dep{
+				{Clid: int64(getCL(ctx, gHost, 122).ID), Kind: changelist.DepKind_HARD},
+				{Clid: int64(getCL(ctx, gHost, 121).ID), Kind: changelist.DepKind_SOFT},
+				{Clid: int64(getCL(ctx, gHost, 101).ID), Kind: changelist.DepKind_SOFT},
+			}
+			sort.Slice(expectedDeps, func(i, j int) bool {
+				return expectedDeps[i].GetClid() < expectedDeps[j].GetClid()
+			})
+			So(cl.Snapshot.GetDeps(), ShouldResembleProto, expectedDeps)
+			expectedTasks := []*RefreshGerritCL{
+				{
+					LuciProject: lProject,
+					Host:        gHost,
+					Change:      101,
+					ClidHint:    int64(getCL(ctx, gHost, 101).ID),
+				},
+				{
+					LuciProject: lProject,
+					Host:        gHost,
+					Change:      121,
+					ClidHint:    int64(getCL(ctx, gHost, 121).ID),
+				},
+				{
+					LuciProject: lProject,
+					Host:        gHost,
+					Change:      122,
+					ClidHint:    int64(getCL(ctx, gHost, 122).ID),
+				},
+			}
+			So(sortedTasks(ct), ShouldResembleProto, expectedTasks)
 
 			// Simulate Gerrit change being updated with +1s timestamp.
 			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
@@ -267,13 +315,16 @@ func TestUpdateCLWorks(t *testing.T) {
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Second))
 
 				Convey("New revision doesn't re-use files & related changes", func() {
-					ct.Clock.Add(time.Minute)
+					// Stay within the same blindRefreshInterval for de-duping refresh
+					// tasks of dependencies.
+					ct.Clock.Add(blindRefreshInterval - 2*time.Second)
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLPublic()
+						// Simulate new patchset which no longer has GerritGitDeps.
 						gf.PS(10)(c.Info)
 						gf.Files("z.zz")(c.Info)
-						// TODO(tandrii): test CQ-Depend once works.
-						// gf.Desc("T\n\nCq-Depend: 122")(c.Info)
+						// 101 is from before, internal:477 is new.
+						gf.Desc("T\n\nCq-Depend: 101,internal:477")(c.Info)
 						gf.Updated(ct.Clock.Now())(c.Info)
 					})
 
@@ -282,6 +333,22 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
 					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 					So(cl3.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"z.zz"})
+					So(cl3.Snapshot.GetGerrit().GetGitDeps(), ShouldBeNil)
+					So(cl3.Snapshot.GetGerrit().GetSoftDeps(), ShouldResembleProto,
+						[]*changelist.GerritSoftDep{
+							{Change: 101, Host: gHost},
+							{Change: 477, Host: gHostInternal},
+						})
+					// For each dep, a task should have been created, but 101 should have
+					// been de-duped with an earlier one. So, only 1 new task for 477:
+					So(sortedTasks(ct), ShouldResembleProto, append(expectedTasks,
+						&RefreshGerritCL{
+							LuciProject: lProject,
+							Host:        gHostInternal,
+							Change:      477,
+							ClidHint:    int64(getCL(ctx, gHostInternal, 477).ID),
+						},
+					))
 				})
 			})
 
@@ -399,5 +466,37 @@ func okThenErr5xx() gf.AccessCheck {
 		} else {
 			return err5xx(o, p)
 		}
+	}
+}
+
+func sortedTasks(ct cvtesting.Test) []*RefreshGerritCL {
+	ret := make([]*RefreshGerritCL, len(ct.TQ.Tasks().Payloads()))
+	for i, m := range ct.TQ.Tasks().Payloads() {
+		v, ok := m.(*RefreshGerritCL)
+		if !ok {
+			panic(fmt.Errorf("unexpected task payload %T: %v", m, m))
+		}
+		ret[i] = v
+	}
+	sort.SliceStable(ret, func(i, j int) bool { return ret[i].less(ret[j]) })
+	return ret
+}
+
+func (l *RefreshGerritCL) less(r *RefreshGerritCL) bool {
+	switch {
+	case l.GetHost() < r.GetHost():
+		return true
+	case l.GetHost() > r.GetHost():
+		return false
+	case l.GetChange() < r.GetChange():
+		return true
+	case l.GetChange() > r.GetChange():
+		return false
+	case l.GetLuciProject() < r.GetLuciProject():
+		return true
+	case l.GetLuciProject() > r.GetLuciProject():
+		return false
+	default:
+		return l.GetUpdatedHint().AsTime().Before(r.GetUpdatedHint().AsTime())
 	}
 }
