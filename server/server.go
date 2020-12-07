@@ -202,7 +202,9 @@ type Options struct {
 	HTTPAddr  string // address to bind the main listening socket to
 	AdminAddr string // address to bind the admin socket to, ignored on GAE
 
-	ShutdownDelay time.Duration // how long to wait after SIGTERM before shutting down
+	DefaultRequestTimeout  time.Duration // how long non-internal HTTP handlers are allowed to run, 1 min by default
+	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
+	ShutdownDelay          time.Duration // how long to wait after SIGTERM before shutting down
 
 	ClientAuth       clientauth.Options // base settings for client auth options
 	TokenCacheDir    string             // where to cache auth tokens (optional)
@@ -244,12 +246,20 @@ func (o *Options) Register(f *flag.FlagSet) {
 	if o.AdminAddr == "" {
 		o.AdminAddr = "127.0.0.1:8900"
 	}
+	if o.DefaultRequestTimeout == 0 {
+		o.DefaultRequestTimeout = time.Minute
+	}
+	if o.InternalRequestTimeout == 0 {
+		o.InternalRequestTimeout = 10 * time.Minute
+	}
 	if o.ShutdownDelay == 0 {
 		o.ShutdownDelay = 15 * time.Second
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to or '-' to disable")
+	f.DurationVar(&o.DefaultRequestTimeout, "default-request-timeout", o.DefaultRequestTimeout, "How long incoming requests are allowed to run before being canceled (or 0 for infinity)")
+	f.DurationVar(&o.InternalRequestTimeout, "internal-request-timeout", o.InternalRequestTimeout, "How long incoming /internal/* requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.ShutdownDelay, "shutdown-delay", o.ShutdownDelay, "How long to wait after SIGTERM before shutting down")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
@@ -1213,8 +1223,16 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		span.End()
 	}()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
+	timeout := s.Options.DefaultRequestTimeout
+	if strings.HasPrefix(c.Request.URL.Path, "/internal/") {
+		timeout = s.Options.InternalRequestTimeout
+	}
+
+	if timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 
 	// Make the request logger emit log entries associated with the tracing span.
 	if s.Options.Prod {

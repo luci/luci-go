@@ -17,6 +17,7 @@ package tq
 import (
 	"context"
 	"flag"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
@@ -90,8 +91,8 @@ type ModuleOptions struct {
 	// POSTs to a URL under this prefix (regardless which one) will be treated
 	// as Cloud Tasks pushes.
 	//
-	// Default is "/internal/tasks". If set to literal "-", no routes will be
-	// registered at all.
+	// Must start with "/internal/". Default is "/internal/tasks". If set to
+	// literal "-", no routes will be registered at all.
 	ServingPrefix string
 
 	// SweepMode defines how to perform sweeps of the transaction tasks reminders.
@@ -170,7 +171,8 @@ type ModuleOptions struct {
 	// receive such tasks (via non-default ServingPrefix). This is useful if
 	// you want to limit what processes process the sweeps.
 	//
-	// If unset defaults to the value of ServingPrefix.
+	// Must start with "/internal/". If unset defaults to the value of
+	// ServingPrefix.
 	SweepTaskPrefix string
 
 	// SweepTargetHost is a hostname to dispatch sweep subtasks to when running
@@ -216,7 +218,7 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		o.ServingPrefix = "/internal/tasks"
 	}
 	f.StringVar(&o.ServingPrefix, "tq-serving-prefix", o.ServingPrefix,
-		`URL prefix to serve registered task handlers from. Set to '-' to disable serving.`)
+		`URL prefix to serve registered task handlers from, must start with '/internal/'. Set to '-' to disable serving.`)
 
 	if o.SweepMode == "" {
 		o.SweepMode = "distributed"
@@ -237,7 +239,7 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		`A queue name to use to distribute sweep subtasks`)
 
 	f.StringVar(&o.SweepTaskPrefix, "tq-sweep-task-prefix", o.SweepTaskPrefix,
-		`URL prefix to use for sweep subtasks. Defaults to -tq-serving-prefix.`)
+		`URL prefix to use for sweep subtasks, must start with '/internal/'. Defaults to -tq-serving-prefix.`)
 
 	f.StringVar(&o.SweepTargetHost, "tq-sweep-target-host", o.SweepTargetHost,
 		`Hostname to dispatch sweep subtasks to. Defaults to -tq-default-target-host.`)
@@ -364,6 +366,9 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 
 	if m.opts.ServingPrefix != "-" {
 		logging.Infof(ctx, "TQ is serving tasks from %q", m.opts.ServingPrefix)
+		if !strings.HasPrefix(m.opts.ServingPrefix, "/internal/") {
+			return nil, errors.Reason(`-tq-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix).Err()
+		}
 		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
 
@@ -394,6 +399,9 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 		} else {
 			m.opts.SweepTaskPrefix = "/internal/tasks"
 		}
+	}
+	if !strings.HasPrefix(m.opts.SweepTaskPrefix, "/internal/") {
+		return errors.Reason(`-tq-sweep-task-prefix must start with "/internal/", got %q`, m.opts.SweepTaskPrefix).Err()
 	}
 
 	if m.opts.SweepTargetHost == "" {
