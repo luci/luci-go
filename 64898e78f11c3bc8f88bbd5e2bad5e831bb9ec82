@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f88e232_f5ec67ef",
+        "filename": "cv/internal/prjmanager/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-07T19:16:34Z",
+      "side": 1,
+      "message": "see `send.go` file.",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "227a57ca_a5c3a754",
+        "filename": "cv/internal/prjmanager/impl/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-07T19:16:34Z",
+      "side": 1,
+      "message": "This isn\u0027t used/complete yet, I\u0027ve put it here to illustrate where it will live.",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dcffc44_ca4c30e5",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-07T19:16:34Z",
+      "side": 1,
+      "message": "This is the only non-trivial logic that can\u0027t be easily re-used (see CL description)",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8dc95ab7_ca942086",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-07T19:16:34Z",
+      "side": 1,
+      "message": "this file contains \"public API\" of Project Manager.",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "218aab8a_91ce1a9d",
+        "filename": "cv/internal/prjmanager/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-07T19:16:34Z",
+      "side": 1,
+      "message": "Yiwei, I think this code can be probably be shared between Run and Project manager.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 51
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
