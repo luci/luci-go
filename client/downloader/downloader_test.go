@@ -120,12 +120,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 	Convey(`A downloader should be able to download the isolated.`, t, func() {
-		tmpDir, err := ioutil.TempDir("", "isolated")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpDir), ShouldBeNil)
-		}()
-
+		tmpDir := t.TempDir()
 		mu := sync.Mutex{}
 		var files []string
 		d := New(ctx, client, isolated2hash, tmpDir, &Options{

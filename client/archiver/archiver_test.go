@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -139,13 +138,7 @@ func TestArchiverCancel(t *testing.T) {
 		defer ts.Close()
 		a := New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
-		tmpDir, err := ioutil.TempDir("", "archiver")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(tmpDir); err != nil {
-				t.Fail()
-			}
-		}()
+		tmpDir := t.TempDir()
 
 		// This will trigger an eventual Cancel().
 		nonexistent := filepath.Join(tmpDir, "nonexistent")
