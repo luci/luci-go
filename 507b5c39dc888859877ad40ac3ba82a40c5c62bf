@@ -63,6 +63,30 @@
       },
       "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a48eb97_ec257477",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:58:32Z",
+      "side": 1,
+      "message": "if you return expected and unexpected results in the same page, does this mean you start both queries concurrently?\nand if unexpected results don\u0027t fit the page size, we discard expected result query?\n\nif we not concurrently, then it will be slow?\n\ni think what you do in\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2575982/3\nis good. UI retrieves unexpected results quickly. Then requests expected results with some delay, but that\u0027s OK, because those are less interesting.",
+      "parentUuid": "d9581b8a_dad047ff",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 85
+      },
+      "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
