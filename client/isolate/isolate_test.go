@@ -118,13 +118,7 @@ func TestArchive(t *testing.T) {
 		//   /second/boz
 		// Result:
 		//   /baz.isolated
-		tmpDir, err := ioutil.TempDir("", "isolate")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(tmpDir); err != nil {
-				t.Fail()
-			}
-		}()
+		tmpDir := t.TempDir()
 		baseDir := filepath.Join(tmpDir, "base")
 		fooDir := filepath.Join(tmpDir, "foo")
 		secondDir := filepath.Join(tmpDir, "second")

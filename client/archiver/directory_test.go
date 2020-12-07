@@ -119,15 +119,7 @@ func TestPushDirectory(t *testing.T) {
 	}
 
 	if runtime.GOOS != "windows" {
-		otherDir, err := ioutil.TempDir("", "archiver")
-		if err != nil {
-			t.Fail()
-		}
-		defer func() {
-			if err := os.RemoveAll(otherDir); err != nil {
-				t.Fail()
-			}
-		}()
+		otherDir := t.TempDir()
 
 		outOfTreeContents := "I am out of the tree"
 		outOfTreeFile := filepath.Join(otherDir, "out", "of", "tree")
@@ -218,15 +210,7 @@ func TestPushDirectory(t *testing.T) {
 
 	for _, testCase := range cases {
 		Convey(testCase.name, t, func() {
-			// Setup temporary directory.
-			tmpDir, err := ioutil.TempDir("", "archiver")
-			So(err, ShouldBeNil)
-			defer func() {
-				if err := os.RemoveAll(tmpDir); err != nil {
-					t.Fatal(err)
-				}
-			}()
-			expectValidPush(t, tmpDir, testCase.nodes, namespace, mode)
+			expectValidPush(t, t.TempDir(), testCase.nodes, namespace, mode)
 		})
 	}
 }
