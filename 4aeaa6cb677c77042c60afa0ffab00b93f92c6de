@@ -1,0 +1,313 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd9ecd37_40818835",
+        "filename": "resultdb/internal/spanutil/buffer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "i don\u0027t think a core package like spanutil should import a ui-level package. This looks like a layering violation.\nPlease consider doing this conversion in the code that runs the query.\n\nFWIU, we are saving two lines of code in testvariants/query.go. IMO it is not worth it",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a853a2d_2d2a9168",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "add comment\n\nin particular dest[:0] logic needs to be explained.",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f357c9e9_4248f645",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "hmm, this decompresses data in place, that\u0027s read a chunk, decompress it and write it back where we read it.\nhttps://godoc.org/github.com/klauspost/compress/zstd#Decoder.DecodeAll\ndoesn\u0027t say that this is supported.\nI don\u0027t see how it can be guarnateed: when we decompress, the size of decompressed data is larger, so if we write it back, eventually we will start overwriting the to-be-decompressed data.\n\nI think we need to decompress to a buffer.\nConsider adding a buffer field to Query and make this func a method of Query.",
+      "range": {
+        "startLine": 65,
+        "startChar": 57,
+        "endLine": 65,
+        "endChar": 70
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "406be6bb_bd7777d3",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "nit: join two lines?",
+      "range": {
+        "startLine": 65,
+        "startChar": 8,
+        "endLine": 66,
+        "endChar": 8
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0f9eea3_b280b8b7",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "space after //",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7292a609_86b22d34",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "reuse the buffer",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 22
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7bab697b_d3dd95d5",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4928df8f_ea541618",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "nit: indentation of this sub-query is inconsistent with sub-queries below\n\nalso inconsistent with queries in other files",
+      "range": {
+        "startLine": 157,
+        "startChar": 5,
+        "endLine": 157,
+        "endChar": 6
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b1ed042_d1af6c13",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 165,
+        "startChar": 11,
+        "endLine": 165,
+        "endChar": 12
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95fbb75a_c2749de8",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "nit: +1 tab",
+      "range": {
+        "startLine": 187,
+        "startChar": 0,
+        "endLine": 187,
+        "endChar": 1
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1c6d6c47_614b6ae1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "i don\u0027t think this works and I didn\u0027t find a unit test for this.\nif it is not exonerated, then exonerated.TestID is NULL, as opposed to \"\".\nI believe it is always !\u003d\"\"",
+      "range": {
+        "startLine": 195,
+        "startChar": 26,
+        "endLine": 195,
+        "endChar": 31
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0619f4ba_ae0c1060",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "if we find anything like this, it means we have a bug in the query, right? \n\nwe started with UnexpectedTestResults - none of them are expected\n\ni think we should assert that we don\u0027t find such rows when reading rows in spanner",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58d0ae58_dbfe8b58",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "nit: indentation is problematic. It is unclear that above is a sub-query and below is a query. Please increase the indentation of the sub-query above",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1356272_c1555df1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "why is it separated in a different template?\nit is not like we will use it anywhere else (because of exonerationExplanations).\nas a reader, i have to jump between two pieces of text.\nplease consider inlining",
+      "range": {
+        "startLine": 224,
+        "startChar": 0,
+        "endLine": 230,
+        "endChar": 25
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8cd3860f_5a9bbd18",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:40:03Z",
+      "side": 1,
+      "message": "tv status is not asserted",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
