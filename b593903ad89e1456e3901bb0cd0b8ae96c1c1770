@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d427db1f_e0d98e2c",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-07T21:34:01Z",
+      "side": 1,
+      "message": "I think this function is doing what the opposite of `IsEmpty` suggests?",
+      "range": {
+        "startLine": 213,
+        "startChar": 22,
+        "endLine": 213,
+        "endChar": 29
+      },
+      "revId": "b593903ad89e1456e3901bb0cd0b8ae96c1c1770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "820612ac_5773997d",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-07T21:34:01Z",
+      "side": 1,
+      "message": "so can?",
+      "range": {
+        "startLine": 191,
+        "startChar": 37,
+        "endLine": 191,
+        "endChar": 43
+      },
+      "revId": "b593903ad89e1456e3901bb0cd0b8ae96c1c1770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
