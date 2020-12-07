@@ -16,7 +16,6 @@ package filesystem
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,11 +27,7 @@ func TestSetReadOnly(t *testing.T) {
 	t.Parallel()
 
 	Convey("Simple tests for SetReadOnly", t, func() {
-		tmpdir, err := ioutil.TempDir("", "TestSetReadOnly-")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		tmpfile := filepath.Join(tmpdir, "tmp")
 		f, err := os.Create(tmpfile)
@@ -65,11 +60,7 @@ func TestSetReadOnly(t *testing.T) {
 
 func TestMakeTreeReadOnly(t *testing.T) {
 	Convey("Simple test for MakeTreeReadOnly", t, func() {
-		tmpdir, err := ioutil.TempDir("", "TestMakeTreeReadOnly-")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		tmpfile := filepath.Join(tmpdir, "tmp")
 		f, err := os.Create(tmpfile)
@@ -88,11 +79,7 @@ func TestMakeTreeReadOnly(t *testing.T) {
 
 func TestMakeTreeFilesReadOnly(t *testing.T) {
 	Convey("Simple test for MakeTreeFilesReadOnly", t, func() {
-		tmpdir, err := ioutil.TempDir("", "TestMakeTreeFilesReadOnly-")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		tmpfile := filepath.Join(tmpdir, "tmp")
 		f, err := os.Create(tmpfile)
@@ -116,11 +103,7 @@ func TestMakeTreeFilesReadOnly(t *testing.T) {
 
 func TestMakeTreeWritable(t *testing.T) {
 	Convey("Simple test for MakeTreeWritable", t, func() {
-		tmpdir, err := ioutil.TempDir("", "TestMakeTreeWritable-")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		tmpfile := filepath.Join(tmpdir, "tmp")
 		f, err := os.Create(tmpfile)

@@ -16,8 +16,6 @@ package exec2
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -44,11 +42,7 @@ func TestExec(t *testing.T) {
 	Convey("TestExec", t, func() {
 		ctx := context.Background()
 
-		tmpdir, err := ioutil.TempDir("", "test")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		errCh := make(chan error, 1)
 
@@ -156,11 +150,7 @@ func TestSetEnv(t *testing.T) {
 	Convey("TestSetEnv", t, func() {
 		ctx := context.Background()
 
-		tmpdir, err := ioutil.TempDir("", "test")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpdir), ShouldBeNil)
-		}()
+		tmpdir := t.TempDir()
 
 		testBinary, err := build(filepath.Join("testdata", "env.go"), tmpdir)
 		So(err, ShouldBeNil)
