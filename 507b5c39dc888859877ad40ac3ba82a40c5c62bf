@@ -39,6 +39,30 @@
       },
       "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9581b8a_dad047ff",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-07T12:12:42Z",
+      "side": 1,
+      "message": "\u003e I\u0027m thinking of returning test variants with only expected results in the same page of test variants with unexpected results\nsounds good.\n\u003e if we don\u0027t do that, then UI can easily tell when all the test variants with unexpected results have been fetched\nI don\u0027t think there\u0027s a need for that.",
+      "parentUuid": "dd13101a_65ca7615",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 85
+      },
+      "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
