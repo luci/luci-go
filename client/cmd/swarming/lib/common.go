@@ -154,6 +154,7 @@ func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, 
 		res, ierr = s.service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
 		return
 	})
+
 	return
 }
 
@@ -395,8 +396,11 @@ func retryGoogleRPC(ctx context.Context, rpcName string, rpc func() error) error
 	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := rpc()
 		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code >= 500 {
-			err = transient.Tag.Apply(err)
+			return transient.Tag.Apply(err)
 		}
-		return err
+		if err != nil {
+			return errors.Annotate(err, "failed to call %s", rpcName).Err()
+		}
+		return nil
 	}, retry.LogCallback(ctx, rpcName))
 }
