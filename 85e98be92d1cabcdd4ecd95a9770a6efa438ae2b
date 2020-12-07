@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "087225f6_a6d884a2",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "Consists of",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 40,
+        "endChar": 16
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86e15e9b_64d1f54f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "q",
+      "range": {
+        "startLine": 97,
+        "startChar": 84,
+        "endLine": 97,
+        "endChar": 85
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cfa7b8cf_126548de",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "the \"unexpected\" query never returns EXPECTED, so the transition from the first query to the second never happens.\nand there is no test for that.\ni think we need a test where we run a series of queries, and cumulatively they return all results",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e52d4e54_8f26ced4",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "this is a write-only struct (our code never reads from it)\nIt is as type-safe as a map[string]interface{}, which would be easier to read. Consider using map instead.\n\nalternatively, actually take advantage of the struct: declare it above and remove `unexpected` variable",
+      "range": {
+        "startLine": 103,
+        "startChar": 10,
+        "endLine": 103,
+        "endChar": 16
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a26efeb_7b50471a",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "consider \n\n  if len(exoExplanationHtmls) \u003e 0 { ...populate exonerations...}\n\ninstead. The advantage is that if is not UNEXPECTED, and it doesn\u0027t have exonerations, then we don\u0027t allocate tv.Exonerations slice unnecessarily",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf5512c2_8c7c2654",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "all {{define}} things are templates. There is no need for \"Tmpl\" suffix.",
+      "range": {
+        "startLine": 243,
+        "startChar": 45,
+        "endLine": 243,
+        "endChar": 49
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f994c57f_d4d4afab",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "how about NULL",
+      "range": {
+        "startLine": 254,
+        "startChar": 3,
+        "endLine": 254,
+        "endChar": 27
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47fde908_1bfffb88",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T17:55:24Z",
+      "side": 1,
+      "message": "did you try running this query on real data? my reading of this query is that it is very slow.\nit requires reading all test results of an invocation (recursively) to return *the first page*.\nthis is because of the GROUP BY + HAVING - to group, you have to read everything.\n\nideally fetching the first page is O(test results in the first page), not O(test results in the invocation).\nI think it can be achieved with UnexpectedTestResults - it can replace the HAVING filter - if it doesn\u0027t join, then it is expected.",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
