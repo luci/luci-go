@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "447f7da1_8cf8a1a4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-07T00:33:47Z",
+      "side": 1,
+      "message": "The build status is already shown in the top-right, so we\u0027re not losing it.\n\nIn the linked bug, a user complains that having the status at the top of the main panel is distracting and just adds visual noise, while the build summary contains all relevant information (and now the background is coloured according to the status). So that\u0027s why I\u0027ve removed it.\n\nWhen there\u0027s no build summary, though, there\u0027s nothing here and it\u0027s slightly harder to tell at a glance if everything succeeded or not. So that\u0027s why I added the status back in only in case of there being no build summary (which often happens when a build succeeded).",
+      "parentUuid": "900dd6f9_672bb34d",
+      "range": {
+        "startLine": 9,
+        "startChar": 2,
+        "endLine": 9,
+        "endChar": 50
+      },
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f242629_b73a0d58",
@@ -43,6 +67,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3c1e0a44_f5ca9b72",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-07T00:33:47Z",
+      "side": 1,
+      "message": "The people who use those sections are all infra people, who are a smaller set of customers than Chrome developers (our main users).\n\nAs discussed offline, I intend to follow up this CL by moving some of the infra stuff to a dedicated Infra tab, and allowing users to pick their default tab. Hopefully this compromise will be enough to satisfy everyone.",
+      "parentUuid": "8f242629_b73a0d58",
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a75c4ef2_87cadf52",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -54,6 +96,23 @@
       "writtenOn": "2020-12-03T08:32:29Z",
       "side": 1,
       "message": "PTAL at the demo and let me know any feedback. This CL doesn\u0027t move anything off the overview tab yet; planning to think about that later.\n\nOld: https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9110/overview\nNew: https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9110/overview",
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7575280c_cfcc53b2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-07T00:33:47Z",
+      "side": 1,
+      "message": "Nodir, would be good to get your input on this too. It\u0027s just an intermediate style change for now, but looking at moving most of the Infra stuff to its own tab in future.",
       "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
