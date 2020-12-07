@@ -293,6 +293,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ff47444_b6a23318",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T21:11:59Z",
+      "side": 1,
+      "message": "nvm, forgot to remove this comment",
+      "parentUuid": "d1356272_c1555df1",
+      "range": {
+        "startLine": 224,
+        "startChar": 0,
+        "endLine": 230,
+        "endChar": 25
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8cd3860f_5a9bbd18",
