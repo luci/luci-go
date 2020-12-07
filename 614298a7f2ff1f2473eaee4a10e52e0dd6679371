@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "038e78d4_62c2ec42",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-07T20:05:19Z",
+      "side": 1,
+      "message": "PTAL again, I redid it using different logic to make it more similar to GAE.",
+      "revId": "614298a7f2ff1f2473eaee4a10e52e0dd6679371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
