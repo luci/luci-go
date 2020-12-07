@@ -139,6 +139,24 @@
       "message": "Nodir, would be good to get your input on this too. It\u0027s just an intermediate style change for now, but looking at moving most of the Infra stuff to its own tab in future.",
       "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c02b97c3_db0d68e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-07T20:05:08Z",
+      "side": 1,
+      "message": "without scrolling, I see properties, but don\u0027t see revision/CL, or timing. I think properties are less interesting.\n\nWhy not put input/infra/timeing/actions in the right pane, above properties?\nmaybe even above tags, which are noisy",
+      "parentUuid": "7575280c_cfcc53b2",
+      "revId": "23c1ba414da1c36c757252715a5fe21b0f0424ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
