@@ -56,13 +56,7 @@ func TestArchive(t *testing.T) {
 		//   /second/boz
 		// Result:
 		//   /baz.isolated
-		tmpDir, err := ioutil.TempDir("", "isolated")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(tmpDir); err != nil {
-				t.Fail()
-			}
-		}()
+		tmpDir := t.TempDir()
 		baseDir := filepath.Join(tmpDir, "base")
 		subDir := filepath.Join(baseDir, "sub")
 		secondDir := filepath.Join(tmpDir, "second")
@@ -221,11 +215,7 @@ func TestArchiveFail(t *testing.T) {
 		Convey(`File missing`, func() {
 			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
-			tmpDir, err := ioutil.TempDir("", "archiver")
-			So(err, ShouldBeNil)
-			defer func() {
-				So(os.RemoveAll(tmpDir), ShouldBeNil)
-			}()
+			tmpDir := t.TempDir()
 
 			// This will trigger an eventual Cancel().
 			nonexistent := filepath.Join(tmpDir, "nonexistent")
@@ -270,11 +260,7 @@ func TestArchiveFail(t *testing.T) {
 			})
 			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
-			tmpDir, err := ioutil.TempDir("", "archiver")
-			So(err, ShouldBeNil)
-			defer func() {
-				So(os.RemoveAll(tmpDir), ShouldBeNil)
-			}()
+			tmpDir := t.TempDir()
 
 			// This will trigger an eventual Cancel().
 			fileName := filepath.Join(tmpDir, "existent")

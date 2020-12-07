@@ -442,14 +442,8 @@ func TestLoadIsolateForConfig(t *testing.T) {
 func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should load a config from isolate with includes.`, t, func() {
-		tmpDir, err := ioutil.TempDir("", "test-isofmt-")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(tmpDir); err != nil {
-				t.Fail()
-			}
-		}()
-		err = os.Mkdir(filepath.Join(tmpDir, "inc"), 0777)
+		tmpDir := t.TempDir()
+		err := os.Mkdir(filepath.Join(tmpDir, "inc"), 0777)
 		So(err, ShouldBeNil)
 		err = ioutil.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
 		So(err, ShouldBeNil)
