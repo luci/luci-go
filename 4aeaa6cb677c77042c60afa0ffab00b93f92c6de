@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "63a7d165_3ccd5bf1",
+        "filename": "resultdb/internal/spanutil/buffer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "I can remove the change.\n\nQuestion: it\u0027s importing go.chromium.org/luci/resultdb/proto/v1 anyways, why importing uipb a violation?",
+      "parentUuid": "cd9ecd37_40818835",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9a853a2d_2d2a9168",
         "filename": "resultdb/internal/spanutil/compression.go",
         "patchSetId": 3
@@ -31,6 +49,24 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "add comment\n\nin particular dest[:0] logic needs to be explained.",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5b7e3d9_c41be065",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a853a2d_2d2a9168",
       "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -48,6 +84,30 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "hmm, this decompresses data in place, that\u0027s read a chunk, decompress it and write it back where we read it.\nhttps://godoc.org/github.com/klauspost/compress/zstd#Decoder.DecodeAll\ndoesn\u0027t say that this is supported.\nI don\u0027t see how it can be guarnateed: when we decompress, the size of decompressed data is larger, so if we write it back, eventually we will start overwriting the to-be-decompressed data.\n\nI think we need to decompress to a buffer.\nConsider adding a buffer field to Query and make this func a method of Query.",
+      "range": {
+        "startLine": 65,
+        "startChar": 57,
+        "endLine": 65,
+        "endChar": 70
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "538d78fc_eb83bb3f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f357c9e9_4248f645",
       "range": {
         "startLine": 65,
         "startChar": 57,
@@ -81,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbb592b8_ad99d704",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "406be6bb_bd7777d3",
+      "range": {
+        "startLine": 65,
+        "startChar": 8,
+        "endLine": 66,
+        "endChar": 8
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a0f9eea3_b280b8b7",
@@ -94,6 +178,30 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "space after //",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb02aec5_8848ae67",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0f9eea3_b280b8b7",
       "range": {
         "startLine": 113,
         "startChar": 4,
@@ -127,6 +235,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b5cc51d_d96e9ce4",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7292a609_86b22d34",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 22
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7bab697b_d3dd95d5",
@@ -144,6 +276,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "148fa8db_09770271",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bab697b_d3dd95d5",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4928df8f_ea541618",
@@ -157,6 +307,30 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "nit: indentation of this sub-query is inconsistent with sub-queries below\n\nalso inconsistent with queries in other files",
+      "range": {
+        "startLine": 157,
+        "startChar": 5,
+        "endLine": 157,
+        "endChar": 6
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "814d3f45_37e42ef1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4928df8f_ea541618",
       "range": {
         "startLine": 157,
         "startChar": 5,
@@ -190,6 +364,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c866aa0c_f5cffbf6",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b1ed042_d1af6c13",
+      "range": {
+        "startLine": 165,
+        "startChar": 11,
+        "endLine": 165,
+        "endChar": 12
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "95fbb75a_c2749de8",
@@ -203,6 +401,30 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "nit: +1 tab",
+      "range": {
+        "startLine": 187,
+        "startChar": 0,
+        "endLine": 187,
+        "endChar": 1
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b839b4c8_c2983459",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95fbb75a_c2749de8",
       "range": {
         "startLine": 187,
         "startChar": 0,
@@ -236,6 +458,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1801cb77_f7ef6f62",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2575876/3/resultdb/internal/testvariants/query_test.go#114 is the test case for exonerations and it works.\n\nBut checking exonerated.TestId is not null also works. I\u0027ll use that instead.",
+      "parentUuid": "1c6d6c47_614b6ae1",
+      "range": {
+        "startLine": 195,
+        "startChar": 26,
+        "endLine": 195,
+        "endChar": 31
+      },
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0619f4ba_ae0c1060",
@@ -253,6 +499,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2b9a3cc_ac3f72e0",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "0619f4ba_ae0c1060",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58d0ae58_dbfe8b58",
@@ -266,6 +530,24 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "nit: indentation is problematic. It is unclear that above is a sub-query and below is a query. Please increase the indentation of the sub-query above",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "001c6822_1c5baa56",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58d0ae58_dbfe8b58",
       "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -330,6 +612,24 @@
       "writtenOn": "2020-12-07T17:40:03Z",
       "side": 1,
       "message": "tv status is not asserted",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d59d734_7a92e957",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cd3860f_5a9bbd18",
       "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

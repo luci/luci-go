@@ -63,6 +63,30 @@
       },
       "revId": "1f127ad193ff2abda4aa6ef088951c9c7100877b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8dc3f363_7d5943e9",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-07T23:40:51Z",
+      "side": 1,
+      "message": "\u003e \u003e Also I think you may want some ordering for the results so the results displayed on UI will be deterministic. WDYT?\n\u003e Sounds good. I think ordering by resultID makes the most sense.\nSince test results in Spanner already have the index over InvocationId, Testid and ResultId, I think we should be good.",
+      "parentUuid": "0e488152_3a062f93",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 223,
+        "endChar": 7
+      },
+      "revId": "1f127ad193ff2abda4aa6ef088951c9c7100877b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
