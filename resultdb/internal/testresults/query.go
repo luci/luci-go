@@ -196,8 +196,8 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		// empty after q.Mask.Trim(tr).
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
 		tr.SummaryHtml = string(summaryHTML)
-		populateExpectedField(tr, maybeUnexpected)
-		populateDurationField(tr, micros)
+		PopulateExpectedField(tr, maybeUnexpected)
+		PopulateDurationField(tr, micros)
 		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := populateTestMetadata(tr, tmd); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
