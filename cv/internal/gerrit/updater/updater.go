@@ -233,50 +233,20 @@ func (f *fetcher) fetchExisting(ctx context.Context) error {
 
 // fetchNew efficiently fetches fetchNew snapshot from Gerrit.
 func (f *fetcher) fetchNew(ctx context.Context) error {
-	req := &gerritpb.GetChangeRequest{
-		Number:  f.change,
-		Project: f.gerritProjectIfKnown(),
-		Options: []gerritpb.QueryOption{
-			// These are expensive to compute for Gerrit,
-			// CV should not do this needlessly.
-			gerritpb.QueryOption_ALL_REVISIONS,
-			gerritpb.QueryOption_CURRENT_COMMIT,
-			gerritpb.QueryOption_DETAILED_LABELS,
-			gerritpb.QueryOption_DETAILED_ACCOUNTS,
-			gerritpb.QueryOption_MESSAGES,
-			gerritpb.QueryOption_SUBMITTABLE,
-			// Avoid asking Gerrit to perform expensive operation.
-			gerritpb.QueryOption_SKIP_MERGEABLE,
-		},
-	}
-	ci, err := f.g.GetChange(ctx, req)
-	switch grpcutil.Code(err) {
-	case codes.OK:
-		if err := f.ensureNotStale(ctx, ci.GetUpdated()); err != nil {
-			return err
-		}
-	case codes.NotFound, codes.PermissionDenied:
-		// Either no access OR CL was deleted.
-		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
-			ByProject: map[string]*changelist.DependentMeta_Meta{
-				f.luciProject: {
-					NoAccess:   true,
-					UpdateTime: timestamppb.New(clock.Now(ctx)),
-				},
-			},
-		}
-		return nil
-	default:
-		return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
-	}
-
-	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
-	switch {
-	case err != nil:
+	ci, err := f.fetchChangeInfo(ctx,
+		// These are expensive to compute for Gerrit,
+		// CV should not do this needlessly.
+		gerritpb.QueryOption_ALL_REVISIONS,
+		gerritpb.QueryOption_CURRENT_COMMIT,
+		gerritpb.QueryOption_DETAILED_LABELS,
+		gerritpb.QueryOption_DETAILED_ACCOUNTS,
+		gerritpb.QueryOption_MESSAGES,
+		gerritpb.QueryOption_SUBMITTABLE,
+		// Avoid asking Gerrit to perform expensive operation.
+		gerritpb.QueryOption_SKIP_MERGEABLE,
+	)
+	if err != nil || ci == nil {
 		return err
-	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
-		logging.Warningf(ctx, "%s is not watched by the %q project", f, f.luciProject)
-		return nil
 	}
 
 	f.toUpdate.Snapshot = &changelist.Snapshot{
@@ -288,6 +258,10 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 			},
 		},
 	}
+	return f.fetchPostChangeInfo(ctx, ci)
+}
+
+func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeInfo) error {
 	min, cur, err := gerrit.EquivalentPatchsetRange(ci)
 	if err != nil {
 		return err
@@ -322,6 +296,51 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+// fetchChangeInfo fetches newest ChangeInfo from Gerrit.
+//
+// * handles permission errors
+// * verifies fetched data isn't definitely stale.
+// * checks that current LUCI project is still watching the change.
+//
+// Returns nil ChangeInfo if no further fetching should proceed.
+func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
+	ci, err := f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
+		Number:  f.change,
+		Project: f.gerritProjectIfKnown(),
+		Options: opts,
+	})
+	switch grpcutil.Code(err) {
+	case codes.OK:
+		if err := f.ensureNotStale(ctx, ci.GetUpdated()); err != nil {
+			return nil, err
+		}
+	case codes.NotFound, codes.PermissionDenied:
+		// Either no access OR CL was deleted.
+		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
+			ByProject: map[string]*changelist.DependentMeta_Meta{
+				f.luciProject: {
+					NoAccess:   true,
+					UpdateTime: timestamppb.New(clock.Now(ctx)),
+				},
+			},
+		}
+		return nil, nil
+	default:
+		return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
+	}
+
+	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
+	switch {
+	case err != nil:
+		return nil, err
+	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
+		logging.Warningf(ctx, "%s is not watched by the %q project", f, f.luciProject)
+		return nil, nil
+	}
+
+	return ci, nil
 }
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
