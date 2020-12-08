@@ -35,4 +35,14 @@ type Project struct {
 	//
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
+
+	// Status of project manager {STARTED, STOPPING, STOPPED (disabled)}.
+	Status Status `gae:",noindex"`
+	// ConfigHash is the latest processed Project Config hash.
+	ConfigHash string `gae:",noindex"`
+
+	// IncompleteRuns are IDs of Runs which aren't yet complete.
+	// ProjectManager is responsible for notifying these Runs of config change.
+	// TODO(tandrii): fix type to run.ID.
+	IncompleteRuns []string `gae:",noindex"`
 }
