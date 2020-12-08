@@ -21,6 +21,7 @@
 package buildbucketpb
 
 import (
+	proto "github.com/golang/protobuf/proto"
 	api "go.chromium.org/luci/swarming/proto/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -37,6 +38,10 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+// This is a compile-time assertion that a sufficiently up-to-date version
+// of the legacy proto package is being used.
+const _ = proto.ProtoPackageIsVersion4
 
 // A single build, identified by an int64 id.
 // Belongs to a builder.

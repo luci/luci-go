@@ -14,6 +14,7 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
+	proto "github.com/golang/protobuf/proto"
 	status "google.golang.org/genproto/googleapis/rpc/status"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
@@ -32,6 +33,10 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+// This is a compile-time assertion that a sufficiently up-to-date version
+// of the legacy proto package is being used.
+const _ = proto.ProtoPackageIsVersion4
 
 // A request message for GetBuild rpc.
 type GetBuildRequest struct {
@@ -273,7 +278,8 @@ type BatchRequest struct {
 	//
 	// All requests are executed in their own individual transactions.
 	// BatchRequest as a whole is not transactional.
-	// Mutations are executed before read-only requests.
+	// There's no guaranteed order of execution between batch items (i.e. consider
+	// them to all operate independently).
 	Requests []*BatchRequest_Request `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 }
 
