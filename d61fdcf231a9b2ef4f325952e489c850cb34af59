@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29a6664b_9898cca3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T09:10:00Z",
+      "side": 1,
+      "message": "PTAL. This is definitely incomplete. But includes most of the fields I can think of.",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
