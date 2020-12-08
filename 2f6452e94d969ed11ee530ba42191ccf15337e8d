@@ -39,6 +39,30 @@
       },
       "revId": "2f6452e94d969ed11ee530ba42191ccf15337e8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a904bb4_b03f855e",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:09:03Z",
+      "side": 1,
+      "message": "Yeah, but please see follow up CLs, i\u0027m getting rid of this entirely, sorry for noise.",
+      "parentUuid": "0d57bf31_b178fccc",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "2f6452e94d969ed11ee530ba42191ccf15337e8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
