@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	// ProjectDSKind should match that of actual impl.Project entities
+	// ProjectDSKind should match that of actual prjmanager.Project entity
 	// for maximal performance since they'd be located next to each other.
 	ProjectDSKind = "Project"
 	// eventDSKind is kind of `Event` entities.

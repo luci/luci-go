@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package prjmanager
 
 import (
 	"time"
@@ -20,9 +20,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// project is an entity per LUCI Project in Datastore.
-type project struct {
-	// $kind must match prjmanager.ProjectEntityKind.
+// Project is an entity per LUCI Project in Datastore.
+type Project struct {
+	// $kind must match internal.ProjectEntityKind.
 	_kind  string                `gae:"$kind,Project"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
@@ -31,7 +31,6 @@ type project struct {
 
 	// EVersion is entity version. Every update should increment it by 1.
 	EVersion int `gae:",noindex"`
-
 	// UpdateTime is exact time of when this entity was last updated.
 	//
 	// It's not indexed to avoid hot areas in the index.
