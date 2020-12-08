@@ -1,0 +1,325 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86e7f661_20f62f05",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "It looks like this package now provides a function to decompress data, but not compress. This is asymetric.\nI think we should make Compress public too.\nThen we could say that it decompresses data compressed with Compress().",
+      "range": {
+        "startLine": 88,
+        "startChar": 35,
+        "endLine": 88,
+        "endChar": 44
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a87509b4_982a8c80",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "please explain what is dest and that it takes [:0], i.e. how it is supposed to be used (L94 is not visible in godoc for example).\nalternatively, move [:0] logic to the callsite.",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4dae3aa_f10e6cea",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "the buffer is there, but it is never reused from one tvResult to another?\nthe buffer should be in a struct that is used in all test results, e.g. Query",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 14
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6a82133_b386095b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "nit: HTML\nGo likes abbreviations capitalized\n\nsame with return value",
+      "range": {
+        "startLine": 53,
+        "startChar": 36,
+        "endLine": 53,
+        "endChar": 40
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2f5be53_6019aa3a",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "why do we need a separate variable?\ntr.Tags \u003d make(...)",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 5
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "379eb561_022efb2e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "why not return err?\n\nif this code was copied from Buffer, the panic is used there because, if memory services, at the time the func did not return an error",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 13
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ff7a807_30a9af01",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "now that the EXPECTED case is removed from the query, this can never happen.\nso the code is no longer detecting the bug.\n\nconsider one of \n1) restore the CASE in the SQL query\n2) remove this if statement\n3) extend the loop in L128, to assert that at least one test result is unexpected",
+      "range": {
+        "startLine": 122,
+        "startChar": 23,
+        "endLine": 122,
+        "endChar": 49
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cdc8805b_9dd54f3e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "please move it before spanutil.Query() call, so that we reuse it from one spanner row to another",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9bccaf4_0d117418",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "nit: join lines?",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 143,
+        "endChar": 7
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31fde338_10e592ca",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "consistency: move \"),\" to the next line",
+      "range": {
+        "startLine": 211,
+        "startChar": 30,
+        "endLine": 211,
+        "endChar": 32
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a378f316_113ee818",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "nit: add trailing comma?",
+      "range": {
+        "startLine": 244,
+        "startChar": 5,
+        "endLine": 244,
+        "endChar": 6
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77a93901_c86ec2c9",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "I think we need a LIMIT here, otherwise we might try to fetch hundreds of results of the same test (thinking of FindIt, or a bug in test framework) and might cause an OOM.\n\nCan we come up with some arbitrary number, put it here and document in the proto?\n\ndoesn\u0027t have to be in this CL. a TODO would suffice",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fcc4a035_3af1a51b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "nit: trailing comma",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c70bbd9_9bef61af",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "nit: TV",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 7
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f10a9b2_0064647f",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "is this code testing getTvStrings function? what bug is it trying to catch?\n\ni suspect this was added in response to my claim that tv status is not asserted. It appears that I was wrong: it was asserted, in L117. I didn\u0027t notice the \"1/\" prefixes. Sorry about that.",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 6
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

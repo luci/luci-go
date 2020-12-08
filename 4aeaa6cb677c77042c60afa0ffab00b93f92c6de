@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e405a3cb_711d0fe9",
+        "filename": "resultdb/internal/spanutil/buffer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T00:41:27Z",
+      "side": 1,
+      "message": "primarily because of the words \"UI\". Usually it is the UI that imports core things, not the other way around.\n\nin general, the problem is that all types are hardcoded in this central/core file, as opposed to types themselves implement some common interface. Imagine that one day buildbucket switches to spanner and they also want Buffer type, which appears generic, except it depends on these resultdb-specific things. That would be a problem.\nI tried to partially solve the problem by introducing Value interface: this way types implement it and the generic lib doesn\u0027t have to know about those types. But we still have some types that don\u0027t implement it.\n\nthis is a messy state, but I think we should at least not make it worse by adding more dependencies to the generic code, especially when it is easy.\nIt is easy in this case because we never send TestVariantStatus to Spanner. We only read from spanner, there is only one place in code where we do that (as opposed to, many places where the code is duplicated)",
+      "parentUuid": "63a7d165_3ccd5bf1",
+      "revId": "4aeaa6cb677c77042c60afa0ffab00b93f92c6de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9a853a2d_2d2a9168",
