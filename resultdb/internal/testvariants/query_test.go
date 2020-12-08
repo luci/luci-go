@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -37,6 +39,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryTestVariants(t *testing.T) {
@@ -69,6 +72,11 @@ func TestQueryTestVariants(t *testing.T) {
 			return tvStrings
 		}
 
+		mustFetchTvStrings := func(q *Query) []string {
+			tvs, _ := mustFetch(q)
+			return getTvStrings(tvs)
+		}
+
 		Convey(`Query`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
@@ -77,6 +85,7 @@ func TestQueryTestVariants(t *testing.T) {
 					insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 					insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
 					insert.TestResults("inv0", "T5", nil, pb.TestStatus_FAIL),
+					insert.TestResults("inv0", "T6", nil, pb.TestStatus_PASS),
 					insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
 					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
 					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
@@ -110,7 +119,7 @@ func TestQueryTestVariants(t *testing.T) {
 					}),
 				)
 
-				Convey(`Works`, func() {
+				Convey(`Unexpected works`, func() {
 					tvs, _ := mustFetch(q)
 					tvStrings := getTvStrings(tvs)
 					So(tvStrings, ShouldResemble, []string{
@@ -152,8 +161,29 @@ func TestQueryTestVariants(t *testing.T) {
 						ExplanationHtml: "explanation 0",
 					})
 				})
+
+				Convey(`Expected works`, func() {
+					q.PageToken = pagination.Token("EXPECTED", "", "")
+					So(mustFetchTvStrings(q), ShouldResemble, []string{
+						"16/T3/e3b0c44298fc1c14",
+						"16/T6/e3b0c44298fc1c14",
+					})
+				})
 			})
 		})
 
+		Convey(`Page Token`, func() {
+			Convey(`wrong number of parts`, func() {
+				q.PageToken = pagination.Token("testId", "variantHash")
+				_, _, err := q.Fetch(ctx)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+			})
+
+			Convey(`first part not tvStatus`, func() {
+				q.PageToken = pagination.Token("50", "testId", "variantHash")
+				_, _, err := q.Fetch(ctx)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+			})
+		})
 	})
 }
