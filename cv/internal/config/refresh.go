@@ -49,10 +49,9 @@ func init() {
 			project := task.GetProject()
 			if err := actionFn(ctx, project); err != nil {
 				errors.Log(ctx, err)
-				// Explicitly not forwarding transient tag so that tq won't retry
-				// because the refresh task is submitted every minute by AppEngine
-				// Cron.
-				return errors.Reason("failed to %s project %q: %s", action, project, err).Err()
+				// Never retry tasks because the refresh task is submitted every minute
+				// by AppEngine Cron.
+				return errors.Annotate(err, "failed to %s project %q", action, project).Tag(tq.Fatal).Err()
 			}
 			return nil
 		},
