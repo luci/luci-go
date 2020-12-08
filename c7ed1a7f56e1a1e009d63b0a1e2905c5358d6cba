@@ -16,6 +16,46 @@
       "message": "actually, let me send this for review anyway. I\u0027m sorry, but Gerrit doesn\u0027t show both files are just copies 😞",
       "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14d44086_e50a965c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:44:15Z",
+      "side": 1,
+      "message": "Did you want to potentially make any changes in this CL other than copy?\n\nAlso where is it copied from? The CL description could also say why it has to be copied (rather than imported from whereever it was).",
+      "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1298fa0b_ec48a11e",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:44:15Z",
+      "side": 1,
+      "message": "If this is a copy in a new location, do we keep the year the same or change it?",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
