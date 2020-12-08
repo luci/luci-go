@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e2ff109f_c1ba6f84",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ae1a33d_8e5ade97",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "29a6664b_9898cca3",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -75,6 +93,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "761ebb0f_b07ab223",
+        "filename": "cv/internal/tryjob/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d352b52f_e56836c0",
+      "range": {
+        "startLine": 49,
+        "startChar": 24,
+        "endLine": 49,
+        "endChar": 42
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba64c83c_e105b6c2",
@@ -88,6 +130,30 @@
       "writtenOn": "2020-12-08T18:38:10Z",
       "side": 1,
       "message": "Nit: Optionally this could be called Details. To me, this is kind of like \"datum/data\". You don\u0027t usually refer to one datum, since that would be just like one primitive field; usually it\u0027s multiple little pieces of information.",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7954042c_37000cf2",
+        "filename": "cv/internal/tryjob/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba64c83c_e105b6c2",
       "range": {
         "startLine": 50,
         "startChar": 1,
@@ -115,6 +181,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1b9c930_79669b31",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cd8515f_eccf7cf8",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "118744df_6cb7b9b7",
@@ -134,6 +218,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c02cb045_122adee5",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Good point\n\n\u003e Food for thought (aka TODO):\n\u003e * how should we store that CV has lost access to a tryjob due to change of ACLs?\n\nI\u0027m thinking of marking this as FAILURE and having a FailureDetails/StatusDetails-ish message to explain which type of failure it is. But NO_READ_ACCESS enum value would also suffice.\n\n\u003e * for newly created Build entity which doesn\u0027t have external ID yet, ie about to be scheduled, what is status?\n\nMy thought is PENDING, but PENDING is now overloaded with two meanings, maybe we can split it by:\n  * PENDING_SCHEDULED: CV hasn\u0027t scheduled this Tryjob in the external system yet.\n  * PENDING_STARTED: CV has scheduled this Tryjob but it hasn\u0027t started in the external system yet.\n\n\u003e   * -\u003e and how do we store lack of ACLs to schedule such build?\n\nSame as losing read access. Either mark it as failure and explain the failure somewhere else or creating new enum value as suggested below.\n\n\u003e \n\u003e Maybe NO_READ_ACCESS, TO_BE_SCHEDULED, NO_SCHEDULE_ACCESS will be good enough, but i\u0027m not sure yet.\n\nWDYT of two types of failure?\n  * INTERNAL_FAILURE: e.g. CV losing access\n  * EXTERNAL_FAILURE: Status reported by BB.",
+      "parentUuid": "118744df_6cb7b9b7",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0ed22ebc_a6bbf6ad",
         "filename": "cv/internal/tryjob/storage.proto",
         "patchSetId": 2
@@ -145,6 +247,30 @@
       "writtenOn": "2020-12-08T13:32:11Z",
       "side": 1,
       "message": "So, did you mean this to be externally reported or possibly set purely on CV\u0027s whim regardless of external system?\n\nFor just BB, externally reported will suffice, because CancelBuild() RPC will respond with final the Build status with status\u003dbb.Canceled, it\u0027ll be easy to only set CANCELED here iff bb.build.status is canceled.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf4f60be_d5b3c67e",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Good point, I actually didn\u0027t thought about externally reported case. I imagine this is purely set by CV because ideally, it is CV who cancels those no-longer-needed tryjobs. But nothing prevents user from going to the build UI and cancelling the Tryjob themselves.\n\nWhat is the current CQ behavior in this scenario? Does CQ consider it as a failure and retry?",
+      "parentUuid": "0ed22ebc_a6bbf6ad",
       "range": {
         "startLine": 34,
         "startChar": 0,
@@ -178,6 +304,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d36815bf_30be683e",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a97755b4_016e9398",
+      "range": {
+        "startLine": 39,
+        "startChar": 8,
+        "endLine": 39,
+        "endChar": 14
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "043c3e98_5aacc80a",
@@ -201,6 +351,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "16001024_d3648608",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "043c3e98_5aacc80a",
+      "range": {
+        "startLine": 40,
+        "startChar": 15,
+        "endLine": 40,
+        "endChar": 19
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b88b3e04_e22490c2",
@@ -214,6 +388,30 @@
       "writtenOn": "2020-12-08T18:38:10Z",
       "side": 1,
       "message": "nit: period",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 26
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b7124f0_4fc9bb2c",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T20:42:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b88b3e04_e22490c2",
       "range": {
         "startLine": 42,
         "startChar": 21,
