@@ -130,6 +130,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8db47912_c9274b16",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T08:52:55Z",
+      "side": 1,
+      "message": "gotcha",
+      "parentUuid": "233f02fc_f40245f9",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e52d4e54_8f26ced4",
@@ -308,6 +326,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f9716c3e_def8efa7",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T08:52:55Z",
+      "side": 1,
+      "message": "got it. but why non-empty array? \nwhy not [] or CAST([] as ARRAY\u003cBYTES\u003e)?\n\nthen we don\u0027t need to check the status above",
+      "parentUuid": "6e8fd7e9_8878d0b5",
+      "range": {
+        "startLine": 254,
+        "startChar": 3,
+        "endLine": 254,
+        "endChar": 27
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "47fde908_1bfffb88",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 3
@@ -337,6 +379,24 @@
       "side": 1,
       "message": "\u003e did you try running this query on real data? my reading of this query is that it is very slow.\n\nI tried this on real data and reading a page is OK (it was ~4s to read 100 rows of data, after adding Tags to test results, it increases to 8.3s).\n\n\u003e I think it can be achieved with UnexpectedTestResults - it can replace the HAVING filter - if it doesn\u0027t join, then it is expected.\n\nIt can replace HAVING, but we still need to GROUP, so I think it wouldn\u0027t help?\n\nActually I tried it with https://paste.googleplex.com/5541692334669824, it tool 11.4s to get a page of data. Or do you mean something else?",
       "parentUuid": "47fde908_1bfffb88",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84341f2b_456ff4f1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-08T08:52:55Z",
+      "side": 1,
+      "message": "yeah, both are pretty slow.\n\nperhaps we don\u0027t need GROUP BY at all? \nhttps://paste.googleplex.com/5650129051713536 finishes in ~100ms.\nit returns non-grouped, but sorted data, and it includes unexpected results.\n\nhow about\n\n  - start two queries concurrently\n    - read all unexpected test variants\n    - https://paste.googleplex.com/5650129051713536\n  - write all unexpected test variants to a hashset\n  - in the callback for test results\n    - first wait until the unexpected-test-variants query finishes\n    - skip this test result if its test variant is in the set\n    - check if this test result has same variant as the previous one\n      - if yes, add it to the \"current\" bundle\n      - otherwise, call f() and start a new bundle\n\n(FWIW I tried to implement the same in SQL using JOIN, but for some reason it was much slower)\n\nthis based is on two things specific to expected results:\n- in general, the vast majority of results are expected, so it is very unlikely that an individual surfaced test variant is not expected. This does mean, though, that we might return fewer than page_size elements\n- most test variants have a single result\n\nthis is non-trivial, but appears 10x faster",
+      "parentUuid": "fd18fb9f_feac442f",
       "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
