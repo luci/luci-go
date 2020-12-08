@@ -16,6 +16,24 @@
       "message": "LGTM. Did you also update the Chops Noogler guide to point here?",
       "revId": "78f176569a0fd06f854f1aeb7fe24ca5b386f7e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11b4ee7b_a79b22f9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-12-08T02:04:53Z",
+      "side": 1,
+      "message": "Yes. Forgot to mention in the description.",
+      "parentUuid": "f2fede94_e1054145",
+      "revId": "78f176569a0fd06f854f1aeb7fe24ca5b386f7e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
