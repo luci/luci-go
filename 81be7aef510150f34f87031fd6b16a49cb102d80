@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92135105_c13ba29e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:49:49Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a4f3e85_1f1c30db",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:49:49Z",
+      "side": 1,
+      "message": "Ah, thanks, that answers my questions.",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 57
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "254a1e60_675f7175",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:49:49Z",
+      "side": 1,
+      "message": "There could potentially be a little more explanation about owner, perhaps at the top of the file. Are all item entities descendents of this owner key? Would it also be accurate to call it root or something?",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 6
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
