@@ -37,5 +37,5 @@ func send(ctx context.Context, luciProject string, p *internal.Payload) error {
 	if err := internal.Send(ctx, luciProject, p); err != nil {
 		return err
 	}
-	return dispatch(ctx, luciProject, time.Time{} /*asap*/)
+	return internal.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
 }
