@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d45df3f1_4f39534d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T18:46:43Z",
+      "side": 1,
+      "message": "grr, Gerrit isn\u0027t smart to figure out the diff. Let me help it.",
+      "revId": "d703b5cb55d80890072ccb80507bf766348f4a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
