@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2888b8ef_98a6e0ae",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T01:37:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6dcffc44_ca4c30e5",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fae221e5_c7015bbc",
@@ -65,6 +83,24 @@
       "writtenOn": "2020-12-08T00:59:23Z",
       "side": 1,
       "message": "If we don\u0027t index CreateTime, does that mean CV will process all events in the random order. I can\u0027t tell what may go wrong in CV but my gut feeling is telling it might be an issue because an event created later may assume CV has already processed and acted on an event created earlier. For example, CV could process StopRun Event before StartRun event. Though I think it can be fixed by not consuming StopRunEvent.",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37a4fce6_27b71dd4",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T01:37:42Z",
+      "side": 1,
+      "message": "Really good question and it\u0027s a valid concern.\n\nNote that in general, timestamps aren\u0027t really solution, especially if events originated in a short succession by different machines (VMs/Pods/Whatever) and are stamped using machine local timestamps. \nGoogle systems can rely on go/truetime API, but I don\u0027t think API is available to us.\nMost DBs out there rely on various contraptions like vector clocks.\n\nHowever, unlike them, CV can rely on an actually consistent DB which can disambiguate any races.\nUpon receiving a RunStart{id} event, recipient can datastore.Get(Run{id}) and do whatever is necessary based on latest Run state. You can see this with UpdateConfig I used instead of Start/Stop in this CL.",
+      "parentUuid": "fae221e5_c7015bbc",
       "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -86,6 +122,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b952d2c_58e62255",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T01:37:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8dc95ab7_ca942086",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1675c9cb_06aca34f",
@@ -99,6 +153,30 @@
       "writtenOn": "2020-12-08T00:59:23Z",
       "side": 1,
       "message": "Del",
+      "range": {
+        "startLine": 36,
+        "startChar": 45,
+        "endLine": 36,
+        "endChar": 46
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cab9a623_82d1fabc",
+        "filename": "cv/internal/prjmanager/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T01:37:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1675c9cb_06aca34f",
       "range": {
         "startLine": 36,
         "startChar": 45,
