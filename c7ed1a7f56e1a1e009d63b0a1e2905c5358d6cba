@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "31cd253a_6d00d332",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:16:36Z",
+      "side": 1,
+      "message": "actually, let me send this for review anyway. I\u0027m sorry, but Gerrit doesn\u0027t show both files are just copies 😞",
+      "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
