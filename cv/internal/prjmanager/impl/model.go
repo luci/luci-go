@@ -36,4 +36,10 @@ type project struct {
 	//
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
+
+	// ConfigHash is the latest processed Project Config hash.
+	ConfigHash string  `gae:",noindex"`
+	State      PMState `gae:",noindex"`
+	// ActiveRuns are registered with ProjectManager Runs.
+	ActiveRuns []string `gae:",noindex"`
 }
