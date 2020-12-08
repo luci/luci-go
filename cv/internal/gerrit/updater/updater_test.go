@@ -22,8 +22,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -169,6 +171,7 @@ func TestUpdateCLWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("Updating CL works", t, func() {
+		// TODO(tandrii): test processing dependencies.
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -219,6 +222,121 @@ func TestUpdateCLWorks(t *testing.T) {
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
+		})
+
+		Convey("CL hint must actually exist", func() {
+			So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 848484881),
+				ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
+		})
+
+		Convey("Fetch for the first time", func() {
+			ci := gf.CI(123, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.Files("a.cpp", "c/b.py"))
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+
+			So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+			cl := getCL(ctx, gHost, 123)
+			So(cl.ApplicableConfig.GetUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+			So(cl.ApplicableConfig.HasOnlyProject(lProject), ShouldBeTrue)
+			So(cl.Snapshot.GetGerrit().Info.GetProject(), ShouldEqual, gRepo)
+			So(cl.Snapshot.GetGerrit().Info.GetRef(), ShouldEqual, "refs/heads/main")
+			So(cl.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
+			So(cl.Snapshot.GetLuciProject(), ShouldEqual, lProject)
+			So(cl.Snapshot.GetExternalUpdateTime(), ShouldResembleProto, ci.GetUpdated())
+
+			// Simulate Gerrit change being updated with +1s timestamp.
+			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+				c.Info.Updated.Seconds++
+			})
+
+			Convey("skips update with updatedHint", func() {
+				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime()
+				So(refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0), ShouldBeNil)
+				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
+			})
+
+			Convey("Don't update iff fetched less recent than updatedHint ", func() {
+				// Set expectation that Gerrit serves change with >=+1m timestamp.
+				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute)
+				err := refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0)
+				So(err, ShouldErrLike, "stale Gerrit data")
+				So(transient.Tag.In(err), ShouldBeTrue)
+				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
+			})
+
+			Convey("Heeds updatedHint and updates the CL", func() {
+				// Set expectation that Gerrit serves change with >=+1ms timestamp.
+				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Millisecond)
+				So(refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0), ShouldBeNil)
+				cl2 := getCL(ctx, gHost, 123)
+				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
+				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
+					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Second))
+			})
+
+			Convey("No longer watched", func() {
+				ct.Clock.Add(time.Second)
+				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
+				gobmap.Update(ctx, lProject)
+				So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+				cl2 := getCL(ctx, gHost, 123)
+				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
+				// Snapshot is preserved (handy, if this is temporal misconfiguration).
+				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
+				So(cl2.ApplicableConfig, ShouldResembleProto, &changelist.ApplicableConfig{
+					UpdateTime: timestamppb.New(ct.Clock.Now()),
+				})
+			})
+
+			Convey("Watched by a diff project", func() {
+				ct.Clock.Add(time.Second)
+				const lProject2 = "proj-2"
+				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another repo"))
+				ct.Cfg.Create(ctx, lProject2, singleRepoConfig(gHost, gRepo))
+				gobmap.Update(ctx, lProject)
+				gobmap.Update(ctx, lProject2)
+
+				// Use a hint that'd normally prevent an update.
+				updateHint := cl.Snapshot.GetExternalUpdateTime().AsTime()
+
+				Convey("with access", func() {
+					So(refreshExternal(ctx, lProject2, gHost, 123, updateHint, 0), ShouldBeNil)
+					cl2 := getCL(ctx, gHost, 123)
+					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
+					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
+					So(cl2.Snapshot.GetExternalUpdateTime(), ShouldResemble,
+						ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
+					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
+				})
+
+				Convey("without access", func() {
+					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+						c.ACLs = gf.ACLRestricted("not-lProject2")
+					})
+					So(refreshExternal(ctx, lProject2, gHost, 123, updateHint, 0), ShouldBeNil)
+					cl2 := getCL(ctx, gHost, 123)
+					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
+					// Snapshot is kept as is, including its ExternalUpdateTime.
+					So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
+					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
+					So(cl2.DependentMeta.GetByProject()[lProject2].GetNoAccess(), ShouldBeTrue)
+				})
+			})
+		})
+
+		Convey("Fetch dep after bare CL was crated", func() {
+			eid, err := changelist.GobID(gHost, 101)
+			So(err, ShouldBeNil)
+			cl, err := eid.GetOrInsert(ctx, func(cl *changelist.CL) {})
+			So(err, ShouldBeNil)
+			So(cl.EVersion, ShouldEqual, 1)
+
+			ci := gf.CI(101, gf.Project(gRepo), gf.Ref("refs/heads/main"))
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+			So(refreshExternal(ctx, lProject, gHost, 101, time.Time{}, cl.ID), ShouldBeNil)
+
+			cl2 := getCL(ctx, gHost, 101)
+			So(cl2.EVersion, ShouldEqual, 2)
+			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
 		})
 	})
 }

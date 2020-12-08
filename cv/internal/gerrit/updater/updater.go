@@ -118,27 +118,14 @@ func refreshExternal(ctx context.Context, luciProject, host string, change int64
 		host:        host,
 		change:      change,
 		updatedHint: updatedHint,
-		// TODO(tandrii): take advantage of clidHint when getting existing CL from
-		// datastore.
 	}
-	fetcher.externalID, err = changelist.GobID(host, change)
-	if err != nil {
+	if fetcher.externalID, err = changelist.GobID(host, change); err != nil {
 		return err
 	}
-	switch fetcher.priorCL, err = fetcher.externalID.Get(ctx); {
-	case err == datastore.ErrNoSuchEntity:
-		// proceed straight to update.
-	case err != nil:
+	if fetcher.g, err = gerrit.CurrentClient(ctx, fetcher.host, fetcher.luciProject); err != nil {
 		return err
-	default:
-		switch skip, err := fetcher.shouldSkip(ctx); {
-		case err != nil:
-			return err
-		case skip:
-			return nil
-		}
 	}
-	return fetcher.update(ctx)
+	return fetcher.update(ctx, clidHint)
 }
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
@@ -162,54 +149,86 @@ type fetcher struct {
 	toUpdate changelist.UpdateFields
 }
 
-func (f *fetcher) shouldSkip(ctx context.Context) (skip bool, err error) {
-	switch {
-	case f.priorCL == nil:
-		return false, nil
-	case f.priorCL.Snapshot == nil:
-		// CL is likely created as a dependency and not yet populated.
-		return false, nil
-	case f.priorCL.ApplicableConfig == nil:
-		panic(errors.Reason("%s has snapshot but not ApplicableConfig", f).Err())
+func (f *fetcher) update(ctx context.Context, clidHint changelist.CLID) (err error) {
+	// Check if CL already exists in Datastore.
+	if clidHint != 0 {
+		f.priorCL = &changelist.CL{ID: clidHint}
+		err = datastore.Get(ctx, f.priorCL)
+	} else {
+		f.priorCL, err = f.externalID.Get(ctx)
+	}
 
-	case f.updatedHint.IsZero():
-		return false, nil
-	case f.priorCL.Snapshot.IsUpToDate(f.luciProject, f.updatedHint):
-		ci := f.priorCL.Snapshot.GetGerrit().Info
-		switch acfg, err := gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		if clidHint != 0 {
+			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)",
+				clidHint, f).Err()
+		}
+		f.priorCL = nil
+		err = f.fetchNew(ctx)
+
+	case err != nil:
+		return err
+
+	case f.priorCL.Snapshot == nil:
+		// CL exists, but without snapshot, usually because it was created as
+		// dependency of another CL.
+		err = f.fetchNew(ctx)
+
+	case f.updatedHint.IsZero() || f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
+		// Either force update or updatedHint is after the snapshot we already have.
+
+		// NOTE: ideally, we'd check whether the current project is watching the
+		// (host,repo,ref) which is stored in a snapshot. Unfortunately, ref is not
+		// immutable after a change creation, see Gerrit move API which is actually
+		// being used to transition to the main branch:
+		// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#move-change
+		// Therefore, here, proceed to fetchng snapshot.
+
+		err = f.fetchExisting(ctx)
+
+	default:
+		// Snapshot considered up-to-date, check if we can skip updates.
+		ci := f.priorCL.Snapshot.GetGerrit().GetInfo()
+		var acfg *changelist.ApplicableConfig
+		switch acfg, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef()); {
 		case err != nil:
-			return false, err
-		case acfg.HasProject(f.luciProject):
-			logging.Debugf(ctx, "Updating %s to %s skipped, already at %s", f, f.updatedHint,
-				f.priorCL.Snapshot.GetExternalUpdateTime().AsTime())
-			return true, nil
-		default:
-			// CL is no longer watched by the given luciProject, even though
-			// snapshot is considered up-to-date.
-			// TODO(tandrii): refactor. This code to changelist.Update smells.
-			err := changelist.Update(ctx, "", f.priorCL.ID, changelist.UpdateFields{
-				ApplicableConfig: acfg,
-			})
-			return true, err
+			return err
+		case !f.priorCL.ApplicableConfig.SemanticallyEqual(acfg):
+			// Only update CL.ApplicableConfig in datastore iff it's materially different,
+			// since timestamp is almost guaranteed to be newer.
+			f.toUpdate.ApplicableConfig = acfg
+		}
+		if acfg.HasOnlyProject(f.luciProject) &&
+			f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
+			// Snapshot cosnidered up-to-date, but fethed in the context of a wrong project.
+			// Must re-fetch. It's OK to re-use prior snapshot so long read access to
+			// Gerrit is verified.
+			logging.Warningf(ctx, "%s switches from %q to %q LUCI project",
+				f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
+			err = f.fetchExisting(ctx)
 		}
 	}
-	return false, nil
+
+	switch {
+	case err != nil:
+		return err
+	case f.toUpdate.IsEmpty():
+		return nil
+	default:
+		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate)
+	}
 }
 
-func (f *fetcher) update(ctx context.Context) (err error) {
-	if f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject); err != nil {
-		return err
-	}
-
-	// TODO(tandrii): optimize for existing CL case.
-	if err := f.new(ctx); err != nil {
-		return err
-	}
-	return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate)
+// fetchExisting efficiently fetches new snapshot from Gerrit,
+// but it may re-use data from prior snapshot.
+func (f *fetcher) fetchExisting(ctx context.Context) error {
+	// TODO(tandrii): actually do this efficiently.
+	return f.fetchNew(ctx)
 }
 
-// new efficiently fetches new snapshot from Gerrit.
-func (f *fetcher) new(ctx context.Context) error {
+// fetchNew efficiently fetches fetchNew snapshot from Gerrit.
+func (f *fetcher) fetchNew(ctx context.Context) error {
 	req := &gerritpb.GetChangeRequest{
 		Number:  f.change,
 		Project: f.gerritProjectIfKnown(),

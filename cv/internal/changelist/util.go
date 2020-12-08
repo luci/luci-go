@@ -68,6 +68,29 @@ func (a *ApplicableConfig) HasProject(luciProject string) bool {
 	return false
 }
 
+// SemanticallyEqual checks if ApplicableConfig configs are the same except the
+// update time.
+func (a *ApplicableConfig) SemanticallyEqual(b *ApplicableConfig) bool {
+	if len(a.GetProjects()) != len(b.GetProjects()) {
+		return false
+	}
+	for i, pa := range a.GetProjects() {
+		switch pb := b.GetProjects()[i]; {
+		case pa.GetName() != pb.GetName():
+			return false
+		case len(pa.GetConfigGroupIds()) != len(pb.GetConfigGroupIds()):
+			return false
+		default:
+			for j, sa := range pa.GetConfigGroupIds() {
+				if sa != pb.GetConfigGroupIds()[j] {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
 // NeedsFetching returns true if the CL is likely out of date and would benefit
 // from fetching in the context of a given project.
 func (cl *CL) NeedsFetching(ctx context.Context, luciProject string) (bool, error) {
