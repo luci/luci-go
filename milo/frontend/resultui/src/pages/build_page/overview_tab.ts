@@ -312,8 +312,8 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       <div id="main">
+        ${this.renderCanaryWarning()}
         <div class="first-column">
-          ${this.renderCanaryWarning()}
           ${this.renderSummary()}
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
@@ -403,6 +403,8 @@ export class OverviewTabElement extends MobxLitElement {
     #canary-warning {
       background-color: var(--warning-color);
       font-weight: 500;
+      padding: 5px;
+      grid-column-end: span 2;
     }
 
     .key-value-list {
