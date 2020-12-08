@@ -280,18 +280,33 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		return nil
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error { return f.fetchFiles(ctx) })
-	eg.Go(func() error { return f.fetchRelated(ctx) })
-	// Meanwhile, compute soft deps. Currently, it's cheap operation.
-	// In the future, it may require sending another RPC to Gerrit,
-	// e.g. to fetch related CLs by topic.
-	if err = f.setSoftDeps(); err != nil {
-		return err
+	if f.priorSnapshot().GetGerrit().GetInfo().GetCurrentRevision() == f.mustHaveCurrentRevision() {
+		// Re-use past results since CurrentRevision is the same.
+		f.toUpdate.Snapshot.GetGerrit().Files = f.priorSnapshot().GetGerrit().GetFiles()
+		f.toUpdate.Snapshot.GetGerrit().GitDeps = f.priorSnapshot().GetGerrit().GetGitDeps()
+		// NOTE: CQ-Depend deps are fixed per revision. Once soft deps are accepted
+		// via hashtags or topics, the re-use won't be possible.
+		f.toUpdate.Snapshot.GetGerrit().SoftDeps = f.priorSnapshot().GetGerrit().GetSoftDeps()
+	} else {
+		eg, ctx := errgroup.WithContext(ctx)
+		eg.Go(func() error { return f.fetchFiles(ctx) })
+		eg.Go(func() error { return f.fetchRelated(ctx) })
+		// Meanwhile, compute soft deps. Currently, it's cheap operation.
+		// In the future, it may require sending another RPC to Gerrit,
+		// e.g. to fetch related CLs by topic.
+		if err = f.setSoftDeps(); err != nil {
+			return err
+		}
+		if err = eg.Wait(); err != nil {
+			return err
+		}
 	}
-	if err = eg.Wait(); err != nil {
-		return err
-	}
+
+	// Always run resolveDeps regardless of re-use of GitDeps/SoftDeps.
+	// CV retention policy deletes CLs not modified for a long time,
+	// which in some very rare case may affect a dep of this CL.
+	// TODO(tandrii): remove such risk by force-updating dep CLs to prevent
+	// retention policy from picking wiping them out.
 	if err := f.resolveDeps(ctx); err != nil {
 		return err
 	}

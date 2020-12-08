@@ -176,7 +176,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const lProject = "infra"
-		const gHost = "chromium"
+		const gHost = "chromium-review.example.com"
 		const gRepo = "depot_tools"
 
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
@@ -198,9 +198,6 @@ func TestUpdateCLWorks(t *testing.T) {
 
 		Convey("Unhandled Gerrit error results in no CL update", func() {
 			ci500 := gf.CI(500, gf.Project(gRepo), gf.Ref("refs/heads/main"))
-			err5xx := func(gf.Operation, string) *status.Status {
-				return status.New(codes.Internal, "boo")
-			}
 			Convey("fail to fetch change details", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
 				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
@@ -209,15 +206,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			})
 
 			Convey("fail to get filelist", func() {
-				calls := int32(0)
-				okThenErr5xx := func(o gf.Operation, p string) *status.Status {
-					if atomic.AddInt32(&calls, 1) == 1 {
-						return status.New(codes.OK, "")
-					} else {
-						return err5xx(o, p)
-					}
-				}
-				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx, ci500))
+				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx(), ci500))
 				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
@@ -266,11 +255,34 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("Heeds updatedHint and updates the CL", func() {
 				// Set expectation that Gerrit serves change with >=+1ms timestamp.
 				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Millisecond)
+				ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+					// Only ChangeInfo but not ListFiles and GetRelatedChanges RPCs should
+					// be called. So, ensure 2+ RPCs return 5xx.
+					c.ACLs = okThenErr5xx()
+				})
 				So(refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Second))
+
+				Convey("New revision doesn't re-use files & related changes", func() {
+					ct.Clock.Add(time.Minute)
+					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
+						c.ACLs = gf.ACLPublic()
+						gf.PS(10)(c.Info)
+						gf.Files("z.zz")(c.Info)
+						// TODO(tandrii): test CQ-Depend once works.
+						// gf.Desc("T\n\nCq-Depend: 122")(c.Info)
+						gf.Updated(ct.Clock.Now())(c.Info)
+					})
+
+					So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+					cl3 := getCL(ctx, gHost, 123)
+					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
+					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+					So(cl3.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"z.zz"})
+				})
 			})
 
 			Convey("No longer watched", func() {
@@ -372,5 +384,20 @@ func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
 				},
 			},
 		},
+	}
+}
+
+func err5xx(gf.Operation, string) *status.Status {
+	return status.New(codes.Internal, "boo")
+}
+
+func okThenErr5xx() gf.AccessCheck {
+	calls := int32(0)
+	return func(o gf.Operation, p string) *status.Status {
+		if atomic.AddInt32(&calls, 1) == 1 {
+			return status.New(codes.OK, "")
+		} else {
+			return err5xx(o, p)
+		}
 	}
 }
