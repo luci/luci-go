@@ -21,9 +21,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -34,8 +36,11 @@ import (
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
-	PageSize      int    // must be positive
-	summaryBuffer []byte // Buffer for decompressing SummaryHTML
+	PageSize      int // must be positive
+	// Consists of test variant status, test id and variant hash.
+	PageToken     string
+	summaryBuffer []byte // buffer for decompressing SummaryHTML
+	unexpected    bool   // if queried test variants have unexpected results
 }
 
 // tvResult matches the result STRUCT of a test variant from the query.
@@ -96,8 +101,23 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		panic("PageSize < 0")
 	}
 
+	switch parts, err := pagination.ParseToken(q.PageToken); {
+	case err != nil:
+		return err
+	case len(parts) == 0:
+		q.unexpected = true
+	case len(parts) != 3:
+		return pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
+	default:
+		status, ok := uipb.TestVariantStatus_value[parts[0]]
+		if !ok {
+			return pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+		}
+		q.unexpected = uipb.TestVariantStatus(status) != uipb.TestVariantStatus_EXPECTED
+	}
+
 	var sql bytes.Buffer
-	if err := queryTmpl.Execute(&sql, nil); err != nil {
+	if err := queryTmpl.Execute(&sql, map[string]interface{}{"Unexpected": q.unexpected}); err != nil {
 		return err
 	}
 	st := spanner.NewStatement(sql.String())
@@ -118,8 +138,8 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		}
 
 		tv.Status = uipb.TestVariantStatus(tvStatus)
-		if tv.Status == uipb.TestVariantStatus_EXPECTED {
-			panic("query of test variants with unexpected results returns a test variant with only expected results.")
+		if q.unexpected && tv.Status == uipb.TestVariantStatus_EXPECTED {
+			panic("query of test variants with unexpected results returned a test variant with only expected results.")
 		}
 
 		// Populate tv.Results
@@ -135,6 +155,11 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		}
 
 		// Populate tv.Exonerations
+		if tv.Status == uipb.TestVariantStatus_EXPECTED || len(exoExplanationHtmls) == 0 {
+			// No exoneration for test variants with only expected results.
+			return f(tv)
+		}
+
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
 			if expBytes, err = spanutil.Decompress(ex, expBytes); err != nil {
@@ -155,8 +180,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		panic("PageSize <= 0")
 	}
 
-	// TODO(crbug.com/1112127): query expected results.
-	// TODO(crbug.com/1112127): add paging.
+	// TODO(crbug.com/1112127): populate next page token.
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	err = q.run(ctx, func(tv *uipb.TestVariant) error {
 		tvs = append(tvs, tv)
@@ -171,10 +195,14 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 // queryTmpl is a set of templates that generate the SQL statements to query test variants.
 var queryTmpl = template.Must(template.New("testVariants").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
-	{{template "testVariantsWithUnexpectedResultsTmpl" .}}
+{{if .Unexpected}}
+	{{template "testVariantsWithUnexpectedResults" .}}
+{{else}}
+	{{template "testVariantsWithOnlyExpectedResults" .}}
+{{end}}
 LIMIT @limit
 
-{{define "testVariantsWithUnexpectedResultsTmpl"}}
+{{define "testVariantsWithUnexpectedResults"}}
 	WITH variantsWithUnexpectedResults AS (
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
@@ -229,6 +257,29 @@ LIMIT @limit
 	{{template "columns"}}
 	FROM testVariantsWithUnexpectedResults
 	ORDER BY TvStatus, TestId, VariantHash
+{{end}}
+
+{{define "testVariantsWithOnlyExpectedResults"}}
+	WITH testVariantsWithOnlyExpectedResults AS (
+		SELECT
+			TestId,
+			VariantHash,
+			ANY_VALUE(Variant) Variant,
+			16 TvStatus, -- "EXPECTED"
+			COUNTIF(IsUnexpected) num_unexpected,
+			{{template "testResults"}},
+			-- Placeholder for exonerationExplanations. So that Spanner knows
+			-- the right SQL type to infer.
+			[SAFE_CAST("" AS BYTES)] exonerationExplanations
+		FROM TestResults
+		WHERE InvocationId in UNNEST(@invIDs)
+		GROUP BY TestId, VariantHash
+		HAVING num_unexpected = 0
+		ORDER BY TestId, VariantHash
+	)
+	{{template "columns"}}
+	FROM testVariantsWithOnlyExpectedResults
+	ORDER BY TestId, VariantHash
 {{end}}
 
 {{define "testResults"}}
