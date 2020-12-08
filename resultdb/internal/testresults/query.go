@@ -290,10 +290,46 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 var queryTmpl = template.Must(template.New("").Parse(`
 	{{define "testResults"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		{{if .onlyUnexpected}}
-			{{template "testResultsWithOnlyUnexpectedResults" .}}
+		WITH
+		{{if .excludeExonerated}}
+			test_variants AS (
+				{{template "variantsWithUnexpectedResults" .}}
+			),
+			exonerated AS (
+				SELECT DISTINCT TestId, VariantHash
+				FROM TestExonerations
+				WHERE InvocationId IN UNNEST(@invIDs)
+				{{template "testIDAndVariantFilter" .}}
+			),
+			variantsWithUnexpectedResults AS (
+				SELECT tv.*
+				FROM test_variants tv
+				LEFT JOIN exonerated USING(TestId, VariantHash)
+				WHERE exonerated.TestId IS NULL
+			)
 		{{else}}
- 			{{template "testResultsWithNotOnlyUnexpectedResults" .}}
+			variantsWithUnexpectedResults AS (
+				{{template "variantsWithUnexpectedResults" .}}
+			)
+		{{end}}
+
+		{{if .onlyUnexpected}}
+				,
+				withUnexpected AS ({{template "testResultsBase" .}}),
+				withOnlyUnexpected AS (
+					SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
+					FROM withUnexpected tr
+					GROUP BY TestId, VariantHash
+					{{/*
+						All results of the TestID and VariantHash are unexpected.
+						IFNULL() is significant because LOGICAL_AND() skips nulls.
+					*/}}
+					HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
+				)
+			SELECT tr.*
+			FROM withOnlyUnexpected owu, owu.trs tr
+		{{else}}
+			{{template "testResultsBase" .}}
 		{{end}}
 
 		{{/* Apply the page token */}}
@@ -306,30 +342,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		{{end}}
 		ORDER BY InvocationId, TestId, ResultId
 		{{if .params.limit}}LIMIT @limit{{end}}
-	{{end}}
-
-	{{define "testResultsWithOnlyUnexpectedResults"}}
-		WITH
-			{{template "variantsWithUnexpectedResultsSubQueries" .}},
-			withUnexpected AS ({{template "testResultsBase" .}}),
-			withOnlyUnexpected AS (
-				SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
-				FROM withUnexpected tr
-				GROUP BY TestId, VariantHash
-				{{/*
-					All results of the TestID and VariantHash are unexpected.
-					IFNULL() is significant because LOGICAL_AND() skips nulls.
-				*/}}
-				HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
-			)
-		SELECT tr.*
-		FROM withOnlyUnexpected owu, owu.trs tr
-	{{end}}
-
-	{{define "testResultsWithNotOnlyUnexpectedResults"}}
-		WITH
-			{{template "variantsWithUnexpectedResultsSubQueries" .}}
-		{{template "testResultsBase" .}}
 	{{end}}
 
 	{{define "testResultsBase"}}
@@ -351,37 +363,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		{{end}}
 	{{end}}
 
-	{{define "variantsWithUnexpectedResultsSubQueries"}}
-		{{if .excludeExonerated}}
-			test_variants AS ({{template "variantsWithUnexpectedResults" .}}),
-			exonerated AS ({{template "exonerated" .}}),
-			variantsWithUnexpectedResults AS (
-				SELECT
-					tv.*
-				FROM test_variants tv
-				LEFT JOIN exonerated USING(TestId, VariantHash)
-				WHERE exonerated.TestId IS NULL
-			)
-		{{else}}
-			variantsWithUnexpectedResults AS (
-					{{template "variantsWithUnexpectedResults" .}}
-			)
-		{{end}}
-	{{end}}
-
 	{{define "variantsWithUnexpectedResults"}}
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 		{{template "testIDAndVariantFilter" .}}
 	{{end}}
-
-	{{define "exonerated"}}
-		SELECT DISTINCT TestId, VariantHash
-		FROM TestExonerations
-		WHERE InvocationId IN UNNEST(@invIDs)
-		{{template "testIDAndVariantFilter" .}}
-  {{end}}
 
 	{{define "testIDAndVariantFilter"}}
 		{{/* Filter by Test ID */}}
