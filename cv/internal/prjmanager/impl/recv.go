@@ -22,12 +22,11 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
 func init() {
-	prjmanager.PokePMTaskRef.AttachHandler(
+	internal.PokePMTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*internal.PokePMTask)
 			switch err := pokePMTask(ctx, task.GetLuciProject()); {
@@ -36,6 +35,8 @@ func init() {
 			case !transient.Tag.In(err):
 				return tq.Fatal.Apply(err)
 			default:
+				// TODO(tandrii): avoid retries iff we know a new task was already
+				// scheduled for the next second.
 				return err
 			}
 		},

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjmanager
+package internal
 
 import (
 	"context"
@@ -24,14 +24,12 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
-// pokeInterval is target frequency of executions of PokePmTask.
+// PokeInterval is target frequency of executions of PokePmTask.
 //
-// See dispatch() for details.
-const pokeInterval = time.Second
+// See Dispatch() for details.
+const PokeInterval = time.Second
 
 // PokePMTaskRef is used by PM implementation to add its handler.
 var PokePMTaskRef tq.TaskClassRef
@@ -39,33 +37,33 @@ var PokePMTaskRef tq.TaskClassRef
 func init() {
 	PokePMTaskRef = tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "poke-pm-task",
-		Prototype: &internal.PokePMTask{},
+		Prototype: &PokePMTask{},
 		Queue:     "manage-project",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "kick-poke-pm-task",
-		Prototype: &internal.KickPokePMTask{},
+		Prototype: &KickPokePMTask{},
 		Queue:     "manage-project",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*internal.KickPokePMTask)
+			task := payload.(*KickPokePMTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			return dispatch(ctx, task.GetLuciProject(), eta)
+			return Dispatch(ctx, task.GetLuciProject(), eta)
 		},
 	})
 }
 
-// dispatch ensures invocation of ProjectManager via PokePMTask.
+// Dispatch ensures invocation of ProjectManager via PokePMTask.
 //
 // ProjectManager will be invoced at approximately no earlier than both:
 // * eta time (if given)
 // * next possible.
-func dispatch(ctx context.Context, luciProject string, eta time.Time) error {
+func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if datastore.CurrentTransaction(ctx) != nil {
-		payload := &internal.KickPokePMTask{LuciProject: luciProject}
+		payload := &KickPokePMTask{LuciProject: luciProject}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
 		}
@@ -88,10 +86,10 @@ func dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if eta.IsZero() || eta.Before(now) {
 		eta = now
 	}
-	eta = eta.Truncate(pokeInterval).Add(pokeInterval)
+	eta = eta.Truncate(PokeInterval).Add(PokeInterval)
 	return tq.AddTask(ctx, &tq.Task{
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
-		Payload:          &internal.PokePMTask{LuciProject: luciProject},
+		Payload:          &PokePMTask{LuciProject: luciProject},
 	})
 }
