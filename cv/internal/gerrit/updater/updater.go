@@ -51,6 +51,7 @@ func init() {
 		Prototype: &RefreshGerritCL{},
 		Queue:     "refresh-gerrit-cl",
 		Handler: func(ctx context.Context, payload proto.Message) error {
+			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
 
 			var updatedHint time.Time
@@ -636,6 +637,10 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		// All errors must be transient. Return any one of them.
 		return errs.(errors.MultiError).First()
 	}
+
+	sort.Slice(resolved, func(i, j int) bool {
+		return resolved[i].GetClid() < resolved[j].GetClid()
+	})
 	f.toUpdate.Snapshot.Deps = resolved
 	return nil
 }
@@ -706,13 +711,6 @@ func (f *fetcher) clidIfKnown() changelist.CLID {
 func (f *fetcher) priorSnapshot() *changelist.Snapshot {
 	if f.priorCL != nil {
 		return f.priorCL.Snapshot
-	}
-	return nil
-}
-
-func (f *fetcher) priorAcfg() *changelist.ApplicableConfig {
-	if f.priorCL != nil {
-		return f.priorCL.ApplicableConfig
 	}
 	return nil
 }
