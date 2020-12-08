@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "60dc895c_fe404e8c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-08T21:55:36Z",
+      "side": 1,
+      "message": "The PyBB didn\u0027t have this implemented, but I think it should be safe to do so.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d462",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 119,
+        "endChar": 4
+      },
+      "revId": "40d2ebb19b9338d5628c21655d8875e3aa48bbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
