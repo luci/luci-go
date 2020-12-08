@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5131f6b3_ec2a7ee5",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T21:04:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e97bfcd2_b68d6fb8",
+      "range": {
+        "startLine": 82,
+        "startChar": 21,
+        "endLine": 82,
+        "endChar": 22
+      },
+      "revId": "492dfc62a136affc01be8c870680773fb99d46cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "92ae4328_cde9773f",
@@ -37,6 +61,24 @@
       "writtenOn": "2020-12-08T08:19:24Z",
       "side": 1,
       "message": "does this work? this looks like LIMIT 10 applies to each element being aggregated, but there is no limit on the length of the array.\nin my comment I meant ARRAY_AGG(STRUCT(...) LIMIT 10)\nbut looks like Spanner\u0027s ARRAY_AGG doesn\u0027t support LIMIT: https://cloud.google.com/spanner/docs/aggregate_functions#array_agg\nBigQuery\u0027s ARRAY_AGG does: https://screenshot.googleplex.com/4xJMigZrPZg2zNQ\n\nif this doesn\u0027t work, we might have to\n\n  ARRAY((SELECT * FROM ARRAY_AGG(...) LIMIT 10))",
+      "revId": "492dfc62a136affc01be8c870680773fb99d46cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d63e438f_b024001d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T21:04:27Z",
+      "side": 1,
+      "message": "You\u0027re right it doesn\u0027t work.\n\nBut ARRAY((SELECT * FROM ARRAY_AGG(...) LIMIT 10)) doesn\u0027t work either, i got the error: `spanner: code \u003d \"InvalidArgument\", desc \u003d \"Table-valued functions are not supported [at 23:22]\\\\n                FROM ARRAY_AGG(\\\\n                     ^\"`\n\n\nI\u0027ll not do this change in this CL, since it should be a corner case. I\u0027ll add a TODO and handle it later.",
+      "parentUuid": "92ae4328_cde9773f",
       "revId": "492dfc62a136affc01be8c870680773fb99d46cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
