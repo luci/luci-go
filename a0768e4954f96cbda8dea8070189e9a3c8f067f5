@@ -70,6 +70,30 @@
       },
       "revId": "a0768e4954f96cbda8dea8070189e9a3c8f067f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee50da61_87d3b118",
+        "filename": "buildbucket/proto/builder_service.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:47:15Z",
+      "side": 1,
+      "message": "I have the same as Scott\u0027s one.",
+      "parentUuid": "3e78d42d_3b8aff2a",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 5
+      },
+      "revId": "a0768e4954f96cbda8dea8070189e9a3c8f067f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
