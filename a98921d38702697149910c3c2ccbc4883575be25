@@ -18,6 +18,69 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1361d99_5b7c581e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98d87711_9d7395ff",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "and the new conspiracy theory is born 😊",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 68
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e78cc08_f3812b47",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "how about:\n\n(`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros to 13 digits.\n\nAnd move explanation of what is CreateTime is to CreateTime doc below.",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 11
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9af5e09_421f8d8c",
@@ -36,6 +99,294 @@
         "startChar": 1,
         "endLine": 85,
         "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80328117_4f98cfc2",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "well, we have to support such scenario because it actually happens in practice, but we can do accounting by taking the latest triggerer only, the same way we take timestamp. Choice is somewhat arbitrary, but it simplifies our code.",
+      "parentUuid": "e9af5e09_421f8d8c",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9e863204_14bd5f5a",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "definitely shouldn\u0027t be here. It\u0027s part of ConfigGroup and will be loaded from there during these periodic checks.",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 39
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f24691d_ea6eaf08",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "Then maybe RemainingTryjobQuota?\n\nI\u0027d prefer to decide on this once we code tryjob support. Having this field here now would actually mean polluting datastore, especially if we decided to rename it later.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 33
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b4d93d7_c0f9fc4b",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "All public types till here are necessary by ProjectManager and eventually API. So, they should be in runmanager/ not impl/ package.\n\n(can be a follow up CL for easy review)\n(and I will do the same thing in PM itself)",
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "789f10a9_7c589ac0",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "i wonder how we can disambiguate ActiveRuns:\n * Project.ActiveRuns\n * RunOwner.ActiveRuns\n * CL.ActiveRuns\n\nIn think in this case ActiveRuns is actually justified. In case of Project \u0026 CL, I probably should call it IncompleteRuns, since it\u0027d include Active and Pending. Thoughts?",
+      "range": {
+        "startLine": 109,
+        "startChar": 4,
+        "endLine": 109,
+        "endChar": 14
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e6aa8ac_1c2a8538",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "I\u0027m not *yet* sure this will be true. Are you?\n\nScenarios I haven\u0027t thought deeply about: \n1. Imagine CQ+1 Run triggered by user A. After the restart, user B votes CQ+1, too. This doesn\u0027t start new attempt,\nbut at the end of dry run, both votes must be removed\n  Sol1A: One way is to to update snapshot when Run receives CL Updated event.\n  Sol1B: Alternatively, just re-query Gerrit right before removing CQ votes.\n2. How to avoid posting duplicate comments? I guess the same solutions.\n\nGiven that GoB still lacks e-tags, I suspect Sol1B is better, but I didn\u0027t give it much thought.\n\nI\u0027d leave a TODO to figure it out and update comment.",
+      "range": {
+        "startLine": 116,
+        "startChar": 54,
+        "endLine": 117,
+        "endChar": 13
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77bb793a_f6fad024",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "*",
+      "range": {
+        "startLine": 124,
+        "startChar": 7,
+        "endLine": 124,
+        "endChar": 8
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9030e6b_6cd59b86",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "Yiwei, wdyt about taking tryjob-specific part of the CL into a separate CL?\nreason: it\u0027d be better to discuss Tryjob specifics once we are close to actually implementing them,\nand for now focus on Milestone1.\n(you can also ignore my questions for its fields)",
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd65a7e6_5121748d",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "Is this actually needed?",
+      "range": {
+        "startLine": 139,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 38
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "651797ea_3f284d2f",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "*",
+      "range": {
+        "startLine": 142,
+        "startChar": 8,
+        "endLine": 142,
+        "endChar": 9
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae626180_2e633e44",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "why \"Re\"? What about the first \"try\"?",
+      "range": {
+        "startLine": 163,
+        "startChar": 8,
+        "endLine": 163,
+        "endChar": 10
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9e6df53_2090928a",
+        "filename": "cv/internal/runmanager/impl/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "has",
+      "range": {
+        "startLine": 27,
+        "startChar": 37,
+        "endLine": 27,
+        "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3582b34d_b855cccd",
+        "filename": "cv/internal/runmanager/impl/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T14:57:51Z",
+      "side": 1,
+      "message": "Can we re-use attempt proto, or do you want to intentionally keep these separate and convert from this to attempt proto by hand?",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 1
       },
       "revId": "a98921d38702697149910c3c2ccbc4883575be25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
