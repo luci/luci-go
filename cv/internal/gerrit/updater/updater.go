@@ -289,9 +289,9 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		// via hashtags or topics, the re-use won't be possible.
 		f.toUpdate.Snapshot.GetGerrit().SoftDeps = f.priorSnapshot().GetGerrit().GetSoftDeps()
 	} else {
-		eg, ctx := errgroup.WithContext(ctx)
-		eg.Go(func() error { return f.fetchFiles(ctx) })
-		eg.Go(func() error { return f.fetchRelated(ctx) })
+		eg, ectx := errgroup.WithContext(ctx)
+		eg.Go(func() error { return f.fetchFiles(ectx) })
+		eg.Go(func() error { return f.fetchRelated(ectx) })
 		// Meanwhile, compute soft deps. Currently, it's cheap operation.
 		// In the future, it may require sending another RPC to Gerrit,
 		// e.g. to fetch related CLs by topic.
