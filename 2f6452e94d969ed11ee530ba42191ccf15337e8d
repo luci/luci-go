@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8192478b_eecca204",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:07:42Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "2f6452e94d969ed11ee530ba42191ccf15337e8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d57bf31_b178fccc",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:07:42Z",
+      "side": 1,
+      "message": "\"DS\" could optionally be removed from the name IMO",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "2f6452e94d969ed11ee530ba42191ccf15337e8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
