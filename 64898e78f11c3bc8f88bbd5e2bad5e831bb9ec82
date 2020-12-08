@@ -107,6 +107,70 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "158498ae_52c6a5f9",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T02:41:15Z",
+      "side": 1,
+      "message": "\u003e Really good question and it\u0027s a valid concern.\n\u003e \n\u003e Note that in general, timestamps aren\u0027t really solution, especially if events originated in a short succession by different machines (VMs/Pods/Whatever) and are stamped using machine local timestamps. \n\u003e Google systems can rely on go/truetime API, but I don\u0027t think API is available to us.\n\u003e Most DBs out there rely on various contraptions like vector clocks.\n\nAgreed. Timestamp is not a 100% reliable solution. It just helps alleviate the problem to some extent.\n\n\u003e However, unlike them, CV can rely on an actually consistent DB which can disambiguate any races.\n\u003e Upon receiving a RunStart{id} event, recipient can datastore.Get(Run{id}) and do whatever is necessary based on latest Run state. You can see this with UpdateConfig I used instead of Start/Stop in this CL.\n\nYes. That\u0027s what I thought as well. And even if we do index CreateTime, we still need such disambiguation for events originated in a short succession. I think we can start with this and see how it goes. I will keep event may arrive in random order in mind while coding RunManager :D",
+      "parentUuid": "37a4fce6_27b71dd4",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "080d9051_891f1797",
+        "filename": "cv/internal/prjmanager/internal/tasks.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T02:41:15Z",
+      "side": 1,
+      "message": "naming nit: I like how scheduler name this task i.e. KickPokePMTask. Async sounds vague to me as it could mean a lot of thing.",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17257a75_7b27b1ac",
+        "filename": "cv/internal/prjmanager/internal/tasks.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T02:41:15Z",
+      "side": 1,
+      "message": "PokePMTask",
+      "range": {
+        "startLine": 34,
+        "startChar": 3,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8dc95ab7_ca942086",
         "filename": "cv/internal/prjmanager/send.go",
         "patchSetId": 4
@@ -136,6 +200,29 @@
       "side": 1,
       "message": "Ack",
       "parentUuid": "8dc95ab7_ca942086",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54183269_61c8c5cb",
+        "filename": "cv/internal/prjmanager/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-08T02:41:15Z",
+      "side": 1,
+      "message": "dispatch",
+      "range": {
+        "startLine": 33,
+        "startChar": 7,
+        "endLine": 33,
+        "endChar": 24
+      },
       "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
