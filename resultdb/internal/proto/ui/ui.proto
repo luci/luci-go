@@ -86,6 +86,7 @@ message TestVariant {
   TestVariantStatus status = 4;
 
   // Outcomes of the test variant.
+  // At most 10 results will be included.
   repeated TestResultBundle results = 5;
 
   // Test exonerations if any test variant is exonerated.

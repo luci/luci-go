@@ -264,6 +264,7 @@ type TestVariant struct {
 	// Status of the test variant.
 	Status TestVariantStatus `protobuf:"varint,4,opt,name=status,proto3,enum=luci.resultdb.internal.ui.TestVariantStatus" json:"status,omitempty"`
 	// Outcomes of the test variant.
+	// At most 10 results will be included.
 	Results []*TestResultBundle `protobuf:"bytes,5,rep,name=results,proto3" json:"results,omitempty"`
 	// Test exonerations if any test variant is exonerated.
 	Exonerations []*v1.TestExoneration `protobuf:"bytes,6,rep,name=exonerations,proto3" json:"exonerations,omitempty"`
