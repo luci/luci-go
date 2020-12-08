@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ae1a33d_8e5ade97",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T13:32:11Z",
+      "side": 1,
+      "message": "please add a new go/luci-bug",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "29a6664b_9898cca3",
@@ -14,6 +31,46 @@
       "writtenOn": "2020-12-08T09:10:00Z",
       "side": 1,
       "message": "PTAL. This is definitely incomplete. But includes most of the fields I can think of.",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "118744df_6cb7b9b7",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T13:32:11Z",
+      "side": 1,
+      "message": "Food for thought (aka TODO):\n* how should we store that CV has lost access to a tryjob due to change of ACLs?\n* for newly created Build entity which doesn\u0027t have external ID yet, ie about to be scheduled, what is status?\n  * -\u003e and how do we store lack of ACLs to schedule such build?\n\nMaybe NO_READ_ACCESS, TO_BE_SCHEDULED, NO_SCHEDULE_ACCESS will be good enough, but i\u0027m not sure yet.",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ed22ebc_a6bbf6ad",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T13:32:11Z",
+      "side": 1,
+      "message": "So, did you mean this to be externally reported or possibly set purely on CV\u0027s whim regardless of external system?\n\nFor just BB, externally reported will suffice, because CancelBuild() RPC will respond with final the Build status with status\u003dbb.Canceled, it\u0027ll be easy to only set CANCELED here iff bb.build.status is canceled.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 15
+      },
       "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
