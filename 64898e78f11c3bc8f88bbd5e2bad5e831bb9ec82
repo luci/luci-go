@@ -146,6 +146,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d2ead71_b848876a",
+        "filename": "cv/internal/prjmanager/internal/tasks.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T15:05:36Z",
+      "side": 1,
+      "message": "I liked \"Kick\" too, but I thought I was biased and async is actually clearer. Well, happy to revert to my preferred choice 😊",
+      "parentUuid": "080d9051_891f1797",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17257a75_7b27b1ac",
@@ -159,6 +183,30 @@
       "writtenOn": "2020-12-08T02:41:15Z",
       "side": 1,
       "message": "PokePMTask",
+      "range": {
+        "startLine": 34,
+        "startChar": 3,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ab8a5e1_d761a615",
+        "filename": "cv/internal/prjmanager/internal/tasks.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T15:05:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17257a75_7b27b1ac",
       "range": {
         "startLine": 34,
         "startChar": 3,
