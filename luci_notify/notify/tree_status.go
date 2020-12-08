@@ -380,8 +380,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	return nil
 }
 
-// NOTE: If you want to add a new message, do so in Gatekeeper, not here. The
-// full list will be copied over before Gatekeeper is deleted.
+// Want more messages? CLs welcome!
 var messages = []string{
 	"(｡>﹏<｡)",
 	"☃",
