@@ -159,7 +159,6 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 		}
 	}
 
-	logging.Debugf(ctx, "Querying search on Build")
 	return q.fetchOnBuild(ctx)
 }
 
