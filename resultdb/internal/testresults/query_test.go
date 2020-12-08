@@ -371,15 +371,15 @@ func TestQueryTestResults(t *testing.T) {
 							FROM test_variants tv
 							LEFT JOIN exonerated USING(TestId, VariantHash)
 							WHERE exonerated.TestId IS NULL
-						) ,
+						),
   					withUnexpected AS (
   						SELECT InvocationId, TestId, VariantHash
 							FROM variantsWithUnexpectedResults vur
 							JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
 							WHERE InvocationId IN UNNEST(@invIDs)
-						),
+						) ,
 						withOnlyUnexpected AS (
-							SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
+							SELECT ARRAY_AGG(tr) trs
 							FROM withUnexpected tr
 							GROUP BY TestId, VariantHash
 							HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
@@ -410,13 +410,16 @@ func TestQueryTestResults(t *testing.T) {
 							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 							AND REGEXP_CONTAINS(TestId, @testIdRegexp)
+						),
+						withUnexpected AS (
+							SELECT InvocationId, TestId, VariantHash
+							FROM variantsWithUnexpectedResults vur
+							JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+							WHERE InvocationId IN UNNEST(@invIDs)
 						)
-					SELECT InvocationId, TestId, VariantHash
-					FROM variantsWithUnexpectedResults vur
-					JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-					WHERE InvocationId IN UNNEST(@invIDs)
+					SELECT * FROM withUnexpected
 					ORDER BY InvocationId, TestId, ResultId
-				`
+					`
 				// Compare sql strings ignoring whitespaces.
 				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
 			})
