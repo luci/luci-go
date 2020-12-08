@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -484,6 +485,9 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.steps", func() {
+			now := testclock.TestRecentTimeLocal
+			ctx, _ = testclock.UseTime(ctx, now)
+
 			step := &pb.Step{
 				Name:      "step",
 				StartTime: &timestamppb.Timestamp{Seconds: 1},
@@ -507,6 +511,55 @@ func TestUpdateBuild(t *testing.T) {
 				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Steps, ShouldBeNil)
+			})
+
+			Convey("incomplete steps with non-terminal Build status", func() {
+				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
+				req.Build.Status = pb.Status_STARTED
+				req.Build.Steps[0].Status = pb.Status_STARTED
+				req.Build.Steps[0].EndTime = nil
+				_, err := srv.UpdateBuild(ctx, req)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+			})
+
+			Convey("incomplete steps with terminal Build status", func() {
+				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
+				req.Build.Status = pb.Status_SUCCESS
+
+				Convey("with mask", func() {
+					req.Build.Steps[0].Status = pb.Status_SUCCESS
+					req.Build.Steps[0].EndTime = nil
+					_, err := srv.UpdateBuild(ctx, req)
+
+					// Should be rejected.
+					msg := `is incomplete "SUCCESS" but the build was or will be terminated`
+					So(err, ShouldHaveRPCCode, codes.InvalidArgument, msg)
+				})
+
+				Convey("w/o mask", func() {
+					// update the build with incomplete steps first.
+					req.Build.Status = pb.Status_STARTED
+					req.Build.Steps[0].Status = pb.Status_STARTED
+					req.Build.Steps[0].EndTime = nil
+					_, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+					// update the build again with a terminal status, but w/o step mask.
+					req.UpdateMask.Paths = []string{"build.status"}
+					req.Build.Status = pb.Status_SUCCESS
+					_, err = srv.UpdateBuild(ctx, req)
+					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+					// the step should have been cancelled.
+					b := getBuildWithDetails(ctx, req.Build.Id)
+					expected := &pb.Step{
+						Name:      step.Name,
+						Status:    pb.Status_CANCELED,
+						StartTime: step.StartTime,
+						EndTime:   google.NewTimestamp(now),
+					}
+					So(b.Proto.Steps[0], ShouldResembleProto, expected)
+				})
 			})
 		})
 
