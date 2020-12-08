@@ -317,14 +317,14 @@ export class OverviewTabElement extends MobxLitElement {
           ${this.renderSummary()}
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
-          ${this.renderInput()}
-          ${this.renderInfra()}
-          ${this.renderTiming()}
-          ${this.renderActionButtons()}
         </div>
         <div class="second-column">
-          ${this.renderTags()}
+          ${this.renderInput()}
+          ${this.renderTiming()}
+          ${this.renderInfra()}
           ${this.renderBuildLogs()}
+          ${this.renderActionButtons()}
+          ${this.renderTags()}
           ${this.renderProperties('Input Properties', build.input.properties)}
           ${this.renderProperties('Output Properties', build.output.properties)}
         </div>
