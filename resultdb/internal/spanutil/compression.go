@@ -54,7 +54,7 @@ func (c Compressed) ToSpanner() interface{} {
 		// Do not store empty bytes.
 		return []byte(nil)
 	}
-	return compress(c)
+	return Compress(c)
 }
 
 // SpannerPtr implements Ptr.
@@ -71,7 +71,7 @@ func (c *Compressed) FromSpanner(b *Buffer) error {
 		// *c might be pointing to an existing memory buffer.
 		// Try to reuse it for decoding.
 		var err error
-		if *c, err = decompress(b.ByteSlice, *c); err != nil {
+		if *c, err = Decompress(b.ByteSlice, *c); err != nil {
 			return err
 		}
 	}
@@ -79,13 +79,17 @@ func (c *Compressed) FromSpanner(b *Buffer) error {
 	return nil
 }
 
-func compress(data []byte) []byte {
+// Compress compresses data using zstd.
+func Compress(data []byte) []byte {
 	out := make([]byte, 0, len(data)/2+len(zstdHeader)) // hope for at least 2x compression
 	out = append(out, zstdHeader...)
 	return zstdEncoder.EncodeAll(data, out)
 }
 
-func decompress(src, dest []byte) ([]byte, error) {
+// Decompress decompresses the src compressed with Compress to dest.
+// dest is the buffer for decompressed content, it will be reset to 0 length
+// before taking the content.
+func Decompress(src, dest []byte) ([]byte, error) {
 	if !bytes.HasPrefix(src, zstdHeader) {
 		return nil, errors.Reason("expected ztd header").Err()
 	}

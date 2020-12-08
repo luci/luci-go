@@ -15,6 +15,7 @@
 package spanutil
 
 import (
+	"fmt"
 	"reflect"
 
 	"cloud.google.com/go/spanner"
@@ -171,7 +172,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		}
 
 	default:
-		panic("impossible")
+		panic(fmt.Sprintf("impossible %q", goPtr))
 	}
 	return nil
 }
