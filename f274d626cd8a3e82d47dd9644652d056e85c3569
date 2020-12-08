@@ -16,6 +16,24 @@
       "message": "Copy-Paste leftover?",
       "revId": "f274d626cd8a3e82d47dd9644652d056e85c3569",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2178fd1e_e26b88ab",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T00:29:09Z",
+      "side": 1,
+      "message": "Yup.",
+      "parentUuid": "3f53d4e7_e6f3e876",
+      "revId": "f274d626cd8a3e82d47dd9644652d056e85c3569",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
