@@ -286,14 +286,63 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 
 // queryTmpl is a set of templates that generate the SQL statements used
 // by Query type.
-// Two main templates are "testResults" and "variantsWithUnexpectedResults"
 var queryTmpl = template.Must(template.New("").Parse(`
 	{{define "testResults"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		{{if .onlyUnexpected}}
-			{{template "testResultsWithOnlyUnexpectedResults" .}}
+		WITH
+		{{if .excludeExonerated}}
+			testVariants AS (
+				{{template "variantsWithUnexpectedResults" .}}
+			),
+			exonerated AS (
+				SELECT DISTINCT TestId, VariantHash
+				FROM TestExonerations
+				WHERE InvocationId IN UNNEST(@invIDs)
+				{{template "testIDAndVariantFilter" .}}
+			),
+			variantsWithUnexpectedResults AS (
+				SELECT tv.*
+				FROM testVariants tv
+				LEFT JOIN exonerated USING(TestId, VariantHash)
+				WHERE exonerated.TestId IS NULL
+			),
 		{{else}}
- 			{{template "testResultsWithNotOnlyUnexpectedResults" .}}
+			variantsWithUnexpectedResults AS (
+				{{template "variantsWithUnexpectedResults" .}}
+			),
+		{{end}}
+
+		withUnexpected AS (
+			SELECT {{.columns}}
+			FROM variantsWithUnexpectedResults vur
+			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+			WHERE InvocationId IN UNNEST(@invIDs)
+			{{/*
+				Don't have to use testIDAndVariantFilter because
+				variantsWithUnexpectedResults is already filtered
+			*/}}
+		)
+
+		{{if .onlyUnexpected}}
+			, withOnlyUnexpected AS (
+				SELECT ARRAY_AGG(tr) trs
+				FROM withUnexpected tr
+				GROUP BY TestId, VariantHash
+				{{/*
+					All results of the TestID and VariantHash are unexpected.
+					IFNULL() is significant because LOGICAL_AND() skips nulls.
+				*/}}
+				HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
+			)
+			SELECT tr.*
+			FROM withOnlyUnexpected owu, owu.trs tr
+		{{else if .withUnexpected}}
+			SELECT * FROM withUnexpected
+		{{else}}
+			SELECT {{.columns}}
+			FROM TestResults tr
+			WHERE InvocationId IN UNNEST(@invIDs)
+				{{template "testIDAndVariantFilter" .}}
 		{{end}}
 
 		{{/* Apply the page token */}}
@@ -308,80 +357,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		{{if .params.limit}}LIMIT @limit{{end}}
 	{{end}}
 
-	{{define "testResultsWithOnlyUnexpectedResults"}}
-		WITH
-			{{template "variantsWithUnexpectedResultsSubQueries" .}},
-			withUnexpected AS ({{template "testResultsBase" .}}),
-			withOnlyUnexpected AS (
-				SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
-				FROM withUnexpected tr
-				GROUP BY TestId, VariantHash
-				{{/*
-					All results of the TestID and VariantHash are unexpected.
-					IFNULL() is significant because LOGICAL_AND() skips nulls.
-				*/}}
-				HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
-			)
-		SELECT tr.*
-		FROM withOnlyUnexpected owu, owu.trs tr
-	{{end}}
-
-	{{define "testResultsWithNotOnlyUnexpectedResults"}}
-		WITH
-			{{template "variantsWithUnexpectedResultsSubQueries" .}}
-		{{template "testResultsBase" .}}
-	{{end}}
-
-	{{define "testResultsBase"}}
-		SELECT {{.columns}}
-		{{if .withUnexpected}}
-				FROM variantsWithUnexpectedResults vur
-				JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-		{{else}}
-			FROM TestResults tr
-		{{end}}
-		WHERE InvocationId IN UNNEST(@invIDs)
-		{{if not .withUnexpected}}
-			{{/*
-				Apply TestId and Variant filters only if we don't filter by
-				@testVariants, because @testVariants are already filtered by TestID
-				and Variant.
-			*/}}
-			{{template "testIDAndVariantFilter" .}}
-		{{end}}
-	{{end}}
-
-	{{define "variantsWithUnexpectedResultsSubQueries"}}
-		{{if .excludeExonerated}}
-			test_variants AS ({{template "variantsWithUnexpectedResults" .}}),
-			exonerated AS ({{template "exonerated" .}}),
-			variantsWithUnexpectedResults AS (
-				SELECT
-					tv.*
-				FROM test_variants tv
-				LEFT JOIN exonerated USING(TestId, VariantHash)
-				WHERE exonerated.TestId IS NULL
-			)
-		{{else}}
-			variantsWithUnexpectedResults AS (
-					{{template "variantsWithUnexpectedResults" .}}
-			)
-		{{end}}
-	{{end}}
-
 	{{define "variantsWithUnexpectedResults"}}
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 		{{template "testIDAndVariantFilter" .}}
 	{{end}}
-
-	{{define "exonerated"}}
-		SELECT DISTINCT TestId, VariantHash
-		FROM TestExonerations
-		WHERE InvocationId IN UNNEST(@invIDs)
-		{{template "testIDAndVariantFilter" .}}
-  {{end}}
 
 	{{define "testIDAndVariantFilter"}}
 		{{/* Filter by Test ID */}}
