@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49ee9624_42d57a04",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:10:43Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "d61289fec27c6aba9ea87a97ed861950ccd0eebe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d417b9d6_d822586f",
+        "filename": "cv/internal/prjmanager/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:10:43Z",
+      "side": 1,
+      "message": "This basically means whether the project is active or disabled, right? Specifically, it may be STARTED (active), STOPPING (pending disabling), STOPPED (disabled). Optionally you could make this comment slightly longer.",
+      "revId": "d61289fec27c6aba9ea87a97ed861950ccd0eebe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26fca296_759eb489",
+        "filename": "cv/internal/prjmanager/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T21:10:43Z",
+      "side": 1,
+      "message": "I guess there\u0027s no STARTING, when a new Project is added it will immediately be in STARTED mode, eh?",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 14
+      },
+      "revId": "d61289fec27c6aba9ea87a97ed861950ccd0eebe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
