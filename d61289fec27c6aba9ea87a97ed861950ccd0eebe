@@ -56,6 +56,30 @@
       },
       "revId": "d61289fec27c6aba9ea87a97ed861950ccd0eebe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2e93404_4850b380",
+        "filename": "cv/internal/prjmanager/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:13:23Z",
+      "side": 1,
+      "message": "Probably. Not 100% sure yet.\n\nYou see, I\u0027ve was writing the CL and didn\u0027t need it, but I realized that my mailbox impl was crap, so I split these small CLs out first to avoid losing work, and then reworked mailbox (CLs on top of this stack).",
+      "parentUuid": "26fca296_759eb489",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 14
+      },
+      "revId": "d61289fec27c6aba9ea87a97ed861950ccd0eebe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
