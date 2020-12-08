@@ -87,6 +87,30 @@
       },
       "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb4a7028_2a9b8d1f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:14:08Z",
+      "side": 1,
+      "message": "I was thinking about do them sequentially and only when we get less than one page of test variants with unexpected results. And yeah that will be slow...\n\nI\u0027ll not do that. UI need to send another request for the next page of test variants with only expected results.",
+      "parentUuid": "8a48eb97_ec257477",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 85
+      },
+      "revId": "507b5c39dc888859877ad40ac3ba82a40c5c62bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
