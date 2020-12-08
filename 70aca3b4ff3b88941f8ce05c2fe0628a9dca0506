@@ -41,6 +41,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9f2f688_02fa3d8d",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a87509b4_982a8c80",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "99a61379_65aa188f",
+        "filename": "resultdb/internal/spanutil/compression.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86e7f661_20f62f05",
+      "range": {
+        "startLine": 88,
+        "startChar": 35,
+        "endLine": 88,
+        "endChar": 44
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e4dae3aa_f10e6cea",
@@ -54,6 +96,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "the buffer is there, but it is never reused from one tvResult to another?\nthe buffer should be in a struct that is used in all test results, e.g. Query",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 14
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f67e1668_f14ca4a0",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4dae3aa_f10e6cea",
       "range": {
         "startLine": 50,
         "startChar": 1,
@@ -87,6 +153,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f19cd552_c64066e6",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6a82133_b386095b",
+      "range": {
+        "startLine": 53,
+        "startChar": 36,
+        "endLine": 53,
+        "endChar": 40
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2f5be53_6019aa3a",
@@ -100,6 +190,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "why do we need a separate variable?\ntr.Tags \u003d make(...)",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 5
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34e96231_a0da0bf9",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2f5be53_6019aa3a",
       "range": {
         "startLine": 80,
         "startChar": 1,
@@ -133,6 +247,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "befa9123_046f1ace",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "379eb561_022efb2e",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 13
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ff7a807_30a9af01",
@@ -146,6 +284,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "now that the EXPECTED case is removed from the query, this can never happen.\nso the code is no longer detecting the bug.\n\nconsider one of \n1) restore the CASE in the SQL query\n2) remove this if statement\n3) extend the loop in L128, to assert that at least one test result is unexpected",
+      "range": {
+        "startLine": 122,
+        "startChar": 23,
+        "endLine": 122,
+        "endChar": 49
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "542dbc8b_be848d13",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "I thought I restored the case... Done 1.",
+      "parentUuid": "2ff7a807_30a9af01",
       "range": {
         "startLine": 122,
         "startChar": 23,
@@ -173,6 +335,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fff93e6f_c10fbd5b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdc8805b_9dd54f3e",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9bccaf4_0d117418",
@@ -186,6 +366,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "nit: join lines?",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 143,
+        "endChar": 7
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "06d821f6_2312b0f4",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9bccaf4_0d117418",
       "range": {
         "startLine": 142,
         "startChar": 5,
@@ -219,6 +423,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec875db4_af49033d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31fde338_10e592ca",
+      "range": {
+        "startLine": 211,
+        "startChar": 30,
+        "endLine": 211,
+        "endChar": 32
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a378f316_113ee818",
@@ -232,6 +460,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "nit: add trailing comma?",
+      "range": {
+        "startLine": 244,
+        "startChar": 5,
+        "endLine": 244,
+        "endChar": 6
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bde60bed_115f6a09",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a378f316_113ee818",
       "range": {
         "startLine": 244,
         "startChar": 5,
@@ -259,6 +511,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccbc4df4_6bc83b31",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done.\n\nI chose 10 right now, since this is for milo and a test should not be run more than 10 - IIRC some test frameworks rerun a failed test at most 3 times, so that\u0027s 4 in total, and there\u0027s retry shard step, which can be the other 4.\n\nFindit builds UI may lose data but it\u0027s a very small use case so I\u0027ll ignore it.\n\nNot sure will it be enough for GERRIT VIEW. Or if there\u0027re any other cases, but we can adjust this or turn it into a query parameter if needed.",
+      "parentUuid": "77a93901_c86ec2c9",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fcc4a035_3af1a51b",
@@ -272,6 +542,24 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "nit: trailing comma",
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87e6e0a8_bae28501",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcc4a035_3af1a51b",
       "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -299,6 +587,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a808b93c_b9c8c58d",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c70bbd9_9bef61af",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 7
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f10a9b2_0064647f",
@@ -312,6 +624,30 @@
       "writtenOn": "2020-12-08T00:41:27Z",
       "side": 1,
       "message": "is this code testing getTvStrings function? what bug is it trying to catch?\n\ni suspect this was added in response to my claim that tv status is not asserted. It appears that I was wrong: it was asserted, in L117. I didn\u0027t notice the \"1/\" prefixes. Sorry about that.",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 6
+      },
+      "revId": "70aca3b4ff3b88941f8ce05c2fe0628a9dca0506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c330d4de_45fa2e6b",
+        "filename": "resultdb/internal/testvariants/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-08T07:13:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f10a9b2_0064647f",
       "range": {
         "startLine": 124,
         "startChar": 5,
