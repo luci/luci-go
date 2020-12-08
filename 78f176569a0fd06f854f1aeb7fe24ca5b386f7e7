@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2fede94_e1054145",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-08T02:00:12Z",
+      "side": 1,
+      "message": "LGTM. Did you also update the Chops Noogler guide to point here?",
+      "revId": "78f176569a0fd06f854f1aeb7fe24ca5b386f7e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
