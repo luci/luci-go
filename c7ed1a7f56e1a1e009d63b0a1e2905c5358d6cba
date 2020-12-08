@@ -122,6 +122,30 @@
       },
       "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcf9c909_d860489d",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T22:09:07Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "2fd7f45e_5d9b5fd6",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
