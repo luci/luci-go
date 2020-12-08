@@ -98,6 +98,30 @@
       },
       "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fd7f45e_5d9b5fd6",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T22:01:07Z",
+      "side": 1,
+      "message": "keep it http://yaqs/5926805707030528",
+      "parentUuid": "1298fa0b_ec48a11e",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c7ed1a7f56e1a1e009d63b0a1e2905c5358d6cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
