@@ -35,6 +35,86 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "281cd6e1_b88f39ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d352b52f_e56836c0",
+        "filename": "cv/internal/tryjob/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "detailed information",
+      "range": {
+        "startLine": 49,
+        "startChar": 24,
+        "endLine": 49,
+        "endChar": 42
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba64c83c_e105b6c2",
+        "filename": "cv/internal/tryjob/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "Nit: Optionally this could be called Details. To me, this is kind of like \"datum/data\". You don\u0027t usually refer to one datum, since that would be just like one primitive field; usually it\u0027s multiple little pieces of information.",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cd8515f_eccf7cf8",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "Because \"external system\" or \"the external system\" is mentioned in the comments below, you could mention that for example \"the external system\" could be Buildbucket. (And will likely only be Buildbucket for quite some time?)",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "118744df_6cb7b9b7",
@@ -70,6 +150,75 @@
         "startChar": 0,
         "endLine": 36,
         "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a97755b4_016e9398",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "Maybe \"Details\"",
+      "range": {
+        "startLine": 39,
+        "startChar": 8,
+        "endLine": 39,
+        "endChar": 14
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "043c3e98_5aacc80a",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "types",
+      "range": {
+        "startLine": 40,
+        "startChar": 15,
+        "endLine": 40,
+        "endChar": 19
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b88b3e04_e22490c2",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-08T18:38:10Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 26
       },
       "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
