@@ -16,16 +16,19 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -37,7 +40,10 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-var emptyStruct, _ = structpb.NewStruct(map[string]interface{}{})
+var (
+	emptyStruct, _   = structpb.NewStruct(map[string]interface{}{})
+	stepMaskTemplate = mask.MustFromReadMask(&pb.Build{}, "steps", "tags")
+)
 
 func nilifyReqBuildDetails(b *pb.Build) func() {
 	origTags, origSteps, origOutProp := b.Tags, b.Steps, emptyStruct
@@ -100,6 +106,18 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
 				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
 			}
+			// reject the request if it has a terminal build status with incomplete steps.
+			if protoutil.IsEnded(req.Build.Status) {
+				for i, step := range req.Build.Steps {
+					if protoutil.IsEnded(step.Status) {
+						return errors.Reason(
+							"step[%d]: %q is incomplete %q but the build was or will be terminated",
+							i, step.Name, step.Status,
+						).Err()
+					}
+				}
+			}
+
 		case "build.status_details":
 		case "build.steps":
 			if err := validateSteps(bs, req.Build.Steps); err != nil {
@@ -294,12 +312,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 			})
 		}
 
-		// steps
-		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
-			steps.Build = bk
-			toSave = append(toSave, steps)
-		}
-
 		// merge the tags of the build entity with the request.
 		if len(req.Build.GetTags()) > 0 && buildMask.MustIncludes("tags") == mask.IncludeEntirely {
 			tags := stringset.NewFromSlice(b.Tags...)
@@ -313,10 +325,45 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		//
 		// TODO(ddoman): if crbug.com/1154557 is done, remove nilifyReqBuildDetails().
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
+		origStatus := b.Proto.Status
 		defer nilifyReqBuildDetails(req.Build)()
 		buildMask.Merge(req.Build, &b.Proto)
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
+		}
+		isEndedStatus := protoutil.IsEnded(b.Proto.Status)
+		if origStatus != b.Proto.Status {
+			switch {
+			case b.Proto.Status == pb.Status_STARTED:
+				if b.Proto.StartTime == nil {
+					b.Proto.StartTime = google.NewTimestamp(clock.Now(ctx).UTC())
+				}
+			case isEndedStatus:
+				if b.Proto.EndTime == nil {
+					b.Proto.EndTime = google.NewTimestamp(clock.Now(ctx).UTC())
+				}
+			default:
+				// var `updateBuildStatuses` should contain only STARTED and terminal
+				// statuses. If this happens, it must be a bug.
+				panic(fmt.Sprintf("invalid status %q for UpdateBuild", b.Proto.Status))
+			}
+		}
+
+		// steps
+		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
+			steps.Build = bk
+			toSave = append(toSave, steps)
+		} else if isEndedStatus {
+			existingSteps := &model.BuildSteps{ID: 1, Build: bk}
+			if err := model.GetIgnoreMissing(ctx, existingSteps); err != nil {
+				return err
+			}
+			switch changed, err := existingSteps.CancelIncomplete(ctx, b.Proto.EndTime); {
+			case err != nil:
+				return err
+			case changed:
+				toSave = append(toSave, existingSteps)
+			}
 		}
 
 		if len(toSave) > 0 {
