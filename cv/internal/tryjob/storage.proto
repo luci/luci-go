@@ -1,0 +1,49 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.tryjob;
+
+option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
+
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
+
+// Status describes the status of a Tryjob in the external system (e.g.
+// Buildbucket).
+enum Status {
+  // Unspecified state.
+  STATUS_UNSPECIFIED = 0;
+  // Tryjob is pending launching in external system.
+  PENDING = 1;
+  // Tryjob has launched in the external system.
+  STARTED = 2;
+  // External system reports success status for this Tryjob.
+  SUCCESS = 3;
+  // External system reports non-success status for this Tryjob.
+  FAILURE = 4;
+  // Tryjob is cancelled. It is likely because CL has been updated and Tryjob
+  // is not reusable any more.
+  CANCELED = 5;
+}
+
+message Details {
+  // Different types of Tryjob.
+  oneof job {
+    // A Buildbucket build.
+    //
+    // TODO(yiwzhang): Decide the exact fields that require persistence.
+    buildbucket.v2.Build buildbucket_build = 1;
+  }
+}
