@@ -123,6 +123,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "729a30ac_4821b604",
+        "filename": "cv/internal/prjmanager/internal/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T15:06:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "158498ae_52c6a5f9",
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "080d9051_891f1797",
@@ -265,6 +283,30 @@
       "writtenOn": "2020-12-08T02:41:15Z",
       "side": 1,
       "message": "dispatch",
+      "range": {
+        "startLine": 33,
+        "startChar": 7,
+        "endLine": 33,
+        "endChar": 24
+      },
+      "revId": "64898e78f11c3bc8f88bbd5e2bad5e831bb9ec82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d35afa6d_a1737a46",
+        "filename": "cv/internal/prjmanager/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T15:06:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54183269_61c8c5cb",
       "range": {
         "startLine": 33,
         "startChar": 7,
