@@ -236,6 +236,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0f2cf2b1_40d50ffa",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:06:39Z",
+      "side": 1,
+      "message": "I don\u0027t like marking auth issue with FAILURE, because that would mean build status can change from FAILURE to SUCCESS in the future, which is weird. Also, this makes figuring out tryjob quota harder, since some failures are different from others . Per separation of concerns PoV (see also below comment), I\u0027d probably prefer separate field to capture these, but I\u0027m not sure if this will make code simpler or not.\n\nWrt Pending, agree about overload, so 2 status is better, but it\u0027d keep them as:\n  TO_BE_SCHEDULED\n  PENDING\ns.t. Pending has exact same meaning as in BB. Though yet again, we can also just have a separate field for Scheduling purposes and keep status _UNSPECIFIED in such a case.",
+      "parentUuid": "c02cb045_122adee5",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0ed22ebc_a6bbf6ad",
         "filename": "cv/internal/tryjob/storage.proto",
         "patchSetId": 2
@@ -271,6 +289,30 @@
       "side": 1,
       "message": "Good point, I actually didn\u0027t thought about externally reported case. I imagine this is purely set by CV because ideally, it is CV who cancels those no-longer-needed tryjobs. But nothing prevents user from going to the build UI and cancelling the Tryjob themselves.\n\nWhat is the current CQ behavior in this scenario? Does CQ consider it as a failure and retry?",
       "parentUuid": "0ed22ebc_a6bbf6ad",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0aa031e_a833ed4b",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-08T21:06:39Z",
+      "side": 1,
+      "message": "In Current CQ, these don\u0027t overlap:\n*  tryjob module deals with relevant tryjobs only, so build.cancelled is treated as if build has failed. There are FRs to change this, s.t. if trooper cancels lots of builds, CQ doesn\u0027t quickly reschedule them.\n* cancelator module cancels and forgets any build that got finalized (since CQ can\u0027t modify such builds).\n\nSO, i think my preference is to keep these concerns separate: keep this status for consumption of a Run (just like tryjob module before), and have a separate field that deals exclusively with cancelation by CQ.",
+      "parentUuid": "cf4f60be_d5b3c67e",
       "range": {
         "startLine": 34,
         "startChar": 0,
