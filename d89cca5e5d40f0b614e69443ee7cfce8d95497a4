@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a2bb12e8_f00c3fdb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T22:13:17Z",
+      "side": 1,
+      "message": "Yup. that\u0027s also what I\u0027m thinking.",
+      "parentUuid": "e9f4e0e9_295be4be",
+      "revId": "d89cca5e5d40f0b614e69443ee7cfce8d95497a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c7478120_57fcaefd",
         "filename": "cv/internal/runmanager/impl/model.go",
         "patchSetId": 1
@@ -73,6 +91,30 @@
       "side": 1,
       "message": "hm, there shouldn\u0027t be a cycle: `impl` can import from `runmanager`, but `runmanager` must not import from `impl`.\n\n(and if you must use generic type, then just `string` wuould suffice)",
       "parentUuid": "c7478120_57fcaefd",
+      "range": {
+        "startLine": 33,
+        "startChar": 14,
+        "endLine": 33,
+        "endChar": 20
+      },
+      "revId": "d89cca5e5d40f0b614e69443ee7cfce8d95497a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "794c34c2_fbd7c1d0",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T22:13:17Z",
+      "side": 1,
+      "message": "Ack.\n\nI\u0027m thinking `runmanager` may need to import something from `impl` though it\u0027s suboptimal. I\u0027ll try to follow the rule..",
+      "parentUuid": "a5a6f6fb_4a7bccf9",
       "range": {
         "startLine": 33,
         "startChar": 14,
