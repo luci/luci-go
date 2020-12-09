@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6734ee14_f9860c3c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:40:44Z",
+      "side": 1,
+      "message": "i think i left a comment about this before, but I don\u0027t see a TODO.\n\nif it is build.output, we must validate output.properties and output.gitiles_commit.\nearlier I have suggested to replace [for with a switch] with [bunch of if statemtents that use MustIncludes]",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ab80776_7370ed5d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:40:44Z",
+      "side": 1,
+      "message": "nit: this got injected between nilifyReqBuildDetails and a TODO about it.\nperhaps it should be before or after\nhow about: right before Merge()",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a64173b_884d2169",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:40:44Z",
+      "side": 1,
+      "message": "nit: this if statement could be another `case`\nbut not a big deal",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55cba651_a432c736",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:40:44Z",
+      "side": 1,
+      "message": "we shouldn\u0027t have to specify this everywhere",
+      "range": {
+        "startLine": 356,
+        "startChar": 38,
+        "endLine": 356,
+        "endChar": 45
+      },
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da4bf4d8_0a590aa1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:40:44Z",
+      "side": 1,
+      "message": "please add a comment that this code relies on the subtle fact that \nif the BuildSteps doesn\u0027t actually exist, the `changed` here is false, and we end up avoiding saving an empty BuildSteps entity.\n\nthis is not obvious from the code.\n(it would be obvious if we used datastore.Get instead of GetIgnoreMissing)",
+      "range": {
+        "startLine": 357,
+        "startChar": 19,
+        "endLine": 357,
+        "endChar": 35
+      },
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
