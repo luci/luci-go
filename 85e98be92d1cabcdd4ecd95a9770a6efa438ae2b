@@ -501,6 +501,24 @@
       "parentUuid": "3d8e38b4_525c8e1e",
       "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51288942_a6b49d97",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:29:42Z",
+      "side": 1,
+      "message": "to decide whether there should be next_page_token\nwe can use the number of rows *spanner* returns \ninstead of number of protos *we* return",
+      "parentUuid": "17b2ff6c_be9f88e5",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
