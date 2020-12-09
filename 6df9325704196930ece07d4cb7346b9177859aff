@@ -114,6 +114,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "92460faa_12a2426c",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T21:33:37Z",
+      "side": 1,
+      "message": "\u003e First, you are correct about Mail + dsset aren\u0027t a good abstraction.\n\u003e \n\u003e Second, the ProcessMail won\u0027t be as simple though for ProjectManager PM (and probably also RunManager):\n\u003e 1. PM has to minimize work done in a transaction. So, it has to prepare based on the listing.\n\u003e 2. PM may need to re-order mail for processing, e.g. UpdateConfig are more important than say CLUpdate mails.\n\u003e 3. PM may not actually care if mail has already been processed before (e.g. op.Pop(mail.ID) \u003d\u003d false may be ignorable.\n\u003e need to stop processing of mail and leave some unprocessed without errorring out.\n\nI don\u0027t think I follow 3. Can you expand it a little bit? Aren\u0027t we currently ignoring the case of `op.Pop(mail.ID) \u003d\u003d false` instead of erroring out?\n\n\u003e 4. If say 3rd mail processing resulted in an error, it may still be beneficial to commit transaction s.t. 1st and 2nd mail get consumed. I am not sure if this is critical, but iff PM is 100s of events, which require loading of a lot of state, it\u0027s more likely that 1 redis/datastore RPC fails transitively, so partial success would be beneficial.\n\u003e \n\u003e (1) necessitates exposing dsset.Item {id, value} or a proxy for it.\n\u003e (1)/(2) can be done via callacbk \"prepare(listing.items) -\u003e ordered_subset\"\n\u003e (3) can be hacked by doing `cb(mail.Value, op.Pop(mail.ID))`\n\u003e (4) quite hard 😞\n\nTrue. Maybe limit the number of events to process per transaction will help.\n\n\u003e \n\u003e So, WDYT about getting rid of \"mailbox\" for now, and just doing NewDSSet(project)?\n\u003e  -\u003e and we could rename dsset package to `mailbox`\n\nusing RawDSSet(or Mailbox after renaming) SGTM.",
+      "parentUuid": "e0e33d47_7462fdf9",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 11
+      },
+      "revId": "6df9325704196930ece07d4cb7346b9177859aff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4550d625_707fab75",
         "filename": "cv/internal/prjmanager/internal/mailbox.go",
         "patchSetId": 1
