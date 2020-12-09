@@ -19,6 +19,7 @@
 package environ
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -34,6 +35,30 @@ import (
 // part. This allows us to reconstitute the original environment string slice
 // without reallocating all of its composite strings.
 type Env map[string]string
+
+var ctxKey = "holds an Env"
+
+// FromCtx returns a copy of the current Env in `ctx`.
+//
+// This is guaranteed to return a non-nil Env (i.e. it's always safe for
+// assignment/manipulation)
+//
+// If no Env has been set with With, this returns `System()`.
+func FromCtx(ctx context.Context) Env {
+	if cur, ok := ctx.Value(&ctxKey).(Env); ok {
+		if cur != nil {
+			return cur.Clone()
+		}
+		return Env{}
+	}
+	return System()
+}
+
+// SetInCtx installs a copy of the Env into the context, which can be retrieved
+// with `FromCtx`.
+func (e Env) SetInCtx(ctx context.Context) context.Context {
+	return context.WithValue(ctx, &ctxKey, e.Clone())
+}
 
 // System returns an Env instance instantiated with the current os.Environ
 // values.
