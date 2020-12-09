@@ -87,6 +87,29 @@
       },
       "revId": "90511c27d094b91e135ee900655ff8d21964095a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abf9326f_785b635d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-09T01:46:48Z",
+      "side": 1,
+      "message": "hm actually.. how can this do anything? Wouldn\u0027t the request be rejected before this?",
+      "range": {
+        "startLine": 365,
+        "startChar": 40,
+        "endLine": 365,
+        "endChar": 56
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
