@@ -138,6 +138,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d12c1a84_35be191b",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:43:40Z",
+      "side": 1,
+      "message": "On (3): I was trying to shoehorn PM into per-mail callback mode:\n\nimagine listing has UpdateCL(1) event among many others.\n*before* transaction, PM would:\n   load all outstanding CLs\n   compute new states of Project \u0026 other helper entities to the maximal extent possible (some things would need to be re-read in a transaction)\n\n*in transaction*\n  read existing entities, notably Project.\n  apply changes to data store, can be somehow done per mail event callback, but if callback is never called?\n\nLet me clean up state machine and share, and we can discuss it there. I\u0027ll proceed with raw dsset.",
+      "parentUuid": "92460faa_12a2426c",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 11
+      },
+      "revId": "6df9325704196930ece07d4cb7346b9177859aff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4550d625_707fab75",
         "filename": "cv/internal/prjmanager/internal/mailbox.go",
         "patchSetId": 1
