@@ -96,7 +96,7 @@ const batchSize = 500
 //     if err != nil {
 //       return err
 //     }
-//     for _, itm := range items {
+//     for _, itm := range listing.items {
 //       if op.Pop(item.ID) {
 //         // The item was indeed in the set and we've just removed it!
 //       } else {

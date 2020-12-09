@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dsset implements a particular flavor of datastore-backed set.
+// Package dsset implements a particular flavor of Datastore-on-Firestore backed
+// set.
 //
 // Due to its internal structure, it requires some maintenance on behalf of the
 // caller to periodically cleanup removed items (aka tombstones).
@@ -31,38 +32,34 @@
 // have to be filtered out).
 //
 // Properties (where N is current size of the set):
-//   * Batch 'Add' with configurable QPS limit, O(1) performance.
+//   * Batch 'Add', O(1) performance.
 //   * Transactional consistent 'Pop' (1 QPS limit), O(N) performance.
-//   * Non-transactional consistent 'List' (1 QPS limit), O(N) performance.
+//   * Non-transactional consistent 'List', O(N) performance.
 //   * Popped items can't be re-added until their tombstones expire.
 //
 // These properties make dsset suitable for multiple producers, single consumer
 // queues, where order of items is not important, each item has a unique
 // identifier, and the queue size is small.
 //
-// Structurally dsset consists of N+1 entity groups:
-//   * N separate entity groups that contain N shards of the set.
-//   * 1 entity group (with a configurable root) that holds tombstones.
+// Structurally dsset places 2 kinds of entities under provided Set's parent
+// entity:
+//   * items of the set.
+//   * tombstones, recording deleted items.
 //
-// It is safe to increase number of shards at any time. Decreasing number of
-// shards is dangerous (but can be done with some more coding).
-//
-// More shards make:
-//   * Add() less contentious (so it can support more QPS).
-//   * List() and CleanupGarbage() slower and more expensive.
-//   * Pop() is not affected by number of shards.
+// This code is a fork of dsset for classic Datastore, which had to work around
+// 1 write per second per entity group limit using shards. See
+// go.chromium.org/luci/scheduler/appengine/engine/dsset.
 package dsset
 
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -96,7 +93,7 @@ const batchSize = 500
 //     if err != nil {
 //       return err
 //     }
-//     for _, itm := range items {
+//     for _, itm := range listing.items {
 //       if op.Pop(item.ID) {
 //         // The item was indeed in the set and we've just removed it!
 //       } else {
@@ -111,10 +108,12 @@ const batchSize = 500
 //   }
 //   return err
 type Set struct {
-	ID              string         // global ID, used to construct datastore keys
-	ShardCount      int            // number of entity groups to use for storage
-	TombstonesRoot  *datastore.Key // tombstones entity parent key
-	TombstonesDelay time.Duration  // how long to keep tombstones in the set
+	// Parent points to the datastore owning the set.
+	//
+	// Set's Datastore entities will be placed with this parent.
+	Parent *datastore.Key
+	// TombstonesDelay is how long to keep tombstones in the set.
+	TombstonesDelay time.Duration
 }
 
 // Item is what's stored in the set.
@@ -139,9 +138,9 @@ type Listing struct {
 	Items   []Item  // all items in the set, in arbitrary order
 	Garbage Garbage // tombstones that can be cleaned up now
 
-	set        string                      // parent set ID
-	producedAt time.Time                   // when 'List' call was initiated
-	idToKeys   map[string][]*datastore.Key // ID -> datastore keys to cleanup
+	parent     *datastore.Key            // set's parent.
+	producedAt time.Time                 // when 'List' call was initiated
+	idToKey    map[string]*datastore.Key // ID -> datastore key to cleanup
 }
 
 // tombstone is a reference to a deleted item that still lingers in the set.
@@ -149,10 +148,10 @@ type Listing struct {
 // Tombstones exist to make sure recently popped items do not reappear in the
 // set if producers attempt to re-add them.
 type tombstone struct {
-	id        string           // deleted item ID
-	storage   []*datastore.Key // itemEntity's to delete in 'CleanupGarbage'
-	old       bool             // true if tombstone should be popped in 'Pop'
-	cleanedUp bool             // true if 'CleanupGarbage' processed the tombstone
+	id        string         // deleted item ID
+	storage   *datastore.Key // itemEntity to delete in 'CleanupGarbage'
+	old       bool           // true if tombstone should be popped in 'Pop'
+	cleanedUp bool           // true if 'CleanupGarbage' processed the tombstone
 }
 
 // Add idempotently adds a bunch of items to the set.
@@ -162,22 +161,18 @@ type tombstone struct {
 // retrying the call like that, the caller is responsible to pass exact same
 // Item.Value, otherwise 'List' may return random variant of the added item.
 //
-// Writes to some single entity group (not known in advance). If called outside
-// of a transaction and the call fails, may add only some subset of items.
-// Running inside a transaction makes this operation atomic.
+// If called outside of a transaction and the call fails, may add only some
+// subset of items. Running inside a transaction makes this operation atomic.
 //
 // Returns only transient errors.
 func (s *Set) Add(c context.Context, items []Item) error {
-	// Pick a random shard and add all new items there. If this is a retry, they
-	// may exist in some other shard already. We don't care, they'll be
-	// deduplicated in 'List'. If added items have been popped already (they have
-	// tombstones), 'List' will omit them as well.
-	shardRoot := s.shardRoot(c, mathrand.Intn(c, s.ShardCount))
+	// If added items have been popped already (they have tombstones), 'List' will
+	// omit them as well.
 	entities := make([]itemEntity, len(items))
 	for i, itm := range items {
 		entities[i] = itemEntity{
 			ID:     itm.ID,
-			Parent: shardRoot,
+			Parent: s.Parent,
 			Value:  itm.Value,
 		}
 	}
@@ -190,58 +185,45 @@ func (s *Set) Add(c context.Context, items []Item) error {
 // as well as a set of tombstones that points to items that were previously
 // popped and can be cleaned up now.
 //
-// Must be called outside of transactions (panics otherwise). Reads many entity
-// groups, including TombstonesRoot one.
+// Must be called outside of transactions (panics otherwise).
 //
 // The set of tombstones to cleanup should be passed to 'CleanupGarbage', and
 // later to 'BeginPop' (via Listing), in that order. Not doing so will lead to
 // accumulation of a garbage in the set that will slow down 'List' and 'Pop'.
 //
 // Returns only transient errors.
-func (s *Set) List(c context.Context) (*Listing, error) {
-	if datastore.CurrentTransaction(c) != nil {
+func (s *Set) List(ctx context.Context) (*Listing, error) {
+	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.Set.List must be called outside of a transaction")
 	}
-	now := clock.Now(c).UTC()
+	now := clock.Now(ctx).UTC()
 
-	// Fetch all shards (via consistent ancestor queries) and all tombstones.
+	// Fetch all items and all tombstones.
+	tombsEntity := tombstonesEntity{Parent: s.Parent}
 
-	shards := make([][]*itemEntity, s.ShardCount)
-	tombsEntity := tombstonesEntity{ID: s.ID, Parent: s.TombstonesRoot}
-
-	wg := sync.WaitGroup{}
-	wg.Add(1 + s.ShardCount)
-	errs := errors.NewLazyMultiError(s.ShardCount + 1)
-
-	go func() {
-		defer wg.Done()
-		if err := datastore.Get(c, &tombsEntity); err != nil && err != datastore.ErrNoSuchEntity {
-			errs.Assign(0, err)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		err := datastore.Get(ctx, &tombsEntity)
+		if err != nil && err != datastore.ErrNoSuchEntity {
+			return err
 		}
-	}()
+		return nil
+	})
 
-	for i := 0; i < s.ShardCount; i++ {
-		go func(i int) {
-			defer wg.Done()
-			q := datastore.NewQuery("dsset.Item").Ancestor(s.shardRoot(c, i))
-			errs.Assign(i+1, datastore.GetAll(c, q, &shards[i]))
-		}(i)
-	}
-
-	wg.Wait()
-	if err := errs.Get(); err != nil {
+	var entities []*itemEntity
+	eg.Go(func() error {
+		q := datastore.NewQuery("dsset.Item").Ancestor(s.Parent)
+		return datastore.GetAll(ctx, q, &entities)
+	})
+	if err := eg.Wait(); err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 
-	// Mapping "item ID" => "list of entities to delete to remove it". This is
-	// eventually used by 'CleanupGarbage'. Under normal circumstances, the list
-	// has only one item, but there can be more if 'Add' call was retried (so the
-	// item ends up in multiple different shards).
-	idToKeys := map[string][]*datastore.Key{}
-	for _, shard := range shards {
-		for _, e := range shard {
-			idToKeys[e.ID] = append(idToKeys[e.ID], datastore.KeyForObj(c, e))
-		}
+	// Mapping "item ID" => "entity to delete to remove it". This is eventually
+	// used by 'CleanupGarbage'.
+	idToKey := map[string]*datastore.Key{}
+	for _, e := range entities {
+		idToKey[e.ID] = datastore.KeyForObj(ctx, e)
 	}
 
 	// A set of items we pretend not to see. Initially all tombstoned ones.
@@ -256,7 +238,7 @@ func (s *Set) List(c context.Context) (*Listing, error) {
 	for _, t := range tombsEntity.Tombstones {
 		ignore.Add(t.ID)
 		old := now.Sub(t.Tombstoned) > s.TombstonesDelay
-		if storage := idToKeys[t.ID]; len(storage) > 0 || old {
+		if storage, ok := idToKey[t.ID]; ok || old {
 			tombs = append(tombs, &tombstone{
 				id:      t.ID,
 				storage: storage,
@@ -265,26 +247,24 @@ func (s *Set) List(c context.Context) (*Listing, error) {
 		}
 	}
 
-	// Join all shards, throwing away tombstoned and duplicated items.
+	// Throw away tombstoned items.
 	var items []Item
-	for _, shard := range shards {
-		for _, e := range shard {
-			if !ignore.Has(e.ID) {
-				items = append(items, Item{
-					ID:    e.ID,
-					Value: e.Value,
-				})
-				ignore.Add(e.ID)
-			}
+	for _, e := range entities {
+		if !ignore.Has(e.ID) {
+			items = append(items, Item{
+				ID:    e.ID,
+				Value: e.Value,
+			})
+			ignore.Add(e.ID)
 		}
 	}
 
 	return &Listing{
 		Items:      items,
 		Garbage:    tombs,
-		set:        s.ID,
+		parent:     s.Parent,
 		producedAt: now,
-		idToKeys:   idToKeys,
+		idToKey:    idToKey,
 	}, nil
 }
 
@@ -292,15 +272,15 @@ func (s *Set) List(c context.Context) (*Listing, error) {
 //
 // See BeginPop.
 type PopOp struct {
-	ctx      context.Context             // datastore context to use for this op
-	txn      datastore.Transaction       // a transaction that started BeginPop
-	now      time.Time                   // popping time for all popped items
-	dirty    bool                        // true if the tombstone map was modified
-	finished bool                        // true if finished already
-	entity   *tombstonesEntity           // entity with tombstones
-	tombs    map[string]time.Time        // entity.Tombstones in a map form
-	idToKeys map[string][]*datastore.Key // ID -> datastore keys to cleanup
-	popped   Garbage                     // new tombstones for popped items
+	ctx      context.Context           // datastore context to use for this op
+	txn      datastore.Transaction     // a transaction that started BeginPop
+	now      time.Time                 // popping time for all popped items
+	dirty    bool                      // true if the tombstone map was modified
+	finished bool                      // true if finished already
+	entity   *tombstonesEntity         // entity with tombstones
+	tombs    map[string]time.Time      // entity.Tombstones in a map form
+	idToKey  map[string]*datastore.Key // ID -> datastore key to cleanup
+	popped   Garbage                   // new tombstones for popped items
 }
 
 // BeginPop initiates 'Pop' operation.
@@ -313,12 +293,12 @@ type PopOp struct {
 // whether the caller wants to actually pop any items from the set). This is
 // part of the required set maintenance.
 //
-// Requires a transaction. Modifies TombstonesRoot entity group (and only it).
+// Requires a transaction. Modifies Tombstone entity.
 //
 // Returns only transient errors. Such errors usually mean that the entire pop
 // sequence ('List' + 'Pop') should be retried.
 func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
-	if listing.set != s.ID {
+	if listing.parent != s.Parent {
 		panic("passed Listing from another set")
 	}
 	txn := datastore.CurrentTransaction(c)
@@ -331,7 +311,7 @@ func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
 		return nil, transient.Tag.Apply(fmt.Errorf("the listing is stale (%s > %s)", age, s.TombstonesDelay))
 	}
 
-	entity := &tombstonesEntity{ID: s.ID, Parent: s.TombstonesRoot}
+	entity := &tombstonesEntity{Parent: s.Parent}
 	if err := datastore.Get(c, entity); err != nil && err != datastore.ErrNoSuchEntity {
 		return nil, transient.Tag.Apply(err)
 	}
@@ -357,13 +337,13 @@ func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
 	}
 
 	return &PopOp{
-		ctx:      c,
-		txn:      txn,
-		now:      now,
-		dirty:    dirty,
-		entity:   entity,
-		tombs:    tombs,
-		idToKeys: listing.idToKeys,
+		ctx:     c,
+		txn:     txn,
+		now:     now,
+		dirty:   dirty,
+		entity:  entity,
+		tombs:   tombs,
+		idToKey: listing.idToKey,
 	}, nil
 }
 
@@ -375,7 +355,7 @@ func (p *PopOp) CanPop(id string) bool {
 	if _, hasTomb := p.tombs[id]; hasTomb {
 		return false // already popped by someone else
 	}
-	if _, present := p.idToKeys[id]; present {
+	if _, present := p.idToKey[id]; present {
 		return true // listed in the set
 	}
 	return false
@@ -395,7 +375,7 @@ func (p *PopOp) Pop(id string) bool {
 	p.tombs[id] = p.now
 	p.popped = append(p.popped, &tombstone{
 		id:      id,
-		storage: p.idToKeys[id],
+		storage: p.idToKey[id],
 	})
 	p.dirty = true
 	return true
@@ -462,7 +442,7 @@ func FinishPop(ctx context.Context, ops ...*PopOp) (tombs Garbage, err error) {
 
 // CleanupGarbage deletes entities used to store items under given tombstones.
 //
-// This is datastore's MultiDelete RPC in disguise. Touches many entity groups.
+// This is datastore's MultiDelete RPC in disguise.
 // Must be called outside of transactions. Idempotent.
 //
 // Can handle tombstones from multiple different sets at once. This is preferred
@@ -482,7 +462,9 @@ func CleanupGarbage(c context.Context, cleanup ...Garbage) error {
 	keys := []*datastore.Key{}
 	for _, tombs := range cleanup {
 		for _, tomb := range tombs {
-			keys = append(keys, tomb.storage...)
+			if tomb.storage != nil {
+				keys = append(keys, tomb.storage)
+			}
 		}
 	}
 
@@ -515,7 +497,7 @@ type itemEntity struct {
 type tombstonesEntity struct {
 	_kind string `gae:"$kind,dsset.Tombstones"`
 
-	ID     string         `gae:"$id"`
+	ID     string         `gae:"$id,const"` // Always the same ID.
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Tombstones is unordered list of pairs <item ID, when it was popped>.
@@ -523,11 +505,6 @@ type tombstonesEntity struct {
 		ID         string
 		Tombstoned time.Time
 	} `gae:",noindex"`
-}
-
-// shardRoot returns entity group key to use for a given shard.
-func (s *Set) shardRoot(c context.Context, n int) *datastore.Key {
-	return datastore.NewKey(c, "dsset.Shard", fmt.Sprintf("%s:%d", s.ID, n), 0, nil)
 }
 
 // batchOp splits 'total' into batches and calls 'op' in parallel.

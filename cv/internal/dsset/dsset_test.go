@@ -35,6 +35,8 @@ import (
 
 func testingContext() context.Context {
 	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AutoIndex(true)
+	datastore.GetTestable(c).Consistent(true)
 	c = clock.Set(c, testclock.New(time.Unix(1442270520, 0).UTC()))
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 	return c
@@ -64,9 +66,7 @@ func TestSet(t *testing.T) {
 		c := testingContext()
 
 		set := Set{
-			ID:              "test",
-			ShardCount:      3,
-			TombstonesRoot:  datastore.NewKey(c, "Root", "root", 0, nil),
+			Parent:          datastore.NewKey(c, "Parent", "parent", 0, nil),
 			TombstonesDelay: time.Minute,
 		}
 
@@ -87,7 +87,7 @@ func TestSet(t *testing.T) {
 			So(popped, ShouldResemble, []string{"abc"})
 			So(len(tombs), ShouldEqual, 1)
 			So(tombs[0].id, ShouldEqual, "abc")
-			So(len(tombs[0].storage), ShouldEqual, 1)
+			So(tombs[0].storage, ShouldNotBeNil)
 			cleanup = tombs
 			return nil
 		}, nil)
@@ -111,20 +111,17 @@ func TestSet(t *testing.T) {
 		So(listing.Items, ShouldBeNil)
 		So(listing.Garbage, ShouldBeNil)
 
-		// Attempt to add it back (should be ignored). Add a bunch of times to make
-		// sure to fill in many shards (this is pseudo-random).
-		for i := 0; i < 5; i++ {
-			So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
-		}
+		// Attempt to add it back (should be ignored).
+		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
 
-		// The listing still doesn't returns it, but we now have a tombstone to
+		// The listing still doesn't return it, but we now have a tombstone to
 		// cleanup (again).
 		listing, err = set.List(c)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(len(listing.Garbage), ShouldEqual, 1)
 		So(listing.Garbage[0].old, ShouldBeFalse)
-		So(len(listing.Garbage[0].storage), ShouldEqual, 3) // all shards
+		So(listing.Garbage[0].storage, ShouldNotBeNil)
 
 		// Popping it again doesn't work either.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
@@ -153,7 +150,7 @@ func TestSet(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
 		So(len(listing.Garbage), ShouldEqual, 1)
-		So(len(listing.Garbage[0].storage), ShouldEqual, 0) // cleaned already
+		So(listing.Garbage[0].storage, ShouldBeNil) // cleaned already
 
 		// Cleanup storage keys.
 		So(CleanupGarbage(c, listing.Garbage), ShouldBeNil)
@@ -183,6 +180,10 @@ func TestSet(t *testing.T) {
 		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
 		So(listing.Garbage, ShouldBeNil)
 	})
+}
+
+func TestStress(t *testing.T) {
+	t.Parallel()
 
 	Convey("stress", t, func() {
 		// Add 1000 items in parallel from N goroutines, and (also in parallel),
@@ -191,9 +192,7 @@ func TestSet(t *testing.T) {
 		c := testingContext()
 
 		set := Set{
-			ID:              "test",
-			ShardCount:      3,
-			TombstonesRoot:  datastore.NewKey(c, "Root", "root", 0, nil),
+			Parent:          datastore.NewKey(c, "Parent", "parent", 0, nil),
 			TombstonesDelay: time.Minute,
 		}
 
