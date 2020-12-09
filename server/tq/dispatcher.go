@@ -59,8 +59,8 @@ import (
 // TraceContextHeader is name of a header that contains the trace context of
 // a span that produced the task.
 //
-// It is always set regardless of InheritTraceContext setting. This header
-// is read only by Dispatcher itself and exists mostly for FYI purposes.
+// This header is read only by Dispatcher itself and exists mostly for FYI
+// purposes to help in debugging issues.
 const TraceContextHeader = "X-Luci-Tq-Trace-Context"
 
 // Dispatcher is a registry of task classes that knows how serialize and route
@@ -293,16 +293,6 @@ type TaskClass struct {
 
 	// Quiet, if set, instructs the dispatcher not to log bodies of tasks.
 	Quiet bool
-
-	// InheritTraceContext, if set, makes the task handler trace span be a child
-	// of the span that called AddTask.
-	//
-	// Ignored for PubSub tasks currently, since there's no easy way to put
-	// the trace context header into PubSub request headers.
-	//
-	// Use it only for "one-off" tasks. Using it for deep chains of tasks usually
-	// leads to messy complicated traces.
-	InheritTraceContext bool
 
 	// Custom, if given, will be called to generate a custom payload from the
 	// task's proto payload.
@@ -837,9 +827,6 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 	// Inject tracing headers.
 	if span := trace.SpanContext(ctx); span != "" {
 		payload.Meta[TraceContextHeader] = span
-		if cls.InheritTraceContext {
-			payload.Meta["X-Cloud-Trace-Context"] = span
-		}
 	}
 
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
