@@ -1105,8 +1105,6 @@ type BatchRequest_Request_SearchBuilds struct {
 }
 
 type BatchRequest_Request_ScheduleBuild struct {
-	// All ScheduleBuild requests in the batch are executed before other
-	// requests.
 	ScheduleBuild *ScheduleBuildRequest `protobuf:"bytes,3,opt,name=schedule_build,json=scheduleBuild,proto3,oneof"`
 }
 
