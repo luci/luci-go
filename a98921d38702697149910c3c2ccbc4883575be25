@@ -248,6 +248,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8175b6c1_0947d6bd",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:20:03Z",
+      "side": 1,
+      "message": "Requester has to authenticate, so we get their ~email as auth.CurrentIdentity(ctx).",
+      "parentUuid": "0ad27e3a_a2b6f7d0",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9e863204_14bd5f5a",
