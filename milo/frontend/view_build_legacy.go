@@ -67,7 +67,7 @@ func handleRawPresentationBuild(c *router.Context) error {
 		c.Params.ByName("project"),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
 	if build != nil {
-		return renderBuild(c, build, err)
+		return renderBuild(c, build, false, err)
 	}
 	return renderBuildLegacy(c, legacyBuild, false, err)
 }
