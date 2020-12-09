@@ -16,16 +16,19 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -85,9 +88,12 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 		return errors.Reason("build.update_mask: required").Err()
 	}
 
+	buildStatus := pb.Status_STATUS_UNSPECIFIED
+	hasStepsMask := false
 	for _, p := range req.UpdateMask.GetPaths() {
 		switch p {
 		case "build.output":
+			// TODO(crbug/1110990): validate properties and gitiles_commit
 		case "build.output.properties":
 			if req.Build.Output.GetProperties() == nil {
 				return errors.Reason("build.output.properties: unspecified").Err()
@@ -100,11 +106,10 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
 				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
 			}
+			buildStatus = req.Build.Status
 		case "build.status_details":
 		case "build.steps":
-			if err := validateSteps(bs, req.Build.Steps); err != nil {
-				return errors.Annotate(err, "build.steps").Err()
-			}
+			hasStepsMask = true
 		case "build.summary_markdown":
 			if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
 				return errors.Annotate(err, "build.summary_markdown").Err()
@@ -117,11 +122,17 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 			return errors.Reason("unsupported path %q", p).Err()
 		}
 	}
+
+	if hasStepsMask {
+		if err := validateSteps(bs, req.Build.Steps, buildStatus); err != nil {
+			return errors.Annotate(err, "build.steps").Err()
+		}
+	}
 	return nil
 }
 
 // validateSteps validates the steps of the Build.
-func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
+func validateSteps(bs *model.BuildSteps, steps []*pb.Step, buildStatus pb.Status) error {
 	if err := bs.FromProto(steps); err != nil {
 		return err
 	}
@@ -147,14 +158,15 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step) error {
 				return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
 			}
 		}
-		if err := validateStep(step, parent); err != nil {
+
+		if err := validateStep(step, parent, buildStatus); err != nil {
 			return errors.Annotate(err, "step[%d]", i).Err()
 		}
 	}
 	return nil
 }
 
-func validateStep(step *pb.Step, parent *pb.Step) error {
+func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	var st, et time.Time
 	var err error
 	if step.StartTime != nil {
@@ -182,6 +194,8 @@ func validateStep(step *pb.Step, parent *pb.Step) error {
 		return errors.Reason("status: is unspecified or unknown").Err()
 	case step.Status == pb.Status_ENDED_MASK:
 		return errors.Reason("status: must not be ENDED_MASK").Err()
+	case protoutil.IsEnded(buildStatus) && !protoutil.IsEnded(step.Status):
+		return errors.Reason("status: cannot be %q because the build has a terminal status %q", step.Status, buildStatus).Err()
 	case stRequired && st.IsZero():
 		return errors.Reason("start_time: required by status %q", step.Status).Err()
 	case step.Status < pb.Status_STARTED && !st.IsZero():
@@ -294,12 +308,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 			})
 		}
 
-		// steps
-		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
-			steps.Build = bk
-			toSave = append(toSave, steps)
-		}
-
 		// merge the tags of the build entity with the request.
 		if len(req.Build.GetTags()) > 0 && buildMask.MustIncludes("tags") == mask.IncludeEntirely {
 			tags := stringset.NewFromSlice(b.Tags...)
@@ -314,9 +322,49 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		// TODO(ddoman): if crbug.com/1154557 is done, remove nilifyReqBuildDetails().
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
 		defer nilifyReqBuildDetails(req.Build)()
+		origStatus := b.Proto.Status
 		buildMask.Merge(req.Build, &b.Proto)
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
+		}
+		isEndedStatus := protoutil.IsEnded(b.Proto.Status)
+		switch {
+		case origStatus == b.Proto.Status:
+		case b.Proto.Status == pb.Status_STARTED:
+			if b.Proto.StartTime == nil {
+				b.Proto.StartTime = google.NewTimestamp(clock.Now(ctx).UTC())
+			}
+		case isEndedStatus:
+			b.Leasee = nil
+			b.LeaseExpirationDate = time.Time{}
+			b.LeaseKey = 0
+
+			if b.Proto.EndTime == nil {
+				b.Proto.EndTime = google.NewTimestamp(clock.Now(ctx).UTC())
+			}
+		default:
+			// var `updateBuildStatuses` should contain only STARTED and terminal
+			// statuses. If this happens, it must be a bug.
+			panic(fmt.Sprintf("invalid status %q for UpdateBuild", b.Proto.Status))
+		}
+
+		// steps
+		if buildMask.MustIncludes("steps") == mask.IncludeEntirely {
+			steps.Build = bk
+			toSave = append(toSave, steps)
+		} else if isEndedStatus {
+			existingSteps := &model.BuildSteps{ID: 1, Build: bk}
+			// If the build has no steps, ignore the ErrNoSuchEntity error.
+			// CancelIncomplete will return false and existingSteps will be skipped.
+			if err := model.GetIgnoreMissing(ctx, existingSteps); err != nil {
+				return err
+			}
+			switch changed, err := existingSteps.CancelIncomplete(ctx, b.Proto.EndTime); {
+			case err != nil:
+				return err
+			case changed:
+				toSave = append(toSave, existingSteps)
+			}
 		}
 
 		if len(toSave) > 0 {

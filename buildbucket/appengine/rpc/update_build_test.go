@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -188,27 +189,34 @@ func TestValidateStep(t *testing.T) {
 	Convey("validate", t, func() {
 		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
 		step := &pb.Step{Name: "step1"}
+		bStatus := pb.Status_STARTED
 
 		Convey("with status unspecified", func() {
 			step.Status = pb.Status_STATUS_UNSPECIFIED
-			So(validateStep(step, nil), ShouldErrLike, "status: is unspecified or unknown")
+			So(validateStep(step, nil, bStatus), ShouldErrLike, "status: is unspecified or unknown")
 		})
 
 		Convey("with status ENDED_MASK", func() {
 			step.Status = pb.Status_ENDED_MASK
-			So(validateStep(step, nil), ShouldErrLike, "status: must not be ENDED_MASK")
+			So(validateStep(step, nil, bStatus), ShouldErrLike, "status: must not be ENDED_MASK")
 		})
 
 		Convey("with non-terminal status", func() {
 			Convey("without start_time, when should have", func() {
 				step.Status = pb.Status_STARTED
-				So(validateStep(step, nil), ShouldErrLike, `start_time: required by status "STARTED"`)
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: required by status "STARTED"`)
 			})
 
 			Convey("with start_time, when should not have", func() {
 				step.Status = pb.Status_SCHEDULED
 				step.StartTime = t
-				So(validateStep(step, nil), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: must not be specified for status "SCHEDULED"`)
+			})
+
+			Convey("with terminal build status", func() {
+				bStatus = pb.Status_SUCCESS
+				step.Status = pb.Status_STARTED
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `status: cannot be "STARTED" because the build has a terminal status "SUCCESS"`)
 			})
 
 		})
@@ -218,19 +226,19 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("missing start_time, but end_time", func() {
 				step.EndTime = t
-				So(validateStep(step, nil), ShouldErrLike, `start_time: required by status "INFRA_FAILURE"`)
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `start_time: required by status "INFRA_FAILURE"`)
 			})
 
 			Convey("missing end_time", func() {
 				step.StartTime = t
-				So(validateStep(step, nil), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
 			})
 
 			Convey("end_time is before start_time", func() {
 				step.EndTime = t
 				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = st
-				So(validateStep(step, nil), ShouldErrLike, "start_time: is after the end_time")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "start_time: is after the end_time")
 			})
 		})
 
@@ -240,17 +248,17 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("missing name", func() {
 				step.Logs = []*pb.Log{{Url: "url", ViewUrl: "view_url"}}
-				So(validateStep(step, nil), ShouldErrLike, "logs[0].name: required")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].name: required")
 			})
 
 			Convey("missing url", func() {
 				step.Logs = []*pb.Log{{Name: "name", ViewUrl: "view_url"}}
-				So(validateStep(step, nil), ShouldErrLike, "logs[0].url: required")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].url: required")
 			})
 
 			Convey("missing view_url", func() {
 				step.Logs = []*pb.Log{{Name: "name", Url: "url"}}
-				So(validateStep(step, nil), ShouldErrLike, "logs[0].view_url: required")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "logs[0].view_url: required")
 			})
 
 			Convey("duplicate name", func() {
@@ -258,7 +266,7 @@ func TestValidateStep(t *testing.T) {
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 					{Name: "name", Url: "url", ViewUrl: "view_url"},
 				}
-				So(validateStep(step, nil), ShouldErrLike, `logs[1].name: duplicate: "name"`)
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `logs[1].name: duplicate: "name"`)
 			})
 		})
 
@@ -273,38 +281,38 @@ func TestValidateStep(t *testing.T) {
 			Convey("parent status is SCHEDULED", func() {
 				setST(pb.Status_STARTED, pb.Status_SCHEDULED)
 				setTS(t, nil, t, nil)
-				So(validateStep(step, parent), ShouldErrLike, `parent "step1" must be at least STARTED`)
+				So(validateStep(step, parent, bStatus), ShouldErrLike, `parent "step1" must be at least STARTED`)
 			})
 
 			Convey("child status is STARTED, but parent status is not", func() {
 				setST(pb.Status_STARTED, pb.Status_SUCCESS)
 				setTS(t, nil, t, t)
-				So(validateStep(step, parent), ShouldErrLike, "the parent status must be STARTED")
+				So(validateStep(step, parent, bStatus), ShouldErrLike, "the parent status must be STARTED")
 			})
 
 			Convey("child status is better", func() {
 				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
 				setTS(t, t, t, t)
-				So(validateStep(step, parent), ShouldBeNil)
+				So(validateStep(step, parent, bStatus), ShouldBeNil)
 			})
 
 			Convey("with start_time", func() {
 				Convey("parent missing start_time", func() {
 					setST(pb.Status_SUCCESS, pb.Status_INFRA_FAILURE)
 					setTS(t, t, nil, t)
-					So(validateStep(step, parent), ShouldErrLike, "parent's start_time not specified")
+					So(validateStep(step, parent, bStatus), ShouldErrLike, "parent's start_time not specified")
 				})
 
 				Convey("preceding to parent.start_time", func() {
 					setST(pb.Status_STARTED, pb.Status_STARTED)
 					setTS(t, nil, addTS(t, time.Second), nil)
-					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot precede parent's")
 				})
 
 				Convey("following parent.end_time", func() {
 					setST(pb.Status_FAILURE, pb.Status_CANCELED)
 					setTS(addTS(t, time.Minute), addTS(t, time.Hour), t, addTS(t, time.Second))
-					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot follow parent's")
 				})
 			})
 
@@ -312,13 +320,13 @@ func TestValidateStep(t *testing.T) {
 				Convey("preceding to parent.start_time", func() {
 					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
 					setTS(addTS(t, -time.Hour), addTS(t, -time.Minute), t, t)
-					So(validateStep(step, parent), ShouldErrLike, "cannot precede parent's")
+					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot precede parent's")
 				})
 
 				Convey("following parent.end_time", func() {
 					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
 					setTS(t, addTS(t, time.Hour), t, t)
-					So(validateStep(step, parent), ShouldErrLike, "cannot follow parent's")
+					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot follow parent's")
 				})
 			})
 		})
@@ -484,6 +492,9 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.steps", func() {
+			now := testclock.TestRecentTimeLocal
+			ctx, _ = testclock.UseTime(ctx, now)
+
 			step := &pb.Step{
 				Name:      "step",
 				StartTime: &timestamppb.Timestamp{Seconds: 1},
@@ -507,6 +518,55 @@ func TestUpdateBuild(t *testing.T) {
 				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Steps, ShouldBeNil)
+			})
+
+			Convey("incomplete steps with non-terminal Build status", func() {
+				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
+				req.Build.Status = pb.Status_STARTED
+				req.Build.Steps[0].Status = pb.Status_STARTED
+				req.Build.Steps[0].EndTime = nil
+				_, err := srv.UpdateBuild(ctx, req)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+			})
+
+			Convey("incomplete steps with terminal Build status", func() {
+				req.UpdateMask.Paths = []string{"build.status", "build.steps"}
+				req.Build.Status = pb.Status_SUCCESS
+
+				Convey("with mask", func() {
+					req.Build.Steps[0].Status = pb.Status_STARTED
+					req.Build.Steps[0].EndTime = nil
+					_, err := srv.UpdateBuild(ctx, req)
+
+					// Should be rejected.
+					msg := `cannot be "STARTED" because the build has a terminal status "SUCCESS"`
+					So(err, ShouldHaveRPCCode, codes.InvalidArgument, msg)
+				})
+
+				Convey("w/o mask", func() {
+					// update the build with incomplete steps first.
+					req.Build.Status = pb.Status_STARTED
+					req.Build.Steps[0].Status = pb.Status_STARTED
+					req.Build.Steps[0].EndTime = nil
+					_, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+					// update the build again with a terminal status, but w/o step mask.
+					req.UpdateMask.Paths = []string{"build.status"}
+					req.Build.Status = pb.Status_SUCCESS
+					_, err = srv.UpdateBuild(ctx, req)
+					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+					// the step should have been cancelled.
+					b := getBuildWithDetails(ctx, req.Build.Id)
+					expected := &pb.Step{
+						Name:      step.Name,
+						Status:    pb.Status_CANCELED,
+						StartTime: step.StartTime,
+						EndTime:   google.NewTimestamp(now),
+					}
+					So(b.Proto.Steps[0], ShouldResembleProto, expected)
+				})
 			})
 		})
 
