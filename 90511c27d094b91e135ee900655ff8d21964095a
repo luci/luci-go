@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f85a1aea_1cafefff",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:55:14Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 17
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c71c0bcf_0c8e9f06",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
@@ -108,6 +131,76 @@
         "startChar": 6,
         "endLine": 109,
         "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d965fd3b_d1873b87",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:55:14Z",
+      "side": 1,
+      "message": "i think it should be OK to have this validation here in general.\nkitchen does cancel steps before failing the build\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tools/kitchen/cook.go;l\u003d459?q\u003dcancel%20steps%20f:kitchen\n\ni couldn\u0027t find this code similar code in bbagent though, so we might add it before we migrate to UpdateBuild in Go.",
+      "parentUuid": "63cc0fc9_c5e2262c",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89c0713c_0526fbd1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:55:14Z",
+      "side": 1,
+      "message": "!",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 8
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c4fed61_a67bda1b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:55:14Z",
+      "side": 1,
+      "message": "what does it have to do with canceling steps?",
+      "range": {
+        "startLine": 335,
+        "startChar": 0,
+        "endLine": 353,
+        "endChar": 4
       },
       "revId": "90511c27d094b91e135ee900655ff8d21964095a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
