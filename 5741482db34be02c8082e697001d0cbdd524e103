@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2413fd5d_170ee5ec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-09T21:59:52Z",
+      "side": 1,
+      "message": "Depends on adding builder (https://chromium-review.googlesource.com/c/infra/infra/+/2580842)",
+      "revId": "5741482db34be02c8082e697001d0cbdd524e103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
