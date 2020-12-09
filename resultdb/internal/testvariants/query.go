@@ -33,6 +33,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// Multiplier to q.PageSize, so that the query to expected test results has
+// a larger page size.
+const expectedTestResultQueryPageSizeMultiplier = 3
+
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
@@ -108,6 +112,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 	st := spanner.NewStatement(sql.String())
 	st.Params = q.params
+	st.Params["limit"] = q.PageSize
 
 	var b spanutil.Buffer
 	var expBytes []byte
@@ -202,7 +207,7 @@ func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestRes
 	//   too many times, but sometime it does get retried.
 	//   One example is in chromium try builds, successful tests are retried in
 	//   (retry shards with patch) steps.
-	st.Params["limit"] = 3 * q.PageSize
+	st.Params["limit"] = expectedTestResultQueryPageSizeMultiplier * q.PageSize
 
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
@@ -227,38 +232,56 @@ func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestRes
 	})
 }
 
-func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, err error) {
+func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
 	var unexpectedTVs map[testVariant]struct{}
 	if unexpectedTVs, err = q.queryUnexpectedTestVariants(ctx); err != nil {
-		return nil, err
+		return
 	}
 
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
-	i := -1 // index of the last test variant in tvs
-	// TODO(crbug.com/1112127): Query next page if there are no expected results in this page.
+
+	// The last test variant we have completely processed.
+	//  * If the test variant has any unexpected result, then it's processed;
+	//  * If the test variant only has expected results, it's processed when all
+	//    of its results are processed.
+	lastProcessedTV := testVariant{}
+	// Count of the total test results returned by the query.
+	lastTRIndex := -1
+	// A test variant with only expected results.
+	// It keeps being a candidate when we process it's results.
+	tvProtoCandidate := &uipb.TestVariant{}
 	err = q.queryExpectedTestResults(ctx, func(tr *pb.TestResult) error {
-		if len(unexpectedTVs) > 0 {
-			if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
-				// This test variant has unexpected results, moving on.
-				return nil
-			}
-		}
-
-		if i >= 0 && tvs[i].TestId == tr.TestId && tvs[i].VariantHash == tr.VariantHash {
-			tvs[i].Results = append(tvs[i].Results, &uipb.TestResultBundle{
-				Result: tr,
-			})
-			return nil
-		}
-
-		// New test variant.
-		if i == q.PageSize-1 {
+		lastTRIndex += 1
+		if len(tvs) == q.PageSize {
 			// Got one page of test variants.
 			// TODO(crbug.com/1112127): Stop the query when get one page of test variants.
 			return nil
 		}
+		if len(unexpectedTVs) > 0 {
+			if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
+				// This test variant has unexpected results, moving on.
+				lastProcessedTV.TestID = tr.TestId
+				lastProcessedTV.VariantHash = tr.VariantHash
+				return nil
+			}
+		}
 
-		tv := &uipb.TestVariant{
+		if tvProtoCandidate.TestId != "" {
+			if tvProtoCandidate.TestId == tr.TestId && tvProtoCandidate.VariantHash == tr.VariantHash {
+				tvProtoCandidate.Results = append(tvProtoCandidate.Results, &uipb.TestResultBundle{
+					Result: tr,
+				})
+				return nil
+			}
+
+			// All test results of tvProtoCandidate have been processed.
+			tvs = append(tvs, tvProtoCandidate)
+			lastProcessedTV.TestID = tvProtoCandidate.TestId
+			lastProcessedTV.VariantHash = tvProtoCandidate.VariantHash
+		}
+
+		// To the new test variant.
+		tvProtoCandidate = &uipb.TestVariant{
 			TestId:      tr.TestId,
 			VariantHash: tr.VariantHash,
 			Variant:     tr.Variant,
@@ -270,12 +293,22 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 			},
 		}
 
-		i += 1
-		tvs = append(tvs, tv)
 		return nil
 	})
 	if err != nil {
 		tvs = nil
+		return
+	}
+	if len(tvs) < q.PageSize && lastTRIndex < expectedTestResultQueryPageSizeMultiplier*q.PageSize-1 {
+		// We have exhausted the test results, add the last test variants to tvs.
+		tvs = append(tvs, tvProtoCandidate)
+	}
+
+	// * If we got page size of test variants or page size of test results, then we haven't exhausted the collection and
+	//   need to return the next page token.
+	if len(tvs) == q.PageSize || lastTRIndex == expectedTestResultQueryPageSizeMultiplier*q.PageSize-1 {
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestID, lastProcessedTV.VariantHash)
+
 	}
 	return
 }
@@ -289,13 +322,15 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 
 	q.params = map[string]interface{}{
 		"invIDs": q.InvocationIDs,
-		"limit":  q.PageSize,
 	}
 	switch parts, err := pagination.ParseToken(q.PageToken); {
 	case err != nil:
 		return nil, "", err
 	case len(parts) == 0:
 		q.unexpected = true
+		q.params["afterTvStatus"] = 0
+		q.params["afterTestId"] = ""
+		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
 		return nil, "", pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
 	default:
@@ -304,28 +339,40 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
 		}
 		q.unexpected = uipb.TestVariantStatus(status) != uipb.TestVariantStatus_EXPECTED
+		q.params["afterTvStatus"] = int(status)
+		q.params["afterTestId"] = parts[1]
+		q.params["afterVariantHash"] = parts[2]
 	}
 
-	// TODO(crbug.com/1112127): populate next page token.
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
-
 	// Fetch test variants with unexpected results.
-	if q.unexpected {
-		err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {
-			tvs = append(tvs, tv)
-			return nil
-		})
-		if err != nil {
-			tvs = nil
-		}
+	if !q.unexpected {
+		// Fetch test variants with only expected results.
+		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
+	}
+
+	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {
+		tvs = append(tvs, tv)
+		return nil
+	})
+	if err != nil {
+		tvs = nil
 		return
 	}
 
-	// Fetch test variants with only expected results.
-	tvs, err = q.fetchTestVariantsWithOnlyExpectedResults(ctx)
-	if err != nil {
-		tvs = nil
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(tvs) == q.PageSize {
+		last := tvs[q.PageSize-1]
+		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
 	}
+
+	// If we got less than one page of test variants with unexpected results,
+	// compute the nextPageToken for test variants with only expected results.
+	if len(tvs) < q.PageSize {
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
+	}
+
 	return
 }
 
@@ -339,7 +386,6 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 {{else}}
 	{{template "expectedResults" .}}
 {{end}}
-LIMIT @limit
 
 {{define "testVariantsWithUnexpectedResults"}}
 	WITH unexpectedTestVariants AS (
@@ -394,7 +440,14 @@ LIMIT @limit
 
 	{{template "columns"}}
 	FROM testVariantsWithUnexpectedResults
+	{{/* Apply the page token */}}
+	WHERE (
+		(TvStatus > @afterTvStatus) OR
+		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TvStatus, TestId, VariantHash
+	LIMIT @limit
 {{end}}
 
 {{define "expectedResults"}}
@@ -406,7 +459,13 @@ LIMIT @limit
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
 	AND IsUnexpected IS NULL
+	{{/* Apply the page token */}}
+	AND (
+		(TestId > @afterTestId) OR
+		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TestId, VariantHash
+	LIMIT @limit
 {{end}}
 
 {{define "testResultsColumns"}}
