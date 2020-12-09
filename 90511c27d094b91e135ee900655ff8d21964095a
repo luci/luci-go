@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb9d96e7_a4c84ea0",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f85a1aea_1cafefff",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 17
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c71c0bcf_0c8e9f06",
@@ -160,6 +184,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "67d5d4e6_8f978805",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "Reopened and left a comment in https://bugs.chromium.org/p/chromium/issues/detail?id\u003d936892#c25 for the work.",
+      "parentUuid": "d965fd3b_d1873b87",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "89c0713c_0526fbd1",
@@ -207,6 +255,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7ea73c9_aab6dadb",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "There is a test, but the test was using \"SUCCESS\" as an incomplete step status. 😞\nfixed.",
+      "parentUuid": "e884f28f_53e5a4f1",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 8
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c4fed61_a67bda1b",
@@ -220,6 +292,30 @@
       "writtenOn": "2020-12-09T02:55:14Z",
       "side": 1,
       "message": "what does it have to do with canceling steps?",
+      "range": {
+        "startLine": 335,
+        "startChar": 0,
+        "endLine": 353,
+        "endChar": 4
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec173ab3_429396d1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "They are required for cancelling steps.\n\n- L365 requires b.Proto.Endtime is set, when isEndedStatus \u003d\u003d True, because it sets the endtime of incomplete steps with b.Proto.Endtime when cancelling them.\n- L339 is to ensure that b.Proto.StartTime is set, when L347 sets b.Proto.EndTime which can be used for cancelling the incomplete steps.\n\nClearing leases are not required for cancelling steps, though.\nI updated the description to be more precise.",
+      "parentUuid": "9c4fed61_a67bda1b",
       "range": {
         "startLine": 335,
         "startChar": 0,
@@ -277,6 +373,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5060278_0c7199cc",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "Never mind. build-step is a single entity and []pb.Step are encoded into BuildStep.Bytes. In any of the above scenario, the final UpdateBuild request will override the existing steps.\n\nThe current code should be fine, I believe.",
+      "parentUuid": "d2d248c9_26f6d7dd",
+      "range": {
+        "startLine": 360,
+        "startChar": 4,
+        "endLine": 360,
+        "endChar": 11
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "abf9326f_785b635d",
@@ -314,6 +434,30 @@
       "side": 1,
       "message": "e.g.,\n\n(1) Build-A was started with incomplete steps.\n(2) recipe called UpdateBuild() for Build-A with the following. Note that the request doesn\u0027t contain steps to update.\nMask: \"build.status\"\nStatus: Status_SUCCESS",
       "parentUuid": "abf9326f_785b635d",
+      "range": {
+        "startLine": 365,
+        "startChar": 40,
+        "endLine": 365,
+        "endChar": 56
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b88b91d3_6114b6c7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T09:42:44Z",
+      "side": 1,
+      "message": "Marking as resolved.",
+      "parentUuid": "af1ffcf6_34b78939",
       "range": {
         "startLine": 365,
         "startChar": 40,
