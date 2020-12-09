@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "71ebe4e9_55564099",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T07:21:28Z",
+      "side": 1,
+      "message": "technically, it\u0027s not deleted at this point yet?",
+      "range": {
+        "startLine": 74,
+        "startChar": 32,
+        "endLine": 74,
+        "endChar": 39
+      },
+      "revId": "6df9325704196930ece07d4cb7346b9177859aff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1745b393_43a84728",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T07:21:28Z",
+      "side": 1,
+      "message": "This seems to be boiler-plate code and I think it\u0027s leaking abstraction as there\u0027re two new concepts here (mailbox and dsset) and it\u0027s hard to tell the relationship between them if one doesn\u0027t have prior knowledge. WDYT, refactor the mailbox.go to something like.\n\n```\n\ntype Mail []byte\n\ntype Mailbox struct {\n  set *dsset.Set\n}\n\nfunc (m *Mailbox) ProcessMails(ctx context.Context, process func(Mail) error) error {\n\tlisting, err :\u003d m.Set.List(ctx)\n\tif err !\u003d nil {\n\t\treturn err\n\t}\n\tif err \u003d dsset.CleanupGarbage(ctx, listing.Garbage); err !\u003d nil {\n\t\treturn err\n\t}\n\n\tvar garbage dsset.Garbage\n\terr \u003d datastore.RunInTransaction(ctx, func(ctx context.Context) error {\n\t\top, err :\u003d m.Set.BeginPop(ctx, listing)\n\t\tif err !\u003d nil {\n\t\t\treturn err\n\t\t}\n\t\tfor _, mail :\u003d range listing.Items {\n\t\t\tif op.Pop(mail.ID) {\n\t\t\t\tif err :\u003d cb(mail.Value); err!\u003d nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tgarbage, err \u003d dsset.FinishPop(ctx, op)\n\t\treturn err\n\t}, nil)\n\tif err \u003d\u003d nil {\n\t\tdsset.CleanupGarbage(ctx, garbage) // best-effort cleanup\n\t}\n\treturn err\n}\n\nfunc (m *Mailbox) SendMail(ctx context.Context, mail Mail) {\n\treturn m.set.Add(ctx, []dsset.Item{{\n\t\tID:    uuid.New().String(),\n\t\tValue: []byte(mail),\n\t}}\n}\n\n```\n\nand make NewMailbox return *Mailbox instead of raw dsset? This way I could reuse it for run manager.",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 11
+      },
+      "revId": "6df9325704196930ece07d4cb7346b9177859aff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4550d625_707fab75",
         "filename": "cv/internal/prjmanager/internal/mailbox.go",
         "patchSetId": 1
