@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"fmt"
+	"html/template"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -61,11 +62,11 @@ func handleLUCIBuild(c *router.Context) error {
 	}
 
 	bp, err := buildbucket.GetBuildPage(c, br, blamelistOpt)
-	return renderBuild(c, bp, err)
+	return renderBuild(c, bp, true, err)
 }
 
 // renderBuild is a shortcut for rendering build or returning err if it is not nil.
-func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
+func renderBuild(c *router.Context, bp *ui.BuildPage, showOptInBanner bool, err error) error {
 	if err != nil {
 		return err
 	}
@@ -73,11 +74,16 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 	bp.StepDisplayPref = getStepDisplayPrefCookie(c)
 	bp.ShowDebugLogsPref = getShowDebugLogsPrefCookie(c)
 
+	var optInBannerHtml template.HTML
+	if showOptInBanner {
+		optInBannerHtml = bp.NewBuildPageOptInHTML()
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"BuildPage":      bp,
 		"RetryRequestID": rand.Int31(),
 		"XsrfTokenField": xsrf.TokenField(c.Context),
-		"BannerHTML":     bp.NewBuildPageOptInHTML(),
+		"BannerHTML":     optInBannerHtml,
 	})
 	return nil
 }
