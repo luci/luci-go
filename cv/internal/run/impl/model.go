@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	run "go.chromium.org/luci/cv/internal/runmanager"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // RunOwner keeps tracks of all open (active or pending) Runs for a user.
