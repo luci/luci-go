@@ -252,6 +252,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d44e34fd_9dd3d888",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T01:45:39Z",
+      "side": 1,
+      "message": "Done. I\u0027ve also added NO_READ_ACCESS and NO_SCHEDULE_ACCESS for now and add a TODO to see if there\u0027s an alternative",
+      "parentUuid": "0f2cf2b1_40d50ffa",
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0ed22ebc_a6bbf6ad",
@@ -313,6 +331,30 @@
       "side": 1,
       "message": "In Current CQ, these don\u0027t overlap:\n*  tryjob module deals with relevant tryjobs only, so build.cancelled is treated as if build has failed. There are FRs to change this, s.t. if trooper cancels lots of builds, CQ doesn\u0027t quickly reschedule them.\n* cancelator module cancels and forgets any build that got finalized (since CQ can\u0027t modify such builds).\n\nSO, i think my preference is to keep these concerns separate: keep this status for consumption of a Run (just like tryjob module before), and have a separate field that deals exclusively with cancelation by CQ.",
       "parentUuid": "cf4f60be_d5b3c67e",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 15
+      },
+      "revId": "d61fdcf231a9b2ef4f325952e489c850cb34af59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e7cbb7d_9b4a241a",
+        "filename": "cv/internal/tryjob/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T01:45:39Z",
+      "side": 1,
+      "message": "Makes sense. Updated the doc. I think the field to disambiguate between user cancellation and CV cancellation should lives in RunTryjob. I\u0027ll add that when I upload the CL for RunTryjob.",
+      "parentUuid": "c0aa031e_a833ed4b",
       "range": {
         "startLine": 34,
         "startChar": 0,
