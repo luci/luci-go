@@ -1,0 +1,40 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.run;
+
+option go_package = "go.chromium.org/luci/cv/internal/runmanager;run";
+
+
+// Status describes the status of a CV Run.
+enum Status {
+  // Unspecified status.
+  STATUS_UNSPECIFIED = 0;
+  // Run is pending to start.
+  //
+  // It is either because Run Manager hasn't processed the StartEvent yet or
+  // the RunOwner has exhausted all the quota and waiting for new quota to
+  // be available.
+  PENDING = 1;
+  // Run has started.
+  STARTED = 2;
+  // Run ends successfully.
+  SUCCESS = 3;
+  // Run ends unsuccessfully.
+  FAILURE = 4;
+  // Run is cancelled.
+  CANCELED = 5;
+}
