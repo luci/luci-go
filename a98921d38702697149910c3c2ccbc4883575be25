@@ -202,6 +202,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3f808a19_a5b56083",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T01:24:48Z",
+      "side": 1,
+      "message": "Sorry, my bad. We must still CL\u0027s owner, but choose the CL which was the latest triggering timestamp.",
+      "parentUuid": "76ec802a_e2199cec",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9e863204_14bd5f5a",
         "filename": "cv/internal/runmanager/impl/model.go",
         "patchSetId": 2
@@ -237,6 +261,30 @@
       "side": 1,
       "message": "I was trying to avoid extra config loading when runmanager is woken up everytime by putting the static information inside the entity directly. Do you think with dscache, it\u0027s not worthwhile?",
       "parentUuid": "9e863204_14bd5f5a",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 39
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04fe3a4a_1b06749a",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T01:24:48Z",
+      "side": 1,
+      "message": "I think it\u0027s easier to write correct code that doesn\u0027t do caching of mutable data, especially by hand.\nAt times we must, e.g. we must snapshot Gerrit because Gerrit isn\u0027t as fast/reliable as datastore.\nHere, I don\u0027t think we need to yet. And yes, dscache should help.",
+      "parentUuid": "a32daf2d_987e277b",
       "range": {
         "startLine": 86,
         "startChar": 0,
@@ -325,6 +373,24 @@
       "side": 1,
       "message": "I\u0027ll have a follow up CL to move for minimizing diff.\n\nAlso, I think RunOwner should also be public as it is ProjectManager who is doing the quota management IIUC?",
       "parentUuid": "5b4d93d7_c0f9fc4b",
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3661b48e_22dc3b0d",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T01:24:48Z",
+      "side": 1,
+      "message": "\u003e ProjectManager who is doing the quota management IIUC\n\nRunManager is better s.t. we reduce the load on ProjectManager. It\u0027s also easier to emit something to RunLog we should eventually add.",
+      "parentUuid": "68ff9d16_081cfacd",
       "revId": "a98921d38702697149910c3c2ccbc4883575be25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
