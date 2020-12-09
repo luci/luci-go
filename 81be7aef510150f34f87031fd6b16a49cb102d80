@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "41fe9e25_02717806",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T16:45:50Z",
+      "side": 1,
+      "message": "Yes, but I\u0027m not actually sure this was correct before. I don\u0027t see what prevents as many Lists as one wants. Vadim, do you?",
+      "parentUuid": "4ebb80b7_a5a3951e",
+      "range": {
+        "startLine": 37,
+        "startChar": 43,
+        "endLine": 37,
+        "endChar": 56
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "3a4f3e85_1f1c30db",
@@ -87,6 +111,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfb0a6b9_c26fb291",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T16:45:50Z",
+      "side": 1,
+      "message": "Didn\u0027t like root because it had special meaning of being root of *entity* group, but now it can be an arbitrary entity.\nRenamed to \"Parent\" since that\u0027s what it is.",
+      "parentUuid": "254a1e60_675f7175",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 6
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be3f5955_28575681",
@@ -100,6 +148,30 @@
       "writtenOn": "2020-12-09T06:51:42Z",
       "side": 1,
       "message": "Del",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53f163d5_ef9ec4aa",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T16:45:50Z",
+      "side": 1,
+      "message": "It appears you are on the Vim\u0027s side of the war between 1- and 2- spacers after period 😄\nhttps://www.theatlantic.com/science/archive/2018/05/two-spaces-after-a-period/559304/",
+      "parentUuid": "be3f5955_28575681",
       "range": {
         "startLine": 160,
         "startChar": 20,
