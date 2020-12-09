@@ -91,6 +91,53 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "63cc0fc9_c5e2262c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T02:09:12Z",
+      "side": 1,
+      "message": "No, It\u0027s not the current behaviour. I just happened to implement the [TODO] when I ported the same logic from PyBB to GoBB. PyBB does not reject a request with a terminal status and incomplete steps.\n\nLet me know if I should not implement it here. I can simply remove this block between L109 and L120.",
+      "parentUuid": "f0637a6e_09402803",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f08306c_5328cce7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T02:09:12Z",
+      "side": 1,
+      "message": "I found that this is racy and doesn\u0027t guarantee cancelling incomplete steps always.\n\n(1) Build-A started.\n(2) At the same time,\n- Client-A updated Build-A with incomplete steps.\n- Client-B called UpdateBuild() for Build-A with\nMask: \"build.status\", \"build.status\"\nStatus: Status_SUCCESS\nSteps: complete-step\n \n(3) Client-A\u0027s request processed before Client-B\u0027s request.\n(4) Then, when Client-B\u0027s request is processed, L359 wouldn\u0027t scan the existing steps to cancel.\n\nThis won\u0027t happen if there is only one recipe handling the same Build, and it\u0027s probably true due to build_token? Let me know it\u0027s worth fetching BuildSteps always to find incomplete steps, whether the request has \"steps\" or not.",
+      "range": {
+        "startLine": 360,
+        "startChar": 4,
+        "endLine": 360,
+        "endChar": 11
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "abf9326f_785b635d",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
@@ -102,6 +149,30 @@
       "writtenOn": "2020-12-09T01:46:48Z",
       "side": 1,
       "message": "hm actually.. how can this do anything? Wouldn\u0027t the request be rejected before this?",
+      "range": {
+        "startLine": 365,
+        "startChar": 40,
+        "endLine": 365,
+        "endChar": 56
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af1ffcf6_34b78939",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T02:09:12Z",
+      "side": 1,
+      "message": "e.g.,\n\n(1) Build-A was started with incomplete steps.\n(2) recipe called UpdateBuild() for Build-A with the following. Note that the request doesn\u0027t contain steps to update.\nMask: \"build.status\"\nStatus: Status_SUCCESS",
+      "parentUuid": "abf9326f_785b635d",
       "range": {
         "startLine": 365,
         "startChar": 40,
