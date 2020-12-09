@@ -204,6 +204,30 @@
       },
       "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53e18b52_7fc6e098",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-09T20:44:03Z",
+      "side": 1,
+      "message": "I am also pro-single-space :-P",
+      "parentUuid": "a9763cf9_986d2087",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
