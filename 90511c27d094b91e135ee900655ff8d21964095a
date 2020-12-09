@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51291371_f1ff2c68",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-09T01:41:57Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c71c0bcf_0c8e9f06",
@@ -38,6 +55,30 @@
       "side": 1,
       "message": "https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d460\n\nnodir@ may have inputs on why it was asked to reject such requests",
       "parentUuid": "c71c0bcf_0c8e9f06",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0637a6e_09402803",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-09T01:41:57Z",
+      "side": 1,
+      "message": "I guess if that\u0027s the current behavior then I have no objection here.",
+      "parentUuid": "f7b820c3_e2577759",
       "range": {
         "startLine": 109,
         "startChar": 6,
