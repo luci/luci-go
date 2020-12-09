@@ -35,12 +35,11 @@ import (
 //
 // The handler is implemented in internal/services/finalizer.
 var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:                  "try-finalize-inv",
-	Prototype:           &taskspb.TryFinalizeInvocation{},
-	Kind:                tq.Transactional,
-	InheritTraceContext: true,
-	Queue:               "finalizer",                 // use a dedicated queue
-	RoutingPrefix:       "/internal/tasks/finalizer", // for routing to "finalizer" service
+	ID:            "try-finalize-inv",
+	Prototype:     &taskspb.TryFinalizeInvocation{},
+	Kind:          tq.Transactional,
+	Queue:         "finalizer",                 // use a dedicated queue
+	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
 // UseFinalizationTQ experiment enables using server/tq for finalization tasks.

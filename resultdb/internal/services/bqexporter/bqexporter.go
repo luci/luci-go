@@ -120,12 +120,11 @@ type bqExporter struct {
 
 // Tasks describes how to route bq export tasks.
 var Tasks = tq.RegisterTaskClass(tq.TaskClass{
-	ID:                  "bq-export",
-	Prototype:           &taskspb.ExportInvocationToBQ{},
-	Kind:                tq.Transactional,
-	InheritTraceContext: true,
-	Queue:               "bqexporter",                 // use a dedicated queue
-	RoutingPrefix:       "/internal/tasks/bqexporter", // for routing to "bqexporter" service
+	ID:            "bq-export",
+	Prototype:     &taskspb.ExportInvocationToBQ{},
+	Kind:          tq.Transactional,
+	Queue:         "bqexporter",                 // use a dedicated queue
+	RoutingPrefix: "/internal/tasks/bqexporter", // for routing to "bqexporter" service
 })
 
 // UseTQ experiment enables using server/tq for bq export tasks.
