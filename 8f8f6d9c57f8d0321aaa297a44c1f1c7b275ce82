@@ -1,0 +1,388 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4eb97fa5_444e1dce",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "I think we can just pass true here.\nit is not possible for queryTestVariantsWithUnexpectedResults to be called while this is false.\n\nbut see below. It might be simpler to have a named template and use https://godoc.org/text/template#Template.ExecuteTemplate",
+      "range": {
+        "startLine": 106,
+        "startChar": 72,
+        "endLine": 106,
+        "endChar": 84
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "144204fd_dcea97c7",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 21
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1df0960_c4e45c6f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "please add tracing here too",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89777139_f5f056ea",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "repeated 3 times.\nextract to a separate method?",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 171,
+        "endChar": 21
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "deca20d6_19095d68",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "let\u0027s parallelize this: invocations.ShardStatement",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27637aec_f29cb88f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "nit: testvariants\nconsistent with package name and how traces are called in testresults/query.go",
+      "range": {
+        "startLine": 190,
+        "startChar": 34,
+        "endLine": 190,
+        "endChar": 46
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd086b32_3c967cdd",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "i feel like this might be excessive.\nmost of the time 1 test result correspond to 3 test variants, so it is likely that we would be fetching 3x more data than needed.\n\nalso this still doesn\u0027t guarantee that we will fetch PageSize of test variants.\n\nI assume you do this in order to decide whether to compute page token.\nI think we can be more precise by counting the number of rows Spanner returns, rather than counting the number of test variants we return.\nFor example, if we requested N test results from Spanner, but it returned N-1, then there should be next_page_token.\nIf we have discarded `current` test variant (see another comment) because it didn\u0027t fit PageSize, then there should be next_page_token.\n\n\nWith that, we can be more efficient with a factor closer to 1.0 here",
+      "range": {
+        "startLine": 205,
+        "startChar": 22,
+        "endLine": 205,
+        "endChar": 26
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "184ceaf3_31b18bc6",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "nit: hard to read multi-line conditions. Consider having the assignment separate from the if statement",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 17
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ece3c61e_051499a2",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "this query blocks starting the next one, unnecessarily (leading to higher latency).\ni think they should start concurrently, but the callback in L240 should wait for this query to finish\n\njust a TODO in this CL would be OK though.",
+      "range": {
+        "startLine": 232,
+        "startChar": 0,
+        "endLine": 234,
+        "endChar": 2
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "231e50c5_f095a674",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "do we need this? the last test variant in tvs is tvs[len(tvs)-1]\n\nstepping back, the last TV is not necessarily complete. We know it is complete only when we discover a new TV.\nso I wonder if we should not add it to tvs until we switched to the new one.\nfrom this perspective the following might be better\n\n  var current *uipb.TestVariant",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "494339dc_18090410",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "why do we need this check? if it is empty, it will return (nil, false)",
+      "range": {
+        "startLine": 240,
+        "startChar": 2,
+        "endLine": 240,
+        "endChar": 29
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b28ad9e5_daef0e12",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "q.unexpected might have been already true from the previous execution of Fetch().\nWe must reset q.unexpected just like we reset q.params in L290",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e6a91bc_6177b0ca",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "3",
+      "range": {
+        "startLine": 300,
+        "startChar": 66,
+        "endLine": 300,
+        "endChar": 68
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f9a91ae_6495443e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "nit: does the code compile without this type conversion? TestVariantStatus_EXPECTED is a constant.\nI\u0027d expecte `status !\u003d TestVariantStatus_EXPECTED` to work as is",
+      "range": {
+        "startLine": 306,
+        "startChar": 17,
+        "endLine": 306,
+        "endChar": 39
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "010cad22_1abb1c96",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "nit: \n\n1) L318-321 is same as L326-329\n2) allocated slice in L310 is thrown away in L325\n\nwhy not\n\n  var tvs ]*uipb.TestVariant\n\n  // Fetch test variants with unexpected results.\n  if q.unexpected {\n    // TODO(crbug.com/1112127): populate next page token.\n    tvs \u003d make([]*uipb.TestVariant, 0, q.PageSize)\n    err \u003d q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {\n      tvs \u003d append(tvs, tv)\n      return nil\n    })\n  } else {\n    tvs, err \u003d q.fetchTestVariantsWithOnlyExpectedResults(ctx)\n  }\n  if err !\u003d nil {\n    tvs \u003d nil\n  }\n  return\n\nalso, code would be even nicer if it was `if q.expected` because `else` would be closer to `if`.\nand also because it would use positive `expected` (as opposed to negative unexpected)",
+      "range": {
+        "startLine": 309,
+        "startChar": 1,
+        "endLine": 329,
+        "endChar": 7
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "764a078f_9eee866f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "we don\u0027t want limit for unexpectedTestVariants.\n\nconsider three separate templates, rather than boolean switches",
+      "range": {
+        "startLine": 342,
+        "startChar": 0,
+        "endLine": 342,
+        "endChar": 12
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf388f75_5de10a59",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dc55001_5973180a",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T17:27:05Z",
+      "side": 1,
+      "message": "dedent",
+      "range": {
+        "startLine": 435,
+        "startChar": 1,
+        "endLine": 436,
+        "endChar": 2
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
