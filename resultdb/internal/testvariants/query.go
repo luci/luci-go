@@ -235,7 +235,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	i := -1 // index of the last test variant in tvs
-	// TODO(crbug.com/1112127): Query next page if there are no expected results in this page.
+	// TODO(crbug.com/1112127): Query next page if there are no enough expected results in this page.
 	err = q.queryExpectedTestResults(ctx, func(tr *pb.TestResult) error {
 		if len(unexpectedTVs) > 0 {
 			if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
@@ -296,6 +296,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		return nil, "", err
 	case len(parts) == 0:
 		q.unexpected = true
+		q.params["afterTvStatus"] = 0
+		q.params["afterTestId"] = ""
+		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
 		return nil, "", pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
 	default:
@@ -304,6 +307,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
 		}
 		q.unexpected = uipb.TestVariantStatus(status) != uipb.TestVariantStatus_EXPECTED
+		q.params["afterTvStatus"] = int(status)
+		q.params["afterTestId"] = parts[1]
+		q.params["afterVariantHash"] = parts[2]
 	}
 
 	// TODO(crbug.com/1112127): populate next page token.
@@ -317,15 +323,30 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		})
 		if err != nil {
 			tvs = nil
+			return
 		}
-		return
+	} else {
+		// Fetch test variants with only expected results.
+		tvs, err = q.fetchTestVariantsWithOnlyExpectedResults(ctx)
+		if err != nil {
+			tvs = nil
+			return
+		}
 	}
 
-	// Fetch test variants with only expected results.
-	tvs, err = q.fetchTestVariantsWithOnlyExpectedResults(ctx)
-	if err != nil {
-		tvs = nil
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(tvs) == q.PageSize {
+		last := tvs[q.PageSize-1]
+		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
 	}
+
+	// If we got less than one page of test variants with unexpected results,
+	// compute the nextPageToken for test variants with only expected results.
+	if q.unexpected && len(tvs) < q.PageSize {
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
+	}
+
 	return
 }
 
@@ -333,7 +354,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 var queryTmpl = template.Must(template.New("testVariants").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
 {{if .OnlyTestVariant}}
-	{{template "unexpectedTestVariants" .}}
+	{{template "unexpectedTestVariantsWithPageToken" .}}
 {{else if .Unexpected}}
 	{{template "testVariantsWithUnexpectedResults" .}}
 {{else}}
@@ -343,6 +364,10 @@ LIMIT @limit
 
 {{define "testVariantsWithUnexpectedResults"}}
 	WITH unexpectedTestVariants AS (
+		-- We have to get the full list of unexpected test variants without applying
+		-- page token because the test variants will be ordered by
+    -- TvStatus, TestId, VariantHash. And in this subquery we do not know TvStatus
+		-- of each test variants.
 		{{template "unexpectedTestVariants"}}
 	),
 
@@ -394,6 +419,12 @@ LIMIT @limit
 
 	{{template "columns"}}
 	FROM testVariantsWithUnexpectedResults
+	{{/* Apply the page token */}}
+	WHERE (
+		(TvStatus > @afterTvStatus) OR
+		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TvStatus, TestId, VariantHash
 {{end}}
 
@@ -406,6 +437,11 @@ LIMIT @limit
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
 	AND IsUnexpected IS NULL
+	{{/* Apply the page token */}}
+	AND (
+		(TestId > @afterTestId) OR
+		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TestId, VariantHash
 {{end}}
 
@@ -434,5 +470,14 @@ LIMIT @limit
 	SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
+{{end}}
+
+{{define "unexpectedTestVariantsWithPageToken"}}
+	{{template "unexpectedTestVariants"}}
+	AND (
+		(TestId > @afterTestId) OR
+		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
+	ORDER BY TestId, VariantHash
 {{end}}
 `))
