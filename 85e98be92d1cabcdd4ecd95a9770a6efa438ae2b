@@ -372,6 +372,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4a6d6f8_89219f13",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-09T08:22:15Z",
+      "side": 1,
+      "message": "CAST([] as ARRAY\u003cBYTES\u003e) works, thanks!",
+      "parentUuid": "f906d158_99fed32d",
+      "range": {
+        "startLine": 254,
+        "startChar": 3,
+        "endLine": 254,
+        "endChar": 27
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "47fde908_1bfffb88",
@@ -439,6 +463,24 @@
       "side": 1,
       "message": "ping",
       "parentUuid": "84341f2b_456ff4f1",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d8e38b4_525c8e1e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-09T08:22:15Z",
+      "side": 1,
+      "message": "Done.\n\nBut the number of test variants in a page may not be stable, if there are too many test variants with unexpected results. I think it should be fine for most of the times, but we may need to handle the case that there are N (\u003ePageSize) consecutive test variants with unexpected results,, it should be very rare, but is possible.",
+      "parentUuid": "f1a307ca_1542b3ae",
       "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
