@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c71c0bcf_0c8e9f06",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-09T01:19:09Z",
+      "side": 1,
+      "message": "hm.... should we not just cancel them here? I worry that a client in a hurried teardown scenario might try to terminate the build with a message but not know to cancel all the steps in order to have the rpc accepted.",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 12
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
