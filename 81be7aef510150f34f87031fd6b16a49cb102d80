@@ -180,6 +180,30 @@
       },
       "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9763cf9_986d2087",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:12Z",
+      "side": 1,
+      "message": "ah! I didn\u0027t even realize I have chosen a side. War comes and goes but consistency is always the best:)",
+      "parentUuid": "53f163d5_ef9ec4aa",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
