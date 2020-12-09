@@ -224,6 +224,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ad27e3a_a2b6f7d0",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "oh got it! \n(triggerer is another overloaded word :))\n\nI think it works in the current mode but probably won\u0027t work if we switch to api triggered Run. In that case, maybe we can ask requester to explicitly provide owner in the request.",
+      "parentUuid": "3f808a19_a5b56083",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 41
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9e863204_14bd5f5a",
@@ -285,6 +309,30 @@
       "side": 1,
       "message": "I think it\u0027s easier to write correct code that doesn\u0027t do caching of mutable data, especially by hand.\nAt times we must, e.g. we must snapshot Gerrit because Gerrit isn\u0027t as fast/reliable as datastore.\nHere, I don\u0027t think we need to yet. And yes, dscache should help.",
       "parentUuid": "a32daf2d_987e277b",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 39
+      },
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1b12d18_b1631760",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "04fe3a4a_1b06749a",
       "range": {
         "startLine": 86,
         "startChar": 0,
@@ -391,6 +439,24 @@
       "side": 1,
       "message": "\u003e ProjectManager who is doing the quota management IIUC\n\nRunManager is better s.t. we reduce the load on ProjectManager. It\u0027s also easier to emit something to RunLog we should eventually add.",
       "parentUuid": "68ff9d16_081cfacd",
+      "revId": "a98921d38702697149910c3c2ccbc4883575be25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cad11e0f_157d0657",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "Makes sense plus there might be project-level run quota management who can only be done in ProjectManager.",
+      "parentUuid": "3661b48e_22dc3b0d",
       "revId": "a98921d38702697149910c3c2ccbc4883575be25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

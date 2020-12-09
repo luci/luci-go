@@ -25,6 +25,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1026f396_070f053c",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "Good idea.",
+      "parentUuid": "52b59441_d685e9da",
+      "range": {
+        "startLine": 36,
+        "startChar": 29,
+        "endLine": 36,
+        "endChar": 38
+      },
+      "revId": "ff71b38d7056d500fb4d1a2ea97d9bbcba7ff305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0480b2b1_87b419f3",
@@ -48,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9310bf9b_e554f4c1",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0480b2b1_87b419f3",
+      "range": {
+        "startLine": 73,
+        "startChar": 53,
+        "endLine": 73,
+        "endChar": 73
+      },
+      "revId": "ff71b38d7056d500fb4d1a2ea97d9bbcba7ff305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f9cb765_67dab7ed",
@@ -61,6 +109,30 @@
       "writtenOn": "2020-12-09T01:24:48Z",
       "side": 1,
       "message": "last",
+      "range": {
+        "startLine": 74,
+        "startChar": 69,
+        "endLine": 74,
+        "endChar": 70
+      },
+      "revId": "ff71b38d7056d500fb4d1a2ea97d9bbcba7ff305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e79a73be_18828d74",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-09T20:42:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f9cb765_67dab7ed",
       "range": {
         "startLine": 74,
         "startChar": 69,
