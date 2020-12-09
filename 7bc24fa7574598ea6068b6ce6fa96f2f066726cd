@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b72ca339_703a87da",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T19:38:35Z",
+      "side": 1,
+      "message": "TODO added.",
+      "parentUuid": "6734ee14_f9860c3c",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ab80776_7370ed5d",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7021da90_2d506529",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T19:38:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ab80776_7370ed5d",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a64173b_884d2169",
@@ -48,6 +84,24 @@
       "writtenOn": "2020-12-09T17:40:44Z",
       "side": 1,
       "message": "nit: this if statement could be another `case`\nbut not a big deal",
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5f4c0e1_5d087c68",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T19:38:35Z",
+      "side": 1,
+      "message": "Good idea. done.",
+      "parentUuid": "4a64173b_884d2169",
       "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbf388f6_8b505195",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T19:38:35Z",
+      "side": 1,
+      "message": "will fix it in a separate CL.",
+      "parentUuid": "55cba651_a432c736",
+      "range": {
+        "startLine": 356,
+        "startChar": 38,
+        "endLine": 356,
+        "endChar": 45
+      },
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da4bf4d8_0a590aa1",
@@ -88,6 +166,30 @@
       "writtenOn": "2020-12-09T17:40:44Z",
       "side": 1,
       "message": "please add a comment that this code relies on the subtle fact that \nif the BuildSteps doesn\u0027t actually exist, the `changed` here is false, and we end up avoiding saving an empty BuildSteps entity.\n\nthis is not obvious from the code.\n(it would be obvious if we used datastore.Get instead of GetIgnoreMissing)",
+      "range": {
+        "startLine": 357,
+        "startChar": 19,
+        "endLine": 357,
+        "endChar": 35
+      },
+      "revId": "7bc24fa7574598ea6068b6ce6fa96f2f066726cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b23d8406_fe7e9e1b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T19:38:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da4bf4d8_0a590aa1",
       "range": {
         "startLine": 357,
         "startChar": 19,
