@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e9f4e0e9_295be4be",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:35:14Z",
+      "side": 1,
+      "message": "SGTU\n\nFWIW, I didn\u0027t want to name mine \"project\" because it\u0027s too ambiguous, but `run` isn\u0027t (at least in the context of CV)",
+      "parentUuid": "cc116287_8ee95bd4",
+      "revId": "d89cca5e5d40f0b614e69443ee7cfce8d95497a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c7478120_57fcaefd",
         "filename": "cv/internal/runmanager/impl/model.go",
         "patchSetId": 1
@@ -31,6 +49,30 @@
       "writtenOn": "2020-12-09T21:28:23Z",
       "side": 1,
       "message": "I think soon there\u0027ll be a dependency cycle. Shall I change this to string or *datastore.Key?",
+      "range": {
+        "startLine": 33,
+        "startChar": 14,
+        "endLine": 33,
+        "endChar": 20
+      },
+      "revId": "d89cca5e5d40f0b614e69443ee7cfce8d95497a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5a6f6fb_4a7bccf9",
+        "filename": "cv/internal/runmanager/impl/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:35:14Z",
+      "side": 1,
+      "message": "hm, there shouldn\u0027t be a cycle: `impl` can import from `runmanager`, but `runmanager` must not import from `impl`.\n\n(and if you must use generic type, then just `string` wuould suffice)",
+      "parentUuid": "c7478120_57fcaefd",
       "range": {
         "startLine": 33,
         "startChar": 14,
