@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92b2d889_4dc28d69",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-09T21:02:26Z",
+      "side": 1,
+      "message": "PTAL. I think Cloud Logging viewer is not ready for such advanced use case.",
+      "revId": "9137db77e28b55acc25661550daee4feb847b861",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
