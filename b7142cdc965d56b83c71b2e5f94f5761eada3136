@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcf6a68d_6064d9dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:40:06Z",
+      "side": 1,
+      "message": "this CL will depend on the discussion in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2575982/7\nso I am still waiting for that one.",
+      "revId": "b7142cdc965d56b83c71b2e5f94f5761eada3136",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
