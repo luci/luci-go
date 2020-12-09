@@ -138,6 +138,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d2d248c9_26f6d7dd",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-09T02:12:58Z",
+      "side": 1,
+      "message": "Thinking back, it doesn\u0027t have to be made by two clients.\nA single recipe can produce the same error.\n\n(1) Schedule Build.\n(2) Update the Build with incomplete step-A\n(3) Update the Build with Status_SUCCESS\nwith complete step-B, but w/o step-A.\n\nI will update this CL to scan and cancel the existing, incomplete steps always.",
+      "parentUuid": "9f08306c_5328cce7",
+      "range": {
+        "startLine": 360,
+        "startChar": 4,
+        "endLine": 360,
+        "endChar": 11
+      },
+      "revId": "90511c27d094b91e135ee900655ff8d21964095a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "abf9326f_785b635d",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 3
