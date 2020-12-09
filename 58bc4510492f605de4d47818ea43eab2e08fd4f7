@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b817cee_d2d74515",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-09T02:20:04Z",
+      "side": 1,
+      "message": "Demo: https://jsca-dot-luci-milo-dev.appspot.com/raw/build/luci-logdog-dev.appspot.com/infra-experimental/led/yiwzhang_google.com/4438b9a62ee1485c3cf1f04c12ed7813d1f701e03d64e0e0358774591417661e/+/build.proto?server\u003dchromium-swarm-dev.appspot.com",
+      "revId": "58bc4510492f605de4d47818ea43eab2e08fd4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
