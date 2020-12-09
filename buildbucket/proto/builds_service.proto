@@ -145,8 +145,6 @@ message BatchRequest {
     oneof request {
       GetBuildRequest get_build = 1;
       SearchBuildsRequest search_builds = 2;
-      // All ScheduleBuild requests in the batch are executed before other
-      // requests.
       ScheduleBuildRequest schedule_build = 3;
       CancelBuildRequest cancel_build = 4 ;
     }
