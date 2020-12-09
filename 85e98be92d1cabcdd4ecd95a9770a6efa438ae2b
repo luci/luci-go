@@ -350,6 +350,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f906d158_99fed32d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:37:07Z",
+      "side": 1,
+      "message": "ping",
+      "parentUuid": "f9716c3e_def8efa7",
+      "range": {
+        "startLine": 254,
+        "startChar": 3,
+        "endLine": 254,
+        "endChar": 27
+      },
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "47fde908_1bfffb88",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 3
@@ -397,6 +421,24 @@
       "side": 1,
       "message": "yeah, both are pretty slow.\n\nperhaps we don\u0027t need GROUP BY at all? \nhttps://paste.googleplex.com/5650129051713536 finishes in ~100ms.\nit returns non-grouped, but sorted data, and it includes unexpected results.\n\nhow about\n\n  - start two queries concurrently\n    - read all unexpected test variants\n    - https://paste.googleplex.com/5650129051713536\n  - write all unexpected test variants to a hashset\n  - in the callback for test results\n    - first wait until the unexpected-test-variants query finishes\n    - skip this test result if its test variant is in the set\n    - check if this test result has same variant as the previous one\n      - if yes, add it to the \"current\" bundle\n      - otherwise, call f() and start a new bundle\n\n(FWIW I tried to implement the same in SQL using JOIN, but for some reason it was much slower)\n\nthis based is on two things specific to expected results:\n- in general, the vast majority of results are expected, so it is very unlikely that an individual surfaced test variant is not expected. This does mean, though, that we might return fewer than page_size elements\n- most test variants have a single result\n\nthis is non-trivial, but appears 10x faster",
       "parentUuid": "fd18fb9f_feac442f",
+      "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1a307ca_1542b3ae",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-09T02:37:07Z",
+      "side": 1,
+      "message": "ping",
+      "parentUuid": "84341f2b_456ff4f1",
       "revId": "85e98be92d1cabcdd4ecd95a9770a6efa438ae2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
