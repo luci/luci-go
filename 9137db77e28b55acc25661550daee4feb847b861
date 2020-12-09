@@ -33,6 +33,24 @@
       "message": "I\u0027m curious about how it looks before and after (screenshots would be great), but not required.",
       "revId": "9137db77e28b55acc25661550daee4feb847b861",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92f2512a_0afeb611",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-09T21:29:55Z",
+      "side": 1,
+      "message": "I closed the tab already and discovering it again will be hard. But basically, all textual logs from *all* handlers in a task chain end up nested under a single \"POST 200 https://...\" log entry (the first one) with no separation between them whatsoever. Additionally I strongly suspect Cloud Logging indexer ignores metadata from all non-first \"POST ...\" entries associated with the trace ID. As a result, I see Envoy handles some requests, but there are no associated discoverable logs from LUCI go code (because Cloud Logging didn\u0027t index them, because they were not first in the chain). It all leads to much confusion and little gain. \n\nTQ still simply logs trace ID of the parent trace, so it is still possible to reconstruct the chain of tasks logs manually when debugging stuff.",
+      "parentUuid": "9df243c4_8175a945",
+      "revId": "9137db77e28b55acc25661550daee4feb847b861",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
