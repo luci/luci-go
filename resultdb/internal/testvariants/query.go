@@ -21,9 +21,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -34,8 +36,12 @@ import (
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
-	PageSize      int    // must be positive
-	summaryBuffer []byte // Buffer for decompressing SummaryHTML
+	PageSize      int // must be positive
+	// Consists of test variant status, test id and variant hash.
+	PageToken     string
+	summaryBuffer []byte                 // buffer for decompressing SummaryHTML
+	unexpected    bool                   // if queried test variants have unexpected results
+	params        map[string]interface{} // query parameters
 }
 
 // tvResult matches the result STRUCT of a test variant from the query.
@@ -87,7 +93,7 @@ func (q *Query) toTestResultProto(r *tvResult, testId string) (*pb.TestResult, e
 	return tr, nil
 }
 
-func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err error) {
+func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*uipb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
@@ -97,14 +103,11 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 	}
 
 	var sql bytes.Buffer
-	if err := queryTmpl.Execute(&sql, nil); err != nil {
+	if err := queryTmpl.Execute(&sql, map[string]interface{}{"Unexpected": q.unexpected}); err != nil {
 		return err
 	}
 	st := spanner.NewStatement(sql.String())
-	st.Params = map[string]interface{}{
-		"invIDs": q.InvocationIDs,
-		"limit":  q.PageSize,
-	}
+	st.Params = q.params
 
 	var b spanutil.Buffer
 	var expBytes []byte
@@ -118,8 +121,8 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		}
 
 		tv.Status = uipb.TestVariantStatus(tvStatus)
-		if tv.Status == uipb.TestVariantStatus_EXPECTED {
-			panic("query of test variants with unexpected results returns a test variant with only expected results.")
+		if q.unexpected && tv.Status == uipb.TestVariantStatus_EXPECTED {
+			panic("query of test variants with unexpected results returned a test variant with only expected results.")
 		}
 
 		// Populate tv.Results
@@ -135,6 +138,10 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 		}
 
 		// Populate tv.Exonerations
+		if len(exoExplanationHtmls) == 0 {
+			return f(tv)
+		}
+
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
 			if expBytes, err = spanutil.Decompress(ex, expBytes); err != nil {
@@ -148,17 +155,122 @@ func (q *Query) run(ctx context.Context, f func(*uipb.TestVariant) error) (err e
 	})
 }
 
-// Fetch returns a page of test variants matching q.
-// Returned test variants are ordered by test variant status, test ID and variant hash.
-func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
-	if q.PageSize <= 0 {
-		panic("PageSize <= 0")
+type testVariant struct {
+	TestID      string
+	VariantHash string
+}
+
+// queryUnexpectedTestVariants returns test variants with unexpected
+// results.
+func (q *Query) queryUnexpectedTestVariants(ctx context.Context) (map[testVariant]struct{}, error) {
+	var sql bytes.Buffer
+	if err := queryTmpl.Execute(&sql, map[string]interface{}{"OnlyTestVariant": true}); err != nil {
+		return nil, err
+	}
+	st := spanner.NewStatement(sql.String())
+	st.Params = q.params
+
+	testVariants := map[testVariant]struct{}{}
+	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var tv testVariant
+		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
+			return err
+		}
+		testVariants[tv] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	// TODO(crbug.com/1112127): query expected results.
-	// TODO(crbug.com/1112127): add paging.
+	return testVariants, nil
+}
+
+func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "testVariants.Query.queryExpectedTestResults")
+	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
+	defer func() { ts.End(err) }()
+	var sql bytes.Buffer
+	if err := queryTmpl.Execute(&sql, nil); err != nil {
+		return err
+	}
+	st := spanner.NewStatement(sql.String())
+	st.Params = q.params
+	// use a larger page size because:
+	// * we need to remove the test variants with unexpected results
+	// * If a test variant gets an expected result, it should not be retried for
+	//   too many times, but sometime it does get retried.
+	//   One example is in chromium try builds, successful tests are retried in
+	//   (retry shards with patch) steps.
+	st.Params["limit"] = 3 * q.PageSize
+
+	var b spanutil.Buffer
+	var summaryHTML spanutil.Compressed
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var invID invocations.ID
+		var maybeUnexpected spanner.NullBool
+		var micros spanner.NullInt64
+		tr := &pb.TestResult{}
+		if err := b.FromSpanner(
+			row, &tr.TestId, &tr.VariantHash, &tr.Variant,
+			&invID, &tr.ResultId, &maybeUnexpected, &tr.Status, &tr.StartTime,
+			&micros, &summaryHTML, &tr.Tags,
+		); err != nil {
+			return err
+		}
+		tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+		tr.SummaryHtml = string(summaryHTML)
+		testresults.PopulateExpectedField(tr, maybeUnexpected)
+		testresults.PopulateDurationField(tr, micros)
+
+		return f(tr)
+	})
+}
+
+func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, err error) {
+	var unexpectedTVs map[testVariant]struct{}
+	if unexpectedTVs, err = q.queryUnexpectedTestVariants(ctx); err != nil {
+		return nil, err
+	}
+
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
-	err = q.run(ctx, func(tv *uipb.TestVariant) error {
+	i := -1 // index of the last test variant in tvs
+	// TODO(crbug.com/1112127): Query next page if there are no expected results in this page.
+	err = q.queryExpectedTestResults(ctx, func(tr *pb.TestResult) error {
+		if len(unexpectedTVs) > 0 {
+			if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
+				// This test variant has unexpected results, moving on.
+				return nil
+			}
+		}
+
+		if i >= 0 && tvs[i].TestId == tr.TestId && tvs[i].VariantHash == tr.VariantHash {
+			tvs[i].Results = append(tvs[i].Results, &uipb.TestResultBundle{
+				Result: tr,
+			})
+			return nil
+		}
+
+		// New test variant.
+		if i == q.PageSize-1 {
+			// Got one page of test variants.
+			// TODO(crbug.com/1112127): Stop the query when get one page of test variants.
+			return nil
+		}
+
+		tv := &uipb.TestVariant{
+			TestId:      tr.TestId,
+			VariantHash: tr.VariantHash,
+			Variant:     tr.Variant,
+			Status:      uipb.TestVariantStatus_EXPECTED,
+			Results: []*uipb.TestResultBundle{
+				{
+					Result: tr,
+				},
+			},
+		}
+
+		i += 1
 		tvs = append(tvs, tv)
 		return nil
 	})
@@ -168,17 +280,70 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	return
 }
 
+// Fetch returns a page of test variants matching q.
+// Returned test variants are ordered by test variant status, test ID and variant hash.
+func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
+	if q.PageSize <= 0 {
+		panic("PageSize <= 0")
+	}
+
+	q.params = map[string]interface{}{
+		"invIDs": q.InvocationIDs,
+		"limit":  q.PageSize,
+	}
+	switch parts, err := pagination.ParseToken(q.PageToken); {
+	case err != nil:
+		return nil, "", err
+	case len(parts) == 0:
+		q.unexpected = true
+	case len(parts) != 3:
+		return nil, "", pagination.InvalidToken(errors.Reason("expected %d components, got %q", 3, parts).Err())
+	default:
+		status, ok := uipb.TestVariantStatus_value[parts[0]]
+		if !ok {
+			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+		}
+		q.unexpected = uipb.TestVariantStatus(status) != uipb.TestVariantStatus_EXPECTED
+	}
+
+	// TODO(crbug.com/1112127): populate next page token.
+	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
+
+	// Fetch test variants with unexpected results.
+	if q.unexpected {
+		err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {
+			tvs = append(tvs, tv)
+			return nil
+		})
+		if err != nil {
+			tvs = nil
+		}
+		return
+	}
+
+	// Fetch test variants with only expected results.
+	tvs, err = q.fetchTestVariantsWithOnlyExpectedResults(ctx)
+	if err != nil {
+		tvs = nil
+	}
+	return
+}
+
 // queryTmpl is a set of templates that generate the SQL statements to query test variants.
 var queryTmpl = template.Must(template.New("testVariants").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
-	{{template "testVariantsWithUnexpectedResultsTmpl" .}}
+{{if .OnlyTestVariant}}
+	{{template "unexpectedTestVariants" .}}
+{{else if .Unexpected}}
+	{{template "testVariantsWithUnexpectedResults" .}}
+{{else}}
+	{{template "expectedResults" .}}
+{{end}}
 LIMIT @limit
 
-{{define "testVariantsWithUnexpectedResultsTmpl"}}
-	WITH variantsWithUnexpectedResults AS (
-		SELECT DISTINCT TestId, VariantHash
-		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
-		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
+{{define "testVariantsWithUnexpectedResults"}}
+	WITH unexpectedTestVariants AS (
+		{{template "unexpectedTestVariants"}}
 	),
 
 	-- Get test variants and their results.
@@ -191,8 +356,9 @@ LIMIT @limit
 			ANY_VALUE(Variant) Variant,
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNT(TestId) num_total,
-			{{template "testResults"}},
-		FROM variantsWithUnexpectedResults vur
+			-- TODO(crbug.com/1112127): Limit the number of results for each test variant to prevent OOM if there are too many of them.
+			ARRAY_AGG(STRUCT({{template "testResultsColumns"}})) results,
+		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
 		WHERE InvocationId in UNNEST(@invIDs)
 		GROUP BY TestId, VariantHash
@@ -231,19 +397,26 @@ LIMIT @limit
 	ORDER BY TvStatus, TestId, VariantHash
 {{end}}
 
-{{define "testResults"}}
-  -- TODO(crbug.com/1112127): Limit the number of results for each test variant to prevent OOM if there are too many of them.
-	ARRAY_AGG(
-		STRUCT(
-			InvocationId,
-			ResultId,
-			IsUnexpected,
-			Status,
-			StartTime,
-			RunDurationUsec,
-			SummaryHTML,
-			Tags)
-	) results
+{{define "expectedResults"}}
+	SELECT
+		TestId,
+		VariantHash,
+		Variant Variant,
+		{{template "testResultsColumns"}},
+	FROM TestResults
+	WHERE InvocationId in UNNEST(@invIDs)
+	ORDER BY TestId, VariantHash
+{{end}}
+
+{{define "testResultsColumns"}}
+	InvocationId,
+	ResultId,
+	IsUnexpected,
+	Status,
+	StartTime,
+	RunDurationUsec,
+	SummaryHTML,
+	Tags
 {{end}}
 
 {{define "columns"}}
@@ -254,5 +427,11 @@ LIMIT @limit
 		TvStatus,
 		results,
 		exonerationExplanations,
+{{end}}
+
+{{define "unexpectedTestVariants"}}
+	SELECT DISTINCT TestId, VariantHash
+		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
 {{end}}
 `))
