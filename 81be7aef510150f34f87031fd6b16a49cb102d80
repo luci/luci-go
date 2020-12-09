@@ -252,6 +252,30 @@
       },
       "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0295ecb_8abb62c2",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:26:39Z",
+      "side": 1,
+      "message": "\u003e It appears you are on the Vim\u0027s side of the war between\n\nThis was wrong! You are/were NOT on the vim\u0027s side.",
+      "parentUuid": "0bb9b74c_91edb871",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
