@@ -12,28 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
-
-package cv.run;
-
-option go_package = "go.chromium.org/luci/cv/internal/runmanager/impl;impl";
-
-
-enum Status {
-  // Unspecified status.
-  STATUS_UNSPECIFIED = 0;
-  // Run is pending to start.
-  //
-  // It is either because RunManager hasn't processed the StartEvent yet or
-  // the RunOwner has exhausted all the quota and waiting for new quota to
-  // be available.
-  PENDING = 1;
-  // Run has started.
-  STARTED = 2;
-  // Run ends successfully.
-  SUCCESS = 3;
-  // Run ends unsuccessfully.
-  FAILURE = 4;
-  // Run is cancelled.
-  CANCELED = 5;
-}
+// Package run implements public interface for Run Manager.
+package run
