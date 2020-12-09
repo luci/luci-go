@@ -228,6 +228,30 @@
       },
       "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bb9b74c_91edb871",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-09T21:25:43Z",
+      "side": 1,
+      "message": "So am I, and whenever I ask my editor to merge/auto-format comment lines, vim fights me 😞",
+      "parentUuid": "53e18b52_7fc6e098",
+      "range": {
+        "startLine": 160,
+        "startChar": 20,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "81be7aef510150f34f87031fd6b16a49cb102d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
