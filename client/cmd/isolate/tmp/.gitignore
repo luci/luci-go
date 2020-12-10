@@ -1,0 +1,6 @@
+cache/
+*.isolate
+*.isolated.gen.json
+*tests/
+isolated
+isolate

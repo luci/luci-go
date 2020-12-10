@@ -17,7 +17,6 @@ package isolate
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,7 +33,7 @@ import (
 	"go/parser"
 	"go/token"
 
-	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"go.chromium.org/luci/common/errors"
 )
 
 var osPathSeparator = string(os.PathSeparator)
@@ -618,12 +617,12 @@ func parseIsolate(content []byte) (*isolate, error) {
 	// TODO(tandrii): figure out why decoding directly into isolate
 	// doesn't work.
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
-	var data interface{}
-	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
-		return nil, err
-	}
-	buf, _ := json.Marshal(&data)
-	if err := json.Unmarshal(buf, isolate); err != nil {
+	// var data interface{}
+	// if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
+	// 	return nil, errors.Annotate(err, "failed to decode Json").Err()
+	// }
+	// buf, _ := json.Marshal(&data)
+	if err := json.Unmarshal(content, isolate); err != nil {
 		return nil, err
 	}
 	return isolate, nil
