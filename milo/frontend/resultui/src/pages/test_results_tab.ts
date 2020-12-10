@@ -156,7 +156,7 @@ export class TestResultsTabElement extends MobxLitElement {
       ` : html ``}
       ${this.renderIntegrationHint()}
       ${this.renderLoadMore()}
-      ${this.renderVariants(unexpectedVariants)}
+      ${this.renderVariants(unexpectedVariants, true)}
       ${this.renderVariants(flakyVariants)}
       ${this.renderVariants(exoneratedVariants)}
       ${this.renderVariants(expectedVariants)}
@@ -189,7 +189,7 @@ export class TestResultsTabElement extends MobxLitElement {
     `: html ``;
   }
 
-  private renderVariants(variants: ReadonlyVariant[]) {
+  private renderVariants(variants: ReadonlyVariant[], expandFirst: boolean = false) {
     return html`
       ${repeat(
         variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),
@@ -199,7 +199,7 @@ export class TestResultsTabElement extends MobxLitElement {
           .variant=${v}
           .prevTestId=${prev?.testId ?? ''}
           .prevVariant=${prev?.testId === v.testId ? prev : null}
-          .expanded=${this.hasSingleVariant}
+          .expanded=${this.hasSingleVariant || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
         ></milo-variant-entry>
       `)}
