@@ -184,6 +184,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3b09c19_5e2a8510",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T00:18:03Z",
+      "side": 1,
+      "message": "Changed to NewDSSet and keep usage as is for now. If we find a way to simplify interface, we\u0027ll do later.",
+      "parentUuid": "0e8fd1b8_0f12ead2",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 11
+      },
+      "revId": "6df9325704196930ece07d4cb7346b9177859aff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4550d625_707fab75",
