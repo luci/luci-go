@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0fcba75b_21f78c30",
+        "filename": "grpc/appstatus/status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-10T23:51:01Z",
+      "side": 1,
+      "message": "When I read the name of this function, I expect is to return a Status object, not an error. Maybe we can change the name to something else to make it clearer?",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "91019e305e23ef186c936f714234ef67edf74e19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
