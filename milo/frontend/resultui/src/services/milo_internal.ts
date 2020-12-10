@@ -70,13 +70,23 @@ export interface QueryBlamelistResponse {
   readonly precedingCommit?: GitCommit;
 }
 
+export interface GetCurrentUserRequest {}
+
+export interface User {
+  readonly identity: string;
+  readonly email?: string;
+  readonly picture?: string;
+}
+
 const SERVICE = 'luci.milo.v1.MiloInternal';
 
 export class MiloInternal {
   private prpcClient: PrpcClient;
 
-  constructor(accessToken: string) {
-    this.prpcClient = new PrpcClient({host: '', accessToken});
+  constructor() {
+    this.prpcClient = new PrpcClient({
+      fetchImpl: (input, init) => fetch(input, {...init, credentials: 'same-origin'}),
+    });
   }
 
   async queryBlamelist(req: QueryBlamelistRequest) {
@@ -84,6 +94,13 @@ export class MiloInternal {
       'QueryBlamelist',
       req,
     ) as QueryBlamelistResponse;
+  }
+
+  async getCurrentUser(req: GetCurrentUserRequest) {
+    return await this.call(
+      'GetCurrentUser',
+      req,
+    ) as User;
   }
 
   private call(method: string, message: object) {

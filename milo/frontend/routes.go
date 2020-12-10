@@ -148,7 +148,9 @@ func Run(templatePath string) {
 }
 
 func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
-	server := &prpc.Server{}
+	server := &prpc.Server{
+		Authenticator: &auth.Authenticator{Methods: []auth.Method{server.CookieAuth}},
+	}
 	milopb.RegisterMiloInternalServer(server, &milopb.DecoratedMiloInternal{
 		Service:  &backend.MiloInternalService{},
 		Postlude: backend.CommonPostlude,
