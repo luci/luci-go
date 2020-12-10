@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "57758552_c3b0ac3d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4eb97fa5_444e1dce",
+      "range": {
+        "startLine": 106,
+        "startChar": 72,
+        "endLine": 106,
+        "endChar": 84
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "144204fd_dcea97c7",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "remove",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 21
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11e73a00_11b0c0c1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "144204fd_dcea97c7",
       "range": {
         "startLine": 124,
         "startChar": 5,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05d94dc1_54f70434",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1df0960_c4e45c6f",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "89777139_f5f056ea",
@@ -77,6 +143,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "repeated 3 times.\nextract to a separate method?",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 171,
+        "endChar": 21
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c5ebb3e_78c2633e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89777139_f5f056ea",
       "range": {
         "startLine": 166,
         "startChar": 0,
@@ -104,6 +194,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dafeead_e10e7932",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "deca20d6_19095d68",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27637aec_f29cb88f",
@@ -117,6 +225,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "nit: testvariants\nconsistent with package name and how traces are called in testresults/query.go",
+      "range": {
+        "startLine": 190,
+        "startChar": 34,
+        "endLine": 190,
+        "endChar": 46
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "40ebc972_3f5fabe9",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27637aec_f29cb88f",
       "range": {
         "startLine": 190,
         "startChar": 34,
@@ -150,6 +282,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "68ecfc3a_0c10dd8f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd086b32_3c967cdd",
+      "range": {
+        "startLine": 205,
+        "startChar": 22,
+        "endLine": 205,
+        "endChar": 26
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "184ceaf3_31b18bc6",
@@ -163,6 +319,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "nit: hard to read multi-line conditions. Consider having the assignment separate from the if statement",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 17
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7db6f7c1_d6b38ca0",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "184ceaf3_31b18bc6",
       "range": {
         "startLine": 214,
         "startChar": 2,
@@ -196,6 +376,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "550492bf_092772bf",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ece3c61e_051499a2",
+      "range": {
+        "startLine": 232,
+        "startChar": 0,
+        "endLine": 234,
+        "endChar": 2
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "231e50c5_f095a674",
@@ -209,6 +413,24 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "do we need this? the last test variant in tvs is tvs[len(tvs)-1]\n\nstepping back, the last TV is not necessarily complete. We know it is complete only when we discover a new TV.\nso I wonder if we should not add it to tvs until we switched to the new one.\nfrom this perspective the following might be better\n\n  var current *uipb.TestVariant",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91bed93d_ab0f8104",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "\u003e so I wonder if we should not add it to tvs until we switched to the new one.\n\nThis is my current approach.\n\nBut I just had a different thought: since the test variants all only have expected results, why do we need to return all of its results? I\u0027m thinking to only include one sample result to each test variant and skip the remaining ones, and we can add the tv to results as soon as we get to it.",
+      "parentUuid": "231e50c5_f095a674",
       "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -236,6 +458,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4459105b_ee892b48",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Old python habbit... Done",
+      "parentUuid": "494339dc_18090410",
+      "range": {
+        "startLine": 240,
+        "startChar": 2,
+        "endLine": 240,
+        "endChar": 29
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b28ad9e5_daef0e12",
@@ -253,6 +499,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "817016fd_4a13c0e1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "b28ad9e5_daef0e12",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e6a91bc_6177b0ca",
@@ -266,6 +530,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "3",
+      "range": {
+        "startLine": 300,
+        "startChar": 66,
+        "endLine": 300,
+        "endChar": 68
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ab071ca_af25ffc2",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e6a91bc_6177b0ca",
       "range": {
         "startLine": 300,
         "startChar": 66,
@@ -299,6 +587,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa9635c2_bf7d147c",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Got \"invalid operation: status !\u003d uipb.TestVariantStatus_EXPECTED (mismatched types int32 and uipb.TestVariantStatus)\"",
+      "parentUuid": "4f9a91ae_6495443e",
+      "range": {
+        "startLine": 306,
+        "startChar": 17,
+        "endLine": 306,
+        "endChar": 39
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "010cad22_1abb1c96",
@@ -322,6 +634,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06554246_fdc0f189",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "010cad22_1abb1c96",
+      "range": {
+        "startLine": 309,
+        "startChar": 1,
+        "endLine": 329,
+        "endChar": 7
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "764a078f_9eee866f",
@@ -335,6 +671,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "we don\u0027t want limit for unexpectedTestVariants.\n\nconsider three separate templates, rather than boolean switches",
+      "range": {
+        "startLine": 342,
+        "startChar": 0,
+        "endLine": 342,
+        "endChar": 12
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01ea29fa_79477703",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "764a078f_9eee866f",
       "range": {
         "startLine": 342,
         "startChar": 0,
@@ -375,6 +735,30 @@
       "writtenOn": "2020-12-09T17:27:05Z",
       "side": 1,
       "message": "dedent",
+      "range": {
+        "startLine": 435,
+        "startChar": 1,
+        "endLine": 436,
+        "endChar": 2
+      },
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80ddbf1d_63069cc3",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T06:16:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dc55001_5973180a",
       "range": {
         "startLine": 435,
         "startChar": 1,
