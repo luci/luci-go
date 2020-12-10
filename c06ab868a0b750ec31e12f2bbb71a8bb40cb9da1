@@ -16,6 +16,52 @@
       "message": "PTAL. Though large, everything is purely copy-paste % modification to adapt to RunManager.",
       "revId": "c06ab868a0b750ec31e12f2bbb71a8bb40cb9da1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2307fec_1b003ade",
+        "filename": "cv/internal/run/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T22:03:51Z",
+      "side": 1,
+      "message": "we probably need to stick this into `util`\n(not in this CL)",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 4
+      },
+      "revId": "c06ab868a0b750ec31e12f2bbb71a8bb40cb9da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a882eac6_8fc67269",
+        "filename": "cv/internal/run/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T22:03:51Z",
+      "side": 1,
+      "message": "ha, not used any more, actually. Please, remove.",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 30
+      },
+      "revId": "c06ab868a0b750ec31e12f2bbb71a8bb40cb9da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
