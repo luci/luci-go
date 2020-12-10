@@ -307,7 +307,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		rootDgs = append(rootDgs, rootDg)
 		entries = append(entries, entrs...)
 	}
-	uploadedDgs, err := cl.UploadIfMissing(ctx, entries...)
+	uploadedDgs, _, err := cl.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return nil, err
 	}

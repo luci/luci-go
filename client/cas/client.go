@@ -77,6 +77,7 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	cl.TreeSymlinkOpts = client.DefaultTreeSymlinkOpts()
 	cl.TreeSymlinkOpts.Preserved = true
 	cl.TreeSymlinkOpts.FollowsTarget = false
+	cl.UnifiedUploads = true
 
 	return cl, nil
 }
