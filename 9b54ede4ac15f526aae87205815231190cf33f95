@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c90800e9_62c5348e",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-10T04:03:46Z",
+      "side": 1,
+      "message": "Why do you think we should expand a passed run? It would make the page longer and take more time to scroll.",
+      "revId": "9b54ede4ac15f526aae87205815231190cf33f95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffcf262b_5cdb9c34",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-10T04:03:46Z",
+      "side": 1,
+      "message": "I guess you can use\nreturn this.variant!.results.findIndex((e) \u003d\u003e !e.expected)\n\nRef: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex",
+      "revId": "9b54ede4ac15f526aae87205815231190cf33f95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
