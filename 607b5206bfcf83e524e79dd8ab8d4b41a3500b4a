@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72144623_5c28b94d",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-12-10T15:36:04Z",
+      "side": 1,
+      "message": "This is correct order.",
+      "range": {
+        "startLine": 236,
+        "startChar": 57,
+        "endLine": 236,
+        "endChar": 69
+      },
+      "revId": "607b5206bfcf83e524e79dd8ab8d4b41a3500b4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
