@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b0d0dce_60a4704a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-10T00:15:27Z",
+      "side": 1,
+      "message": "No demo since the failures on dev don\u0027t seem to have artifacts at all.",
+      "revId": "472d3fb6c5b543c38e74259e586bd45e1d9475ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
