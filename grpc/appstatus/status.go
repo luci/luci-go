@@ -34,6 +34,20 @@ func Error(code codes.Code, msg string) error {
 	return ToError(status.New(code, msg))
 }
 
+// FromGRPC attempts to convert an error with a GRPC status to an error with a
+// corresponding application-specific status.
+// If the conversion is unsuccessful, return the original error.
+func FromGRPC(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if s, ok := status.FromError(err); ok {
+		return ToError(s)
+	}
+	return err
+}
+
 // Errorf returns an error with an application-specific status.
 // The message will be shared with the RPC client as is.
 func Errorf(code codes.Code, format string, args ...interface{}) error {
