@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00032cc9_d8f7938a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T07:33:09Z",
+      "side": 1,
+      "message": "LGTM, since this code is fine, but the new idea might lead to deletion of some of the new code here.\nStill, I propose to land this, and work on the new idea in a separate CL, so that the new CL is focused on that.",
+      "revId": "8310d56abd5c35aad13036262d54d2253563517a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a1d2842c_d70097fd",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T07:33:09Z",
+      "side": 1,
+      "message": "not done",
+      "parentUuid": "7d373938_a2af01e6",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c506f6a9_7a013810",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 11
@@ -272,6 +290,24 @@
       "side": 1,
       "message": "queryUnexpectedTestVariants and only query expected results in the main query can help us skip the test variants with only unexpected results. \n\nBut since there aren\u0027t so many test variants like that in most of the builds, I agree that the benefit may be marginal.",
       "parentUuid": "6cf22f14_60222500",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37a47efd_13d43505",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T07:33:09Z",
+      "side": 1,
+      "message": "I am not sure I understood your comment. \nboth approaches can skip only-unexpected results, and in both approaches it is happening in Go (not spanner),\nbut the new approach needs only one spanner query",
+      "parentUuid": "bac005ee_7ef5251c",
       "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
