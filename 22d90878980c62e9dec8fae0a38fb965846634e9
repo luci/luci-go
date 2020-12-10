@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37309978_7b496396",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T23:43:54Z",
+      "side": 1,
+      "message": "this is lame, but shortens the main function with ds.Transaction, since it\u0027s already really long.",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 65
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "524a700e_83530d33",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T23:43:54Z",
+      "side": 1,
+      "message": "this is actually the only project-manager specific glue. So, there might be a way to abstract it out.\nNot sure how yet.",
+      "range": {
+        "startLine": 189,
+        "startChar": 0,
+        "endLine": 217,
+        "endChar": 1
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1c0800f_c263b5f0",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T23:43:54Z",
+      "side": 1,
+      "message": "oops, this is actually not used. I coded it to support partial updates, then decided to get rid of partial updates for now (see description). Will remove this.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 1
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ffc8801_de5539e3",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T23:43:54Z",
+      "side": 1,
+      "message": "bogus comment, sorry. Will remove.",
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62ab5238_a6de9dfa",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T23:43:54Z",
+      "side": 1,
+      "message": "this is what state.clone() was for.",
+      "range": {
+        "startLine": 145,
+        "startChar": 46,
+        "endLine": 145,
+        "endChar": 69
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
