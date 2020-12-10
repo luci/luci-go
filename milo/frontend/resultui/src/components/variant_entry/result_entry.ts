@@ -150,6 +150,26 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
+  private renderInvocationLevelArtifacts() {
+    if (this.invArtifacts.length === 0) {
+      return html``;
+    }
+
+    return html`
+      <div id="inv-artifacts-header">
+        From the parent ${this.parentInvType}:
+      </div>
+      <ul>
+        ${this.invArtifacts.map((artifact) => html`
+        <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
+        <li>
+          <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
+        </li>
+        `)}
+      </ul>
+    `;
+  }
+
   private renderArtifacts() {
     const artifactCount = this.resultArtifacts.length + this.invArtifacts.length;
     if (artifactCount === 0) {
@@ -168,17 +188,7 @@ export class ResultEntryElement extends MobxLitElement {
             <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
             `)}
           </ul>
-          <div id="inv-artifacts-header">
-            From the parent ${this.parentInvType}:
-          </div>
-          <ul>
-            ${this.invArtifacts.map((artifact) => html`
-            <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-            <li>
-              <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
-            </li>
-            `)}
-          </ul>
+          ${this.renderInvocationLevelArtifacts()}
         </div>
       </milo-expandable-entry>
     `;
