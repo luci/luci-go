@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, LitElement, property } from 'lit-element';
+import { css, customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
 
 import { styleMap } from 'lit-html/directives/style-map';
@@ -34,4 +34,10 @@ export class LogElement extends LitElement {
       </span>
     `;
   }
+
+  static styles = css`
+    a {
+      color: var(--default-text-color);
+    }
+  `;
 }

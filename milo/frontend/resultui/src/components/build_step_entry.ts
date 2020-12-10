@@ -195,8 +195,12 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
       margin-block-start: 0px;
     }
 
-    #summary > p:last-child {
+    #summary > :last-child {
       margin-block-end: 0px;
+    }
+
+    #summary a {
+      color: var(--default-text-color);
     }
 
     #log-links {
@@ -206,17 +210,8 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
       overflow-wrap: break-word;
     }
 
-    #log-links>li:nth-child(odd) {
-      background-color: var(--block-background-color);
-      list-style-type: circle;
-    }
-
     #log-links>li {
       list-style-type: circle;
-      padding: 0.1em 1em 0.1em 1em;
-    }
-    #log-links>li>a {
-      color: var(--default-text-color);
     }
 
     milo-build-step-entry {
