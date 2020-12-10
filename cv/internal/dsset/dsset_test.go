@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -34,7 +35,7 @@ import (
 )
 
 func testingContext() context.Context {
-	c := memory.Use(context.Background())
+	c := txndefer.FilterRDS(memory.Use(context.Background()))
 	datastore.GetTestable(c).AutoIndex(true)
 	datastore.GetTestable(c).Consistent(true)
 	c = clock.Set(c, testclock.New(time.Unix(1442270520, 0).UTC()))
@@ -43,20 +44,20 @@ func testingContext() context.Context {
 }
 
 // pop pops a bunch of items from the set and returns items that were popped.
-func pop(c context.Context, s *Set, listing *Listing, ids []string) (popped []string, tombs Garbage, err error) {
+func pop(c context.Context, s *Set, listing *Listing, ids []string) (popped []string, err error) {
 	op, err := s.BeginPop(c, listing)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	for _, id := range ids {
 		if op.Pop(id) {
 			popped = append(popped, id)
 		}
 	}
-	if tombs, err = FinishPop(c, op); err != nil {
-		return nil, nil, err
+	if err = FinishPop(c, op); err != nil {
+		return nil, err
 	}
-	return popped, tombs, nil
+	return popped, nil
 }
 
 func TestSet(t *testing.T) {
@@ -80,29 +81,18 @@ func TestSet(t *testing.T) {
 		So(listing.Garbage, ShouldBeNil)
 
 		// Pop it!
-		var cleanup Garbage
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
-			popped, tombs, err := pop(c, &set, listing, []string{"abc"})
+			popped, err := pop(c, &set, listing, []string{"abc"})
 			So(err, ShouldBeNil)
 			So(popped, ShouldResemble, []string{"abc"})
-			So(len(tombs), ShouldEqual, 1)
-			So(tombs[0].id, ShouldEqual, "abc")
-			So(tombs[0].storage, ShouldNotBeNil)
-			cleanup = tombs
 			return nil
 		}, nil)
 		So(err, ShouldBeNil)
 
-		// The listing no longer returns it, but we have a fresh tombstone that can
-		// be cleaned up.
+		// The listing no longer returns it.
 		listing, err = set.List(c)
 		So(err, ShouldBeNil)
 		So(listing.Items, ShouldBeNil)
-		So(len(listing.Garbage), ShouldEqual, 1)
-		So(listing.Garbage[0].id, ShouldEqual, "abc")
-
-		// Cleaning up the storage using tombstones from Pop works.
-		So(CleanupGarbage(c, cleanup), ShouldBeNil)
 
 		// The listing no longer returns the item, and there's no tombstones to
 		// cleanup.
@@ -125,10 +115,9 @@ func TestSet(t *testing.T) {
 
 		// Popping it again doesn't work either.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
-			popped, tombs, err := pop(c, &set, listing, []string{"abc"})
+			popped, err := pop(c, &set, listing, []string{"abc"})
 			So(err, ShouldBeNil)
 			So(popped, ShouldBeNil)
-			So(tombs, ShouldBeNil)
 			return nil
 		}, nil)
 		So(err, ShouldBeNil)
@@ -157,10 +146,9 @@ func TestSet(t *testing.T) {
 
 		// Cleanup the tombstones themselves.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
-			popped, tombs, err := pop(c, &set, listing, nil)
+			popped, err := pop(c, &set, listing, nil)
 			So(err, ShouldBeNil)
 			So(popped, ShouldBeNil)
-			So(tombs, ShouldBeNil)
 			return nil
 		}, nil)
 		So(err, ShouldBeNil)
@@ -233,16 +221,11 @@ func TestStress(t *testing.T) {
 
 			// Try to pop all.
 			var popped []string
-			var tombs Garbage
 			err = datastore.RunInTransaction(c, func(c context.Context) error {
 				var err error
-				popped, tombs, err = pop(c, &set, listing, keys)
+				popped, err = pop(c, &set, listing, keys)
 				return err
 			}, nil)
-			// Best-effort storage cleanup on success.
-			if err == nil {
-				CleanupGarbage(c, tombs)
-			}
 
 			// Consider items consumed only if transaction has landed.
 			if err == nil && len(popped) != 0 {
