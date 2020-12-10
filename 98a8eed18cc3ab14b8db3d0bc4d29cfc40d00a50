@@ -16,6 +16,155 @@
       "message": "This CL is ready for review.",
       "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3f2e980_94eba3c2",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c506f6a9_7a013810",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 174,
+        "startChar": 20,
+        "endLine": 174,
+        "endChar": 28
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb9f56c1_7d94124e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "nitty nit: we wouldn\u0027t have to write this if the code went like\n\n  expectedTVs, err :\u003d ....\n  if err !\u003d nil { ...\n\nwhich would be shorter",
+      "range": {
+        "startLine": 231,
+        "startChar": 19,
+        "endLine": 231,
+        "endChar": 43
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6090c1fd_13e9adb3",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "why do we need both lastProcessedTV and current?\nwe only write to lastProcessedTV, but never read from it",
+      "range": {
+        "startLine": 241,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 16
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26de586a_d0581fda",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "we are going to ultimately discard this allocated TestVariant,\nso why not have it like\n\n  var current *uipb.TestVariant\n\nand check for nil below instead",
+      "range": {
+        "startLine": 246,
+        "startChar": 1,
+        "endLine": 246,
+        "endChar": 31
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cf22f14_60222500",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "i just realized: we don\u0027t need to run queryUnexpectedTestVariants.\nWe have all results right here. If any of results of the TV is unexpected, then the whole test variant is discarded.\n\nWDYT?",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a027701a_46f8bbf7",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "perhaps we need to restore `return` here\notherwise L288-291 runs",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 285,
+        "endChar": 11
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

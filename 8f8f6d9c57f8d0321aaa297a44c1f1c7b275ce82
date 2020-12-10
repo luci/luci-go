@@ -437,6 +437,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7496051c_80da3167",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-10T06:57:16Z",
+      "side": 1,
+      "message": "could you elaborate how does it help?",
+      "parentUuid": "91bed93d_ab0f8104",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "494339dc_18090410",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 9
