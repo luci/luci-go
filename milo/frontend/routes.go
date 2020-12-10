@@ -148,11 +148,11 @@ func Run(templatePath string) {
 }
 
 func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
-	server := &prpc.Server{}
-	milopb.RegisterMiloInternalServer(server, &milopb.DecoratedMiloInternal{
-		Service:  &backend.MiloInternalService{},
-		Postlude: backend.CommonPostlude,
-	})
+	server := &prpc.Server{
+		UnaryServerInterceptor: backend.CommonUnaryServerInterceptor,
+	}
+	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{})
+
 	discovery.Enable(server)
 	rpcexplorer.Install(r)
 	server.InstallHandlers(r, base)

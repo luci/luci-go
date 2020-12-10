@@ -17,11 +17,13 @@ package backend
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/grpc/appstatus"
+	"google.golang.org/grpc"
 )
 
-// CommonPostlude converts an appstatus error to a gRPC error and logs it.
-func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	return appstatus.GRPCifyAndLog(ctx, err)
+// CommonUnaryServerInterceptor converts an appstatus error returned by the handler to
+// a gRPC error and logs it.
+func CommonUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	h, err := handler(ctx, req)
+	return h, appstatus.GRPCifyAndLog(ctx, err)
 }
