@@ -16,7 +16,10 @@ package ledcli
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
+	apipb "go.chromium.org/luci/swarming/proto/api"
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
@@ -173,7 +176,18 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, _ auth.Options, i
 				} else {
 					pkg = ""
 					ver = ""
-					inJob.UserPayload.Digest = c.recipeIsolate
+					switch strs := strings.Split(c.recipeIsolate, "/"); {
+					case len(strs) == 1:
+						inJob.UserPayload.Digest = c.recipeIsolate
+					case len(strs) == 2:
+						inJob.CasUserPayload.Digest = &apipb.Digest{Hash: strs[0]}
+						if inJob.CasUserPayload.Digest.SizeBytes, err = strconv.ParseInt(strs[1], 10, 64); err != nil {
+							return
+						}
+					default:
+						err = errors.Reason("Invalide recipe bundle hash(rbh) %s", c.recipeIsolate).Err()
+						return
+					}
 				}
 				je.TaskPayloadSource(pkg, ver)
 			}
