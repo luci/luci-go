@@ -328,7 +328,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		for _, dg := range rootDgs {
 			dgsStr = append(dgsStr, dg.String())
 		}
-		al.LogSummary(ctx, missing, hits, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed), dgsStr)
+		al.LogSummary(ctx, hits, missing, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed), dgsStr)
 	}
 
 	if dumpJSON == "" {
