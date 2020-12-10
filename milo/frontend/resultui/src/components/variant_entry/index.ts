@@ -92,6 +92,22 @@ export class VariantEntryElement extends MobxLitElement {
     return res;
   }
 
+  @computed
+  private get expandedResultIndex() {
+    // If there's only a single result, just expand it (even if it passed).
+    if (this.hasSingleChild) {
+      return 0;
+    }
+    // Otherwise expand the first failed result.
+    for (let i = 0; i < this.variant!.results.length; i++) {
+      if (!this.variant!.results[i].expected) {
+        return i;
+      }
+    }
+    // If there are multiple results and no failures, don't expand anything.
+    return -1;
+  }
+
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
@@ -122,7 +138,7 @@ export class VariantEntryElement extends MobxLitElement {
         <milo-result-entry
           .id=${i + 1}
           .testResult=${r}
-          .expanded=${this.hasSingleChild || !r.expected}
+          .expanded=${i === this.expandedResultIndex}
         ></milo-result-entry>
         `)}
       </div>
