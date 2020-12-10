@@ -22,12 +22,16 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -135,6 +139,7 @@ func buildCreated(ctx context.Context, b *model.Build) {
 }
 
 func buildStarted(ctx context.Context, b *model.Build) {
+	logging.Infof(ctx, "Build-%d started", b.ID)
 	buildCountStarted.Add(ctx, 1, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Canary)
 	if b.Proto.GetStartTime() != nil {
 		startT, _ := ptypes.Timestamp(b.Proto.StartTime)
@@ -143,6 +148,10 @@ func buildStarted(ctx context.Context, b *model.Build) {
 			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, "", "", "", b.Proto.Canary,
 		)
 	}
+}
+
+func buildStarting(ctx context.Context, b *model.Build) error {
+	return notifyPubSub(ctx, b)
 }
 
 func buildCompleted(ctx context.Context, b *model.Build) {
@@ -161,4 +170,14 @@ func buildCompleted(ctx context.Context, b *model.Build) {
 			b.Proto.Builder.Bucket, b.Proto.Builder.Builder, r, fr, cr, b.Proto.Canary,
 		)
 	}
+}
+
+func buildCompleting(ctx context.Context, b *model.Build) error {
+	bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
+	invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
+	return parallel.FanOutIn(func(tks chan<- func() error) {
+		tks <- func() error { return notifyPubSub(ctx, b) }
+		tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
+		tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
+	})
 }
