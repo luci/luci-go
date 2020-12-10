@@ -33,6 +33,24 @@
       "message": "I think it\u0027s better to mention in the package doc that txndefer filter MUST be installed?",
       "revId": "5a05436f45cf7bf561ec8f329302350e4e5d3372",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85d30f60_fb896ed9",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-10T00:23:30Z",
+      "side": 1,
+      "message": "Added to BeginPop doc, since this is the only func that really needs it. Adds() don\u0027t require it.",
+      "parentUuid": "b3b70aa0_314da161",
+      "revId": "5a05436f45cf7bf561ec8f329302350e4e5d3372",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
