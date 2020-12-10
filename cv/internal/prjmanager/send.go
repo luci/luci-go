@@ -18,6 +18,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/dsset"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
@@ -26,16 +31,24 @@ import (
 //
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
 func UpdateConfig(ctx context.Context, luciProject string) error {
-	return send(ctx, luciProject, &internal.Payload{
-		Event: &internal.Payload_UpdateConfig{
+	return send(ctx, luciProject, &internal.Event{
+		Event: &internal.Event_UpdateConfig{
 			UpdateConfig: &internal.UpdateConfig{},
 		},
 	})
 }
 
-func send(ctx context.Context, luciProject string, p *internal.Payload) error {
-	if err := internal.Send(ctx, luciProject, p); err != nil {
-		return err
+func send(ctx context.Context, luciProject string, e *internal.Event) error {
+	value, err := proto.Marshal(e)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal").Err()
+	}
+	err = internal.NewDSSet(ctx, luciProject).Add(ctx, []dsset.Item{{
+		ID:    uuid.New().String(),
+		Value: value,
+	}})
+	if err != nil {
+		return errors.Annotate(err, "failed to send event").Err()
 	}
 	return internal.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
 }

@@ -50,9 +50,9 @@ func TestPokePM(t *testing.T) {
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-			events, err := internal.Peek(ctx, lProject, 100)
+			l, err := internal.NewDSSet(ctx, lProject).List(ctx)
 			So(err, ShouldBeNil)
-			So(events, ShouldHaveLength, 0)
+			So(l.Items, ShouldBeNil)
 		}
 		Convey("Non-Transactional", func() {
 			test(false)

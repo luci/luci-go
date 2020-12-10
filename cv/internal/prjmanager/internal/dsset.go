@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package internal
 
-package internal.prjmanager.internal;
+import (
+	"context"
+	"time"
 
-option go_package = "go.chromium.org/luci/cv/internal/prjmanager/internal;internal";
+	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/dsset"
+)
 
-// Event is a container for all kinds of events a project manager can receive.
-message Event {
-  oneof event {
-    UpdateConfig update_config = 1;
-  }
-}
-
-message UpdateConfig {
+// NewDSSet returns DSSet for a given LUCI project.
+func NewDSSet(ctx context.Context, luciProject string) *dsset.Set {
+	return &dsset.Set{
+		Parent:          datastore.MakeKey(ctx, "Project", luciProject),
+		TombstonesDelay: 5 * time.Minute,
+	}
 }
