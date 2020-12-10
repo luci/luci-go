@@ -59,7 +59,6 @@ func pokePMTask(ctx context.Context, luciProject string) error {
 		return err
 	}
 
-	var garbage dsset.Garbage
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		op, err := mbox.BeginPop(ctx, listing)
 		if err != nil {
@@ -74,11 +73,10 @@ func pokePMTask(ctx context.Context, luciProject string) error {
 				logging.Debugf(ctx, "read %T", e.GetEvent())
 			}
 		}
-		garbage, err = dsset.FinishPop(ctx, op)
-		return err
+		return dsset.FinishPop(ctx, op)
 	}, nil)
-	if err == nil {
-		dsset.CleanupGarbage(ctx, garbage) // best-effort cleanup
+	if err != nil {
+		return errors.Annotate(err, "failed to mutate %q", luciProject).Err()
 	}
 	return err
 }

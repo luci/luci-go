@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -89,7 +90,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.Clock.Add(dur)
 	})
 
-	ctx = memory.Use(ctx)
+	ctx = txndefer.FilterRDS(memory.Use(ctx))
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 

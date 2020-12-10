@@ -56,6 +56,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 	"golang.org/x/sync/errgroup"
 
@@ -87,7 +88,6 @@ const batchSize = 500
 //
 //   ... Fetch any additional info associated with 'listing.Items' ...
 //
-//   var garbage dsset.Garbage
 //   err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 //     op, err := set.BeginPop(ctx, listing)
 //     if err != nil {
@@ -100,12 +100,8 @@ const batchSize = 500
 //         // Some other transaction has popped it already.
 //       }
 //     }
-//     garbage, err = dsset.FinishPop(ctx, op)
-//     return err
+//     return dsset.FinishPop(ctx, op)
 //   }, nil)
-//   if err == nil {
-//     dsset.CleanupGarbage(ctx, garbage)  // best-effort cleanup
-//   }
 //   return err
 type Set struct {
 	// Parent points to the datastore owning the set.
@@ -294,6 +290,8 @@ type PopOp struct {
 // part of the required set maintenance.
 //
 // Requires a transaction. Modifies Tombstone entity.
+// Requires a txndefer to be installed in context. This is already done by
+// default in luci/server.
 //
 // Returns only transient errors. Such errors usually mean that the entire pop
 // sequence ('List' + 'Pop') should be retried.
@@ -400,14 +398,8 @@ func (p *PopOp) makeTombstonesEntity() *tombstonesEntity {
 //
 // Must be called within the same transaction that called BeginPop.
 //
-// It returns a list of tombstones for popped items. The storage used by the
-// items can be reclaimed right away by calling 'CleanupGarbage'. It is fine
-// not to do so, 'List' will eventually return all tombstones that need cleaning
-// anyway. Calling 'CleanupGarbage' as best effort is still beneficial though,
-// since it will reduce the amount of garbage in the set.
-//
 // Returns only transient errors.
-func FinishPop(ctx context.Context, ops ...*PopOp) (tombs Garbage, err error) {
+func FinishPop(ctx context.Context, ops ...*PopOp) error {
 	txn := datastore.CurrentTransaction(ctx)
 
 	entities := []*tombstonesEntity{}
@@ -426,9 +418,10 @@ func FinishPop(ctx context.Context, ops ...*PopOp) (tombs Garbage, err error) {
 	}
 
 	if err := datastore.Put(ctx, entities); err != nil {
-		return nil, transient.Tag.Apply(err)
+		return transient.Tag.Apply(err)
 	}
 
+	var tombs Garbage
 	if tombsCount != 0 {
 		tombs = make(Garbage, 0, tombsCount)
 	}
@@ -436,8 +429,10 @@ func FinishPop(ctx context.Context, ops ...*PopOp) (tombs Garbage, err error) {
 		tombs = append(tombs, op.popped...)
 		op.finished = true
 	}
-
-	return tombs, nil
+	txndefer.Defer(ctx, func(ctx context.Context) {
+		CleanupGarbage(ctx, tombs) // best-effort cleanup
+	})
+	return nil
 }
 
 // CleanupGarbage deletes entities used to store items under given tombstones.
