@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63750c11_632bbdd5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-10T18:29:02Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0fec7586_7b0af732",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-10T18:29:02Z",
+      "side": 1,
+      "message": "worth putting into `pubsub.go` to be expanded later?",
+      "range": {
+        "startLine": 252,
+        "startChar": 24,
+        "endLine": 252,
+        "endChar": 70
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04b5a612_2dcd757a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-10T18:29:02Z",
+      "side": 1,
+      "message": "nit: transaction is frequently abbreviated txn",
+      "range": {
+        "startLine": 389,
+        "startChar": 36,
+        "endLine": 389,
+        "endChar": 40
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a4802ae_519f8929",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-10T18:29:02Z",
+      "side": 1,
+      "message": "is it a problem if we timeout or crash at this point?\n\nconsider the transaction succeeds, but we error out here; the client will re-try the RPC. Shouldn\u0027t we send the notification in that case? I think because origStatus \u003d\u003d b.Status at that point, no notification will ever happen?\n\nIt\u0027s possible this is a bug in the current python implementation that you\u0027re just porting, but we should probably have a bug for this (i.e. Build should have a \u0027finalized\u0027 bool and we should use that as the clue to send notifications then set it to true; duplicate notifications SHOULD be ok, I think?). \n\nWe could then also have a sweeper job for unfinalized builds.",
+      "range": {
+        "startLine": 392,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 16
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
