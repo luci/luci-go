@@ -33,6 +33,42 @@
       "message": "Do you have a demo?",
       "revId": "0a6c7bd784b0b71c4c628af4b9c6e15a8be7e9cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b549848_a685cc30",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-10T05:45:56Z",
+      "side": 1,
+      "message": "The idea is to reduce the number of clicks to get to failure logs.\n\nThis change is based on a comment in https://crbug.com/1154435 where a user didn\u0027t find the Test Results tab useful because it asked him to expand too many things to get to the useful information (compared to the Overview tab, which presented it immediately). If we want people to start looking at test results rather than steps, we have to make it as easy as possible for them.\n\nIn terms of the first being not more interesting than others, I agree; but the point is that if someone is looking at a presubmit failure, any failed test is going to need to be investigated and fixed. So it might as well be the first one in the list.",
+      "parentUuid": "1c1b26e5_da68a868",
+      "revId": "0a6c7bd784b0b71c4c628af4b9c6e15a8be7e9cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f59f83e_8a2436c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-10T05:45:56Z",
+      "side": 1,
+      "message": "Demo: https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/9264/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue",
+      "parentUuid": "c09a16ba_9d0770d8",
+      "revId": "0a6c7bd784b0b71c4c628af4b9c6e15a8be7e9cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
