@@ -19,9 +19,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/dsset"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
@@ -46,11 +50,35 @@ func init() {
 const maxEventsToProcess = 256
 
 func pokePMTask(ctx context.Context, luciProject string) error {
-	// Read events outside of transactions.
-	events, err := internal.Peek(ctx, luciProject, maxEventsToProcess)
+	mbox := internal.NewDSSet(ctx, luciProject)
+	listing, err := mbox.List(ctx)
 	if err != nil {
 		return err
 	}
-	// TODO(tandrii): use the events.
-	return internal.Delete(ctx, events)
+	if err = dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
+		return err
+	}
+
+	var garbage dsset.Garbage
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		op, err := mbox.BeginPop(ctx, listing)
+		if err != nil {
+			return err
+		}
+		for _, mail := range listing.Items {
+			if op.Pop(mail.ID) {
+				e := internal.Event{}
+				if err := proto.Unmarshal(mail.Value, &e); err != nil {
+					return errors.Annotate(err, "failed to unmarshal event").Err()
+				}
+				logging.Debugf(ctx, "read %T", e.GetEvent())
+			}
+		}
+		garbage, err = dsset.FinishPop(ctx, op)
+		return err
+	}, nil)
+	if err == nil {
+		dsset.CleanupGarbage(ctx, garbage) // best-effort cleanup
+	}
+	return err
 }
