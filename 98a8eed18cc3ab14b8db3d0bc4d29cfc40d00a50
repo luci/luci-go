@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d373938_a2af01e6",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3f2e980_94eba3c2",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c506f6a9_7a013810",
@@ -48,6 +66,30 @@
       "writtenOn": "2020-12-10T06:57:16Z",
       "side": 1,
       "message": "inline?",
+      "range": {
+        "startLine": 174,
+        "startChar": 20,
+        "endLine": 174,
+        "endChar": 28
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2a187ea_e918a4cc",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c506f6a9_7a013810",
       "range": {
         "startLine": 174,
         "startChar": 20,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba0cf77d_ad6831e1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb9f56c1_7d94124e",
+      "range": {
+        "startLine": 231,
+        "startChar": 19,
+        "endLine": 231,
+        "endChar": 43
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6090c1fd_13e9adb3",
@@ -94,6 +160,30 @@
       "writtenOn": "2020-12-10T06:57:16Z",
       "side": 1,
       "message": "why do we need both lastProcessedTV and current?\nwe only write to lastProcessedTV, but never read from it",
+      "range": {
+        "startLine": 241,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 16
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6548241_ff4f3c94",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "That\u0027s for calculating page token.. Removed form this CL.",
+      "parentUuid": "6090c1fd_13e9adb3",
       "range": {
         "startLine": 241,
         "startChar": 1,
@@ -127,6 +217,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e580317_17925a2d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26de586a_d0581fda",
+      "range": {
+        "startLine": 246,
+        "startChar": 1,
+        "endLine": 246,
+        "endChar": 31
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6cf22f14_60222500",
@@ -146,6 +260,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bac005ee_7ef5251c",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "queryUnexpectedTestVariants and only query expected results in the main query can help us skip the test variants with only unexpected results. \n\nBut since there aren\u0027t so many test variants like that in most of the builds, I agree that the benefit may be marginal.",
+      "parentUuid": "6cf22f14_60222500",
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a027701a_46f8bbf7",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 11
@@ -157,6 +289,30 @@
       "writtenOn": "2020-12-10T06:57:16Z",
       "side": 1,
       "message": "perhaps we need to restore `return` here\notherwise L288-291 runs",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 285,
+        "endChar": 11
+      },
+      "revId": "98a8eed18cc3ab14b8db3d0bc4d29cfc40d00a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ff0760c_f81980de",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a027701a_46f8bbf7",
       "range": {
         "startLine": 285,
         "startChar": 2,

@@ -455,6 +455,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "91d61609_4180d79a",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-10T07:25:50Z",
+      "side": 1,
+      "message": "I think there\u0027s no point of including all the expected results to the test variants, because they only have expected results. So a sample would be sufficient. And by doing that, we can add current to tvs as soon as we start to see it and know it doesn\u0027t have unexpected results.\n\nBut this idea has more benefits on current approach: main query only gets expected results and filter out the flaky ones by checking if the test variant is included in queryUnexpectedTestVariants results.\n\nIf we decide to query all results and do not run queryUnexpectedTestVariants, we\u0027ll need to go through all the results of a test before deciding if we can add it to tvs anyways.",
+      "parentUuid": "7496051c_80da3167",
+      "revId": "8f8f6d9c57f8d0321aaa297a44c1f1c7b275ce82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "494339dc_18090410",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 9
