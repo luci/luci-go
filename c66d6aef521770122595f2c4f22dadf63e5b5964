@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "10f9f52c_49ea5392",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T19:40:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6428e53c_03f19a60",
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "358ea45d_ae70e00b",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eea79c32_39ee6976",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T19:40:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "358ea45d_ae70e00b",
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b574df4d_6b477341",
@@ -48,6 +84,30 @@
       "writtenOn": "2020-12-11T04:17:07Z",
       "side": 1,
       "message": "i suspect this was unintentional",
+      "range": {
+        "startLine": 327,
+        "startChar": 34,
+        "endLine": 327,
+        "endChar": 37
+      },
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e7336f9_53e34cfa",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T19:40:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b574df4d_6b477341",
       "range": {
         "startLine": 327,
         "startChar": 34,
