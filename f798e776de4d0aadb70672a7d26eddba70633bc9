@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4398b835_25bd0d9c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T20:33:52Z",
+      "side": 1,
+      "message": "sorry for delay \u0026 lgtm % doc nits",
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74d70abf_f66f91b2",
+        "filename": "rts/presubmit/eval/algo.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T20:33:52Z",
+      "side": 1,
+      "message": "index contradicts 2 tests having the same rank. How about:\n\nRank orders all tests in the repository by Distance, with rank 1 assigned to the test with the lowest distance.\nTwo tests may have the same rank ...\n\n\nAlso, is having same distance implies same rank? Code below suggests \"NO\", so consider stating this explicitly that \"Two tests may, but don\u0027t have to, have same the same rank iff they have the same distance\".",
+      "range": {
+        "startLine": 82,
+        "startChar": 22,
+        "endLine": 83,
+        "endChar": 49
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "903ff2e7_2cc7e736",
+        "filename": "rts/presubmit/eval/algo.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T20:33:52Z",
+      "side": 1,
+      "message": "do IIUC that this is \"of the test with lowest rank among those with lowest distances\"?",
+      "range": {
+        "startLine": 98,
+        "startChar": 54,
+        "endLine": 99,
+        "endChar": 8
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb2546af_b10bfa6e",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T20:33:52Z",
+      "side": 1,
+      "message": "TIL, good package 👍",
+      "range": {
+        "startLine": 75,
+        "startChar": 52,
+        "endLine": 75,
+        "endChar": 62
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
