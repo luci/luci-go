@@ -1,6 +1,52 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b42aef1_ff288143",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "if and only if all ApplyFuncs succeed?",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 14
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc6e8e06_1146561b",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "It took me lots of time to figure out the relationship between emutation, mutation, preMut. WDYT the following structure.\n\n1. optional: Rename ApplyFunc to FollowUpActionFn. IIUC, the responsibility of applyFunc is to interact with other CV components to reflect the project state change?\n2. Make stateMachine.updateConfig directly returns FollowUpActionFn and possibly newState in the future CL instead of mutation struct\n3. Replace emutation with following struct.\n```\ntype stateTransition struct {\n  trigger    []string   // ID of the event\n  transitTo  *state\n  apply      ApplyFunc\n}\n\nfunc (t *transition) apply(ctx context.Context, p *dsset.PopOp) error {\n  // ...\n}\n```\n4. preMut could be renamed to something like calculateStateTransition.",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 150,
+        "endChar": 0
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "37309978_7b496396",
@@ -19,6 +65,29 @@
         "startChar": 1,
         "endLine": 152,
         "endChar": 65
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb1a61ec_d2a26a2a",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "Would this cause one bad event stops the entire CV if CV keeps loading this event back from dsset? Maybe CV still proceed with processing other events.",
+      "range": {
+        "startLine": 192,
+        "startChar": 0,
+        "endLine": 195,
+        "endChar": 12
       },
       "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -43,6 +112,23 @@
         "endLine": 217,
         "endChar": 1
       },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7834790d_da0c91c6",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "Is this for debugging purpose?",
       "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -89,6 +175,41 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b5754fa5_91fac9da",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6ffc8801_de5539e3",
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0965f35_209565a5",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "another case for STATUS_UNSPECIFIED or do you think we should panic in this case?",
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "62ab5238_a6de9dfa",
         "filename": "cv/internal/prjmanager/impl/sm.go",
         "patchSetId": 1
@@ -105,6 +226,29 @@
         "startChar": 46,
         "endLine": 145,
         "endChar": 69
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff3b59a8_29f5f281",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:03:21Z",
+      "side": 1,
+      "message": "What does keep track of atomicity mean?",
+      "range": {
+        "startLine": 145,
+        "startChar": 18,
+        "endLine": 145,
+        "endChar": 45
       },
       "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
