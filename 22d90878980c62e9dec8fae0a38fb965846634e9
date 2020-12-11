@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0aa5ee19_88c29e24",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "8b42aef1_ff288143",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 14
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc6e8e06_1146561b",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-11T03:03:21Z",
       "side": 1,
       "message": "It took me lots of time to figure out the relationship between emutation, mutation, preMut. WDYT the following structure.\n\n1. optional: Rename ApplyFunc to FollowUpActionFn. IIUC, the responsibility of applyFunc is to interact with other CV components to reflect the project state change?\n2. Make stateMachine.updateConfig directly returns FollowUpActionFn and possibly newState in the future CL instead of mutation struct\n3. Replace emutation with following struct.\n```\ntype stateTransition struct {\n  trigger    []string   // ID of the event\n  transitTo  *state\n  apply      ApplyFunc\n}\n\nfunc (t *transition) apply(ctx context.Context, p *dsset.PopOp) error {\n  // ...\n}\n```\n4. preMut could be renamed to something like calculateStateTransition.",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 150,
+        "endChar": 0
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1295482f_84a53cf0",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "You are very right. It was a mess. After sleeping on your feedback, I adopted your proposal and also encapsulated it into `eventbox` package % s/ApplyFunc/SideEffectFn\n\npreMut isn\u0027t even necessary any more. But there is also no longer a state machine, just a state mutating function like UpdateConfig.",
+      "parentUuid": "bc6e8e06_1146561b",
       "range": {
         "startLine": 128,
         "startChar": 0,
@@ -93,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "f500fa8f_1a5f4b14",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "Yeah, good point. I think during development, it\u0027s definitely better to panic, which is less likely to left unnoticed. In production, I\u0027m not so sure. Ideally, we should never emit new event types *before* code to read them is deployed.",
+      "parentUuid": "eb1a61ec_d2a26a2a",
+      "range": {
+        "startLine": 192,
+        "startChar": 0,
+        "endLine": 195,
+        "endChar": 12
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "524a700e_83530d33",
@@ -133,6 +205,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f120ab82_e7fad194",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "7834790d_da0c91c6",
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8252fb27_1c32e75d",
@@ -156,6 +246,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "524b95bd_373de864",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "true, it smells. I inlined it to where it\u0027s actually used.",
+      "parentUuid": "8252fb27_1c32e75d",
+      "range": {
+        "startLine": 49,
+        "startChar": 18,
+        "endLine": 49,
+        "endChar": 34
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e1c0800f_c263b5f0",
@@ -169,6 +283,30 @@
       "writtenOn": "2020-12-10T23:43:54Z",
       "side": 1,
       "message": "oops, this is actually not used. I coded it to support partial updates, then decided to get rid of partial updates for now (see description). Will remove this.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 1
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83a46322_1284f170",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "used now 😊",
+      "parentUuid": "e1c0800f_c263b5f0",
       "range": {
         "startLine": 59,
         "startChar": 0,
@@ -233,6 +371,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4d782ece_b607f8c8",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "Forgot about it, it\u0027s a highly unlikely case, but it\u0027s easy to handle.",
+      "parentUuid": "f0965f35_209565a5",
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "62ab5238_a6de9dfa",
         "filename": "cv/internal/prjmanager/impl/sm.go",
         "patchSetId": 1
@@ -267,6 +423,30 @@
       "writtenOn": "2020-12-11T03:03:21Z",
       "side": 1,
       "message": "What does keep track of atomicity mean?",
+      "range": {
+        "startLine": 145,
+        "startChar": 18,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e65bbb4a_68d81b06",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "if apply fails, does it leave mess behind? If maybe, then not atomic. If definitely no, I call it atomic (imperfect name, better ideas welcome). Why it matters? Iff atomic applyFunc fails within a transaction, we can save state transitioned to by the last successful applyFunc. I tried to explain this next to new patchset\u0027s SideEffectFn.",
+      "parentUuid": "ff3b59a8_29f5f281",
       "range": {
         "startLine": 145,
         "startChar": 18,

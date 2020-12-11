@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a4d27f7_65842206",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-11T18:47:21Z",
+      "side": 1,
+      "message": "PTAL again. Sorry for substantial changes, though diff vs patchset #1 is still meaningful.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
