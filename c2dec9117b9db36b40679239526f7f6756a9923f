@@ -16,6 +16,332 @@
       "message": "PTAL again. Sorry for substantial changes, though diff vs patchset #1 is still meaningful.",
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d88e6c9_1b68e566",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "I just have a few questions and nits.\n\nI\u0027m coming mainly from the perspective of someone who hasn\u0027t fully grasped the way that \"eventbox\" works (also is that our new name for the \"mailbox\" concept?)\n\nIs it the case that for project manager, the events are config updates, and receiving these events basically means upating the Project entity state?",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27af5e3e_7aa501d8",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Note in the description you mentioned adding tests for eventbox in a follow-up.\n\nI think this will be very helpful for the purpose of making this abstract/general functionality more concrete and clear for readers.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49995647_89600801",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Ideally a function doc comment should be added for public functions even if they\u0027re short.\n\nFor this function, my initial questions are:\n1. What are id and value? 2. What kind of key should `to` be? (I can get from context that this is like sending an event to a \"mailbox\", but specifically what should the \"mailbox\" look like?)",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 9
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0350720b_667f45a5",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Nit: Move constant to the top of the file.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9e5af47_0e2abbc9",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "incomplete comment",
+      "range": {
+        "startLine": 133,
+        "startChar": 3,
+        "endLine": 133,
+        "endChar": 13
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19770d72_d51a3641",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "This block is used for setting up task queue handler functions, right?",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77f23541_7c14515e",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "This is neat, does this affect all logging in functions called with this context?",
+      "range": {
+        "startLine": 56,
+        "startChar": 15,
+        "endLine": 56,
+        "endChar": 23
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d14b203_627970ae",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "If this is defined as a constant somewhere it could be used here too.",
+      "range": {
+        "startLine": 57,
+        "startChar": 38,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e029329f_8585047e",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Nit: EVersion",
+      "range": {
+        "startLine": 118,
+        "startChar": 14,
+        "endLine": 118,
+        "endChar": 55
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f9d8aa9_39c1a76b",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Quick drive-by comment: triage and mutate seem to be not specifically related to project manager, does it seem like they might be moved somewhere else when \"eventbox\" is used elsewhere?",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de670fcc_0ea24d12",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Is there no sm_test.go just because this only contains private/lowercase functions?",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4171a874_fd88cc02",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "The word \"currently\" can usually be removed from comments. (It\u0027s either true, or the comment should be removed/updated.)",
+      "range": {
+        "startLine": 29,
+        "startChar": 16,
+        "endLine": 29,
+        "endChar": 25
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c2e45e8a_08806a79",
+        "filename": "cv/internal/prjmanager/model.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Is that defined there? I didn\u0027t see it.",
+      "range": {
+        "startLine": 26,
+        "startChar": 30,
+        "endLine": 26,
+        "endChar": 47
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15922b84_194912c1",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "spelling (although not changed by this CL)",
+      "range": {
+        "startLine": 32,
+        "startChar": 23,
+        "endLine": 32,
+        "endChar": 33
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b3cf432_7c3a4ab6",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "Will there be any other types of event for Project Manager besides UpdateConfig events?",
+      "range": {
+        "startLine": 38,
+        "startChar": 3,
+        "endLine": 38,
+        "endChar": 15
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6229f0e_b499dc30",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-11T20:02:03Z",
+      "side": 1,
+      "message": "OK, so Project entities contain state of current runs etc.; and also the Project entity key serves as the \"mailbox\" of events which will affect Project state?\n\n(Also, if internal.ProjectEntityKind is defined then it could perhaps be used here?)",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
