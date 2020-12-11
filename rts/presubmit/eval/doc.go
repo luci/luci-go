@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package eval implements a framework for RTS algorithm evaluation.
+// Package eval implements a framework for selection strategy evaluation.
 //
 // For evaluation, see
 // https://chromium.googlesource.com/infra/luci/luci-go/+/master/rts/doc/eval.md

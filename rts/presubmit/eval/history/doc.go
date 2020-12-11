@@ -16,7 +16,7 @@
 // records used for RTS evaluation.
 //
 // RTS evaluation uses history files to emulate CQ behavior with a candidate
-// RTS algorithm. Conceptually a history file is a sequence of Record
+// selection strategy. Conceptually a history file is a sequence of Record
 // protobuf messages,
 // see https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/rts/presubmit/eval/proto/eval.proto.
 // More specifically, it is a Zstd-compressed RecordIO-encoded sequence of
