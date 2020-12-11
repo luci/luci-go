@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "543eabd9_6a899cfe",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T05:52:51Z",
+      "side": 1,
+      "message": "Here we see a test results with different TestId and/or VariantHash from current, which means test results of current have all been processed. So here is where we can update lastProcessedTV with current\u0027s info, as we\u0027re moving to the results of the next test variant.\n\nI updated the comment a bit, will it be clearer?",
+      "parentUuid": "421e8c8f_e56e556e",
+      "range": {
+        "startLine": 214,
+        "startChar": 0,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f3a8a814_da704a18",
         "filename": "resultdb/internal/testvariants/query.go",
         "patchSetId": 12
@@ -54,6 +78,30 @@
       "writtenOn": "2020-12-11T04:30:24Z",
       "side": 1,
       "message": "comments talks about page size, but the code is about something else?\nalso i am not sure I understand the logic. What if the we have exhausted all test results, but the last one happened to be flaky?\n\nwhy isn\u0027t L254 sufficient?",
+      "range": {
+        "startLine": 248,
+        "startChar": 1,
+        "endLine": 248,
+        "endChar": 26
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5809cce6_08657bd2",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T05:52:51Z",
+      "side": 1,
+      "message": "I missed the condition of trLen \u003d\u003d q.PageSize here. Fixed.",
+      "parentUuid": "f3a8a814_da704a18",
       "range": {
         "startLine": 248,
         "startChar": 1,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce66d1bd_8f25f4d1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T05:52:51Z",
+      "side": 1,
+      "message": "It\u0027s possible that there\u0027s no element at all in tvs, the \"paging works\" test has such cases.\n\nIn reality it\u0027s very unlikely though.",
+      "parentUuid": "ee21b8ec_958c70d6",
+      "range": {
+        "startLine": 257,
+        "startChar": 77,
+        "endLine": 257,
+        "endChar": 92
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2519ef42_01fafd9f",
@@ -100,6 +172,30 @@
       "writtenOn": "2020-12-11T04:30:24Z",
       "side": 1,
       "message": "else if\n\nor maybe a giant switch with `err !\u003d nil` too",
+      "range": {
+        "startLine": 319,
+        "startChar": 1,
+        "endLine": 319,
+        "endChar": 3
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2b5780f_948150b5",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T05:52:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2519ef42_01fafd9f",
       "range": {
         "startLine": 319,
         "startChar": 1,
