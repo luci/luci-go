@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package milointernal
 
 import (
 	"context"
@@ -34,7 +34,7 @@ import (
 )
 
 // QueryBlamelist implements milopb.MiloInternal service
-func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
+func (s *Service) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
 
 	startCommitID, err := prepareQueryBlamelistRequest(req)

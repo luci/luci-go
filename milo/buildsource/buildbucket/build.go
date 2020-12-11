@@ -44,7 +44,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/config"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
-	"go.chromium.org/luci/milo/backend"
+	milointernal "go.chromium.org/luci/milo/backend/services/milo"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -100,7 +100,7 @@ func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result 
 		return
 	}
 
-	svc := &backend.MiloInternalService{}
+	svc := &milointernal.Service{}
 	req := &milopb.QueryBlamelistRequest{
 		Builder:       build.Builder,
 		GitilesCommit: gc,

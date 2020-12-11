@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
-	"go.chromium.org/luci/milo/backend"
+	milointernal "go.chromium.org/luci/milo/backend/services/milo"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
@@ -149,7 +149,7 @@ func Run(templatePath string) {
 
 func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
 	server := &prpc.Server{}
-	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{})
+	milopb.RegisterMiloInternalServer(server, &milointernal.Service{})
 
 	discovery.Enable(server)
 	rpcexplorer.Install(r)
