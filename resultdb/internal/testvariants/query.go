@@ -18,11 +18,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -153,50 +151,11 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-type testVariant struct {
-	TestID      string
-	VariantHash string
-}
-
-// queryUnexpectedTestVariants returns test variants with unexpected
-// results.
-func (q *Query) queryUnexpectedTestVariants(ctx context.Context) (testVariants map[testVariant]struct{}, err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryUnexpectedTestVariants")
+func (q *Query) queryTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
-
-	testVariants = map[testVariant]struct{}{}
-	var mu sync.Mutex
-	st := q.genStatement("unexpectedTestVariantsQuery")
-
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, st := range invocations.ShardStatement(st, "invIDs") {
-		st := st
-		eg.Go(func() error {
-			return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-				var tv testVariant
-				if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
-					return err
-				}
-
-				mu.Lock()
-				testVariants[tv] = struct{}{}
-				mu.Unlock()
-				return nil
-			})
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-	return
-}
-
-func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryExpectedTestResults")
-	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
-	defer func() { ts.End(err) }()
-	st := q.genStatement("expectedResults")
+	st := q.genStatement("allTestResults")
 	// TODO(crbug.com/1157349): Tune the page size.
 	st.Params["limit"] = q.PageSize
 
@@ -226,48 +185,48 @@ func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestRes
 }
 
 func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
-	// TODO(crbug.com/1112127): run the query concurrently, then in callback wait for this to finish.
-	unexpectedTVs, err := q.queryUnexpectedTestVariants(ctx)
-	if err != nil {
-		return nil, "", err
-	}
-
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	// Number of the total test results returned by the query.
 	trLen := 0
-	// The test variant we're processing right now.
-	// It will be appended to tvs when all of its results are added.
-	var current *uipb.TestVariant
-	err = q.queryExpectedTestResults(ctx, func(tr *pb.TestResult) error {
-		trLen += 1
-		if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
-			// This test variant has unexpected results, moving on.
-			return nil
-		}
 
-		if current != nil {
+	type testVariant struct {
+		*uipb.TestVariant
+		onlyExpected bool
+	}
+	// The test variant we're processing right now.
+	// It will be appended to tvs when all of its results are processed.
+	var current testVariant
+	err = q.queryTestResults(ctx, func(tr *pb.TestResult) error {
+		trLen += 1
+		if current.TestVariant != nil {
 			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
 				current.Results = append(current.Results, &uipb.TestResultBundle{
 					Result: tr,
 				})
+				current.onlyExpected = current.onlyExpected && tr.Expected
 				return nil
 			}
 
 			// All test results of current have been processed.
-			tvs = append(tvs, current)
+			if current.onlyExpected {
+				tvs = append(tvs, current.TestVariant)
+			}
 		}
 
 		// New test variant.
-		current = &uipb.TestVariant{
-			TestId:      tr.TestId,
-			VariantHash: tr.VariantHash,
-			Variant:     tr.Variant,
-			Status:      uipb.TestVariantStatus_EXPECTED,
-			Results: []*uipb.TestResultBundle{
-				{
-					Result: tr,
+		current = testVariant{
+			&uipb.TestVariant{
+				TestId:      tr.TestId,
+				VariantHash: tr.VariantHash,
+				Variant:     tr.Variant,
+				Status:      uipb.TestVariantStatus_EXPECTED,
+				Results: []*uipb.TestResultBundle{
+					{
+						Result: tr,
+					},
 				},
 			},
+			tr.Expected,
 		}
 		return nil
 	})
@@ -276,9 +235,9 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		return
 	}
 
-	if trLen < q.PageSize {
+	if trLen < q.PageSize && current.onlyExpected {
 		// We have exhausted the test results, add current to tvs.
-		tvs = append(tvs, current)
+		tvs = append(tvs, current.TestVariant)
 	}
 	return
 }
@@ -395,7 +354,7 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 	LIMIT @limit
 {{end}}
 
-{{define "expectedResults"}}
+{{define "allTestResults"}}
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	SELECT
 		TestId,
@@ -404,7 +363,6 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 		{{template "testResultsColumns"}},
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
-	AND IsUnexpected IS NULL
 	ORDER BY TestId, VariantHash
 	LIMIT @limit
 {{end}}
