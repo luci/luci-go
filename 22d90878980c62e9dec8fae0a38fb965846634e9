@@ -167,6 +167,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "eadffca5_f2ad0129",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f500fa8f_1a5f4b14",
+      "range": {
+        "startLine": 192,
+        "startChar": 0,
+        "endLine": 195,
+        "endChar": 12
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "524a700e_83530d33",
         "filename": "cv/internal/prjmanager/impl/recv.go",
         "patchSetId": 1
@@ -447,6 +471,30 @@
       "side": 1,
       "message": "if apply fails, does it leave mess behind? If maybe, then not atomic. If definitely no, I call it atomic (imperfect name, better ideas welcome). Why it matters? Iff atomic applyFunc fails within a transaction, we can save state transitioned to by the last successful applyFunc. I tried to explain this next to new patchset\u0027s SideEffectFn.",
       "parentUuid": "ff3b59a8_29f5f281",
+      "range": {
+        "startLine": 145,
+        "startChar": 18,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9be7a6de_b61efec5",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "Sweet",
+      "parentUuid": "e65bbb4a_68d81b06",
       "range": {
         "startLine": 145,
         "startChar": 18,

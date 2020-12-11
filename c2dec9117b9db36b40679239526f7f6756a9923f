@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb22dc70_5a17e938",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "The abstraction now looks very nice! I love it as well. Good job!\n\nlgtm % 1 major concern for reusing in RunManager",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27af5e3e_7aa501d8",
@@ -77,6 +94,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "18e9cd21_ada842e5",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "Maybe we can generate uuid inside Emit as id since both Project and Run Manager will use that?\n\n(It might be hard for testing, we can expose a private one that takes id as input)",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0350720b_667f45a5",
         "filename": "cv/internal/eventbox/box.go",
         "patchSetId": 5
@@ -110,6 +150,52 @@
         "startChar": 3,
         "endLine": 133,
         "endChar": 13
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0efe5402_791a3e6d",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "Major: I think this works well for Project Manager, but maybe a bit tricky for RunManager, because the state of ProjectManager is exclusively determined by a single entity while for RunManager it is determined by Run entity and its children. \n\nRunManger may workaround by coming up with a EVersion the represents a snapshot of Run entity and its children. An alternative way I can think of is to drop the concept of EVersion completely in the event box and call GetState again at the beginning at the transaction. We can check state staleness by make State\n\n```\ntype State interface {\n  Same(other State) bool\n}\n```\n\nEVersion could also be part of the state so that SaveState could compute the newEVersion inside the implementation itself",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 51
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dff65f68_3c802018",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "Should this be `State`?",
+      "range": {
+        "startLine": 211,
+        "startChar": 14,
+        "endLine": 211,
+        "endChar": 25
       },
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -173,6 +259,29 @@
         "startChar": 38,
         "endLine": 57,
         "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f12e46d1_e31a1760",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "nit: apply",
+      "range": {
+        "startLine": 88,
+        "startChar": 34,
+        "endLine": 88,
+        "endChar": 39
       },
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -253,6 +362,52 @@
         "startChar": 16,
         "endLine": 29,
         "endChar": 25
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16d2fe34_87c7f3b1",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "nit: s/state/status. state has a different meaning in the current context.",
+      "range": {
+        "startLine": 102,
+        "startChar": 40,
+        "endLine": 102,
+        "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "450800a3_a44e18eb",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T21:00:06Z",
+      "side": 1,
+      "message": "same here.",
+      "range": {
+        "startLine": 105,
+        "startChar": 38,
+        "endLine": 105,
+        "endChar": 43
       },
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
