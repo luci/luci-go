@@ -35,15 +35,11 @@ type Safety struct {
 	TestRecall   TestRecall
 }
 
-// ChangeRecall represents the fraction of eligible code change rejections
+// ChangeRecall represents the fraction of code change rejections
 // that were preserved by the candidate strategy.
 type ChangeRecall struct {
 	// TotalRejections is the total number of analyzed rejections.
 	TotalRejections int
-
-	// EligibleRejections is the number of rejections eligible for safety
-	// evaluation.
-	EligibleRejections int
 
 	// LostRejections are the rejections that would not be preserved
 	// by the candidate strategy, i.e. the bad patchsets would land.
@@ -54,19 +50,19 @@ type ChangeRecall struct {
 }
 
 func (r *ChangeRecall) preserved() int {
-	return r.EligibleRejections - len(r.LostRejections)
+	return r.TotalRejections - len(r.LostRejections)
 }
 
-// Score returns the fraction of eligible rejections that were preserved.
+// Score returns the fraction of rejections that were preserved.
 // May return NaN.
 func (r *ChangeRecall) Score() float64 {
-	if r.EligibleRejections == 0 {
+	if r.TotalRejections == 0 {
 		return math.NaN()
 	}
-	return float64(r.preserved()) / float64(r.EligibleRejections)
+	return float64(r.preserved()) / float64(r.TotalRejections)
 }
 
-// TestRecall represents the fraction of eligible test failures
+// TestRecall represents the fraction of test failures
 // that were preserved by the candidate strategy.
 // If a test is not selected by the strategy, then its failure is not
 // preserved.
@@ -74,25 +70,21 @@ type TestRecall struct {
 	// TotalFailures is the total number of analyzed test failures.
 	TotalFailures int
 
-	// EligibleFailures is the number of failures eligible for safety
-	// evaluation.
-	EligibleFailures int
-
 	// LostFailures are the failures which the candidate strategy did not preserve.
 	LostFailures []LostTestFailure
 }
 
 func (r *TestRecall) preserved() int {
-	return r.EligibleFailures - len(r.LostFailures)
+	return r.TotalFailures - len(r.LostFailures)
 }
 
-// Score returns the fraction of eligible test failures that were preserved.
+// Score returns the fraction of test failures that were preserved.
 // May return NaN.
 func (r *TestRecall) Score() float64 {
-	if r.EligibleFailures == 0 {
+	if r.TotalFailures == 0 {
 		return math.NaN()
 	}
-	return float64(r.preserved()) / float64(r.EligibleFailures)
+	return float64(r.preserved()) / float64(r.TotalFailures)
 }
 
 // LostTestFailure is a failure of a test that the candidate strategy did not select.
@@ -137,8 +129,7 @@ func (e *safetyEval) eval(ctx context.Context) error {
 				return nil
 			}
 
-			eligible, err := e.processRejection(ctx, rej)
-			if err != nil {
+			if err := e.processRejection(ctx, rej); err != nil {
 				return errors.Annotate(err, "failed to process rejection %q", rej).Err()
 			}
 
@@ -152,27 +143,23 @@ func (e *safetyEval) eval(ctx context.Context) error {
 			e.mu.Lock()
 			cr.TotalRejections++
 			tr.TotalFailures += len(rej.FailedTestVariants)
-			if eligible {
-				cr.EligibleRejections++
-				tr.EligibleFailures += len(rej.FailedTestVariants)
-				if !preservedRejection {
-					cr.LostRejections = append(cr.LostRejections, rej)
-				}
-				for i, af := range e.out.TestVariantAffectedness {
-					if !e.shouldRun(af) {
-						tr.LostFailures = append(tr.LostFailures, LostTestFailure{
-							Rejection: rej,
-							// Note: this assumes that in.TestVariants == rej.FailedTestVariants
-							TestVariant: rej.FailedTestVariants[i],
-						})
-					}
+			if !preservedRejection {
+				cr.LostRejections = append(cr.LostRejections, rej)
+			}
+			for i, af := range e.out.TestVariantAffectedness {
+				if !e.shouldRun(af) {
+					tr.LostFailures = append(tr.LostFailures, LostTestFailure{
+						Rejection: rej,
+						// Note: this assumes that in.TestVariants == rej.FailedTestVariants
+						TestVariant: rej.FailedTestVariants[i],
+					})
 				}
 			}
 
 			e.maybeReportProgress(ctx)
 			e.mu.Unlock()
 
-			if eligible && !preservedRejection && e.LogLostRejections {
+			if !preservedRejection && e.LogLostRejections {
 				buf.Reset()
 				printLostRejection(p, rej)
 				logging.Infof(ctx, "%s", buf.Bytes())
@@ -181,7 +168,7 @@ func (e *safetyEval) eval(ctx context.Context) error {
 	}
 }
 
-func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection) (eligible bool, err error) {
+func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection) error {
 	// TODO(crbug.com/1112125): add support for CL stacks.
 	// This call returns only files modified in the particular patchset and
 	// ignores possible parent CLs that were also tested.
@@ -203,9 +190,9 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 		}
 	}
 	if err := e.Strategy(ctx, in, &e.out); err != nil {
-		return false, errors.Annotate(err, "the selection strategy failed").Err()
+		return errors.Annotate(err, "the selection strategy failed").Err()
 	}
-	return true, nil
+	return nil
 }
 
 // printLostRejection prints a rejection that wouldn't be preserved by the
