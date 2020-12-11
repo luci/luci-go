@@ -16,6 +16,46 @@
       "message": "Actually, this may no longer be needed because we may want to return the GRPC error directly instead.",
       "revId": "46152f203ba962204ad61e1b56f3828a2c6969bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4efd4d9e_f3976e81",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T00:44:33Z",
+      "side": 1,
+      "message": "why do we need this?",
+      "revId": "46152f203ba962204ad61e1b56f3828a2c6969bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb926f72_6169858c",
+        "filename": "grpc/appstatus/status.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T00:44:33Z",
+      "side": 1,
+      "message": "this looks like generic \"convert arbitrary error to an appstatus error\" which is kind of discouraged by this package.\nGiven the function comment, i think this func name should be more about grpc, than about appstatus.\nHow about FromGRPCError instead.\n\nalso we need to expand the comment to mention that this is useful when proxying errors from other services.\nalso I think we need to add a warning that this should be done only in the code which makes the request (as opposed to the down the stack)",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 21
+      },
+      "revId": "46152f203ba962204ad61e1b56f3828a2c6969bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
