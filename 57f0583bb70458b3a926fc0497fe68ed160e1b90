@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "57f0583bb70458b3a926fc0497fe68ed160e1b90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28ff04d9_e7903de4",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:33:10Z",
+      "side": 1,
+      "message": "nit: comment should start with the symbol name",
+      "revId": "57f0583bb70458b3a926fc0497fe68ed160e1b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "130d54e1_86bd1e7f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:33:10Z",
+      "side": 1,
+      "message": "maybe don\u0027t add it to begin with?\nwe are creating bundle structs and throwing them away",
+      "range": {
+        "startLine": 216,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 5
+      },
+      "revId": "57f0583bb70458b3a926fc0497fe68ed160e1b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
