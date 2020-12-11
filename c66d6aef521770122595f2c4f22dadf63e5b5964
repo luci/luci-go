@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6428e53c_03f19a60",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:17:07Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "358ea45d_ae70e00b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:17:07Z",
+      "side": 1,
+      "message": "nit: indent +1\n\nsame below",
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b574df4d_6b477341",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:17:07Z",
+      "side": 1,
+      "message": "i suspect this was unintentional",
+      "range": {
+        "startLine": 327,
+        "startChar": 34,
+        "endLine": 327,
+        "endChar": 37
+      },
+      "revId": "c66d6aef521770122595f2c4f22dadf63e5b5964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
