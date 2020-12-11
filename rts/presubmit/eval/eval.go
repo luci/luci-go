@@ -19,6 +19,7 @@ import (
 	"flag"
 	"time"
 
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
@@ -37,10 +38,20 @@ type Eval struct {
 	Algorithm Algorithm
 
 	// MaxDistance is the maximum distance to run a test.
-	// If a test is further than this, it is skipped.
+	// If a test's distance is <= MaxDistance, then it is executed, regardless of
+	// MaxRank.
+	//
 	// TODO(nodir): automatically compute the optimal MaxDistance based on
 	// MinChangeRecall and MinTestRecall.
 	MaxDistance float64
+
+	// MaxRank is a test rank threshold: if a test's rank <= MaxRank, then it is
+	// executed, regardless of MaxDistance.
+	// Note that multiple tests may have the same rank.
+	//
+	// TODO(nodir): automatically compute the optimal MaxRank based on
+	// MinChangeRecall and MinTestRecall.
+	MaxRank int
 
 	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
@@ -61,7 +72,15 @@ type Eval struct {
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	// The default value of 0.5 makes sense for those algorithms that
 	// use distance between 0.0 and 1.0.
-	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, "Max distance from tests to the changed files")
+	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, text.Doc(`
+		Max distance from tests to the changed files.
+		If a test is closer than or equal -max-distance, then it is selected regardless of -max-rank.
+	`))
+	fs.IntVar(&e.MaxRank, "max-rank", 0, text.Doc(`
+		Max rank for tests to run.
+		If a test has a rank less or equal -max-rank, then it is selected regardless of -max-distance.
+		Ignored if 0
+	`))
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
@@ -107,4 +126,8 @@ func (f *historyFileInputFlag) Set(val string) error {
 
 func (f *historyFileInputFlag) String() string {
 	return f.path
+}
+
+func (e *Eval) shouldRun(a Affectedness) bool {
+	return a.Distance <= e.MaxDistance || (a.Rank != 0 && a.Rank <= e.MaxRank)
 }

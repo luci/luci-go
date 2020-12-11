@@ -27,7 +27,7 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	eval.Main(ctx, func(ctx context.Context, in eval.Input, out *eval.Output) error {
 		for i := range in.TestVariants {
-			out.TestVariantDistances[i] = rand.Float64()
+			out.TestVariantAffectedness[i].Distance = rand.Float64()
 		}
 		return nil
 	})
