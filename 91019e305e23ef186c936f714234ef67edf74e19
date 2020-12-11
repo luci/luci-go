@@ -22,6 +22,30 @@
       },
       "revId": "91019e305e23ef186c936f714234ef67edf74e19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "719db2fb_beb54372",
+        "filename": "grpc/appstatus/status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-11T00:29:22Z",
+      "side": 1,
+      "message": "Renamed and changed the implementation to make it cleaner.",
+      "parentUuid": "0fcba75b_21f78c30",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "91019e305e23ef186c936f714234ef67edf74e19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
