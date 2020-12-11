@@ -51,7 +51,7 @@ func newHistoryAccumulator(capacity int) historyAccumulator {
 }
 
 func TestByTimestamp(t *testing.T) {
-	SkipConvey(`ByTimestamp`, t, func() {
+	Convey(`ByTimestamp`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		realm := "testproject:bytimestamprealm"
 
