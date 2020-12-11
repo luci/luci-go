@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "70e6ebac_71c06169",
+        "filename": "rts/presubmit/eval/algo.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T20:54:04Z",
+      "side": 1,
+      "message": "i can revise after this CL lands.",
+      "parentUuid": "3aafb0f9_4d5738b5",
+      "range": {
+        "startLine": 82,
+        "startChar": 22,
+        "endLine": 83,
+        "endChar": 49
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "903ff2e7_2cc7e736",
