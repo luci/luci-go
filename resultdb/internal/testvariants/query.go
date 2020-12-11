@@ -15,14 +15,9 @@
 package testvariants
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"sync"
-	"text/template"
 
 	"cloud.google.com/go/spanner"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -104,7 +99,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		panic("PageSize < 0")
 	}
 
-	st := q.genStatement("testVariantsWithUnexpectedResults")
+	st := spanner.Statement{SQL: testVariantsWithUnexpectedResultsSQL, Params: q.params}
 	st.Params["limit"] = q.PageSize
 
 	var b spanutil.Buffer
@@ -153,50 +148,11 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-type testVariant struct {
-	TestID      string
-	VariantHash string
-}
-
-// queryUnexpectedTestVariants returns test variants with unexpected
-// results.
-func (q *Query) queryUnexpectedTestVariants(ctx context.Context) (testVariants map[testVariant]struct{}, err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryUnexpectedTestVariants")
+func (q *Query) queryTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
-
-	testVariants = map[testVariant]struct{}{}
-	var mu sync.Mutex
-	st := q.genStatement("unexpectedTestVariantsQuery")
-
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, st := range invocations.ShardStatement(st, "invIDs") {
-		st := st
-		eg.Go(func() error {
-			return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-				var tv testVariant
-				if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
-					return err
-				}
-
-				mu.Lock()
-				testVariants[tv] = struct{}{}
-				mu.Unlock()
-				return nil
-			})
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-	return
-}
-
-func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryExpectedTestResults")
-	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
-	defer func() { ts.End(err) }()
-	st := q.genStatement("expectedResults")
+	st := spanner.Statement{SQL: allTestResultsSQL, Params: q.params}
 	// TODO(crbug.com/1157349): Tune the page size.
 	st.Params["limit"] = q.PageSize
 
@@ -226,35 +182,30 @@ func (q *Query) queryExpectedTestResults(ctx context.Context, f func(*pb.TestRes
 }
 
 func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*uipb.TestVariant, nextPageToken string, err error) {
-	// TODO(crbug.com/1112127): run the query concurrently, then in callback wait for this to finish.
-	unexpectedTVs, err := q.queryUnexpectedTestVariants(ctx)
-	if err != nil {
-		return nil, "", err
-	}
-
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	// Number of the total test results returned by the query.
 	trLen := 0
-	// The test variant we're processing right now.
-	// It will be appended to tvs when all of its results are added.
-	var current *uipb.TestVariant
-	err = q.queryExpectedTestResults(ctx, func(tr *pb.TestResult) error {
-		trLen += 1
-		if _, unexpected := unexpectedTVs[testVariant{TestID: tr.TestId, VariantHash: tr.VariantHash}]; unexpected {
-			// This test variant has unexpected results, moving on.
-			return nil
-		}
 
+	// The test variant we're processing right now.
+	// It will be appended to tvs when all of its results are processed unless
+	// it has unexpected results.
+	var current *uipb.TestVariant
+	var currentOnlyExpected bool
+	err = q.queryTestResults(ctx, func(tr *pb.TestResult) error {
+		trLen++
 		if current != nil {
 			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
 				current.Results = append(current.Results, &uipb.TestResultBundle{
 					Result: tr,
 				})
+				currentOnlyExpected = currentOnlyExpected && tr.Expected
 				return nil
 			}
 
 			// All test results of current have been processed.
-			tvs = append(tvs, current)
+			if currentOnlyExpected {
+				tvs = append(tvs, current)
+			}
 		}
 
 		// New test variant.
@@ -269,6 +220,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 				},
 			},
 		}
+		currentOnlyExpected = tr.Expected
 		return nil
 	})
 	if err != nil {
@@ -276,7 +228,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		return
 	}
 
-	if trLen < q.PageSize {
+	if trLen < q.PageSize && currentOnlyExpected {
 		// We have exhausted the test results, add current to tvs.
 		tvs = append(tvs, current)
 	}
@@ -326,21 +278,12 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	return
 }
 
-func (q *Query) genStatement(templateName string) spanner.Statement {
-	var sql bytes.Buffer
-	err := queryTmpl.ExecuteTemplate(&sql, templateName, nil)
-	if err != nil {
-		panic(fmt.Sprintf("failed to generate a SQL statement: %s", err))
-	}
-	return spanner.Statement{SQL: sql.String(), Params: q.params}
-}
-
-// queryTmpl is a set of templates that generate the SQL statements to query test variants.
-var queryTmpl = template.Must(template.New("testVariants").Parse(`
-{{define "testVariantsWithUnexpectedResults"}}
+var testVariantsWithUnexpectedResultsSQL = `
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH unexpectedTestVariants AS (
-		{{template "unexpectedTestVariants"}}
+		SELECT DISTINCT TestId, VariantHash
+		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
 	),
 
 	-- Get test variants and their results.
@@ -354,7 +297,16 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNT(TestId) num_total,
 			-- TODO(crbug.com/1112127): Limit the number of results for each test variant to prevent OOM if there are too many of them.
-			ARRAY_AGG(STRUCT({{template "testResultsColumns"}})) results,
+			ARRAY_AGG(STRUCT(
+				InvocationId,
+				ResultId,
+				IsUnexpected,
+				Status,
+				StartTime,
+				RunDurationUsec,
+				SummaryHTML,
+				Tags
+			)) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
 		WHERE InvocationId in UNNEST(@invIDs)
@@ -389,38 +341,6 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 		ORDER BY TvStatus, TestId, VariantHash
 	)
 
-	{{template "columns"}}
-	FROM testVariantsWithUnexpectedResults
-	ORDER BY TvStatus, TestId, VariantHash
-	LIMIT @limit
-{{end}}
-
-{{define "expectedResults"}}
-	@{USE_ADDITIONAL_PARALLELISM=TRUE}
-	SELECT
-		TestId,
-		VariantHash,
-		Variant Variant,
-		{{template "testResultsColumns"}},
-	FROM TestResults
-	WHERE InvocationId in UNNEST(@invIDs)
-	AND IsUnexpected IS NULL
-	ORDER BY TestId, VariantHash
-	LIMIT @limit
-{{end}}
-
-{{define "testResultsColumns"}}
-	InvocationId,
-	ResultId,
-	IsUnexpected,
-	Status,
-	StartTime,
-	RunDurationUsec,
-	SummaryHTML,
-	Tags
-{{end}}
-
-{{define "columns"}}
 	SELECT
 		TestId,
 		VariantHash,
@@ -428,16 +348,27 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 		TvStatus,
 		results,
 		exonerationExplanations,
-{{end}}
+	FROM testVariantsWithUnexpectedResults
+	ORDER BY TvStatus, TestId, VariantHash
+	LIMIT @limit
+`
 
-{{define "unexpectedTestVariants"}}
-	SELECT DISTINCT TestId, VariantHash
-	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
-	WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
-{{end}}
-
-{{define "unexpectedTestVariantsQuery"}}
+var allTestResultsSQL = `
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
-	{{template "unexpectedTestVariants"}}
-{{end}}
-`))
+	SELECT
+		TestId,
+		VariantHash,
+		Variant Variant,
+		InvocationId,
+		ResultId,
+		IsUnexpected,
+		Status,
+		StartTime,
+		RunDurationUsec,
+		SummaryHTML,
+		Tags,
+	FROM TestResults
+	WHERE InvocationId in UNNEST(@invIDs)
+	ORDER BY TestId, VariantHash
+	LIMIT @limit
+`
