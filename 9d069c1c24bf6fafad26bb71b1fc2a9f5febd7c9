@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ca5e30a_74e1c249",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T06:37:41Z",
+      "side": 1,
+      "message": "yep, now i understand, thanks",
+      "parentUuid": "543eabd9_6a899cfe",
+      "range": {
+        "startLine": 214,
+        "startChar": 0,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f3a8a814_da704a18",
