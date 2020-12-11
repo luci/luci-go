@@ -17,6 +17,7 @@ package prjmanager
 import (
 	"time"
 
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -40,9 +41,7 @@ type Project struct {
 	Status Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
-
 	// IncompleteRuns are IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
-	// TODO(tandrii): fix type to run.ID.
-	IncompleteRuns []string `gae:",noindex"`
+	IncompleteRuns []run.ID `gae:",noindex"`
 }
