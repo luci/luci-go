@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6f7818c_e1142d98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-11T00:39:59Z",
+      "side": 1,
+      "message": "Actually, this may no longer be needed because we may want to return the GRPC error directly instead.",
+      "revId": "46152f203ba962204ad61e1b56f3828a2c6969bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
