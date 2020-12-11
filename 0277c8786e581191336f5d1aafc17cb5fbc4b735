@@ -16,6 +16,24 @@
       "message": "IMO it will be simpler and more correct to call appstatus.GRPCifyAndLog manually in each individual handler and get rid of decorators/interceptors, e.g.\n\n```\nfunc (...) DoStuff(...) (res *Result, err error) {\n  defer func() { err \u003d appstatus.GRPCifyAndLog(err) }\n\n  // The rest of the handler is unchanged.\n}\n```\n\ngRPC servers implementations are supposed to return gRPC errors. There\u0027s no guarantee that gRPC library will pass non-gRPC error from the server to the interceptor without wrapping it into code.Internal grpc errors. Even if it works now, it can stop working in the future. \n\n(This issue was less severe when using svcdec since there were no gRPC-library code between the decorator and the server implementation, so we could guarantee custom errors reach the decorator unchanged).\n\nAdditionally, unary server interceptors are global to the server. For example, your decorator is actually applied to discovery.Discovery service which is use by RPC Explorer. This can become messy in general.",
       "revId": "0277c8786e581191336f5d1aafc17cb5fbc4b735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0baec62e_f9720412",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-11T00:59:37Z",
+      "side": 1,
+      "message": "Makes sense. Updated to use direct GRPCifyAndLog calls.\nAnd updated the commit description to match that.",
+      "parentUuid": "895f8648_a7f80ecb",
+      "revId": "0277c8786e581191336f5d1aafc17cb5fbc4b735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
