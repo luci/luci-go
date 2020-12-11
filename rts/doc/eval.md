@@ -94,12 +94,12 @@ When done, it will print something like this:
 ```
 Change recall:
   Score: 69%
-  Eligible rejections:                       722
-  Eligible rejections preserved by this RTS: 500
+  Rejections:               722
+  Rejections preserved: 500
 Test recall:
   Score: 50%
-  Eligible test failures:                       1357767
-  Eligible test failures preserved by this RTS: 679198
+  Test failures:           1357767
+  Test failures preserved: 679198
 Efficiency:
   Saved: 50%
   Test results analyzed: 157728
