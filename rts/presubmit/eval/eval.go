@@ -63,7 +63,7 @@ type Eval struct {
 	// How often to report progress. Defaults to 5s.
 	ProgressReportInterval time.Duration
 
-	// If true, log eligible lost rejections.
+	// If true, log lost rejections.
 	// See also ChangeRecall.LostRejections.
 	LogLostRejections bool
 }
