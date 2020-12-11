@@ -15,4 +15,3 @@
 package milopb
 
 //go:generate cproto
-//go:generate svcdec -type MiloInternalServer
