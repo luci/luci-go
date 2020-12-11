@@ -31,13 +31,17 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -439,6 +443,10 @@ func TestUpdateBuild(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
+		ctx = txndefer.FilterRDS(ctx)
+		ctx, sch := tq.TestingContext(ctx, nil)
 
 		// create and save a sample build in the datastore
 		build := &model.Build{
@@ -601,7 +609,78 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Tags, ShouldBeNil)
 			})
+		})
 
+		Convey("build-start event", func() {
+			Convey("Status_STARTED w/o status change", func() {
+				req.UpdateMask.Paths[0] = "build.status"
+				req.Build.Status = pb.Status_STARTED
+				_, err := srv.UpdateBuild(ctx, req)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+				// no TQ tasks should be scheduled.
+				So(sch.Tasks(), ShouldBeEmpty)
+
+				// no metric update, either.
+				So(store.Get(ctx, buildCountStarted, time.Time{}, fv(false)), ShouldEqual, nil)
+			})
+
+			Convey("Status_STARTED w/ status change", func() {
+				// create a sample task with SCHEDULED.
+				build.Proto.Id += 1
+				build.ID += 1
+				build.Proto.Status, build.Status = pb.Status_SCHEDULED, pb.Status_SCHEDULED
+				So(datastore.Put(ctx, build), ShouldBeNil)
+
+				// update it with STARTED
+				req.Build.Id = build.ID
+				req.UpdateMask.Paths[0] = "build.status"
+				req.Build.Status = pb.Status_STARTED
+				_, err := srv.UpdateBuild(ctx, req)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+				// TQ task for pubsub-notification.
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
+
+				// BuildStarted metric should be set 1.
+				So(store.Get(ctx, buildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+			})
+		})
+
+		Convey("build-completion event", func() {
+			Convey("Status_SUCCESSS w/o status change", func() {
+				req.UpdateMask.Paths[0] = "build.status"
+				req.Build.Status = pb.Status_SUCCESS
+				_, err := srv.UpdateBuild(ctx, req)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+
+				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 3)
+				sum := 0
+				for _, task := range tasks {
+					switch v := task.Payload.(type) {
+					case *taskdefs.NotifyPubSub:
+						sum += 1
+						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+					case *taskdefs.ExportBigQuery:
+						sum += 2
+						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+					case *taskdefs.FinalizeResultDB:
+						sum += 4
+						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+					default:
+						panic("invalid task payload")
+					}
+				}
+				So(sum, ShouldEqual, 7)
+
+				// BuildCompleted metric should be set to 1 with SUCCESS.
+				fvs := fv(model.Success.String(), "", "", false)
+				So(store.Get(ctx, buildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+			})
 		})
 	})
 }

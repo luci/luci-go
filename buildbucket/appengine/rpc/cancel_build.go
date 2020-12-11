@@ -35,28 +35,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// notifyPubSub enqueues tasks to notify Pub/Sub about the given build.
-// TODO(crbug/1091604): Move next to Pub/Sub notification task handler.
-// Currently the task handler is implemented in Python.
-func notifyPubSub(ctx context.Context, b *model.Build) error {
-	if err := tasks.NotifyPubSub(ctx, &taskdefs.NotifyPubSub{
-		BuildId: b.ID,
-	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
-	}
-	if b.PubSubCallback == (model.PubSubCallback{}) {
-		return nil
-	}
-
-	if err := tasks.NotifyPubSub(ctx, &taskdefs.NotifyPubSub{
-		BuildId:  b.ID,
-		Callback: true,
-	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue callback pubsub notification task: %d", b.ID).Err()
-	}
-	return nil
-}
-
 // validateCancel validates the given request.
 func validateCancel(req *pb.CancelBuildRequest) error {
 	var err error
