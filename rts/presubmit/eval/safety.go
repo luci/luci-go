@@ -124,7 +124,7 @@ func (e *safetyEval) eval(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 
-		case rej, ok := <-e.rejectionC:
+		case rej, ok := <-e.History.RejectionC:
 			if !ok {
 				return nil
 			}
