@@ -31,6 +31,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// testResultLimit is the limit of test results each test variant includes.
+const testResultLimit = 10
+
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
@@ -102,6 +105,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	//st := q.genStatement("testVariantsWithUnexpectedResultsSQL")
 	st := spanner.Statement{SQL: testVariantsWithUnexpectedResultsSQL, Params: q.params}
 	st.Params["limit"] = q.PageSize
+	st.Params["testResultLimit"] = testResultLimit
 
 	var b spanutil.Buffer
 	var expBytes []byte
@@ -195,7 +199,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	err = q.queryTestResults(ctx, func(tr *pb.TestResult) error {
 		trLen++
 		if current != nil {
-			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
+			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash && len(current.Results) < testResultLimit {
 				current.Results = append(current.Results, &uipb.TestResultBundle{
 					Result: tr,
 				})
@@ -297,7 +301,6 @@ var testVariantsWithUnexpectedResultsSQL = `
 			ANY_VALUE(Variant) Variant,
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNT(TestId) num_total,
-			-- TODO(crbug.com/1112127): Limit the number of results for each test variant to prevent OOM if there are too many of them.
 			ARRAY_AGG(STRUCT(
 				InvocationId,
 				ResultId,
@@ -335,7 +338,10 @@ var testVariantsWithUnexpectedResultsSQL = `
 				WHEN num_unexpected = num_total THEN 1 -- "UNEXPECTED"
 				ELSE 2 --"FLAKY"
 			END TvStatus,
-			tv.results,
+			ARRAY(
+				SELECT AS STRUCT *
+				FROM UNNEST(tv.results)
+				LIMIT @testResultLimit) results,
 			exonerated.exonerationExplanations
 		FROM test_variants tv
 		LEFT JOIN exonerated USING(TestId, VariantHash)
