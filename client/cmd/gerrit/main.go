@@ -48,6 +48,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			cmdSetReview(defaultAuthOpts),
 			cmdGetMergeable(defaultAuthOpts),
 			cmdSubmit(defaultAuthOpts),
+			cmdRebase(defaultAuthOpts),
 			cmdRestore(defaultAuthOpts),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),

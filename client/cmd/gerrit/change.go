@@ -423,6 +423,40 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#chang
 	}
 }
 
+func cmdRebase(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		ri, _ := input.JSONInput.(*gerrit.RebaseInput)
+		result, err := client.RebaseChange(ctx, input.ChangeID, ri)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "rebase <options>",
+		ShortDesc: "rebases a change",
+		LongDesc: `rebases a change.
+
+Input should contain a change ID, and optionally a JSON payload, e.g.
+{
+  "change_id": <change-id>,
+  "input": <JSON payload>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on "rebase" may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#rebase-change`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:  true,
+				jsonInput: &gerrit.RebaseInput{},
+			}, runner)
+		},
+	}
+}
+
 func cmdRestore(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		ri, _ := input.JSONInput.(*gerrit.RestoreInput)
