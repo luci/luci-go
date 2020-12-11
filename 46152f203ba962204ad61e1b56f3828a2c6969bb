@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4d6242b5_8ada155d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-11T01:25:22Z",
+      "side": 1,
+      "message": "Previously, we had a mechanism to convert app-status errors to gRPC errors in postlude. if we return a gRPC errors directly in a handler, it will be converted to an internal error because there\u0027s no associated app status.\nI needed a utility function to convert gRPC error to app-status error so I can selectively preserve some gRPC errors by converting them to app-status error first.\nin https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2586406, vadim suggested that we should convert the errors in the handlers instead. As a result, this is no longer needed.",
+      "parentUuid": "4efd4d9e_f3976e81",
+      "revId": "46152f203ba962204ad61e1b56f3828a2c6969bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cb926f72_6169858c",
         "filename": "grpc/appstatus/status.go",
         "patchSetId": 4
