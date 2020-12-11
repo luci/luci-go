@@ -12,7 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package resultdbproxy
 
-// MiloInternalService implements milopb.MiloInternal
-type MiloInternalService struct{}
+import (
+	"context"
+
+	"go.chromium.org/luci/milo/resultdb"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/auth"
+)
+
+// GetInvocation implements milopb.MiloInternal service
+func (s *Service) GetInvocation(ctx context.Context, req *resultpb.GetInvocationRequest) (*resultpb.Invocation, error) {
+	host, err := resultdb.GetHost(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := resultdb.ResultdbClient(ctx, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+	inv, err := client.GetInvocation(ctx, req)
+	return inv, err
+}

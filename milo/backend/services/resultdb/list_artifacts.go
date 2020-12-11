@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package resultdbproxy
 
 import (
 	"context"
 
+	"go.chromium.org/luci/milo/resultdb"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
-
-	milopb "go.chromium.org/luci/milo/api/service/v1"
 )
 
-// GetCurrentUser implements milopb.MiloInternal service
-func (s *MiloInternalService) GetCurrentUser(ctx context.Context, req *milopb.GetCurrentUserRequest) (*milopb.User, error) {
-	user := auth.CurrentUser(ctx)
-	return &milopb.User{
-		Identity: string(user.Identity),
-		Email:    user.Email,
-		Picture:  user.Picture,
-	}, nil
+// ListArtifacts implements milopb.MiloInternal service
+func (s *Service) ListArtifacts(ctx context.Context, req *resultpb.ListArtifactsRequest) (*resultpb.ListArtifactsResponse, error) {
+	host, err := resultdb.GetHost(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := resultdb.ResultdbClient(ctx, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+	inv, err := client.ListArtifacts(ctx, req)
+	return inv, err
 }

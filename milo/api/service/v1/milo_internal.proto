@@ -17,8 +17,13 @@ syntax = "proto3";
 package luci.milo.v1;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/builds_service.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/resultdb.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
 
@@ -42,6 +47,18 @@ service MiloInternal {
   // Return the current user if user is logged in. Otherwise, return an
   // anonymous user.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (User) {};
+
+  rpc GetBuild(buildbucket.v2.GetBuildRequest) returns (buildbucket.v2.Build) {};
+  rpc SearchBuilds(buildbucket.v2.SearchBuildsRequest) returns (buildbucket.v2.SearchBuildsResponse) {};
+  rpc CancelBuild(buildbucket.v2.CancelBuildRequest) returns (buildbucket.v2.Build) {};
+  rpc ScheduleBuild(buildbucket.v2.ScheduleBuildRequest) returns (buildbucket.v2.Build) {};
+
+  // Retrieves an invocation.
+  rpc GetInvocation(luci.resultdb.v1.GetInvocationRequest) returns (luci.resultdb.v1.Invocation) {};
+  rpc QueryTestResults(luci.resultdb.v1.QueryTestResultsRequest) returns (luci.resultdb.v1.QueryTestResultsResponse) {};
+  rpc QueryTestExonerations(luci.resultdb.v1.QueryTestExonerationsRequest) returns (luci.resultdb.v1.QueryTestExonerationsResponse) {};
+  rpc ListArtifacts(luci.resultdb.v1.ListArtifactsRequest) returns (luci.resultdb.v1.ListArtifactsResponse) {};
+  rpc GetArtifact(luci.resultdb.v1.GetArtifactRequest) returns (luci.resultdb.v1.Artifact) {};
 }
 
 // A request message for `GetCurrentUser` RPC.
@@ -49,8 +66,8 @@ message GetCurrentUserRequest {}
 
 // A message that represents identity and profile of a user.
 message User {
-  // Identity string of the user (anonymous:anonymous if the user is not logged
-  // in).
+  // Identity string of the user (may be anonymous:anonymous if the user is
+  // not logged in).
   string identity = 1;
 
   // The email of the user. Optional, default "".

@@ -17,7 +17,6 @@ import { computed, observable } from 'mobx';
 import { consumeContext, provideContext } from '../../libs/context';
 import { BuildsService } from '../../services/buildbucket';
 import { MiloInternal } from '../../services/milo_internal';
-import { ResultDb } from '../../services/resultdb';
 
 /**
  * Records the app-level state.
@@ -30,13 +29,6 @@ export class AppState {
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
-  @computed
-  get resultDb(): ResultDb | null {
-    if (this.accessToken === null) {
-      return null;
-    }
-    return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
-  }
 
   @computed
   get milo(): MiloInternal | null {

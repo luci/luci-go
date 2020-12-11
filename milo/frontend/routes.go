@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/resultdb"
 )
 
 // Run sets up all the routes and runs the server.
@@ -141,14 +142,28 @@ func Run(templatePath string) {
 	// Config for ResultUI frontend.
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
-	apiMW := baseMW.Extend(withGitMiddleware)
+	apiMW := baseMW.Extend(
+		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
+		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
+		withGitMiddleware,
+		withBuildbucketBuildsClient,
+		withResultDBClient,
+	)
 	installAPIRoutes(r, apiMW)
 
 	http.DefaultServeMux.Handle("/", r)
 }
 
+// withResultDBClient is a middleware that installs a production buildbucket builds RPC client into the context.
+func withResultDBClient(c *router.Context, next router.Handler) {
+	c.Context = resultdb.WithResultDBFactory(c.Context, resultdb.ProdResultDBFactory)
+	next(c)
+}
+
 func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
-	server := &prpc.Server{}
+	server := &prpc.Server{
+		HackFixFieldMasksForJSON: true,
+	}
 	milopb.RegisterMiloInternalServer(server, &backend.MiloInternalService{})
 
 	discovery.Enable(server)

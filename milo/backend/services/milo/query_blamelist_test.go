@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package milointernal
 
 import (
 	"fmt"
@@ -116,7 +116,7 @@ func TestQueryBlamelist(t *testing.T) {
 	Convey(`TestQueryBlamelist`, t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
-		srv := &MiloInternalService{}
+		srv := &Service{}
 		ctrl := gomock.NewController(t)
 		gitMock := git.NewMockClient(ctrl)
 		c = git.Use(c, gitMock)
