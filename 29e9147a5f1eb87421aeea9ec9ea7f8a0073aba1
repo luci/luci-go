@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7390028_f03a5348",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 0,
+      "message": "how did this work before? there is no unexpectedTestVariantsQuery template below.\n\nwere we (and still are) missing a test?",
+      "revId": "29e9147a5f1eb87421aeea9ec9ea7f8a0073aba1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

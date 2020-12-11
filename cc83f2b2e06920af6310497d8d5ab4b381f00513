@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d2741b6_11f378dc",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "it is no longer used, so we can remove it",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 7
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc5644c3_194b7876",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "can we use testresults.Query now?",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 32
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "231c1592_b61e2d03",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "nit nit: would it be simpler to have two vars?\n\nvar currentTV *uipb.TestVariant\nvar currentOnlyExpected bool",
+      "range": {
+        "startLine": 192,
+        "startChar": 6,
+        "endLine": 192,
+        "endChar": 17
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e140a79_524ef04b",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "unless it has unexpected results",
+      "range": {
+        "startLine": 197,
+        "startChar": 68,
+        "endLine": 197,
+        "endChar": 69
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "508dddbb_3eb547b1",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "trLen++",
+      "range": {
+        "startLine": 200,
+        "startChar": 2,
+        "endLine": 200,
+        "endChar": 12
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7f067c9_08588ac7",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "this is the only usage. please inline",
+      "range": {
+        "startLine": 351,
+        "startChar": 1,
+        "endLine": 351,
+        "endChar": 23
+      },
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15287547_ccd294ae",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T01:05:07Z",
+      "side": 1,
+      "message": "nit: it appears that this is the only reused template.\nThis is a just a list of columns, and the code that reads them is duplicated anyway.\n\nIMO it would be OK to have two string literals for two SQL queries, instead of templates.\nAKA template seems overkill here\n\nbut maybe we don\u0027t even need allTestResults because we already have testresults.Query",
+      "revId": "cc83f2b2e06920af6310497d8d5ab4b381f00513",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
