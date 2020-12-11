@@ -16,6 +16,24 @@
       "message": "how did this work before? there is no unexpectedTestVariantsQuery template below.\n\nwere we (and still are) missing a test?",
       "revId": "29e9147a5f1eb87421aeea9ec9ea7f8a0073aba1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0c85531_9b24dcd5",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-11T03:30:42Z",
+      "side": 0,
+      "message": "There is one from L439. Thanks for this comment though, now I remember to remove it.",
+      "parentUuid": "e7390028_f03a5348",
+      "revId": "29e9147a5f1eb87421aeea9ec9ea7f8a0073aba1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
