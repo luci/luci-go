@@ -28,8 +28,9 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/led/job"
 	api "go.chromium.org/luci/swarming/proto/api"
+
+	"go.chromium.org/luci/led/job"
 )
 
 // ConsolidateIsolateSources will, for Swarming tasks:
