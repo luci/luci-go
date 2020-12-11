@@ -24,13 +24,10 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // Result is the result of evaluation.
@@ -48,17 +45,12 @@ type evalRun struct {
 	buf                      bytes.Buffer
 	mostRecentProgressReport time.Time
 	mu                       sync.Mutex
-
-	rejectionC chan *evalpb.Rejection
-	durationC  chan *evalpb.TestDuration
 }
 
 func (r *evalRun) run(ctx context.Context) error {
 	// Init internal state.
 	r.res = Result{}
 	r.mostRecentProgressReport = time.Time{}
-	r.rejectionC = make(chan *evalpb.Rejection)
-	r.durationC = make(chan *evalpb.TestDuration)
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
@@ -77,61 +69,12 @@ func (r *evalRun) run(ctx context.Context) error {
 
 	// Play back the history.
 	eg.Go(func() error {
-		defer func() {
-			close(r.rejectionC)
-			close(r.durationC)
-			r.History.Close()
-		}()
-		err := r.playbackHistory(ctx)
+		err := r.History.Playback(ctx)
+		r.res.TotalRecords = r.History.TotalRecords()
 		return errors.Annotate(err, "failed to playback history").Err()
 	})
 
 	return eg.Wait()
-}
-
-// playbackHistory reads records from r.Eval.History and dispatches them
-// to r.rejectionC and r.durationC.
-func (r *evalRun) playbackHistory(ctx context.Context) error {
-	curRej := &evalpb.Rejection{}
-	for {
-		rec, err := r.History.Read()
-		switch {
-		case err == io.EOF:
-			return nil
-		case err != nil:
-			return errors.Annotate(err, "failed to read history").Err()
-		}
-
-		r.mu.Lock()
-		r.res.TotalRecords++
-		r.mu.Unlock()
-
-		// Send the record to the appropriate channel.
-		switch data := rec.Data.(type) {
-
-		case *evalpb.Record_RejectionFragment:
-			proto.Merge(curRej, data.RejectionFragment.Rejection)
-			if data.RejectionFragment.Terminal {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case r.rejectionC <- curRej:
-					// Start a new rejection.
-					curRej = &evalpb.Rejection{}
-				}
-			}
-
-		case *evalpb.Record_TestDuration:
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case r.durationC <- data.TestDuration:
-			}
-
-		default:
-			panic(fmt.Sprintf("unexpected record %s", rec))
-		}
-	}
 }
 
 // Print prints the results to w.
