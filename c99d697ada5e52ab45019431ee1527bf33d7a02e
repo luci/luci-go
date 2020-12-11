@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f81894d8_0c98c83c",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-11T21:20:54Z",
+      "side": 1,
+      "message": "Done, but named to \"notification.go\" to match with the python module name.",
+      "parentUuid": "0fec7586_7b0af732",
+      "range": {
+        "startLine": 252,
+        "startChar": 24,
+        "endLine": 252,
+        "endChar": 70
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "04b5a612_2dcd757a",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4897fa10_00c45c6a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-11T21:20:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04b5a612_2dcd757a",
+      "range": {
+        "startLine": 389,
+        "startChar": 36,
+        "endLine": 389,
+        "endChar": 40
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9a4802ae_519f8929",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-12-10T18:29:02Z",
       "side": 1,
       "message": "is it a problem if we timeout or crash at this point?\n\nconsider the transaction succeeds, but we error out here; the client will re-try the RPC. Shouldn\u0027t we send the notification in that case? I think because origStatus \u003d\u003d b.Status at that point, no notification will ever happen?\n\nIt\u0027s possible this is a bug in the current python implementation that you\u0027re just porting, but we should probably have a bug for this (i.e. Build should have a \u0027finalized\u0027 bool and we should use that as the clue to send notifications then set it to true; duplicate notifications SHOULD be ok, I think?). \n\nWe could then also have a sweeper job for unfinalized builds.",
+      "range": {
+        "startLine": 392,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 16
+      },
+      "revId": "c99d697ada5e52ab45019431ee1527bf33d7a02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "040decb2_f0b2f01d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-11T21:20:54Z",
+      "side": 1,
+      "message": "If it panics after a txn success, we lose the monitoring data point. It is\u0027the same problem of \"what if a server process crashes before flushing the tsmon metrics to ProdXMon?\"\n\nI cannot think of a good solution for the problem, and any monitoring system that periodically flushes can have the same problem. If we buffer every single data point in a locally running an agent, but it won\u0027t be completely free of this problem.\n\nI think it will probably not be a critical problem, as long as buildCompleted() only updates tsmon metrics. it simply updates vars in memory. If it panics, then tsmon wouldn\u0027t likely be able to update the HTTP and gRPC metrics either, and those would be a bigger problem.",
+      "parentUuid": "9a4802ae_519f8929",
       "range": {
         "startLine": 392,
         "startChar": 2,
