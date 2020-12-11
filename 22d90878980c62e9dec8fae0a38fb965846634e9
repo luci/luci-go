@@ -135,6 +135,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8252fb27_1c32e75d",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-11T03:07:11Z",
+      "side": 1,
+      "message": "`p.IncompleteRuns[:]`? Otherwise, updateConfig will directly modify the project entity",
+      "range": {
+        "startLine": 49,
+        "startChar": 18,
+        "endLine": 49,
+        "endChar": 34
+      },
+      "revId": "22d90878980c62e9dec8fae0a38fb965846634e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e1c0800f_c263b5f0",
         "filename": "cv/internal/prjmanager/impl/sm.go",
         "patchSetId": 1
