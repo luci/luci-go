@@ -187,6 +187,13 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// Number of the total test results returned by the query.
 	trLen := 0
 
+	type tvId struct {
+		TestId      string
+		VariantHash string
+	}
+	// The last test variant we have completely processed.
+	var lastProcessedTV tvId
+
 	// The test variant we're processing right now.
 	// It will be appended to tvs when all of its results are processed unless
 	// it has unexpected results.
@@ -204,6 +211,8 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 			}
 
 			// All test results of current have been processed.
+			lastProcessedTV.TestId = current.TestId
+			lastProcessedTV.VariantHash = current.VariantHash
 			if currentOnlyExpected {
 				tvs = append(tvs, current)
 			}
@@ -233,6 +242,21 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		// We have exhausted the test results, add current to tvs.
 		tvs = append(tvs, current)
 	}
+
+	// If we got page size of test results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if !currentOnlyExpected {
+		// current has unexpected results, skip it in the next page.
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), current.TestId, current.VariantHash)
+		return
+	}
+
+	if trLen == q.PageSize {
+		// Cannot decide if current has unexpected results in the next page, query its
+		// test results again.
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestId, lastProcessedTV.VariantHash)
+	}
+
 	return
 }
 
@@ -252,6 +276,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		return nil, "", err
 	case len(parts) == 0:
 		expected = false
+		q.params["afterTvStatus"] = 0
+		q.params["afterTestId"] = ""
+		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
 		return nil, "", pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
 	default:
@@ -260,13 +287,15 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
 		}
 		expected = uipb.TestVariantStatus(status) == uipb.TestVariantStatus_EXPECTED
+		q.params["afterTvStatus"] = int(status)
+		q.params["afterTestId"] = parts[1]
+		q.params["afterVariantHash"] = parts[2]
 	}
 
 	if expected {
 		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
 	}
 
-	// TODO(crbug.com/1112127): populate next page token.
 	tvs = make([]*uipb.TestVariant, 0, q.PageSize)
 	// Fetch test variants with unexpected results.
 	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *uipb.TestVariant) error {
@@ -275,7 +304,22 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	})
 	if err != nil {
 		tvs = nil
+		return
 	}
+
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(tvs) == q.PageSize {
+		last := tvs[q.PageSize-1]
+		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
+	}
+
+	// If we got less than one page of test variants with unexpected results,
+	// compute the nextPageToken for test variants with only expected results.
+	if len(tvs) < q.PageSize {
+		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
+	}
+
 	return
 }
 
@@ -350,6 +394,11 @@ var testVariantsWithUnexpectedResultsSQL = `
 		results,
 		exonerationExplanations,
 	FROM testVariantsWithUnexpectedResultsSQL
+	WHERE (
+		(TvStatus > @afterTvStatus) OR
+		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TvStatus, TestId, VariantHash
 	LIMIT @limit
 `
@@ -370,6 +419,10 @@ var allTestResultsSQL = `
 		Tags,
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
+	AND (
+		(TestId > @afterTestId) OR
+		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
+	)
 	ORDER BY TestId, VariantHash
 	LIMIT @limit
 `
