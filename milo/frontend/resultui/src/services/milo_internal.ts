@@ -70,6 +70,14 @@ export interface QueryBlamelistResponse {
   readonly precedingCommit?: GitCommit;
 }
 
+export interface GetCurrentUserRequest {}
+
+export interface User {
+  readonly identity: string;
+  readonly email?: string;
+  readonly picture?: string;
+}
+
 const SERVICE = 'luci.milo.v1.MiloInternal';
 
 export class MiloInternal {
@@ -84,6 +92,13 @@ export class MiloInternal {
       'QueryBlamelist',
       req,
     ) as QueryBlamelistResponse;
+  }
+
+  async getCurrentUser(req: GetCurrentUserRequest) {
+    return await this.call(
+      'GetCurrentUser',
+      req,
+    ) as User;
   }
 
   private call(method: string, message: object) {
