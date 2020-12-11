@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35b11912_fc64a792",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:30:24Z",
+      "side": 1,
+      "message": "do we still need this?",
+      "range": {
+        "startLine": 38,
+        "startChar": 6,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "7e9182e5870ca971bb2b0bfab1ae84b719e66ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

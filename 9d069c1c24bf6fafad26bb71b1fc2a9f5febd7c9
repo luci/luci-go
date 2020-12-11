@@ -16,6 +16,98 @@
       "message": "PTAL",
       "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "421e8c8f_e56e556e",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:30:24Z",
+      "side": 1,
+      "message": "why is it here? it means this code doesn\u0027t run in the very first spanner row we get (because current is nil).\nwhy isn\u0027t it in the beginning of the func, or before `return nil`?",
+      "range": {
+        "startLine": 214,
+        "startChar": 0,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3a8a814_da704a18",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:30:24Z",
+      "side": 1,
+      "message": "comments talks about page size, but the code is about something else?\nalso i am not sure I understand the logic. What if the we have exhausted all test results, but the last one happened to be flaky?\n\nwhy isn\u0027t L254 sufficient?",
+      "range": {
+        "startLine": 248,
+        "startChar": 1,
+        "endLine": 248,
+        "endChar": 26
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee21b8ec_958c70d6",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:30:24Z",
+      "side": 1,
+      "message": "why can\u0027t we use tvs[len(tvs)-1]?\nnormally the page token correspond to what we return. In this case, the page token is for \"after\" [the last TV we returned]",
+      "range": {
+        "startLine": 257,
+        "startChar": 77,
+        "endLine": 257,
+        "endChar": 92
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2519ef42_01fafd9f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T04:30:24Z",
+      "side": 1,
+      "message": "else if\n\nor maybe a giant switch with `err !\u003d nil` too",
+      "range": {
+        "startLine": 319,
+        "startChar": 1,
+        "endLine": 319,
+        "endChar": 3
+      },
+      "revId": "9d069c1c24bf6fafad26bb71b1fc2a9f5febd7c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
