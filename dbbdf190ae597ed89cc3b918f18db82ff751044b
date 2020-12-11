@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c35d7977_77188d57",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-11T01:09:32Z",
+      "side": 1,
+      "message": "Maybe we can just remove the \"may be\"? It will create confusion.",
+      "range": {
+        "startLine": 52,
+        "startChar": 34,
+        "endLine": 52,
+        "endChar": 40
+      },
+      "revId": "dbbdf190ae597ed89cc3b918f18db82ff751044b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
