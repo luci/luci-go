@@ -17,6 +17,8 @@ package eval
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
@@ -56,14 +58,79 @@ func (in *Input) ensureChangedFilesInclude(pss ...*evalpb.GerritPatchset) {
 
 // Output is the output of an RTS algorithm.
 type Output struct {
-	// TestVariantDistances are distances for Input.TestVariants, in the same
-	// order. A distance is a non-negative value, where 0.0 means
-	// the changed files are extremely likely to affect the test variant,
-	// and +inf means extremely unlikely.
-	// Given a distance threshold, too-far away tests are skipped.
+	// TestVariantAffectedness is how much Input.TestVariants are affected by the
+	// code change, where TestVariantAffectedness[i]
+	// corresponds to Input.TestVariants[i].
 	//
-	// When Algorithm() is called, TestVariantDistances is pre-initialized with a
-	// slice with the same length as Input.TestVariants, and filled with zeros.
-	// Thus by default, all tests are selected.
-	TestVariantDistances []float64
+	// When Algorithm() is called, TestVariantAffectedness is pre-initialized
+	// with a slice with the same length as Input.TestVariants, and zero elements.
+	// Thus by default all tests are affected (distance=0) and unranked (rank=0).
+	TestVariantAffectedness AffectednessSlice
+}
+
+// Affectedness is how much a test is affected by the code change.
+// The zero value means a test is affected and unranked.
+type Affectedness struct {
+	// Distance is a non-negative number, where 0.0 means the code change is
+	// extremely likely to affect the test, and +inf means extremely unlikely.
+	// If a test's distance is less or equal than a given MaxDistance threshold,
+	// then the test is selected.
+	// An algorithm doesn't have to use +inf as the upper boundary if the
+	// threshold uses the same scale.
+	Distance float64
+
+	// Rank orders all tests in the repository by Distance, with rank 1 assigned
+	// to the test with the lowest distance.
+	// Iff two tests have the same distance, then they may, but don't have to,
+	// have same the same rank.
+	// Zero rank means the rank is unknown, e.g. if the algorithm is not aware of
+	// other tests.
+	//
+	// Example:
+	// There are three tests exists in the codebase: T1, T2 and T3.
+	// Their distances are 1, 2 and 3, respectively.
+	// Input.TestVariants has only one element and it refers to T2.
+	// Then Output.TestVariantAffectedness[0].Rank should be 2.
+	Rank int
+}
+
+// AffectednessSlice is a slice of Affectedness structs.
+type AffectednessSlice []Affectedness
+
+// closest returns index of the closest Affectedness, in terms of distance and
+// rank.
+// If two tests have the same distance and ranks are available, then ranks are
+// used to break the tie.
+//
+// Returns an error if an inconsistency is found among ranks and distances,
+// see also checkConsistency.
+func (s AffectednessSlice) closest() (int, error) {
+	if len(s) == 0 {
+		return 0, errors.New("empty")
+	}
+	closest := 0
+	for i, af := range s {
+		closestAf := s[closest]
+		if err := checkConsistency(closestAf, af); err != nil {
+			return 0, err
+		}
+		haveRanks := af.Rank != 0 && closestAf.Rank != 0
+		if closestAf.Distance > af.Distance || haveRanks && closestAf.Rank > af.Rank {
+			closest = i
+		}
+	}
+	return closest, nil
+}
+
+// checkConsistency returns a non-nil error if the order implied by ranks
+// and distances is inconsistent in a and b, e.g. a is closer, but its rank
+// is greater.
+func checkConsistency(a, b Affectedness) error {
+	if a.Rank == 0 || b.Rank == 0 {
+		return nil
+	}
+	if (a.Distance < b.Distance && a.Rank >= b.Rank) || (a.Distance > b.Distance && a.Rank <= b.Rank) {
+		return errors.Reason("ranks and distances are inconsistent: %#v and %#v", a, b).Err()
+	}
+	return nil
 }
