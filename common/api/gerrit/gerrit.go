@@ -758,6 +758,33 @@ func (c *Client) Submit(ctx context.Context, changeID string, si *SubmitInput) (
 	return &resp, nil
 }
 
+// RebaseInput contains information for rebasing a change.
+type RebaseInput struct {
+	// Base is the revision to rebase on top of.
+	Base string `json:"base,omitempty"`
+}
+
+// RebaseChange rebases an open change on top of a specified revision (or its
+// parent change, if no revision is specified).
+//
+// Returns a Change referenced by changeID, if rebased.
+//
+// RebaseInput is optional (that is, may be nil).
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) RebaseChange(ctx context.Context, changeID string, ri *RebaseInput) (*Change, error) {
+	var resp Change
+	path := fmt.Sprintf("a/changes/%s/rebase", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // RestoreInput contains information for restoring a change.
 type RestoreInput struct {
 	// Message is the message to be added as review comment to the change when restoring the change.
