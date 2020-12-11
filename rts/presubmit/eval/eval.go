@@ -57,8 +57,8 @@ type Eval struct {
 	// If <=0, defaults to 100.
 	Concurrency int
 
-	// Historical records to use for evaluation.
-	History *history.Reader
+	// History are the historical records to use for evaluation.
+	History *history.Player
 
 	// How often to report progress. Defaults to 5s.
 	ProgressReportInterval time.Duration
@@ -110,7 +110,7 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 
 type historyFileInputFlag struct {
 	path string
-	ptr  **history.Reader
+	ptr  **history.Player
 }
 
 func (f *historyFileInputFlag) Set(val string) error {
@@ -120,7 +120,7 @@ func (f *historyFileInputFlag) Set(val string) error {
 	}
 
 	f.path = val
-	*f.ptr = r
+	*f.ptr = history.NewPlayer(r)
 	return nil
 }
 
