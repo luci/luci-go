@@ -34,6 +34,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// The limit of test results each test variant includes.
+const testResultLimit = 10
+
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
@@ -104,6 +107,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 	st := q.genStatement("testVariantsWithUnexpectedResults")
 	st.Params["limit"] = q.PageSize
+	st.Params["testResultLimit"] = testResultLimit
 
 	var b spanutil.Buffer
 	var expBytes []byte
@@ -209,6 +213,9 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 
 			// All test results of current have been processed.
 			if current.onlyExpected {
+				if len(current.Results) > testResultLimit {
+					current.Results = current.Results[:testResultLimit]
+				}
 				tvs = append(tvs, current.TestVariant)
 			}
 		}
@@ -312,7 +319,6 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 			ANY_VALUE(Variant) Variant,
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNT(TestId) num_total,
-			-- TODO(crbug.com/1112127): Limit the number of results for each test variant to prevent OOM if there are too many of them.
 			ARRAY_AGG(STRUCT({{template "testResultsColumns"}})) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
@@ -341,7 +347,10 @@ var queryTmpl = template.Must(template.New("testVariants").Parse(`
 				WHEN num_unexpected = num_total THEN 1 -- "UNEXPECTED"
 				ELSE 2 --"FLAKY"
 			END TvStatus,
-			tv.results,
+			ARRAY(
+				SELECT AS STRUCT *
+				FROM UNNEST(tv.results)
+				LIMIT @testResultLimit) results,
 			exonerated.exonerationExplanations
 		FROM test_variants tv
 		LEFT JOIN exonerated USING(TestId, VariantHash)
