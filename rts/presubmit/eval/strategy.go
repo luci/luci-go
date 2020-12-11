@@ -22,16 +22,16 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// Algorithm accepts a list of changed files and a test description and
-// decides whether to run it.
-type Algorithm func(context.Context, Input, *Output) error
+// Strategy evaluates how much a given test is affected by given changed files.
+type Strategy func(context.Context, Input, *Output) error
 
-// Input is input to an RTS Algorithm.
+// Input is input to a selection strategy.
 type Input struct {
-	// ChangedFiles is a list of files changed in a patchset.
+	// ChangedFiles is a list of changed files.
 	ChangedFiles []*evalpb.SourceFile
 
-	// The algorithm needs to decide whether to run these test variants.
+	// The strategy needs to decide how much each of these test variants is
+	// affected by the changed files.
 	TestVariants []*evalpb.TestVariant
 }
 
@@ -56,13 +56,13 @@ func (in *Input) ensureChangedFilesInclude(pss ...*evalpb.GerritPatchset) {
 	}
 }
 
-// Output is the output of an RTS algorithm.
+// Output is the output of a selection strategy.
 type Output struct {
 	// TestVariantAffectedness is how much Input.TestVariants are affected by the
 	// code change, where TestVariantAffectedness[i]
 	// corresponds to Input.TestVariants[i].
 	//
-	// When Algorithm() is called, TestVariantAffectedness is pre-initialized
+	// When Strategy() is called, TestVariantAffectedness is pre-initialized
 	// with a slice with the same length as Input.TestVariants, and zero elements.
 	// Thus by default all tests are affected (distance=0) and unranked (rank=0).
 	TestVariantAffectedness AffectednessSlice
@@ -75,7 +75,7 @@ type Affectedness struct {
 	// extremely likely to affect the test, and +inf means extremely unlikely.
 	// If a test's distance is less or equal than a given MaxDistance threshold,
 	// then the test is selected.
-	// An algorithm doesn't have to use +inf as the upper boundary if the
+	// A selection strategy doesn't have to use +inf as the upper boundary if the
 	// threshold uses the same scale.
 	Distance float64
 
@@ -83,8 +83,8 @@ type Affectedness struct {
 	// to the test with the lowest distance.
 	// Iff two tests have the same distance, then they may, but don't have to,
 	// have same the same rank.
-	// Zero rank means the rank is unknown, e.g. if the algorithm is not aware of
-	// other tests.
+	// Zero rank means the rank is unknown, e.g. if the selection strategy is not
+	// aware of other tests.
 	//
 	// Example:
 	// There are three tests exists in the codebase: T1, T2 and T3.

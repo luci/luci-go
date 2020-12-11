@@ -35,8 +35,8 @@ import (
 func cmdEval() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `eval`,
-		ShortDesc: "evaluate Chromium's RTS algorithm",
-		LongDesc:  "Evaluate Chromium's RTS algorithm",
+		ShortDesc: "evaluate Chromium's test selection strategy",
+		LongDesc:  "Evaluate Chromium's test selection strategy",
 		CommandRun: func() subcommands.CommandRun {
 			r := &evalRun{}
 			if err := r.ev.RegisterFlags(&r.Flags); err != nil {
@@ -95,7 +95,7 @@ func (r *evalRun) run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to load the file graph").Err()
 	}
 
-	r.ev.Algorithm = r.selectTests
+	r.ev.Strategy = r.selectTests
 	res, err := r.ev.Run(ctx)
 	if err != nil {
 		return err

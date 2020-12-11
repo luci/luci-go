@@ -32,10 +32,10 @@ const (
 	defaultProgressReportInterval = 5 * time.Second
 )
 
-// Eval estimates safety and efficiency of a given RTS algorithm.
+// Eval estimates safety and efficiency of a given selection strategy.
 type Eval struct {
-	// The algorithm to evaluate.
-	Algorithm Algorithm
+	// The selection strategy to evaluate.
+	Strategy Strategy
 
 	// MaxDistance is the maximum distance to run a test.
 	// If a test's distance is <= MaxDistance, then it is executed, regardless of
@@ -70,7 +70,7 @@ type Eval struct {
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	// The default value of 0.5 makes sense for those algorithms that
+	// The default value of 0.5 makes sense for those selection strategies that
 	// use distance between 0.0 and 1.0.
 	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, text.Doc(`
 		Max distance from tests to the changed files.
@@ -84,7 +84,7 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
-	fs.BoolVar(&e.LogLostRejections, "log-lost-rejections", false, "Log every lost rejection, to diagnose the RTS algorithm")
+	fs.BoolVar(&e.LogLostRejections, "log-lost-rejections", false, "Log every lost rejection, to diagnose the selection strategy")
 	return nil
 }
 
@@ -96,7 +96,7 @@ func (e *Eval) ValidateFlags() error {
 	return nil
 }
 
-// Run evaluates the algorithm.
+// Run evaluates the candidate strategy.
 func (e *Eval) Run(ctx context.Context) (*Result, error) {
 	run := evalRun{
 		// make a copy of settings
