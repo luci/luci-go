@@ -40,7 +40,7 @@ import (
 )
 
 func TestHistory(t *testing.T) {
-	Convey(`TestHistory`, t, func() {
+	SkipConvey(`TestHistory`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = clock.Set(ctx, testclock.New(testclock.TestRecentTimeUTC.Add(time.Hour)))
 
