@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -350,16 +351,19 @@ func TestAgent(t *testing.T) {
 
 			rootTrack.handleNewData(mkDgram(&bbpb.Build{
 				Steps: []*bbpb.Step{
-					{Name: "Merge", Logs: []*bbpb.Log{
-						{Name: "$build.proto", Url: "sub/build.proto"},
-					}},
+					{
+						Name:   "Merge",
+						Status: bbpb.Status_STARTED,
+						Logs: []*bbpb.Log{
+							{Name: "$build.proto", Url: "sub/build.proto"},
+						}},
 				},
 			}))
 
-			expect := *base
+			expect := proto.Clone(base).(*bbpb.Build)
 			expect.Steps = append(expect.Steps, &bbpb.Step{
 				Name:   "Merge",
-				Status: bbpb.Status_SCHEDULED,
+				Status: bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{{
 					Name: "$build.proto", Url: "url://u/sub/build.proto",
 				}},
@@ -367,7 +371,7 @@ func TestAgent(t *testing.T) {
 			})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
 			Convey(`and merge properly when sub-build stream is present later`, func() {
 				merger.onNewStream(mkDesc("u/sub/build.proto"))
@@ -375,6 +379,7 @@ func TestAgent(t *testing.T) {
 				So(ok, ShouldBeTrue)
 
 				subTrack.handleNewData(mkDgram(&bbpb.Build{
+					Status: bbpb.Status_SUCCESS,
 					Steps: []*bbpb.Step{
 						{Name: "SubStep"},
 					},
@@ -383,14 +388,15 @@ func TestAgent(t *testing.T) {
 				expect.Steps = nil
 				expect.Steps = append(expect.Steps,
 					&bbpb.Step{
-						Name: "Merge",
+						Name:   "Merge",
+						Status: bbpb.Status_SUCCESS,
 						Logs: []*bbpb.Log{{
 							Name: "$build.proto", Url: "url://u/sub/build.proto",
 						}},
 					},
 					&bbpb.Step{Name: "Merge|SubStep"},
 				)
-				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 			})
 		})
 	})
