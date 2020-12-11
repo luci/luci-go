@@ -82,6 +82,13 @@ func TestQueryTestVariants(t *testing.T) {
 					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
 					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS),
 					insert.TestResults("inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+					insert.TestResults(
+						"inv1", "Tx", nil,
+						pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+						pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+						pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+						pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+					),
 
 					insert.TestExonerations("inv0", "T1", nil, 1),
 				)...)
@@ -117,6 +124,7 @@ func TestQueryTestVariants(t *testing.T) {
 					So(tvStrings, ShouldResemble, []string{
 						"1/T4/c467ccce5a16dc72",
 						"1/T5/e3b0c44298fc1c14",
+						"1/Tx/e3b0c44298fc1c14",
 						"2/T2/e3b0c44298fc1c14",
 						"2/T5/c467ccce5a16dc72",
 						"3/T1/e3b0c44298fc1c14",
@@ -136,9 +144,10 @@ func TestQueryTestVariants(t *testing.T) {
 							},
 						},
 					})
-					So(tvs[4].Exonerations[0], ShouldResemble, &pb.TestExoneration{
+					So(tvs[5].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 						ExplanationHtml: "explanation 0",
 					})
+					So(len(tvs[2].Results), ShouldEqual, 10)
 				})
 
 				Convey(`Expected works`, func() {
