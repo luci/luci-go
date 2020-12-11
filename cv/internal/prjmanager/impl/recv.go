@@ -16,16 +16,19 @@ package impl
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/cv/internal/dsset"
+	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
@@ -37,8 +40,10 @@ func init() {
 			case err == nil:
 				return nil
 			case !transient.Tag.In(err):
-				return tq.Fatal.Apply(err)
+				err = tq.Fatal.Apply(err)
+				fallthrough
 			default:
+				errors.Log(ctx, err)
 				// TODO(tandrii): avoid retries iff we know a new task was already
 				// scheduled for the next second.
 				return err
@@ -47,36 +52,111 @@ func init() {
 	)
 }
 
-const maxEventsToProcess = 256
-
 func pokePMTask(ctx context.Context, luciProject string) error {
-	mbox := internal.NewDSSet(ctx, luciProject)
-	listing, err := mbox.List(ctx)
-	if err != nil {
-		return err
-	}
-	if err = dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
-		return err
-	}
+	ctx = logging.SetField(ctx, "project", luciProject)
+	recipient := datastore.MakeKey(ctx, "Project", luciProject)
+	return eventbox.ProcessBatch(ctx, recipient, &controller{luciProject: luciProject})
+}
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		op, err := mbox.BeginPop(ctx, listing)
-		if err != nil {
-			return err
-		}
-		for _, mail := range listing.Items {
-			if op.Pop(mail.ID) {
-				e := internal.Event{}
-				if err := proto.Unmarshal(mail.Value, &e); err != nil {
-					return errors.Annotate(err, "failed to unmarshal event").Err()
-				}
-				logging.Debugf(ctx, "read %T", e.GetEvent())
-			}
-		}
-		return dsset.FinishPop(ctx, op)
-	}, nil)
-	if err != nil {
-		return errors.Annotate(err, "failed to mutate %q", luciProject).Err()
+// controller implements internal.Controller.
+type controller struct {
+	luciProject string
+}
+
+// GetState is called to load the state before a transaction.
+func (c *controller) GetState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
+	p := &prjmanager.Project{ID: c.luciProject}
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return &state{}, 0, nil
+	case err != nil:
+		return nil, 0, errors.Annotate(err, "failed to get %q", c.luciProject).Tag(
+			transient.Tag).Err()
+	default:
+		return eventbox.State(fromProjectEntity(p)), eventbox.EVersion(p.EVersion), nil
 	}
-	return err
+}
+
+// Mutate is called before a transaction to compute transitions.
+//
+// All actions that must be done atomically with updating state must be
+// encapsulated inside Transition.Apply callback.
+func (c *controller) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (
+	[]eventbox.Transition, error) {
+	tr := &triageResult{}
+	for _, e := range events {
+		tr.triage(ctx, e)
+	}
+	return c.mutate(ctx, tr, s.(*state))
+}
+
+// GetEVersion is called at the beginning of a transaction.
+//
+// The returned EVersion is compared against the one associated with a state
+// loaded via GetState. If different, the transaction is aborted and new state
+// isn't saved.
+func (c *controller) GetEVersion(ctx context.Context) (eventbox.EVersion, error) {
+	p := &prjmanager.Project{ID: c.luciProject}
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return 0, nil
+	case err != nil:
+		return 0, errors.Annotate(err, "failed to get %q", c.luciProject).Tag(
+			transient.Tag).Err()
+	default:
+		return eventbox.EVersion(p.EVersion), nil
+	}
+}
+
+// SaveState is called in a transaction to save the state if it has changed.
+//
+// The passed eversion is incremented value of eversion of what GetState
+// returned before.
+func (c *controller) SaveState(ctx context.Context, s eventbox.State, ev eventbox.EVersion) error {
+	p := &prjmanager.Project{
+		ID:         c.luciProject,
+		EVersion:   int(ev),
+		UpdateTime: clock.Now(ctx).UTC(),
+	}
+	s.(*state).toProjectEntity(p)
+	if err := datastore.Put(ctx, p); err != nil {
+		return errors.Annotate(err, "failed to put Project").Tag(transient.Tag).Err()
+	}
+	return nil
+}
+
+// triageResult is the result of the triage of the incoming events.
+type triageResult struct {
+	updateConfig eventbox.Events
+}
+
+func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
+	e := &internal.Event{}
+	if err := proto.Unmarshal(item.Value, e); err != nil {
+		// This is a bug in code or data corruption.
+		// There is no way to recover on its own.
+		logging.Errorf(ctx, "CRITICAL: failed to deserialize event %q: %s", item.ID, err)
+		panic(err)
+	}
+	switch e.GetEvent().(type) {
+	case *internal.Event_UpdateConfig:
+		tr.updateConfig = append(tr.updateConfig, item)
+	default:
+		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
+	}
+}
+
+func (c *controller) mutate(ctx context.Context, tr *triageResult, s *state) (
+	ret []eventbox.Transition, err error) {
+	// Visit all non-empty fields of triageResult and emit Transitions.
+	if len(tr.updateConfig) > 0 {
+		t := eventbox.Transition{Events: tr.updateConfig}
+		t.SideEffectFn, s, err = updateConfig(ctx, c.luciProject, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+	return
 }

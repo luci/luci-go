@@ -1,0 +1,137 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package impl
+
+import (
+	"context"
+	"fmt"
+
+	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/run"
+)
+
+// state stores serializable state of a ProjectManager.
+//
+// The state is currently stored entirely in Project entity.
+//
+// NOTE: this could have been a proto message stored in a single Project's
+// entity field. I chose not to do this *yet* because then it'd be impossible to
+// read just the ConfigHash or IncompleteRuns w/o paying proto deserialization
+// cost, which could be substantial. So, pay the cost of 2 boilerplaty
+// toProjectEntity/fromProjectEntity methods to make it easy to optimize reading
+// w/o deserialization in the future if necessary.
+type state struct {
+	Status         prjmanager.Status
+	ConfigHash     string
+	IncompleteRuns []run.ID
+	// TODO(tandrii): add CL grouping state.
+}
+
+func fromProjectEntity(p *prjmanager.Project) *state {
+	return &state{
+		Status:         p.Status,
+		ConfigHash:     p.ConfigHash,
+		IncompleteRuns: p.IncompleteRuns,
+	}
+}
+
+func (s *state) toProjectEntity(p *prjmanager.Project) {
+	p.Status = s.Status
+	p.ConfigHash = s.ConfigHash
+	p.IncompleteRuns = s.IncompleteRuns
+}
+
+func (s *state) cloneDeep() *state {
+	return &state{
+		Status:         s.Status,
+		ConfigHash:     s.ConfigHash,
+		IncompleteRuns: s.IncompleteRuns[:],
+	}
+}
+
+func (s *state) cloneShallow() *state {
+	return &state{
+		Status:         s.Status,
+		ConfigHash:     s.ConfigHash,
+		IncompleteRuns: s.IncompleteRuns,
+	}
+}
+
+func updateConfig(ctx context.Context, luciProject string, s *state) (
+	eventbox.SideEffectFn, *state, error) {
+	meta, err := config.GetLatestMeta(ctx, luciProject)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	switch meta.Status {
+	case config.StatusEnabled:
+		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.ConfigHash {
+			return nil, s, nil // already up-to-date.
+		}
+		s = s.cloneShallow()
+		s.ConfigHash = meta.Hash()
+		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
+		// themselves, while others haven't yet even noticed the stopping.
+		// The former will eventually be removed from sm.pe.IncompleteRuns,
+		// while the latter will continue running.
+		s.Status = prjmanager.Status_STARTED
+		// TODO(tandrii): re-evaluate pending CLs.
+		return eventbox.Chain(notifyGoBPoller(luciProject), notifyIncompleteRuns), s, nil
+
+	case config.StatusDisabled, config.StatusNotExists:
+		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
+		// since it's not actionable.
+		switch s.Status {
+		case prjmanager.Status_STATUS_UNSPECIFIED:
+			// Project entity doesn't exist. No need to create it.
+			return nil, s, nil
+		case prjmanager.Status_STOPPED:
+			return nil, s, nil
+		case prjmanager.Status_STARTED:
+			s = s.cloneShallow()
+			s.Status = prjmanager.Status_STOPPING
+			fallthrough
+		case prjmanager.Status_STOPPING:
+			if len(s.IncompleteRuns) == 0 {
+				s = s.cloneShallow()
+				s.Status = prjmanager.Status_STOPPED
+			}
+			return eventbox.Chain(notifyGoBPoller(luciProject), notifyIncompleteRuns), s, nil
+		default:
+			panic(fmt.Errorf("unexpected project state: %d", s.Status))
+		}
+	default:
+		panic(fmt.Errorf("unexpected config state: %d", meta.Status))
+	}
+	panic("unreachable")
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// helpers
+
+func notifyGoBPoller(luciProject string) eventbox.SideEffectFn {
+	return func(_ context.Context) error {
+		// TODO(tandrii): notify Gerrit Poller.
+		return nil
+	}
+}
+
+func notifyIncompleteRuns(ctx context.Context) error {
+	// TODO(tandrii): notify IncompleteRuns.
+	return nil
+}
