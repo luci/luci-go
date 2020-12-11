@@ -1,14 +1,14 @@
 # RTS evaluation
 
-RTS algorithm evaluation is a process of measuring a candidate algorithm's
+Selection strategy evaluation is a process of measuring a candidate strategy's
 *safety* and *efficiency*. It is done by emulating CQ behavior **with** the
-candidate algorithm, based on CQ's historial records.
+candidate selection strategy, based on CQ's historial records.
 
 [TOC]
 
 ## Safety
 
-A safe RTS algorithm doesn't let bad code into the repository.
+A safe selection strategy doesn't let bad code into the repository.
 There are two safety scores: change recall and test recall.
 
 ### Change recall
@@ -17,9 +17,9 @@ Change recall is the ratio `preserved_rejections/total_rejections`, where
 *   `total_rejections` is the number of patchsets rejected by CQ due to test
     failures. More generally, a single *rejection* may span multiple patchsets.
 *  `preserved_rejections` is how many of them would still be rejected
-    if the candidate RTS algorithm was deployed.
+    if the candidate strategy was deployed.
 
-A rejection is considered *preserved* if and only if the RTS algorithm selects
+A rejection is considered *preserved* if and only if the strategy selects
 at least one test that caused the rejection. For example, if 10 tests failed out
 of 1000, it is sufficient to select just 2 to preserve the rejection.
 
@@ -28,30 +28,29 @@ of 1000, it is sufficient to select just 2 to preserve the rejection.
 Test recall is the ratio `preserved_test_failures/total_test_failures`, where
 *   `total_test_failures` is the number of test failures that caused a CQ
     rejection.
-*   `preserved_test_failures` is how many of them the RTS algorithm would
-    preserve. If the algorithm does not select a test, its failure is not
+*   `preserved_test_failures` is how many of them the candidate strategy would
+    preserve. If the stategy does not select a test, its failure is not
     preserved.
 
 ## Efficiency
 
-An efficient RTS algorithm reduces resources spent on testing.
+An efficient selection strategy reduces resources spent on testing.
 Efficiency is scored as a ratio `saved_duration/total_duration`, where
 
 *   `total_duration` is the sum of test durations found in the historical
     records.
-*   `saved_duration` is the duration sum for those tests that the RTS
-    algorithm did not select.
+*   `saved_duration` is the duration sum for those tests that the candidate
+    strategy did not select.
 
 ## Why evaluate
 
-* Evaluation is mandatory before deploying an RTS algorithm into production;
+* Evaluation is mandatory before deploying an candidate strategy in production;
   otherwise it might let bad code into the repository and create a havoc for
-  sheriffs. Evaluation predicts what would happen if the candidate algorithm
+  sheriffs. Evaluation predicts what would happen if the candidate strategy
   was deployed.
-* There are many possible RTS algorithms and we need objective metrics to rank
-  them.
-* An algorithm developer needs objective metrics in order to fine tune the
-  algorithm.
+* There are many possible selection strategies and we need objective metrics to
+  rank them.
+* An strategy developer needs objective metrics in order to fine tune it.
 
 ## History files
 
@@ -73,16 +72,16 @@ illustrative; the sections below provide much more useful examples.
 
 ## Evaluation framework
 
-To evaluate an algorithm, it must be plugged into the
-[evaluation framework](https://go.chromium.org/luci/rts/presubmit/eval). It compiles into an executable that accepts a `.hist` file, emulates CQ by
+To evaluate a selection strategy, it must be plugged into the
+[evaluation framework](https://go.chromium.org/luci/rts/presubmit/eval).
+It compiles into an executable that accepts a `.hist` file, emulates CQ by
 playing the history back and prints safety/efficiency scores.
 
 There are two examples of framework usages:
 
 * [rts-random](../cmd/rts-random) flips a coin to decide whether to run a
-  test. It is a Hello World of RTS algorithms.
-* [rts-chromium](../cmd/rts-chromium/eval.go) is Chromium's RTS
-  algorithm.
+  test. It is a Hello World of selection strategies.
+* [rts-chromium](../cmd/rts-chromium/eval.go) is Chromium's selection strategy.
 
 To evaluate `rts-random`:
 ```bash
@@ -116,11 +115,11 @@ Total records: 1516227
 Safety should be evaluated before efficiency because:
 * Safety evaluation is much faster because there is less data to analyze.
 * The output of safety evaluation is **actionable**, unlike efficiency.
-  This is because safety evaluation prints the CLs where the algorithm
-  failed to select affected tests.
+  This is because safety evaluation prints the CLs for which the strategy
+  failed to select failed tests.
 * Data for efficiency evaluation takes much longer to fetch.
 
-Fine tune your algorithm until it reaches a satisfactory safety score;
+Fine tune your selection strategy until it reaches a satisfactory safety score;
 then evaluate efficiency. To evaluate only safety, tell the
 `presubmit-history` subcommand not to fetch test durations by passing
 `-duration-data-frac 0`. As a convention, use `.safety.hist` extension for
@@ -148,12 +147,13 @@ Some builders, such as linux-rel, are used by developers as representative
 of other builders.
 In such case, it is important to *preserve rejections* at the builder level,
 in addition to CQ at large. For each such builder, produce a `.safety.hist`
-file using `-builder` flag. Ensure the algorithm is safe for each file.
+file using `-builder` flag. Ensure the selection strategy is safe for each file.
 
 ### Do not perfect safety
 
-Ideally the algorithm preserves all rejections, but it is often impractical
-because sometimes test flakes creep in, despite the efforts to exclude them.
+Ideally the selection strategy preserves all rejections, but it is often
+impractical because sometimes test flakes creep in, despite the efforts to
+exclude them.
 The recommended strategy is to preserve most rejections and manually analyze the rest.
 Some of them will turn out to be "OK", and others might provide insight into
 further tuning.

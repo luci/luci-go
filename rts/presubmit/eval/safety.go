@@ -28,15 +28,15 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// Safety is result of algorithm safety evaluation.
-// A safe algorithm does not let bad CLs pass CQ.
+// Safety is how safe the candidate strategy is.
+// A safe strategy does not let bad CLs pass CQ.
 type Safety struct {
 	ChangeRecall ChangeRecall
 	TestRecall   TestRecall
 }
 
 // ChangeRecall represents the fraction of eligible code change rejections
-// that were preserved by the RTS algorithm.
+// that were preserved by the candidate strategy.
 type ChangeRecall struct {
 	// TotalRejections is the total number of analyzed rejections.
 	TotalRejections int
@@ -46,9 +46,8 @@ type ChangeRecall struct {
 	EligibleRejections int
 
 	// LostRejections are the rejections that would not be preserved
-	// by the candidate algorithm, i.e. the bad patchsets would land.
-	// The candidate RTS algorithm did not select any of the failed tests
-	// in these rejections.
+	// by the candidate strategy, i.e. the bad patchsets would land.
+	// The strategy did not select any of the failed tests in these rejections.
 	//
 	// Ideally this slice is empty.
 	LostRejections []*evalpb.Rejection
@@ -68,8 +67,8 @@ func (r *ChangeRecall) Score() float64 {
 }
 
 // TestRecall represents the fraction of eligible test failures
-// that were preserved by the RTS algorithm.
-// If a test is not selected by the algorithm, then its failure is not
+// that were preserved by the candidate strategy.
+// If a test is not selected by the strategy, then its failure is not
 // preserved.
 type TestRecall struct {
 	// TotalFailures is the total number of analyzed test failures.
@@ -79,7 +78,7 @@ type TestRecall struct {
 	// evaluation.
 	EligibleFailures int
 
-	// LostFailures are the failures which the RTS algorithm did not preserve.
+	// LostFailures are the failures which the candidate strategy did not preserve.
 	LostFailures []LostTestFailure
 }
 
@@ -96,7 +95,7 @@ func (r *TestRecall) Score() float64 {
 	return float64(r.preserved()) / float64(r.EligibleFailures)
 }
 
-// LostTestFailure is a failure of a test that the RTS algorithm did not select.
+// LostTestFailure is a failure of a test that the candidate strategy did not select.
 type LostTestFailure struct {
 	Rejection   *evalpb.Rejection
 	TestVariant *evalpb.TestVariant
@@ -188,7 +187,7 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 	// ignores possible parent CLs that were also tested.
 
 	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
-	// Most RTS algorithms would reject such a patchset, so it represents noise.
+	// Most selection strategies would reject such a patchset, so it represents noise.
 
 	// Select tests.
 	in := Input{
@@ -203,14 +202,14 @@ func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection
 			e.out.TestVariantAffectedness[i] = Affectedness{}
 		}
 	}
-	if err := e.Algorithm(ctx, in, &e.out); err != nil {
-		return false, errors.Annotate(err, "RTS algorithm failed").Err()
+	if err := e.Strategy(ctx, in, &e.out); err != nil {
+		return false, errors.Annotate(err, "the selection strategy failed").Err()
 	}
 	return true, nil
 }
 
 // printLostRejection prints a rejection that wouldn't be preserved by the
-// candidate RTS algorithm.
+// candidate strategy.
 func printLostRejection(p *printer, rej *evalpb.Rejection) error {
 	pf := p.printf
 

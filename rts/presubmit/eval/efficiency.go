@@ -24,8 +24,8 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// Efficiency is result of evaluation how much compute time the RTS algorithm
-// could save.
+// Efficiency is result of evaluation how much compute time the candidate
+// strategy could save.
 type Efficiency struct {
 	// TestResults is the number of analyzed test results.
 	TestResults int
@@ -33,8 +33,8 @@ type Efficiency struct {
 	// SampleDuration is the sum of test durations in the analyzed data sample.
 	SampleDuration time.Duration
 
-	// ForecastDuration is the sum of test durations for tests selected by the RTS
-	// algorithm. It is a value between 0 and SampleDuration.
+	// ForecastDuration is the sum of test durations for tests selected by the
+	// strategy. It is a value between 0 and SampleDuration.
 	// The lower the number the better.
 	ForecastDuration time.Duration
 }
@@ -54,18 +54,18 @@ func (e *Efficiency) Score() float64 {
 func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
-	// Run the algorithm in r.Concurrency goroutines.
+	// Run the selection strategy in r.Concurrency goroutines.
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 			out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
 			for td := range r.durationC {
-				// Run the algorithm.
+				// Invoke the strategy.
 				in.ChangedFiles = in.ChangedFiles[:0]
 				in.ensureChangedFilesInclude(td.Patchsets...)
 				in.TestVariants[0] = td.TestVariant
 				out.TestVariantAffectedness[0] = Affectedness{}
-				if err := r.Algorithm(ctx, in, out); err != nil {
+				if err := r.Strategy(ctx, in, out); err != nil {
 					return err
 				}
 

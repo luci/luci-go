@@ -25,12 +25,12 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-// Main evaluates an RTS algorithm, prints results and exits the process.
-func Main(ctx context.Context, algo Algorithm) {
+// Main evaluates the selection strategy, prints results and exits the process.
+func Main(ctx context.Context, strategy Strategy) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer signals.HandleInterrupt(cancel)
 
-	ev := &Eval{Algorithm: algo}
+	ev := &Eval{Strategy: strategy}
 	parseFlags(ev)
 
 	var logCfg = gologger.LoggerConfig{
