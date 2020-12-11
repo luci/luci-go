@@ -12,7 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package milointernal
 
-// MiloInternalService implements milopb.MiloInternal
-type MiloInternalService struct{}
+import (
+	"context"
+
+	"go.chromium.org/luci/server/auth"
+
+	milopb "go.chromium.org/luci/milo/api/service/v1"
+)
+
+// GetCurrentUser implements milopb.MiloInternal service
+func (s *Service) GetCurrentUser(ctx context.Context, req *milopb.GetCurrentUserRequest) (*milopb.User, error) {
+	user := auth.CurrentUser(ctx)
+	return &milopb.User{
+		Identity: string(user.Identity),
+		Email:    user.Email,
+		Picture:  user.Picture,
+	}, nil
+}
