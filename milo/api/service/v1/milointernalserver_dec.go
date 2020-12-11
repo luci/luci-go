@@ -39,3 +39,20 @@ func (s *DecoratedMiloInternal) QueryBlamelist(ctx context.Context, req *QueryBl
 	}
 	return
 }
+
+func (s *DecoratedMiloInternal) GetCurrentUser(ctx context.Context, req *GetCurrentUserRequest) (rsp *User, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetCurrentUser", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetCurrentUser(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetCurrentUser", rsp, err)
+	}
+	return
+}
