@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3aafb0f9_4d5738b5",
+        "filename": "rts/presubmit/eval/algo.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T20:43:26Z",
+      "side": 1,
+      "message": "Done. Does this look good?",
+      "parentUuid": "74d70abf_f66f91b2",
+      "range": {
+        "startLine": 82,
+        "startChar": 22,
+        "endLine": 83,
+        "endChar": 49
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "903ff2e7_2cc7e736",
         "filename": "rts/presubmit/eval/algo.go",
         "patchSetId": 11
@@ -54,6 +78,30 @@
       "writtenOn": "2020-12-11T20:33:52Z",
       "side": 1,
       "message": "do IIUC that this is \"of the test with lowest rank among those with lowest distances\"?",
+      "range": {
+        "startLine": 98,
+        "startChar": 54,
+        "endLine": 99,
+        "endChar": 8
+      },
+      "revId": "f798e776de4d0aadb70672a7d26eddba70633bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f6e0e63_fd2311eb",
+        "filename": "rts/presubmit/eval/algo.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-11T20:43:26Z",
+      "side": 1,
+      "message": "yes, except ranks might not be available. Updated the comment, PTAL.",
+      "parentUuid": "903ff2e7_2cc7e736",
       "range": {
         "startLine": 98,
         "startChar": 54,
