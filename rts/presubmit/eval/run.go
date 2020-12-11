@@ -146,13 +146,10 @@ func (r *Result) Print(w io.Writer) error {
 	case cr.TotalRejections == 0:
 		pf("Evaluation failed: rejections not found\n")
 
-	case cr.EligibleRejections == 0:
-		pf("Evaluation failed: all %d rejections are ineligible.\n", cr.TotalRejections)
-
 	default:
 		pf("Score: %s\n", scoreString(cr.Score()))
-		pf("Eligible rejections:                       %d\n", cr.EligibleRejections)
-		pf("Eligible rejections preserved by this RTS: %d\n", cr.preserved())
+		pf("Rejections:           %d\n", cr.TotalRejections)
+		pf("Rejections preserved: %d\n", cr.preserved())
 	}
 	p.Level--
 
@@ -163,13 +160,10 @@ func (r *Result) Print(w io.Writer) error {
 	case tr.TotalFailures == 0:
 		pf("Evaluation failed: rejections not found\n")
 
-	case tr.EligibleFailures == 0:
-		pf("Evaluation failed: all %d test failures are ineligible.\n", tr.TotalFailures)
-
 	default:
 		pf("Score: %s\n", scoreString(tr.Score()))
-		pf("Eligible test failures:                       %d\n", tr.EligibleFailures)
-		pf("Eligible test failures preserved by this RTS: %d\n", tr.preserved())
+		pf("Test failures:           %d\n", tr.TotalFailures)
+		pf("Test failures preserved: %d\n", tr.preserved())
 	}
 	p.Level--
 
@@ -210,10 +204,10 @@ func (r *evalRun) progressReportLine() string {
 	r.buf.Reset()
 
 	fmt.Fprintf(&r.buf, "change recall: %s", scoreString(r.res.Safety.ChangeRecall.Score()))
-	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.ChangeRecall.EligibleRejections)
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.ChangeRecall.TotalRejections)
 
 	fmt.Fprintf(&r.buf, " | test recall: %s", scoreString(r.res.Safety.TestRecall.Score()))
-	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.TestRecall.EligibleFailures)
+	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Safety.TestRecall.TotalFailures)
 
 	fmt.Fprintf(&r.buf, " | efficiency: %s", scoreString(r.res.Efficiency.Score()))
 	fmt.Fprintf(&r.buf, " (%d data points)", r.res.Efficiency.TestResults)
