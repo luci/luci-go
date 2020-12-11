@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f79876a9_983105fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-11T20:57:33Z",
+      "side": 1,
+      "message": "I\u0027m always a fan of using fewer words to say the same thing.",
+      "revId": "77dd7d5c32b5c34379f75901d97f6a29f776aa36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
