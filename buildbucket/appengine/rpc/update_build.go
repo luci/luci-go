@@ -291,8 +291,11 @@ func getBuildForUpdate(ctx context.Context, buildMask *mask.Mask, req *pb.Update
 }
 
 func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *mask.Mask, steps *model.BuildSteps) error {
-	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		b, err := getBuildForUpdate(ctx, buildMask, req)
+	var b *model.Build
+	var origStatus pb.Status
+	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		var err error
+		b, err = getBuildForUpdate(ctx, buildMask, req)
 		if err != nil {
 			return err
 		}
@@ -322,7 +325,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		// TODO(ddoman): if crbug.com/1154557 is done, remove nilifyReqBuildDetails().
 		// Instead, remove the field paths from the mask and merge the protos with the mask.
 		defer nilifyReqBuildDetails(req.Build)()
-		origStatus := b.Proto.Status
+		origStatus = b.Proto.Status
 		buildMask.Merge(req.Build, &b.Proto)
 		if b.Proto.Output != nil {
 			b.Proto.Output.Properties = nil
@@ -334,6 +337,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 			if b.Proto.StartTime == nil {
 				b.Proto.StartTime = google.NewTimestamp(clock.Now(ctx).UTC())
 			}
+			if err := buildStarting(ctx, b); err != nil {
+				return nil
+			}
 		case isEndedStatus:
 			b.Leasee = nil
 			b.LeaseExpirationDate = time.Time{}
@@ -341,6 +347,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 
 			if b.Proto.EndTime == nil {
 				b.Proto.EndTime = google.NewTimestamp(clock.Now(ctx).UTC())
+			}
+			if err := buildCompleting(ctx, b); err != nil {
+				return err
 			}
 		default:
 			// var `updateBuildStatuses` should contain only STARTED and terminal
@@ -374,6 +383,17 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		}
 		return nil
 	}, nil)
+
+	// send pubsub notifications and update metrics.
+	switch {
+	case txErr != nil: // skip, if the txn failed.
+	case origStatus == b.Status: // skip, if no status changed.
+	case protoutil.IsEnded(b.Status):
+		buildCompleted(ctx, b)
+	default:
+		buildStarted(ctx, b)
+	}
+	return txErr
 }
 
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
