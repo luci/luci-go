@@ -59,7 +59,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 		eg.Go(func() error {
 			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 			out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
-			for td := range r.durationC {
+			for td := range r.History.DurationC {
 				// Invoke the strategy.
 				in.ChangedFiles = in.ChangedFiles[:0]
 				in.ensureChangedFilesInclude(td.Patchsets...)
