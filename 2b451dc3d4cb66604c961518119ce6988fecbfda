@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5b81068_288f8139",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-12-12T00:31:22Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6532ed1a_166f1000",
+      "range": {
+        "startLine": 89,
+        "startChar": 16,
+        "endLine": 89,
+        "endChar": 22
+      },
+      "revId": "2b451dc3d4cb66604c961518119ce6988fecbfda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ef4e8bdc_6905f422",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d618a29_c7cc30c5",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-12-12T00:31:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef4e8bdc_6905f422",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 9
+      },
+      "revId": "2b451dc3d4cb66604c961518119ce6988fecbfda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b5bc2058_a5720399",
@@ -60,6 +108,30 @@
       "writtenOn": "2020-12-11T23:39:59Z",
       "side": 1,
       "message": "this pattern is copied 6 times.\nconsider a helper func that does this, and uses defer.\nmany other tests use helper funcs like this",
+      "range": {
+        "startLine": 104,
+        "startChar": 3,
+        "endLine": 106,
+        "endChar": 19
+      },
+      "revId": "2b451dc3d4cb66604c961518119ce6988fecbfda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80459b07_a7f874d4",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-12-12T00:31:22Z",
+      "side": 1,
+      "message": "Thanks for the suggestion! Done.",
+      "parentUuid": "b5bc2058_a5720399",
       "range": {
         "startLine": 104,
         "startChar": 3,
