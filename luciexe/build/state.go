@@ -14,6 +14,12 @@
 
 package build
 
+import (
+	"context"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+)
+
 // State is the state of the current Build.
 //
 // This is properly initialized with the Start function, and as long as it isn't
@@ -26,3 +32,41 @@ package build
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
 type State struct{}
+
+// Start is the entrypoint to this library.
+//
+// This function clones `initial` as the basis of all state updates (see
+// OptSend) and MakePropertyReader declarations. This also initializes the build
+// State in `ctx` and returns the manipulable State object.
+//
+// Start may print information and exit the program immediately if various
+// command-line options, such as `--help`, are passed. Use OptSuppressExit() to
+// avoid this.
+//
+// You must End the returned State. To automatically handle errors and panics,
+// End the State like:
+//
+//    var err error
+//    ctx, state := build.Start(ctx, ...)
+//    defer state.End(err)
+//
+//    err = opThatErrsOrPanics(ctx)
+func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
+	panic("not implemented")
+}
+
+// End sets the build's final status, according to `err` (See GetStatus).
+//
+// End will also be able to set INFRA_FAILURE status and log additional
+// information if the program is panic'ing.
+//
+// End must be invoked like:
+//
+//    var err error
+//    ctx, state := build.Start(ctx, ...)
+//    defer state.End(err)
+//
+//    err = opThatErrsOrPanics(ctx)
+func (*State) End(err error) {
+	panic("not implemented")
+}
