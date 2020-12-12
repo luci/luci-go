@@ -279,6 +279,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "230aecc4_8812e428",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-12T00:43:45Z",
+      "side": 1,
+      "message": "If the main entity is updated (i.e. eVersion increments) when its child entity is updated, then it is okay. I initially thought sometimes we don\u0027t need to even load the main entity back when updating the child entity. For example, when receiving a TryjobUpdateEvent that a tryjob has started, technically, updating the RunTryjob entity is sufficient enough. But for most of the cases, we\u0027ll need and load back the run entity.",
+      "parentUuid": "8952ea47_6e2789c2",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 51
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dff65f68_3c802018",
