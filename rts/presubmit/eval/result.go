@@ -25,9 +25,29 @@ import (
 
 // Result is the result of evaluation.
 type Result struct {
+	DistanceThresholds ThresholdPercentiles
+	RankThresholds     ThresholdPercentiles
+
+	// TODO(nodir): refactor these fields by moving their data into this struct
+	// directly or into Threshold.
+
 	Safety       Safety
 	Efficiency   Efficiency
 	TotalRecords int
+}
+
+// ThresholdPercentiles are 100 threhsolds for different values of ChangeRecall,
+// where Thresholds[i] corresponds to ChangeRecall score (i+1)/100.0.
+// For example, to achieve 95% ChangeRecall, use Thresholds[94].Value.
+type ThresholdPercentiles [100]Threshold
+
+// Threshold is a distance or rank theshold,
+// as well as expected safety and efficiency.
+// Whether it is a distance or rank depends on the context.
+type Threshold struct {
+	Value Affectedness
+
+	// TODO(nodir): move safety and efficiency here.
 }
 
 // Safety is how safe the candidate strategy is.
