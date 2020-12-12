@@ -573,7 +573,6 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("empty", func() {
 				So(datastore.Put(ctx, &model.BuildInputProperties{
-					ID:    1,
 					Build: datastore.MakeKey(ctx, "Build", 1),
 				}), ShouldBeNil)
 
@@ -648,7 +647,6 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("non-empty", func() {
 				So(datastore.Put(ctx, &model.BuildInputProperties{
-					ID:    1,
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: model.DSStruct{
 						Struct: structpb.Struct{
