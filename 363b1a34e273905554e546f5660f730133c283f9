@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "41d934fa_6ad21ebe",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a194e690_3022e5db",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 27
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "edca8e88_9bdc67f5",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-12T00:32:32Z",
       "side": 1,
       "message": "What if err is nil?",
+      "range": {
+        "startLine": 34,
+        "startChar": 8,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b476363_ed562825",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:14:30Z",
+      "side": 1,
+      "message": "no-op, specified.",
+      "parentUuid": "edca8e88_9bdc67f5",
       "range": {
         "startLine": 34,
         "startChar": 8,
@@ -72,6 +120,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "26c0b82c_2ade7f5f",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:14:30Z",
+      "side": 1,
+      "message": "Changed to ExtractStatus; the package name is `build` and `build.Status` seems weird... wdyt?",
+      "parentUuid": "dd66bd89_825bf0ff",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 12
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b2d04cbf_b4c0e1c6",
         "filename": "luciexe/build/errors.go",
         "patchSetId": 1
@@ -83,6 +155,30 @@
       "writtenOn": "2020-12-12T00:32:32Z",
       "side": 1,
       "message": "what does \"Timeout as *bbpb.StatusDetails\" mean?",
+      "range": {
+        "startLine": 45,
+        "startChar": 23,
+        "endLine": 45,
+        "endChar": 30
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53756e0e_3b42bcc6",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:14:30Z",
+      "side": 1,
+      "message": "Made more precise",
+      "parentUuid": "b2d04cbf_b4c0e1c6",
       "range": {
         "startLine": 45,
         "startChar": 23,
