@@ -104,6 +104,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e50c6d0d_21912ce9",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Added tests, ptal!",
+      "parentUuid": "c04b8eef_dc499a36",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "49995647_89600801",
@@ -169,6 +187,54 @@
         "startChar": 31,
         "endLine": 32,
         "endChar": 40
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9017e15_c485c562",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea25e736_fdca676a",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d96b7743_1c7c77c8",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done. Sorry, I was too excited and didn\u0027t have time to add comments everywhere.",
+      "parentUuid": "49995647_89600801",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 9
       },
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -250,6 +316,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "869999be_c3597bbf",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done. Also, renamed to Processor since it\u0027s ProcessingBatch.",
+      "parentUuid": "e9e5af47_0e2abbc9",
+      "range": {
+        "startLine": 133,
+        "startChar": 3,
+        "endLine": 133,
+        "endChar": 13
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0efe5402_791a3e6d",
@@ -321,6 +411,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6588b159_cd95a17c",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "wrt your example, I don\u0027t think just updating RunTryjob is ever possible: it should only be updated iff Run isn\u0027t finalized yet, so reading Run entity is a must.",
+      "parentUuid": "230aecc4_8812e428",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 51
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dff65f68_3c802018",
@@ -334,6 +448,30 @@
       "writtenOn": "2020-12-11T21:00:06Z",
       "side": 1,
       "message": "Should this be `State`?",
+      "range": {
+        "startLine": 211,
+        "startChar": 14,
+        "endLine": 211,
+        "endChar": 25
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ddfacce_ba275667",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dff65f68_3c802018",
       "range": {
         "startLine": 211,
         "startChar": 14,
@@ -473,6 +611,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "450230d9_101b613d",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "done 😊",
+      "parentUuid": "0c813d74_b1c79fae",
+      "range": {
+        "startLine": 57,
+        "startChar": 38,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f12e46d1_e31a1760",
@@ -520,6 +682,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5cab447_2706432f",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95bd39e2_b5cbecf0",
+      "range": {
+        "startLine": 88,
+        "startChar": 34,
+        "endLine": 88,
+        "endChar": 39
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e029329f_8585047e",
@@ -533,6 +719,30 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "Nit: EVersion",
+      "range": {
+        "startLine": 118,
+        "startChar": 14,
+        "endLine": 118,
+        "endChar": 55
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1287348a_04a47938",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e029329f_8585047e",
       "range": {
         "startLine": 118,
         "startChar": 14,
@@ -678,6 +888,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75ca9020_bc2fc2cb",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a574fc6_16be3d2e",
+      "range": {
+        "startLine": 29,
+        "startChar": 16,
+        "endLine": 29,
+        "endChar": 25
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "16d2fe34_87c7f3b1",
@@ -701,6 +935,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a81afde_226206c1",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16d2fe34_87c7f3b1",
+      "range": {
+        "startLine": 102,
+        "startChar": 40,
+        "endLine": 102,
+        "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "450800a3_a44e18eb",
@@ -714,6 +972,30 @@
       "writtenOn": "2020-12-11T21:00:06Z",
       "side": 1,
       "message": "same here.",
+      "range": {
+        "startLine": 105,
+        "startChar": 38,
+        "endLine": 105,
+        "endChar": 43
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0192f6b4_c47aac4d",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "450800a3_a44e18eb",
       "range": {
         "startLine": 105,
         "startChar": 38,

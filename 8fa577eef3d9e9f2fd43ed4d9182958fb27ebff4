@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df96c9e4_d9740938",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T03:41:50Z",
+      "side": 1,
+      "message": "Added tests to illustrate usage, including partial consumption of events, which prjmanager actual example so far lacked.",
+      "revId": "8fa577eef3d9e9f2fd43ed4d9182958fb27ebff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
