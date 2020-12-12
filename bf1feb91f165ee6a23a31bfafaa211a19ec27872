@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b638e08_9d1a5f44",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-12T00:41:27Z",
+      "side": 1,
+      "message": "less code:\n\n  execute :\u003d func(ctx context.Context) ([]*pb.GetTestResultHistoryResponse_Entry, string) {\n    ctx, cancel :\u003d span.ReadOnlyTransaction(ctx)\n    defer cancel()\n    entries, nextPageToken, err :\u003d q.Execute(ctx)\n    So(err, ShouldBeNil)\n    return entries, nextPageToken\n  }",
+      "revId": "bf1feb91f165ee6a23a31bfafaa211a19ec27872",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
