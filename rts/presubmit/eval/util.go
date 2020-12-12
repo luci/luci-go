@@ -15,6 +15,7 @@
 package eval
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -22,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/resultdb/pbutil"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -76,4 +78,17 @@ func (f *historyFileInputFlag) Set(val string) error {
 
 func (f *historyFileInputFlag) String() string {
 	return f.path
+}
+
+func parallelize(ctx context.Context, concurrency int, f func(ctx context.Context) error) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	if concurrency <= 0 {
+		concurrency = defaultConcurrency
+	}
+	for i := 0; i < concurrency; i++ {
+		eg.Go(func() error {
+			return f(ctx)
+		})
+	}
+	return eg.Wait()
 }
