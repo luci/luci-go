@@ -431,5 +431,5 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
+	return &pb.Build{}, nil
 }
