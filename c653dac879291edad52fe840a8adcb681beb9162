@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfc27c46_bd775c00",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:04:59Z",
+      "side": 1,
+      "message": "Yep; see design doc for how we detect panics in this case.",
+      "parentUuid": "e2d820ff_99b74dd8",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58dfaea6_de8201a7",
@@ -112,6 +136,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75a43d2e_546382a7",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:04:59Z",
+      "side": 1,
+      "message": "I actually missed this; I copypasta\u0027d from the design doc :p\n\n(I agree it shouldn\u0027t be here)",
+      "parentUuid": "622dc84a_cacdcece",
+      "range": {
+        "startLine": 34,
+        "startChar": 22,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "131be737_b0470869",
@@ -125,6 +173,30 @@
       "writtenOn": "2020-12-12T00:25:49Z",
       "side": 1,
       "message": "actually, why not just \n  defer step.End(err)\n?",
+      "range": {
+        "startLine": 76,
+        "startChar": 12,
+        "endLine": 76,
+        "endChar": 38
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "185b7897_b8af53b2",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-12T01:04:59Z",
+      "side": 1,
+      "message": "Huh, would you look at that... the magic does work that way. I need to adjust it a bit to allow both. Some reason I thought that would bind err too early...",
+      "parentUuid": "131be737_b0470869",
       "range": {
         "startLine": 76,
         "startChar": 12,
