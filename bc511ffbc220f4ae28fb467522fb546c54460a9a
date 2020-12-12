@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d455a49_9f9c140b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-12T02:34:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0504ca9_baaf58f8",
+      "range": {
+        "startLine": 7,
+        "startChar": 10,
+        "endLine": 7,
+        "endChar": 13
+      },
+      "revId": "bc511ffbc220f4ae28fb467522fb546c54460a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f039673f_40a80aac",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-11T23:34:27Z",
       "side": 1,
       "message": "this doesn\u0027t look great to me; Before we loaded this from the server, now we just assume that the RBE-CAS installation is on the same cloud project as the swarming service?",
+      "range": {
+        "startLine": 37,
+        "startChar": 37,
+        "endLine": 37,
+        "endChar": 44
+      },
+      "revId": "bc511ffbc220f4ae28fb467522fb546c54460a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea7cf527_274cbd65",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-12T02:34:45Z",
+      "side": 1,
+      "message": "Yeah, the RBE-CAS instance locates under the same swarming cloud project. Swarming team also does the similar way to extract the CAS instance from swarming host in their code - https://source.chromium.org/chromium/infra/infra/+/c0e2975de17a9ba4440178cf7e549c43fe75cb47:recipes-py/recipe_modules/cas/api.py;l\u003d41\n\n(BTW, this is the migration doc - https://screenshot.googleplex.com/BSsAv2gnefZYZ4n)",
+      "parentUuid": "f039673f_40a80aac",
       "range": {
         "startLine": 37,
         "startChar": 37,
