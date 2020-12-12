@@ -209,6 +209,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "22eaf60c_3f35fa3e",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-12T01:40:08Z",
+      "side": 1,
+      "message": "OK, I guess my only argument is that the top of the file is where someone might usually go looking to find constants.\n\nBut in practice people will just search for the name and find it wherever it is.",
+      "parentUuid": "c8e52514_c361c4d5",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9e5af47_0e2abbc9",
@@ -556,6 +574,24 @@
       "side": 1,
       "message": "no, they are already PM specific. Note that they effectively interpret Events. I expect both funcs to grow pretty large (PM will have ~6+ event kinds).\n\nRunManager will need its own.",
       "parentUuid": "4f9d8aa9_39c1a76b",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e03ce3ae_e1433924",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-12T01:40:08Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9ed61654_0cfa49a4",
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
