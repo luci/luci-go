@@ -18,12 +18,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/cv/internal/dsset"
+
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
@@ -43,12 +44,9 @@ func send(ctx context.Context, luciProject string, e *internal.Event) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	err = internal.NewDSSet(ctx, luciProject).Add(ctx, []dsset.Item{{
-		ID:    uuid.New().String(),
-		Value: value,
-	}})
-	if err != nil {
-		return errors.Annotate(err, "failed to send event").Err()
+	to := datastore.MakeKey(ctx, ProjectKind, luciProject)
+	if err := eventbox.Emit(ctx, value, to); err != nil {
+		return err
 	}
 	return internal.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
 }

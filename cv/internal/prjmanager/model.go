@@ -17,12 +17,16 @@ package prjmanager
 import (
 	"time"
 
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
+// ProjectKind is Datastore entity kind for Project.
+const ProjectKind = "Project"
+
 // Project is an entity per LUCI Project in Datastore.
 type Project struct {
-	// $kind must match internal.ProjectEntityKind.
+	// $kind must match ProjectKind.
 	_kind  string                `gae:"$kind,Project"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
@@ -40,9 +44,7 @@ type Project struct {
 	Status Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
-
 	// IncompleteRuns are IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
-	// TODO(tandrii): fix type to run.ID.
-	IncompleteRuns []string `gae:",noindex"`
+	IncompleteRuns []run.ID `gae:",noindex"`
 }
