@@ -33,6 +33,24 @@
       "message": "IIUC this only supports consolidating cas data from jobs which already have it; Is there a CL which converts isolate tasks to rbe-cas tasks (i.e. consolidates the isolated data to a folder then uploads to rbe-cas?)",
       "revId": "f46504406c3270e6132e0c319db262d857f6453a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1c27ef8_64a5f7f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-12T02:53:05Z",
+      "side": 1,
+      "message": "Yes, it\u0027s in `EditIsolated` function flow. It downloads files from isolate and uploads to rbe-cas.(L140 to L164: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2559652/11/led/ledcmd/edit_isolated.go#140)",
+      "parentUuid": "b6d3ae7f_cbe2dd78",
+      "revId": "f46504406c3270e6132e0c319db262d857f6453a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
