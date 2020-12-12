@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "020d92b0_b2024e84",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-12T00:41:15Z",
+      "side": 1,
+      "message": "to address the comment in http://crrev.com/c/2573421",
+      "revId": "c0517fd8701ebe789d0334a42df06276cc3d1f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
