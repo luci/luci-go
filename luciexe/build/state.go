@@ -16,6 +16,7 @@ package build
 
 import (
 	"context"
+	"io"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -32,6 +33,8 @@ import (
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
 type State struct{}
+
+var _ Loggable = (*State)(nil)
 
 // Start is the entrypoint to this library.
 //
@@ -69,4 +72,24 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 //    err = opThatErrsOrPanics(ctx)
 func (*State) End(err error) {
 	panic("not implemented")
+}
+
+func (*State) Log(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+func (*State) LogBinary(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+func (*State) LogDatagram(ctx context.Context, name string) (DatagramWriter, error) {
+	panic("implement")
+}
+
+func (*State) LogFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
+}
+
+func (*State) LogBinaryFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
 }

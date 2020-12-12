@@ -16,12 +16,15 @@ package build
 
 import (
 	"context"
+	"io"
 )
 
 // StepState represents the state of a single step.
 //
 // This is properly initialized by the Step and ScheduleStep functions.
 type StepState struct{}
+
+var _ Loggable = (*StepState)(nil)
 
 // Step adds a new step to the build.
 //
@@ -78,4 +81,24 @@ func ScheduleStep(ctx context.Context, name string) (*StepState, context.Context
 //    err = opThatErrsOrPanics()
 func (*StepState) End(err error) {
 	panic("not implemented")
+}
+
+func (*StepState) Log(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+func (*StepState) LogBinary(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+func (*StepState) LogDatagram(ctx context.Context, name string) (DatagramWriter, error) {
+	panic("implement")
+}
+
+func (*StepState) LogFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
+}
+
+func (*StepState) LogBinaryFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
 }
