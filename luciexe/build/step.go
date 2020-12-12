@@ -64,7 +64,7 @@ func ScheduleStep(ctx context.Context, name string) (*StepState, context.Context
 	panic("not implemented")
 }
 
-// End sets the step's final status, according to `err` (See GetStatus).
+// End sets the step's final status, according to `err` (See ExtractStatus).
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.

@@ -55,7 +55,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	panic("not implemented")
 }
 
-// End sets the build's final status, according to `err` (See GetStatus).
+// End sets the build's final status, according to `err` (See ExtractStatus).
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.
