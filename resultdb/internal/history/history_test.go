@@ -39,6 +39,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func runQueryInTxn(ctx context.Context, q *Query) ([]*pb.GetTestResultHistoryResponse_Entry, string, error) {
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	return q.Execute(ctx)
+}
+
 func TestHistory(t *testing.T) {
 	Convey(`TestHistory`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -87,10 +93,7 @@ func TestHistory(t *testing.T) {
 		Convey(`page token`, func() {
 			q.Request.Realm = "testproject:testrealm"
 			q.Request.PageSize = 5
-			span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(ctx, q)
 			So(err, ShouldBeNil)
 			n := len(entries)
 			So(n, ShouldBeLessThanOrEqualTo, q.Request.PageSize)
@@ -103,30 +106,21 @@ func TestHistory(t *testing.T) {
 		Convey(`paging`, func() {
 			q.Request.Realm = "testproject:testrealm"
 			q.Request.PageSize = 10
-			span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(ctx, q)
 			So(err, ShouldBeNil)
 			So(entries, ShouldHaveLength, 10)
 
 			// Get next page.
 			q = &Query{Request: q.Request}
 			q.Request.PageToken = nextPageToken
-			span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(ctx, q)
 			So(err, ShouldBeNil)
 			So(entries, ShouldHaveLength, 10)
 
 			// Get next page.
 			q = &Query{Request: q.Request}
 			q.Request.PageToken = nextPageToken
-			span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(ctx, q)
 			So(err, ShouldBeNil)
 			So(nextPageToken, ShouldEqual, "")
 			So(entries, ShouldHaveLength, 7)
@@ -140,10 +134,7 @@ func TestHistory(t *testing.T) {
 			// to return partial results.
 			expiringCtx, cancel := clock.WithTimeout(ctx, 4*time.Second)
 			defer cancel()
-			span.ReadWriteTransaction(expiringCtx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(expiringCtx, q)
 			So(err, ShouldBeNil)
 			So(nextPageToken, ShouldNotEqual, "")
 			So(entries, ShouldHaveLength, 9)
@@ -151,10 +142,7 @@ func TestHistory(t *testing.T) {
 
 		Convey(`all results`, func() {
 			q.Request.Realm = "testproject:testrealm"
-			span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				entries, nextPageToken, err = q.Execute(ctx)
-				return nil
-			})
+			entries, nextPageToken, err = runQueryInTxn(ctx, q)
 			So(err, ShouldBeNil)
 			So(nextPageToken, ShouldEqual, "")
 			So(entries, ShouldHaveLength, 27)
