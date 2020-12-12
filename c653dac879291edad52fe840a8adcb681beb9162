@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e2d820ff_99b74dd8",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:26:12Z",
+      "side": 1,
+      "message": "on panics this will call state.End(nil), is that intended usage?",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58dfaea6_de8201a7",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:26:12Z",
+      "side": 1,
+      "message": "nit: del\n\nIMO documentation is not a good place for emoticons or, generally, flourishes that express author\u0027s individuality. In a project developer by a group the documentation should look uniform regardless of what member of the group produced it.",
+      "range": {
+        "startLine": 34,
+        "startChar": 22,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "131be737_b0470869",
         "filename": "luciexe/build/step.go",
         "patchSetId": 2
