@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5c4de7e3_79dafbff",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T01:00:24Z",
+      "side": 1,
+      "message": "i expected `err` to be completely ignored on panic, what did you expect, Vadim?",
+      "parentUuid": "e2d820ff_99b74dd8",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "58dfaea6_de8201a7",
         "filename": "luciexe/build/step.go",
         "patchSetId": 2
