@@ -22,7 +22,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -100,99 +99,48 @@ func (r *evalRun) evaluateSafety(ctx context.Context) error {
 
 	for i := 0; i < r.Concurrency; i++ {
 		eg.Go(func() error {
-			se := safetyEval{evalRun: r}
-			return se.eval(ctx)
+			return r.analyzeRejections(ctx)
 		})
 	}
-
 	return eg.Wait()
 }
 
-type safetyEval struct {
-	*evalRun
-	out Output
-}
-
-func (e *safetyEval) eval(ctx context.Context) error {
-	cr := &e.res.Safety.ChangeRecall
-	tr := &e.res.Safety.TestRecall
+func (r *evalRun) analyzeRejections(ctx context.Context) error {
+	cr := &r.res.Safety.ChangeRecall
+	tr := &r.res.Safety.TestRecall
 
 	buf := &bytes.Buffer{}
 	p := newPrinter(buf)
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
+	return analyzeRejections(ctx, r.History.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
+		// The rejection is preserved if at least one test ran.
+		// Conclude that based on the closest test.
+		preservedRejection := r.shouldRun(rej.Closest)
 
-		case rej, ok := <-e.History.RejectionC:
-			if !ok {
-				return nil
-			}
+		if !preservedRejection && r.LogLostRejections {
+			buf.Reset()
+			printLostRejection(p, rej.Rejection)
+			logging.Infof(ctx, "%s", buf.Bytes())
+		}
 
-			if err := e.processRejection(ctx, rej); err != nil {
-				return errors.Annotate(err, "failed to process rejection %q", rej).Err()
-			}
-
-			// The rejection is preserved if at least one test ran, so find the closest test.
-			closest, err := e.out.TestVariantAffectedness.closest()
-			if err != nil {
-				return err
-			}
-			preservedRejection := e.shouldRun(e.out.TestVariantAffectedness[closest])
-
-			e.mu.Lock()
-			cr.TotalRejections++
-			tr.TotalFailures += len(rej.FailedTestVariants)
-			if !preservedRejection {
-				cr.LostRejections = append(cr.LostRejections, rej)
-			}
-			for i, af := range e.out.TestVariantAffectedness {
-				if !e.shouldRun(af) {
-					tr.LostFailures = append(tr.LostFailures, LostTestFailure{
-						Rejection: rej,
-						// Note: this assumes that in.TestVariants == rej.FailedTestVariants
-						TestVariant: rej.FailedTestVariants[i],
-					})
-				}
-			}
-
-			e.maybeReportProgress(ctx)
-			e.mu.Unlock()
-
-			if !preservedRejection && e.LogLostRejections {
-				buf.Reset()
-				printLostRejection(p, rej)
-				logging.Infof(ctx, "%s", buf.Bytes())
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		cr.TotalRejections++
+		tr.TotalFailures += len(rej.FailedTestVariants)
+		if !preservedRejection {
+			cr.LostRejections = append(cr.LostRejections, rej.Rejection)
+		}
+		for i, af := range rej.Affectedness {
+			if !r.shouldRun(af) {
+				tr.LostFailures = append(tr.LostFailures, LostTestFailure{
+					Rejection:   rej.Rejection,
+					TestVariant: rej.FailedTestVariants[i],
+				})
 			}
 		}
-	}
-}
 
-func (e *safetyEval) processRejection(ctx context.Context, rej *evalpb.Rejection) error {
-	// TODO(crbug.com/1112125): add support for CL stacks.
-	// This call returns only files modified in the particular patchset and
-	// ignores possible parent CLs that were also tested.
-
-	// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
-	// Most selection strategies would reject such a patchset, so it represents noise.
-
-	// Select tests.
-	in := Input{
-		TestVariants: rej.FailedTestVariants,
-	}
-	in.ensureChangedFilesInclude(rej.Patchsets...)
-	if cap(e.out.TestVariantAffectedness) < len(in.TestVariants) {
-		e.out.TestVariantAffectedness = make([]Affectedness, len(in.TestVariants))
-	} else {
-		e.out.TestVariantAffectedness = e.out.TestVariantAffectedness[:len(in.TestVariants)]
-		for i := range e.out.TestVariantAffectedness {
-			e.out.TestVariantAffectedness[i] = Affectedness{}
-		}
-	}
-	if err := e.Strategy(ctx, in, &e.out); err != nil {
-		return errors.Annotate(err, "the selection strategy failed").Err()
-	}
-	return nil
+		r.maybeReportProgress(ctx)
+		return nil
+	})
 }
 
 // printLostRejection prints a rejection that wouldn't be preserved by the
