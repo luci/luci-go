@@ -209,19 +209,15 @@ func LoadBuildDetails(ctx context.Context, m *mask.Mask, builds ...*pb.Build) er
 		}
 		key := datastore.KeyForObj(ctx, &Build{ID: p.Id})
 		inf = append(inf, &BuildInfra{
-			ID:    1,
 			Build: key,
 		})
 		inp = append(inp, &BuildInputProperties{
-			ID:    1,
 			Build: key,
 		})
 		out = append(out, &BuildOutputProperties{
-			ID:    1,
 			Build: key,
 		})
 		stp = append(stp, &BuildSteps{
-			ID:    1,
 			Build: key,
 		})
 		appendIfIncluded := func(path string, det interface{}) {

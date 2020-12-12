@@ -73,11 +73,9 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 	}
 
 	inf := &model.BuildInfra{
-		ID:    1,
 		Build: datastore.KeyForObj(ctx, bld),
 	}
 	stp := &model.BuildSteps{
-		ID:    1,
 		Build: inf.Build,
 	}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
