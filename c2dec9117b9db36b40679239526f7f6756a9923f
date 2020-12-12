@@ -52,6 +52,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "99fd2241_4dde5c61",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "haven\u0027t changed anything yet, just responding to some comments to get more feedback before we go on weekend.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27af5e3e_7aa501d8",
@@ -65,6 +82,24 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "Note in the description you mentioned adding tests for eventbox in a follow-up.\n\nI think this will be very helpful for the purpose of making this abstract/general functionality more concrete and clear for readers.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c04b8eef_dc499a36",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "The tests will be almost exactly the same as what you see in sm.go + recv.go + recv_test.go.\nBut yes, I agree we need them with something simpler than updateConfig logic of sm.go.",
+      "parentUuid": "27af5e3e_7aa501d8",
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -117,6 +152,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ea25e736_fdca676a",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "Good thought. I initially exposed ID because it allows for trivially idempotent sends,\nbut we don\u0027t use this functionality of dsset. So, yes, ID must be impl detail.\nBut we could use reproducible mathrand package to generate IDs, s.t. it\u0027d be possible to assert in tests,\nthat sad, I didn\u0027t need this in tests yet -- I think it\u0027s much better to assert on kinds of outstanding events.",
+      "parentUuid": "18e9cd21_ada842e5",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0350720b_667f45a5",
         "filename": "cv/internal/eventbox/box.go",
         "patchSetId": 5
@@ -128,6 +187,24 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "Nit: Move constant to the top of the file.",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8e52514_c361c4d5",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "but why? this is a private const, so imo the closer it is to where it\u0027s used, the better.\nI actually went to check Google style guide and I didn\u0027t find guidance on placing consts.",
+      "parentUuid": "0350720b_667f45a5",
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -180,6 +257,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8952ea47_6e2789c2",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "Project M (PM) isn\u0027t necessarily different from Run M (RM), we may have extra entities, just not ye.\nMy thinking is that EVersion would be *only* in the main entity,\nand iff other entities have to be updated, then we\u0027d also always update the main entity, even if it means just doing EV++ (minor con: requires needlessly cloning a state to get a new pointer)\n\nWhat you propose is also OK, however, it\u0027d require you to read *all* child entities to construct a state.\nThis shouldn\u0027t be necessary even for RunManager.\nSuppose, RunManager gets a CLUpdated event. Processing such event should start with reading just Run itself (if it is stopped, then no need to do anything) and then specific RunCL entity to determine if anything needs to be done at all.",
+      "parentUuid": "0efe5402_791a3e6d",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 51
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "dff65f68_3c802018",
         "filename": "cv/internal/eventbox/box.go",
         "patchSetId": 5
@@ -220,6 +321,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a421adb8_2ed6dc79",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "19770d72_d51a3641",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "77f23541_7c14515e",
         "filename": "cv/internal/prjmanager/impl/recv.go",
         "patchSetId": 5
@@ -231,6 +350,30 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "This is neat, does this affect all logging in functions called with this context?",
+      "range": {
+        "startLine": 56,
+        "startChar": 15,
+        "endLine": 56,
+        "endChar": 23
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86b89673_f9df088e",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "77f23541_7c14515e",
       "range": {
         "startLine": 56,
         "startChar": 15,
@@ -264,6 +407,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c813d74_b1c79fae",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "It was, but I gave up on it. Maybe I will bring it back. Good news is that if this is wrong, then tests will catch it, so constant isn\u0027t really giving us much.",
+      "parentUuid": "1d14b203_627970ae",
+      "range": {
+        "startLine": 57,
+        "startChar": 38,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f12e46d1_e31a1760",
@@ -277,6 +444,30 @@
       "writtenOn": "2020-12-11T21:00:06Z",
       "side": 1,
       "message": "nit: apply",
+      "range": {
+        "startLine": 88,
+        "startChar": 34,
+        "endLine": 88,
+        "endChar": 39
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95bd39e2_b5cbecf0",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "actually, SideEffectFn.",
+      "parentUuid": "f12e46d1_e31a1760",
       "range": {
         "startLine": 88,
         "startChar": 34,
@@ -329,6 +520,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9ed61654_0cfa49a4",
+        "filename": "cv/internal/prjmanager/impl/recv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "no, they are already PM specific. Note that they effectively interpret Events. I expect both funcs to grow pretty large (PM will have ~6+ event kinds).\n\nRunManager will need its own.",
+      "parentUuid": "4f9d8aa9_39c1a76b",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "de670fcc_0ea24d12",
         "filename": "cv/internal/prjmanager/impl/sm.go",
         "patchSetId": 5
@@ -346,6 +555,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9821a116_3578e743",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "No. I don\u0027t follow X_test for every X.go with public funcs.\nI prefer to test the desired functionality, not implementation, unless the specific implementation is really difficult to get right and easy to break. \n\nNow, for this package, I want to write decent impl_test.go, but currently i\u0027m relying on recv_test.go to make the diff small. I currently think that ideal test would be very similar to what recv_test does:\n  a bunch of prjmanager.\u003cSendSomeEvent\u003e()\n  run outstanding tasks\n  assert on newly triggered tasks + datastore entities.",
+      "parentUuid": "de670fcc_0ea24d12",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4171a874_fd88cc02",
         "filename": "cv/internal/prjmanager/impl/sm.go",
         "patchSetId": 5
@@ -357,6 +584,30 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "The word \"currently\" can usually be removed from comments. (It\u0027s either true, or the comment should be removed/updated.)",
+      "range": {
+        "startLine": 29,
+        "startChar": 16,
+        "endLine": 29,
+        "endChar": 25
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a574fc6_16be3d2e",
+        "filename": "cv/internal/prjmanager/impl/sm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "True, will do.",
+      "parentUuid": "4171a874_fd88cc02",
       "range": {
         "startLine": 29,
         "startChar": 16,
@@ -482,6 +733,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44af6457_fcd0f27c",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "yep, plenty (I counted 6)",
+      "parentUuid": "0b3cf432_7c3a4ab6",
+      "range": {
+        "startLine": 38,
+        "startChar": 3,
+        "endLine": 38,
+        "endChar": 15
+      },
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e6229f0e_b499dc30",
@@ -495,6 +770,24 @@
       "writtenOn": "2020-12-11T20:02:03Z",
       "side": 1,
       "message": "OK, so Project entities contain state of current runs etc.; and also the Project entity key serves as the \"mailbox\" of events which will affect Project state?\n\n(Also, if internal.ProjectEntityKind is defined then it could perhaps be used here?)",
+      "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "514641ed_d4797f60",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:20:03Z",
+      "side": 1,
+      "message": "yes, and fine, will re-define it 😊",
+      "parentUuid": "e6229f0e_b499dc30",
       "revId": "c2dec9117b9db36b40679239526f7f6756a9923f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
