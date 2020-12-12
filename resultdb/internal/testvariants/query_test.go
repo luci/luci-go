@@ -71,143 +71,138 @@ func TestQueryTestVariants(t *testing.T) {
 
 		testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
-		Convey(`unexpected`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv0", "T5", nil, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "T6", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv0", "T7", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv0", "T8", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "T9", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
-				insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+		testutil.MustApply(ctx, testutil.CombineMutations(
+			insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv0", "T5", nil, pb.TestStatus_FAIL),
+			insert.TestResults(
+				"inv0", "T6", nil,
+				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
+				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
+				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
+				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
+			),
+			insert.TestResults("inv0", "T7", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv0", "T8", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			insert.TestResults("inv0", "T9", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
+			insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS),
+			insert.TestResults("inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(
+				"inv1", "Ty", nil,
+				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+			),
 
-				insert.TestExonerations("inv0", "T1", nil, 1),
-			)...)
+			insert.TestExonerations("inv0", "T1", nil, 1),
+		)...)
 
-			// Insert an additional TestResult for comparing TestVariant.Results.Result.
-			startTime := timestamppb.New(testclock.TestRecentTimeUTC.Add(-2 * time.Minute))
-			duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
-			strPairs := pbutil.StringPairs(
-				"buildername", "blder",
-				"test_suite", "foo_unittests",
-				"test_id_prefix", "ninja://tests:tests/")
+		// Insert an additional TestResult for comparing TestVariant.Results.Result.
+		startTime := timestamppb.New(testclock.TestRecentTimeUTC.Add(-2 * time.Minute))
+		duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
+		strPairs := pbutil.StringPairs(
+			"buildername", "blder",
+			"test_suite", "foo_unittests",
+			"test_id_prefix", "ninja://tests:tests/")
 
-			testutil.MustApply(ctx,
-				spanutil.InsertMap("TestResults", map[string]interface{}{
-					"InvocationId":    invocations.ID("inv1"),
-					"TestId":          "T4",
-					"ResultId":        "0",
-					"Variant":         pbutil.Variant("a", "b"),
-					"VariantHash":     pbutil.VariantHash(pbutil.Variant("a", "b")),
-					"CommitTimestamp": spanner.CommitTimestamp,
-					"IsUnexpected":    true,
-					"Status":          pb.TestStatus_FAIL,
-					"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
-					"StartTime":       startTime,
-					"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
-					"Tags":            pbutil.StringPairsToStrings(strPairs...),
-				}),
-			)
+		testutil.MustApply(ctx,
+			spanutil.InsertMap("TestResults", map[string]interface{}{
+				"InvocationId":    invocations.ID("inv1"),
+				"TestId":          "T4",
+				"ResultId":        "0",
+				"Variant":         pbutil.Variant("a", "b"),
+				"VariantHash":     pbutil.VariantHash(pbutil.Variant("a", "b")),
+				"CommitTimestamp": spanner.CommitTimestamp,
+				"IsUnexpected":    true,
+				"Status":          pb.TestStatus_FAIL,
+				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
+				"StartTime":       startTime,
+				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
+				"Tags":            pbutil.StringPairsToStrings(strPairs...),
+			}),
+		)
 
-			Convey(`Unexpected works`, func() {
-				tvs, _ := mustFetch(q)
-				tvStrings := getTVStrings(tvs)
-				So(tvStrings, ShouldResemble, []string{
-					"1/T4/c467ccce5a16dc72",
-					"1/T5/e3b0c44298fc1c14",
-					"2/T2/e3b0c44298fc1c14",
-					"2/T5/c467ccce5a16dc72",
-					"2/T8/e3b0c44298fc1c14",
-					"3/T1/e3b0c44298fc1c14",
-				})
+		Convey(`Unexpected works`, func() {
+			tvs, _ := mustFetch(q)
+			tvStrings := getTVStrings(tvs)
+			So(tvStrings, ShouldResemble, []string{
+				"1/T4/c467ccce5a16dc72",
+				"1/T5/e3b0c44298fc1c14",
+				"1/Ty/e3b0c44298fc1c14",
+				"2/T2/e3b0c44298fc1c14",
+				"2/T5/c467ccce5a16dc72",
+				"2/T8/e3b0c44298fc1c14",
+				"3/T1/e3b0c44298fc1c14",
+			})
 
-				So(tvs[0].Results, ShouldResemble, []*uipb.TestResultBundle{
-					&uipb.TestResultBundle{
-						Result: &pb.TestResult{
-							Name:        "invocations/inv1/tests/T4/results/0",
-							ResultId:    "0",
-							Expected:    false,
-							Status:      pb.TestStatus_FAIL,
-							StartTime:   startTime,
-							Duration:    duration,
-							SummaryHtml: "SummaryHtml",
-							Tags:        strPairs,
-						},
+			So(tvs[0].Results, ShouldResemble, []*uipb.TestResultBundle{
+				&uipb.TestResultBundle{
+					Result: &pb.TestResult{
+						Name:        "invocations/inv1/tests/T4/results/0",
+						ResultId:    "0",
+						Expected:    false,
+						Status:      pb.TestStatus_FAIL,
+						StartTime:   startTime,
+						Duration:    duration,
+						SummaryHtml: "SummaryHtml",
+						Tags:        strPairs,
 					},
-				})
-				So(tvs[5].Exonerations[0], ShouldResemble, &pb.TestExoneration{
-					ExplanationHtml: "explanation 0",
-				})
+				},
 			})
-
-			Convey(`Expected works`, func() {
-				q.PageToken = pagination.Token("EXPECTED", "", "")
-				tvs, _ := mustFetch(q)
-				So(getTVStrings(tvs), ShouldResemble, []string{
-					"16/T3/e3b0c44298fc1c14",
-					"16/T6/e3b0c44298fc1c14",
-					"16/T7/e3b0c44298fc1c14",
-					"16/T9/e3b0c44298fc1c14",
-				})
-				So(len(tvs[0].Results), ShouldEqual, 2)
+			So(tvs[6].Exonerations[0], ShouldResemble, &pb.TestExoneration{
+				ExplanationHtml: "explanation 0",
 			})
+			So(len(tvs[2].Results), ShouldEqual, 10)
+		})
 
-			Convey(`paging works`, func() {
-				page := func(token string, expectedTVLen int32, expectedTVStrings []string) string {
-					q.PageToken = token
-					tvs, nextToken := mustFetch(q)
-					So(getTVStrings(tvs), ShouldResemble, expectedTVStrings)
-					return nextToken
-				}
-
-				q.PageSize = 3
-				nextToken := page("", 3, []string{
-					"1/T4/c467ccce5a16dc72",
-					"1/T5/e3b0c44298fc1c14",
-					"2/T2/e3b0c44298fc1c14",
-				})
-				So(nextToken, ShouldEqual, pagination.Token("FLAKY", "T2", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 3, []string{
-					"2/T5/c467ccce5a16dc72",
-					"2/T8/e3b0c44298fc1c14",
-					"3/T1/e3b0c44298fc1c14",
-				})
-				So(nextToken, ShouldEqual, pagination.Token("EXONERATED", "T1", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 0, []string{})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
-
-				nextToken = page(nextToken, 0, []string{})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T1", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 0, []string{})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T2", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 1, []string{
-					"16/T3/e3b0c44298fc1c14",
-				})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T4", "c467ccce5a16dc72"))
-
-				nextToken = page(nextToken, 0, []string{})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 2, []string{
-					"16/T6/e3b0c44298fc1c14",
-					"16/T7/e3b0c44298fc1c14",
-				})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T7", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 0, []string{})
-				So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
-
-				nextToken = page(nextToken, 1, []string{"16/T9/e3b0c44298fc1c14"})
-				So(nextToken, ShouldEqual, "")
+		Convey(`Expected works`, func() {
+			q.PageToken = pagination.Token("EXPECTED", "", "")
+			tvs, _ := mustFetch(q)
+			So(getTVStrings(tvs), ShouldResemble, []string{
+				"16/T3/e3b0c44298fc1c14",
+				"16/T6/e3b0c44298fc1c14",
+				"16/T7/e3b0c44298fc1c14",
+				"16/T9/e3b0c44298fc1c14",
 			})
+			So(len(tvs[0].Results), ShouldEqual, 2)
+		})
+
+		Convey(`paging works`, func() {
+			page := func(token string, expectedTVLen int32, expectedTVStrings []string) string {
+				q.PageToken = token
+				tvs, nextToken := mustFetch(q)
+				So(getTVStrings(tvs), ShouldResemble, expectedTVStrings)
+				return nextToken
+			}
+
+			q.PageSize = 15
+			nextToken := page("", 6, []string{
+				"1/T4/c467ccce5a16dc72",
+				"1/T5/e3b0c44298fc1c14",
+				"1/Ty/e3b0c44298fc1c14",
+				"2/T2/e3b0c44298fc1c14",
+				"2/T5/c467ccce5a16dc72",
+				"2/T8/e3b0c44298fc1c14",
+				"3/T1/e3b0c44298fc1c14",
+			})
+			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+
+			nextToken = page(nextToken, 1, []string{
+				"16/T3/e3b0c44298fc1c14",
+			})
+			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14"))
+
+			nextToken = page(nextToken, 2, []string{
+				"16/T6/e3b0c44298fc1c14",
+				"16/T7/e3b0c44298fc1c14",
+			})
+			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
+
+			nextToken = page(nextToken, 1, []string{"16/T9/e3b0c44298fc1c14"})
+			So(nextToken, ShouldEqual, "")
 		})
 
 		Convey(`Page Token`, func() {
