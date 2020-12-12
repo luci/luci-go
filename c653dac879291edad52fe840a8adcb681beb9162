@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "622dc84a_cacdcece",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:27:57Z",
+      "side": 1,
+      "message": "Also https://bit.ly/3gQyWAx",
+      "parentUuid": "58dfaea6_de8201a7",
+      "range": {
+        "startLine": 34,
+        "startChar": 22,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "131be737_b0470869",
         "filename": "luciexe/build/step.go",
         "patchSetId": 2
