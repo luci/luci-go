@@ -21,38 +21,58 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestPokePM(t *testing.T) {
+func TestUpdateConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Event pipeline works", t, func() {
+	Convey("UpdateConfig works alone", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		const lProject = "infra"
+		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
 		test := func(trans bool) {
-			// TODO(tandrii): expand test to actually create a config.
-			if trans {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return prjmanager.UpdateConfig(ctx, lProject)
-				}, nil), ShouldBeNil)
-			} else {
-				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			poke := func() {
+				if trans {
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return prjmanager.UpdateConfig(ctx, lProject)
+					}, nil), ShouldBeNil)
+				} else {
+					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+				}
 			}
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-			l, err := internal.NewDSSet(ctx, lProject).List(ctx)
-			So(err, ShouldBeNil)
-			So(l.Items, ShouldBeNil)
+			Convey("with new project", func() {
+				ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+				poke()
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
+				events, err := eventbox.List(ctx, lProjectKey)
+				So(err, ShouldBeNil)
+				So(events, ShouldHaveLength, 0)
+				p := getProject(ctx, lProject)
+				So(p.EVersion, ShouldEqual, 1)
+				So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
+				// TODO(tandrii): assert poller is notified.
+
+				Convey("... and just deleted project", func() {
+					ct.Cfg.Delete(ctx, lProject)
+					poke()
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+					p := getProject(ctx, lProject)
+					So(p.EVersion, ShouldEqual, 2)
+					So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
+				})
+			})
 		}
 		Convey("Non-Transactional", func() {
 			test(false)
@@ -61,4 +81,38 @@ func TestPokePM(t *testing.T) {
 			test(true)
 		})
 	})
+}
+
+func getProject(ctx context.Context, luciProject string) *prjmanager.Project {
+	p := &prjmanager.Project{ID: luciProject}
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
+	default:
+		So(err, ShouldBeNil)
+		return p
+	}
+}
+
+func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
+	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
+	for i, gRepo := range gRepos {
+		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{
+			Name:      gRepo,
+			RefRegexp: []string{"refs/heads/main"},
+		}
+	}
+	return &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: "main",
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url:      "https://" + gHost + "/",
+						Projects: projects,
+					},
+				},
+			},
+		},
+	}
 }
