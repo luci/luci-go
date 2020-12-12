@@ -305,7 +305,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		// output.properties
 		if buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
 			toSave = append(toSave, &model.BuildOutputProperties{
-				ID:    1,
 				Build: bk,
 				Proto: model.DSStruct{*req.Build.Output.Properties},
 			})
@@ -362,7 +361,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 			steps.Build = bk
 			toSave = append(toSave, steps)
 		} else if isEndedStatus {
-			existingSteps := &model.BuildSteps{ID: 1, Build: bk}
+			existingSteps := &model.BuildSteps{Build: bk}
 			// If the build has no steps, ignore the ErrNoSuchEntity error.
 			// CancelIncomplete will return false and existingSteps will be skipped.
 			if err := model.GetIgnoreMissing(ctx, existingSteps); err != nil {

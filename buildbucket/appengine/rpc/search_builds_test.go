@@ -265,7 +265,6 @@ func TestSearchBuilds(t *testing.T) {
 			}
 			key := datastore.KeyForObj(ctx, b)
 			So(datastore.Put(ctx, &model.BuildInfra{
-				ID:    1,
 				Build: key,
 				Proto: model.DSBuildInfra{
 					BuildInfra: pb.BuildInfra{
@@ -276,7 +275,6 @@ func TestSearchBuilds(t *testing.T) {
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.BuildInputProperties{
-				ID:    1,
 				Build: key,
 				Proto: model.DSStruct{
 					Struct: structpb.Struct{

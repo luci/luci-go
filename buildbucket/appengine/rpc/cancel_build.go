@@ -72,14 +72,8 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
-	inf := &model.BuildInfra{
-		ID:    1,
-		Build: datastore.KeyForObj(ctx, bld),
-	}
-	stp := &model.BuildSteps{
-		ID:    1,
-		Build: inf.Build,
-	}
+	inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+	stp := &model.BuildSteps{Build: inf.Build}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {

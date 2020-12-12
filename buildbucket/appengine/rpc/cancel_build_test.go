@@ -242,7 +242,6 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.BuildInfra{
-					ID:    1,
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: model.DSBuildInfra{
 						pb.BuildInfra{
@@ -305,7 +304,6 @@ func TestCancelBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.BuildInfra{
-					ID:    1,
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: model.DSBuildInfra{
 						pb.BuildInfra{

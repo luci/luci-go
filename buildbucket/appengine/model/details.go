@@ -107,7 +107,7 @@ func (b *DSBuildInfra) FromProperty(p datastore.Property) error {
 type BuildInfra struct {
 	_kind string `gae:"$kind,BuildInfra"`
 	// ID is always 1 because only one such entity exists.
-	ID int `gae:"$id"`
+	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the pb.BuildInfra proto representation of the infra field.
@@ -119,7 +119,7 @@ type BuildInfra struct {
 type BuildInputProperties struct {
 	_kind string `gae:"$kind,BuildInputProperties"`
 	// ID is always 1 because only one such entity exists.
-	ID int `gae:"$id"`
+	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the struct.Struct representation of the properties field.
@@ -131,7 +131,7 @@ type BuildInputProperties struct {
 type BuildOutputProperties struct {
 	_kind string `gae:"$kind,BuildOutputProperties"`
 	// ID is always 1 because only one such entity exists.
-	ID int `gae:"$id"`
+	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the struct.Struct representation of the properties field.
@@ -150,7 +150,7 @@ const BuildStepsMaxBytes = 1e6
 type BuildSteps struct {
 	_kind string `gae:"$kind,BuildSteps"`
 	// ID is always 1 because only one such entity exists.
-	ID int `gae:"$id"`
+	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// IsZipped indicates whether or not Bytes is zlib compressed.
