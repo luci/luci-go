@@ -22,6 +22,30 @@
       },
       "revId": "b1e95976089ee25b218663c6481a8354ec9ce033",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0e4d152_464abd66",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-12-12T02:38:53Z",
+      "side": 1,
+      "message": "Because the condition `jd.UserPayload \u003d\u003d nil` can intercept the nil UserPayload.",
+      "parentUuid": "7479d3c5_7772608d",
+      "range": {
+        "startLine": 143,
+        "startChar": 89,
+        "endLine": 143,
+        "endChar": 95
+      },
+      "revId": "b1e95976089ee25b218663c6481a8354ec9ce033",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
