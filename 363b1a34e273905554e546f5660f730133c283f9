@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a194e690_3022e5db",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:32:32Z",
+      "side": 1,
+      "message": "Why is this important and why would users of this library care? There\u0027s a high chance they have no idea what appstatus is and this doc will just confuse them.",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 27
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "edca8e88_9bdc67f5",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:32:32Z",
+      "side": 1,
+      "message": "What if err is nil?",
+      "range": {
+        "startLine": 34,
+        "startChar": 8,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd66bd89_825bf0ff",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:32:32Z",
+      "side": 1,
+      "message": "nit: Status\n\nGet... is frowned upon in Go https://g3doc.corp.google.com/go/g3doc/style/decisions.md?cl\u003dhead#getters",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 12
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2d04cbf_b4c0e1c6",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-12T00:32:32Z",
+      "side": 1,
+      "message": "what does \"Timeout as *bbpb.StatusDetails\" mean?",
+      "range": {
+        "startLine": 45,
+        "startChar": 23,
+        "endLine": 45,
+        "endChar": 30
+      },
+      "revId": "363b1a34e273905554e546f5660f730133c283f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
