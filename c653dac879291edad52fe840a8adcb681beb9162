@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f452fc4b_3084b399",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:25:49Z",
+      "side": 1,
+      "message": "very lgtm % doc nits + question",
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "131be737_b0470869",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:25:49Z",
+      "side": 1,
+      "message": "actually, why not just \n  defer step.End(err)\n?",
+      "range": {
+        "startLine": 76,
+        "startChar": 12,
+        "endLine": 76,
+        "endChar": 38
+      },
+      "revId": "c653dac879291edad52fe840a8adcb681beb9162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

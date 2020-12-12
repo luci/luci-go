@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d00af999_9d36b12a",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:25:49Z",
+      "side": 1,
+      "message": "😊",
+      "range": {
+        "startLine": 33,
+        "startChar": 46,
+        "endLine": 34,
+        "endChar": 26
+      },
+      "revId": "a1018290eab9a3b4b9b838b88fcb4ba3543ba90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89bd6c42_f83d84d0",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:25:49Z",
+      "side": 1,
+      "message": ":Vgf",
+      "range": {
+        "startLine": 36,
+        "startChar": 75,
+        "endLine": 36,
+        "endChar": 96
+      },
+      "revId": "a1018290eab9a3b4b9b838b88fcb4ba3543ba90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48c9de43_395fc73a",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-12T00:25:49Z",
+      "side": 1,
+      "message": "c",
+      "range": {
+        "startLine": 44,
+        "startChar": 57,
+        "endLine": 44,
+        "endChar": 58
+      },
+      "revId": "a1018290eab9a3b4b9b838b88fcb4ba3543ba90e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
