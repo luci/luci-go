@@ -29,8 +29,8 @@ func TestPrintLostRejection(t *testing.T) {
 
 	assert := func(rej *evalpb.Rejection, expectedText string) {
 		buf := &bytes.Buffer{}
-		p := newPrinter(buf)
-		So(printLostRejection(p, rej), ShouldBeNil)
+		p := rejectionPrinter{printer: newPrinter(buf)}
+		So(p.rejection(rej), ShouldBeNil)
 		expectedText = strings.Replace(expectedText, "\t", "  ", -1)
 		So(buf.String(), ShouldEqual, expectedText)
 	}
