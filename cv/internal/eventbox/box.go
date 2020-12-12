@@ -58,12 +58,12 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 
 // ProcessBatch reliably processes events, while transactionally modifying state
 // and performing arbitrary side effects.
-func ProcessBatch(ctx context.Context, recipient *datastore.Key, ctrl Processor) error {
+func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) error {
 	var state State
 	var expectedEV EVersion
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.Go(func() (err error) {
-		state, expectedEV, err = ctrl.LoadState(ectx)
+		state, expectedEV, err = p.LoadState(ectx)
 		return
 	})
 	d := dsset.Set{
@@ -82,7 +82,7 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, ctrl Processor)
 	}
 
 	// Compute resulting state before transaction.
-	transitions, err := ctrl.Mutate(ctx, toEvents(listing.Items), state)
+	transitions, err := p.Mutate(ctx, toEvents(listing.Items), state)
 	switch {
 	case err != nil:
 		return err
@@ -91,7 +91,7 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, ctrl Processor)
 	}
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch latestEV, err := ctrl.FetchEVersion(ctx); {
+		switch latestEV, err := p.FetchEVersion(ctx); {
 		case err != nil:
 			return err
 		case latestEV != expectedEV:
@@ -119,7 +119,9 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, ctrl Processor)
 
 		logging.Debugf(ctx, "%d transitions, %d events", len(transitions), eventsConsumed)
 		if newState != state {
-			ctrl.SaveState(ctx, newState, expectedEV+1)
+			if err := p.SaveState(ctx, newState, expectedEV+1); err != nil {
+				return err
+			}
 		} else {
 			logging.Debugf(ctx, "state wasn't modified")
 		}
