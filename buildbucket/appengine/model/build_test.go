@@ -97,7 +97,6 @@ func TestBuild(t *testing.T) {
 			}
 			key := datastore.KeyForObj(ctx, b)
 			So(datastore.Put(ctx, &BuildInfra{
-				ID:    1,
 				Build: key,
 				Proto: DSBuildInfra{
 					pb.BuildInfra{
@@ -108,7 +107,6 @@ func TestBuild(t *testing.T) {
 				},
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &BuildInputProperties{
-				ID:    1,
 				Build: key,
 				Proto: DSStruct{
 					Struct: structpb.Struct{
@@ -175,7 +173,6 @@ func TestBuild(t *testing.T) {
 
 			Convey("output properties", func() {
 				So(datastore.Put(ctx, &BuildOutputProperties{
-					ID:    1,
 					Build: key,
 					Proto: DSStruct{
 						Struct: structpb.Struct{
@@ -205,7 +202,6 @@ func TestBuild(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(datastore.Put(ctx, &BuildSteps{
-					ID:       1,
 					Build:    key,
 					Bytes:    s,
 					IsZipped: false,

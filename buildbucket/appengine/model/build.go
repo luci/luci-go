@@ -208,22 +208,10 @@ func LoadBuildDetails(ctx context.Context, m *mask.Mask, builds ...*pb.Build) er
 			return errors.Reason("invalid build for %q", p).Err()
 		}
 		key := datastore.KeyForObj(ctx, &Build{ID: p.Id})
-		inf = append(inf, &BuildInfra{
-			ID:    1,
-			Build: key,
-		})
-		inp = append(inp, &BuildInputProperties{
-			ID:    1,
-			Build: key,
-		})
-		out = append(out, &BuildOutputProperties{
-			ID:    1,
-			Build: key,
-		})
-		stp = append(stp, &BuildSteps{
-			ID:    1,
-			Build: key,
-		})
+		inf = append(inf, &BuildInfra{Build: key})
+		inp = append(inp, &BuildInputProperties{Build: key})
+		out = append(out, &BuildOutputProperties{Build: key})
+		stp = append(stp, &BuildSteps{Build: key})
 		appendIfIncluded := func(path string, det interface{}) {
 			if included[path] {
 				dets = append(dets, det)
