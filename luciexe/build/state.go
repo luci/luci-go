@@ -16,6 +16,7 @@ package build
 
 import (
 	"context"
+	"io"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -32,6 +33,8 @@ import (
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
 type State struct{}
+
+var _ Loggable = (*State)(nil)
 
 // Start is the entrypoint to this library.
 //
@@ -69,4 +72,39 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 //    err = opThatErrsOrPanics(ctx)
 func (*State) End(err error) {
 	panic("not implemented")
+}
+
+// Log creates a new build-level line-oriented text log stream with the given name.
+//
+// You must close the stream when you're done with it.
+func (*State) Log(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+// LogBinary creates a new build-level binary log stream with the given name.
+//
+// You must close the stream when you're done with it.
+func (*State) LogBinary(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+// LogDatagram creates a new build-level datagram log stream with the given name.
+// Each call to WriteDatagram will produce a single datagram message in the
+// stream.
+//
+// You must close the stream when you're done with it.
+func (*State) LogDatagram(ctx context.Context, name string) (DatagramWriter, error) {
+	panic("implement")
+}
+
+// LogFile is a helper method which copies the contents of the file at
+// `filepath` to the build-level line-oriented log named `name`.
+func (*State) LogFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
+}
+
+// LogBinaryFile is a helper method which copies the contents of the file at
+// `filepath` to the build-level binary log named `name`.
+func (*State) LogBinaryFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
 }

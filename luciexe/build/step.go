@@ -16,12 +16,15 @@ package build
 
 import (
 	"context"
+	"io"
 )
 
 // StepState represents the state of a single step.
 //
 // This is properly initialized by the Step and ScheduleStep functions.
 type StepState struct{}
+
+var _ Loggable = (*StepState)(nil)
 
 // Step adds a new step to the build.
 //
@@ -78,4 +81,39 @@ func ScheduleStep(ctx context.Context, name string) (*StepState, context.Context
 //    err = opThatErrsOrPanics()
 func (*StepState) End(err error) {
 	panic("not implemented")
+}
+
+// Log creates a new step-level line-oriented text log stream with the given name.
+//
+// You must close the stream when you're done with it.
+func (*StepState) Log(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+// LogBinary creates a new step-level binary log stream with the given name.
+//
+// You must close the stream when you're done with it.
+func (*StepState) LogBinary(ctx context.Context, name string) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+// LogDatagram creates a new step-level datagram log stream with the given name.
+// Each call to WriteDatagram will produce a single datagram message in the
+// stream.
+//
+// You must close the stream when you're done with it.
+func (*StepState) LogDatagram(ctx context.Context, name string) (DatagramWriter, error) {
+	panic("implement")
+}
+
+// LogFile is a helper method which copies the contents of the file at
+// `filepath` to the step-level line-oriented log named `name`.
+func (*StepState) LogFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
+}
+
+// LogBinaryFile is a helper method which copies the contents of the file at
+// `filepath` to the step-level binary log named `name`.
+func (*StepState) LogBinaryFile(ctx context.Context, name, filepath string) error {
+	panic("implement")
 }
