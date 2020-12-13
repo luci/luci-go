@@ -17,101 +17,32 @@ package config
 import (
 	"context"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 
-const configFileName = "commit-queue.cfg"
+const ConfigFileName = "commit-queue.cfg"
 
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "refresh-project-config",
-		Prototype: &RefreshProjectConfigTask{},
-		Queue:     "refresh-project-config",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*RefreshProjectConfigTask)
-			action, actionFn := "update", updateProject
-			if task.GetDisable() {
-				action, actionFn = "disable", disableProject
-			}
-			project := task.GetProject()
-			if err := actionFn(ctx, project); err != nil {
-				errors.Log(ctx, err)
-				// Never retry tasks because the refresh task is submitted every minute
-				// by AppEngine Cron.
-				return errors.Annotate(err, "failed to %s project %q", action, project).Tag(tq.Fatal).Err()
-			}
-			return nil
-		},
-	})
+// ProjectsWithConfig returns all LUCI projects which have CV config.
+func ProjectsWithConfig(ctx context.Context) ([]string, error) {
+	projects, err := cfgclient.ProjectsWithConfig(ctx, ConfigFileName)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get projects with %q from LUCI Config",
+			ConfigFileName).Tag(transient.Tag).Err()
+	}
+	return projects, nil
 }
 
-// SubmitRefreshTasks submits tasks that update config for LUCI projects
-// or disable projects that do not have CV config in LUCI Config.
-func SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := cfgclient.ProjectsWithConfig(ctx, configFileName)
-	if err != nil {
-		return errors.Annotate(err, "failed to get projects that have %q from LUCI Config", configFileName).Tag(transient.Tag).Err()
-	}
-	tasks := make([]*tq.Task, len(projects))
-	for i, p := range projects {
-		tasks[i] = &tq.Task{
-			Payload: &RefreshProjectConfigTask{
-				Project: p,
-			},
-		}
-	}
-
-	curEnabledProjects, err := getAllProjectIDs(ctx, true)
-	if err != nil {
-		return err
-	}
-	projectsInLUCIConfig := stringset.NewFromSlice(projects...)
-	for _, p := range curEnabledProjects {
-		if !projectsInLUCIConfig.Has(p) {
-			tasks = append(tasks, &tq.Task{
-				Payload: &RefreshProjectConfigTask{
-					Project: p,
-					Disable: true,
-				},
-			})
-		}
-	}
-
-	err = parallel.WorkPool(32, func(workCh chan<- func() error) {
-		for _, task := range tasks {
-			task := task
-			workCh <- func() error {
-				if err := tq.AddTask(ctx, task); err != nil {
-					logging.WithError(err).Errorf(ctx, "Failed to submit refresh task for project %q", task.Payload.(*RefreshProjectConfigTask).GetProject())
-					return err
-				}
-				return nil
-			}
-		}
-	})
-
-	if err != nil {
-		return err.(errors.MultiError).First()
-	}
-	return nil
-}
-
-// updateProject imports the latest CV Config for a given LUCI Project
+// UpdateProject imports the latest CV Config for a given LUCI Project
 // from LUCI Config if the config in CV is outdated.
-func updateProject(ctx context.Context, project string) error {
+func UpdateProject(ctx context.Context, project string) error {
 	externalHash, err := getExternalContentHash(ctx, project)
 	if err != nil {
 		return err
@@ -200,7 +131,7 @@ func updateProject(ctx context.Context, project string) error {
 
 func getExternalContentHash(ctx context.Context, project string) (string, error) {
 	var meta config.Meta
-	switch err := cfgclient.Get(ctx, config.ProjectSet(project), configFileName, nil, &meta); {
+	switch err := cfgclient.Get(ctx, config.ProjectSet(project), ConfigFileName, nil, &meta); {
 	case err != nil:
 		return "", errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
@@ -225,8 +156,8 @@ func fetchCfg(ctx context.Context, project string, contentHash string) (*pb.Conf
 	return ret, nil
 }
 
-// disableProject disables the given LUCI Project if it is currently enabled.
-func disableProject(ctx context.Context, project string) error {
+// DisableProject disables the given LUCI Project if it is currently enabled.
+func DisableProject(ctx context.Context, project string) error {
 	disabled := false
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
