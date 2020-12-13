@@ -41,9 +41,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// TODO (crbug.com/1148834): Remove master_buildbucket_id after
-// https://crrev.com/c/2560220 lands.
-var crosMainRE = regexp.MustCompile(`^cros/(?:master_buildbucket_id|parent_buildbucket_id)/(\d+)$`)
+var crosMainRE = regexp.MustCompile(`^cros/parent_buildbucket_id/(\d+)$`)
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
 // nesting information.
