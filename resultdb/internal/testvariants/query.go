@@ -57,6 +57,10 @@ type tvResult struct {
 }
 
 func (q *Query) decompressSummaryHTML(r *tvResult) (summaryHtml string, err error) {
+	if len(r.SummaryHTML) == 0 {
+		return
+	}
+
 	q.summaryBuffer, err = spanutil.Decompress(r.SummaryHTML, q.summaryBuffer)
 	if err != nil {
 		return
@@ -141,6 +145,10 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
+			if len(ex) == 0 {
+				tv.Exonerations[i] = &pb.TestExoneration{}
+				continue
+			}
 			if expBytes, err = spanutil.Decompress(ex, expBytes); err != nil {
 				return err
 			}
