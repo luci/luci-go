@@ -695,7 +695,7 @@ func (h *stepHandler) getTextStream(name types.StreamName) (s io.WriteCloser, cr
 	}
 
 	// Create a new stream. Clone the properties archetype and customize.
-	s, err = h.client.NewTextStream(h.processor.ctx, name)
+	s, err = h.client.NewStream(h.processor.ctx, name)
 	if err == nil {
 		created = true
 		h.streams[name] = s

@@ -50,7 +50,7 @@ func TestButler(t *testing.T) {
 				c.So(bs.Prefix, ShouldEqual, "null")
 				c.So(bs.Namespace, ShouldEqual, "u")
 
-				stream, err := bs.Client.NewTextStream(ctx, "sup")
+				stream, err := bs.Client.NewStream(ctx, "sup")
 				c.So(err, ShouldBeNil)
 				defer stream.Close()
 				_, err = stream.Write([]byte("HELLO"))

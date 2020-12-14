@@ -45,11 +45,11 @@ func TestClientGeneral(t *testing.T) {
 		Convey(`bad options`, func() {
 			client := NewFake("")
 
-			_, err := client.NewTextStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			_, err := client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"))
 			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
 
 			// for coverage, whee.
-			_, err = client.NewBinaryStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			_, err = client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"), Binary())
 			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
 
 			_, err = client.NewDatagramStream(ctx, "test", WithTags("bad+@!tag", "value"))
@@ -61,8 +61,8 @@ func TestClientGeneral(t *testing.T) {
 				client := NewFake("")
 				client.SetFakeError(errors.New("bad juju"))
 
-				_, err := client.NewTextStream(ctx, "test")
-				So(err, ShouldErrLike, `text stream "test": bad juju`)
+				_, err := client.NewStream(ctx, "test")
+				So(err, ShouldErrLike, `stream "test": bad juju`)
 			})
 		})
 	})
