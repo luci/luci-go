@@ -16,14 +16,17 @@ package eventbox
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/cvtesting"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // processor simulates a variant of game of life on one cell in an array of
@@ -131,7 +134,7 @@ func (p *processor) Mutate(ctx context.Context, events Events, s State) (ts []Tr
 	return
 }
 
-func TestEventbox(t *testing.T) {
+func TestEventboxWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("eventbox works", t, func() {
@@ -222,4 +225,129 @@ func mustList(ctx context.Context, index int) Events {
 	l, err := List(ctx, key(ctx, index))
 	So(err, ShouldBeNil)
 	return l
+}
+
+func TestEventboxFails(t *testing.T) {
+	t.Parallel()
+
+	Convey("eventbox fails as intended in failure cases", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		recipient := key(ctx, 77)
+		So(Emit(ctx, []byte{'+'}, recipient), ShouldBeNil)
+		So(Emit(ctx, []byte{'-'}, recipient), ShouldBeNil)
+
+		initState := int(99)
+		p := &mockProc{
+			loadState: func(_ context.Context) (State, EVersion, error) {
+				return State(&initState), EVersion(0), nil
+			},
+			// since 3 other funcs are nil, calling their Upper-case counterparts will
+			// panic (see mockProc implementation below).
+		}
+		Convey("Mutate() failure aborts", func() {
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+				return nil, errors.New("oops")
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "oops")
+		})
+
+		firstSideEffectCalled := false
+		const firstIndex = 88
+		secondState := initState + 1
+		var second SideEffectFn
+		p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+			return []Transition{
+				{
+					SideEffectFn: func(ctx context.Context) error {
+						firstSideEffectCalled = true
+						return datastore.Put(ctx, &cell{Index: firstIndex})
+					},
+					Events:       es[:1],
+					TransitionTo: s,
+				},
+				{
+					SideEffectFn: second,
+					Events:       es[1:],
+					TransitionTo: State(&secondState),
+				},
+			}, nil
+		}
+
+		Convey("Eversion must be checked", func() {
+			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
+				return 0, errors.New("ev error")
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "ev error")
+			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
+				return 1, nil
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "Concurrent modification")
+			So(firstSideEffectCalled, ShouldBeFalse)
+		})
+
+		p.fetchEVersion = func(_ context.Context) (EVersion, error) {
+			return 0, nil
+		}
+
+		Convey("No call to save if any Transition fails", func() {
+			second = func(_ context.Context) error {
+				return transient.Tag.Apply(errors.New("2nd failed"))
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "2nd failed")
+			So(firstSideEffectCalled, ShouldBeTrue)
+			// ... but w/o any effect since transaction should have been aborted
+			So(datastore.Get(ctx, &cell{Index: firstIndex}),
+				ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		second = func(_ context.Context) error { return nil }
+		Convey("Failed Save aborts any side effects, too", func() {
+			p.saveState = func(ctx context.Context, st State, ev EVersion) error {
+				s := *(st.(*int))
+				logging.Debugf(ctx, "wtf?")
+				So(ev, ShouldEqual, 1)
+				So(s, ShouldNotEqual, initState)
+				So(s, ShouldEqual, secondState)
+				return transient.Tag.Apply(errors.New("savvvvvvvvvvvvvvvvvvvvvvvvvv hung"))
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "savvvvvvvvvvvvvvvv")
+			// ... still no side effect.
+			So(datastore.Get(ctx, &cell{Index: firstIndex}),
+				ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		// In all cases, there must still be 2 unconsumed events.
+		l, err := List(ctx, recipient)
+		So(err, ShouldBeNil)
+		So(l, ShouldHaveLength, 2)
+
+		// Finally, check that first side effect is real, otherwise assertions above
+		// might be giving false sense of correctness.
+		p.saveState = func(context.Context, State, EVersion) error { return nil }
+		So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+		So(mustGet(ctx, firstIndex), ShouldNotBeNil)
+	})
+}
+
+type mockProc struct {
+	loadState     func(_ context.Context) (State, EVersion, error)
+	mutate        func(_ context.Context, _ Events, _ State) ([]Transition, error)
+	fetchEVersion func(ctx context.Context) (EVersion, error)
+	saveState     func(_ context.Context, _ State, _ EVersion) error
+}
+
+func (m *mockProc) LoadState(ctx context.Context) (State, EVersion, error) {
+	return m.loadState(ctx)
+}
+func (m *mockProc) Mutate(ctx context.Context, e Events, s State) ([]Transition, error) {
+	return m.mutate(ctx, e, s)
+}
+func (m *mockProc) FetchEVersion(ctx context.Context) (EVersion, error) {
+	return m.fetchEVersion(ctx)
+}
+func (m *mockProc) SaveState(ctx context.Context, s State, e EVersion) error {
+	return m.saveState(ctx, s, e)
 }
