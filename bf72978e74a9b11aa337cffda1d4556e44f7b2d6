@@ -16,6 +16,69 @@
       "message": "rubber-stampy lgtm.",
       "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a406a1d_5251834b",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-12-14T19:19:25Z",
+      "side": 1,
+      "message": "why?",
+      "range": {
+        "startLine": 428,
+        "startChar": 6,
+        "endLine": 428,
+        "endChar": 7
+      },
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a34f0da_290dfaec",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-12-14T19:19:25Z",
+      "side": 1,
+      "message": "You should just return it, lines 430-433 are unnecessary.",
+      "range": {
+        "startLine": 429,
+        "startChar": 2,
+        "endLine": 429,
+        "endChar": 13
+      },
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f66b70e5_e123cbed",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-12-14T19:19:25Z",
+      "side": 1,
+      "message": "sort",
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
