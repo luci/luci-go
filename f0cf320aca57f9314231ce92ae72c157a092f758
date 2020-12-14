@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a94d6f6_8f3f8c08",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T17:53:56Z",
+      "side": 1,
+      "message": "I see the addition of pmtest.Projects in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2588334/2, although prjmanager/impl/pm_test.go isn\u0027t modified in that CL, should it be?",
+      "parentUuid": "ed6af258_e7bf38d6",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "432da6b4_d6ce0d10",
@@ -84,6 +102,24 @@
       "side": 1,
       "message": "There is some misunderstanding.\neventbox is only for Project manager because it must handle \u003e1 QPS of incoming events.\nPoller doesn\u0027t need it, it\u0027s \"poked\" at once per ~10 seconds.\n\nAre you asking why previously it was a SideEffectFn executed during PM transaction and now it\u0027s fine to do it before transaction? That\u0027s because poking poller doesn\u0027t need to be atomic with updating PM entity -- the new config is already stored in datastore.",
       "parentUuid": "432da6b4_d6ce0d10",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76e7ca1a_af84cede",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T17:53:56Z",
+      "side": 1,
+      "message": "Thanks for explaining -- got it.",
+      "parentUuid": "5d1b7ba0_2f9c1094",
       "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
