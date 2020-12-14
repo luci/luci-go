@@ -33,6 +33,24 @@
       "message": "What does this do exactly? Why/how does importing the package as _ (unused) add TQ handlers to default service?",
       "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "982ac846_752893c2",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T19:11:21Z",
+      "side": 1,
+      "message": "the follow declarations inside that package (and all its dependencies) will be executed:\n  var ...\n  func init(){...}\n\nthe init() is where we attach a TQ handler for PM.",
+      "parentUuid": "2d15f59a_f151e38d",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
