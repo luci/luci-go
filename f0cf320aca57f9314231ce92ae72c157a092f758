@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed6af258_e7bf38d6",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T16:31:37Z",
+      "side": 1,
+      "message": "PokePMTask, see https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/30/2588330/2/cv/internal/prjmanager/internal/tq.go#38\n\nBut also see follow up CL with `pmtest` package, which makes it clearer, or so I hope.",
+      "parentUuid": "d0209f0d_a9522ed1",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "432da6b4_d6ce0d10",
@@ -48,6 +66,24 @@
       "writtenOn": "2020-12-14T16:21:07Z",
       "side": 1,
       "message": "Why is it that previously you were thinking of adding an event to eventbox for poller but it turns out only calling poller.Poke is necessary?",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d1b7ba0_2f9c1094",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T16:31:37Z",
+      "side": 1,
+      "message": "There is some misunderstanding.\neventbox is only for Project manager because it must handle \u003e1 QPS of incoming events.\nPoller doesn\u0027t need it, it\u0027s \"poked\" at once per ~10 seconds.\n\nAre you asking why previously it was a SideEffectFn executed during PM transaction and now it\u0027s fine to do it before transaction? That\u0027s because poking poller doesn\u0027t need to be atomic with updating PM entity -- the new config is already stored in datastore.",
+      "parentUuid": "432da6b4_d6ce0d10",
       "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
