@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e96bacb_be082b78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:58:48Z",
+      "side": 1,
+      "message": "Can you at least add a comment about that to server/tq? Ideally also add a check.",
+      "revId": "42bd502a37d6af0d6e30362b7a9f3c87195204e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
