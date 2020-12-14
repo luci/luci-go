@@ -16,6 +16,98 @@
       "message": "ptal",
       "revId": "fc1bfa9960f741bce6de7ba8b88eda5827a29cb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1391568f_aaced70c",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:32:46Z",
+      "side": 1,
+      "message": "I wonder, what would context.Context be used here for? There\u0027s a bit of inconsistency in how Log(...) takes the context, but the actually blocking methods like Write(...) don\u0027t.\n\nMaybe StepState should always use the context it was created with (the return value of Step(...))?",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 13
+      },
+      "revId": "fc1bfa9960f741bce6de7ba8b88eda5827a29cb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d6ea31a_aaee8fc3",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:32:46Z",
+      "side": 1,
+      "message": "Why not `Log(ctx, name, mode)` to be similar to open(...) in other languages (and to avoid duplication of helper methods that might support text and binary at the same time)?",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 68
+      },
+      "revId": "fc1bfa9960f741bce6de7ba8b88eda5827a29cb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a8a2736_22fe358d",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:32:46Z",
+      "side": 1,
+      "message": "Does anyone use this feature?",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 12
+      },
+      "revId": "fc1bfa9960f741bce6de7ba8b88eda5827a29cb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1ff1127_8022f3e8",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:32:46Z",
+      "side": 1,
+      "message": "IMO helper functions like these should not be a part of the interface, they are implementable via Log and LogBinary unless there\u0027s some special sort of optimization?\n\nIf you prefer to keep them, consider replacing `filepath string` with an io.Reader.",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 64
+      },
+      "revId": "fc1bfa9960f741bce6de7ba8b88eda5827a29cb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
