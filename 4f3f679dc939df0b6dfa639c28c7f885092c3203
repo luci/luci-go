@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d8cd52b_9b966c20",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T18:32:38Z",
+      "side": 1,
+      "message": "LGTM with question",
+      "revId": "4f3f679dc939df0b6dfa639c28c7f885092c3203",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65bcaa88_6a002527",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T18:32:38Z",
+      "side": 1,
+      "message": "Currently Update fetches meta etc. itself,\n\nI guess the idea is that actually we\u0027ll always fetch those before calling Update anyway, so to avoid redundant work, just pass them in?",
+      "revId": "4f3f679dc939df0b6dfa639c28c7f885092c3203",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
