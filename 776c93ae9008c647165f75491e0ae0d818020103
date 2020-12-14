@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff437eaa_b258e32c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T23:13:43Z",
+      "side": 1,
+      "message": "fwiw: true today, not sure about 1 year from now https://crbug.com/1146667",
+      "range": {
+        "startLine": 434,
+        "startChar": 0,
+        "endLine": 436,
+        "endChar": 24
+      },
+      "revId": "776c93ae9008c647165f75491e0ae0d818020103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
