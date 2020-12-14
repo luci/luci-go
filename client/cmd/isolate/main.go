@@ -20,9 +20,11 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
+	"github.com/golang/glog"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -56,6 +58,10 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 
 func main() {
 	log.SetFlags(log.Lmicroseconds)
+
+	flag.Parse()
+	defer glog.Flush()
+
 	mathrand.SeedRandomly()
 	app := getApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
