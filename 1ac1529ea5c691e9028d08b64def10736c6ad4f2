@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e721ec40_7c3343d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:45:24Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "1ac1529ea5c691e9028d08b64def10736c6ad4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e13f828_3676f02f",
+        "filename": "cv/internal/gerrit/poller/task/task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:45:24Z",
+      "side": 1,
+      "message": "As a note, I recall for Tricium all of the task-queue names were in one \"common\" package (https://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tricium/appengine/common/common.go;l\u003d23).\n\nAlthough the style of CV is clearly to have more information hiding by having more smaller packages, which I think is better, so having this here is good.",
+      "revId": "1ac1529ea5c691e9028d08b64def10736c6ad4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecc98921_807fb4cf",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:45:24Z",
+      "side": 1,
+      "message": "Nice :-)",
+      "revId": "1ac1529ea5c691e9028d08b64def10736c6ad4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
