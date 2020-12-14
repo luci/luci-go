@@ -22,6 +22,30 @@
       },
       "revId": "ad736e8f3c5e156808fac5ebed14d6f60d07721f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ac200c4_f20e386e",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-12-14T20:43:35Z",
+      "side": 1,
+      "message": "I mean:\n\n    ai :\u003d input.JSONInput.(*gerrit.AbandonInput)\n\nthis will force a panic if the type is incorrect, which should be fine instead of a nil value. But it\u0027s possible that the code does rely on nil value.",
+      "parentUuid": "d8348dfb_505b03c6",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 7
+      },
+      "revId": "ad736e8f3c5e156808fac5ebed14d6f60d07721f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
