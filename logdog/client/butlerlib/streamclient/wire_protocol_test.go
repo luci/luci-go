@@ -88,7 +88,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 	Convey(`in-process`, func() {
 		Convey(`text+binary`, func(c C) {
 			go func() {
-				stream, err := client.NewTextStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test")
 				c.So(err, ShouldBeNil)
 				_, err = stream.Write([]byte("hello world!!"))
 				c.So(err, ShouldBeNil)
@@ -146,7 +146,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 		if forProcessTest {
 			Convey(`subprocess`, func(c C) {
 				go func() {
-					stream, err := client.NewTextStream(ctx, "test", ForProcess())
+					stream, err := client.NewStream(ctx, "test", ForProcess())
 					c.So(err, ShouldBeNil)
 					c.So(stream, ShouldHaveSameTypeAs, (*os.File)(nil))
 					defer stream.Close()
@@ -176,7 +176,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 
 			Convey(`in-process use of "ForProcess" handle`, func(c C) {
 				go func() {
-					stream, err := client.NewTextStream(ctx, "test", ForProcess())
+					stream, err := client.NewStream(ctx, "test", ForProcess())
 					c.So(err, ShouldBeNil)
 					_, err = stream.Write([]byte("hello world!!"))
 					c.So(err, ShouldBeNil)
