@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9452710f_59041424",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:21:07Z",
+      "side": 1,
+      "message": "LGTM with questions",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0209f0d_a9522ed1",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:21:07Z",
+      "side": 1,
+      "message": "What is this task?",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "432da6b4_d6ce0d10",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T16:21:07Z",
+      "side": 1,
+      "message": "Why is it that previously you were thinking of adding an event to eventbox for poller but it turns out only calling poller.Poke is necessary?",
+      "revId": "f0cf320aca57f9314231ce92ae72c157a092f758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
