@@ -22,6 +22,30 @@
       },
       "revId": "09707846664d7b323baf1b97dd69c63ab45c81f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84540509_48d0c3e1",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-14T00:35:39Z",
+      "side": 1,
+      "message": "Oops. The GetCurrentUser CL was landed around the same time and I forgot to update it after rebasing. I\u0027ll open another CL to fix this.",
+      "parentUuid": "b4500074_19589b22",
+      "range": {
+        "startLine": 38,
+        "startChar": 22,
+        "endLine": 38,
+        "endChar": 45
+      },
+      "revId": "09707846664d7b323baf1b97dd69c63ab45c81f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
