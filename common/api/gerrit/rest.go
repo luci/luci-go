@@ -454,7 +454,7 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 
 	res, err := ctxhttp.Do(ctx, c.Client, req)
 	if err != nil {
-		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute Post HTTP request: %s", err)
+		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute %s HTTP request: %s", method, err)
 	}
 	defer res.Body.Close()
 
@@ -462,6 +462,7 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 	if err != nil {
 		return res.StatusCode, []byte{}, status.Errorf(codes.Internal, "failed to read response: %s", err)
 	}
+	logging.Debugf(ctx, "HTTP %d %d <= %s %s", res.StatusCode, len(body), method, url)
 
 	expectedHTTPCodes = append(expectedHTTPCodes, http.StatusOK)
 	for _, s := range expectedHTTPCodes {
