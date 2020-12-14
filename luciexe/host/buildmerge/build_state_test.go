@@ -153,14 +153,6 @@ func TestBuildState(t *testing.T) {
 			})
 
 			Convey(`no updates`, func() {
-				Convey(`getLatest`, func() {
-					assertStateEqual(bs.getLatest(), &buildState{
-						build: &bbpb.Build{
-							Status:          bbpb.Status_SCHEDULED,
-							SummaryMarkdown: "build.proto not found",
-						}})
-				})
-
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()

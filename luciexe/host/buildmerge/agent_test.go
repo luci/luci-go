@@ -243,26 +243,23 @@ func TestAgent(t *testing.T) {
 						}},
 					},
 				}))
-				expect.Steps = append(expect.Steps, &bbpb.Step{
-					Name:            "Merge|SuperDeep",
-					Status:          bbpb.Status_SCHEDULED,
-					SummaryMarkdown: "build.proto not found",
-					Logs: []*bbpb.Log{{
-						Name: "$build.proto", Url: "url://u/sub/super_deep/build.proto",
-					}},
-				})
-				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
-
+				<-merger.MergedBuildC // digest subTrack update
 				superTrack.handleNewData(mkDgram(&bbpb.Build{
 					Steps: []*bbpb.Step{
 						{Name: "Hi!"},
 					},
 				}))
-				expect.Steps[len(expect.Steps)-1].Status = bbpb.Status_STATUS_UNSPECIFIED
-				expect.Steps[len(expect.Steps)-1].SummaryMarkdown = ""
-				expect.Steps = append(expect.Steps, &bbpb.Step{
-					Name: "Merge|SuperDeep|Hi!",
-				})
+				expect.Steps = append(expect.Steps,
+					&bbpb.Step{
+						Name: "Merge|SuperDeep",
+						Logs: []*bbpb.Log{{
+							Name: "$build.proto", Url: "url://u/sub/super_deep/build.proto",
+						}},
+					},
+					&bbpb.Step{
+						Name: "Merge|SuperDeep|Hi!",
+					},
+				)
 				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 				Convey(`and shut down`, func() {
@@ -344,7 +341,7 @@ func TestAgent(t *testing.T) {
 			})
 		})
 
-		Convey(`can handle missing sub-build`, func() {
+		Convey(`can merge sub-build`, func() {
 			merger.onNewStream(mkDesc("u/build.proto"))
 			rootTrack, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
@@ -361,42 +358,61 @@ func TestAgent(t *testing.T) {
 			}))
 
 			expect := proto.Clone(base).(*bbpb.Build)
-			expect.Steps = append(expect.Steps, &bbpb.Step{
-				Name:   "Merge",
-				Status: bbpb.Status_STARTED,
-				Logs: []*bbpb.Log{{
-					Name: "$build.proto", Url: "url://u/sub/build.proto",
-				}},
-				SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" has not registered yet",
-			})
+			expect.Steps = nil
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
-			Convey(`and merge properly when sub-build stream is present later`, func() {
-				merger.onNewStream(mkDesc("u/sub/build.proto"))
-				subTrack, ok := merger.states["url://u/sub/build.proto"]
-				So(ok, ShouldBeTrue)
-
-				subTrack.handleNewData(mkDgram(&bbpb.Build{
-					Status: bbpb.Status_SUCCESS,
-					Steps: []*bbpb.Step{
-						{Name: "SubStep"},
-					},
-				}))
-
-				expect.Steps = nil
-				expect.Steps = append(expect.Steps,
+			Convey(`when sub-build stream has not been registered yet`, func() {
+				expect.Steps = []*bbpb.Step{
 					&bbpb.Step{
 						Name:   "Merge",
-						Status: bbpb.Status_SUCCESS,
+						Status: bbpb.Status_STARTED,
 						Logs: []*bbpb.Log{{
 							Name: "$build.proto", Url: "url://u/sub/build.proto",
 						}},
+						SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" has not registered yet",
 					},
-					&bbpb.Step{Name: "Merge|SubStep"},
-				)
+				}
 				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+
+				Convey(`then registered but stream is empty`, func() {
+					merger.onNewStream(mkDesc("u/sub/build.proto"))
+					subTrack, ok := merger.states["url://u/sub/build.proto"]
+					So(ok, ShouldBeTrue)
+					expect.Steps = []*bbpb.Step{
+						&bbpb.Step{
+							Name:   "Merge",
+							Status: bbpb.Status_STARTED,
+							Logs: []*bbpb.Log{{
+								Name: "$build.proto", Url: "url://u/sub/build.proto",
+							}},
+							SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is empty",
+						},
+					}
+					// send something random to kick off a merge.
+					merger.onNewStream(mkDesc("u/unknown/build.proto"))(mkDgram(&bbpb.Build{}))
+					So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+
+					Convey(`finally merge properly when sub-build stream is present`, func() {
+						subTrack.handleNewData(mkDgram(&bbpb.Build{
+							Status: bbpb.Status_SUCCESS,
+							Steps: []*bbpb.Step{
+								{Name: "SubStep"},
+							},
+						}))
+						expect.Steps = []*bbpb.Step{
+							&bbpb.Step{
+								Name:   "Merge",
+								Status: bbpb.Status_SUCCESS,
+								Logs: []*bbpb.Log{{
+									Name: "$build.proto", Url: "url://u/sub/build.proto",
+								}},
+							},
+							&bbpb.Step{Name: "Merge|SubStep"},
+						}
+						So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+					})
+				})
 			})
 		})
 	})
