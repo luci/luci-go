@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c074559_1da8bdd5",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-14T19:51:51Z",
+      "side": 1,
+      "message": "L193 uses q.outOfTime(ctx). This loop should also use it for timeout?\n\n```\nselect {\ncase entry, ok :\u003d \u003c- wi.resultsC:\n  ...\n// if the parent cancelled the context\ncase \u003c-ctx.Done():\n  return ctx.Err()\n\n// if the query timed out\ncase \u003c-q.outOfTime(ctx):\n  ....\n  return errors.Reason(\"out of time\").Tag(pageBreak).Err()\n}\n```\n\nIt requires a change in outOfTime, though.",
+      "range": {
+        "startLine": 174,
+        "startChar": 3,
+        "endLine": 175,
+        "endChar": 6
+      },
+      "revId": "ece16c8b51e85473e7b9cd45628fbb6128e2838e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
