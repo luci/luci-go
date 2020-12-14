@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -151,6 +152,11 @@ func TestUpdate(t *testing.T) {
 				Snapshot:         snap,
 				ApplicableConfig: acfg,
 				AddDependentMeta: asdep,
+			}, func(ctx context.Context, id common.CLID, ev int) error {
+				So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+				So(id, ShouldBeGreaterThan, 0)
+				So(ev, ShouldEqual, 1)
+				return nil
 			})
 			So(err, ShouldBeNil)
 			cl, err := eid.Get(ctx)
@@ -171,7 +177,13 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			snap := makeSnapshot(epoch)
-			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap})
+			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap},
+				func(ctx context.Context, id common.CLID, ev int) error {
+					So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+					So(id, ShouldEqual, cl.ID)
+					So(ev, ShouldEqual, 2)
+					return nil
+				})
 			So(err, ShouldBeNil)
 
 			cl2, err := eid.Get(ctx)
@@ -187,7 +199,13 @@ func TestUpdate(t *testing.T) {
 			Convey("with known CLID", func() {
 				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
 				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
-					UpdateFields{ApplicableConfig: acfg2})
+					UpdateFields{ApplicableConfig: acfg2},
+					func(ctx context.Context, id common.CLID, ev int) error {
+						So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+						So(id, ShouldEqual, cl.ID)
+						So(ev, ShouldEqual, 3)
+						return nil
+					})
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
@@ -204,6 +222,8 @@ func TestUpdate(t *testing.T) {
 					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
 					ApplicableConfig: makeApplicableConfig(epoch.Add(-time.Minute)),
 					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
+				}, func(context.Context, common.CLID, int) error {
+					panic("must not be called")
 				})
 				So(err, ShouldBeNil)
 
@@ -218,7 +238,7 @@ func TestUpdate(t *testing.T) {
 
 			Convey("adds/updates DependentMeta", func() {
 				asdep3 := makeDependentMeta(epoch.Add(time.Minute), "another-project", "2nd")
-				err = Update(ctx, "", cl.ID, UpdateFields{AddDependentMeta: asdep3})
+				err = Update(ctx, "", cl.ID, UpdateFields{AddDependentMeta: asdep3}, nil)
 				So(err, ShouldBeNil)
 				cl3, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
@@ -226,7 +246,7 @@ func TestUpdate(t *testing.T) {
 
 				err = Update(ctx, "", cl.ID, UpdateFields{
 					AddDependentMeta: makeDependentMeta(epoch.Add(time.Hour), "2nd", "3rd"),
-				})
+				}, nil)
 				So(err, ShouldBeNil)
 				cl4, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
@@ -302,7 +322,7 @@ func TestConcurrentUpdate(t *testing.T) {
 				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
-					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}); err == nil {
+					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}, nil); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
