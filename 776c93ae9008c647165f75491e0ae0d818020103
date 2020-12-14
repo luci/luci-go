@@ -22,6 +22,30 @@
       },
       "revId": "776c93ae9008c647165f75491e0ae0d818020103",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dfc115c_1aa0cc1b",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-14T23:34:21Z",
+      "side": 1,
+      "message": "Acked.",
+      "parentUuid": "ff437eaa_b258e32c",
+      "range": {
+        "startLine": 434,
+        "startChar": 0,
+        "endLine": 436,
+        "endChar": 24
+      },
+      "revId": "776c93ae9008c647165f75491e0ae0d818020103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
