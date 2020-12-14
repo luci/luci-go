@@ -17,14 +17,49 @@ package resultdb
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/grpc/appstatus"
-
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
+	"go.chromium.org/luci/resultdb/internal/testvariants"
 )
 
 // QueryTestVariants implements uipb.UIServer.
 func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVariantsRequest) (*uipb.QueryTestVariantsResponse, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
+	if err := permissions.VerifyInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
+		return nil, err
+	}
+
+	if err := validateQueryRequest(in); err != nil {
+		return nil, err
+	}
+
+	// Open a transaction.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	// Get the transitive closure.
+	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read the reach").Err()
+	}
+
+	// Query test variants.
+	q := testvariants.Query{
+		InvocationIDs: invs,
+		PageSize:      pagination.AdjustPageSize(in.PageSize),
+		PageToken:     in.PageToken,
+	}
+	tvs, token, err := q.Fetch(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read test variants").Err()
+	}
+
+	return &uipb.QueryTestVariantsResponse{
+		TestVariants:  tvs,
+		NextPageToken: token,
+	}, nil
 }
