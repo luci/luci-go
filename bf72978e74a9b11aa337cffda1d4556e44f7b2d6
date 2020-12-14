@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74f42c3c_1c31f963",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-12-14T19:26:43Z",
+      "side": 1,
+      "message": "Copy-pasted for consistency - see comment below.",
+      "parentUuid": "2a406a1d_5251834b",
+      "range": {
+        "startLine": 428,
+        "startChar": 6,
+        "endLine": 428,
+        "endChar": 7
+      },
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a34f0da_290dfaec",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fec64de_feec9d0e",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-12-14T19:26:43Z",
+      "side": 1,
+      "message": "Good point, I just copy-pasted this from another function. All the cmds do it this way, so I\u0027ll fix them all in a follow-up.",
+      "parentUuid": "2a34f0da_290dfaec",
+      "range": {
+        "startLine": 429,
+        "startChar": 2,
+        "endLine": 429,
+        "endChar": 13
+      },
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f66b70e5_e123cbed",
@@ -77,6 +125,24 @@
       "writtenOn": "2020-12-14T19:19:25Z",
       "side": 1,
       "message": "sort",
+      "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f401206_ea6c9645",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-12-14T19:26:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f66b70e5_e123cbed",
       "revId": "bf72978e74a9b11aa337cffda1d4556e44f7b2d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
