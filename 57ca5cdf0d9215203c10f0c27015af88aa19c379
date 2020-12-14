@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1edc322_71a57e34",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T18:35:31Z",
+      "side": 1,
+      "message": "LGTM with question",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d15f59a_f151e38d",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T18:35:31Z",
+      "side": 1,
+      "message": "What does this do exactly? Why/how does importing the package as _ (unused) add TQ handlers to default service?",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
