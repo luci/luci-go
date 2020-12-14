@@ -51,6 +51,8 @@ func main() {
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
 		srv.Context = gerrit.UseProd(srv.Context)
 
+		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"
+
 		srv.Routes.GET("/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) {
@@ -69,7 +71,7 @@ func main() {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs[1] = configcron.SubmitRefreshTasks(ctx)
+					errs[1] = configcron.SubmitRefreshTasks(ctx, isDev)
 				}()
 
 				wg.Wait()
