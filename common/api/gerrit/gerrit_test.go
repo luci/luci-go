@@ -375,6 +375,61 @@ func TestAbandonChange(t *testing.T) {
 	})
 }
 
+func TestRebase(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("RebaseChange", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ri RestoreInput
+			err := json.NewDecoder(r.Body).Decode(&ri)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeCL1Str)
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			change, err := client.RebaseChange(ctx, "627036", nil)
+			So(err, ShouldBeNil)
+			So(change.Status, ShouldResemble, "NEW")
+		})
+
+		Convey("Basic with overridden base revision", func() {
+			ri := RebaseInput{
+				Base: "abc123",
+			}
+			change, err := client.RebaseChange(ctx, "627036", &ri)
+			So(err, ShouldBeNil)
+			So(change.Status, ShouldResemble, "NEW")
+		})
+	})
+
+	Convey("RebaseChange with nontrivial merge conflict", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ri RebaseInput
+			err := json.NewDecoder(r.Body).Decode(&ri)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(409)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "change has conflicts")
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			_, err := client.RebaseChange(ctx, "627036", nil)
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
 func TestRestoreChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
