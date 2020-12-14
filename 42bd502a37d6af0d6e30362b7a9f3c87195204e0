@@ -16,6 +16,23 @@
       "message": "Can you at least add a comment about that to server/tq? Ideally also add a check.",
       "revId": "42bd502a37d6af0d6e30362b7a9f3c87195204e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4073bafe_0245a1fc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:01:33Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "42bd502a37d6af0d6e30362b7a9f3c87195204e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
