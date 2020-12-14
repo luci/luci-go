@@ -15,6 +15,7 @@
 package poller
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -32,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -222,6 +224,8 @@ func TestPoller(t *testing.T) {
 			}})
 			// Ensure follow up task has been created.
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			So(watchedBy(ctx, gHost, gRepo, "refs/heads/main").
+				HasOnlyProject(lProject), ShouldBeTrue)
 
 			Convey("with CLs", func() {
 				getCL := func(host string, change int) *changelist.CL {
@@ -320,6 +324,8 @@ func TestPoller(t *testing.T) {
 						LastFullTime: timestamppb.New(ct.Clock.Now()),
 					},
 				})
+				So(watchedBy(ctx, gHost, "shared/001", "refs/heads/main").
+					HasOnlyProject(lProject), ShouldBeTrue)
 			})
 
 			Convey("disabled project => remove poller state & stop task chain", func() {
@@ -327,6 +333,8 @@ func TestPoller(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")
+				ensureNotWatched(ctx, gHost, "shared/001", "refs/heads/main")
 			})
 
 			Convey("deleted => remove poller state & stop task chain", func() {
@@ -334,9 +342,22 @@ func TestPoller(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")
+				ensureNotWatched(ctx, gHost, "shared/001", "refs/heads/main")
 			})
 		})
 	})
+}
+
+func watchedBy(ctx context.Context, gHost, gRepo, ref string) *changelist.ApplicableConfig {
+	a, err := gobmap.Lookup(ctx, gHost, gRepo, ref)
+	So(err, ShouldBeNil)
+	return a
+}
+
+func ensureNotWatched(ctx context.Context, gHost, gRepo, ref string) {
+	a := watchedBy(ctx, gHost, gRepo, ref)
+	So(a.GetProjects(), ShouldBeEmpty)
 }
 
 func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
