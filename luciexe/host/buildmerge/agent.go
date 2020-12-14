@@ -291,11 +291,11 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		base.Steps = make([]*bbpb.Step, 0, stepCount)
 	}
 
-	var insertSteps func(stepNS []string, streamURL string) *bbpb.Build
-	insertSteps = func(stepNS []string, streamURL string) *bbpb.Build {
+	var insertSteps func(stepNS []string, streamURL string) (build *bbpb.Build, registered bool)
+	insertSteps = func(stepNS []string, streamURL string) (*bbpb.Build, bool) {
 		build, ok := builds[streamURL]
 		if !ok {
-			return nil
+			return nil, false
 		}
 		for _, step := range build.GetSteps() {
 			isMergeStep := luciexe.IsMergeStep(step)
@@ -313,17 +313,24 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 			if isMergeStep {
 				logURL := step.Logs[0].Url
-				subBuild := insertSteps(append(stepNS, baseName), logURL)
-				if subBuild == nil {
+				subBuild, registered := insertSteps(append(stepNS, baseName), logURL)
+				switch {
+				case !registered:
 					step.SummaryMarkdown = fmt.Sprintf("build.proto stream: %q has not registered yet", logURL)
-				} else {
+				case subBuild == nil:
+					step.SummaryMarkdown = fmt.Sprintf("build.proto stream: %q is empty", logURL)
+				default:
 					updateStepFromBuild(step, subBuild)
 				}
 			}
 		}
-		return build
+		return build, true
 	}
-	updateBaseFromUserBuild(&base, insertSteps(nil, a.userRootURL))
+
+	userBuild, registered := insertSteps(nil, a.userRootURL)
+	if registered && userBuild != nil {
+		updateBaseFromUserBuild(&base, userBuild)
+	}
 
 	select {
 	case a.mergedBuildC <- &base:
