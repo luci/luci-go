@@ -45,7 +45,8 @@ func (t TestController) Create(ctx context.Context, project string, cfg *pb.Conf
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
 	}))
-	if err := UpdateProject(ctx, project); err != nil {
+	err := UpdateProject(ctx, project, func(context.Context) error { return nil })
+	if err != nil {
 		panic(err)
 	}
 }
@@ -58,7 +59,8 @@ func (t TestController) Update(ctx context.Context, project string, cfg *pb.Conf
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
 	}))
-	if err := UpdateProject(ctx, project); err != nil {
+	err := UpdateProject(ctx, project, func(context.Context) error { return nil })
+	if err != nil {
 		panic(err)
 	}
 }
@@ -68,7 +70,10 @@ func (t TestController) Update(ctx context.Context, project string, cfg *pb.Conf
 // Panics if project config doesn't exist.
 func (t TestController) Disable(ctx context.Context, project string) {
 	t.MustExist(ctx, project)
-	DisableProject(ctx, project)
+	err := DisableProject(ctx, project, func(context.Context) error { return nil })
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Enable enables project.

@@ -126,19 +126,28 @@ func TestUpdateProject(t *testing.T) {
 			})
 		}
 
+		notifyCalled := false
+		notify := func(context.Context) error {
+			notifyCalled = true
+			return nil
+		}
+
 		Convey("Creates new ProjectConfig", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.ProjectSet("chromium"): {
 					ConfigFileName: toProtoText(chromiumConfig),
 				},
 			}))
-			err := UpdateProject(ctx, "chromium")
+			err := UpdateProject(ctx, "chromium", notify)
 			So(err, ShouldBeNil)
 			verifyEntitiesInDatastore(ctx, 1)
+			So(notifyCalled, ShouldBeTrue)
+
+			notifyCalled = false
 			testClock.Add(10 * time.Minute)
 
 			Convey("Noop if config is up-to-date", func() {
-				err := UpdateProject(ctx, "chromium")
+				err := UpdateProject(ctx, "chromium", notify)
 				So(err, ShouldBeNil)
 				pc := ProjectConfig{Project: "chromium"}
 				err = datastore.Get(ctx, &pc)
@@ -146,6 +155,7 @@ func TestUpdateProject(t *testing.T) {
 				So(pc.EVersion, ShouldEqual, 1)
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
 				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime.UTC())
+				So(notifyCalled, ShouldBeFalse)
 			})
 
 			Convey("Update existing ProjectConfig", func() {
@@ -169,9 +179,12 @@ func TestUpdateProject(t *testing.T) {
 						ConfigFileName: toProtoText(updatedConfig),
 					},
 				}))
-				err := UpdateProject(ctx, "chromium")
+				err := UpdateProject(ctx, "chromium", notify)
 				So(err, ShouldBeNil)
 				verifyEntitiesInDatastore(ctx, 2)
+				So(notifyCalled, ShouldBeTrue)
+
+				notifyCalled = false
 				testClock.Add(10 * time.Minute)
 
 				Convey("Roll back to previous version", func() {
@@ -181,14 +194,15 @@ func TestUpdateProject(t *testing.T) {
 						},
 					}))
 
-					err := UpdateProject(ctx, "chromium")
+					err := UpdateProject(ctx, "chromium", notify)
 					So(err, ShouldBeNil)
 					verifyEntitiesInDatastore(ctx, 3)
+					So(notifyCalled, ShouldBeTrue)
 				})
 
 				Convey("Re-enables project even if config hash is the same", func() {
 					testClock.Add(10 * time.Minute)
-					So(DisableProject(ctx, "chromium"), ShouldBeNil)
+					So(DisableProject(ctx, "chromium", notify), ShouldBeNil)
 					before := ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &before), ShouldBeNil)
 					// Delete config entities.
@@ -203,7 +217,7 @@ func TestUpdateProject(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					testClock.Add(10 * time.Minute)
-					So(UpdateProject(ctx, "chromium"), ShouldBeNil)
+					So(UpdateProject(ctx, "chromium", notify), ShouldBeNil)
 					after := ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &after), ShouldBeNil)
 
@@ -212,6 +226,7 @@ func TestUpdateProject(t *testing.T) {
 					So(after.Hash, ShouldResemble, before.Hash)
 					// Ensure deleted entities are re-created.
 					verifyEntitiesInDatastore(ctx, 4)
+					So(notifyCalled, ShouldBeTrue)
 				})
 			})
 		})
@@ -235,31 +250,40 @@ func TestDisableProject(t *testing.T) {
 			testClock.Add(10 * time.Minute)
 		}
 
+		notifyCalled := false
+		notify := func(context.Context) error {
+			notifyCalled = true
+			return nil
+		}
+
 		Convey("currently enabled Project", func() {
 			writeProjectConfig(true)
-			err := DisableProject(ctx, "chromium")
+			err := DisableProject(ctx, "chromium", notify)
 			So(err, ShouldBeNil)
 			actual := ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
 			So(actual.Enabled, ShouldBeFalse)
 			So(actual.EVersion, ShouldEqual, 101)
 			So(actual.UpdateTime, ShouldResemble, datastore.RoundTime(testClock.Now()).UTC())
+			So(notifyCalled, ShouldBeTrue)
 		})
 
 		Convey("currently disabled Project", func() {
 			writeProjectConfig(false)
-			err := DisableProject(ctx, "chromium")
+			err := DisableProject(ctx, "chromium", notify)
 			So(err, ShouldBeNil)
 			actual := ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
 			So(actual.Enabled, ShouldBeFalse)
 			So(actual.EVersion, ShouldEqual, 100)
+			So(notifyCalled, ShouldBeFalse)
 		})
 
 		Convey("non-existing Project", func() {
-			err := DisableProject(ctx, "non-existing")
+			err := DisableProject(ctx, "non-existing", notify)
 			So(err, ShouldBeNil)
 			So(datastore.Get(ctx, &ProjectConfig{Project: "non-existing"}), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(notifyCalled, ShouldBeFalse)
 		})
 	})
 }
