@@ -79,16 +79,16 @@ func Schedule(ctx context.Context, luciProject, host string, change int64,
 	}
 	task := &tq.Task{
 		Payload: payload,
-		Title:   fmt.Sprintf("refresh-%s-%d", host, change),
+		Title:   fmt.Sprintf("%s/%s/%d", luciProject, host, change),
 	}
 
 	if clidHint != 0 {
-		task.Title += fmt.Sprintf("[%d]", clidHint)
+		task.Title += fmt.Sprintf("/clid-%d", clidHint)
 		payload.ClidHint = int64(clidHint)
 	}
 	if !updatedHint.IsZero() {
 		payload.UpdatedHint = timestamppb.New(updatedHint)
-		task.Title += fmt.Sprintf("@%s", updatedHint)
+		task.Title += fmt.Sprintf("/u-%s", updatedHint.UTC().Format(time.RFC3339))
 	}
 
 	// If done within transaction, can't use de-dup.
