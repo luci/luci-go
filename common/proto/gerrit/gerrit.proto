@@ -472,26 +472,87 @@ message LabelInfo {
   bool optional = 1;
 
   // One user who approved this label on the change.
+  //
+  // Only set if LABELS are requested.
   AccountInfo approved = 2;
 
   // One user who rejected this label on the change.
+  //
+  // Only set if LABELS are requested.
   AccountInfo rejected = 3;
 
   // One user who recommended this label on the change.
+  //
+  // Only set if LABELS are requested.
   AccountInfo recommended = 4;
 
   // One user who disliked this label on the change.
+  //
+  // Only set if LABELS are requested.
   AccountInfo disliked = 5;
 
   // If true, the label blocks submit operation.
+  //
+  // Only set if LABELS are requested.
   bool blocking = 6;
 
   // The voting value of the user who recommended/disliked this label on the
   // change if it is not "+1"/"-1".
+  //
+  // Only set if LABELS are requested.
   int32 value = 7;
 
   // The default voting value for the label.
+  //
+  // Only set if LABELS are requested.
   int32 default_value = 8;
+
+  // List of all votes for this label.
+  //
+  // Items in this list may not represent actual votes cast by users; if a user
+  // votes on any label, a corresponding ApprovalInfo will appear in this list
+  // for all labels.
+  //
+  // Only set if DETAILED_LABELS are requested.
+  repeated ApprovalInfo all = 9;
+
+  // A map of all values that are allowed for this label to their descriptions.
+  //
+  // Only set if DETAILED_LABELS are requested.
+  map<int32, string> values = 10;
+}
+
+// Information about an approval from a user for a label on a change.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#approval-info
+message ApprovalInfo {
+  // User who did the approval.
+  AccountInfo user = 1;
+
+  // The vote that the user has given for the label.
+  int32 value = 2;
+  // The range of votes the user is authorized to vote on that label.
+  //
+  // If absent, the user is not permitted to vote on that label.
+  VotingRangeInfo permitted_voting_range = 3;
+  // The time and date describing when the approval was made.
+  google.protobuf.Timestamp date = 4;
+  // Value of the tag field from ReviewInput set while posting the review.
+  string tag = 5;
+  // If true, this vote was made after the change was submitted.
+  bool post_submit = 6;
+}
+
+// VotingRangeInfo describes the continuous voting range from min to max values.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#voting-range-info
+message VotingRangeInfo {
+  // The minimum voting value, inclusive.
+  int32 min = 1;
+  // The maximum voting value, inclusive.
+  int32 max = 2;
 }
 
 // Information about a message attached to change.
