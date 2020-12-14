@@ -448,6 +448,12 @@ func TestUpdateBuild(t *testing.T) {
 		ctx = txndefer.FilterRDS(ctx)
 		ctx, sch := tq.TestingContext(ctx, nil)
 
+		// helper function to call UpdateBuild.
+		updateBuild := func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+			_, err := srv.UpdateBuild(ctx, req)
+			return err
+		}
+
 		// create and save a sample build in the datastore
 		build := &model.Build{
 			ID: 1,
@@ -471,8 +477,7 @@ func TestUpdateBuild(t *testing.T) {
 
 		Convey("permission deined, if sender is not in updater group", func() {
 			s.Identity = "anonymous:anonymous"
-			_, err := srv.UpdateBuild(ctx, req)
-			So(err, ShouldHaveRPCCode, codes.PermissionDenied)
+			So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.PermissionDenied)
 		})
 
 		Convey("build.output.properties", func() {
@@ -482,17 +487,13 @@ func TestUpdateBuild(t *testing.T) {
 
 			Convey("with mask", func() {
 				req.UpdateMask.Paths[0] = "build.output.properties"
-				_, err = srv.UpdateBuild(ctx, req)
-
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Output.Properties, ShouldResembleProtoJSON, `{"key": "value"}`)
 			})
 
 			Convey("without mask", func() {
-				_, err = srv.UpdateBuild(ctx, req)
-
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Output.Properties, ShouldResembleProtoJSON, `{}`)
 			})
@@ -513,17 +514,13 @@ func TestUpdateBuild(t *testing.T) {
 
 			Convey("with mask", func() {
 				req.UpdateMask.Paths[0] = "build.steps"
-				_, err := srv.UpdateBuild(ctx, req)
-
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Steps[0], ShouldResembleProto, step)
 			})
 
 			Convey("without mask", func() {
-				_, err := srv.UpdateBuild(ctx, req)
-
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Proto.Steps, ShouldBeNil)
 			})
@@ -533,8 +530,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Status = pb.Status_STARTED
 				req.Build.Steps[0].Status = pb.Status_STARTED
 				req.Build.Steps[0].EndTime = nil
-				_, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 			})
 
 			Convey("incomplete steps with terminal Build status", func() {
@@ -544,11 +540,10 @@ func TestUpdateBuild(t *testing.T) {
 				Convey("with mask", func() {
 					req.Build.Steps[0].Status = pb.Status_STARTED
 					req.Build.Steps[0].EndTime = nil
-					_, err := srv.UpdateBuild(ctx, req)
 
 					// Should be rejected.
 					msg := `cannot be "STARTED" because the build has a terminal status "SUCCESS"`
-					So(err, ShouldHaveRPCCode, codes.InvalidArgument, msg)
+					So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.InvalidArgument, msg)
 				})
 
 				Convey("w/o mask", func() {
@@ -556,14 +551,12 @@ func TestUpdateBuild(t *testing.T) {
 					req.Build.Status = pb.Status_STARTED
 					req.Build.Steps[0].Status = pb.Status_STARTED
 					req.Build.Steps[0].EndTime = nil
-					_, err := srv.UpdateBuild(ctx, req)
-					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+					So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 					// update the build again with a terminal status, but w/o step mask.
 					req.UpdateMask.Paths = []string{"build.status"}
 					req.Build.Status = pb.Status_SUCCESS
-					_, err = srv.UpdateBuild(ctx, req)
-					So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+					So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 					// the step should have been cancelled.
 					b := getBuildWithDetails(ctx, req.Build.Id)
@@ -584,8 +577,7 @@ func TestUpdateBuild(t *testing.T) {
 
 			Convey("with mask", func() {
 				req.UpdateMask.Paths[0] = "build.tags"
-				_, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
@@ -593,8 +585,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// change the value and update it again
 				tag.Value = "enabled"
-				_, err = srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 				// both tags should exist
 				b = getBuildWithDetails(ctx, req.Build.Id)
@@ -603,9 +594,7 @@ func TestUpdateBuild(t *testing.T) {
 			})
 
 			Convey("without mask", func() {
-				_, err := srv.UpdateBuild(ctx, req)
-
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Tags, ShouldBeNil)
 			})
@@ -615,8 +604,7 @@ func TestUpdateBuild(t *testing.T) {
 			Convey("Status_STARTED w/o status change", func() {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				_, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 				// no TQ tasks should be scheduled.
 				So(sch.Tasks(), ShouldBeEmpty)
@@ -636,8 +624,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Id = build.ID
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				_, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 				// TQ task for pubsub-notification.
 				tasks := sch.Tasks()
@@ -653,8 +640,7 @@ func TestUpdateBuild(t *testing.T) {
 			Convey("Status_SUCCESSS w/o status change", func() {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				_, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented, "method not implemented")
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
