@@ -99,18 +99,3 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (
 	}
 	panic("unreachable")
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// helpers
-
-func notifyGoBPoller(luciProject string) eventbox.SideEffectFn {
-	return func(_ context.Context) error {
-		// TODO(tandrii): notify Gerrit Poller.
-		return nil
-	}
-}
-
-func notifyIncompleteRuns(ctx context.Context) error {
-	// TODO(tandrii): notify IncompleteRuns.
-	return nil
-}
