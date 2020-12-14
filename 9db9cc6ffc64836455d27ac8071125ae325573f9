@@ -16,6 +16,46 @@
       "message": "ptal",
       "revId": "9db9cc6ffc64836455d27ac8071125ae325573f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a59cadcb_34cbf26a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:09:52Z",
+      "side": 1,
+      "message": "This CL itself lgtm, but I have concerns regarding the previous CL.",
+      "revId": "9db9cc6ffc64836455d27ac8071125ae325573f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6645e735_6a7eec90",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-14T21:09:52Z",
+      "side": 1,
+      "message": "I don\u0027t think this is correct. Defers capture values of arguments at the moment `defer` is declared. https://play.golang.org/p/qthrK3ObB7e\n\nAnd as I mentioned in the previous CL, panic handling is either broken or too magical, e.g. the previous version of this doc claimed this is fine:\n\n  func f() {\n    var err error\n    ctx, state :\u003d build.Start(ctx, ...)\n    defer func() { state.End(err) }\n\n    panic(\"Boom\")\n  }\n\nIt would call `state.End(nil)`. Why is it fine? Does End() do recovery inside? If so, it should probably be documented. If it does recover, does it rethrow the panic of just \"eats\" it?",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 26
+      },
+      "revId": "9db9cc6ffc64836455d27ac8071125ae325573f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
