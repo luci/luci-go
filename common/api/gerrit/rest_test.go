@@ -179,6 +179,7 @@ func TestGetChange(t *testing.T) {
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
 						Number: 1,
+						Kind:   gerritpb.RevisionInfo_REWORK,
 						Ref:    "refs/changes/123",
 						Files: map[string]*gerritpb.FileInfo{
 							"go/to/file.go": {
@@ -267,6 +268,7 @@ func TestGetChange(t *testing.T) {
 					"revisions": {
 						"deadbeef": {
 							"_number": 1,
+							"kind": "REWORK",
 							"ref": "refs/changes/123",
 							"files": {
 								"go/to/file.go": {
