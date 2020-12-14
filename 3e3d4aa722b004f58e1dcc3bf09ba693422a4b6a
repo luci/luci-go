@@ -16,6 +16,24 @@
       "message": "Could you add an explanation in the CL description about the reason for the change?",
       "revId": "3e3d4aa722b004f58e1dcc3bf09ba693422a4b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "992feb7a_37c2d8c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T23:08:36Z",
+      "side": 1,
+      "message": "Done. COpied from the bug. tl;dr it\u0027s in the design doc.",
+      "parentUuid": "ca098512_3c58f5f3",
+      "revId": "3e3d4aa722b004f58e1dcc3bf09ba693422a4b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
