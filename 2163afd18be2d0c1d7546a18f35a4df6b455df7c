@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a17b6ef_0282dd76",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:03:32Z",
+      "side": 1,
+      "message": "LGTM\n\nI assume this is needed to determine \"equivalent patchsets\"",
+      "revId": "2163afd18be2d0c1d7546a18f35a4df6b455df7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
