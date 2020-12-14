@@ -204,6 +204,22 @@ func TestGetChange(t *testing.T) {
 							Email: "rubberstamper@example.com",
 						},
 					},
+					"Commit-Queue": {
+						Optional:     true,
+						DefaultValue: 0,
+						Values:       map[int32]string{0: "Not ready", 1: "Dry run", 2: "Commit"},
+						All: []*gerritpb.ApprovalInfo{
+							{
+								User: &gerritpb.AccountInfo{
+									Name:  "Dry Runner",
+									Email: "dry-runner@example.com",
+								},
+								Value:                1,
+								PermittedVotingRange: &gerritpb.VotingRangeInfo{Min: 0, Max: 2},
+								Date:                 timestamppb.New(parseTime("2020-12-13T18:32:35.000000000Z")),
+							},
+						},
+					},
 				},
 				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
@@ -285,6 +301,34 @@ func TestGetChange(t *testing.T) {
 								"name": "Rubber Stamper",
 								"email": "rubberstamper@example.com"
 							}
+						},
+						"Commit-Queue": {
+							"all": [
+								{
+									"value": 1,
+									"date": "2020-12-13 18:32:35.000000000",
+									"permitted_voting_range": {
+										"min": 0,
+										"max": 2
+									},
+									"_account_id": 1010101,
+									"name": "Dry Runner",
+									"email": "dry-runner@example.com",
+									"avatars": [
+										{
+											"url": "https://example.com/photo.jpg",
+											"height": 32
+										}
+									]
+								}
+							],
+							"values": {
+								" 0": "Not ready",
+								"+1": "Dry run",
+								"+2": "Commit"
+							},
+							"default_value": 0,
+							"optional": true
 						}
 					},
 					"messages": [
