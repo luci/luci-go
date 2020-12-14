@@ -142,6 +142,7 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 		eta = eta.Add(pollInterval)
 	}
 	task := &tq.Task{
+		Title: luciProject,
 		Payload: &task.PollGerritTask{
 			LuciProject: luciProject,
 			Eta:         timestamppb.New(eta),

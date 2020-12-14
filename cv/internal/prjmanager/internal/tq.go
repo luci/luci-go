@@ -68,6 +68,7 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 			payload.Eta = timestamppb.New(eta)
 		}
 		return tq.AddTask(ctx, &tq.Task{
+			Title:            luciProject,
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
 		})
@@ -88,6 +89,7 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	}
 	eta = eta.Truncate(PokeInterval).Add(PokeInterval)
 	return tq.AddTask(ctx, &tq.Task{
+		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
 		Payload:          &PokePMTask{LuciProject: luciProject},
