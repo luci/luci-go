@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -47,7 +48,7 @@ type RunCL struct {
 	_kind string `gae:"$kind,RunCL"`
 
 	// ID is the CL internal ID.
-	ID     changelist.CLID `gae:"$id"`
-	Run    *datastore.Key  `gae:"$parent"`
+	ID     common.CLID    `gae:"$id"`
+	Run    *datastore.Key `gae:"$parent"`
 	Detail *changelist.Snapshot
 }
