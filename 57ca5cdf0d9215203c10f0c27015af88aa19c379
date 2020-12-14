@@ -51,6 +51,24 @@
       "parentUuid": "2d15f59a_f151e38d",
       "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddd084bd_743e79f8",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T19:53:40Z",
+      "side": 1,
+      "message": "init is just defined, not invoked, right?\n\nBut anyway don\u0027t let this question block you from submitting, if this is what works -- I\u0027m just noting that it seems mysterious to me.",
+      "parentUuid": "982ac846_752893c2",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
