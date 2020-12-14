@@ -134,7 +134,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	start = time.Now()
-	uploadedDigests, err := client.UploadIfMissing(ctx, entries...)
+	uploadedDigests, _, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
