@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "343c1aed77b2c3467f4c1fc4e505379119581cd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ac4c30f_8d201c6f",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-14T22:53:48Z",
+      "side": 1,
+      "message": "less code:\n- move this up, before the if statement\n- in L155, tv.Exoneratoins[i].ExplanationHtml \u003d string(expBytes)\n\nbut stepping back, why not generalize decompressSummaryHTML to decompress() and use it here?\nthen we don\u0027t need expBytes and this loop body gets shorter",
+      "revId": "343c1aed77b2c3467f4c1fc4e505379119581cd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
