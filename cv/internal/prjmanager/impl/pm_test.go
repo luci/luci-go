@@ -24,6 +24,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,45 +41,32 @@ func TestUpdateConfig(t *testing.T) {
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
-		test := func(trans bool) {
-			poke := func() {
-				if trans {
-					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						return prjmanager.UpdateConfig(ctx, lProject)
-					}, nil), ShouldBeNil)
-				} else {
-					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-				}
-			}
-			Convey("with new project", func() {
-				ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
-				poke()
-				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
-				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-				events, err := eventbox.List(ctx, lProjectKey)
-				So(err, ShouldBeNil)
-				So(events, ShouldHaveLength, 0)
-				p := getProject(ctx, lProject)
-				So(p.EVersion, ShouldEqual, 1)
-				So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
-				// TODO(tandrii): assert poller is notified.
+		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		Convey("with new project", func() {
+			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+			events, err := eventbox.List(ctx, lProjectKey)
+			So(err, ShouldBeNil)
+			So(events, ShouldHaveLength, 0)
+			p := getProject(ctx, lProject)
+			So(p.EVersion, ShouldEqual, 1)
+			So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
+			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
+			So(ct.TQ.Tasks().Payloads()[0].(*poller.PollGerritTask).GetLuciProject(),
+				ShouldEqual, lProject)
 
-				Convey("... and just deleted project", func() {
-					ct.Cfg.Delete(ctx, lProject)
-					poke()
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
-					p := getProject(ctx, lProject)
-					So(p.EVersion, ShouldEqual, 2)
-					So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
-				})
+			Convey("... and just deleted project", func() {
+				ct.Cfg.Delete(ctx, lProject)
+				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+				p := getProject(ctx, lProject)
+				So(p.EVersion, ShouldEqual, 2)
+				So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
+				So(ct.TQ.Tasks().Payloads()[0].(*poller.PollGerritTask).GetLuciProject(),
+					ShouldEqual, lProject)
 			})
-		}
-		Convey("Non-Transactional", func() {
-			test(false)
-		})
-		Convey("Transactional", func() {
-			test(true)
 		})
 	})
 }

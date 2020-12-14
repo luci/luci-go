@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -69,8 +70,12 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (
 		// The former will eventually be removed from sm.pe.IncompleteRuns,
 		// while the latter will continue running.
 		s.Status = prjmanager.Status_STARTED
+
+		if err := poller.Poke(ctx, luciProject); err != nil {
+			return nil, nil, err
+		}
 		// TODO(tandrii): re-evaluate pending CLs.
-		return eventbox.Chain(notifyGoBPoller(luciProject), notifyIncompleteRuns), s, nil
+		return notifyIncompleteRuns, s, nil
 
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
@@ -90,12 +95,14 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (
 				s = s.cloneShallow()
 				s.Status = prjmanager.Status_STOPPED
 			}
-			return eventbox.Chain(notifyGoBPoller(luciProject), notifyIncompleteRuns), s, nil
+			if err := poller.Poke(ctx, luciProject); err != nil {
+				return nil, nil, err
+			}
+			return notifyIncompleteRuns, s, nil
 		default:
 			panic(fmt.Errorf("unexpected project status: %d", s.Status))
 		}
 	default:
 		panic(fmt.Errorf("unexpected config status: %d", meta.Status))
 	}
-	panic("unreachable")
 }

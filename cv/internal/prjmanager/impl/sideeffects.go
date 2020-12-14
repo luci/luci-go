@@ -16,16 +16,7 @@ package impl
 
 import (
 	"context"
-
-	"go.chromium.org/luci/cv/internal/eventbox"
 )
-
-func notifyGoBPoller(luciProject string) eventbox.SideEffectFn {
-	return func(_ context.Context) error {
-		// TODO(tandrii): notify Gerrit Poller.
-		return nil
-	}
-}
 
 func notifyIncompleteRuns(ctx context.Context) error {
 	// TODO(tandrii): notify IncompleteRuns.
