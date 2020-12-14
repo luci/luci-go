@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8348dfb_505b03c6",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-12-14T20:37:02Z",
+      "side": 1,
+      "message": "I didn\u0027t clean up this stuff because I didn\u0027t want to add a bunch of boilerplate \"failed to parse\" logs. There are definitely ways to refactor this whole file to avoid passing around interface{}s (e.g. make each command a struct instead of a func) but I don\u0027t really think it\u0027s worth spending that much time on it.\n\nHappy to change it if you disagree or if you have an idea for an easier way to refactor to avoid this.",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 7
+      },
+      "revId": "ad736e8f3c5e156808fac5ebed14d6f60d07721f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
