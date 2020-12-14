@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4500074_19589b22",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-14T00:33:49Z",
+      "side": 1,
+      "message": "Do we also need to do this for GetCurrentUser?",
+      "range": {
+        "startLine": 38,
+        "startChar": 22,
+        "endLine": 38,
+        "endChar": 45
+      },
+      "revId": "09707846664d7b323baf1b97dd69c63ab45c81f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
