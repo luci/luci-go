@@ -43,19 +43,23 @@ type State struct{}
 // command-line options, such as `--help`, are passed. Use OptSuppressExit() to
 // avoid this.
 //
-// You must End the returned State. To automatically handle errors and panics,
-// End the State like:
+// You must End the returned State. To automatically map errors and panics to
+// their correct visual representation, End the State like:
 //
 //    var err error
-//    ctx, state := build.Start(ctx, ...)
-//    defer state.End(err)
+//    state, ctx := build.Start(ctx, ...)
+//    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
+//
+// NOTE: A panic will still crash the program as usual. This does NOT
+// `recover()` the panic. Please use conventional Go error handling and control
+// flow mechanisms.
 func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
 	panic("not implemented")
 }
 
-// End sets the build's final status, according to `err` (See GetStatus).
+// End sets the build's final status, according to `err` (See ExtractStatus).
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.
@@ -63,10 +67,14 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 // End must be invoked like:
 //
 //    var err error
-//    ctx, state := build.Start(ctx, ...)
-//    defer state.End(err)
+//    state, ctx := build.Start(ctx, ...)
+//    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
+//
+// NOTE: A panic will still crash the program as usual. This does NOT
+// `recover()` the panic. Please use conventional Go error handling and control
+// flow mechanisms.
 func (*State) End(err error) {
 	panic("not implemented")
 }
