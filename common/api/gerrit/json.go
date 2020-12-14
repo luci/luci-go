@@ -74,13 +74,13 @@ type changeInfo struct {
 	// so this field is handled specially in ToProto.
 	Status string `json:"status"`
 
-	CurrentRevision string                         `json:"current_revision"`
-	Revisions       map[string]*revisionInfo       `json:"revisions"`
-	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
-	Messages        []changeMessageInfo            `json:"messages"`
-	Created         Timestamp                      `json:"created"`
-	Updated         Timestamp                      `json:"updated"`
-	Submittable     bool                           `json:"submittable,omitempty"`
+	CurrentRevision string                   `json:"current_revision"`
+	Revisions       map[string]*revisionInfo `json:"revisions"`
+	Labels          map[string]*labelInfo    `json:"labels"`
+	Messages        []changeMessageInfo      `json:"messages"`
+	Created         Timestamp                `json:"created"`
+	Updated         Timestamp                `json:"updated"`
+	Submittable     bool                     `json:"submittable,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -109,7 +109,7 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 	if ci.Labels != nil {
 		ret.Labels = make(map[string]*gerritpb.LabelInfo, len(ci.Labels))
 		for label, info := range ci.Labels {
-			ret.Labels[label] = info
+			ret.Labels[label] = info.ToProto()
 		}
 	}
 	if ci.Messages != nil {
@@ -117,6 +117,70 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 		for i, msg := range ci.Messages {
 			ret.Messages[i] = msg.ToProto()
 		}
+	}
+	return ret
+}
+
+type labelInfo struct {
+	Optional     bool                  `json:"optional"`
+	Approved     *gerritpb.AccountInfo `json:"approved"`
+	Rejected     *gerritpb.AccountInfo `json:"rejected"`
+	Recommended  *gerritpb.AccountInfo `json:"recommended"`
+	Disliked     *gerritpb.AccountInfo `json:"disliked"`
+	Blocking     bool                  `json:"blocking"`
+	Value        int32                 `json:"value"`
+	DefaultValue int32                 `json:"default_value"`
+	All          []*approvalInfo       `json:"all"`
+	Values       map[string]string     `json:"values"`
+}
+
+func (li *labelInfo) ToProto() *gerritpb.LabelInfo {
+	ret := &gerritpb.LabelInfo{
+		Optional:     li.Optional,
+		Approved:     li.Approved,
+		Rejected:     li.Rejected,
+		Recommended:  li.Recommended,
+		Disliked:     li.Disliked,
+		Blocking:     li.Blocking,
+		Value:        li.Value,
+		DefaultValue: li.DefaultValue,
+	}
+	if len(li.All) > 0 {
+		ret.All = make([]*gerritpb.ApprovalInfo, len(li.All))
+		for i, a := range li.All {
+			ret.All[i] = a.ToProto()
+		}
+	}
+	if li.Values != nil {
+		ret.Values = make(map[int32]string, len(li.Values))
+		for value, description := range li.Values {
+			i, err := strconv.ParseInt(strings.TrimSpace(value), 10, 32)
+			// Error is silently ignored for consistency with other parts of code.
+			if err == nil {
+				ret.Values[int32(i)] = description
+			}
+		}
+	}
+	return ret
+}
+
+type approvalInfo struct {
+	*gerritpb.AccountInfo
+	Value                int32                     `json:"value"`
+	PermittedVotingRange *gerritpb.VotingRangeInfo `json:"permitted_voting_range"`
+	Date                 Timestamp                 `json:"date"`
+	Tag                  string                    `json:"tag"`
+	PostSubmit           bool                      `json:"post_submit"`
+}
+
+func (ai *approvalInfo) ToProto() *gerritpb.ApprovalInfo {
+	ret := &gerritpb.ApprovalInfo{
+		User:                 ai.AccountInfo,
+		Value:                ai.Value,
+		PermittedVotingRange: ai.PermittedVotingRange,
+		Date:                 timestamppb.New(ai.Date.Time),
+		Tag:                  ai.Tag,
+		PostSubmit:           ai.PostSubmit,
 	}
 	return ret
 }
