@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -24,7 +25,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
-	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -53,19 +54,17 @@ func TestUpdateConfig(t *testing.T) {
 			p := getProject(ctx, lProject)
 			So(p.EVersion, ShouldEqual, 1)
 			So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
-			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
-			So(ct.TQ.Tasks().Payloads()[0].(*poller.PollGerritTask).GetLuciProject(),
-				ShouldEqual, lProject)
+			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			Convey("... and just deleted project", func() {
+				ct.Clock.Add(time.Hour) // ensure first poller task gets executed.
 				ct.Cfg.Delete(ctx, lProject)
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
 				p := getProject(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
 				So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
-				So(ct.TQ.Tasks().Payloads()[0].(*poller.PollGerritTask).GetLuciProject(),
-					ShouldEqual, lProject)
+				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			})
 		})
 	})

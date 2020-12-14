@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 )
 
 // Poke schedules the next poll via task queue.
@@ -91,11 +92,11 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "poll-gerrit-task",
-		Prototype: &PollGerritTask{},
+		ID:        task.ClassID,
+		Prototype: &task.PollGerritTask{},
 		Queue:     "poll-gerrit",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*PollGerritTask)
+			task := payload.(*task.PollGerritTask)
 			if err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime()); err != nil {
 				errors.Log(ctx, err)
 				if !transient.Tag.In(err) {
@@ -141,7 +142,7 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 		eta = eta.Add(pollInterval)
 	}
 	task := &tq.Task{
-		Payload: &PollGerritTask{
+		Payload: &task.PollGerritTask{
 			LuciProject: luciProject,
 			Eta:         timestamppb.New(eta),
 		},

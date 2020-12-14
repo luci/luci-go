@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -83,9 +84,9 @@ func TestSchedule(t *testing.T) {
 
 		Convey("schedule works", func() {
 			So(schedule(ctx, project, time.Time{}), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-
-			first := ct.TQ.Tasks().Payloads()[0].(*PollGerritTask)
+			payloads := pt.PFilter(ct.TQ.Tasks())
+			So(payloads, ShouldHaveLength, 1)
+			first := payloads[0]
 			So(first.GetLuciProject(), ShouldEqual, project)
 			firstETA := first.GetEta().AsTime()
 			So(firstETA.UnixNano(), ShouldBeBetweenOrEqual,
@@ -93,28 +94,27 @@ func TestSchedule(t *testing.T) {
 
 			Convey("idempotency via task deduplication", func() {
 				So(schedule(ctx, project, time.Time{}), ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+				So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
 
 				Convey("but only for the same project", func() {
 					So(schedule(ctx, "another project", time.Time{}), ShouldBeNil)
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 2)
-					So(ct.TQ.Tasks().Payloads()[1].(*PollGerritTask).GetLuciProject(), ShouldEqual,
-						"another project")
+					So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{
+						project, "another project"})
 				})
 			})
 
 			Convey("schedule next poll", func() {
 				So(schedule(ctx, project, firstETA), ShouldBeNil)
-				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 2)
-				So(ct.TQ.Tasks().Payloads()[1].(*PollGerritTask).GetEta().AsTime(),
-					ShouldEqual, firstETA.Add(pollInterval))
+				payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
+				So(payloads, ShouldHaveLength, 2)
+				So(payloads[1].GetEta().AsTime(), ShouldEqual, firstETA.Add(pollInterval))
 
 				Convey("from a delayed prior poll", func() {
 					ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
 					So(schedule(ctx, project, firstETA), ShouldBeNil)
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 3)
-					So(ct.TQ.Tasks().Payloads()[2].(*PollGerritTask).GetEta().AsTime(),
-						ShouldEqual, firstETA.Add(2*pollInterval))
+					payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
+					So(payloads, ShouldHaveLength, 3)
+					So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
 				})
 			})
 		})

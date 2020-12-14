@@ -12,19 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+// Package task exists to break circular dependnecy of poller and
+// pollertesting packages.
+package task
 
-package internal.gerrit.poller;
+//go:generate cproto
 
-option go_package = "go.chromium.org/luci/cv/internal/gerrit/poller;poller";
-
-import "google/protobuf/timestamp.proto";
-
-// PollGerritTask performs next poll for a given LUCI Project.
-//
-// Queue: "poll-gerrit".
-message PollGerritTask {
-  string luci_project = 1;
-  // eta is when this task is supposed to run.
-  google.protobuf.Timestamp eta = 2;
-}
+const ClassID = "poll-gerrit-task"
