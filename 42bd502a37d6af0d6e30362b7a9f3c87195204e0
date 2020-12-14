@@ -33,6 +33,24 @@
       "message": "LGTM",
       "revId": "42bd502a37d6af0d6e30362b7a9f3c87195204e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36b1b7c6_d70ba8b9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T22:48:44Z",
+      "side": 1,
+      "message": "I\u0027ll send a separate CL for server/tq",
+      "parentUuid": "5e96bacb_be082b78",
+      "revId": "42bd502a37d6af0d6e30362b7a9f3c87195204e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
