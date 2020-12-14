@@ -27,12 +27,6 @@ type StepState struct{}
 //
 // The step will have a "RUNNING" status with a StartTime.
 //
-// You MUST call StepState.End; Failure to do so is generally undefined, but in
-// a LUCI build context, this will result in the step having a status of
-// CANCELED and the SummaryMarkdown being overwritten with a message informing
-// you that the step was not ended correctly. Don't rely on this behavior, just
-// call End in a defer.
-//
 // The returned context is updated so that calling Step/ScheduleStep on it will create sub-steps.
 //
 // If `name` contains `|` this function will panic, since this is a reserved
@@ -44,12 +38,18 @@ type StepState struct{}
 // The returned context will have `name` embedded in it; Calling Step or
 // ScheduleStep with this context will generate a sub-step.
 //
-// Use like:
+// You MUST call StepState.End. To automatically map errors and panics to their
+// correct visual representation, End the Step like:
+//
 //    var err error
-//    ctx, step := build.Step(ctx, "Step name")
-//    defer step.End(err)
+//    step, ctx := build.Step(ctx, "Step name")
+//    defer func() { step.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
+//
+// NOTE: A panic will still crash the program as usual. This does NOT
+// `recover()` the panic. Please use conventional Go error handling and control
+// flow mechanisms.
 func Step(ctx context.Context, name string) (*StepState, context.Context) {
 	panic("not implemented")
 }
@@ -64,7 +64,7 @@ func ScheduleStep(ctx context.Context, name string) (*StepState, context.Context
 	panic("not implemented")
 }
 
-// End sets the step's final status, according to `err` (See GetStatus).
+// End sets the step's final status, according to `err` (See ExtractStatus).
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.
@@ -72,10 +72,14 @@ func ScheduleStep(ctx context.Context, name string) (*StepState, context.Context
 // End must be invoked like:
 //
 //    var err error
-//    ctx, step := build.Step(ctx, ...)  // or build.ScheduleStep
-//    defer step.End(err)
+//    step, ctx := build.Step(ctx, ...)  // or build.ScheduleStep
+//    defer func() { step.End(err) }()
 //
 //    err = opThatErrsOrPanics()
+//
+// NOTE: A panic will still crash the program as usual. This does NOT
+// `recover()` the panic. Please use conventional Go error handling and control
+// flow mechanisms.
 func (*StepState) End(err error) {
 	panic("not implemented")
 }
