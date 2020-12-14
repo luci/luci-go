@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.internal.ui;
 
+import "google/protobuf/duration.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
@@ -52,6 +53,14 @@ message QueryTestVariantsRequest {
   // When paginating, all other parameters provided to `QueryTestVariants` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // The version of the state from which the response draws is allowed to be
+  // stale up to this duration.
+  // For example, with max staleness of 5m, the response might not contain
+  // artifacts uploaded 4m ago.
+  // Choosing a larger duration may reduce request latency.
+  // Must be <=30m.
+  google.protobuf.Duration max_staleness = 6;
 }
 
 // A response message for QueryTestVariants RPC.
