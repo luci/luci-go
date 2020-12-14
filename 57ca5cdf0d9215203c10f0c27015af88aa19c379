@@ -69,6 +69,24 @@
       "parentUuid": "982ac846_752893c2",
       "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c6f5e7c_a4b60281",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T20:00:24Z",
+      "side": 1,
+      "message": "No, init() is invoked. This is one of the reasons for Go\u0027s insistence on non-cyclic imports: for determinism of the init() execution in various packages (In C++, this is a major problem: https://isocpp.org/wiki/faq/ctors#static-init-order ).",
+      "parentUuid": "ddd084bd_743e79f8",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
