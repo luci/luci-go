@@ -48,14 +48,14 @@ type State struct{}
 //
 //    var err error
 //    ctx, state := build.Start(ctx, ...)
-//    defer state.End(err)
+//    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
 func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
 	panic("not implemented")
 }
 
-// End sets the build's final status, according to `err` (See GetStatus).
+// End sets the build's final status, according to `err` (See ExtractStatus).
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.
@@ -64,7 +64,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 //
 //    var err error
 //    ctx, state := build.Start(ctx, ...)
-//    defer state.End(err)
+//    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
 func (*State) End(err error) {
