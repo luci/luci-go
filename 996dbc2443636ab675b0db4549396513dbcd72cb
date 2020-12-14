@@ -39,6 +39,30 @@
       },
       "revId": "996dbc2443636ab675b0db4549396513dbcd72cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b98e0a47_6a3e80a9",
+        "filename": "cv/internal/eventbox/box_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T14:44:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86ff80c0_a288550c",
+      "range": {
+        "startLine": 233,
+        "startChar": 24,
+        "endLine": 233,
+        "endChar": 35
+      },
+      "revId": "996dbc2443636ab675b0db4549396513dbcd72cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
