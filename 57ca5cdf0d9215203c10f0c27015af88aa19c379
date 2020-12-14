@@ -87,6 +87,24 @@
       "parentUuid": "ddd084bd_743e79f8",
       "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "647f0a4b_67f9cd1a",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:10:37Z",
+      "side": 1,
+      "message": "Oh, I see, init is a special function in Go. Got it.",
+      "parentUuid": "5c6f5e7c_a4b60281",
+      "revId": "57ca5cdf0d9215203c10f0c27015af88aa19c379",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
