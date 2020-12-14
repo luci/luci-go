@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "dcf6d60a_7fcc7139",
+        "filename": "cv/internal/gerrit/poller/task/task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-14T16:47:52Z",
+      "side": 1,
+      "message": "TBH, I already feel the trade offs between total encapsulation and assertions in unit tests. So, maybe at some point we really should end up with common/ consts",
+      "parentUuid": "9e13f828_3676f02f",
+      "revId": "1ac1529ea5c691e9028d08b64def10736c6ad4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ecc98921_807fb4cf",
         "filename": "cv/internal/prjmanager/impl/pm_test.go",
         "patchSetId": 2
