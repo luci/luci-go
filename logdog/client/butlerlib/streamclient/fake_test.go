@@ -39,7 +39,7 @@ func TestFakeProtocol(t *testing.T) {
 			client := NewFake("namespace")
 
 			Convey(`can use a text stream`, func() {
-				stream, err := client.NewTextStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test")
 				So(err, ShouldBeNil)
 
 				n, err := stream.Write([]byte("hi"))
@@ -61,7 +61,7 @@ func TestFakeProtocol(t *testing.T) {
 			})
 
 			Convey(`can use a binary stream`, func() {
-				stream, err := client.NewBinaryStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test", Binary())
 				So(err, ShouldBeNil)
 
 				n, err := stream.Write([]byte{0, 1, 2, 3})
@@ -108,15 +108,15 @@ func TestFakeProtocol(t *testing.T) {
 			Convey(`duplicate stream`, func() {
 				client := NewFake("")
 
-				stream, err := client.NewTextStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test")
 				So(err, ShouldBeNil)
 				So(stream.Close(), ShouldBeNil)
 
-				_, err = client.NewTextStream(ctx, "test")
-				So(err, ShouldErrLike, `text stream "test": stream "test" already dialed`)
+				_, err = client.NewStream(ctx, "test")
+				So(err, ShouldErrLike, `stream "test": stream "test" already dialed`)
 
-				_, err = client.NewBinaryStream(ctx, "test")
-				So(err, ShouldErrLike, `binary stream "test": stream "test" already dialed`)
+				_, err = client.NewStream(ctx, "test", Binary())
+				So(err, ShouldErrLike, `stream "test": stream "test" already dialed`)
 
 				_, err = client.NewDatagramStream(ctx, "test")
 				So(err, ShouldErrLike, `datagram stream "test": stream "test" already dialed`)
@@ -127,14 +127,14 @@ func TestFakeProtocol(t *testing.T) {
 					client := NewFake("")
 					client.SetFakeError(errors.New("bad juju"))
 
-					_, err := client.NewTextStream(ctx, "test")
-					So(err, ShouldErrLike, `text stream "test": bad juju`)
+					_, err := client.NewStream(ctx, "test")
+					So(err, ShouldErrLike, `stream "test": bad juju`)
 				})
 
 				Convey(`use of a stream after close`, func() {
 					client := NewFake("")
 
-					stream, err := client.NewTextStream(ctx, "test")
+					stream, err := client.NewStream(ctx, "test")
 					So(err, ShouldBeNil)
 					So(stream.Close(), ShouldBeNil)
 

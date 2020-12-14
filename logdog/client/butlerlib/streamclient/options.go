@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
@@ -108,7 +109,7 @@ func WithTagMap(tags map[string]string) Option {
 // the Stream open from the butler's point of view, which will prevent the butler
 // from closing down.
 //
-//    stdout, _ = logdogServ.Client.NewTextStream(
+//    stdout, _ = logdogServ.Client.NewStream(
 //      ..., streamclient.ForProcess())
 //    cmd.Stdout = stdout
 //
@@ -157,5 +158,14 @@ func WithTagMap(tags map[string]string) Option {
 func ForProcess() Option {
 	return func(o *options) {
 		o.forProcess = true
+	}
+}
+
+// Binary can be used with NewStream to select a binary mode stream.
+//
+// Using this with NewDatagramStream has no effect.
+func Binary() Option {
+	return func(o *options) {
+		o.desc.Type = streamproto.StreamType(logpb.StreamType_BINARY)
 	}
 }

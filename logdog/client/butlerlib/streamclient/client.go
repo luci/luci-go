@@ -100,9 +100,8 @@ func New(path string, namespace types.StreamName) (*Client, error) {
 	return nil, errors.Reason("no protocol registered for [%s]", parts[0]).Err()
 }
 
-func (c *Client) mkOptions(ctx context.Context, name types.StreamName, sType logpb.StreamType, opts []Option) (ret options, err error) {
+func (c *Client) mkOptions(ctx context.Context, name types.StreamName, opts []Option) (ret options, err error) {
 	ret.desc.Name = streamproto.StreamNameFlag(c.ns.Concat(name))
-	ret.desc.Type = streamproto.StreamType(sType)
 	for _, o := range opts {
 		o(&ret)
 	}
@@ -119,28 +118,19 @@ func (c *Client) mkOptions(ctx context.Context, name types.StreamName, sType log
 	return
 }
 
-// NewTextStream returns a new open text-based stream to the butler.
+// NewStream returns a new open stream to the butler.
 //
-// Text streams look for newlines to delimit log sections.
-func (c *Client) NewTextStream(ctx context.Context, name types.StreamName, opts ...Option) (io.WriteCloser, error) {
-	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_TEXT, opts)
+// By default this is text-based (line-oriented); pass Binary for a binary stream.
+//
+// Text streams look for newlines to delimit log chunks.
+// Binary streams use fixed size chunks to delimit log chunks.
+func (c *Client) NewStream(ctx context.Context, name types.StreamName, opts ...Option) (io.WriteCloser, error) {
+	fullOpts, err := c.mkOptions(ctx, name, opts)
 	if err != nil {
 		return nil, err
 	}
 	ret, err := c.dial.DialStream(fullOpts.forProcess, fullOpts.desc)
-	return ret, errors.Annotate(err, "attempting to connect text stream %q", name).Err()
-}
-
-// NewBinaryStream returns a new open binary stream to the butler.
-//
-// Binary streams use fixed size chunks to delimit log sections.
-func (c *Client) NewBinaryStream(ctx context.Context, name types.StreamName, opts ...Option) (io.WriteCloser, error) {
-	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_BINARY, opts)
-	if err != nil {
-		return nil, err
-	}
-	ret, err := c.dial.DialStream(fullOpts.forProcess, fullOpts.desc)
-	return ret, errors.Annotate(err, "attempting to connect binary stream %q", name).Err()
+	return ret, errors.Annotate(err, "attempting to connect stream %q", name).Err()
 }
 
 // NewDatagramStream returns a new datagram stream to the butler.
@@ -151,7 +141,13 @@ func (c *Client) NewBinaryStream(ctx context.Context, name types.StreamName, opt
 // NOTE: It is an error to pass ForProcess as an Option (see documentation on
 // ForProcess for more detail).
 func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, opts ...Option) (DatagramStream, error) {
-	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_DATAGRAM, opts)
+	newOpts := make([]Option, 0, len(opts)+1)
+	newOpts = append(newOpts, opts...)
+	newOpts = append(newOpts, func(o *options) {
+		o.desc.Type = streamproto.StreamType(logpb.StreamType_DATAGRAM)
+	})
+
+	fullOpts, err := c.mkOptions(ctx, name, newOpts)
 	if err != nil {
 		return nil, err
 	}
