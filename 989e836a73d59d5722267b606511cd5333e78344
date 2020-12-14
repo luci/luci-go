@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "098de233_a12088a9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:08:17Z",
+      "side": 1,
+      "message": "Yeah, it\u0027s kind of verbose -- but then again that\u0027s how much of common/api/gerrit/json.go is.",
+      "revId": "989e836a73d59d5722267b606511cd5333e78344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3474c13a_5410405a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:08:17Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "989e836a73d59d5722267b606511cd5333e78344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a8527b3_29a29e3d",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-14T22:08:17Z",
+      "side": 1,
+      "message": "Optionally to avoid repetition the description about what\u0027s set depending on what options are given could be put above in the general message comment.",
+      "revId": "989e836a73d59d5722267b606511cd5333e78344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
