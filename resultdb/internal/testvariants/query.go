@@ -56,12 +56,11 @@ type tvResult struct {
 	Tags            []string
 }
 
-func (q *Query) decompressSummaryHTML(r *tvResult) (summaryHtml string, err error) {
-	q.summaryBuffer, err = spanutil.Decompress(r.SummaryHTML, q.summaryBuffer)
-	if err != nil {
-		return
+func decompress(src, dst []byte) ([]byte, error) {
+	if len(src) == 0 {
+		return nil, nil
 	}
-	return string(q.summaryBuffer), nil
+	return spanutil.Decompress(src, dst)
 }
 
 func (q *Query) toTestResultProto(r *tvResult, testId string) (*pb.TestResult, error) {
@@ -78,9 +77,10 @@ func (q *Query) toTestResultProto(r *tvResult, testId string) (*pb.TestResult, e
 
 	// Decompress SummaryHtml.
 	var err error
-	if tr.SummaryHtml, err = q.decompressSummaryHTML(r); err != nil {
+	if q.summaryBuffer, err = decompress(r.SummaryHTML, q.summaryBuffer); err != nil {
 		return nil, err
 	}
+	tr.SummaryHtml = string(q.summaryBuffer)
 
 	// Populate Tags.
 	tr.Tags = make([]*pb.StringPair, len(r.Tags))
@@ -141,12 +141,11 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
-			if expBytes, err = spanutil.Decompress(ex, expBytes); err != nil {
+			tv.Exonerations[i] = &pb.TestExoneration{}
+			if expBytes, err = decompress(ex, expBytes); err != nil {
 				return err
 			}
-			tv.Exonerations[i] = &pb.TestExoneration{
-				ExplanationHtml: string(expBytes),
-			}
+			tv.Exonerations[i].ExplanationHtml = string(expBytes)
 		}
 		return f(tv)
 	})
