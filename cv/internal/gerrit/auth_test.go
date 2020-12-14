@@ -52,7 +52,7 @@ func TestMakeClient(t *testing.T) {
 			Convey("forced legacy", func() {
 				t, err := f.token(ctx, "first.example.com", "force-legacy")
 				So(err, ShouldBeNil)
-				So(t.AccessToken, ShouldEqual, "legacy-1")
+				So(t.AccessToken, ShouldEqual, "bGVnYWN5LTE=") // base64 of "legacy-1"
 				So(t.TokenType, ShouldEqual, "Basic")
 			})
 
@@ -62,7 +62,7 @@ func TestMakeClient(t *testing.T) {
 				}
 				t, err := f.token(ctx, "first.example.com", "not-migrated")
 				So(err, ShouldBeNil)
-				So(t.AccessToken, ShouldEqual, "legacy-1")
+				So(t.AccessToken, ShouldEqual, "bGVnYWN5LTE=") // base64 of "legacy-1"
 				So(t.TokenType, ShouldEqual, "Basic")
 			})
 

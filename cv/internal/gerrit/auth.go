@@ -16,6 +16,7 @@ package gerrit
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"strings"
 	"time"
@@ -109,6 +110,7 @@ func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*o
 		if luciProject == project {
 			allowed = false
 			logging.Debugf(ctx, "Project %q is not allowed to use project scoped service account", luciProject)
+			break
 		}
 	}
 	if allowed {
@@ -157,7 +159,7 @@ func (f *factory) token(ctx context.Context, gerritHost, luciProject string) (*o
 		return nil, errors.Reason("No legacy credentials for host %q", gerritHost).Err()
 	default:
 		return &oauth2.Token{
-			AccessToken: value.(string),
+			AccessToken: base64.StdEncoding.EncodeToString([]byte(value.(string))),
 			TokenType:   "Basic",
 		}, nil
 	}
