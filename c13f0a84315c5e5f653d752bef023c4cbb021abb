@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b86890df_e6a87157",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-14T01:03:28Z",
+      "side": 1,
+      "message": "Think I\u0027m mostly OK with this; will leave up to you to decide how you want to organise the service code.\n\nMy only comment is that API-wise, I don\u0027t think there\u0027s a fundamental difference between stuff like QueryBlamelist and the new methods you\u0027re going to add to talk to resultdb/buildbucket. The fact that QueryBlamelist has more logic is just an implementation detail, so that shouldn\u0027t be reflected in the API. I don\u0027t see a reason to have Milo offering separate services, especially since there\u0027s only one user which is our own client code, and it\u0027ll be using all of them.",
+      "revId": "c13f0a84315c5e5f653d752bef023c4cbb021abb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
