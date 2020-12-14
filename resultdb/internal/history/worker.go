@@ -161,14 +161,32 @@ func (q *Query) dispatchWorkItems(ctx context.Context) error {
 // an index point.
 func (q *Query) collect(ctx context.Context) error {
 	entries := make([]*pb.GetTestResultHistoryResponse_Entry, 0)
-	for wi := range q.allResultsC {
-		entries = entries[:0]
-		for entry := range wi.resultsC {
-			entries = append(entries, entry)
+	var wi *workItem
+	var ok bool
+	var entry *pb.GetTestResultHistoryResponse_Entry
+workItemsLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case wi, ok = <-q.allResultsC:
+			if !ok {
+				break workItemsLoop
+			}
 		}
 
-		if ctx.Err() != nil {
-			return ctx.Err()
+		entries = entries[:0]
+	entriesLoop:
+		for {
+			select {
+			case entry, ok = <-wi.resultsC:
+				if !ok {
+					break entriesLoop
+				}
+				entries = append(entries, entry)
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		sortEntries(entries)
