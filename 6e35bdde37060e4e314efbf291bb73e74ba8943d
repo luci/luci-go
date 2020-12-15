@@ -16,6 +16,24 @@
       "message": "nit: We can move this to a separate block and add a comment?\n\nAlso, side question: IIUC, we need to do this for all task registrations as long as they are not reachable via the import tree?",
       "revId": "6e35bdde37060e4e314efbf291bb73e74ba8943d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea3e3774_559ee3d7",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T02:43:50Z",
+      "side": 1,
+      "message": "Good idea, Done!",
+      "parentUuid": "aa418577_b030337f",
+      "revId": "6e35bdde37060e4e314efbf291bb73e74ba8943d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
