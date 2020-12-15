@@ -311,7 +311,7 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 	// CV retention policy deletes CLs not modified for a long time,
 	// which in some very rare case may affect a dep of this CL.
 	// TODO(tandrii): remove such risk by force-updating dep CLs to prevent
-	// retention policy from picking wiping them out.
+	// retention policy from wiping them out.
 	if err := f.resolveDeps(ctx); err != nil {
 		return err
 	}

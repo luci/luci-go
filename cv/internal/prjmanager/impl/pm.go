@@ -137,6 +137,12 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 type triageResult struct {
 	updateConfig eventbox.Events
 	poke         eventbox.Events
+
+	clupdated struct {
+		// i-th event corresponds to i-th cl.
+		events eventbox.Events
+		cls    []*internal.CLUpdated
+	}
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -147,11 +153,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		logging.Errorf(ctx, "CRITICAL: failed to deserialize event %q: %s", item.ID, err)
 		panic(err)
 	}
-	switch e.GetEvent().(type) {
+	switch v := e.GetEvent().(type) {
 	case *internal.Event_UpdateConfig:
 		tr.updateConfig = append(tr.updateConfig, item)
 	case *internal.Event_Poke:
 		tr.poke = append(tr.poke, item)
+	case *internal.Event_ClUpdated:
+		tr.clupdated.events = append(tr.clupdated.events, item)
+		tr.clupdated.cls = append(tr.clupdated.cls, v.ClUpdated)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -172,6 +181,16 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.poke) > 0 {
 		t := eventbox.Transition{Events: tr.poke}
 		t.SideEffectFn, s, err = poke(ctx, pm.luciProject, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+
+	if len(tr.clupdated.cls) > 0 {
+		t := eventbox.Transition{Events: tr.clupdated.events}
+		t.SideEffectFn, s, err = clsUpdated(ctx, pm.luciProject, tr.clupdated.cls, s)
 		if err != nil {
 			return nil, err
 		}

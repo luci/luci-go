@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -122,6 +123,12 @@ func poke(ctx context.Context, luciProject string, s *state) (
 	if err := poller.Poke(ctx, luciProject); err != nil {
 		return nil, nil, err
 	}
+	// TODO(tandrii): implement.
+	return nil, s, nil
+}
+
+func clsUpdated(ctx context.Context, luciProject string, cls []*internal.CLUpdated, s *state) (
+	eventbox.SideEffectFn, *state, error) {
 	// TODO(tandrii): implement.
 	return nil, s, nil
 }
