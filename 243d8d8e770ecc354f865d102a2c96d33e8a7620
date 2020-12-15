@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24c62dcc_1dce6919",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-15T20:21:10Z",
+      "side": 0,
+      "message": "why did this go? I think this is still ok to have (though it\u0027s not strictly necessary b/c of build.GetSteps()). I think it makes it easier to reason about if additional code is added outside the loop later though?",
+      "range": {
+        "startLine": 297,
+        "startChar": 6,
+        "endLine": 297,
+        "endChar": 8
+      },
+      "revId": "243d8d8e770ecc354f865d102a2c96d33e8a7620",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "e60f58a44290b883fabcde48976ae6591de7d054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94dc091e_3270f3fb",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-15T20:21:10Z",
+      "side": 1,
+      "message": "I think this is actually a bug now! Probably has to be proto.Clone in new proto library version 😞",
+      "range": {
+        "startLine": 300,
+        "startChar": 0,
+        "endLine": 301,
+        "endChar": 20
+      },
+      "revId": "e60f58a44290b883fabcde48976ae6591de7d054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
