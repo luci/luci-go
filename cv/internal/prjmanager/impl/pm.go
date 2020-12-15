@@ -136,6 +136,7 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
 	updateConfig eventbox.Events
+	poke         eventbox.Events
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -149,6 +150,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	switch e.GetEvent().(type) {
 	case *internal.Event_UpdateConfig:
 		tr.updateConfig = append(tr.updateConfig, item)
+	case *internal.Event_Poke:
+		tr.poke = append(tr.poke, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -160,6 +163,15 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.updateConfig) > 0 {
 		t := eventbox.Transition{Events: tr.updateConfig}
 		t.SideEffectFn, s, err = updateConfig(ctx, pm.luciProject, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+	if len(tr.poke) > 0 {
+		t := eventbox.Transition{Events: tr.poke}
+		t.SideEffectFn, s, err = poke(ctx, pm.luciProject, s)
 		if err != nil {
 			return nil, err
 		}
