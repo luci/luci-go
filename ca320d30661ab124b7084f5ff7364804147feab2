@@ -22,6 +22,30 @@
       },
       "revId": "ca320d30661ab124b7084f5ff7364804147feab2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9899d275_e3c3ba9d",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-15T17:34:54Z",
+      "side": 1,
+      "message": "\u003e what happens if the callback returns an error?\nOops; didn\u0027t mean for this to return an error.\n\n\u003e what happens if it blocks for 10 min?\n\nImplied by the docstring, but added more clarification.\n\n\u003e what happens if there are multiple callbacks, are they called in parallel or in order or there\u0027s only one?\n\nThis was already documented in the docstring?\n\n\nAnyhow, I\u0027ve clarified things now, hopefully.",
+      "parentUuid": "093111f5_d3487a14",
+      "range": {
+        "startLine": 53,
+        "startChar": 43,
+        "endLine": 53,
+        "endChar": 48
+      },
+      "revId": "ca320d30661ab124b7084f5ff7364804147feab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
