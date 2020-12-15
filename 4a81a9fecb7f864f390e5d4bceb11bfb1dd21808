@@ -1,6 +1,24 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "36ec312e_baa1566b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-15T02:27:40Z",
+      "side": 1,
+      "message": "is this abandoned?",
+      "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
       "key": {
         "uuid": "cd81ee72_a177a26c",
         "filename": "server/auth/authdb/snapshot.go",
@@ -20,10 +38,10 @@
         "endChar": 2
       },
       "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "d35b7a94_b64601c8",
         "filename": "server/auth/authdb/snapshot.go",
@@ -44,8 +62,7 @@
         "endChar": 2
       },
       "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
