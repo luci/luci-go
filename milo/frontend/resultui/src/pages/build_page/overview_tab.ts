@@ -313,8 +313,8 @@ export class OverviewTabElement extends MobxLitElement {
       </mwc-dialog>
       <div id="main">
         ${this.renderCanaryWarning()}
+        ${this.renderSummary()}
         <div class="first-column">
-          ${this.renderSummary()}
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
         </div>
@@ -357,6 +357,7 @@ export class OverviewTabElement extends MobxLitElement {
       padding: 0 10px;
       clear: both;
       overflow-wrap: break-word;
+      grid-column-end: span 2;
     }
     #summary-html.scheduled {
       border: 1px solid var(--scheduled-color);
@@ -384,6 +385,7 @@ export class OverviewTabElement extends MobxLitElement {
     }
     #summary-html pre {
       white-space: pre-wrap;
+      font-size: 12px;
     }
     #summary-html * {
       margin-block: 10px;
