@@ -89,6 +89,7 @@ func init() {
 		ID:        "refresh-project-config",
 		Prototype: &RefreshProjectConfigTask{},
 		Queue:     "refresh-project-config",
+		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*RefreshProjectConfigTask)
 			if err := refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
