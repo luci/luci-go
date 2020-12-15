@@ -40,14 +40,14 @@ type Query struct {
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
 	PageToken     string
-	summaryBuffer []byte                 // buffer for decompressing SummaryHTML
+	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters
 }
 
 // tvResult matches the result STRUCT of a test variant from the query.
 type tvResult struct {
-	InvocationId    string
-	ResultId        string
+	InvocationID    string
+	ResultID        string
 	IsUnexpected    spanner.NullBool
 	Status          int64
 	StartTime       spanner.NullTime
@@ -56,17 +56,21 @@ type tvResult struct {
 	Tags            []string
 }
 
-func decompress(src, dst []byte) ([]byte, error) {
+func (q *Query) decompressText(src []byte) (string, error) {
 	if len(src) == 0 {
-		return nil, nil
+		return "", nil
 	}
-	return spanutil.Decompress(src, dst)
+	var err error
+	if q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf); err != nil {
+		return "", err
+	}
+	return string(q.decompressBuf), nil
 }
 
-func (q *Query) toTestResultProto(r *tvResult, testId string) (*pb.TestResult, error) {
+func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, error) {
 	tr := &pb.TestResult{
-		Name:     pbutil.TestResultName(string(invocations.IDFromRowID(r.InvocationId)), testId, r.ResultId),
-		ResultId: r.ResultId,
+		Name:     pbutil.TestResultName(string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID),
+		ResultId: r.ResultID,
 		Status:   pb.TestStatus(r.Status),
 	}
 	if r.StartTime.Valid {
@@ -75,12 +79,10 @@ func (q *Query) toTestResultProto(r *tvResult, testId string) (*pb.TestResult, e
 	testresults.PopulateExpectedField(tr, r.IsUnexpected)
 	testresults.PopulateDurationField(tr, r.RunDurationUsec)
 
-	// Decompress SummaryHtml.
 	var err error
-	if q.summaryBuffer, err = decompress(r.SummaryHTML, q.summaryBuffer); err != nil {
+	if tr.SummaryHtml, err = q.decompressText(r.SummaryHTML); err != nil {
 		return nil, err
 	}
-	tr.SummaryHtml = string(q.summaryBuffer)
 
 	// Populate Tags.
 	tr.Tags = make([]*pb.StringPair, len(r.Tags))
@@ -107,7 +109,6 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	st.Params["testResultLimit"] = testResultLimit
 
 	var b spanutil.Buffer
-	var expBytes []byte
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		tv := &uipb.TestVariant{}
 		var tvStatus int64
@@ -142,10 +143,9 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
 		for i, ex := range exoExplanationHtmls {
 			tv.Exonerations[i] = &pb.TestExoneration{}
-			if expBytes, err = decompress(ex, expBytes); err != nil {
+			if tv.Exonerations[i].ExplanationHtml, err = q.decompressText(ex); err != nil {
 				return err
 			}
-			tv.Exonerations[i].ExplanationHtml = string(expBytes)
 		}
 		return f(tv)
 	})
