@@ -39,6 +39,30 @@
       },
       "revId": "6a9cb19bcb741c99ef7a48865dc6d8ebf08a3ae3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec84603a_b5255b42",
+        "filename": "cv/internal/changelist/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T04:06:27Z",
+      "side": 1,
+      "message": "oh! test rocks! seems to be an easy mistake to make with named return value.",
+      "parentUuid": "99e9e15d_923ca31c",
+      "range": {
+        "startLine": 377,
+        "startChar": 8,
+        "endLine": 377,
+        "endChar": 9
+      },
+      "revId": "6a9cb19bcb741c99ef7a48865dc6d8ebf08a3ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
