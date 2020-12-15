@@ -15,8 +15,10 @@
 package eval
 
 import (
+	"bytes"
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -100,5 +102,121 @@ func TestAnalyzeRejections(t *testing.T) {
 			{Distance: 1, Rank: 1},
 		})
 		So(actual[2].Closest, ShouldResemble, Affectedness{Distance: 1, Rank: 1})
+	})
+}
+
+func TestPrintLostRejection(t *testing.T) {
+	t.Parallel()
+
+	assert := func(rej *evalpb.Rejection, expectedText string) {
+		buf := &bytes.Buffer{}
+		p := rejectionPrinter{printer: newPrinter(buf)}
+		So(p.rejection(rej), ShouldBeNil)
+		expectedText = strings.Replace(expectedText, "\t", "  ", -1)
+		So(buf.String(), ShouldEqual, expectedText)
+	}
+
+	ps1 := &evalpb.GerritPatchset{
+		Change: &evalpb.GerritChange{
+			Host:    "chromium-review.googlesource.com",
+			Project: "chromium/src",
+			Number:  123,
+		},
+		Patchset: 4,
+	}
+	ps2 := &evalpb.GerritPatchset{
+		Change: &evalpb.GerritChange{
+			Host:    "chromium-review.googlesource.com",
+			Project: "chromium/src",
+			Number:  223,
+		},
+		Patchset: 4,
+	}
+
+	Convey(`PrintLostRejection`, t, func() {
+		Convey(`Basic`, func() {
+			rej := &evalpb.Rejection{
+				Patchsets:          []*evalpb.GerritPatchset{ps1},
+				FailedTestVariants: []*evalpb.TestVariant{{Id: "test1"}},
+			}
+
+			assert(rej, `Lost rejection:
+	https://chromium-review.googlesource.com/c/123/4
+	Failed and not selected tests:
+		- <empty test variant>
+			- test1
+`)
+		})
+
+		Convey(`With file name`, func() {
+			rej := &evalpb.Rejection{
+				Patchsets: []*evalpb.GerritPatchset{ps1},
+				FailedTestVariants: []*evalpb.TestVariant{{
+					Id:       "test1",
+					FileName: "test.cc",
+				}},
+			}
+
+			assert(rej, `Lost rejection:
+	https://chromium-review.googlesource.com/c/123/4
+	Failed and not selected tests:
+		- <empty test variant>
+			- test1
+				in test.cc
+`)
+		})
+
+		Convey(`Multiple variants`, func() {
+			rej := &evalpb.Rejection{
+				Patchsets: []*evalpb.GerritPatchset{ps1},
+				FailedTestVariants: []*evalpb.TestVariant{
+					{
+						Id: "test1",
+						Variant: map[string]string{
+							"a": "0",
+						},
+					},
+					{
+						Id: "test2",
+						Variant: map[string]string{
+							"a": "0",
+						},
+					},
+					{
+						Id: "test1",
+						Variant: map[string]string{
+							"a": "0",
+							"b": "0",
+						},
+					},
+				},
+			}
+
+			assert(rej, `Lost rejection:
+	https://chromium-review.googlesource.com/c/123/4
+	Failed and not selected tests:
+		- a:0
+			- test1
+			- test2
+		- a:0 | b:0
+			- test1
+`)
+		})
+
+		Convey(`Two patchsets`, func() {
+			rej := &evalpb.Rejection{
+				Patchsets:          []*evalpb.GerritPatchset{ps1, ps2},
+				FailedTestVariants: []*evalpb.TestVariant{{Id: "test1"}},
+			}
+
+			assert(rej, `Lost rejection:
+	- patchsets:
+		https://chromium-review.googlesource.com/c/123/4
+		https://chromium-review.googlesource.com/c/223/4
+	Failed and not selected tests:
+		- <empty test variant>
+			- test1
+`)
+		})
 	})
 }

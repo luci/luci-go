@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/resultdb/pbutil"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
@@ -54,4 +56,24 @@ func variantString(v map[string]string) string {
 // psURL returns the patchset URL.
 func psURL(p *evalpb.GerritPatchset) string {
 	return fmt.Sprintf("https://%s/c/%d/%d", p.Change.Host, p.Change.Number, p.Patchset)
+}
+
+type historyFileInputFlag struct {
+	path string
+	ptr  **history.Player
+}
+
+func (f *historyFileInputFlag) Set(val string) error {
+	r, err := history.OpenFile(val)
+	if err != nil {
+		return err
+	}
+
+	f.path = val
+	*f.ptr = history.NewPlayer(r)
+	return nil
+}
+
+func (f *historyFileInputFlag) String() string {
+	return f.path
 }

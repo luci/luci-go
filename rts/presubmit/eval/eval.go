@@ -15,14 +15,21 @@
 package eval
 
 import (
+	"bytes"
 	"context"
 	"flag"
+	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
+	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
 // defaults
@@ -108,24 +115,152 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 	return &run.res, nil
 }
 
-type historyFileInputFlag struct {
-	path string
-	ptr  **history.Player
+type evalRun struct {
+	Eval
+
+	// internal mutable state
+	res                      Result
+	buf                      bytes.Buffer
+	mostRecentProgressReport time.Time
+	mu                       sync.Mutex
 }
 
-func (f *historyFileInputFlag) Set(val string) error {
-	r, err := history.OpenFile(val)
-	if err != nil {
-		return err
+func (r *evalRun) run(ctx context.Context) error {
+	// Init internal state.
+	r.res = Result{}
+	r.mostRecentProgressReport = time.Time{}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
+	// Analyze safety.
+	eg.Go(func() error {
+		err := r.evaluateSafety(ctx)
+		return errors.Annotate(err, "failed to evaluate safety").Err()
+	})
+
+	// Analyze efficiency.
+	eg.Go(func() error {
+		err := r.evaluateEfficiency(ctx)
+		return errors.Annotate(err, "failed to evaluate efficiency").Err()
+	})
+
+	// Play back the history.
+	eg.Go(func() error {
+		err := r.History.Playback(ctx)
+		r.res.TotalRecords = r.History.TotalRecords()
+		return errors.Annotate(err, "failed to playback history").Err()
+	})
+
+	return eg.Wait()
+}
+
+// evaluateSafety reads rejections from r.rejectionC,
+// updates r.res.Safety and calls r.maybeReportProgress.
+func (r *evalRun) evaluateSafety(ctx context.Context) error {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	for i := 0; i < r.Concurrency; i++ {
+		eg.Go(func() error {
+			return r.analyzeRejections(ctx)
+		})
+	}
+	return eg.Wait()
+}
+
+func (r *evalRun) analyzeRejections(ctx context.Context) error {
+	cr := &r.res.Safety.ChangeRecall
+	tr := &r.res.Safety.TestRecall
+
+	buf := &bytes.Buffer{}
+	p := &rejectionPrinter{printer: newPrinter(buf)}
+	return analyzeRejections(ctx, r.History.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
+		// The rejection is preserved if at least one test ran.
+		// Conclude that based on the closest test.
+		preservedRejection := r.shouldRun(rej.Closest)
+
+		if !preservedRejection && r.LogLostRejections {
+			buf.Reset()
+			p.rejection(rej.Rejection)
+			logging.Infof(ctx, "%s", buf.Bytes())
+		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		cr.TotalRejections++
+		tr.TotalFailures += len(rej.FailedTestVariants)
+		if !preservedRejection {
+			cr.LostRejections = append(cr.LostRejections, rej.Rejection)
+		}
+		for i, af := range rej.Affectedness {
+			if !r.shouldRun(af) {
+				tr.LostFailures = append(tr.LostFailures, LostTestFailure{
+					Rejection:   rej.Rejection,
+					TestVariant: rej.FailedTestVariants[i],
+				})
+			}
+		}
+
+		r.maybeReportProgress(ctx)
+		return nil
+	})
+}
+
+// evaluateEfficiency reads test durations from r.durationC,
+// updates r.res.Efficiency and calls r.maybeReportProgress.
+func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	// Run the selection strategy in r.Concurrency goroutines.
+	for i := 0; i < r.Concurrency; i++ {
+		eg.Go(func() error {
+			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
+			out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
+			for td := range r.History.DurationC {
+				// Invoke the strategy.
+				in.ChangedFiles = in.ChangedFiles[:0]
+				in.ensureChangedFilesInclude(td.Patchsets...)
+				in.TestVariants[0] = td.TestVariant
+				out.TestVariantAffectedness[0] = Affectedness{}
+				if err := r.Strategy(ctx, in, out); err != nil {
+					return err
+				}
+
+				// Record results.
+				dur := td.Duration.AsDuration()
+				r.mu.Lock()
+				r.res.Efficiency.TestResults++
+				r.res.Efficiency.SampleDuration += dur
+				if r.shouldRun(out.TestVariantAffectedness[0]) {
+					r.res.Efficiency.ForecastDuration += dur
+				}
+				r.maybeReportProgress(ctx)
+				r.mu.Unlock()
+			}
+			return ctx.Err()
+		})
 	}
 
-	f.path = val
-	*f.ptr = history.NewPlayer(r)
-	return nil
+	return eg.Wait()
 }
 
-func (f *historyFileInputFlag) String() string {
-	return f.path
+func (r *evalRun) maybeReportProgress(ctx context.Context) {
+	interval := r.ProgressReportInterval
+	if interval <= 0 {
+		interval = defaultProgressReportInterval
+	}
+
+	now := clock.Now(ctx)
+	switch {
+	case r.mostRecentProgressReport.IsZero():
+		r.mostRecentProgressReport = now
+
+	case now.After(r.mostRecentProgressReport.Add(interval)):
+		r.buf.Reset()
+		r.res.oneLine(&r.buf)
+		logging.Infof(ctx, "%s", r.buf.Bytes())
+		r.mostRecentProgressReport = now
+	}
 }
 
 func (e *Eval) shouldRun(a Affectedness) bool {
