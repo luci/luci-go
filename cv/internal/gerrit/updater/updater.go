@@ -40,6 +40,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -60,7 +61,7 @@ func init() {
 			}
 
 			err := refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
-				updatedHint, changelist.CLID(t.GetClidHint()))
+				updatedHint, common.CLID(t.GetClidHint()))
 			if err != nil {
 				errors.Log(ctx, err)
 				if !transient.Tag.In(err) {
@@ -74,7 +75,7 @@ func init() {
 
 // Schedule enqueues a TQ task to refresh a Gerrit CL.
 func Schedule(ctx context.Context, luciProject, host string, change int64,
-	updatedHint time.Time, clidHint changelist.CLID) error {
+	updatedHint time.Time, clidHint common.CLID) error {
 	payload := &RefreshGerritCL{
 		LuciProject: luciProject,
 		Host:        host,
@@ -120,7 +121,7 @@ const blindRefreshInterval = time.Minute
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed.
 // To force an update, provide as time.Time{} as updatedHint.
-func refreshExternal(ctx context.Context, luciProject, host string, change int64, updatedHint time.Time, clidHint changelist.CLID) (err error) {
+func refreshExternal(ctx context.Context, luciProject, host string, change int64, updatedHint time.Time, clidHint common.CLID) (err error) {
 	fetcher := fetcher{
 		luciProject: luciProject,
 		host:        host,
@@ -157,7 +158,7 @@ type fetcher struct {
 	toUpdate changelist.UpdateFields
 }
 
-func (f *fetcher) update(ctx context.Context, clidHint changelist.CLID) (err error) {
+func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) {
 	// Check if CL already exists in Datastore.
 	if clidHint != 0 {
 		f.priorCL = &changelist.CL{ID: clidHint}
@@ -704,7 +705,7 @@ func (f *fetcher) gerritProjectIfKnown() string {
 	return ""
 }
 
-func (f *fetcher) clidIfKnown() changelist.CLID {
+func (f *fetcher) clidIfKnown() common.CLID {
 	if f.priorCL != nil {
 		return f.priorCL.ID
 	}

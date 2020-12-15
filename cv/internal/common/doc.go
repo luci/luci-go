@@ -12,26 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package internal contains widely used CV utilities.
-package internal
-
-import (
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
-)
-
-// MostSevereError returns the most severer error in order of
-// non-transient => transient => nil.
-func MostSevereError(errs errors.MultiError) error {
-	var firstTrans error
-	for _, err := range errs {
-		switch {
-		case err == nil:
-		case !transient.Tag.In(err):
-			return err
-		case firstTrans == nil:
-			firstTrans = err
-		}
-	}
-	return firstTrans
-}
+// Package common contains widely used CV utilities & types.
+package common
