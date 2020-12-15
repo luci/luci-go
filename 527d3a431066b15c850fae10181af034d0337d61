@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f544146_80d06455",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T01:54:57Z",
+      "side": 1,
+      "message": "Yep. Just saw how the new event is handled in https://crrev.com/c/2591309. Let\u0027s optimize later if needed.",
+      "parentUuid": "8f8df916_10ab3762",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "527d3a431066b15c850fae10181af034d0337d61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ef1e659b_29ae8134",
