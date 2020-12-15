@@ -88,6 +88,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de7a0959_359a4924",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-12-15T22:08:20Z",
+      "side": 1,
+      "message": "Thanks! I\u0027m thinking of adding this to resultdb 2021 Q1 OKRs.If the timeline SGTY. And either you or I can take it, depend on the availability.",
+      "parentUuid": "232cb2c8_6941637f",
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6bac7992_4c532665",
