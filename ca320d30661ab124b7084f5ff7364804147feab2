@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "093111f5_d3487a14",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-15T00:38:31Z",
+      "side": 1,
+      "message": "what happens if the callback returns an error?\nwhat happens if it blocks for 10 min?\nwhat happens if there are multiple callbacks, are they called in parallel or in order or there\u0027s only one?",
+      "range": {
+        "startLine": 53,
+        "startChar": 43,
+        "endLine": 53,
+        "endChar": 48
+      },
+      "revId": "ca320d30661ab124b7084f5ff7364804147feab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
