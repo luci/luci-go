@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8f8df916_10ab3762",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T01:48:36Z",
+      "side": 1,
+      "message": "yeah, but \na) the function was gross (i actually wrote it) \nb) the next event kind isn\u0027t the same.\nSo, let\u0027s keep copy-pasta for now in the best Go tradition 😄",
+      "parentUuid": "e34ac753_f50d0b20",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "527d3a431066b15c850fae10181af034d0337d61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ef1e659b_29ae8134",
         "filename": "cv/internal/prjmanager/impl/transitions.go",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-15T01:38:51Z",
       "side": 1,
       "message": "typo: newState",
+      "range": {
+        "startLine": 113,
+        "startChar": 20,
+        "endLine": 113,
+        "endChar": 27
+      },
+      "revId": "527d3a431066b15c850fae10181af034d0337d61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d147c57_3582fb17",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T01:48:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef1e659b_29ae8134",
       "range": {
         "startLine": 113,
         "startChar": 20,
