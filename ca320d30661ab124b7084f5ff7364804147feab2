@@ -46,6 +46,30 @@
       },
       "revId": "ca320d30661ab124b7084f5ff7364804147feab2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97327639_91ea0c18",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-15T19:28:55Z",
+      "side": 1,
+      "message": "It is not clear, if I register two callbacks (pass two OptSend options), are they rate-limited as a single unit or behave completely independently of each other?\n\nDo we have a use case for multiple callbacks? Should we clarify there can be only one?",
+      "parentUuid": "9899d275_e3c3ba9d",
+      "range": {
+        "startLine": 53,
+        "startChar": 43,
+        "endLine": 53,
+        "endChar": 48
+      },
+      "revId": "ca320d30661ab124b7084f5ff7364804147feab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
