@@ -33,10 +33,17 @@ import (
 // or disable projects that do not have CV config in LUCI Config.
 //
 // It's expected to be called by a cron.
-func SubmitRefreshTasks(ctx context.Context) error {
+//
+// If isDev is true, only some projects will be considered,
+// regardless of which projects are registered.
+// TODO(crbug/1158505): switch to -dev configs and remove isDev parameter.
+func SubmitRefreshTasks(ctx context.Context, isDev bool) error {
 	projects, err := config.ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
+	}
+	if isDev {
+		projects = []string{"infra", "chromium", "chromium-m86", "v8"}
 	}
 	tasks := make([]*tq.Task, len(projects))
 	for i, p := range projects {
