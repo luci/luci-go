@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7991aaf_ed6dd023",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-15T08:23:22Z",
+      "side": 1,
+      "message": "PTAL. I hope you find this CL interesting.\nThe amount of code-to-review is much less than the amount of thinking that went into this.",
+      "revId": "4c9237bb5afa45778d7ea625dfb0b0a70d95c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
