@@ -64,6 +64,9 @@ func init() {
 // * next possible.
 func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if datastore.CurrentTransaction(ctx) != nil {
+		// TODO(tandrii): use txndefer to immediately trigger a PokePMTask after
+		// transaction completes to reduce latency in *most* circumstances.
+		// The KickPokePMTask is still required for correctness.
 		payload := &KickPokePMTask{LuciProject: luciProject}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
