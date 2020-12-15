@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d2b6518_f0ecf77b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T05:41:56Z",
+      "side": 1,
+      "message": "PTAL again as I\u0027ve updated to adopt new changes in prjmanager.",
+      "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

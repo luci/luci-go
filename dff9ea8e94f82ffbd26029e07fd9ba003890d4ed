@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47c02184_4eb26008",
+        "filename": "cv/internal/run/internal/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T05:41:56Z",
+      "side": 1,
+      "message": "I renamed this to cancel as the status is named `CANCELLED`.",
+      "range": {
+        "startLine": 28,
+        "startChar": 4,
+        "endLine": 28,
+        "endChar": 22
+      },
+      "revId": "dff9ea8e94f82ffbd26029e07fd9ba003890d4ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
