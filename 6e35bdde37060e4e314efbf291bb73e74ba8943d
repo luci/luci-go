@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aa418577_b030337f",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T01:17:56Z",
+      "side": 1,
+      "message": "nit: We can move this to a separate block and add a comment?\n\nAlso, side question: IIUC, we need to do this for all task registrations as long as they are not reachable via the import tree?",
+      "revId": "6e35bdde37060e4e314efbf291bb73e74ba8943d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
