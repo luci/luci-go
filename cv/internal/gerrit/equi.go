@@ -65,7 +65,8 @@ func EquivalentPatchsetRange(info *gerritpb.ChangeInfo) (minEquiPatchset, curren
 			gerritpb.RevisionInfo_TRIVIAL_REBASE:
 			minEquiPatchset = int(revs[i+1].Number)
 		default:
-			err = errors.Reason("Unknown revision kind %d %s", rev.Kind, rev.Kind).Err()
+			err = errors.Reason("Unknown revision kind %d %s ps#%d",
+				rev.Kind, rev.Kind, rev.GetNumber()).Err()
 			return
 		}
 	}
