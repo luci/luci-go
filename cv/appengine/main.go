@@ -32,6 +32,7 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/config/configcron"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 
@@ -52,6 +53,7 @@ func main() {
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
+		srv.Context = gerrit.UseProd(srv.Context)
 
 		srv.Routes.GET("/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
