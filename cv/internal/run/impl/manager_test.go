@@ -100,6 +100,112 @@ func TestStartRun(t *testing.T) {
 	})
 }
 
+func TestCancelRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("CancelRun", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const runID = "chromium/1111111111111/deadbeef"
+		runKey := datastore.MakeKey(ctx, run.RunKind, runID)
+		initialEversion := 10
+
+		for _, status := range []run.Status{run.Status_PENDING, run.Status_RUNNING} {
+			Convey(fmt.Sprintf("Cancels when Run is %s", status), func() {
+				startTime := time.Time{}
+				if status == run.Status_RUNNING {
+					startTime = datastore.RoundTime(ct.Clock.Now().UTC())
+				}
+				err := datastore.Put(ctx, &run.Run{
+					ID:        runID,
+					Status:    status,
+					EVersion:  initialEversion,
+					StartTime: startTime,
+				})
+				So(err, ShouldBeNil)
+				ct.Clock.Add(1 * time.Minute)
+				So(run.CancelRun(ctx, runID), ShouldBeNil)
+				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-run-task"))
+				assertEventBoxSize(ctx, runKey, 0)
+
+				r := run.Run{ID: runID}
+				So(datastore.Get(ctx, &r), ShouldBeNil)
+
+				now := datastore.RoundTime(ct.Clock.Now().UTC())
+				if startTime.IsZero() {
+					startTime = now // Cancel will fill in start time if empty
+				}
+				So(r, ShouldResemble, run.Run{
+					ID:         runID,
+					Status:     run.Status_CANCELLED,
+					EVersion:   initialEversion + 1,
+					StartTime:  startTime,
+					EndTime:    now,
+					UpdateTime: now,
+				})
+			})
+		}
+
+		Convey("Panic when Run Status is not specified", func() {
+			err := datastore.Put(ctx, &run.Run{
+				ID:       runID,
+				EVersion: initialEversion,
+			})
+			So(err, ShouldBeNil)
+			So(run.CancelRun(ctx, runID), ShouldBeNil)
+			So(func() { ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-run-task")) }, ShouldPanic)
+		})
+
+		statuses := []run.Status{
+			run.Status_FINALIZING,
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
+		}
+		for _, status := range statuses {
+			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
+				err := datastore.Put(ctx, &run.Run{
+					ID:       runID,
+					Status:   status,
+					EVersion: initialEversion,
+				})
+				So(err, ShouldBeNil)
+				So(run.CancelRun(ctx, runID), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-run-task"))
+
+				r := run.Run{ID: runID}
+				So(datastore.Get(ctx, &r), ShouldBeNil)
+				So(r.EVersion, ShouldEqual, initialEversion)
+			})
+		}
+
+		Convey("Cancel takes precedence over Start", func() {
+			err := datastore.Put(ctx, &run.Run{
+				ID:       runID,
+				Status:   run.Status_PENDING,
+				EVersion: initialEversion,
+			})
+			So(err, ShouldBeNil)
+
+			So(run.StartRun(ctx, runID), ShouldBeNil)
+			So(run.CancelRun(ctx, runID), ShouldBeNil)
+			assertEventBoxSize(ctx, runKey, 2)
+
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-run-task"))
+			// Consumed both events
+			assertEventBoxSize(ctx, runKey, 0)
+
+			r := run.Run{ID: runID}
+			So(datastore.Get(ctx, &r), ShouldBeNil)
+			So(r.Status, ShouldEqual, run.Status_CANCELLED)
+			So(r.EVersion, ShouldEqual, initialEversion+1)
+		})
+	})
+}
+
 func assertEventBoxSize(ctx context.Context, recipient *datastore.Key, expectedSize int) {
 	events, err := eventbox.List(ctx, recipient)
 	So(err, ShouldBeNil)
