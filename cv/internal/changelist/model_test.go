@@ -25,7 +25,10 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -151,6 +154,11 @@ func TestUpdate(t *testing.T) {
 				Snapshot:         snap,
 				ApplicableConfig: acfg,
 				AddDependentMeta: asdep,
+			}, func(ctx context.Context, id common.CLID, ev int) error {
+				So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+				So(id, ShouldBeGreaterThan, 0)
+				So(ev, ShouldEqual, 1)
+				return nil
 			})
 			So(err, ShouldBeNil)
 			cl, err := eid.Get(ctx)
@@ -171,7 +179,13 @@ func TestUpdate(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			snap := makeSnapshot(epoch)
-			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap})
+			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap},
+				func(ctx context.Context, id common.CLID, ev int) error {
+					So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+					So(id, ShouldEqual, cl.ID)
+					So(ev, ShouldEqual, 2)
+					return nil
+				})
 			So(err, ShouldBeNil)
 
 			cl2, err := eid.Get(ctx)
@@ -187,7 +201,13 @@ func TestUpdate(t *testing.T) {
 			Convey("with known CLID", func() {
 				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
 				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
-					UpdateFields{ApplicableConfig: acfg2})
+					UpdateFields{ApplicableConfig: acfg2},
+					func(ctx context.Context, id common.CLID, ev int) error {
+						So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
+						So(id, ShouldEqual, cl.ID)
+						So(ev, ShouldEqual, 3)
+						return nil
+					})
 				So(err, ShouldBeNil)
 
 				cl3, err := eid.Get(ctx)
@@ -204,6 +224,8 @@ func TestUpdate(t *testing.T) {
 					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
 					ApplicableConfig: makeApplicableConfig(epoch.Add(-time.Minute)),
 					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
+				}, func(context.Context, common.CLID, int) error {
+					panic("must not be called")
 				})
 				So(err, ShouldBeNil)
 
@@ -218,7 +240,7 @@ func TestUpdate(t *testing.T) {
 
 			Convey("adds/updates DependentMeta", func() {
 				asdep3 := makeDependentMeta(epoch.Add(time.Minute), "another-project", "2nd")
-				err = Update(ctx, "", cl.ID, UpdateFields{AddDependentMeta: asdep3})
+				err = Update(ctx, "", cl.ID, UpdateFields{AddDependentMeta: asdep3}, nil)
 				So(err, ShouldBeNil)
 				cl3, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
@@ -226,7 +248,7 @@ func TestUpdate(t *testing.T) {
 
 				err = Update(ctx, "", cl.ID, UpdateFields{
 					AddDependentMeta: makeDependentMeta(epoch.Add(time.Hour), "2nd", "3rd"),
-				})
+				}, nil)
 				So(err, ShouldBeNil)
 				cl4, err := eid.Get(ctx)
 				So(err, ShouldBeNil)
@@ -255,11 +277,16 @@ func TestConcurrentUpdate(t *testing.T) {
 	t.Parallel()
 
 	Convey("Update is atomic when called concurrently with flaky datastore", t, func() {
-		epoch := testclock.TestRecentTimeUTC
+		// use Seconds with lots of 0s at the end for easy grasp of assertion
+		// failures since they are done on protos.
+		epoch := (&timestamppb.Timestamp{Seconds: 14500000000}).AsTime()
 		ctx, _ := testclock.UseTime(context.Background(), epoch)
 		ctx = txndefer.FilterRDS(memory.Use(ctx))
 		ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 		datastore.GetTestable(ctx).Consistent(true)
+		if testing.Verbose() {
+			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		}
 
 		// Use a single random source for all flaky.Errors(...) instances. Otherwise
 		// they repeat the same random pattern each time withBrokenDS is called.
@@ -291,10 +318,10 @@ func TestConcurrentUpdate(t *testing.T) {
 
 			// For a co-prime p,N:
 			//   assert sorted(set([((p*d)%N) for d in xrange(N)])) == range(N)
-			// 47, 59, 67 are actual primes.
-			snapTS := epoch.Add(time.Minute * time.Duration((47*d)%N))
-			acfgTS := epoch.Add(time.Minute * time.Duration((59*d)%N))
-			asdepTS := epoch.Add(time.Minute * time.Duration((67*d)%N))
+			// 47, 59, 73 are actual primes.
+			snapTS := epoch.Add(time.Second * time.Duration((47*d)%N))
+			acfgTS := epoch.Add(time.Second * time.Duration((59*d)%N))
+			asdepTS := epoch.Add(time.Second * time.Duration((73*d)%N))
 			go func() {
 				defer wg.Done()
 				snap := makeSnapshot(snapTS)
@@ -302,7 +329,7 @@ func TestConcurrentUpdate(t *testing.T) {
 				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
-					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}); err == nil {
+					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}, nil); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
@@ -321,7 +348,7 @@ func TestConcurrentUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 		// Since all workers have succeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
-		latestTS := epoch.Add((N - 1) * time.Minute)
+		latestTS := epoch.Add((N - 1) * time.Second)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
 		So(cl.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(latestTS))
 		So(cl.DependentMeta, ShouldResembleProto, makeDependentMeta(latestTS, "another-project"))

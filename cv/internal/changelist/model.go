@@ -62,6 +62,10 @@ func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 	return
 }
 
+// Notify is called in a transaction context modifying a CL with its ID and new
+// EVersion.
+type Notify func(ctx context.Context, clid common.CLID, eversion int) error
+
 // CL is a CL entity in Datastore.
 type CL struct {
 	_kind  string                `gae:"$kind,CL"`
@@ -258,10 +262,13 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 //
 // If common.CLID is not known and CL for provided ExternalID doesn't exist,
 // then a new CL is created with values from UpdateFields.
-// Otherwise, an existing CL entity will be updated as documented in UpdateFields.
+// Otherwise, an existing CL entity will be updated as documented in
+// UpdateFields.
 //
-// TODO(tandrii): emit notification events.
-func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields UpdateFields) error {
+// If notify is given AND cl entity is created/updated,
+// notify is called in a transaction context with CL's ID and latest EVersion.
+func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
+	fields UpdateFields, notify Notify) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known common.CLID must be provided")
 	}
@@ -274,12 +281,16 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields U
 			m := clMap{ExternalID: eid}
 			switch err := datastore.Get(ctx, &m); {
 			case err == datastore.ErrNoSuchEntity:
-				// Insert new entity.
-				_, err = insert(ctx, eid, func(cl *CL) {
+				// Insert a new entity with EVersion = 1.
+				cl, err := insert(ctx, eid, func(cl *CL) {
 					cl.Snapshot = fields.Snapshot
 					cl.ApplicableConfig = fields.ApplicableConfig
 					cl.DependentMeta = fields.AddDependentMeta
 				})
+				if err == nil && notify != nil {
+					err = errors.Annotate(notify(ctx, cl.ID, 1),
+						"notifyCallback failed on %s", eid).Err()
+				}
 				return err
 			case err != nil:
 				return errors.Annotate(err, "failed to get CLMap entity").Tag(transient.Tag).Err()
@@ -291,7 +302,12 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields U
 			return err
 		}
 		// Update exsting entity.
-		return update(ctx, cl, fields.apply)
+		updated, err := update(ctx, cl, fields.apply)
+		if err == nil && updated && notify != nil {
+			err = errors.Annotate(notify(ctx, cl.ID, cl.EVersion),
+				"notifyCallback failed on %d", cl.ID).Err()
+		}
+		return err
 	}, nil)
 	return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
 }
@@ -345,20 +361,21 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 	return cl, nil
 }
 
-func update(ctx context.Context, justRead *CL, mut func(*CL) (update bool)) error {
+func update(ctx context.Context, justRead *CL, mut func(*CL) (update bool)) (updated bool, err error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in transaction context")
 	}
 
 	before := *justRead // shallow copy, avoiding cloning Snapshot.
-	if !mut(justRead) {
-		return nil
+	updated = mut(justRead)
+	if !updated {
+		return false, nil
 	}
 	justRead.Snapshot.PanicIfNotValid()
 	justRead.EVersion = before.EVersion + 1
 	justRead.UpdateTime = clock.Now(ctx).UTC()
-	if err := datastore.Put(ctx, justRead); err != nil {
-		return errors.Annotate(err, "failed to put CL entity").Tag(transient.Tag).Err()
+	if err = datastore.Put(ctx, justRead); err != nil {
+		err = errors.Annotate(err, "failed to put CL entity").Tag(transient.Tag).Err()
 	}
-	return nil
+	return true, err
 }

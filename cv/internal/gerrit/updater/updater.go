@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 )
 
 func init() {
@@ -225,7 +226,10 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	case f.toUpdate.IsEmpty():
 		return nil
 	default:
-		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate)
+		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate,
+			func(ctx context.Context, clid common.CLID, eversion int) error {
+				return prjmanager.CLUpdated(ctx, f.luciProject, clid, eversion)
+			})
 	}
 }
 
