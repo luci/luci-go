@@ -61,8 +61,11 @@ func init() {
 
 			err := refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
 				updatedHint, changelist.CLID(t.GetClidHint()))
-			if !transient.Tag.In(err) {
-				err = tq.Fatal.Apply(err)
+			if err != nil {
+				errors.Log(ctx, err)
+				if !transient.Tag.In(err) {
+					err = tq.Fatal.Apply(err)
+				}
 			}
 			return err
 		},
@@ -265,7 +268,7 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeInfo) error {
 	min, cur, err := gerrit.EquivalentPatchsetRange(ci)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to compute equivalent patchset range on %s", f).Err()
 	}
 	f.toUpdate.Snapshot.MinEquivalentPatchset = int32(min)
 	f.toUpdate.Snapshot.Patchset = int32(cur)
