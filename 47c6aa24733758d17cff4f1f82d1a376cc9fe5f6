@@ -16,6 +16,63 @@
       "message": "PTAL again as I\u0027ve updated to adopt new changes in prjmanager.",
       "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a0350fe_faf74c4b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T18:14:09Z",
+      "side": 1,
+      "message": "still lgtm!",
+      "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "116ec6ee_5afaa661",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T18:14:09Z",
+      "side": 1,
+      "message": "oh, i like manager.go name.",
+      "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd521109_dfedcbbe",
+        "filename": "cv/internal/run/internal/events.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T18:14:09Z",
+      "side": 1,
+      "message": "Cancel",
+      "range": {
+        "startLine": 27,
+        "startChar": 10,
+        "endLine": 27,
+        "endChar": 15
+      },
+      "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
