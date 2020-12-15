@@ -25,9 +25,38 @@ import (
 
 // Result is the result of evaluation.
 type Result struct {
+	Thresholds ThresholdGrid
+
+	// TODO(nodir): refactor these fields by moving their data into this struct
+	// directly or into Threshold.
+
 	Safety       Safety
 	Efficiency   Efficiency
 	TotalRecords int
+}
+
+// ThresholdGrid is a 100x100 grid where each cell represents a distance/rank
+// threshold. All cells in the same row have the same distance value, and
+// all cells in the same column have the same rank value.
+//
+// The distance value of the row i is the minimal distance threshold required
+// to achieve ChangeRecall score (i+1)/100.0 on to the training set without a
+// rank threshold.
+// For example, ThresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
+// on the training set.
+// Similarly, rank value of the column i is the minimal rank threshold required
+// to achieve ChangeRecall score (i+1)/100.0 on to the training set without a
+// distance threshold.
+// The distances and ranks are computed independently of each other and then
+// combined into this grid.
+type ThresholdGrid [100][100]Threshold
+
+// Threshold is a distance and rank theshold, as well as their results on the
+// eval set.
+type Threshold struct {
+	Value Affectedness
+
+	// TODO(nodir): move safety and efficiency data here.
 }
 
 // Safety is how safe the candidate strategy is.
