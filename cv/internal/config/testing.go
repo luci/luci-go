@@ -43,9 +43,9 @@ type TestController struct {
 func (t TestController) Create(ctx context.Context, project string, cfg *pb.Config) {
 	t.MustNotExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {configFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
 	}))
-	if err := updateProject(ctx, project); err != nil {
+	if err := UpdateProject(ctx, project); err != nil {
 		panic(err)
 	}
 }
@@ -56,9 +56,9 @@ func (t TestController) Create(ctx context.Context, project string, cfg *pb.Conf
 func (t TestController) Update(ctx context.Context, project string, cfg *pb.Config) {
 	t.MustExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {configFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {ConfigFileName: prototext.Format(cfg)},
 	}))
-	if err := updateProject(ctx, project); err != nil {
+	if err := UpdateProject(ctx, project); err != nil {
 		panic(err)
 	}
 }
@@ -68,7 +68,7 @@ func (t TestController) Update(ctx context.Context, project string, cfg *pb.Conf
 // Panics if project config doesn't exist.
 func (t TestController) Disable(ctx context.Context, project string) {
 	t.MustExist(ctx, project)
-	disableProject(ctx, project)
+	DisableProject(ctx, project)
 }
 
 // Enable enables project.

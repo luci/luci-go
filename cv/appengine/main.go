@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 )
@@ -66,7 +66,7 @@ func main() {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs[1] = config.SubmitRefreshTasks(ctx)
+					errs[1] = configcron.SubmitRefreshTasks(ctx)
 				}()
 
 				wg.Wait()

@@ -83,13 +83,13 @@ func TestGetAllProjectIDs(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("All", func() {
-			ret, err := getAllProjectIDs(ctx, false)
+			ret, err := GetAllProjectIDs(ctx, false)
 			So(err, ShouldBeNil)
 			So(ret, ShouldResemble, []string{"disabledProject", "enabledProject"})
 		})
 
 		Convey("Enabled", func() {
-			ret, err := getAllProjectIDs(ctx, true)
+			ret, err := GetAllProjectIDs(ctx, true)
 			So(err, ShouldBeNil)
 			So(ret, ShouldResemble, []string{"enabledProject"})
 		})

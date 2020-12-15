@@ -41,82 +41,6 @@ import (
 
 var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 
-func TestSubmitRefreshTasks(t *testing.T) {
-	t.Parallel()
-
-	Convey("Submit refresh task", t, func() {
-		ctx, _, tqScheduler := mkTestingCtx()
-
-		Convey("for a new project", func() {
-			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {configFileName: ""},
-			}))
-			// Project chromium doesn't exist in datastore.
-			err := SubmitRefreshTasks(ctx)
-			So(err, ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-				{Project: "chromium"},
-			})
-		})
-
-		Convey("for an existing project", func() {
-			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {configFileName: ""},
-			}))
-			So(datastore.Put(ctx, &ProjectConfig{
-				Project: "chromium",
-				Enabled: true,
-			}), ShouldBeNil)
-			err := SubmitRefreshTasks(ctx)
-			So(err, ShouldBeNil)
-			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-				{Project: "chromium"},
-			})
-		})
-
-		Convey("Disable project", func() {
-			Convey("that doesn't have CV config", func() {
-				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-					config.ProjectSet("chromium"): {"other.cfg": ""},
-				}))
-				So(datastore.Put(ctx, &ProjectConfig{
-					Project: "chromium",
-					Enabled: true,
-				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-					{Project: "chromium", Disable: true},
-				})
-			})
-			Convey("that doesn't exist in LUCI Config", func() {
-				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &ProjectConfig{
-					Project: "chromium",
-					Enabled: true,
-				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
-					{Project: "chromium", Disable: true},
-				})
-			})
-
-			Convey("Skip already disabled Project", func() {
-				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
-				So(datastore.Put(ctx, &ProjectConfig{
-					Project: "foo",
-					Enabled: false,
-				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx)
-				So(err, ShouldBeNil)
-				So(tqScheduler.Tasks(), ShouldBeEmpty)
-			})
-		})
-
-	})
-}
-
 func TestUpdateProject(t *testing.T) {
 	Convey("Update Project", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
@@ -158,7 +82,7 @@ func TestUpdateProject(t *testing.T) {
 		}
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
 			cfg, meta := &pb.Config{}, &config.Meta{}
-			err := cfgclient.Get(ctx, config.ProjectSet("chromium"), configFileName, cfgclient.ProtoText(cfg), meta)
+			err := cfgclient.Get(ctx, config.ProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
 			So(err, ShouldBeNil)
 			localHash := computeHash(cfg)
 			projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
@@ -205,16 +129,16 @@ func TestUpdateProject(t *testing.T) {
 		Convey("Creates new ProjectConfig", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.ProjectSet("chromium"): {
-					configFileName: toProtoText(chromiumConfig),
+					ConfigFileName: toProtoText(chromiumConfig),
 				},
 			}))
-			err := updateProject(ctx, "chromium")
+			err := UpdateProject(ctx, "chromium")
 			So(err, ShouldBeNil)
 			verifyEntitiesInDatastore(ctx, 1)
 			testClock.Add(10 * time.Minute)
 
 			Convey("Noop if config is up-to-date", func() {
-				err := updateProject(ctx, "chromium")
+				err := UpdateProject(ctx, "chromium")
 				So(err, ShouldBeNil)
 				pc := ProjectConfig{Project: "chromium"}
 				err = datastore.Get(ctx, &pc)
@@ -242,10 +166,10 @@ func TestUpdateProject(t *testing.T) {
 				})
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 					config.ProjectSet("chromium"): {
-						configFileName: toProtoText(updatedConfig),
+						ConfigFileName: toProtoText(updatedConfig),
 					},
 				}))
-				err := updateProject(ctx, "chromium")
+				err := UpdateProject(ctx, "chromium")
 				So(err, ShouldBeNil)
 				verifyEntitiesInDatastore(ctx, 2)
 				testClock.Add(10 * time.Minute)
@@ -253,18 +177,18 @@ func TestUpdateProject(t *testing.T) {
 				Convey("Roll back to previous version", func() {
 					ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 						config.ProjectSet("chromium"): {
-							configFileName: toProtoText(chromiumConfig),
+							ConfigFileName: toProtoText(chromiumConfig),
 						},
 					}))
 
-					err := updateProject(ctx, "chromium")
+					err := UpdateProject(ctx, "chromium")
 					So(err, ShouldBeNil)
 					verifyEntitiesInDatastore(ctx, 3)
 				})
 
 				Convey("Re-enables project even if config hash is the same", func() {
 					testClock.Add(10 * time.Minute)
-					So(disableProject(ctx, "chromium"), ShouldBeNil)
+					So(DisableProject(ctx, "chromium"), ShouldBeNil)
 					before := ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &before), ShouldBeNil)
 					// Delete config entities.
@@ -279,7 +203,7 @@ func TestUpdateProject(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					testClock.Add(10 * time.Minute)
-					So(updateProject(ctx, "chromium"), ShouldBeNil)
+					So(UpdateProject(ctx, "chromium"), ShouldBeNil)
 					after := ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &after), ShouldBeNil)
 
@@ -313,7 +237,7 @@ func TestDisableProject(t *testing.T) {
 
 		Convey("currently enabled Project", func() {
 			writeProjectConfig(true)
-			err := disableProject(ctx, "chromium")
+			err := DisableProject(ctx, "chromium")
 			So(err, ShouldBeNil)
 			actual := ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
@@ -324,7 +248,7 @@ func TestDisableProject(t *testing.T) {
 
 		Convey("currently disabled Project", func() {
 			writeProjectConfig(false)
-			err := disableProject(ctx, "chromium")
+			err := DisableProject(ctx, "chromium")
 			So(err, ShouldBeNil)
 			actual := ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
@@ -333,7 +257,7 @@ func TestDisableProject(t *testing.T) {
 		})
 
 		Convey("non-existing Project", func() {
-			err := disableProject(ctx, "non-existing")
+			err := DisableProject(ctx, "non-existing")
 			So(err, ShouldBeNil)
 			So(datastore.Get(ctx, &ProjectConfig{Project: "non-existing"}), ShouldErrLike, datastore.ErrNoSuchEntity)
 		})

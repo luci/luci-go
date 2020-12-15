@@ -87,8 +87,8 @@ func computeHash(cfg *pb.Config) string {
 	return fmt.Sprintf("sha256:%s", hex.EncodeToString(sha.Sum(nil)[:8]))
 }
 
-// getAllProjectIDs returns the names of all projects available in datastore.
-func getAllProjectIDs(ctx context.Context, enabledOnly bool) ([]string, error) {
+// GetAllProjectIDs returns the names of all projects available in datastore.
+func GetAllProjectIDs(ctx context.Context, enabledOnly bool) ([]string, error) {
 	var projects []*ProjectConfig
 	query := datastore.NewQuery(projectConfigKind).Project("Enabled")
 	if err := datastore.GetAll(ctx, query, &projects); err != nil {
