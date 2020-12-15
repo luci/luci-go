@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61a32aa2_f5d4d7ce",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-15T19:35:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64be38b2_26c8dd2f",
+      "range": {
+        "startLine": 50,
+        "startChar": 32,
+        "endLine": 50,
+        "endChar": 34
+      },
+      "revId": "564bc59622faad8f700d0f7fb1a288f5304b1c28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4fb68d8c_ddff0666",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-15T19:28:55Z",
       "side": 1,
       "message": "... and rate limits allow?",
+      "range": {
+        "startLine": 55,
+        "startChar": 43,
+        "endLine": 55,
+        "endChar": 66
+      },
+      "revId": "564bc59622faad8f700d0f7fb1a288f5304b1c28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be3d5892_d2e623a5",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-15T19:35:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fb68d8c_ddff0666",
       "range": {
         "startLine": 55,
         "startChar": 43,
