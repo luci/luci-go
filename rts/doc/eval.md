@@ -4,6 +4,8 @@ Selection strategy evaluation is a process of measuring a candidate strategy's
 *safety* and *efficiency*. It is done by emulating CQ behavior **with** the
 candidate selection strategy, based on CQ's historial records.
 
+TODO(nodir): update this doc. It is stale.
+
 [TOC]
 
 ## Safety
