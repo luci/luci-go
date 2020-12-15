@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f1d47fd_3636d172",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-15T22:23:09Z",
+      "side": 1,
+      "message": "Please update https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/cipd/client/cipd/client.go#140 to 2.5.1",
+      "revId": "2027551ab6631323f6c0884bf7129553925f5959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
