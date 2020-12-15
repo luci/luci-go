@@ -76,3 +76,55 @@ func TestAffectednessSlice(t *testing.T) {
 		So(checkConsistency(b, a), ShouldErrLike, `ranks and distances are inconsistent: eval.Affectedness{Distance:1, Rank:1} and eval.Affectedness{Distance:0, Rank:2}`)
 	})
 }
+
+func TestQuantiles(t *testing.T) {
+	t.Parallel()
+	Convey(`Quantiles`, t, func() {
+		Convey(`median of 1, 2, 3, 4`, func() {
+			afs := AffectednessSlice{
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 4},
+			}
+			So(afs.quantiles(2, true), ShouldResemble, AffectednessSlice{
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 4},
+			})
+		})
+		Convey(`4-quantiles of 1, 2, 3, 4`, func() {
+			afs := AffectednessSlice{
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 4},
+			}
+			So(afs.quantiles(4, true), ShouldResemble, AffectednessSlice{
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 4},
+			})
+		})
+		Convey(`10-quantiles of 1, 2, 3, 4`, func() {
+			afs := AffectednessSlice{
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 4},
+			}
+			So(afs.quantiles(10, true), ShouldResemble, AffectednessSlice{
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 1},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 2},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 3},
+				Affectedness{Distance: 4},
+				Affectedness{Distance: 4},
+				Affectedness{Distance: 4},
+			})
+		})
+	})
+}
