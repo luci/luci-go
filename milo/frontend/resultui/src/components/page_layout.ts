@@ -58,8 +58,10 @@ export class PageLayoutElement extends LitElement {
     return html`
       <div id="container">
         <div id="title-container">
-          <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
-          <span id="headline">LUCI</span>
+          <a href="/" id="title-link">
+            <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+            <span id="headline">LUCI</span>
+          </a>
         </div>
         <div
           id="feedback"
@@ -98,6 +100,11 @@ export class PageLayoutElement extends LitElement {
       flex: 1 1 100%;
       align-items: center;
       margin-left: 14px;
+    }
+    #title-link {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
     }
     #chromium-icon {
       display: inline-block;
