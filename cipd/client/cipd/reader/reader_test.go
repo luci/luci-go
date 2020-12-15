@@ -105,7 +105,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(pin, ShouldResemble, Pin{
 			PackageName: "testing",
-			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		})
 
 		// Open it.
@@ -157,7 +157,7 @@ func TestPackageReading(t *testing.T) {
 		// Attempt to open it, providing correct instance ID, should work.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: VerifyHash,
-			InstanceID:       "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+			InstanceID:       "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		})
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
@@ -165,7 +165,7 @@ func TestPackageReading(t *testing.T) {
 
 		So(inst.Pin(), ShouldResemble, Pin{
 			PackageName: "testing",
-			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		})
 
 		// Attempt to open it, providing incorrect instance ID.
@@ -301,12 +301,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
+			"instance_id": "OvNF-MsVw1eXYJtjkiq7pXCm6mLYYSaN9qSqsMT3DEAC",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "8YWDtsb0eJ3iegl5hBGaGJnw3qB2eNXhs9Fz7WO50B8C",
+				"instance_id": "ZM2WksvyI1lQiHnYcuLLXQSNquBPexuH-t57CkJPVDoC",
 				"package_name": "testing"
 			}`
 		}
@@ -376,7 +376,7 @@ func TestPackageReading(t *testing.T) {
 			goodManifest = fmt.Sprintf(goodManifest, `{
 				"name": "subpath/version.json",
 				"size": 96,
-				"hash": "9IYeZqpt0Ci4nxzyl6YJR2fSe870Y2MpmiS17r0h-cIC"
+				"hash": "XD6QlRyLX4Cj09wtPLAEQGacygrySk317U38Ku2d9zIC"
 			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
@@ -461,12 +461,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "Fmfp6kX5NlbedUcu_lw6ONfNaF_mKRb2_ZX78l3QJqcC",
+			"instance_id": "TFCuWXMWQSAoTRwjHXIu9ZTRTNrkwxuXXNKg_HTFQn0C",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "oVEoO_i5iVpgGhvjxQL-D1Lp_Tn8LUQ-hBbh48651mYC",
+				"instance_id": "JtKHZQLjvjsDbo2bRjfkCXCdlE4PZ-mRA7c2fAx09hkC",
 				"package_name": "testing"
 			}`
 		}
@@ -524,7 +524,7 @@ func TestPackageReading(t *testing.T) {
 			goodManifest = fmt.Sprintf(goodManifest, `{
 				"name": "subpath/version.json",
 				"size": 96,
-				"hash": "26nPG7CQsXMilBA-yCqbzNeqp_9LTlTu3Kh2cbD7X4gC"
+				"hash": "JlgQS4Xa4D7f94PYzpQcvgPsDfQqySYVlUBBYfF6x8sC"
 			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
