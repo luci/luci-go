@@ -73,6 +73,30 @@
       },
       "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f4a8d9f_f18c764d",
+        "filename": "cv/internal/run/internal/events.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T18:41:49Z",
+      "side": 1,
+      "message": "Oops. fixed.",
+      "parentUuid": "dd521109_dfedcbbe",
+      "range": {
+        "startLine": 27,
+        "startChar": 10,
+        "endLine": 27,
+        "endChar": 15
+      },
+      "revId": "47c6aa24733758d17cff4f1f82d1a376cc9fe5f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
