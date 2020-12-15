@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2206eac0_4e4401ff",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T01:49:42Z",
+      "side": 1,
+      "message": "read style guide in g3 😊\n`cron` is widely used so is very likely to clash with other packages (e.g. I expect server/cron to become a thing),\nwhile configcron is still short enough for me.",
+      "parentUuid": "bb34ca16_e0b89de6",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 18
+      },
+      "revId": "2470214848a69578df8c9a8e5bfb7be32de98d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "86d69c35_6a79c16b",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-12-15T00:54:37Z",
       "side": 1,
       "message": "nit: maybe disable because we never delete.",
+      "range": {
+        "startLine": 58,
+        "startChar": 12,
+        "endLine": 58,
+        "endChar": 18
+      },
+      "revId": "2470214848a69578df8c9a8e5bfb7be32de98d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "163eb84c_e372cceb",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T01:49:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86d69c35_6a79c16b",
       "range": {
         "startLine": 58,
         "startChar": 12,
