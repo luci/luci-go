@@ -45,6 +45,7 @@ func init() {
 		ID:        "kick-poke-pm-task",
 		Prototype: &KickPokePMTask{},
 		Queue:     "manage-project",
+		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*KickPokePMTask)
 			var eta time.Time
