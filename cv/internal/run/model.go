@@ -26,6 +26,9 @@ import (
 // CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
 var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
 
+// RunKind is Datastore entity kind for Run.
+const RunKind = "Run"
+
 // ID is an unique ID to identify a Run in CV.
 //
 // ID is a '/' separated string with following three parts:
@@ -50,6 +53,7 @@ const (
 //
 // Detail information about CL and Tryjobs are stored in its child entities.
 type Run struct {
+	// $kind must match RunKind.
 	_kind  string                `gae:"$kind,Run"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
