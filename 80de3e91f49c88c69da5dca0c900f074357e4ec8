@@ -33,6 +33,29 @@
       "message": "oops, sorry, missed these. Will review now.",
       "revId": "80de3e91f49c88c69da5dca0c900f074357e4ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77ea88f0_895b1a6a",
+        "filename": "rts/presubmit/eval/rejections.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T03:58:34Z",
+      "side": 1,
+      "message": "👍 i like this.",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 30
+      },
+      "revId": "80de3e91f49c88c69da5dca0c900f074357e4ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
