@@ -34,7 +34,7 @@ func TestNullProtocol(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey(`can use a text stream`, func() {
-				stream, err := client.NewTextStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test")
 				So(err, ShouldBeNil)
 
 				n, err := stream.Write([]byte("hi"))
@@ -44,7 +44,7 @@ func TestNullProtocol(t *testing.T) {
 			})
 
 			Convey(`can use a text stream for a subprocess`, func() {
-				stream, err := client.NewTextStream(ctx, "test", ForProcess())
+				stream, err := client.NewStream(ctx, "test", ForProcess())
 				So(err, ShouldBeNil)
 				defer stream.Close()
 				So(stream, ShouldHaveSameTypeAs, (*os.File)(nil))
@@ -57,7 +57,7 @@ func TestNullProtocol(t *testing.T) {
 			})
 
 			Convey(`can use a binary stream`, func() {
-				stream, err := client.NewBinaryStream(ctx, "test")
+				stream, err := client.NewStream(ctx, "test", Binary())
 				So(err, ShouldBeNil)
 
 				n, err := stream.Write([]byte{0, 1, 2, 3})

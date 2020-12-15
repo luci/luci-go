@@ -237,7 +237,7 @@ func testClientServer(svr *StreamServer, client *streamclient.Client) {
 		}()
 
 		var stream io.WriteCloser
-		if stream, err = client.NewTextStream(ctx, "foo/bar"); err != nil {
+		if stream, err = client.NewStream(ctx, "foo/bar"); err != nil {
 			return
 		}
 		defer func() {

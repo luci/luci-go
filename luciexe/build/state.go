@@ -16,8 +16,10 @@ package build
 
 import (
 	"context"
+	"io"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 // State is the state of the current Build.
@@ -32,6 +34,8 @@ import (
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
 type State struct{}
+
+var _ Loggable = (*State)(nil)
 
 // Start is the entrypoint to this library.
 //
@@ -77,4 +81,20 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 // flow mechanisms.
 func (*State) End(err error) {
 	panic("not implemented")
+}
+
+// Log creates a new build-level line-oriented text log stream with the given name.
+//
+// You must close the stream when you're done with it.
+func (*State) Log(name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	panic("implement")
+}
+
+// LogDatagram creates a new build-level datagram log stream with the given name.
+// Each call to WriteDatagram will produce a single datagram message in the
+// stream.
+//
+// You must close the stream when you're done with it.
+func (*State) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+	panic("implement")
 }

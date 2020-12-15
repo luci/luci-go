@@ -34,7 +34,7 @@ func TestOptions(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
 		Convey(`defaults`, func() {
-			_, err := client.NewTextStream(ctx, "test")
+			_, err := client.NewStream(ctx, "test")
 			So(err, ShouldBeNil)
 			defaultFlags := client.GetFakeData()["test"].GetFlags()
 			So(defaultFlags.ContentType, ShouldEqual, "text/plain")
@@ -43,21 +43,21 @@ func TestOptions(t *testing.T) {
 		})
 
 		Convey(`can change content type`, func() {
-			_, err := client.NewTextStream(ctx, "test", WithContentType("narple"))
+			_, err := client.NewStream(ctx, "test", WithContentType("narple"))
 			So(err, ShouldBeNil)
 			testFlags := client.GetFakeData()["test"].GetFlags()
 			So(testFlags.ContentType, ShouldEqual, "narple")
 		})
 
 		Convey(`can set initial timestamp`, func() {
-			_, err := client.NewTextStream(ctx, "test", WithTimestamp(testclock.TestRecentTimeUTC))
+			_, err := client.NewStream(ctx, "test", WithTimestamp(testclock.TestRecentTimeUTC))
 			So(err, ShouldBeNil)
 			testFlags := client.GetFakeData()["test"].GetFlags()
 			So(testFlags.Timestamp.Time(), ShouldEqual, testclock.TestRecentTimeUTC)
 		})
 
 		Convey(`can set tags nicely`, func() {
-			_, err := client.NewTextStream(ctx, "test", WithTags(
+			_, err := client.NewStream(ctx, "test", WithTags(
 				"key1", "value",
 				"key2", "value",
 			))
@@ -76,7 +76,7 @@ func TestOptions(t *testing.T) {
 		})
 
 		Convey(`can set tags practically`, func() {
-			_, err := client.NewTextStream(ctx, "test", WithTagMap(map[string]string{
+			_, err := client.NewStream(ctx, "test", WithTagMap(map[string]string{
 				"key1": "value",
 				"key2": "value",
 			}))

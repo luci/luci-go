@@ -299,7 +299,7 @@ func (lo *launchOptions) prepStdio(ctx context.Context) error {
 	}
 
 	openStream := func(name string) (ret io.WriteCloser, err error) {
-		ret, err = bs.Client.NewTextStream(
+		ret, err = bs.Client.NewStream(
 			ctx, types.StreamName(name), streamclient.ForProcess())
 		err = errors.Annotate(err, "opening %q", name).Err()
 		return
