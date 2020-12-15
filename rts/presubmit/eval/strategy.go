@@ -16,6 +16,8 @@ package eval
 
 import (
 	"context"
+	"math"
+	"sort"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -133,4 +135,28 @@ func checkConsistency(a, b Affectedness) error {
 		return errors.Reason("ranks and distances are inconsistent: %#v and %#v", a, b).Err()
 	}
 	return nil
+}
+
+// quantiles returns quantiles of the Affectedness elements, either by
+// distance or rank.
+// Reorders s.
+// Panics if s is empty.
+func (s AffectednessSlice) quantiles(count int, byDistance bool) AffectednessSlice {
+	if len(s) == 0 {
+		panic("s is empty")
+	}
+
+	sort.Slice(s, func(i, j int) bool {
+		if byDistance {
+			return s[i].Distance < s[j].Distance
+		}
+		return s[i].Rank < s[j].Rank
+	})
+
+	ret := make(AffectednessSlice, count)
+	for i := 0; i < count; i++ {
+		boundary := int(math.Ceil(float64(len(s)*(i+1)) / float64(count)))
+		ret[i] = s[boundary-1]
+	}
+	return ret
 }
