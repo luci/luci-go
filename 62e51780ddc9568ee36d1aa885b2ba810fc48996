@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7f75502_626998ac",
+        "filename": "cv/internal/prjmanager/internal/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T02:02:10Z",
+      "side": 1,
+      "message": "Good point!",
+      "range": {
+        "startLine": 68,
+        "startChar": 30,
+        "endLine": 68,
+        "endChar": 68
+      },
+      "revId": "62e51780ddc9568ee36d1aa885b2ba810fc48996",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
