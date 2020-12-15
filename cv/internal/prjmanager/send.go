@@ -39,6 +39,16 @@ func UpdateConfig(ctx context.Context, luciProject string) error {
 	})
 }
 
+// Poke tells ProjectManager to poke all downstream actors and check its own
+// state.
+func Poke(ctx context.Context, luciProject string) error {
+	return send(ctx, luciProject, &internal.Event{
+		Event: &internal.Event_Poke{
+			Poke: &internal.Poke{},
+		},
+	})
+}
+
 func send(ctx context.Context, luciProject string, e *internal.Event) error {
 	value, err := proto.Marshal(e)
 	if err != nil {

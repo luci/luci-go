@@ -16,6 +16,7 @@ package configcron
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
@@ -127,6 +129,7 @@ func TestConfigRefreshCron(t *testing.T) {
 
 func mkTestingCtx() (context.Context, *tqtesting.Scheduler) {
 	ctx, tclock := testclock.UseTime(context.Background(), testNow)
+	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(1)))
 	tclock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
 		// Move fake time forward whenever someone's waiting for it.
 		tclock.Add(dur)

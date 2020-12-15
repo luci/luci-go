@@ -106,3 +106,22 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (
 		panic(fmt.Errorf("unexpected config status: %d", meta.Status))
 	}
 }
+
+func poke(ctx context.Context, luciProject string, s *state) (
+	eventbox.SideEffectFn, *state, error) {
+	// First, check if updateConfig if necessary.
+	switch sideEffect, newState, err := updateConfig(ctx, luciProject, s); {
+	case err != nil:
+		return nil, nil, err
+	case newState != s:
+		// updateConfig noticed a change and its SideEffectFn will propagate it
+		// downstream.
+		return sideEffect, newState, nil
+	}
+	// Propagate downstream.
+	if err := poller.Poke(ctx, luciProject); err != nil {
+		return nil, nil, err
+	}
+	// TODO(tandrii): implement.
+	return nil, s, nil
+}

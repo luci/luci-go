@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -75,12 +76,11 @@ func SubmitRefreshTasks(ctx context.Context, isDev bool) error {
 	err = parallel.WorkPool(32, func(workCh chan<- func() error) {
 		for _, task := range tasks {
 			task := task
-			workCh <- func() error {
-				if err := tq.AddTask(ctx, task); err != nil {
+			workCh <- func() (err error) {
+				if err = tq.AddTask(ctx, task); err != nil {
 					logging.Errorf(ctx, "Failed to submit task for %q: %s", task.Title, err)
-					return err
 				}
-				return nil
+				return
 			}
 		}
 	})
@@ -120,6 +120,13 @@ func refreshProject(ctx context.Context, project string, disable bool) error {
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
+	}
+	// TODO(crbug/1158500): replace with time-based decision s.t. we can guarantee
+	// that PM will be invoked and hence can do alerting if it's not the case.
+	if mathrand.Float32(ctx) >= 0.9 { // ~10% chance.
+		if err := prjmanager.Poke(ctx, project); err != nil {
+			return err
+		}
 	}
 	return nil
 }
