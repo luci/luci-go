@@ -158,90 +158,74 @@ func (r *evalRun) run(ctx context.Context) error {
 // evaluateSafety reads rejections from r.rejectionC,
 // updates r.res.Safety and calls r.maybeReportProgress.
 func (r *evalRun) evaluateSafety(ctx context.Context) error {
-	eg, ctx := errgroup.WithContext(ctx)
+	return r.parallelize(ctx, func(ctx context.Context) error {
+		cr := &r.res.Safety.ChangeRecall
+		tr := &r.res.Safety.TestRecall
 
-	for i := 0; i < r.Concurrency; i++ {
-		eg.Go(func() error {
-			return r.analyzeRejections(ctx)
-		})
-	}
-	return eg.Wait()
-}
+		buf := &bytes.Buffer{}
+		p := &rejectionPrinter{printer: newPrinter(buf)}
+		return analyzeRejections(ctx, r.History.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
+			// The rejection is preserved if at least one test ran.
+			// Conclude that based on the closest test.
+			preservedRejection := r.shouldRun(rej.Closest)
 
-func (r *evalRun) analyzeRejections(ctx context.Context) error {
-	cr := &r.res.Safety.ChangeRecall
-	tr := &r.res.Safety.TestRecall
-
-	buf := &bytes.Buffer{}
-	p := &rejectionPrinter{printer: newPrinter(buf)}
-	return analyzeRejections(ctx, r.History.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
-		// The rejection is preserved if at least one test ran.
-		// Conclude that based on the closest test.
-		preservedRejection := r.shouldRun(rej.Closest)
-
-		if !preservedRejection && r.LogLostRejections {
-			buf.Reset()
-			p.rejection(rej.Rejection)
-			logging.Infof(ctx, "%s", buf.Bytes())
-		}
-
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		cr.TotalRejections++
-		tr.TotalFailures += len(rej.FailedTestVariants)
-		if !preservedRejection {
-			cr.LostRejections = append(cr.LostRejections, rej.Rejection)
-		}
-		for i, af := range rej.Affectedness {
-			if !r.shouldRun(af) {
-				tr.LostFailures = append(tr.LostFailures, LostTestFailure{
-					Rejection:   rej.Rejection,
-					TestVariant: rej.FailedTestVariants[i],
-				})
+			if !preservedRejection && r.LogLostRejections {
+				buf.Reset()
+				p.rejection(rej.Rejection)
+				logging.Infof(ctx, "%s", buf.Bytes())
 			}
-		}
 
-		r.maybeReportProgress(ctx)
-		return nil
+			r.mu.Lock()
+			defer r.mu.Unlock()
+			cr.TotalRejections++
+			tr.TotalFailures += len(rej.FailedTestVariants)
+			if !preservedRejection {
+				cr.LostRejections = append(cr.LostRejections, rej.Rejection)
+			}
+			for i, af := range rej.Affectedness {
+				if !r.shouldRun(af) {
+					tr.LostFailures = append(tr.LostFailures, LostTestFailure{
+						Rejection:   rej.Rejection,
+						TestVariant: rej.FailedTestVariants[i],
+					})
+				}
+			}
+
+			r.maybeReportProgress(ctx)
+			return nil
+		})
 	})
 }
 
 // evaluateEfficiency reads test durations from r.durationC,
 // updates r.res.Efficiency and calls r.maybeReportProgress.
 func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// Run the selection strategy in r.Concurrency goroutines.
-	for i := 0; i < r.Concurrency; i++ {
-		eg.Go(func() error {
-			in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
-			out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
-			for td := range r.History.DurationC {
-				// Invoke the strategy.
-				in.ChangedFiles = in.ChangedFiles[:0]
-				in.ensureChangedFilesInclude(td.Patchsets...)
-				in.TestVariants[0] = td.TestVariant
-				out.TestVariantAffectedness[0] = Affectedness{}
-				if err := r.Strategy(ctx, in, out); err != nil {
-					return err
-				}
-
-				// Record results.
-				dur := td.Duration.AsDuration()
-				r.mu.Lock()
-				r.res.Efficiency.TestResults++
-				r.res.Efficiency.SampleDuration += dur
-				if r.shouldRun(out.TestVariantAffectedness[0]) {
-					r.res.Efficiency.ForecastDuration += dur
-				}
-				r.maybeReportProgress(ctx)
-				r.mu.Unlock()
+	return r.parallelize(ctx, func(ctx context.Context) error {
+		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
+		out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
+		for td := range r.History.DurationC {
+			// Invoke the strategy.
+			in.ChangedFiles = in.ChangedFiles[:0]
+			in.ensureChangedFilesInclude(td.Patchsets...)
+			in.TestVariants[0] = td.TestVariant
+			out.TestVariantAffectedness[0] = Affectedness{}
+			if err := r.Strategy(ctx, in, out); err != nil {
+				return err
 			}
-			return ctx.Err()
-		})
-	}
 
-	return eg.Wait()
+			// Record results.
+			dur := td.Duration.AsDuration()
+			r.mu.Lock()
+			r.res.Efficiency.TestResults++
+			r.res.Efficiency.SampleDuration += dur
+			if r.shouldRun(out.TestVariantAffectedness[0]) {
+				r.res.Efficiency.ForecastDuration += dur
+			}
+			r.maybeReportProgress(ctx)
+			r.mu.Unlock()
+		}
+		return ctx.Err()
+	})
 }
 
 func (r *evalRun) maybeReportProgress(ctx context.Context) {
@@ -265,4 +249,18 @@ func (r *evalRun) maybeReportProgress(ctx context.Context) {
 
 func (e *Eval) shouldRun(a Affectedness) bool {
 	return a.Distance <= e.MaxDistance || (a.Rank != 0 && a.Rank <= e.MaxRank)
+}
+
+func (e *Eval) parallelize(ctx context.Context, f func(ctx context.Context) error) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	concurrency := e.Concurrency
+	if concurrency <= 0 {
+		concurrency = defaultConcurrency
+	}
+	for i := 0; i < concurrency; i++ {
+		eg.Go(func() error {
+			return f(ctx)
+		})
+	}
+	return eg.Wait()
 }
