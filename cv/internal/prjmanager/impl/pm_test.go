@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,7 +47,7 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("with new project", func() {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
 			events, err := eventbox.List(ctx, lProjectKey)
 			So(err, ShouldBeNil)

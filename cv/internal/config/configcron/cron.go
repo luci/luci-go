@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 )
 
 // SubmitRefreshTasks submits tasks that update config for LUCI projects
@@ -106,7 +107,10 @@ func refreshProject(ctx context.Context, project string, disable bool) error {
 	if disable {
 		action, actionFn = "disable", config.DisableProject
 	}
-	if err := actionFn(ctx, project); err != nil {
+	err := actionFn(ctx, project, func(ctx context.Context) error {
+		return prjmanager.UpdateConfig(ctx, project)
+	})
+	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
 	}
 	return nil

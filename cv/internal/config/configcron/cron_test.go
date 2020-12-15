@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cvconfig "go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -40,11 +42,11 @@ import (
 
 var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 
-func TestSubmitRefreshTasks(t *testing.T) {
+func TestConfigRefreshCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("Submit refresh task", t, func() {
-		ctx, _, tqScheduler := mkTestingCtx()
+	Convey("Config refresh cron works", t, func() {
+		ctx, tqScheduler := mkTestingCtx()
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
@@ -56,6 +58,8 @@ func TestSubmitRefreshTasks(t *testing.T) {
 			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 				{Project: "chromium"},
 			})
+			tqScheduler.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
+			So(pmtest.Projects(tqScheduler.Tasks()), ShouldResemble, []string{"chromium"})
 		})
 
 		Convey("for an existing project", func() {
@@ -71,6 +75,8 @@ func TestSubmitRefreshTasks(t *testing.T) {
 			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 				{Project: "chromium"},
 			})
+			tqScheduler.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
+			So(pmtest.Projects(tqScheduler.Tasks()), ShouldResemble, []string{"chromium"})
 		})
 
 		Convey("Disable project", func() {
@@ -87,6 +93,8 @@ func TestSubmitRefreshTasks(t *testing.T) {
 				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
 				})
+				tqScheduler.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
+				So(pmtest.Projects(tqScheduler.Tasks()), ShouldResemble, []string{"chromium"})
 			})
 			Convey("that doesn't exist in LUCI Config", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
@@ -99,6 +107,8 @@ func TestSubmitRefreshTasks(t *testing.T) {
 				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
 				})
+				tqScheduler.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
+				So(pmtest.Projects(tqScheduler.Tasks()), ShouldResemble, []string{"chromium"})
 			})
 
 			Convey("Skip already disabled Project", func() {
@@ -112,18 +122,22 @@ func TestSubmitRefreshTasks(t *testing.T) {
 				So(tqScheduler.Tasks(), ShouldBeEmpty)
 			})
 		})
-
 	})
 }
 
-func mkTestingCtx() (context.Context, testclock.TestClock, *tqtesting.Scheduler) {
-	ctx, clock := testclock.UseTime(context.Background(), testNow)
+func mkTestingCtx() (context.Context, *tqtesting.Scheduler) {
+	ctx, tclock := testclock.UseTime(context.Background(), testNow)
+	tclock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
+		// Move fake time forward whenever someone's waiting for it.
+		tclock.Add(dur)
+	})
+
 	ctx = txndefer.FilterRDS(gaememory.Use(ctx))
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
 	ctx, scheduler := tq.TestingContext(ctx, nil)
-	return ctx, clock, scheduler
+	return ctx, scheduler
 }
 
 func toProtoText(msg proto.Message) string {

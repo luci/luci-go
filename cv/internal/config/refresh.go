@@ -40,9 +40,13 @@ func ProjectsWithConfig(ctx context.Context) ([]string, error) {
 	return projects, nil
 }
 
+// NotifyCallback is called in a transaction context from UpdateProject and
+// DisableProject. Used by configcron package.
+type NotifyCallback func(context.Context) error
+
 // UpdateProject imports the latest CV Config for a given LUCI Project
 // from LUCI Config if the config in CV is outdated.
-func UpdateProject(ctx context.Context, project string) error {
+func UpdateProject(ctx context.Context, project string, notify NotifyCallback) error {
 	externalHash, err := getExternalContentHash(ctx, project)
 	if err != nil {
 		return err
@@ -115,8 +119,11 @@ func UpdateProject(ctx context.Context, project string) error {
 				ConfigGroupNames: cgNames,
 			}
 			updated = true
-			return errors.Annotate(datastore.Put(ctx, &pc), "failed to put ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
-			// TODO(yiwzhang): Notify ProjectManager
+			if err := datastore.Put(ctx, &pc); err != nil {
+				return errors.Annotate(err, "failed to put ProjectConfig(project=%q)",
+					project).Tag(transient.Tag).Err()
+			}
+			return notify(ctx)
 		}
 	}, nil)
 
@@ -157,7 +164,7 @@ func fetchCfg(ctx context.Context, project string, contentHash string) (*pb.Conf
 }
 
 // DisableProject disables the given LUCI Project if it is currently enabled.
-func DisableProject(ctx context.Context, project string) error {
+func DisableProject(ctx context.Context, project string, notify NotifyCallback) error {
 	disabled := false
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -178,8 +185,7 @@ func DisableProject(ctx context.Context, project string) error {
 			return errors.Annotate(err, "failed to put ProjectConfig").Tag(transient.Tag).Err()
 		}
 		disabled = true
-		// TODO(yiwzhang): Notify ProjectManager
-		return nil
+		return notify(ctx)
 	}, nil)
 
 	switch {
