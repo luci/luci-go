@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d96e7c33_b54e32ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T00:54:37Z",
+      "side": 1,
+      "message": "lgtm % nits",
+      "revId": "2470214848a69578df8c9a8e5bfb7be32de98d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb34ca16_e0b89de6",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T00:54:37Z",
+      "side": 1,
+      "message": "nit: why not just cron since it is in the config context already?",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 18
+      },
+      "revId": "2470214848a69578df8c9a8e5bfb7be32de98d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86d69c35_6a79c16b",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T00:54:37Z",
+      "side": 1,
+      "message": "nit: maybe disable because we never delete.",
+      "range": {
+        "startLine": 58,
+        "startChar": 12,
+        "endLine": 58,
+        "endChar": 18
+      },
+      "revId": "2470214848a69578df8c9a8e5bfb7be32de98d90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
