@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b368b201_1e209514",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T03:52:17Z",
+      "side": 1,
+      "message": "diff before was \n\u003e\u003e\u003e 128313747197\n\u003c\u003c\u003c 128313747199\n\ndiff now:\n\u003e\u003e\u003e 145000000007\n\u003c\u003c\u003c 145000000009",
+      "range": {
+        "startLine": 282,
+        "startChar": 44,
+        "endLine": 282,
+        "endChar": 55
+      },
+      "revId": "2bee249c6414c1816085e62f2cfe39e071a7bc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21b779e0_4aa688b3",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T03:52:17Z",
+      "side": 1,
+      "message": "67 and 47 go through the same sequence mod 10. 73\u0027s better.",
+      "range": {
+        "startLine": 321,
+        "startChar": 14,
+        "endLine": 321,
+        "endChar": 16
+      },
+      "revId": "2bee249c6414c1816085e62f2cfe39e071a7bc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e4cb9f5_7e52fda0",
+        "filename": "cv/internal/changelist/model_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-15T03:52:17Z",
+      "side": 1,
+      "message": "multiples of 60 in diff are harder to grok vs multiples of 1 😊",
+      "range": {
+        "startLine": 351,
+        "startChar": 39,
+        "endLine": 351,
+        "endChar": 45
+      },
+      "revId": "2bee249c6414c1816085e62f2cfe39e071a7bc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
