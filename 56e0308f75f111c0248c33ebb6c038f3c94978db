@@ -1,6 +1,24 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4239b302_48b56fb4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-15T02:28:14Z",
+      "side": 1,
+      "message": "abandoned?",
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
       "key": {
         "uuid": "a4b03aeb_9d4f375d",
         "filename": "buildbucket/luciexe/runner/main.go",
@@ -20,10 +38,10 @@
         "endChar": 47
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "d2a35442_0dc12855",
         "filename": "buildbucket/luciexe/runner/main.go",
@@ -44,10 +62,10 @@
         "endChar": 47
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "b058278d_fc41a2ee",
         "filename": "buildbucket/luciexe/runner/main.go",
@@ -67,10 +85,10 @@
         "endChar": 48
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "fcc71c1e_1dc1efff",
         "filename": "buildbucket/luciexe/runner/main.go",
@@ -90,10 +108,10 @@
         "endChar": 50
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "d946290f_a6f6ccfb",
         "filename": "buildbucket/luciexe/runner/main.go",
@@ -107,10 +125,10 @@
       "side": 1,
       "message": "i am somewhat confused by the name \"workDir\". Unlike other dirs above, these two are not children of base.\n\nMaybe \"workspace\" would be a better name.",
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "b6323fff_398cd8fe",
         "filename": "buildbucket/luciexe/runner/run_exe.go",
@@ -130,10 +148,10 @@
         "endChar": 29
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "cb1c6a21_6fb33cd9",
         "filename": "buildbucket/luciexe/runner/runner.go",
@@ -153,10 +171,10 @@
         "endChar": 7
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "1160bbe4_7bac6d87",
         "filename": "buildbucket/luciexe/runner/runner.go",
@@ -176,10 +194,10 @@
         "endChar": 12
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "34d156c3_bbe2d467",
         "filename": "buildbucket/proto/build.proto",
@@ -199,10 +217,10 @@
         "endChar": 19
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "bbd931eb_316693b0",
         "filename": "buildbucket/proto/build.proto",
@@ -223,10 +241,10 @@
         "endChar": 19
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "d3162afd_4eb3ff51",
         "filename": "buildbucket/proto/common.proto",
@@ -240,10 +258,10 @@
       "side": 1,
       "message": "consistency: either remove this blank line, or add one between \"On Windows\" and \"Buildbucket will search\"",
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "53b25ef0_c03a6e87",
         "filename": "buildbucket/proto/launcher.proto",
@@ -263,10 +281,10 @@
         "endChar": 34
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "7820a2e7_ed1cddea",
         "filename": "buildbucket/proto/launcher.proto",
@@ -286,10 +304,10 @@
         "endChar": 23
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "52722e9c_9ee45c9b",
         "filename": "buildbucket/proto/launcher.proto",
@@ -309,10 +327,10 @@
         "endChar": 28
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "c11c7d2c_bc72d8e2",
         "filename": "buildbucket/proto/launcher.proto",
@@ -333,10 +351,10 @@
         "endChar": 28
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
       "key": {
         "uuid": "c5b6c47a_17072b4b",
         "filename": "buildbucket/proto/launcher.proto",
@@ -357,8 +375,7 @@
         "endChar": 28
       },
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": true
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
