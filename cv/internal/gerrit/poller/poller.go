@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 )
 
@@ -68,6 +69,9 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 
 	case (meta.Status == config.StatusDisabled ||
 		meta.Status == config.StatusNotExists):
+		if err := gobmap.Update(ctx, luciProject); err != nil {
+			return err
+		}
 		if err = datastore.Delete(ctx, &state{LuciProject: luciProject}); err != nil {
 			return errors.Annotate(err, "failed to disable poller for %q", luciProject).Err()
 		}
@@ -255,6 +259,10 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 	s.ConfigHash = meta.Hash()
 	cgs, err := meta.GetConfigGroups(ctx)
 	if err != nil {
+		return err
+	}
+	// TODO(tandrii): gobmap.Update will need meta & cgs. Pass it to it.
+	if err := gobmap.Update(ctx, s.LuciProject); err != nil {
 		return err
 	}
 	s.SubPollers = &SubPollers{SubPollers: partitionConfig(cgs)}
