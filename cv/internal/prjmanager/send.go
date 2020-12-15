@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -45,6 +46,18 @@ func Poke(ctx context.Context, luciProject string) error {
 	return send(ctx, luciProject, &internal.Event{
 		Event: &internal.Event_Poke{
 			Poke: &internal.Poke{},
+		},
+	})
+}
+
+// CLUpdated tells ProjectManager to check latest version of a given CL.
+func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
+	return send(ctx, luciProject, &internal.Event{
+		Event: &internal.Event_ClUpdated{
+			ClUpdated: &internal.CLUpdated{
+				Clid:     int64(clid),
+				Eversion: int64(eversion),
+			},
 		},
 	})
 }
