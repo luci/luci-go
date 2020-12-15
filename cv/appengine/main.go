@@ -34,6 +34,11 @@ import (
 	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
+
+	// import all modules with server/tq handler additions in init() calls,
+	// which are otherwise not imported directly or transitively via imports
+	// above.
+	_ "go.chromium.org/luci/cv/internal/prjmanager/impl"
 )
 
 func main() {
