@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e34ac753_f50d0b20",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T01:38:51Z",
+      "side": 1,
+      "message": "It looks the exact same as updateConfig. I think we can make a common function out of it instead of repeating as more new states will be defined.",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "527d3a431066b15c850fae10181af034d0337d61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ef1e659b_29ae8134",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-15T01:38:51Z",
+      "side": 1,
+      "message": "typo: newState",
+      "range": {
+        "startLine": 113,
+        "startChar": 20,
+        "endLine": 113,
+        "endChar": 27
+      },
+      "revId": "527d3a431066b15c850fae10181af034d0337d61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
