@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/cv/internal"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
@@ -239,7 +239,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		// saving error supersedes subpoller errors.
 		return saveErr
 	}
-	err = internal.MostSevereError(errs)
+	err = common.MostSevereError(errs)
 	switch n, first := errs.Summary(); {
 	case n == len(errs):
 		return errors.Annotate(first, "no progress on any poller, first error").Err()

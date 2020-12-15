@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/cv/internal"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 )
@@ -197,7 +197,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		}
 	})
 	if errs != nil {
-		return internal.MostSevereError(errs.(errors.MultiError))
+		return common.MostSevereError(errs.(errors.MultiError))
 	}
 	return nil
 }
