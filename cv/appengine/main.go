@@ -40,6 +40,7 @@ import (
 	// which are otherwise not imported directly or transitively via imports
 	// above.
 	_ "go.chromium.org/luci/cv/internal/prjmanager/impl"
+	_ "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 func main() {
