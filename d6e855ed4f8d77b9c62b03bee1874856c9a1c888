@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5eb7e8f_e1c1482a",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-15T00:32:47Z",
+      "side": 1,
+      "message": "Is it ok to expose all options?",
+      "range": {
+        "startLine": 42,
+        "startChar": 23,
+        "endLine": 42,
+        "endChar": 45
+      },
+      "revId": "d6e855ed4f8d77b9c62b03bee1874856c9a1c888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
