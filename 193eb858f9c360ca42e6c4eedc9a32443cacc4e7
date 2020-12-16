@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb3f1e62_ad12e69e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-16T04:36:57Z",
+      "side": 1,
+      "message": "Gary, I\u0027ll reland this change tomorrow making sure it passes the roll.",
+      "revId": "193eb858f9c360ca42e6c4eedc9a32443cacc4e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
