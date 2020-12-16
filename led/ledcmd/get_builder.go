@@ -88,7 +88,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 		return nil, err
 	}
 
-	if err := fillIsolateServerDefaults(authClient, jd); err != nil {
+	if err := fillCasDefaults(jd); err != nil {
 		return nil, err
 	}
 

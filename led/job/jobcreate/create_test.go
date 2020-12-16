@@ -75,7 +75,15 @@ func TestCreateSwarmRaw(t *testing.T) {
 	t.Parallel()
 
 	Convey(`consume non-buildbucket swarming task`, t, func() {
-		jd := readTestFixture("raw")
+		jd := readTestFixture("raw_iso")
+
+		So(jd.GetSwarming(), ShouldNotBeNil)
+		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
+		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
+
+	Convey(`consume non-buildbucket swarming task with RBE-CAS prop`, t, func() {
+		jd := readTestFixture("raw_cas")
 
 		So(jd.GetSwarming(), ShouldNotBeNil)
 		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
@@ -86,8 +94,16 @@ func TestCreateSwarmRaw(t *testing.T) {
 func TestCreateBBagent(t *testing.T) {
 	t.Parallel()
 
-	Convey(`consume bbagent buildbucket swarming task`, t, func() {
-		jd := readTestFixture("bbagent")
+	Convey(`consume bbagent buildbucket swarming task with isolate prop`, t, func() {
+		jd := readTestFixture("bbagent_iso")
+
+		So(jd.GetBuildbucket(), ShouldNotBeNil)
+		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
+		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
+
+	Convey(`consume bbagent buildbucket swarming task with RBE-CAS prop`, t, func() {
+		jd := readTestFixture("bbagent_cas")
 
 		So(jd.GetBuildbucket(), ShouldNotBeNil)
 		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
