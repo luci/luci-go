@@ -37,6 +37,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "17286aef_8c94d361",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-16T01:30:47Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "5c7314a6_bf83f36f",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 5
@@ -171,6 +188,29 @@
         "startChar": 18,
         "endLine": 46,
         "endChar": 31
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e5218ba_e8773968",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-16T01:30:47Z",
+      "side": 1,
+      "message": "Ah, the suggest the two-L spelling, eh?\n\nWe could switch over when adding the cancelator stuff, the two-L spelling is a bit more common :-P",
+      "range": {
+        "startLine": 50,
+        "startChar": 2,
+        "endLine": 50,
+        "endChar": 11
       },
       "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
