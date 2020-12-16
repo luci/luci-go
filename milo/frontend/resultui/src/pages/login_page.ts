@@ -40,14 +40,14 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     when(
-      () => this.appState.accessToken !== '',
+      () => !!this.appState.accessToken,
       () => Router.go(this.redirectUri),
     );
   }
 
   protected render() {
     return html`
-      <div id="sign-in-message">You must sign in to see anything useful.<div>
+      <div id="sign-in-message">You must <span id="sign-in-link" @click=${() => this.appState.gAuth?.signIn()}>sign in</span> to see anything useful.<div>
     `;
   }
 
@@ -55,5 +55,10 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     #sign-in-message {
       margin: 8px 16px;
     }
+
+    #sign-in-link {
+      cursor: pointer;
+      text-decoration: underline;
+    };
   `;
 }

@@ -30,6 +30,8 @@ export class AppState {
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
+  @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;
+
   @computed
   get resultDb(): ResultDb | null {
     if (this.accessToken === null) {

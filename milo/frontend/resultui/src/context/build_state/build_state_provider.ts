@@ -13,10 +13,13 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { Router } from '@vaadin/router';
 import { customElement, html, property } from 'lit-element';
 import { autorun, observable, when } from 'mobx';
 import { REJECTED } from 'mobx-utils';
 
+import { router } from '../../routes';
 import { AppState, consumeAppState } from '../app_state/app_state';
 import { BuildState, provideBuildState } from './build_state';
 
@@ -38,11 +41,20 @@ export class BuildStateProviderElement extends MobxLitElement {
     ));
     this.disposers.push(when(
       () => this.buildState.buildReq.state === REJECTED,
-      () => this.dispatchEvent(new ErrorEvent('error', {
-        message: this.buildState.buildReq.value.toString(),
-        composed: true,
-        bubbles: true,
-      })),
+      () => {
+        const err = this.buildState.buildReq.value as GrpcError;
+        // If the build is not found and the user is not logged in, redirect
+        // them to the login page.
+        if (err.code === RpcCode.NOT_FOUND && this.appState.accessToken === '') {
+          Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+          return;
+        }
+        this.dispatchEvent(new ErrorEvent('error', {
+          message: this.buildState.buildReq.value.toString(),
+          composed: true,
+          bubbles: true,
+        }));
+      },
     ));
   }
   disconnectedCallback() {
