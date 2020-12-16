@@ -44,24 +44,35 @@ service Migration {
   // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
   // CQDaemon.
   rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
+
+  // FetchActiveRuns returns all currently RUNNING runs in CV for the given
+  // project.
+  rpc FetchActiveRuns(FetchActiveRunsRequest) returns (FetchActiveRunsResponse);
 }
 
 message ReportRunsRequest {
-  repeated ReportedRun runs = 1;
-}
-
-message ReportedRun {
-  // Re-use BQ attempt for now.
-  bigquery.Attempt attempt = 1;
-
-  // TODO(tandrii): add more fields as needed.
+  repeated Run runs = 1;
 }
 
 message ReportFinishedRunRequest {
-  ReportedRun run = 1;
+  Run run = 1;
 }
 
 message ReportUsedNetrcRequest {
   string gerrit_host = 1;
   string access_token = 2;
+}
+
+message FetchActiveRunsRequest {
+  string luci_project = 1;
+}
+
+message FetchActiveRunsResponse {
+  repeated Run runs = 1;
+}
+
+message Run {
+  // Re-use BQ attempt for now
+  bigquery.Attempt attempt = 1;
+  // TODO(tandrii/yiwzhang):  add more fields if needed
 }
