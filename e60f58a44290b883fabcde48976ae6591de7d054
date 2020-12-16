@@ -39,6 +39,30 @@
       },
       "revId": "e60f58a44290b883fabcde48976ae6591de7d054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad898ef7_18b7e6de",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:41:16Z",
+      "side": 1,
+      "message": "True.  I\u0027m surprised that tryjobs actually went through, maybe we don\u0027t have `go vet` check. Created a bug https://crbug.com/1159247 so that I don\u0027t lose track. Goona fix it during prod freeze :)",
+      "parentUuid": "94dc091e_3270f3fb",
+      "range": {
+        "startLine": 300,
+        "startChar": 0,
+        "endLine": 301,
+        "endChar": 20
+      },
+      "revId": "e60f58a44290b883fabcde48976ae6591de7d054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

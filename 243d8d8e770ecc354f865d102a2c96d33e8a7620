@@ -22,6 +22,30 @@
       },
       "revId": "243d8d8e770ecc354f865d102a2c96d33e8a7620",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8690352a_4c5f90b5",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:41:16Z",
+      "side": 0,
+      "message": "I removed it because it is now implicitly handled since the map returns nil build for non-existing build stream and build.GetSteps() accept nil build. \n\nRecovered it in the latest PS. Good to be expilicit.",
+      "parentUuid": "24c62dcc_1dce6919",
+      "range": {
+        "startLine": 297,
+        "startChar": 6,
+        "endLine": 297,
+        "endChar": 8
+      },
+      "revId": "243d8d8e770ecc354f865d102a2c96d33e8a7620",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
