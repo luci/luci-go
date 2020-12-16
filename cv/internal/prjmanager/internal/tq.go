@@ -34,15 +34,19 @@ const PokeInterval = time.Second
 // PokePMTaskRef is used by PM implementation to add its handler.
 var PokePMTaskRef tq.TaskClassRef
 
+const (
+	ManageProjectTaskClass = "manage-project"
+)
+
 func init() {
 	PokePMTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "poke-pm-task",
+		ID:        ManageProjectTaskClass,
 		Prototype: &PokePMTask{},
 		Queue:     "manage-project",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "kick-poke-pm-task",
+		ID:        "kick-" + ManageProjectTaskClass,
 		Prototype: &KickPokePMTask{},
 		Queue:     "manage-project",
 		Quiet:     true,
