@@ -88,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "69030883_591007bd",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:20:27Z",
+      "side": 1,
+      "message": "eh.. my fault here.\n\nThe idea is the shallowcopy of run entity. Otherwise, shallow copy is almost useless, So it should be\n\n```\nr :\u003d *s.Run // shallow copy of run entity\nret.Run \u003d \u0026r\n```\n\nMaybe I should use struct instead of pointer to the run entity in the state so that it is really a shallow copy of state?",
+      "parentUuid": "1481db4c_0d98835b",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 102,
+        "endChar": 21
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a366f13d_db55a40b",
@@ -158,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a760eb99_f22d7038",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:20:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d656ea9c_6d82c2da",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 23
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c716d007_59a73058",
@@ -181,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "820b5286_97df7ff1",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:20:27Z",
+      "side": 1,
+      "message": "Yup",
+      "parentUuid": "c716d007_59a73058",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 18
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cdab405d_884b8877",
@@ -194,6 +266,30 @@
       "writtenOn": "2020-12-16T16:37:19Z",
       "side": 1,
       "message": "why? the old version is less copy-pasty.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 1
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aec8541f_d3b30e69",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:20:27Z",
+      "side": 1,
+      "message": "It looks like `datastore.Makekey` will panic unless the concrete type of key value is string while here it is run.ID though it\u0027s underlying type is string.\n\n\nIs this something should be supported by datastore lib for both int and string?",
+      "parentUuid": "cdab405d_884b8877",
       "range": {
         "startLine": 29,
         "startChar": 0,
