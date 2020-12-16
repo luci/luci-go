@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "955858fa_a0572455",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-16T00:25:35Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/android-lollipop-arm-rel-swarming\n\nDefault tab in the demo link is hard-coded to be the steps tab.\nClick on any build to see the effect.",
+      "revId": "c50b367ee12634542d5889e9cee712e4c46a6d3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
