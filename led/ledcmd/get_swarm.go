@@ -16,9 +16,7 @@ package ledcmd
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"regexp"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -27,14 +25,6 @@ import (
 
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobcreate"
-)
-
-const (
-	casInstanceTemplate = "projects/%s/instances/default_instance"
-)
-
-var (
-	hostRx = regexp.MustCompile("(.*)\\.appspot\\.com")
 )
 
 // GetFromSwarmingTaskOpts are the options for GetFromSwarmingTask.
@@ -150,13 +140,13 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 
 // fill the cas default if no isolate inputs.
 func fillCasDefaults(jd *job.Definition) error {
-	if jd.UserPayload == nil || jd.UserPayload.Digest == "" {
-		match := hostRx.FindStringSubmatch(jd.Info().SwarmingHostname())
-		if match == nil {
-			return errors.New("invalid swarming host in job definition")
+	if jd.CasUserPayload == nil && (jd.UserPayload == nil || jd.UserPayload.Digest == ""){
+		cas, err := jd.CasInstance()
+		if err != nil {
+			return err
 		}
 		jd.CasUserPayload = &swarmingpb.CASReference{
-			CasInstance: fmt.Sprintf(casInstanceTemplate, match[1]),
+			CasInstance: cas,
 		}
 		jd.UserPayload = nil
 	}

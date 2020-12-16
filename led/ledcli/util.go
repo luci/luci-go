@@ -46,7 +46,7 @@ type command interface {
 	positionalRange() (min, max int)
 
 	validateFlags(ctx context.Context, positionals []string, env subcommands.Env) error
-	execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (output interface{}, err error)
+	execute(ctx context.Context, authClient *http.Client, authOpts auth.Options, inJob *job.Definition) (output interface{}, err error)
 }
 
 type cmdBaseOptions struct {
@@ -139,7 +139,7 @@ func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args 
 		}
 	}
 
-	output, err := cmd.execute(ctx, authClient, inJob)
+	output, err := cmd.execute(ctx, authClient, authOpts, inJob)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

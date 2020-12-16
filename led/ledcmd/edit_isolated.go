@@ -23,15 +23,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/mattn/go-tty"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	apipb "go.chromium.org/luci/swarming/proto/api"
+
 	"go.chromium.org/luci/led/job"
 )
 
@@ -79,12 +86,13 @@ func PromptIsolatedTransformer() IsolatedTransformer {
 	}
 }
 
-// EditIsolated allows you to edit the isolated (input ref) contents of the
-// job.Definition.
+// EditIsolated allows you to edit the isolated (input_ref or cas_input_root)
+// contents of the job.Definition.
 //
-// This implicitly collapses all isolate sources in the job.Definition into
-// a single isolate.
-func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definition, xform IsolatedTransformer) error {
+// This implicitly collapses all isolated sources in the job.Definition into
+// a single isolated source.
+// The output job.Definition always has cas_user_payload and no user_payload.
+func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Options, jd *job.Definition, xform IsolatedTransformer) error {
 	logging.Infof(ctx, "editing isolated")
 
 	tdir, err := ioutil.TempDir("", "led-edit-isolated")
@@ -97,6 +105,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		}
 	}()
 
+	// TODO(yuanjunh): consolidate RBE-CAS inputs as well in the next CL.
 	if err := ConsolidateIsolateSources(ctx, authClient, jd); err != nil {
 		return err
 	}
@@ -105,6 +114,10 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 	if err != nil {
 		return err
 	}
+	if current.CASTree != nil && current.CASReference != nil{
+		return errors.Reason("job uses isolate and RBE-CAS at the same time - iso: %v\ncas: %v", current.CASTree, current.CASReference).Err()
+	}
+
 	err = jd.Edit(func(je job.Editor) {
 		je.ClearCurrentIsolated()
 	})
@@ -112,72 +125,101 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		return err
 	}
 
-	// If we have no current isolate data, default to the default isolate
-	// server/namespace, which are stored in UserPayload.
-	isoServerParams := current
-	if isoServerParams == nil {
-		isoServerParams = jd.UserPayload
-	}
-
-	rawIsoClient := isolatedclient.NewClient(
-		isoServerParams.Server,
-		isolatedclient.WithAuthClient(authClient),
-		isolatedclient.WithNamespace(isoServerParams.Namespace),
-		isolatedclient.WithRetryFactory(retry.Default))
-
-	if dgst := current.GetDigest(); dgst != "" {
-		var statMu sync.Mutex
-		var previousStats *downloader.FileStats
-
-		dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(dgst), tdir, &downloader.Options{
-			FileStatsCallback: func(s downloader.FileStats, span time.Duration) {
-				logging.Infof(ctx, "%s", s.StatLine(previousStats, span))
-				statMu.Lock()
-				previousStats = &s
-				statMu.Unlock()
-			},
-		})
-		if err = dl.Wait(); err != nil {
+	casInstance := current.GetCasInstance()
+	if casInstance == "" {
+		if casInstance, err = jd.CasInstance(); err != nil {
 			return err
 		}
+	}
+	casClient, err := cas.NewClient(ctx, casInstance, authOpts, false)
+	if err != nil {
+		return err
+	}
+	defer casClient.Close()
+
+	if err = downloadFromIso(ctx, current.CASTree, authClient, tdir); err != nil {
+		return err
+	}
+	if err = downloadFromCas(ctx, current.CASReference, casClient, tdir); err != nil {
+		return err
 	}
 
 	if err := xform(ctx, tdir); err != nil {
 		return err
 	}
 
-	logging.Infof(ctx, "uploading new isolated")
-
-	hash, err := isolateDirectory(ctx, rawIsoClient, tdir)
+	logging.Infof(ctx, "uploading new isolated to RBE-CAS")
+	digest, err := uploadToCas(ctx, casClient, tdir)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "errors in uploadToCas").Err()
 	}
 	logging.Infof(ctx, "isolated upload: done")
-	jd.UserPayload.Digest = string(hash)
+	jd.CasUserPayload = &apipb.CASReference{
+		CasInstance: casInstance,
+		Digest: &apipb.Digest{
+			Hash:digest.Hash,
+			SizeBytes: digest.Size,
+		},
+	}
+	jd.UserPayload = nil
 	return nil
 }
 
-func isolateDirectory(ctx context.Context, isoClient *isolatedclient.Client, dir string) (isolated.HexDigest, error) {
-	checker := archiver.NewChecker(ctx, isoClient, 32)
-	uploader := archiver.NewUploader(ctx, isoClient, 8)
-	arc := archiver.NewTarringArchiver(checker, uploader)
-
-	summary, err := arc.Archive(&archiver.TarringArgs{
-		Deps:    []string{dir},
-		RootDir: dir,
-		Isol:    isolated.New(isoClient.Hash()),
-	})
+func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient *client.Client, tdir string) error {
+	if casRef.GetDigest().GetHash() == "" {
+		return nil
+	}
+	d := digest.Digest{
+		Hash: casRef.Digest.Hash,
+		Size: casRef.Digest.SizeBytes,
+	}
+	logging.Infof(ctx, "downloading from RBE-CAS...")
+	_, err := casClient.DownloadDirectory(ctx, d, tdir, filemetadata.NewNoopCache())
 	if err != nil {
-		return "", errors.Annotate(err, "isolating directory").Err()
+		return errors.Annotate(err, "failed to download directory").Err()
+	}
+	return nil
+}
+
+func downloadFromIso(ctx context.Context, iso *apipb.CASTree, authClient *http.Client, tdir string) error {
+	if iso.GetDigest() == "" {
+		return nil
+	}
+	rawIsoClient := isolatedclient.NewClient(
+	iso.Server,
+	isolatedclient.WithAuthClient(authClient),
+	isolatedclient.WithNamespace(iso.Namespace),
+	isolatedclient.WithRetryFactory(retry.Default))
+	var statMu sync.Mutex
+	var previousStats *downloader.FileStats
+
+	logging.Infof(ctx, "downloading from isolate...")
+	dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(iso.GetDigest()), tdir, &downloader.Options{
+		FileStatsCallback: func(s downloader.FileStats, span time.Duration) {
+			logging.Infof(ctx, "%s", s.StatLine(previousStats, span))
+			statMu.Lock()
+			previousStats = &s
+			statMu.Unlock()
+		},
+	})
+	if err := dl.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func uploadToCas(ctx context.Context, client *client.Client, dir string) (*digest.Digest, error) {
+	is := command.InputSpec{
+		Inputs: []string{"."}, // entire dir
+	}
+	rootDg, entries, _, err := client.ComputeMerkleTree(dir, &is, filemetadata.NewNoopCache())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to compute Merkle Tree").Err()
 	}
 
-	if err := checker.Close(); err != nil {
-		return "", errors.Annotate(err, "closing checker").Err()
+	_, err = client.UploadIfMissing(ctx, entries...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to upload items").Err()
 	}
-
-	if err := uploader.Close(); err != nil {
-		return "", errors.Annotate(err, "closing uploader").Err()
-	}
-
-	return summary.Digest, nil
+	return &rootDg, nil
 }

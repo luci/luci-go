@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -26,6 +28,7 @@ import (
 type swInfo struct {
 	*Swarming
 	userPayload *swarmingpb.CASTree
+	casUserPayload *swarmingpb.CASReference
 }
 
 var _ Info = swInfo{}
@@ -38,7 +41,19 @@ func (s swInfo) TaskName() string {
 	return s.GetTask().GetName()
 }
 
-func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
+func (s swInfo) CurrentIsolated() (*isolated, error) {
+	isolated := &isolated{}
+	var err error
+	if isolated.CASTree, err = s.currentIsoInfo(); err != nil {
+		return nil, err
+	}
+	if isolated.CASReference, err = s.currentCasInfo(); err != nil {
+		return nil, err
+	}
+	return isolated, nil
+}
+
+func (s swInfo) currentIsoInfo() (*swarmingpb.CASTree, error) {
 	isolatedOptions := map[string]*swarmingpb.CASTree{}
 	if up := s.userPayload; up != nil && up.Digest != "" {
 		isolatedOptions[up.Digest] = up
@@ -54,11 +69,34 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	}
 	if len(isolatedOptions) > 1 {
 		return nil, errors.Reason(
-			"Definition contains multiple isolateds: %v", isolatedOptions).Err()
+			"Definition contains multiple isolate inputs: %v", isolatedOptions).Err()
 	}
 	for _, v := range isolatedOptions {
-		ret := *v
-		return &ret, nil
+		return proto.Clone(v).(*swarmingpb.CASTree), nil
+	}
+	return nil, nil
+}
+
+func (s swInfo) currentCasInfo() (*swarmingpb.CASReference, error) {
+	casOptions := map[string]*swarmingpb.CASReference{}
+	if p := s.casUserPayload; p.GetDigest().GetHash() != "" {
+		casOptions[p.Digest.Hash] = p
+	}
+
+	if sw := s.Swarming; sw != nil {
+		for _, slc := range sw.GetTask().GetTaskSlices() {
+			input := slc.GetProperties().GetCasInputRoot()
+			if input != nil {
+				casOptions[input.Digest.GetHash()] = input
+			}
+		}
+	}
+	if len(casOptions) > 1 {
+		return nil, errors.Reason(
+			"Definition contains multiple RBE-CAS inputs: %v", casOptions).Err()
+	}
+	for _, v := range casOptions {
+		return proto.Clone(v).(*swarmingpb.CASReference), nil
 	}
 	return nil, nil
 }

@@ -16,6 +16,7 @@ package job
 
 import (
 	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
@@ -25,6 +26,7 @@ type bbInfo struct {
 	*Buildbucket
 
 	userPayload *swarmingpb.CASTree
+	casUserPayload *swarmingpb.CASReference
 }
 
 var _ Info = bbInfo{}
@@ -37,12 +39,15 @@ func (b bbInfo) TaskName() string {
 	return b.GetName()
 }
 
-func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
+func (b bbInfo) CurrentIsolated() (*isolated, error) {
+	isolated := &isolated{}
 	if b.userPayload.GetDigest() != "" {
-		ret := *b.userPayload
-		return &ret, nil
+		isolated.CASTree = proto.Clone(b.userPayload).(*swarmingpb.CASTree)
 	}
-	return nil, nil
+	if b.casUserPayload.GetDigest().GetHash() != "" {
+		isolated.CASReference = proto.Clone(b.casUserPayload).(*swarmingpb.CASReference)
+	}
+	return isolated, nil
 }
 
 func (b bbInfo) Dimensions() (ExpiringDimensions, error) {
@@ -124,8 +129,7 @@ func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
 	if changes := b.GetBbagentArgs().GetBuild().GetInput().GetGerritChanges(); len(changes) > 0 {
 		ret = make([]*bbpb.GerritChange, len(changes))
 		for i, change := range changes {
-			toAdd := *change
-			ret[i] = &toAdd
+			ret[i] = proto.Clone(change).(*bbpb.GerritChange)
 		}
 	}
 	return
@@ -133,8 +137,7 @@ func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
 
 func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
 	if gc := b.GetBbagentArgs().GetBuild().GetInput().GetGitilesCommit(); gc != nil {
-		toRet := *gc
-		ret = &toRet
+		ret = proto.Clone(gc).(*bbpb.GitilesCommit)
 	}
 	return
 }

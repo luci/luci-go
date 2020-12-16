@@ -15,7 +15,11 @@
 package job
 
 import (
+	"fmt"
+	"regexp"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -31,12 +35,12 @@ type Info interface {
 	TaskName() string
 
 	// CurrentIsolated returns the current isolated contents for the
-	// Definition. If the current CASTree information has no Digest value, this
-	// returns nil.
+	// Definition. If the CASTree or CASReference has no hash value,
+	// this returns an empty isolated obj.
 	//
 	// Returns error if this is a Swarming job where the slices have differing
 	// isolateds.
-	CurrentIsolated() (*swarmingpb.CASTree, error)
+	CurrentIsolated() (*isolated, error)
 
 	// Dimensions returns a single map of all dimensions in the job Definition
 	// and what their latest expiration is.
@@ -114,9 +118,9 @@ type HighLevelInfo interface {
 // Returns nil if the Definition doesn't support Info().
 func (jd *Definition) Info() Info {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.UserPayload}
+		return bbInfo{bb, jd.UserPayload, jd.CasUserPayload}
 	} else if sw := jd.GetSwarming(); sw != nil {
-		return swInfo{sw, jd.UserPayload}
+		return swInfo{sw, jd.UserPayload, jd.CasUserPayload}
 	}
 	return nil
 }
@@ -128,7 +132,29 @@ func (jd *Definition) Info() Info {
 // returns nil.
 func (jd *Definition) HighLevelInfo() HighLevelInfo {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.UserPayload}
+		return bbInfo{bb, jd.UserPayload, jd.CasUserPayload}
 	}
 	return nil
+}
+
+const (
+	casInstanceTemplate = "projects/%s/instances/default_instance"
+)
+
+var (
+	swarmingHostRx = regexp.MustCompile(`(.*)\.appspot\.com`)
+)
+
+// returns the corresponding cas instance from job's Swarming hostname.
+func (jd *Definition) CasInstance() (string, error) {
+	match := swarmingHostRx.FindStringSubmatch(jd.Info().SwarmingHostname())
+	if match == nil {
+		return "", errors.New("invalid swarming host in job definition")
+	}
+	return fmt.Sprintf(casInstanceTemplate, match[1]), nil
+}
+
+type isolated struct {
+	*swarmingpb.CASTree
+	*swarmingpb.CASReference
 }
