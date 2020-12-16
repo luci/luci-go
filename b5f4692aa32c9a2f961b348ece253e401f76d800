@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61b99e13_e48d8be0",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T20:30:19Z",
+      "side": 1,
+      "message": "this seems to be repeated everywhere. Consider using logging.SetField(\"run\", runID) in RunManager before calling these funcs.",
+      "range": {
+        "startLine": 38,
+        "startChar": 56,
+        "endLine": 38,
+        "endChar": 68
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80256314_892485f8",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T20:30:19Z",
+      "side": 1,
+      "message": "not yet critical, but worthy a TODO:\n\n// don\u0027t cancel a Run currently being submitted.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 38
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0b74f5e_e389a316",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T20:30:19Z",
+      "side": 1,
+      "message": "Have you considered processing Runs first and then Cancel in this function, s.t. both transitions happen in the span of the same processTriageResults? Yes, you\u0027d lose on ~800ns shallow-cloning state, but we won\u0027t need this comment nor condition to check if start time IsZero nor extra test docu.",
+      "range": {
+        "startLine": 193,
+        "startChar": 0,
+        "endLine": 198,
+        "endChar": 33
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
