@@ -16,6 +16,7 @@ package build
 
 import (
 	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
@@ -67,4 +68,57 @@ func OptSend(rate.Limit, func(*bbpb.Build)) StartOption {
 // Instead, Start will return a nil `*State` and an unmodified context.
 func OptSuppressExit() StartOption {
 	panic("not implemented")
+}
+
+// OptParseProperties allows you to parse the build's Input.Properties field as
+// JSONPB into the given protobuf message.
+//
+// Message fields which overlap with property namespaces reserved by
+// MakePropertyReader will not be populated (i.e. all property namespaces
+// reserved with MakePropertyReader will be removed before parsing into this
+// message).
+//
+// Type mismatches (i.e. parsing a non-numeric string into an int field) will
+// report an error and quit the build.
+//
+// Example:
+//   msg := &MyOutputMessage{}
+//   state, ctx := Start(ctx, inputBuild, OptParseProperties(msg))
+//   # `msg` has been populated from inputBuild.InputProperties
+func OptParseProperties(proto.Message) StartOption {
+	panic("implement")
+}
+
+// OptStrictInputProperties will cause the build to report an error if data is
+// passed via Input.Properties which wasn't parsed into OptParseProperties or
+// MakePropertyReader.
+func OptStrictInputProperties() StartOption {
+	panic("implement")
+}
+
+// OptOutputProperties allows you to register a property writer for the
+// top-level output properties of the build.
+//
+// The registered message must not have any fields which conflict with
+// a namespace reserved with MakePropertyModifier, or this will panic.
+//
+// This works like MakePropertyModifier, except that it works at the top level
+// (i.e. no namespace).
+//
+// Usage:
+//
+//   var writer func(context.Context, *MyMessage)
+//   var merger func(context.Context, *MyMessage)
+//
+//   // one function may be nil and will be skipped
+//   ... = Start(, ..., OptOutputProperties(&writer, &merger))
+//
+// in go2 this will be:
+//   type PropertyManipulator[T proto.Message] interface {
+//     Write func(context.Context, *T)
+//     Merge func(context.Context, *T)
+//   }
+//   func OptOutputProperties[T proto.Message]() (StartOption, PropertyManipulator[T])
+func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {
+	panic("implement")
 }
