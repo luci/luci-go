@@ -105,8 +105,10 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 		}
 	}()
 
-	// TODO(yuanjunh): consolidate RBE-CAS inputs as well in the next CL.
 	if err := ConsolidateIsolateSources(ctx, authClient, jd); err != nil {
+		return err
+	}
+	if err := ConsolidateRbeCasSources(ctx, authOpts, jd); err != nil {
 		return err
 	}
 
@@ -114,7 +116,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	if err != nil {
 		return err
 	}
-	if current.CASTree != nil && current.CASReference != nil{
+	if current.CASTree != nil && current.CASReference != nil {
 		return errors.Reason("job uses isolate and RBE-CAS at the same time - iso: %v\ncas: %v", current.CASTree, current.CASReference).Err()
 	}
 
@@ -157,7 +159,7 @@ func EditIsolated(ctx context.Context, authClient *http.Client, authOpts auth.Op
 	jd.CasUserPayload = &apipb.CASReference{
 		CasInstance: casInstance,
 		Digest: &apipb.Digest{
-			Hash:digest.Hash,
+			Hash:      digest.Hash,
 			SizeBytes: digest.Size,
 		},
 	}
@@ -186,10 +188,10 @@ func downloadFromIso(ctx context.Context, iso *apipb.CASTree, authClient *http.C
 		return nil
 	}
 	rawIsoClient := isolatedclient.NewClient(
-	iso.Server,
-	isolatedclient.WithAuthClient(authClient),
-	isolatedclient.WithNamespace(iso.Namespace),
-	isolatedclient.WithRetryFactory(retry.Default))
+		iso.Server,
+		isolatedclient.WithAuthClient(authClient),
+		isolatedclient.WithNamespace(iso.Namespace),
+		isolatedclient.WithRetryFactory(retry.Default))
 	var statMu sync.Mutex
 	var previousStats *downloader.FileStats
 

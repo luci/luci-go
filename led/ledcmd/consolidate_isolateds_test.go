@@ -243,6 +243,10 @@ func TestConsolidateIsolateSources(t *testing.T) {
 			})
 
 			Convey(`can follow includes`, func() {
+				job.UserPayload = &swarmingpb.CASTree{
+					Server:    client.Server(),
+					Namespace: client.Namespace(),
+				}
 				iso := client.mkIso("some_file", "data")
 				subIso := client.pushIso(client.mkIso(
 					"other_file", "data",
@@ -303,6 +307,10 @@ func TestConsolidateIsolateSources(t *testing.T) {
 					"something", "data",
 				))
 				sw.Task.TaskSlices[0].Properties.CasInputs.Server = "narp"
+				job.UserPayload = &swarmingpb.CASTree{
+					Server:    client.Server(),
+					Namespace: client.Namespace(),
+				}
 				So(ConsolidateIsolateSources(ctx, nil, job), ShouldErrLike,
 					"two different servers")
 			})
@@ -312,6 +320,10 @@ func TestConsolidateIsolateSources(t *testing.T) {
 					"something", "data",
 				))
 				sw.Task.TaskSlices[0].Properties.CasInputs.Namespace = "narp"
+				job.UserPayload = &swarmingpb.CASTree{
+					Server:    client.Server(),
+					Namespace: client.Namespace(),
+				}
 				So(ConsolidateIsolateSources(ctx, nil, job), ShouldErrLike,
 					"two different namespaces")
 			})
