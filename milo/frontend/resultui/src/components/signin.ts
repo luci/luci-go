@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, LitElement, property, svg } from 'lit-element';
+import { css, customElement, html, LitElement, property } from 'lit-element';
 
 export type UserUpdateEvent = CustomEvent<gapi.auth2.GoogleUser>;
 
@@ -40,14 +40,6 @@ export class SignInElement extends LitElement {
     this.gAuth.currentUser.listen(this.onUserUpdate);
   }
 
-  onclick = () => {
-    if (this.gAuth.currentUser.get().isSignedIn()) {
-      return this.gAuth.signOut();
-    } else {
-      return this.gAuth.signIn();
-    }
-  }
-
   private onUserUpdate = (user: gapi.auth2.GoogleUser) => {
     this.profile = user.isSignedIn() ? user.getBasicProfile() : null;
     this.dispatchEvent(new CustomEvent<gapi.auth2.GoogleUser>('user-update', {
@@ -57,35 +49,38 @@ export class SignInElement extends LitElement {
   }
 
   protected render() {
-    if (!this.profile) {
-      return svg`
-        <svg viewBox="0 0 24 24">
-          <path
-            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0
-            3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5
-            0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29
-            1.94-3.5 3.22-6 3.22z"></path>
-        </svg>
-      `;
+    if (this.profile === null) {
+      return html`<div class="link" @click=${() => this.gAuth.signIn()}>Login</div>`;
     }
     return html`
-      <img title="Sign out of ${this.profile.getEmail()}" src="${this.profile.getImageUrl()}"/>
+      <img src=${this.profile.getImageUrl()}>
+      <div>${this.profile.getEmail()}</div>
+      <div>|</div>
+      <div class="link" @click=${() => this.gAuth.signOut()}>Logout</div>
     `;
   }
 
   static styles = css`
     :host {
       display: inline-block;
-      fill: red;
-      cursor: pointer;
       height: 32px;
-      width: 32px;
     }
     img {
-      height: 100%;
-      width: 100%;
-      border-radius: 50%;
+      margin: 2px 3px;
+      height: 28px;
+      width: 28px;
+      border-radius: 6px;
       overflow: hidden;
+    }
+    .link {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    div {
+      display: inline-block;
+      height: 32px;
+      line-height: 32px;
+      vertical-align: top;
     }
   `;
 }
