@@ -268,20 +268,10 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 }
 
 // getLatest returns the current state of the Build. See `buildState`.
-//
-// This always returns a non-nil buildState.build to make the calling code
-// simpler.
 func (t *buildStateTracker) getLatest() *buildState {
 	t.latestStateMu.Lock()
 	defer t.latestStateMu.Unlock()
-
 	state := *t.latestState
-	if state.build == nil {
-		state.build = &bbpb.Build{
-			SummaryMarkdown: "build.proto not found",
-			Status:          bbpb.Status_SCHEDULED,
-		}
-	}
 	return &state
 }
 

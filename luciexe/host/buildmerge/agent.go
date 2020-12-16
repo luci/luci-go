@@ -312,10 +312,14 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 			base.Steps = append(base.Steps, step)
 
 			if isMergeStep {
-				logURL := step.Logs[0].Url
-				subBuild := insertSteps(append(stepNS, baseName), logURL)
+				subBuildStreamURL := step.Logs[0].Url
+				subBuild := insertSteps(append(stepNS, baseName), subBuildStreamURL)
 				if subBuild == nil {
-					step.SummaryMarkdown = fmt.Sprintf("build.proto stream: %q has not registered yet", logURL)
+					if _, ok := builds[subBuildStreamURL]; ok {
+						step.SummaryMarkdown = fmt.Sprintf("build.proto stream: %q is empty", subBuildStreamURL)
+					} else {
+						step.SummaryMarkdown = fmt.Sprintf("build.proto stream: %q has not registered yet", subBuildStreamURL)
+					}
 				} else {
 					updateStepFromBuild(step, subBuild)
 				}
