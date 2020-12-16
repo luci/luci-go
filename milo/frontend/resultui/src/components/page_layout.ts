@@ -121,8 +121,6 @@ export class PageLayoutElement extends LitElement {
     }
     #signin {
       margin-right: 14px;
-      width: 32px;
-      height: 32px;
       flex-shrink: 0;
     }
     #feedback {
