@@ -103,7 +103,7 @@ type PSSAMigration struct {
 	unknownFields protoimpl.UnknownFields
 
 	// List of LUCI Projects which must ues legacy ~/.netrc credentials,
-	// because althouhg they have registered project-scoped service account
+	// because although they have registered project-scoped service account
 	// (PSSA), their Gerrit ACLs aren't ready yet.
 	ProjectsBlocklist []string `protobuf:"bytes,1,rep,name=projects_blocklist,json=projectsBlocklist,proto3" json:"projects_blocklist,omitempty"`
 }
