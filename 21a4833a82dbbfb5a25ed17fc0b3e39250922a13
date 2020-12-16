@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01f1ec4d_5423ecf5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T20:33:06Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "21a4833a82dbbfb5a25ed17fc0b3e39250922a13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42a1993a_8528b21d",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T20:33:06Z",
+      "side": 1,
+      "message": "btw, this is redundant, same for Cancel, since calling code will be:\n\nrun.Start, run.Cancel\n\n(follow up CL is OK)",
+      "range": {
+        "startLine": 31,
+        "startChar": 10,
+        "endLine": 31,
+        "endChar": 13
+      },
+      "revId": "21a4833a82dbbfb5a25ed17fc0b3e39250922a13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
