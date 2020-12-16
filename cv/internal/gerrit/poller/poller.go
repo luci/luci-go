@@ -56,7 +56,7 @@ func Poke(ctx context.Context, luciProject string) error {
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
 // Automatically enqueues a new task to perform next poll.
 func poll(ctx context.Context, luciProject string, eta time.Time) error {
-	if now := clock.Now(ctx); now.Add(10 * time.Millisecond).Before(eta) {
+	if now := clock.Now(ctx); now.Add(100 * time.Millisecond).Before(eta) {
 		// NOTE: if this happens in production, it probably means that we have
 		// concurrent polling of gerrit than intended.
 		// TODO(tandrii): avoid concurent polling of the same project via cheap
