@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8946cb85_78d59fbf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T20:12:34Z",
+      "side": 1,
+      "message": "It is there in the attempt.proto :) \n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto;l\u003d100-102;drc\u003da524ab5c5c417bd3f9746211b464c3c1ef351cde",
+      "parentUuid": "48c5a27a_d67d8d9a",
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4536bd7e_178a673d",
