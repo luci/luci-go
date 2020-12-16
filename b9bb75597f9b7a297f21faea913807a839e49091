@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "611a5f3b_e7155124",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:29:31Z",
+      "side": 1,
+      "message": "oops sorry. I meant to publish this actually. I guess I forgot to click the button yesterday.",
+      "parentUuid": "14f418a9_20e533f8",
+      "revId": "b9bb75597f9b7a297f21faea913807a839e49091",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f202fb60_38da936e",
         "filename": "cv/internal/run/impl/manager_test.go",
         "patchSetId": 2
@@ -31,6 +49,30 @@
       "writtenOn": "2020-12-16T16:42:47Z",
       "side": 1,
       "message": "$0.02: benefit-cost of this test seems negative to me, since we aren\u0027t building a nuclear reactor.",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 4
+      },
+      "revId": "b9bb75597f9b7a297f21faea913807a839e49091",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2327a9b_5994c55c",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:29:31Z",
+      "side": 1,
+      "message": "Agree that this test is not adding much value. But it\u0027s so easy to add since I\u0027m anyway testing other statuses. I\u0027ll leave it as it is since I\u0027ve already written the test. but will not spend effort (though trivial) to add such test :)",
+      "parentUuid": "f202fb60_38da936e",
       "range": {
         "startLine": 67,
         "startChar": 0,
@@ -54,6 +96,30 @@
       "writtenOn": "2020-12-16T16:42:47Z",
       "side": 1,
       "message": "Manager",
+      "range": {
+        "startLine": 25,
+        "startChar": 48,
+        "endLine": 25,
+        "endChar": 55
+      },
+      "revId": "b9bb75597f9b7a297f21faea913807a839e49091",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1db7fa9_8d5db305",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T19:29:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d274a5c9_bb603b7c",
       "range": {
         "startLine": 25,
         "startChar": 48,
