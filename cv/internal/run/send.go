@@ -29,7 +29,7 @@ import (
 
 // StartRun tells RunManager to start the given run.
 func StartRun(ctx context.Context, runID ID) error {
-	return send(ctx, runID, &internal.Event{
+	return send(ctx, string(runID), &internal.Event{
 		Event: &internal.Event_Start{
 			Start: &internal.Start{},
 		},
@@ -38,14 +38,14 @@ func StartRun(ctx context.Context, runID ID) error {
 
 // CancelRun tells RunManager to cancel the given run.
 func CancelRun(ctx context.Context, runID ID) error {
-	return send(ctx, runID, &internal.Event{
+	return send(ctx, string(runID), &internal.Event{
 		Event: &internal.Event_Cancel{
 			Cancel: &internal.Cancel{},
 		},
 	})
 }
 
-func send(ctx context.Context, runID ID, evt *internal.Event) error {
+func send(ctx context.Context, runID string, evt *internal.Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
@@ -54,5 +54,5 @@ func send(ctx context.Context, runID ID, evt *internal.Event) error {
 	if err := eventbox.Emit(ctx, value, to); err != nil {
 		return err
 	}
-	return internal.Dispatch(ctx, string(runID), time.Time{} /*asap*/)
+	return internal.Dispatch(ctx, runID, time.Time{} /*asap*/)
 }
