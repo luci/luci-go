@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 
 import '../components/signin';
 import { UserUpdateEvent } from '../components/signin';
@@ -44,14 +45,13 @@ Please enter a description of the problem, with repro steps if applicable.
 @customElement('milo-page-layout')
 @provideConfigsStore
 @provideAppState
-export class PageLayoutElement extends LitElement {
-  @property() private gAuth: gapi.auth2.GoogleAuth | null = null;
+export class PageLayoutElement extends MobxLitElement {
   readonly appState = new AppState();
   readonly configsStore = new UserConfigsStore();
 
   constructor() {
     super();
-    gAuthPromise.then((gAuth) => this.gAuth = gAuth);
+    gAuthPromise.then((gAuth) => this.appState.gAuth = gAuth);
   }
 
   protected render() {
@@ -71,9 +71,9 @@ export class PageLayoutElement extends LitElement {
           <mwc-icon>feedback</mwc-icon>
         </div>
         <div id="signin">
-          ${this.gAuth ? html`
+          ${this.appState.gAuth ? html`
           <milo-signin
-            .gAuth=${this.gAuth}
+            .gAuth=${this.appState.gAuth}
             @user-update=${(e: UserUpdateEvent) => {
               this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
             }}
