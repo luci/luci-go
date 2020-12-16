@@ -44,6 +44,12 @@ type isoInput struct {
 	Hash      string `json:"hash"`
 }
 
+type rbeCasInput struct {
+	CasInstance string `json:"cas_instance"`
+	Hash        string `json:"hash"`
+	SizeBytes   int64  `json:"size_bytes"`
+}
+
 type cipdInput struct {
 	Package string `json:"package"`
 	Version string `json:"version"`
@@ -53,6 +59,8 @@ type ledProperties struct {
 	LedRunID string `json:"led_run_id"`
 
 	IsolatedInput *isoInput `json:"isolated_input,omitempty"`
+
+	RbeCasInput *rbeCasInput `json:"rbe_cas_input,omitempty"`
 
 	CIPDInput *cipdInput `json:"cipd_input,omitempty"`
 }
@@ -127,8 +135,18 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 			Namespace: payload.GetNamespace(),
 			Hash:      payload.GetDigest(),
 		}
+	} else if payload := jd.GetCasUserPayload(); payload.GetDigest() != nil {
+		props.RbeCasInput = &rbeCasInput{
+			CasInstance: payload.CasInstance,
+			Hash:        payload.Digest.GetHash(),
+			SizeBytes:   payload.Digest.GetSizeBytes(),
+		}
 	}
 
+	// in case both isolate and rbe-cas properties are set in "$recipe_engine/led".
+	bb.WriteProperties(map[string]interface{}{
+		"$recipe_engine/led": nil,
+	})
 	bb.WriteProperties(map[string]interface{}{
 		"$recipe_engine/led": props,
 	})
@@ -326,7 +344,9 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 		return nil
 	}
-
+	if jd.UserPayload != nil && jd.CasUserPayload != nil {
+		return errors.Reason("job uses isolate and RBE-CAS at the same time - iso: %v\ncas: %v", jd.UserPayload, jd.CasUserPayload).Err()
+	}
 	err := jd.addLedProperties(ctx, uid)
 	if err != nil {
 		return errors.Annotate(err, "adding led properties").Err()
@@ -379,8 +399,9 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	baseProperties := &swarmingpb.TaskProperties{
-		CipdInputs: append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
-		CasInputs:  jd.UserPayload,
+		CipdInputs:   append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
+		CasInputs:    jd.UserPayload,
+		CasInputRoot: jd.CasUserPayload,
 
 		EnvPaths:         bb.EnvPrefixes,
 		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,

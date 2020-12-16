@@ -15,11 +15,7 @@
 package job
 
 import (
-	"fmt"
-	"regexp"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -137,21 +133,9 @@ func (jd *Definition) HighLevelInfo() HighLevelInfo {
 	return nil
 }
 
-const (
-	casInstanceTemplate = "projects/%s/instances/default_instance"
-)
-
-var (
-	swarmingHostRx = regexp.MustCompile(`(.*)\.appspot\.com`)
-)
-
 // returns the corresponding cas instance from job's Swarming hostname.
 func (jd *Definition) CasInstance() (string, error) {
-	match := swarmingHostRx.FindStringSubmatch(jd.Info().SwarmingHostname())
-	if match == nil {
-		return "", errors.New("invalid swarming host in job definition")
-	}
-	return fmt.Sprintf(casInstanceTemplate, match[1]), nil
+	return ToCasInstance(jd.Info().SwarmingHostname())
 }
 
 type isolated struct {

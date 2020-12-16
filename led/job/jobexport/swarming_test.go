@@ -48,7 +48,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 	So(jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport(), "off"),
 		ShouldBeNil)
 
-	ret, err := ToSwarmingNewTask(jd.GetSwarming(), jd.UserPayload)
+	ret, err := ToSwarmingNewTask(jd.GetSwarming(), jd.UserPayload, jd.CasUserPayload)
 	So(err, ShouldBeNil)
 
 	outFile := fmt.Sprintf("testdata/%s.swarm.json", fixtureBaseName)
@@ -76,8 +76,13 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 func TestExportRaw(t *testing.T) {
 	t.Parallel()
 
-	Convey(`export raw swarming task`, t, func() {
-		req := readTestFixture("raw")
+	Convey(`export raw swarming task with isolate input`, t, func() {
+		req := readTestFixture("raw_iso")
+		So(req, ShouldNotBeNil)
+	})
+
+	Convey(`export raw swarming task with rbe-cas input`, t, func() {
+		req := readTestFixture("raw_cas")
 		So(req, ShouldNotBeNil)
 	})
 }
@@ -85,8 +90,18 @@ func TestExportRaw(t *testing.T) {
 func TestExportBBagent(t *testing.T) {
 	t.Parallel()
 
-	Convey(`export bbagent task`, t, func() {
-		req := readTestFixture("bbagent")
+	Convey(`export bbagent task with empty isolate input`, t, func() {
+		req := readTestFixture("bbagent_empty_iso")
+		So(req, ShouldNotBeNil)
+	})
+
+	Convey(`export bbagent task with rbe-cas input`, t, func() {
+		req := readTestFixture("bbagent_cas")
+		So(req, ShouldNotBeNil)
+	})
+
+	Convey(`export bbagent task with isolate input`, t, func() {
+		req := readTestFixture("bbagent_iso")
 		So(req, ShouldNotBeNil)
 	})
 }
