@@ -28,6 +28,9 @@ type MigrationClient interface {
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
+	// project.
+	FetchActiveRuns(ctx context.Context, in *FetchActiveRunsRequest, opts ...grpc.CallOption) (*FetchActiveRunsResponse, error)
 }
 
 type migrationClient struct {
@@ -65,6 +68,15 @@ func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNet
 	return out, nil
 }
 
+func (c *migrationClient) FetchActiveRuns(ctx context.Context, in *FetchActiveRunsRequest, opts ...grpc.CallOption) (*FetchActiveRunsResponse, error) {
+	out := new(FetchActiveRunsResponse)
+	err := c.cc.Invoke(ctx, "/migration.Migration/FetchActiveRuns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigrationServer is the server API for Migration service.
 // All implementations must embed UnimplementedMigrationServer
 // for forward compatibility
@@ -79,6 +91,9 @@ type MigrationServer interface {
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error)
+	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
+	// project.
+	FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error)
 	mustEmbedUnimplementedMigrationServer()
 }
 
@@ -95,6 +110,9 @@ func (UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFi
 func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
 }
+func (UnimplementedMigrationServer) FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchActiveRuns not implemented")
+}
 func (UnimplementedMigrationServer) mustEmbedUnimplementedMigrationServer() {}
 
 // UnsafeMigrationServer may be embedded to opt out of forward compatibility for this service.
@@ -105,7 +123,7 @@ type UnsafeMigrationServer interface {
 }
 
 func RegisterMigrationServer(s grpc.ServiceRegistrar, srv MigrationServer) {
-	s.RegisterService(&_Migration_serviceDesc, srv)
+	s.RegisterService(&Migration_ServiceDesc, srv)
 }
 
 func _Migration_ReportRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -162,7 +180,28 @@ func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Migration_serviceDesc = grpc.ServiceDesc{
+func _Migration_FetchActiveRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchActiveRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).FetchActiveRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/FetchActiveRuns",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).FetchActiveRuns(ctx, req.(*FetchActiveRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Migration_ServiceDesc is the grpc.ServiceDesc for Migration service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Migration_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "migration.Migration",
 	HandlerType: (*MigrationServer)(nil),
 	Methods: []grpc.MethodDesc{
@@ -177,6 +216,10 @@ var _Migration_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportUsedNetrc",
 			Handler:    _Migration_ReportUsedNetrc_Handler,
+		},
+		{
+			MethodName: "FetchActiveRuns",
+			Handler:    _Migration_FetchActiveRuns_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
