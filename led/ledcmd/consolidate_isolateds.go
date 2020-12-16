@@ -17,11 +17,17 @@ package ledcmd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
@@ -35,7 +41,7 @@ import (
 //     * is the union of UserPayload and slice.Properties.CasInputs
 //   * Combined isolated in slice.Properties.CasInputs.
 func ConsolidateIsolateSources(ctx context.Context, authClient *http.Client, jd *job.Definition) error {
-	if jd.GetSwarming() == nil {
+	if jd.GetSwarming() == nil || jd.UserPayload == nil {
 		return nil
 	}
 
@@ -135,4 +141,58 @@ func combineIsolateds(ctx context.Context, arc isoClientIface, isos ...*api.CAST
 	ret.Digest = string(promise.Digest())
 
 	return ret, arc.Close()
+}
+
+// ConsolidateRbeCasSources combines RBE-CAS inputs in slice.Properties.CasInputRoot
+// and CasUserPayload for swarming tasks. For the same file, the one in CasUserPayload
+// will replace the one in slice.Properties.CasInputRoot.
+func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *job.Definition) error {
+	if jd.GetSwarming() == nil || (jd.CasUserPayload.GetDigest().GetHash() == "") {
+		return nil
+	}
+	logging.Infof(ctx, "consolidating RBE-CAS sources...")
+	tdir, err := ioutil.TempDir("", "led-consolidate-rbe-cas")
+	if err != nil {
+		return errors.Annotate(err, "failed to create tempdir in consolidation step").Err()
+	}
+	defer func() {
+		if err = os.RemoveAll(tdir); err != nil {
+			logging.Errorf(ctx, "failed to cleanup temp dir %q: %s", tdir, err)
+		}
+	}()
+	casClient, err := cas.NewClient(ctx, jd.CasUserPayload.CasInstance, authOpts, false)
+	if err != nil {
+		return err
+	}
+	defer casClient.Close()
+
+	for i, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
+		if slc.Properties == nil {
+			slc.Properties = &api.TaskProperties{}
+		}
+		props := slc.Properties
+		if props.CasInputRoot == nil || props.CasInputRoot.Digest.GetHash() == jd.CasUserPayload.Digest.Hash {
+			continue
+		}
+
+		subDir := fmt.Sprintf("%s/%d", tdir, i)
+		if err := downloadFromCas(ctx, props.CasInputRoot, casClient, subDir); err != nil {
+			return errors.Annotate(err, "consolidation").Err()
+		}
+		if err := downloadFromCas(ctx, jd.CasUserPayload, casClient, subDir); err != nil {
+			return errors.Annotate(err, "consolidation").Err()
+		}
+		digest, err := uploadToCas(ctx, casClient, subDir)
+		if err != nil {
+			return errors.Annotate(err, "consolidation").Err()
+		}
+		props.CasInputRoot.Digest = &api.Digest{
+			Hash:      digest.Hash,
+			SizeBytes: digest.Size,
+		}
+	}
+	if jd.CasUserPayload != nil {
+		jd.CasUserPayload.Digest = nil
+	}
+	return nil
 }
