@@ -39,6 +39,30 @@
       },
       "revId": "21a4833a82dbbfb5a25ed17fc0b3e39250922a13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3acdc2ae_8ea50870",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T20:52:29Z",
+      "side": 1,
+      "message": "ah true! will have a follow up CL.",
+      "parentUuid": "42a1993a_8528b21d",
+      "range": {
+        "startLine": 31,
+        "startChar": 10,
+        "endLine": 31,
+        "endChar": 13
+      },
+      "revId": "21a4833a82dbbfb5a25ed17fc0b3e39250922a13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
