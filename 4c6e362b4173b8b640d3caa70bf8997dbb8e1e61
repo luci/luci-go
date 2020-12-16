@@ -322,6 +322,30 @@
       },
       "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ee6678d_9723e16c",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T19:29:22Z",
+      "side": 1,
+      "message": "ah, then do this:\n\nvar rid string\nrid \u003d string(runID)\nreturn interna.Dispatch(ctx, rid, ...)",
+      "parentUuid": "aec8541f_d3b30e69",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 1
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
