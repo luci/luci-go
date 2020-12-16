@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c8390ce_c6d04206",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T18:47:00Z",
+      "side": 1,
+      "message": "Exactly! We can leave this responsibility to CQ Daemon if that hasn\u0027t been migrated to CV after code freeze.\n\nThe only thing I am uncertain is how it will impact the tryjob cancellator in CQ Daemon as I haven\u0027t gone through the logic there. Gonna take a peek later today.",
+      "parentUuid": "69641856_c194cddd",
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4536bd7e_178a673d",
@@ -49,6 +67,30 @@
       "writtenOn": "2020-12-16T15:31:46Z",
       "side": 1,
       "message": "runs",
+      "range": {
+        "startLine": 48,
+        "startChar": 51,
+        "endLine": 48,
+        "endChar": 54
+      },
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e3570c6_2e1d3c64",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T18:47:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4536bd7e_178a673d",
       "range": {
         "startLine": 48,
         "startChar": 51,
@@ -82,6 +124,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7673101c_562aa8f6",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T18:47:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6016b086_e44c8f0a",
+      "range": {
+        "startLine": 49,
+        "startChar": 12,
+        "endLine": 49,
+        "endChar": 13
+      },
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1758f7a2_8d1027c3",
@@ -95,6 +161,30 @@
       "writtenOn": "2020-12-16T15:31:46Z",
       "side": 1,
       "message": "del\n\nthere is 1 CQDaemon process for each LUCI Project. So, 1 RPC will always be scoped to just 1 project.",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 10
+      },
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0020182e_9fd08f40",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T18:47:00Z",
+      "side": 1,
+      "message": "oh true!",
+      "parentUuid": "1758f7a2_8d1027c3",
       "range": {
         "startLine": 67,
         "startChar": 2,
