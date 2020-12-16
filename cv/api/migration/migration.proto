@@ -44,6 +44,8 @@ service Migration {
   // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
   // CQDaemon.
   rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
+
+  rpc FetchActiveRuns(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
 }
 
 message ReportRunsRequest {
