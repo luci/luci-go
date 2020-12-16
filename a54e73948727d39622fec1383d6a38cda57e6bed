@@ -196,6 +196,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "76fe793e_db64a76e",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-16T23:58:57Z",
+      "side": 1,
+      "message": "I don\u0027t remember why status tags are powers of two. This was designed in early 2018 (go/buildbucket-api-v2).\nI think I was erring on the side of flexibility if it is not expensive (cheap in this case).\nPowers of two allow combining statuses, e.g. \"search for pending OR started builds\" could be expressed as CREATED|STARTED, as opposed to `repeated Status`. But this doesn\u0027t work for protoJSON at all, so it is not a good reason.\n\nAndrii\u0027s idea of tag segments sgtm",
+      "parentUuid": "e5f7873f_f8f8eb8e",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ad3073fa_9df964ca",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 5
