@@ -43,6 +43,53 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "135f99d8_c9fea765",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "Seems fine to me.",
+      "parentUuid": "08bc0795_9415d863",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 13
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1481db4c_0d98835b",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "isn\u0027t this the same as ret.Run \u003d s.Run, ie just copying the pointer.\n\nThat said, it\u0027s really the shallow-most copy possible 😄",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 102,
+        "endChar": 21
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a366f13d_db55a40b",
         "filename": "cv/internal/run/impl/manager.go",
         "patchSetId": 2
@@ -59,6 +106,99 @@
         "startChar": 0,
         "endLine": 116,
         "endChar": 12
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c52d129_13d32b2c",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "Probably fine, I also don\u0027t know what exactly would have a need to send an event to Run.\n\nUnless we have a bug in future code that accidentally sends an event to ~1.5 year old Run which gets deleted.\nShould be unlikely.",
+      "parentUuid": "a366f13d_db55a40b",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 12
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d656ea9c_6d82c2da",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "nit: merge lines.",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 23
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c716d007_59a73058",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "it\u0027s always non-nil, i think.",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 18
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cdab405d_884b8877",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:37:19Z",
+      "side": 1,
+      "message": "why? the old version is less copy-pasty.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 1
       },
       "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
