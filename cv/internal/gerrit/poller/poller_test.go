@@ -35,6 +35,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
+	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -213,7 +214,7 @@ func TestPoller(t *testing.T) {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			So(Poke(ctx, lProject), ShouldBeNil)
 			// Execute next poll task, which should result in full poll.
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 			st := mustGetState(lProject)
 			So(st.EVersion, ShouldEqual, 1)
 			fullPollStamp := timestamppb.New(ct.Clock.Now())
@@ -255,7 +256,7 @@ func TestPoller(t *testing.T) {
 
 				Convey("performs incremental polls", func() {
 					// Execute next poll task, it should be incremental.
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					st = mustGetState(lProject)
 					So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
 						Host:         gHost,
@@ -266,7 +267,7 @@ func TestPoller(t *testing.T) {
 					// 1 for the future poll + 2 immediate to update CLs 31, 32.
 					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+2)
 					// Run all tasks.
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					// Due to CL update task de-dup, regardless of what next incremental
 					// poll discovered, there shouldn't more CL update tasks.
 					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
@@ -288,7 +289,7 @@ func TestPoller(t *testing.T) {
 							gf.Updated(ct.Clock.Now())(c.Info)
 						})
 
-						ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						st = mustGetState(lProject)
 						So(st.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{{
 							Host:         gHost,
@@ -297,7 +298,7 @@ func TestPoller(t *testing.T) {
 						}})
 						// 1 for the future poll + 3 for CL for 33 and 34 and again 32.
 						So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 4)
-						ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						So(getCL(gHost, 33), ShouldNotBeNil)
 						So(getCL(gHost, 34), ShouldNotBeNil)
 						So(getCL(gHost, 32).EVersion, ShouldEqual, 2) // was updated.
@@ -309,7 +310,7 @@ func TestPoller(t *testing.T) {
 				before := mustGetState(lProject)
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				after := mustGetState(lProject)
 				So(after.ConfigHash, ShouldNotEqual, before.ConfigHash)
 				So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
@@ -330,7 +331,7 @@ func TestPoller(t *testing.T) {
 
 			Convey("disabled project => remove poller state & stop task chain", func() {
 				ct.Cfg.Disable(ctx, lProject)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")
@@ -339,7 +340,7 @@ func TestPoller(t *testing.T) {
 
 			Convey("deleted => remove poller state & stop task chain", func() {
 				ct.Cfg.Delete(ctx, lProject)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poll-gerrit-task"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
 				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")

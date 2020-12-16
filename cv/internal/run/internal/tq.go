@@ -37,13 +37,13 @@ var PokeRunTaskRef tq.TaskClassRef
 
 func init() {
 	PokeRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "poke-run-task",
+		ID:        "poke-manage-run",
 		Prototype: &PokeRunTask{},
 		Queue:     "manage-run",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "kick-poke-run-task",
+		ID:        "manage-run",
 		Prototype: &KickPokeRunTask{},
 		Queue:     "manage-run",
 		Quiet:     true,

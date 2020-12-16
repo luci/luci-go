@@ -18,4 +18,4 @@ package task
 
 //go:generate cproto
 
-const ClassID = "poll-gerrit-task"
+const ClassID = "poll-gerrit"

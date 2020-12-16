@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -48,7 +49,7 @@ func TestUpdateConfig(t *testing.T) {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, lProjectKey)
 			So(err, ShouldBeNil)
 			So(events, ShouldHaveLength, 0)
@@ -61,7 +62,7 @@ func TestUpdateConfig(t *testing.T) {
 				ct.Clock.Add(time.Hour) // ensure first poller task gets executed.
 				ct.Cfg.Delete(ctx, lProject)
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-pm-task"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 				p := getProject(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
 				So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
