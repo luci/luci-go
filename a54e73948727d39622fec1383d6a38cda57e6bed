@@ -99,6 +99,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5231b07_4a5cd5d2",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T15:23:44Z",
+      "side": 1,
+      "message": "i mean submission is another operation which shouldn\u0027t be interrupted, but I\u0027m not sure if it deserves as separate top-level status.",
+      "parentUuid": "3217ed3f_dc163dcc",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "42d109d5_5a53a724",
@@ -136,6 +160,30 @@
       "side": 1,
       "message": "ah! not the recommended way, but I simply took this idea from buildbucket because I found it easy to check if it is ended. Making all final statuses\u0027 values be \u003e 100 also works. Either way works for me. I can switch to that if this is confusing you as a reader.\n\nSee: https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto#36",
       "parentUuid": "42d109d5_5a53a724",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5f7873f_f8f8eb8e",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T15:23:44Z",
+      "side": 1,
+      "message": "+Nodir\n\nI don\u0027t grasp BB final status values either. Why does it follow this formula?\n  f(n) :\u003d (1\u003c\u003cended_bits) + (1\u003c\u003c(ended_bits+n))   for n \u003e 0\n\nUnless I\u0027m missing some additional benefit in the above, I\u0027d prefer simpler:\nENDED_THRESHOLD \u003d 64 // allow ~62 non-final statuses.\nENDED_MASK \u003d 64 // works as mask, too.\nFAILED \u003d 64+1\nCANCELLED \u003d 64+2\n// we can add ~60 more w/o exceeding 1 byte on the wire (127 is max in varint encoding)",
+      "parentUuid": "7f16e0cb_a804b809",
       "range": {
         "startLine": 43,
         "startChar": 2,
