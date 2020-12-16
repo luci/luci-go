@@ -34,6 +34,24 @@
       "parentUuid": "f7991aaf_ed6dd023",
       "revId": "4c9237bb5afa45778d7ea625dfb0b0a70d95c0ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4a56dda_b66bbf6a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-16T21:47:40Z",
+      "side": 1,
+      "message": "the CL is fine. PTAL! :)",
+      "parentUuid": "18231e93_64a15f27",
+      "revId": "4c9237bb5afa45778d7ea625dfb0b0a70d95c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
