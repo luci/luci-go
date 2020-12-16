@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb9e9618_a411c51d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-16T02:36:01Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromeos/builders/cq/fizz-accelerator-cq/b8861816124392468448/overview\n",
+      "revId": "a20f6be108d0705fc42bf10453a27c3b28872d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
