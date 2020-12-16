@@ -21,6 +21,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
@@ -143,7 +144,7 @@ func (c *cmdEdit) validateFlags(ctx context.Context, _ []string, _ subcommands.E
 	return
 }
 
-func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
 	err = inJob.Edit(func(je job.Editor) {
 		je.EditDimensions(c.processedDimensions)
 		if host := c.swarmingHost; host != "" {
