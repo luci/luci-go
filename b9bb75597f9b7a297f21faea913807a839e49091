@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f202fb60_38da936e",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:42:47Z",
+      "side": 1,
+      "message": "$0.02: benefit-cost of this test seems negative to me, since we aren\u0027t building a nuclear reactor.",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 4
+      },
+      "revId": "b9bb75597f9b7a297f21faea913807a839e49091",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d274a5c9_bb603b7c",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T16:42:47Z",
+      "side": 1,
+      "message": "Manager",
+      "range": {
+        "startLine": 25,
+        "startChar": 48,
+        "endLine": 25,
+        "endChar": 55
+      },
+      "revId": "b9bb75597f9b7a297f21faea913807a839e49091",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
