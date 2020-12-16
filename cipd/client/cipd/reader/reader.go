@@ -16,7 +16,9 @@
 package reader
 
 import (
+	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,9 +31,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/klauspost/compress/flate"
-	"github.com/klauspost/compress/zip"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

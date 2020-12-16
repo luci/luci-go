@@ -15,7 +15,9 @@
 package builder
 
 import (
+	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"context"
 	"fmt"
 	"io"
@@ -24,9 +26,6 @@ import (
 	"path"
 	"strings"
 	"time"
-
-	"github.com/klauspost/compress/flate"
-	"github.com/klauspost/compress/zip"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
