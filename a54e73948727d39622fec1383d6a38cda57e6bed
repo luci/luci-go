@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3217ed3f_dc163dcc",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:25:23Z",
+      "side": 1,
+      "message": "Yes, we should definitely revisit. \n\n\u003e or will it be covered by Running?\n\nDo you mean status is still RUNNING but have a separate field in Run entity to indicate it is currently finalizing?",
+      "parentUuid": "5c7314a6_bf83f36f",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "42d109d5_5a53a724",
@@ -71,6 +95,30 @@
       "writtenOn": "2020-12-16T01:06:46Z",
       "side": 1,
       "message": "curious, is this the recommended way?\n\nie why not just make all final statuses\u0027 values be \u003e100?",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f16e0cb_a804b809",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:25:23Z",
+      "side": 1,
+      "message": "ah! not the recommended way, but I simply took this idea from buildbucket because I found it easy to check if it is ended. Making all final statuses\u0027 values be \u003e 100 also works. Either way works for me. I can switch to that if this is confusing you as a reader.\n\nSee: https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto#36",
+      "parentUuid": "42d109d5_5a53a724",
       "range": {
         "startLine": 43,
         "startChar": 2,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "021ac89d_b6fff6a4",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:25:23Z",
+      "side": 1,
+      "message": "I think you get it now. basically `24 \u003d 1 \u003c\u003c 4 | 1 \u003c\u003c 3`",
+      "parentUuid": "ad3073fa_9df964ca",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 31
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f2571a91_60c26651",
@@ -117,6 +189,30 @@
       "writtenOn": "2020-12-16T01:06:46Z",
       "side": 1,
       "message": "ah, i see. So it just means 4th bit is set. Yeah, this is fine, but I don\u0027t follow why values of final statuses aren\u0027t: 8, 9, 10, 11, 12, since all of them qualify for the above.",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 1
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "060ffd66_11e4e071",
+        "filename": "cv/internal/run/util.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:25:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f2571a91_60c26651",
       "range": {
         "startLine": 17,
         "startChar": 0,
