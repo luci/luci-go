@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9678438a_8977da78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T23:03:48Z",
+      "side": 1,
+      "message": "PTAL.\n\nFollow up for : https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2593558/comment/42a1993a_8528b21d/",
+      "revId": "b2f39d948227e968db3b310bb23b5e92e5375bb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
