@@ -15,7 +15,6 @@
 package builder
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -25,6 +24,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/klauspost/compress/zip"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
@@ -49,10 +50,10 @@ func TestBuildInstance(t *testing.T) {
 		// BuildInstance builds deterministic zip. It MUST NOT depend on
 		// the platform, or a time of day, or anything else, only on the input data,
 		// CIPD code and compress/deflat and archive/zip code.
-		So(getSHA256(&out), ShouldEqual, "66b44a6bd1cdfcb9481d952c6654f3a66882b3c02abc0873f5367337de90a71e")
+		So(getSHA256(&out), ShouldEqual, "3cf335f34fb98be575ab9e79e1ec0a18ee23ab871607e70ec13bb28680afde3a")
 		So(pin, ShouldResemble, common.Pin{
 			PackageName: "testing",
-			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		})
 
 		// There should be a single file: the manifest.
