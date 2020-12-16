@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e648bab_74dc91e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:01:08Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08bc0795_9415d863",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:01:08Z",
+      "side": 1,
+      "message": "This seems to be the easiest way since all fields are needed during SaveState?",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 13
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a366f13d_db55a40b",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T01:01:08Z",
+      "side": 1,
+      "message": "I think we should panic here? I can\u0027t think of any cases where CV can\u0027t load the requested run.",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 12
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
