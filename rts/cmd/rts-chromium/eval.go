@@ -100,7 +100,7 @@ func (r *evalRun) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	res.Print(os.Stdout)
+	res.Print(os.Stdout, 0.9)
 	return nil
 }
 
