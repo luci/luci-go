@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a2bf5ed_a4794899",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T23:01:50Z",
+      "side": 1,
+      "message": "Done. I already have that but I completely forget about it.",
+      "parentUuid": "61b99e13_e48d8be0",
+      "range": {
+        "startLine": 38,
+        "startChar": 56,
+        "endLine": 38,
+        "endChar": 68
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "80256314_892485f8",
@@ -49,6 +73,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f04944bf_c737fe92",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T23:01:50Z",
+      "side": 1,
+      "message": "I think a Run currently being submitted will have a FINALIZING status (before we decide to model it as a separate status or just a field). It is currently handled on L34.",
+      "parentUuid": "80256314_892485f8",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 38
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c0b74f5e_e389a316",
         "filename": "cv/internal/run/impl/manager.go",
         "patchSetId": 3
@@ -60,6 +108,30 @@
       "writtenOn": "2020-12-16T20:30:19Z",
       "side": 1,
       "message": "Have you considered processing Runs first and then Cancel in this function, s.t. both transitions happen in the span of the same processTriageResults? Yes, you\u0027d lose on ~800ns shallow-cloning state, but we won\u0027t need this comment nor condition to check if start time IsZero nor extra test docu.",
+      "range": {
+        "startLine": 193,
+        "startChar": 0,
+        "endLine": 198,
+        "endChar": 33
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cfff0fc_eb6fdfc7",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T23:01:50Z",
+      "side": 1,
+      "message": "Yeah, I could do that. But I was thinking in that case, I\u0027ll need to drop all SideEffectFns for starting the run since it is meaningless to run (like. start tryjob, storing Gerrit message Intent). Also, I think start will be a very heavy operation later on, because it needs to search for reusable build in buildbucket.",
+      "parentUuid": "c0b74f5e_e389a316",
       "range": {
         "startLine": 193,
         "startChar": 0,
