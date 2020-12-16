@@ -44,7 +44,7 @@ func Main(ctx context.Context, strategy Strategy) {
 		fatal(err)
 	}
 
-	res.Print(os.Stdout)
+	res.Print(os.Stdout, 0)
 	os.Exit(0)
 }
 
