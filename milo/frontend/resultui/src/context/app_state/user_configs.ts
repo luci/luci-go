@@ -31,6 +31,7 @@ export interface UserConfigs {
     showExoneratedVariant: boolean;
     showFlakyVariant: boolean;
   };
+  defaultBuildPageTabName: string;
 }
 
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
@@ -46,6 +47,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
     showExoneratedVariant: true,
     showFlakyVariant: true,
   }),
+  defaultBuildPageTabName: 'build-overview',
 });
 
 export class UserConfigsStore {
