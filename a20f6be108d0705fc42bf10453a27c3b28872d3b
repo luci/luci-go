@@ -16,6 +16,23 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo.appspot.com/ui/p/chromeos/builders/cq/fizz-accelerator-cq/b8861816124392468448/overview\n",
       "revId": "a20f6be108d0705fc42bf10453a27c3b28872d3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0e97958_623b28ec",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state_provider.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-16T02:36:57Z",
+      "side": 1,
+      "message": "Because browser, by default, blocks popups that are not triggered by user interaction, show them the resultui login page instead of redirecting them to the google sign in page.",
+      "revId": "a20f6be108d0705fc42bf10453a27c3b28872d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
