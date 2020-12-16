@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	"go.chromium.org/luci/common/clock"
@@ -44,12 +44,6 @@ type isoInput struct {
 	Hash      string `json:"hash"`
 }
 
-type rbeCasInput struct {
-	CasInstance string `json:"cas_instance"`
-	Hash        string `json:"hash"`
-	SizeBytes   int64  `json:"size_bytes"`
-}
-
 type cipdInput struct {
 	Package string `json:"package"`
 	Version string `json:"version"`
@@ -60,7 +54,7 @@ type ledProperties struct {
 
 	IsolatedInput *isoInput `json:"isolated_input,omitempty"`
 
-	RbeCasInput *rbeCasInput `json:"rbe_cas_input,omitempty"`
+	RbeCasInput *swarmingpb.CASReference `json:"rbe_cas_input,omitempty"`
 
 	CIPDInput *cipdInput `json:"cipd_input,omitempty"`
 }
@@ -136,11 +130,7 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 			Hash:      payload.GetDigest(),
 		}
 	} else if payload := jd.GetCasUserPayload(); payload.GetDigest() != nil {
-		props.RbeCasInput = &rbeCasInput{
-			CasInstance: payload.CasInstance,
-			Hash:        payload.Digest.GetHash(),
-			SizeBytes:   payload.Digest.GetSizeBytes(),
-		}
+		props.RbeCasInput = proto.Clone(payload).(*swarmingpb.CASReference)
 	}
 
 	// in case both isolate and rbe-cas properties are set in "$recipe_engine/led".
