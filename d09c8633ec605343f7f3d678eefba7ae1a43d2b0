@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04eb49ae_7c00e59c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-16T01:02:34Z",
+      "side": 1,
+      "message": "Looks awesome btw, glad you fixed this.",
+      "revId": "d09c8633ec605343f7f3d678eefba7ae1a43d2b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c4d3370_d51d00e2",
+        "filename": "milo/frontend/resultui/src/components/signin.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-16T01:02:34Z",
+      "side": 1,
+      "message": "Tiny nit/suggestion: IMO \"margin: 2px 3px\" looks slightly better-aligned",
+      "range": {
+        "startLine": 69,
+        "startChar": 14,
+        "endLine": 69,
+        "endChar": 17
+      },
+      "revId": "d09c8633ec605343f7f3d678eefba7ae1a43d2b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
