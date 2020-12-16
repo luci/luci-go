@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f265fcd_b564dcb7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-16T07:36:26Z",
+      "side": 1,
+      "message": "I feel like this one method is sufficient. My currently naive thinking is that this method is a complete replacement for _get_candidate. All other logic pretty much stay the same. i.e. CQ daemon will do a set math against all previously observed Runs and decide which one to start from fresh and which one to remove. CQ daemon will use ReportFinshedRuns to report finished runs to CV so that the Run status can be updated. \n\nLet me know if there\u0027s anything missing.\n\n\n[1]: https://chrome-internal.googlesource.com/infra/infra_internal/+/8e6ac7005424d123378392fca0f795ea703f70d7/infra_internal/services/cq/pending_manager/base.py#880",
+      "revId": "ac1fa7d69911b5cf1b62a71617d8672033b69ddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
