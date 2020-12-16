@@ -120,13 +120,20 @@ router.setRoutes({
                 {
                   path: '/',
                   redirect: '/p/:project/builders/:bucket/:builder/:build_num_or_id/overview',
+                  action: async (_ctx, cmd) => {
+                    await import(
+                      /* webpackChunkName: "build_default_tab" */
+                      /* webpackPrefetch: true */
+                      './pages/build_page/build_default_tab');
+                    return cmd.component('milo-build-default-tab');
+                  },
                 },
                 {
                   path: '/overview',
                   name: 'build-overview',
                   action: async (_ctx, cmd) => {
                     await import(
-                      /* webpackChunkName: "test_overview_tab" */
+                      /* webpackChunkName: "overview_tab" */
                       /* webpackPrefetch: true */
                       './pages/build_page/overview_tab');
                     return cmd.component('milo-overview-tab');
