@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3c6cc51_502fd525",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-16T19:26:22Z",
+      "side": 1,
+      "message": "I think this is better:\n  ret :\u003d \u0026state{Run: \u0026Run{}}\n  ...\n  *ret.Run \u003d *s.Run\n\nstruct instead of a pointer LGTM.",
+      "parentUuid": "69030883_591007bd",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 102,
+        "endChar": 21
+      },
+      "revId": "4c6e362b4173b8b640d3caa70bf8997dbb8e1e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a366f13d_db55a40b",
