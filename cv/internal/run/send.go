@@ -27,8 +27,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run/internal"
 )
 
-// StartRun tells RunManager to start the given run.
-func StartRun(ctx context.Context, runID ID) error {
+// Start tells RunManager to start the given run.
+func Start(ctx context.Context, runID ID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Start{
 			Start: &internal.Start{},
@@ -36,8 +36,8 @@ func StartRun(ctx context.Context, runID ID) error {
 	})
 }
 
-// CancelRun tells RunManager to cancel the given run.
-func CancelRun(ctx context.Context, runID ID) error {
+// Cancel tells RunManager to cancel the given run.
+func Cancel(ctx context.Context, runID ID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Cancel{
 			Cancel: &internal.Cancel{},

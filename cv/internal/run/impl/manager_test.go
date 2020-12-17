@@ -49,7 +49,7 @@ func TestStartRun(t *testing.T) {
 				EVersion: initialEversion,
 			})
 			So(err, ShouldBeNil)
-			So(run.StartRun(ctx, runID), ShouldBeNil)
+			So(run.Start(ctx, runID), ShouldBeNil)
 			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			assertEventBoxSize(ctx, runKey, 0)
@@ -71,7 +71,7 @@ func TestStartRun(t *testing.T) {
 				EVersion: initialEversion,
 			})
 			So(err, ShouldBeNil)
-			So(run.StartRun(ctx, runID), ShouldBeNil)
+			So(run.Start(ctx, runID), ShouldBeNil)
 			So(func() { ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run")) }, ShouldPanic)
 		})
 
@@ -90,7 +90,7 @@ func TestStartRun(t *testing.T) {
 					EVersion: initialEversion,
 				})
 				So(err, ShouldBeNil)
-				So(run.StartRun(ctx, runID), ShouldBeNil)
+				So(run.Start(ctx, runID), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 
 				r := run.Run{ID: runID}
@@ -126,7 +126,7 @@ func TestCancelRun(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				ct.Clock.Add(1 * time.Minute)
-				So(run.CancelRun(ctx, runID), ShouldBeNil)
+				So(run.Cancel(ctx, runID), ShouldBeNil)
 				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 				assertEventBoxSize(ctx, runKey, 0)
@@ -155,7 +155,7 @@ func TestCancelRun(t *testing.T) {
 				EVersion: initialEversion,
 			})
 			So(err, ShouldBeNil)
-			So(run.CancelRun(ctx, runID), ShouldBeNil)
+			So(run.Cancel(ctx, runID), ShouldBeNil)
 			So(func() { ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run")) }, ShouldPanic)
 		})
 
@@ -173,7 +173,7 @@ func TestCancelRun(t *testing.T) {
 					EVersion: initialEversion,
 				})
 				So(err, ShouldBeNil)
-				So(run.CancelRun(ctx, runID), ShouldBeNil)
+				So(run.Cancel(ctx, runID), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 
 				r := run.Run{ID: runID}
@@ -190,8 +190,8 @@ func TestCancelRun(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 
-			So(run.StartRun(ctx, runID), ShouldBeNil)
-			So(run.CancelRun(ctx, runID), ShouldBeNil)
+			So(run.Start(ctx, runID), ShouldBeNil)
+			So(run.Cancel(ctx, runID), ShouldBeNil)
 			assertEventBoxSize(ctx, runKey, 2)
 
 			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
