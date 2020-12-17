@@ -25,9 +25,53 @@ import (
 
 // Result is the result of evaluation.
 type Result struct {
+	Thresholds ThresholdGrid
+
+	// TODO(nodir): refactor these fields by moving their data into this struct
+	// directly or into Thresholds.
+
 	Safety       Safety
 	Efficiency   Efficiency
 	TotalRecords int
+}
+
+// ThresholdGrid is a 100x100 grid where each cell represents a distance/rank
+// threshold. All cells in the same row have the same distance value, and
+// all cells in the same column have the same rank value.
+//
+// The distance value of the row R is the minimal distance threshold required to
+// achieve ChangeRecall score of (R+1)/100.0 on the training set, while ignoring
+// rank threshold.
+// For example, ThresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
+// on the training set.
+//
+// Similarly, rank value of the column C is the minimal rank threshold required
+// to achieve ChangeRecall score of (C+1)/100.0 on to the training set,
+// while ignoring distance threshold.
+//
+// The distances and ranks are computed independently of each other and then
+// combined into this grid.
+type ThresholdGrid [100][100]Threshold
+
+// init clears the grid and initializes the rows/columns with distance/rank
+// percentiles in afs.
+func (g *ThresholdGrid) init(afs AffectednessSlice) (distancePercentiles []float64, rankPercentiles []int) {
+	*g = ThresholdGrid{}
+	distancePercentiles, rankPercentiles = afs.quantiles(100)
+	for row, distance := range distancePercentiles {
+		for col, rank := range rankPercentiles {
+			g[row][col].Value = Affectedness{Distance: distance, Rank: rank}
+		}
+	}
+	return
+}
+
+// Threshold is distance and rank thresholds, as well as their results on the
+// eval set.
+type Threshold struct {
+	Value Affectedness
+
+	// TODO(nodir): move safety and efficiency data here.
 }
 
 // Safety is how safe the candidate strategy is.

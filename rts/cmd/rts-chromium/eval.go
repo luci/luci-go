@@ -167,7 +167,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 				return false
 			}
 		}
-		return sp.Distance <= r.ev.MaxDistance || rank <= r.ev.MaxRank
+		return true
 	})
 
 	for i, n := range testNodes {

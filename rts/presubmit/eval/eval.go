@@ -48,24 +48,27 @@ type Eval struct {
 	// If a test's distance is <= MaxDistance, then it is executed, regardless of
 	// MaxRank.
 	//
-	// TODO(nodir): automatically compute the optimal MaxDistance based on
-	// MinChangeRecall and MinTestRecall.
+	// TODO(nodir): delete this.
 	MaxDistance float64
 
 	// MaxRank is a test rank threshold: if a test's rank <= MaxRank, then it is
 	// executed, regardless of MaxDistance.
 	// Note that multiple tests may have the same rank.
 	//
-	// TODO(nodir): automatically compute the optimal MaxRank based on
-	// MinChangeRecall and MinTestRecall.
+	// TODO(nodir): delete this.
 	MaxRank int
 
 	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
 	Concurrency int
 
-	// History are the historical records to use for evaluation.
-	History *history.Player
+	// TrainingSet are the change rejections to use for computing candidate
+	// thresholds.
+	TrainingSet *history.Player
+
+	// EvalSet is the historical records to use for safety and efficiency
+	// evaluation.
+	EvalSet *history.Player
 
 	// How often to report progress. Defaults to 5s.
 	ProgressReportInterval time.Duration
@@ -89,7 +92,11 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 		Ignored if 0
 	`))
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
-	fs.Var(&historyFileInputFlag{ptr: &e.History}, "history", "Path to the history file")
+	fs.Var(&historyFileInputFlag{ptr: &e.TrainingSet}, "training-set", text.Doc(`
+		Path to the history file for training.
+		The distance data is ignored.
+	`))
+	fs.Var(&historyFileInputFlag{ptr: &e.EvalSet}, "eval-set", "Path to the history file for evaluation")
 	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
 	fs.BoolVar(&e.LogLostRejections, "log-lost-rejections", false, "Log every lost rejection, to diagnose the selection strategy")
 	return nil
@@ -97,8 +104,11 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 
 // ValidateFlags validates values of flags registered using RegisterFlags.
 func (e *Eval) ValidateFlags() error {
-	if e.History == nil {
-		return errors.New("-history is required")
+	if e.TrainingSet == nil {
+		return errors.New("-training-set is required")
+	}
+	if e.EvalSet == nil {
+		return errors.New("-eval-set is required")
 	}
 	return nil
 }
@@ -128,6 +138,12 @@ type evalRun struct {
 func (r *evalRun) run(ctx context.Context) error {
 	// Init internal state.
 	r.res = Result{}
+
+	logging.Infof(ctx, "training...")
+	if err := r.train(ctx); err != nil {
+		return errors.Annotate(err, "threshold computation failed").Err()
+	}
+
 	r.mostRecentProgressReport = time.Time{}
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -147,12 +163,47 @@ func (r *evalRun) run(ctx context.Context) error {
 
 	// Play back the history.
 	eg.Go(func() error {
-		err := r.History.Playback(ctx)
-		r.res.TotalRecords = r.History.TotalRecords()
+		err := r.EvalSet.Playback(ctx)
+		r.res.TotalRecords = r.EvalSet.TotalRecords()
 		return errors.Annotate(err, "failed to playback history").Err()
 	})
 
 	return eg.Wait()
+}
+
+// train computes r.res.Thresholds.
+func (r *evalRun) train(ctx context.Context) error {
+	var affectedness AffectednessSlice
+	var mu sync.Mutex
+
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+	eg.Go(func() error {
+		return r.parallelize(ctx, func(ctx context.Context) error {
+			return analyzeRejections(ctx, r.TrainingSet.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
+				mu.Lock()
+				affectedness = append(affectedness, rej.Closest)
+				mu.Unlock()
+				return nil
+			})
+		})
+	})
+
+	eg.Go(func() error {
+		err := r.TrainingSet.PlaybackIgnoreDurations(ctx)
+		return errors.Annotate(err, "failed to playback history").Err()
+	})
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	// Populate the grid.
+	// Compute distance/rank thresholds by taking distance/rank percentiles.
+	distancePercentiles, rankPercentiles := r.res.Thresholds.init(affectedness)
+	logging.Infof(ctx, "Distance percentiles: %v", distancePercentiles)
+	logging.Infof(ctx, "Rank percentiles: %v", rankPercentiles)
+	return nil
 }
 
 // evaluateSafety reads rejections from r.rejectionC,
@@ -164,7 +215,7 @@ func (r *evalRun) evaluateSafety(ctx context.Context) error {
 
 		buf := &bytes.Buffer{}
 		p := &rejectionPrinter{printer: newPrinter(buf)}
-		return analyzeRejections(ctx, r.History.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
+		return analyzeRejections(ctx, r.EvalSet.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
 			// The rejection is preserved if at least one test ran.
 			// Conclude that based on the closest test.
 			preservedRejection := r.shouldRun(rej.Closest)
@@ -203,7 +254,7 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 	return r.parallelize(ctx, func(ctx context.Context) error {
 		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 		out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
-		for td := range r.History.DurationC {
+		for td := range r.EvalSet.DurationC {
 			// Invoke the strategy.
 			in.ChangedFiles = in.ChangedFiles[:0]
 			in.ensureChangedFilesInclude(td.Patchsets...)
