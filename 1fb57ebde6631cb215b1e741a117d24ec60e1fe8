@@ -107,6 +107,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "619162c1_19f68790",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T03:05:04Z",
+      "side": 1,
+      "message": "I don\u0027t think we need to do the redirection now. I think it\u0027s unlikely that a user sets the test result tab as the default when they works with builds which don\u0027t have the tab.\n\nWhat do you mean by \"Eventually, we will show the test results tab unconditionally anyway\"? Am I missing anything here?",
+      "parentUuid": "d857783a_ec3344f8",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3516add7_0e6f1a00",
         "filename": "milo/frontend/resultui/src/components/page_layout.ts",
         "patchSetId": 6
