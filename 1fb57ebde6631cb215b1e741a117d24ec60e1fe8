@@ -67,6 +67,121 @@
       "message": "\"Default build page tab\" is in lower case, but \"Test Results Integration Hints\" is in camel case. We should make them consistent.",
       "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff4d0252_28c385ce",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-17T01:04:10Z",
+      "side": 1,
+      "message": "Is there a way to add padding to the dropdown arrow icon? It\u0027s right up against the edge of the container.",
+      "range": {
+        "startLine": 109,
+        "startChar": 9,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5529f4c4_b13122ef",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-17T01:04:10Z",
+      "side": 1,
+      "message": "Suggestion: can we have this select on the same line as the label? Each item is short so it looks odd having it be width 100%.",
+      "range": {
+        "startLine": 109,
+        "startChar": 8,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f521fe2_ea8bc929",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-17T01:04:10Z",
+      "side": 1,
+      "message": "I suspect people won\u0027t understand what this means. Is it worth including at all? Why would anyone want to turn it back on (apart from us for testing)?",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 84
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07dac172_27269966",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-17T01:04:10Z",
+      "side": 1,
+      "message": "Add title\u003d\"Settings\" here",
+      "range": {
+        "startLine": 144,
+        "startChar": 10,
+        "endLine": 144,
+        "endChar": 34
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6346f8bc_74ff4f8f",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-12-17T01:04:10Z",
+      "side": 1,
+      "message": "Suggest also adding margin-top: 2px for slightly nicer alignment",
+      "range": {
+        "startLine": 205,
+        "startChar": 6,
+        "endLine": 205,
+        "endChar": 25
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
