@@ -123,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e242207_774f209b",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-17T01:14:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f5231b07_4a5cd5d2",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "42d109d5_5a53a724",
@@ -231,6 +255,30 @@
       "writtenOn": "2020-12-17T01:06:06Z",
       "side": 1,
       "message": "\u003e CREATED|STARTED \n\nthat\u0027s clever 👍\n\n\u003e But this doesn\u0027t work for protoJSON at all\n\nOh, sadly, true. Damn, I really like the scheme! There is some mathematical beauty in it. \nMaybe we can still keep it, since it doesn\u0027t hurt? Yiwei, your call.\n  If we do keep it, i propose to reserve 8 bits for non-final statuses,\n  s.t. ENDED_MASK is 256 \u0026\u0026 fix non-final statuses to use different bits, too.",
+      "parentUuid": "76fe793e_db64a76e",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f00c5fcc_696779c7",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-17T01:14:52Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t remember why status tags are powers of two. This was designed in early 2018 (go/buildbucket-api-v2).\n\u003e I think I was erring on the side of flexibility if it is not expensive (cheap in this case).\n\u003e Powers of two allow combining statuses, e.g. \"search for pending OR started builds\" could be expressed as CREATED|STARTED, as opposed to `repeated Status`. But this doesn\u0027t work for protoJSON at all, so it is not a good reason.\n\nAh! Thanks for explaining. The ability to declare pending or started as CREATED|STARTED does sounds appealing to use this approach at the first place.\n\n\u003e Andrii\u0027s idea of tag segments sgtm\n\nsgtm as well. changed in the latest PS.",
       "parentUuid": "76fe793e_db64a76e",
       "range": {
         "startLine": 43,

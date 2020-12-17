@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b946a18_92f1d2da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-17T01:14:52Z",
+      "side": 1,
+      "message": "PTAL again. ",
+      "revId": "005d74873d68b64617db287a3ef929d0f9cddd64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f3c5c1a_9d861eb6",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-17T01:14:52Z",
+      "side": 1,
+      "message": "So I didn\u0027t add a separate status(`ENDED_THRESHOLD`) for that as I don\u0027t see how it will be used in code.\n\nLet me know if there\u0027s anything I\u0027m missing.",
+      "range": {
+        "startLine": 40,
+        "startChar": 33,
+        "endLine": 40,
+        "endChar": 71
+      },
+      "revId": "005d74873d68b64617db287a3ef929d0f9cddd64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
