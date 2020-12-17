@@ -15,7 +15,9 @@
 // Package build implements a minimal, safe, easy-to-use, hard-to-use-wrong,
 // 'luciexe binary' implementation in Go.
 //
-// In particular:
+// See `Start` for the entrypoint to this API.
+//
+// Features:
 //   * Can be used in library code which is used in both luciexe and non-luciexe
 //     contexts. You won't need "two versions" of your library just to give it
 //     the appearance of steps in a LUCI build context, or to have it read or
@@ -37,5 +39,28 @@
 //     tests (you can observe all outputs from this API without any live
 //     services or heavy mocks).
 //
-// See `Start` for the entrypoint to this API.
+// No-Op Mode
+//
+// When no Build is in use in the context, the library behaves in 'no-op' mode.
+// This should enable libraries to add `build` features which gracefully degrade
+// into pure terminal output via logging.
+//
+//   * MakePropertyReader functions will return empty messages. Well-behaved
+//     libraries should handle having no configuration in the context if this is
+//     possible.
+//   * There will be no *State object, because there is no Start call.
+//   * Step/ScheduleStep will return a *StepState which is detached. Step
+//     namespacing will still work in context (but name deduplication will not).
+//   * The result of State.Modify/StepState.Modify (and Set) calls will be
+//     logged at DEBUG.
+//   * Step scheduled/started/ended messages will be logged at INFO.
+//     Ended log messages will include the final summary markdown as well.
+//   * Text logs will be logged line-by-line at INFO with fields set indicating
+//     which step and log they were emitted from. Debug text logs (those whose
+//     log names start with "$") will be logged at DEBUG level.
+//   * Non-text logs will be dropped with a WARNING indicating that they're
+//     being dropped.
+//   * MakePropertyReader property readers will return empty message objects.
+//   * MakePropertyModifier property manipulators will log their emitted
+//     properties at INFO.
 package build
