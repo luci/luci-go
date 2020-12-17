@@ -54,6 +54,16 @@ func NewPlayer(r *Reader) *Player {
 // p.DurationC.
 // Before exiting, closes RejectionC, DurationC and the underlying reader.
 func (p *Player) Playback(ctx context.Context) error {
+	return p.playback(ctx, true)
+}
+
+// PlaybackIgnoreDurations is like Playback, except it ignores all duration
+// data.
+func (p *Player) PlaybackIgnoreDurations(ctx context.Context) error {
+	return p.playback(ctx, false)
+}
+
+func (p *Player) playback(ctx context.Context, withDurations bool) error {
 	defer func() {
 		close(p.RejectionC)
 		close(p.DurationC)
@@ -88,10 +98,12 @@ func (p *Player) Playback(ctx context.Context) error {
 			}
 
 		case *evalpb.Record_TestDuration:
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case p.DurationC <- data.TestDuration:
+			if withDurations {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case p.DurationC <- data.TestDuration:
+				}
 			}
 
 		default:
