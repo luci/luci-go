@@ -220,6 +220,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f2d17115_10fd8d8e",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T01:06:06Z",
+      "side": 1,
+      "message": "\u003e CREATED|STARTED \n\nthat\u0027s clever 👍\n\n\u003e But this doesn\u0027t work for protoJSON at all\n\nOh, sadly, true. Damn, I really like the scheme! There is some mathematical beauty in it. \nMaybe we can still keep it, since it doesn\u0027t hurt? Yiwei, your call.\n  If we do keep it, i propose to reserve 8 bits for non-final statuses,\n  s.t. ENDED_MASK is 256 \u0026\u0026 fix non-final statuses to use different bits, too.",
+      "parentUuid": "76fe793e_db64a76e",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "a54e73948727d39622fec1383d6a38cda57e6bed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ad3073fa_9df964ca",
         "filename": "cv/internal/run/storage.proto",
         "patchSetId": 5
