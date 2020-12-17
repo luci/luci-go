@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54baa4d2_bff451b7",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T01:18:57Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f04944bf_c737fe92",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 38
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0b74f5e_e389a316",
@@ -137,6 +161,53 @@
         "startChar": 0,
         "endLine": 198,
         "endChar": 33
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f5831dc_9b25f2cb",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T01:18:57Z",
+      "side": 1,
+      "message": "Good thinking, I appreciate. I agree with problems of heavy operation, though we are optimizing for a rare case.\n\nHowever, it\u0027s a good point that iff for some reason RunManager got stuck and got cancelled, we\u0027d actually not want it to start at all. So, SGTM!",
+      "parentUuid": "7cfff0fc_eb6fdfc7",
+      "range": {
+        "startLine": 193,
+        "startChar": 0,
+        "endLine": 198,
+        "endChar": 33
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15af60a4_ff54adfb",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T01:18:57Z",
+      "side": 1,
+      "message": "*wdyt* about additional test that asserts \n  start()\n  poke()\n  cancel()\n  poke()\nassert state (not status) is same {start,cancel} combined above?\n\nI like this idea in general, but I am wondering if we\u0027d regret the test afterwards once Start has extra side effects that affect the final assertion",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 3
       },
       "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
