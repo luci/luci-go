@@ -39,6 +39,30 @@
       },
       "revId": "005d74873d68b64617db287a3ef929d0f9cddd64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af357620_7529ec0d",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T01:47:10Z",
+      "side": 1,
+      "message": "I meant to keep it and not _MASK, but _MASK is fine.",
+      "parentUuid": "3f3c5c1a_9d861eb6",
+      "range": {
+        "startLine": 40,
+        "startChar": 33,
+        "endLine": 40,
+        "endChar": 71
+      },
+      "revId": "005d74873d68b64617db287a3ef929d0f9cddd64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
