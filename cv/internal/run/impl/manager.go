@@ -187,5 +187,15 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 }
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, s *state) (ret []eventbox.Transition, err error) {
-	panic("not implemented")
+	switch {
+	case len(tr.starts) > 0:
+		t := eventbox.Transition{Events: tr.starts}
+		t.SideEffectFn, s, err = start(ctx, rm.runID, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+	return
 }
