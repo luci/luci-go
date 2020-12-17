@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "ff53e67ab6e8b832d1d98e635de4cbcbfdca9e83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b988af3_7612c362",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-17T00:08:31Z",
+      "side": 1,
+      "message": "Very clever. Here\u0027s my tldr: you look at each historically rejected CL, noting the minimum thresholds needed to catch it. Then, you sort these thresholds and voila you can look up the thresholds needed to achieve any % change recall.",
+      "revId": "ff53e67ab6e8b832d1d98e635de4cbcbfdca9e83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
