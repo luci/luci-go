@@ -125,6 +125,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "082468aa_505e50b8",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T03:30:21Z",
+      "side": 1,
+      "message": "\u003e Eventually, we will show the test results tab unconditionally anyway\"? Am I missing anything here\n\nThe reason we hide the test results tab in some builds is because foundation team isn\u0027t ready for mass resultdb integration yet. Once that is changed, we can show the results tab unconditionally.",
+      "parentUuid": "619162c1_19f68790",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3516add7_0e6f1a00",
         "filename": "milo/frontend/resultui/src/components/page_layout.ts",
         "patchSetId": 6
