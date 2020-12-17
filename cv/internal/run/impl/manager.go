@@ -188,6 +188,21 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, s *state) (ret []eventbox.Transition, err error) {
 	switch {
+	case len(tr.cancels) > 0:
+		t := eventbox.Transition{Events: tr.cancels}
+		// Consume all the start events here as well because it is possible
+		// that Run Manager receives start and cancel events at the same time.
+		// For example, user requests to start a Run and immediately cancels
+		// it. But the duration is long enough for Project Manager to create
+		// this Run in CV. In that case, Run Manager should just move this Run
+		// to cancelled state directly.
+		t.Events = append(t.Events, tr.starts...)
+		t.SideEffectFn, s, err = cancel(ctx, rm.runID, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
 	case len(tr.starts) > 0:
 		t := eventbox.Transition{Events: tr.starts}
 		t.SideEffectFn, s, err = start(ctx, rm.runID, s)
