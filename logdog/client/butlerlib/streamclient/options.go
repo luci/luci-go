@@ -33,6 +33,17 @@ type options struct {
 // initial stream setup.
 type Option func(*options)
 
+// RenderOptions is a helper function for tests and low-level code.
+//
+// Returns the cumulative effect of a list of Options.
+func RenderOptions(opts ...Option) (flags streamproto.Flags, forProcess bool) {
+	acc := options{}
+	for _, opt := range opts {
+		opt(&acc)
+	}
+	return acc.desc, acc.forProcess
+}
+
 // WithContentType returns an Option to set the content type for a new stream.
 //
 // The content type can be read by LogDog clients and may be used to indicate
@@ -90,8 +101,8 @@ func WithTagMap(tags map[string]string) Option {
 	}
 }
 
-// ForProcess opens this stream optimized for subprocess IO (i.e. to attach to
-// "os/exec".Cmd.Std{out,err}).
+// ForProcess is an Option which opens this stream optimized for subprocess IO
+// (i.e. to attach to "os/exec".Cmd.Std{out,err}).
 //
 // Accidentally passing a non-`ForProcess` stream to a subprocess will result in
 // an extra pipe, and an extra goroutine with a copy loop in the parent process.
