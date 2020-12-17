@@ -101,10 +101,8 @@ func New(path string, namespace types.StreamName) (*Client, error) {
 }
 
 func (c *Client) mkOptions(ctx context.Context, name types.StreamName, opts []Option) (ret options, err error) {
+	ret.desc, ret.forProcess = RenderOptions(opts...)
 	ret.desc.Name = streamproto.StreamNameFlag(c.ns.Concat(name))
-	for _, o := range opts {
-		o(&ret)
-	}
 	if time.Time(ret.desc.Timestamp).IsZero() {
 		ret.desc.Timestamp = clockflag.Time(clock.Now(ctx))
 	}
