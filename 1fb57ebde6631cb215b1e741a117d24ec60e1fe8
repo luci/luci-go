@@ -16,6 +16,57 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/9483/steps?succeeded\u003dfalse\u0026debug\u003dfalse",
       "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9f04116_4f73e15f",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T01:03:30Z",
+      "side": 1,
+      "message": "Nits: Perhaps we should maintain the order of the tab as it appear in the page: Overview - Test results - Steps - Related Builds - Timeline - Blamelist",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3516add7_0e6f1a00",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T01:03:30Z",
+      "side": 1,
+      "message": "As we are adding it in page_layout, will this settings appear in other pages as well (e.g. invocation, artifact...). Is it your intentional that we allow that?",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f7e5565_60dc5913",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T01:03:30Z",
+      "side": 1,
+      "message": "\"Default build page tab\" is in lower case, but \"Test Results Integration Hints\" is in camel case. We should make them consistent.",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
