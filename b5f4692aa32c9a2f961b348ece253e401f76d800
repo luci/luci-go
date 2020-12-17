@@ -235,6 +235,30 @@
       },
       "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0458ed72_179d5e77",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-17T20:45:48Z",
+      "side": 1,
+      "message": "Oh, yeah, cvtesting/util.go has automatic moving of time whenever something is waiting.",
+      "parentUuid": "9b2f40ca_1b94ac08",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 3
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
