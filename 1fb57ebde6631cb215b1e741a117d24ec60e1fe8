@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9452a4c4_1fd0d992",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9f04116_4f73e15f",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "efaa5782_a9c4a6bd",
@@ -65,6 +83,24 @@
       "writtenOn": "2020-12-17T01:12:26Z",
       "side": 1,
       "message": "In the case that users set Test Result as default, but for some builds, we don\u0027t have this tab, then what will happen?",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d857783a_ec3344f8",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "The user will still see the test result tab. But there won\u0027t be any test results.\nWe can redirect them to the overview tab, but\n1. We can only trigger a redirection after the build page RPC response come back.\n2. Eventually, we will show the test results tab unconditionally anyway.\nSo I reckon just showing the test results tab is good enough.",
+      "parentUuid": "efaa5782_a9c4a6bd",
       "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -88,6 +124,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "69243cf1_4afbb050",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Moving the settings modal to the build page and added a big logic to control the rendering of the settings icon.",
+      "parentUuid": "3516add7_0e6f1a00",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5f7e5565_60dc5913",
         "filename": "milo/frontend/resultui/src/components/page_layout.ts",
         "patchSetId": 6
@@ -99,6 +153,24 @@
       "writtenOn": "2020-12-17T01:03:30Z",
       "side": 1,
       "message": "\"Default build page tab\" is in lower case, but \"Test Results Integration Hints\" is in camel case. We should make them consistent.",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ab89c3c_e5bd7a91",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Removed test results integration hints.",
+      "parentUuid": "5f7e5565_60dc5913",
       "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -149,6 +221,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "26381b20_ad29a23c",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5529f4c4_b13122ef",
+      "range": {
+        "startLine": 109,
+        "startChar": 8,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac0931e9_a10665bd",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "It seems like we need to replace the arrow with a background img if we want to add padding.\nThat\u0027s not really worth doing imo.",
+      "parentUuid": "ff4d0252_28c385ce",
+      "range": {
+        "startLine": 109,
+        "startChar": 9,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5f521fe2_ea8bc929",
@@ -162,6 +282,30 @@
       "writtenOn": "2020-12-17T01:04:10Z",
       "side": 1,
       "message": "I suspect people won\u0027t understand what this means. Is it worth including at all? Why would anyone want to turn it back on (apart from us for testing)?",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 84
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ae7cc09_e219366f",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "5f521fe2_ea8bc929",
       "range": {
         "startLine": 120,
         "startChar": 8,
@@ -195,6 +339,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b605fe1_328b4fca",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07dac172_27269966",
+      "range": {
+        "startLine": 144,
+        "startChar": 10,
+        "endLine": 144,
+        "endChar": 34
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6346f8bc_74ff4f8f",
@@ -208,6 +376,30 @@
       "writtenOn": "2020-12-17T01:04:10Z",
       "side": 1,
       "message": "Suggest also adding margin-top: 2px for slightly nicer alignment",
+      "range": {
+        "startLine": 205,
+        "startChar": 6,
+        "endLine": 205,
+        "endChar": 25
+      },
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "291a0c75_9a993506",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-12-17T02:45:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6346f8bc_74ff4f8f",
       "range": {
         "startLine": 205,
         "startChar": 6,
