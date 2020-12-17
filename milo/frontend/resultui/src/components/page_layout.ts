@@ -13,8 +13,11 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
+import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
 
 import '../components/signin';
 import { UserUpdateEvent } from '../components/signin';
@@ -38,8 +41,8 @@ Please enter a description of the problem, with repro steps if applicable.
 }
 
 /**
- * Renders page header, including a sign-in widget and a feedback button, at the
- * top of the child nodes.
+ * Renders page header, including a sign-in widget, a settings button, and a
+ * feedback button, at the top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
@@ -54,6 +57,16 @@ export class PageLayoutElement extends MobxLitElement {
     gAuthPromise.then((gAuth) => this.appState.gAuth = gAuth);
   }
 
+  private disposer = () => {};
+  connectedCallback() {
+    super.connectedCallback();
+
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.disposer();
+  }
+
   protected render() {
     return html`
       <div id="container">
@@ -63,13 +76,18 @@ export class PageLayoutElement extends MobxLitElement {
             <span id="headline">LUCI</span>
           </a>
         </div>
-        <div
+        <mwc-icon
           id="feedback"
           title="Send Feedback"
+          class="interactive-icon"
           @click=${() => window.open(genFeedbackUrl())}
-        >
-          <mwc-icon>feedback</mwc-icon>
-        </div>
+        >feedback</mwc-icon>
+        <mwc-icon
+          class="interactive-icon"
+          title="Settings"
+          @click=${() => this.appState.showSettingsDialog = true}
+          style=${styleMap({display: this.appState.hasSettingsDialog ? '' : 'none'})}
+        >settings</mwc-icon>
         <div id="signin">
           ${this.appState.gAuth ? html`
           <milo-signin
@@ -123,23 +141,19 @@ export class PageLayoutElement extends MobxLitElement {
       margin-right: 14px;
       flex-shrink: 0;
     }
-    #feedback {
+    .interactive-icon {
       cursor: pointer;
       height: 32px;
       width: 32px;
       --mdc-icon-size: 28px;
+      margin-top: 2px;
       margin-right: 14px;
       position: relative;
       color: black;
-      opacity: 0.4;
-    }
-    #feedback>mwc-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    #feedback:hover {
       opacity: 0.6;
+    }
+    .interactive-icon:hover {
+      opacity: 0.8;
     }
   `;
 }
