@@ -50,9 +50,10 @@ func send(ctx context.Context, runID ID, evt *internal.Event) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	to := datastore.MakeKey(ctx, RunKind, runID)
+	rid := string(runID)
+	to := datastore.MakeKey(ctx, RunKind, rid)
 	if err := eventbox.Emit(ctx, value, to); err != nil {
 		return err
 	}
-	return internal.Dispatch(ctx, string(runID), time.Time{} /*asap*/)
+	return internal.Dispatch(ctx, rid, time.Time{} /*asap*/)
 }
