@@ -13,13 +13,17 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
+import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
+import merge from 'lodash-es/merge';
+import { observable, reaction } from 'mobx';
 
 import '../components/signin';
 import { UserUpdateEvent } from '../components/signin';
 import { AppState, provideAppState } from '../context/app_state/app_state';
-import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { DEFAULT_USER_CONFIGS, provideConfigsStore, UserConfigs, UserConfigsStore } from '../context/app_state/user_configs';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {
@@ -37,9 +41,20 @@ Please enter a description of the problem, with repro steps if applicable.
   return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
 }
 
+// An array of [buildTabName, buildTabLabel] tuples.
+// Use an array of tuples instead of an Object to ensure order.
+const TAB_NAME_LABEL_TUPLES = Object.freeze([
+  Object.freeze(['build-overview', 'Overview']),
+  Object.freeze(['build-test-results', 'Test Results']),
+  Object.freeze(['build-steps', 'Steps & Logs']),
+  Object.freeze(['build-related-builds', 'Related Builds']),
+  Object.freeze(['build-timeline', 'Timeline']),
+  Object.freeze(['build-blamelist', 'Blamelist']),
+]);
+
 /**
- * Renders page header, including a sign-in widget and a feedback button, at the
- * top of the child nodes.
+ * Renders page header, including a sign-in widget, a settings button, and a
+ * feedback button, at the top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
@@ -49,13 +64,62 @@ export class PageLayoutElement extends MobxLitElement {
   readonly appState = new AppState();
   readonly configsStore = new UserConfigsStore();
 
+  @observable.ref private showSettingsDialog = false;
+
+  @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
+
   constructor() {
     super();
     gAuthPromise.then((gAuth) => this.appState.gAuth = gAuth);
   }
 
+  private disposer = () => {};
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Sync uncommitted configs with committed configs.
+    this.disposer = reaction(
+      () => merge({}, this.configsStore.userConfigs),
+      (committedConfig) => merge(this.uncommittedConfigs, committedConfig),
+      {fireImmediately: true},
+    );
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.disposer();
+  }
+
   protected render() {
     return html`
+      <mwc-dialog
+        id="settings-dialog"
+        heading="Settings"
+        ?open=${this.showSettingsDialog}
+        @closed=${(event: CustomEvent<{action: string}>) => {
+          if (event.detail.action === 'save') {
+            merge(this.configsStore.userConfigs, this.uncommittedConfigs);
+            this.configsStore.save();
+          }
+          // Reset uncommitted configs.
+          merge(this.uncommittedConfigs, this.configsStore.userConfigs);
+          this.showSettingsDialog = false;
+        }}
+      >
+        <label for="default-build-page-tab">Default build page tab:</label>
+        <select
+          id="default-build-page-tab"
+          @change=${(e: InputEvent) => this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value}
+        >
+          ${TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => html`
+          <option
+            value=${tabName}
+            ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}
+          >${label}</option>
+          `)}
+        </select>
+        <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
+        <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
+      </mwc-dialog>
       <div id="container">
         <div id="title-container">
           <a href="/" id="title-link">
@@ -63,13 +127,17 @@ export class PageLayoutElement extends MobxLitElement {
             <span id="headline">LUCI</span>
           </a>
         </div>
-        <div
+        <mwc-icon
           id="feedback"
           title="Send Feedback"
+          class="interactive-icon"
           @click=${() => window.open(genFeedbackUrl())}
-        >
-          <mwc-icon>feedback</mwc-icon>
-        </div>
+        >feedback</mwc-icon>
+        <mwc-icon
+          class="interactive-icon"
+          title="Settings"
+          @click=${() => this.showSettingsDialog = true}
+        >settings</mwc-icon>
         <div id="signin">
           ${this.appState.gAuth ? html`
           <milo-signin
@@ -123,23 +191,32 @@ export class PageLayoutElement extends MobxLitElement {
       margin-right: 14px;
       flex-shrink: 0;
     }
-    #feedback {
+    .interactive-icon {
       cursor: pointer;
       height: 32px;
       width: 32px;
       --mdc-icon-size: 28px;
+      margin-top: 2px;
       margin-right: 14px;
       position: relative;
       color: black;
-      opacity: 0.4;
-    }
-    #feedback>mwc-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    #feedback:hover {
       opacity: 0.6;
+    }
+    .interactive-icon:hover {
+      opacity: 0.8;
+    }
+    #settings-dialog {
+      --mdc-dialog-min-width: 600px;
+    }
+    select {
+      display: inline-block;
+      padding: .375rem .75rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      background-clip: padding-box;
+      border: 1px solid var(--divider-color);
+      border-radius: .25rem;
+      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
     }
   `;
 }
