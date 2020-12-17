@@ -30,6 +30,11 @@ export class AppState {
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
+  // Indicates whether the current page has a settings dialog.
+  // This should be set by the current page.
+  @observable.ref hasSettingsDialog = false;
+  @observable.ref showSettingsDialog = false;
+
   @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;
 
   @computed
