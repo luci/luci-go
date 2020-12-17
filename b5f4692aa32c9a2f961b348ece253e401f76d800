@@ -211,6 +211,30 @@
       },
       "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b2f40ca_1b94ac08",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-17T04:56:14Z",
+      "side": 1,
+      "message": "I like this idea, but turns out it\u0027s pretty tricky to test it right. mainly because the time actually moves (I think there\u0027s a timer used somewhere in code \nand our testclock moves it but I couldn\u0027t find it). Therefore, I end up only comparing status which is not adding much value. I add a TODO so that I can revisit it in the future to see if there\u0027s a way to test.",
+      "parentUuid": "15af60a4_ff54adfb",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 3
+      },
+      "revId": "b5f4692aa32c9a2f961b348ece253e401f76d800",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
