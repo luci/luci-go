@@ -15,15 +15,15 @@
 package eval
 
 import (
-	"bytes"
 	"context"
 	"flag"
+	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -32,31 +32,12 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// defaults
-const (
-	defaultConcurrency = 100
-
-	defaultProgressReportInterval = 5 * time.Second
-)
+const defaultConcurrency = 100
 
 // Eval estimates safety and efficiency of a given selection strategy.
 type Eval struct {
 	// The selection strategy to evaluate.
 	Strategy Strategy
-
-	// MaxDistance is the maximum distance to run a test.
-	// If a test's distance is <= MaxDistance, then it is executed, regardless of
-	// MaxRank.
-	//
-	// TODO(nodir): delete this.
-	MaxDistance float64
-
-	// MaxRank is a test rank threshold: if a test's rank <= MaxRank, then it is
-	// executed, regardless of MaxDistance.
-	// Note that multiple tests may have the same rank.
-	//
-	// TODO(nodir): delete this.
-	MaxRank int
 
 	// The number of goroutines to spawn for each metric.
 	// If <=0, defaults to 100.
@@ -70,35 +51,31 @@ type Eval struct {
 	// evaluation.
 	EvalSet *history.Player
 
-	// How often to report progress. Defaults to 5s.
-	ProgressReportInterval time.Duration
-
-	// If true, log lost rejections.
-	// See also ChangeRecall.LostRejections.
-	LogLostRejections bool
+	// LogFurthest instructs to log rejections where the selection strategy
+	// concluded that the failed tests have great distance.
+	// LogFurthest is the number of rejections to print, ordered by descending
+	// distance.
+	// This can help diagnosing the selection strategy.
+	//
+	// TODO(nodir): implement this.
+	LogFurthest int
 }
 
 // RegisterFlags registers flags for the Eval fields.
 func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	// The default value of 0.5 makes sense for those selection strategies that
-	// use distance between 0.0 and 1.0.
-	fs.Float64Var(&e.MaxDistance, "max-distance", 0.5, text.Doc(`
-		Max distance from tests to the changed files.
-		If a test is closer than or equal -max-distance, then it is selected regardless of -max-rank.
-	`))
-	fs.IntVar(&e.MaxRank, "max-rank", 0, text.Doc(`
-		Max rank for tests to run.
-		If a test has a rank less or equal -max-rank, then it is selected regardless of -max-distance.
-		Ignored if 0
-	`))
 	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
 	fs.Var(&historyFileInputFlag{ptr: &e.TrainingSet}, "training-set", text.Doc(`
 		Path to the history file for training.
 		The distance data is ignored.
 	`))
 	fs.Var(&historyFileInputFlag{ptr: &e.EvalSet}, "eval-set", "Path to the history file for evaluation")
-	fs.DurationVar(&e.ProgressReportInterval, "progress-report-interval", defaultProgressReportInterval, "How often to report progress")
-	fs.BoolVar(&e.LogLostRejections, "log-lost-rejections", false, "Log every lost rejection, to diagnose the selection strategy")
+	fs.IntVar(&e.LogFurthest, "log-furthest", 0, text.Doc(`
+		Instructs to log rejections where the selection strategy concluded that the
+		failed tests have great distance.
+		The flag value is the number of rejections to print, ordered by descending
+		distance.
+		This can help diagnosing the selection strategy.
+	`))
 	return nil
 }
 
@@ -129,10 +106,7 @@ type evalRun struct {
 	Eval
 
 	// internal mutable state
-	res                      Result
-	buf                      bytes.Buffer
-	mostRecentProgressReport time.Time
-	mu                       sync.Mutex
+	res Result
 }
 
 func (r *evalRun) run(ctx context.Context) error {
@@ -144,31 +118,8 @@ func (r *evalRun) run(ctx context.Context) error {
 		return errors.Annotate(err, "threshold computation failed").Err()
 	}
 
-	r.mostRecentProgressReport = time.Time{}
-
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-
-	// Analyze safety.
-	eg.Go(func() error {
-		err := r.evaluateSafety(ctx)
-		return errors.Annotate(err, "failed to evaluate safety").Err()
-	})
-
-	// Analyze efficiency.
-	eg.Go(func() error {
-		err := r.evaluateEfficiency(ctx)
-		return errors.Annotate(err, "failed to evaluate efficiency").Err()
-	})
-
-	// Play back the history.
-	eg.Go(func() error {
-		err := r.EvalSet.Playback(ctx)
-		r.res.TotalRecords = r.EvalSet.TotalRecords()
-		return errors.Annotate(err, "failed to playback history").Err()
-	})
-
-	return eg.Wait()
+	logging.Infof(ctx, "evaluating...")
+	return r.evaluate(ctx)
 }
 
 // train computes r.res.Thresholds.
@@ -191,6 +142,7 @@ func (r *evalRun) train(ctx context.Context) error {
 
 	eg.Go(func() error {
 		err := r.TrainingSet.PlaybackIgnoreDurations(ctx)
+		r.res.TrainingRecords = r.TrainingSet.TotalRecords()
 		return errors.Annotate(err, "failed to playback history").Err()
 	})
 
@@ -206,52 +158,77 @@ func (r *evalRun) train(ctx context.Context) error {
 	return nil
 }
 
-// evaluateSafety reads rejections from r.rejectionC,
-// updates r.res.Safety and calls r.maybeReportProgress.
+func (r *evalRun) evaluate(ctx context.Context) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
+	// Analyze safety.
+	eg.Go(func() error {
+		err := r.evaluateSafety(ctx)
+		return errors.Annotate(err, "failed to evaluate safety").Err()
+	})
+
+	// Analyze efficiency.
+	eg.Go(func() error {
+		err := r.evaluateEfficiency(ctx)
+		return errors.Annotate(err, "failed to evaluate efficiency").Err()
+	})
+
+	// Play back the history.
+	eg.Go(func() error {
+		err := r.EvalSet.Playback(ctx)
+		r.res.EvalRecords = r.EvalSet.TotalRecords()
+		return errors.Annotate(err, "failed to playback history").Err()
+	})
+
+	return eg.Wait()
+}
+
+// evaluateSafety computes safety-related data in r.res based on rejections in
+// r.EvalSet.RejectionC.
 func (r *evalRun) evaluateSafety(ctx context.Context) error {
-	return r.parallelize(ctx, func(ctx context.Context) error {
-		cr := &r.res.Safety.ChangeRecall
-		tr := &r.res.Safety.TestRecall
-
-		buf := &bytes.Buffer{}
-		p := &rejectionPrinter{printer: newPrinter(buf)}
+	// Process rejections in parallel and increment appropriate counters.
+	var lostRejections, lostFailures bucketGrid
+	var totalRejections, totalFailures int32
+	err := r.parallelize(ctx, func(ctx context.Context) error {
 		return analyzeRejections(ctx, r.EvalSet.RejectionC, r.Strategy, func(ctx context.Context, rej analyzedRejection) error {
-			// The rejection is preserved if at least one test ran.
-			// Conclude that based on the closest test.
-			preservedRejection := r.shouldRun(rej.Closest)
-
-			if !preservedRejection && r.LogLostRejections {
-				buf.Reset()
-				p.rejection(rej.Rejection)
-				logging.Infof(ctx, "%s", buf.Bytes())
+			lostRejections.inc(&r.res.Thresholds, rej.Closest, 1)
+			for _, af := range rej.Affectedness {
+				lostFailures.inc(&r.res.Thresholds, af, 1)
 			}
 
-			r.mu.Lock()
-			defer r.mu.Unlock()
-			cr.TotalRejections++
-			tr.TotalFailures += len(rej.FailedTestVariants)
-			if !preservedRejection {
-				cr.LostRejections = append(cr.LostRejections, rej.Rejection)
-			}
-			for i, af := range rej.Affectedness {
-				if !r.shouldRun(af) {
-					tr.LostFailures = append(tr.LostFailures, LostTestFailure{
-						Rejection:   rej.Rejection,
-						TestVariant: rej.FailedTestVariants[i],
-					})
-				}
-			}
-
-			r.maybeReportProgress(ctx)
+			atomic.AddInt32(&totalRejections, 1)
+			atomic.AddInt32(&totalFailures, int32(len(rej.Affectedness)))
 			return nil
 		})
 	})
+	if err != nil {
+		return err
+	}
+
+	// Incroporate the counters into r.res.
+
+	r.res.TotalRejections = int(totalRejections)
+	r.res.TotalTestFailures = int(totalFailures)
+
+	lostRejections.makeCumulative()
+	lostFailures.makeCumulative()
+	for row := 0; row < 100; row++ {
+		for col := 0; col < 100; col++ {
+			r.res.Thresholds[row][col].PreservedRejections = r.res.TotalRejections - int(lostRejections[row+1][col+1])
+			r.res.Thresholds[row][col].PreservedTestFailures = r.res.TotalTestFailures - int(lostFailures[row+1][col+1])
+		}
+	}
+	return nil
 }
 
-// evaluateEfficiency reads test durations from r.durationC,
-// updates r.res.Efficiency and calls r.maybeReportProgress.
+// evaluateEfficiency computes efficiency-related data in r.res based on
+// test durations in r.EvalSet.DurationC.
 func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
-	return r.parallelize(ctx, func(ctx context.Context) error {
+	// Process test durations in parallel and increment appropriate counters.
+	var savedDurations bucketGrid
+	var totalDuration int64
+	err := r.parallelize(ctx, func(ctx context.Context) error {
 		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 		out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
 		for td := range r.EvalSet.DurationC {
@@ -265,41 +242,26 @@ func (r *evalRun) evaluateEfficiency(ctx context.Context) error {
 			}
 
 			// Record results.
-			dur := td.Duration.AsDuration()
-			r.mu.Lock()
-			r.res.Efficiency.TestResults++
-			r.res.Efficiency.SampleDuration += dur
-			if r.shouldRun(out.TestVariantAffectedness[0]) {
-				r.res.Efficiency.ForecastDuration += dur
-			}
-			r.maybeReportProgress(ctx)
-			r.mu.Unlock()
+			dur := int64(td.Duration.AsDuration())
+			atomic.AddInt64(&totalDuration, dur)
+			savedDurations.inc(&r.res.Thresholds, out.TestVariantAffectedness[0], dur)
 		}
 		return ctx.Err()
 	})
-}
-
-func (r *evalRun) maybeReportProgress(ctx context.Context) {
-	interval := r.ProgressReportInterval
-	if interval <= 0 {
-		interval = defaultProgressReportInterval
+	if err != nil {
+		return err
 	}
 
-	now := clock.Now(ctx)
-	switch {
-	case r.mostRecentProgressReport.IsZero():
-		r.mostRecentProgressReport = now
+	// Incroporate the counters into r.res.
 
-	case now.After(r.mostRecentProgressReport.Add(interval)):
-		r.buf.Reset()
-		r.res.oneLine(&r.buf)
-		logging.Infof(ctx, "%s", r.buf.Bytes())
-		r.mostRecentProgressReport = now
+	r.res.TotalDuration = time.Duration(totalDuration)
+	savedDurations.makeCumulative()
+	for row := 0; row < 100; row++ {
+		for col := 0; col < 100; col++ {
+			r.res.Thresholds[row][col].SavedDuration = time.Duration(savedDurations[row+1][col+1])
+		}
 	}
-}
-
-func (e *Eval) shouldRun(a Affectedness) bool {
-	return a.Distance <= e.MaxDistance || (a.Rank != 0 && a.Rank <= e.MaxRank)
+	return nil
 }
 
 func (e *Eval) parallelize(ctx context.Context, f func(ctx context.Context) error) error {
@@ -314,4 +276,55 @@ func (e *Eval) parallelize(ctx context.Context, f func(ctx context.Context) erro
 		})
 	}
 	return eg.Wait()
+}
+
+// bucketGrid is an auxulary data structure to compute cumulative counters
+// in ThresholdGrid. Each cell contains the number of data points lost by that
+// bucket.
+//
+// bucketGrid is used in two phases:
+//   1) For each data point, call inc().
+//   2) Call makeCumulative() and incorporate bucketGrid into ThresholdGrid.
+//
+// The structure of bucketGrid is similar to ThresholdGrid, except bucketGrid
+// cell (R, C) corresponds to ThresholdGrid cell (R-1, C-1) because the grid
+// is padded with extra row 0 and column 0 for data points that were not lost
+// by any distance or by any rank.
+type bucketGrid [101][101]int64
+
+// inc increments the counter in the cell (R, C) where row R has the largest
+// distance less than af.Distance, and C has the largest rank less than af.Rank.
+// In other words, it increments the largest thresholds that missed the data
+// point.
+//
+// Goroutine-safe.
+func (b *bucketGrid) inc(g *ThresholdGrid, af Affectedness, delta int64) {
+	row := sort.Search(100, func(i int) bool {
+		return g[i][0].Value.Distance >= af.Distance
+	})
+	col := sort.Search(100, func(i int) bool {
+		return g[0][i].Value.Rank >= af.Rank
+	})
+
+	// For each of distance and rank, we have found the index of the smallest
+	// threshold satisfied by af.
+	// We need the largest threshold NOT satisfied by af, i.e. the preceding
+	// index. Indexes in bucketGrid are already shifted by one, so use row and
+	// col as is.
+	atomic.AddInt64(&b[row][col], delta)
+}
+
+// makeCumulative makes all counters cumulative.
+// Not idempotent.
+func (b *bucketGrid) makeCumulative() {
+	for row := 99; row >= 0; row-- {
+		for col := 99; col >= 0; col-- {
+			b[row][col] += b[row][col+1]
+		}
+	}
+	for col := 99; col >= 0; col-- {
+		for row := 99; row >= 0; row-- {
+			b[row][col] += b[row+1][col]
+		}
+	}
 }
