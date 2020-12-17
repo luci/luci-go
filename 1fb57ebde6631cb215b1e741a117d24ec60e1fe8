@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6fd2137_7c02aad8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T01:12:26Z",
+      "side": 1,
+      "message": "I",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9f04116_4f73e15f",
@@ -31,6 +48,23 @@
       "writtenOn": "2020-12-17T01:03:30Z",
       "side": 1,
       "message": "Nits: Perhaps we should maintain the order of the tab as it appear in the page: Overview - Test results - Steps - Related Builds - Timeline - Blamelist",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "efaa5782_a9c4a6bd",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-12-17T01:12:26Z",
+      "side": 1,
+      "message": "In the case that users set Test Result as default, but for some builds, we don\u0027t have this tab, then what will happen?",
       "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
