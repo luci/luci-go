@@ -19,6 +19,7 @@ package sink
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -42,8 +43,6 @@ import (
 )
 
 const (
-	// DefaultAddr is the TCP address that the Server listens on by default.
-	DefaultAddr = "localhost:62115"
 	// AuthTokenKey is the key of the HTTP request header where the auth token should
 	// be specified. Note that the an HTTP request must have the auth token in the header
 	// with the following format.
@@ -81,8 +80,11 @@ type ServerConfig struct {
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
 	AuthToken string
-	// Address is the HTTP address to listen on. If empty, the server will use
-	// the default address.
+	// Address is the HTTP address to listen on.
+	//
+	// If empty, the server will use "localhost" with a random port available at
+	// the time of Server.Start call, and the generated address can be found at
+	// Server.Config().Address.
 	Address string
 
 	// Invocation is the name of the invocation that test results should append to.
@@ -102,9 +104,6 @@ type ServerConfig struct {
 
 	// TestLocationBase will be prepended to the Location.FileName of each TestResult.
 	TestLocationBase string
-
-	// Listener for tests
-	testListener net.Listener
 
 	// ArtChannelMaxLeases specifies that the max lease of the Artifact upload channel.
 	ArtChannelMaxLeases uint
@@ -181,10 +180,6 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
 	}
 
-	// set the optional fields with the default values.
-	if cfg.Address == "" {
-		cfg.Address = DefaultAddr
-	}
 	if cfg.AuthToken == "" {
 		tk, err := genAuthToken(ctx)
 		if err != nil {
@@ -268,13 +263,12 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 	// re-used, the new context would be passed to Shutdown in the deferred function after
 	// being cancelled.
 	cbCtx, cancel := context.WithCancel(s.Export(ctx))
-	defer func() {
-		cancel()
-	}()
+	defer cancel()
 	go func() {
 		select {
 		case <-s.Done():
-			// cancel the context if the server terminates before callback finishes.
+			// cancel the callback context if the server terminates before callback
+			// finishes.
 			cancel()
 		case <-ctx.Done():
 		}
@@ -290,13 +284,10 @@ func (s *Server) Start(ctx context.Context) error {
 		return errors.Reason("cannot call Start twice").Err()
 	}
 
-	// launch an HTTP server
+	// create an HTTP server with a pRPC service.
 	routes := router.NewWithRootContext(ctx)
 	routes.Use(router.NewMiddlewareChain(middleware.WithPanicCatcher))
-	s.httpSrv.Addr = s.cfg.Address
 	s.httpSrv.Handler = routes
-
-	// install a pRPC service into it.
 	ss, err := newSinkServer(ctx, s.cfg)
 	if err != nil {
 		return err
@@ -305,6 +296,23 @@ func (s *Server) Start(ctx context.Context) error {
 	prpc.InstallHandlers(routes, router.MiddlewareChain{})
 	sinkpb.RegisterSinkServer(prpc, ss)
 
+	addr := s.cfg.Address
+	if addr == "" {
+		// If the config is missing the address, choose a random available port.
+		addr = "localhost:0"
+	}
+
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		s.mu.Lock()
+		s.err = err
+		s.mu.Unlock()
+		return err
+	}
+	if s.cfg.Address == "" {
+		s.cfg.Address = fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port)
+	}
+
 	go func() {
 		defer func() {
 			// close SinkServer to complete all the outgoing requests before closing doneC
@@ -312,16 +320,11 @@ func (s *Server) Start(ctx context.Context) error {
 			closeSinkServer(ctx, ss)
 			close(s.doneC)
 		}()
-		var err error
-		if s.cfg.testListener == nil {
-			// err will be written to s.err after the channel fully drained.
-			logging.Infof(ctx, "SinkServer: starting HTTP server...")
-			err = s.httpSrv.ListenAndServe()
-			logging.Infof(ctx, "SinkServer: HTTP server stopped with %q", err)
-		} else {
-			// In test mode, the the listener MUST be prepared already.
-			err = s.httpSrv.Serve(s.cfg.testListener)
-		}
+
+		logging.Infof(ctx, "SinkServer: starting HTTP server...")
+		// No need to close the listener, because http.Serve always closes it on return.
+		err = s.httpSrv.Serve(l)
+		logging.Infof(ctx, "SinkServer: HTTP server stopped with %q", err)
 
 		// if the reason of the server stopped was due to s.Close or s.Shutdown invoked,
 		// then s.Err should return nil instead.

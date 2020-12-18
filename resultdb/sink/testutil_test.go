@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -37,16 +36,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func installTestListener(cfg *ServerConfig) (string, func() error) {
-	l, err := net.Listen("tcp", "localhost:0")
-	So(err, ShouldBeNil)
-	cfg.testListener = l
-	cfg.Address = fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port)
-
-	// return the serving address
-	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
-}
 
 func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
