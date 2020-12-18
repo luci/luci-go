@@ -100,7 +100,7 @@ func (r *evalRun) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	res.Print(os.Stdout)
+	res.Print(os.Stdout, 0.9)
 	return nil
 }
 
@@ -146,8 +146,8 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		if n == nil {
 			return nil
 		}
-		// Unaffected and unranked by default.
-		affectedness[n] = eval.Affectedness{Distance: math.Inf(1)}
+		// Too far away by default.
+		affectedness[n] = eval.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
 		testNodes[i] = n
 	}
 
@@ -167,6 +167,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 				return false
 			}
 		}
+
 		return true
 	})
 
