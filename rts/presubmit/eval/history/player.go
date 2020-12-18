@@ -37,6 +37,8 @@ type Player struct {
 }
 
 // TotalRecords returns the number of records observed thus far.
+//
+// TODO(nodir): decide whether to keep this function. It is not used.
 func (p *Player) TotalRecords() int {
 	return int(atomic.LoadInt64(&p.totalRecords))
 }
@@ -53,17 +55,24 @@ func NewPlayer(r *Reader) *Player {
 // Playback reads historical records and dispatches them to p.RejectionC and
 // p.DurationC.
 // Before exiting, closes RejectionC, DurationC and the underlying reader.
+//
+// TODO(nodir): refactor this package and potentially the file format.
+// This function is never used.
 func (p *Player) Playback(ctx context.Context) error {
-	return p.playback(ctx, true)
+	return p.playback(ctx, true, true)
 }
 
-// PlaybackIgnoreDurations is like Playback, except it ignores all duration
-// data.
-func (p *Player) PlaybackIgnoreDurations(ctx context.Context) error {
-	return p.playback(ctx, false)
+// PlaybackRejections is like Playback, except reports only rejections.
+func (p *Player) PlaybackRejections(ctx context.Context) error {
+	return p.playback(ctx, false, true)
 }
 
-func (p *Player) playback(ctx context.Context, withDurations bool) error {
+// PlaybackDurations is like Playback, except reports only durations.
+func (p *Player) PlaybackDurations(ctx context.Context) error {
+	return p.playback(ctx, false, true)
+}
+
+func (p *Player) playback(ctx context.Context, withDurations, withRejections bool) error {
 	defer func() {
 		close(p.RejectionC)
 		close(p.DurationC)
@@ -86,14 +95,16 @@ func (p *Player) playback(ctx context.Context, withDurations bool) error {
 		switch data := rec.Data.(type) {
 
 		case *evalpb.Record_RejectionFragment:
-			proto.Merge(curRej, data.RejectionFragment.Rejection)
-			if data.RejectionFragment.Terminal {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case p.RejectionC <- curRej:
-					// Start a new rejection.
-					curRej = &evalpb.Rejection{}
+			if withRejections {
+				proto.Merge(curRej, data.RejectionFragment.Rejection)
+				if data.RejectionFragment.Terminal {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case p.RejectionC <- curRej:
+						// Start a new rejection.
+						curRej = &evalpb.Rejection{}
+					}
 				}
 			}
 
