@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "af04c491f2deb5756f05e6f655c53aa0713e4736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3238e20a_dcab9252",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-18T18:49:57Z",
+      "side": 1,
+      "message": "lgtm. For CL entity, it\u0027s a duplicate, since ExternalID already contains it, but I see that it\u0027s useful for RunCL.",
+      "revId": "af04c491f2deb5756f05e6f655c53aa0713e4736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
