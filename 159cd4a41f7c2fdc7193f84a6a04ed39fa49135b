@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f45f62ca_e8a6de72",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:15:00Z",
+      "side": 1,
+      "message": "IIUC, there\u0027ll be no concept of sub-namespace, It will be part of the proto message?",
+      "range": {
+        "startLine": 31,
+        "startChar": 7,
+        "endLine": 31,
+        "endChar": 63
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0696cae_512327b5",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:15:00Z",
+      "side": 1,
+      "message": "Curious, why function pointer over function itself?",
+      "range": {
+        "startLine": 37,
+        "startChar": 35,
+        "endLine": 37,
+        "endChar": 40
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "060ff157_6e29e513",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:15:00Z",
+      "side": 1,
+      "message": "Del?",
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41344914_66ddc94b",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:15:00Z",
+      "side": 1,
+      "message": "IIUC, I think we can still do this even without generic, i.e.\n\n```\ntype PropertyModifier interface {\n    Write(context.Context, value proto.Message)\n    Merge(context.Context, value proto.Message) \n}\n```\n\n\nand that should be usable as Write/Merge doesn\u0027t need to know the concrete type of proto message?",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 6
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0496f85c_bb98b51a",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:15:00Z",
+      "side": 1,
+      "message": "nit: s/inputBuild/initialBuild/g to match the function signature?",
+      "range": {
+        "startLine": 54,
+        "startChar": 37,
+        "endLine": 54,
+        "endChar": 47
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
