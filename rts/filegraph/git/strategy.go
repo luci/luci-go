@@ -18,6 +18,7 @@ import (
 	"context"
 	"math"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/rts/filegraph"
@@ -25,10 +26,38 @@ import (
 )
 
 // SelectionStrategy implements a selection strategy based on a git graph.
-//
-// TODO(nodir): add Select() method to select tests in production.
 type SelectionStrategy struct {
 	Graph *Graph
+
+	// TestFiles are all existing test files.
+	// A test file must be in this set in order to be skipped.
+	TestFiles stringset.Set
+
+	// MaxDistance is the maximum distance to select a test.
+	MaxDistance float64
+	// MaxRank is the maximum rank to select a test.
+	MaxRank int
+}
+
+// Select calls skipTestFile for each test file that should be skipped.
+//
+// A file is skipped iff it is in the s.TestFiles, has distance greater than
+// s.MaxDistance and has rank greater than s.MaxRank.
+func (s *SelectionStrategy) Select(changedFiles []string, skipTestFile func(testFile string) error) error {
+	return s.runQuery(changedFiles, func(sp *filegraph.ShortestPath, rank int) error {
+		if rank <= s.MaxRank || sp.Distance <= s.MaxDistance {
+			// This file too close to skip it.
+			return nil
+		}
+
+		fileName := sp.Node.Name()
+		if !s.TestFiles.Has(fileName) {
+			// This file is not recognized as a test file.
+			return nil
+		}
+
+		return skipTestFile(fileName)
+	})
 }
 
 // Eval implements eval.SelectionStrategy.
@@ -38,6 +67,8 @@ type SelectionStrategy struct {
 // that validates input. For example, this function does not check
 // in.ChangedFiles[i].Repo and does not check for file patterns that must be
 // exempted from RTS.
+//
+// Ignores TestFiles, MaxDistance and MaxRank.
 func (s *SelectionStrategy) Eval(ctx context.Context, in eval.Input, out *eval.Output) error {
 	changedFiles := make([]string, len(in.ChangedFiles))
 	for i, f := range in.ChangedFiles {
