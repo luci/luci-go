@@ -263,6 +263,7 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 		ExternalUpdateTime: ci.GetUpdated(),
 		Kind: &changelist.Snapshot_Gerrit{
 			Gerrit: &changelist.Gerrit{
+				Host: f.host,
 				Info: ci,
 			},
 		},
