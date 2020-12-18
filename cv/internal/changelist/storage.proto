@@ -73,6 +73,9 @@ message Dep {
 }
 
 message Gerrit {
+  // Gerrit host.
+  string host = 5;
+
   // Info contains all revisions, but non-current revisions will not have all
   // the fields populated.
   //
