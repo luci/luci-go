@@ -17,7 +17,7 @@
     "codemirror": "^5.58.2",
     "copy-to-clipboard": "^3.3.1",
     "diff2html": "^3.1.9",
-    "dompurify": "^2.0.12",
+    "dompurify": "^2.0.17",
     "hotkeys-js": "^3.8.1",
     "json-bigint": "^1.0.0",
     "lit-element": "^2.3.1",
