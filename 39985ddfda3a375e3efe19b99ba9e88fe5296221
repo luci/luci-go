@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6db0f5c_1e8b1a20",
+        "filename": "logdog/client/butlerlib/streamclient/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:35:14Z",
+      "side": 1,
+      "message": "why can\u0027t we return *options directly here? We\u0027ll add new return parameter everytime a new property is added to options struct.",
+      "range": {
+        "startLine": 39,
+        "startChar": 36,
+        "endLine": 39,
+        "endChar": 76
+      },
+      "revId": "39985ddfda3a375e3efe19b99ba9e88fe5296221",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
