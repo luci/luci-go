@@ -16,6 +16,24 @@
       "message": "Let me know if you think I should add more tests; I think the given example test should be fine for all practical purposes.",
       "revId": "ade2530d553124ad45185439f0969a1f2e1f6397",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b1e30c2_9dae12c5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:30:38Z",
+      "side": 1,
+      "message": "I think a practical example will be launching 10 goroutine at the same time with 1 panic and see if it reports correctly. Though from the example, it should be guaranteed.",
+      "parentUuid": "a9ab7e48_eccff9d7",
+      "revId": "ade2530d553124ad45185439f0969a1f2e1f6397",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

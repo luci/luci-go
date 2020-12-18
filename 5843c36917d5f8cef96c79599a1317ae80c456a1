@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57f9761d_92548542",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:30:38Z",
+      "side": 1,
+      "message": "Seems okay though hacky. Let\u0027s how long this mechanism will work :) ",
+      "revId": "5843c36917d5f8cef96c79599a1317ae80c456a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf210742_e27b12c3",
+        "filename": "common/errors/is_panicking.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:30:38Z",
+      "side": 1,
+      "message": "Curious: What ensures this? Is it because otherwise one won\u0027t see \"runtime.gopanic\" in the stack?",
+      "revId": "5843c36917d5f8cef96c79599a1317ae80c456a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea49d038_a38721d6",
+        "filename": "common/errors/is_panicking_example_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:30:38Z",
+      "side": 1,
+      "message": "2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "5843c36917d5f8cef96c79599a1317ae80c456a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
