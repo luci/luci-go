@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f2edf5f_3fb6a5f3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-18T01:46:00Z",
+      "side": 1,
+      "message": "Doc lgtm.\n\nWhat is the plan for this mode? Will it be removed after the development of this library finishes? I think eventually we should panic when this library is called w/o build in the context.",
+      "revId": "1f3250a338a5c516c15bdc9fbeb5593171085d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
