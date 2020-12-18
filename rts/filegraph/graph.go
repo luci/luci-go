@@ -14,6 +14,10 @@
 
 package filegraph
 
+type Graph interface {
+	Node(name string) Node
+}
+
 // Node is a node in a directed weighted graph of files.
 // It is either a file or a directory.
 //
