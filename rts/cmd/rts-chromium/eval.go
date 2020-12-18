@@ -92,7 +92,7 @@ func (r *evalRun) run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to load the file graph").Err()
 	}
 
-	r.ev.Strategy = r.selectTests
+	r.ev.Strategy = r.strategy.Eval
 	res, err := r.ev.Run(ctx)
 	if err != nil {
 		return err
