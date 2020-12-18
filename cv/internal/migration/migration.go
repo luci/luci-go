@@ -22,9 +22,14 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -32,6 +37,8 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/run"
+	runImpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -97,6 +104,74 @@ func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.
 	logging.Infof(ctx, "CQD[%s] uses netrc access token for %s", project, req.GerritHost)
 	resp = &empty.Empty{}
 	err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken)
+	return
+}
+
+// FetchActiveRuns returns all RUNNING runs for the given LUCI Project.
+func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.FetchActiveRunsRequest) (resp *migrationpb.FetchActiveRunsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return
+	}
+
+	runs := []run.Run{}
+	q := run.NewQueryWithLUCIProject(req.GetLuciProject()).Eq("Status", run.Status_RUNNING)
+	err = errors.Annotate(datastore.GetAll(ctx, q, &runs), "fetch Run entities").Tag(transient.Tag).Err()
+	if err != nil {
+		return
+	}
+
+	resp = &migrationpb.FetchActiveRunsResponse{}
+	if len(runs) == 0 {
+		return
+	}
+
+	attemptsCh := make(chan *cvbqpb.Attempt)
+	go func() {
+		err = parallel.WorkPool(20, func(workCh chan<- func() error) {
+			for _, r := range runs {
+				workCh <- func() error {
+					runCLs := []runImpl.RunCL{}
+					q := datastore.NewQuery("RunCL").Ancestor(datastore.KeyForObj(ctx, r))
+					if err := datastore.GetAll(ctx, q, &runCLs); err != nil {
+						return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
+					}
+					attempt := &cvbqpb.Attempt{
+						LuciProject:   req.GetLuciProject(),
+						StartTime:     timestamppb.New(r.CreateTime),
+						GerritChanges: make([]*cvbqpb.GerritChange, len(runCLs)),
+					}
+					var mode cvbqpb.Mode
+					if r.Mode == run.DryRun {
+						mode = cvbqpb.Mode_DRY_RUN
+					} else {
+						mode = cvbqpb.Mode_FULL_RUN
+					}
+					for i, cl := range runCLs {
+						attempt.GerritChanges[i] = &cvbqpb.GerritChange{
+							Host:                       cl.Detail.GetGerrit().GetHost(),
+							Project:                    cl.Detail.GetGerrit().GetInfo().GetProject(),
+							Change:                     cl.Detail.GetGerrit().GetInfo().GetNumber(),
+							Patchset:                   int64(cl.Detail.GetPatchset()),
+							EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
+							Mode:                       mode,
+						}
+					}
+					attemptsCh <- attempt
+					return nil
+				}
+			}
+		})
+		close(attemptsCh)
+	}()
+
+	for attempt := range attemptsCh {
+		resp.Runs = append(resp.Runs, &migrationpb.Run{Attempt: attempt})
+	}
+
+	if err != nil {
+		resp.Runs = nil
+	}
 	return
 }
 
