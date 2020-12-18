@@ -14,10 +14,21 @@
 
 package build
 
+import (
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+)
+
 // StepView is a window into the build State.
 //
 // You can obtain/manipulate this with the Step.Modify method.
-type StepView struct{}
+type StepView struct {
+	SummaryMarkdown string
+}
 
 // Start will change the status of this Step from SCHEDULED to STARTED and
 // initializes StartTime.
@@ -25,8 +36,19 @@ type StepView struct{}
 // This must only be called for ScheduleStep invocations. If the step is already
 // started (e.g. it was produced via Step() or Start() was already called), this
 // panics.
-func (*StepState) Start() {
-	panic("implement")
+func (s *StepState) Start() {
+	s.mutate(func() {
+		if status := s.stepPb.GetStatus(); status != bbpb.Status_SCHEDULED {
+			panic(errors.Reason("cannot start step %q: not SCHEDULED: %s", s.stepPb.Name, status).Err())
+		}
+
+		s.stepPb.Status = bbpb.Status_STARTED
+		s.stepPb.StartTime = timestamppb.New(clock.Now(s.ctx))
+
+		if s.noopMode() /* || no logsink */ {
+			logging.Infof(s.ctx, "set status: %s", bbpb.Status_STARTED)
+		}
+	})
 }
 
 // Modify allows you to atomically manipulate the StepView for this StepState.
@@ -37,11 +59,25 @@ func (*StepState) Start() {
 //
 // The Set* methods should be preferred unless you need to read/modify/write
 // View items.
-func (*StepState) Modify(func(*StepView)) {
-	panic("implement")
+func (s *StepState) Modify(cb func(*StepView)) {
+	logSM := ""
+	s.mutate(func() {
+		oldView := StepView{s.stepPb.SummaryMarkdown}
+		newView := oldView // shallow copy
+		cb(&newView)
+		if oldView.SummaryMarkdown != newView.SummaryMarkdown {
+			logSM = newView.SummaryMarkdown
+			s.stepPb.SummaryMarkdown = newView.SummaryMarkdown
+		}
+	})
+	if s.noopMode() && len(logSM) > 0 {
+		logging.Debugf(s.ctx, "changed SummaryMarkdown: %s", logSM)
+	}
 }
 
 // SetSummaryMarkdown atomically sets the step's SummaryMarkdown field.
-func (*StepState) SetSummaryMarkdown(string) {
-	panic("implement")
+func (s *StepState) SetSummaryMarkdown(summaryMarkdown string) {
+	s.Modify(func(v *StepView) {
+		v.SummaryMarkdown = summaryMarkdown
+	})
 }
