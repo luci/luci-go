@@ -50,6 +50,8 @@ func main() {
 		Commands: []*subcommands.Command{
 			cmdPresubmitHistory(&authOpt),
 			cmdEval(),
+			cmdSelect(),
+			// TODO(crbug.com/1090668): add create-model subcommand.
 
 			{}, // a separator
 			authcli.SubcommandLogin(authOpt, "auth-login", false),

@@ -19,7 +19,6 @@ import (
 	"flag"
 	"math"
 	"os"
-	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -107,32 +106,12 @@ func (r *evalRun) run(ctx context.Context) error {
 func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
 	// Run Dijkstra from the modified files and try to find all test files.
 
-	q := &filegraph.Query{
-		Sources: make([]filegraph.Node, len(in.ChangedFiles)),
-		EdgeReader: &git.EdgeReader{
-			// We run the query from changed files, but we need distance
-			// from test files to changed files, and not the other way around.
-			Reversed: true,
-		},
-	}
-
+	changedFiles := make([]string, len(in.ChangedFiles))
 	for i, f := range in.ChangedFiles {
-		switch {
-		case f.Repo != "https://chromium-review.googlesource.com/chromium/src":
+		if f.Repo != "https://chromium-review.googlesource.com/chromium/src" {
 			return errors.Reason("unexpected repo %q", f.Repo).Err()
-		case strings.HasPrefix(f.Path, "//testing/"):
-			// This CL changes the way tests run or their configurations.
-			// Run all tests.
-			return nil
-		case f.Path == "//DEPS":
-			// The full list of modified files is not available, and the
-			// graph does not include DEPSed file changes anyway.
-			return nil
 		}
-
-		if q.Sources[i] = r.fg.Node(f.Path); q.Sources[i] == nil {
-			return nil
-		}
+		changedFiles[i] = f.Path
 	}
 
 	affectedness := make(map[filegraph.Node]eval.Affectedness, len(in.TestVariants))
@@ -152,23 +131,23 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 	}
 
 	found := 0
-	rank := 0
-	q.Run(func(sp *filegraph.ShortestPath) (keepGoing bool) {
-		// Note: the files are enumerated in the order of distance.
-		rank++
-		if _, ok := affectedness[sp.Node]; ok {
-			affectedness[sp.Node] = eval.Affectedness{
-				Distance: sp.Distance,
-				Rank:     rank,
+	err := queryFileGraph(r.fg, changedFiles, func(fd fileDistance) error {
+		if _, ok := affectedness[fd.Node]; ok {
+			affectedness[fd.Node] = eval.Affectedness{
+				Distance: fd.Distance,
+				Rank:     fd.Rank,
 			}
 			found++
 			if found == len(affectedness) {
 				// We have found everything.
-				return false
+				return errStop
 			}
 		}
-		return true
+		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	for i, n := range testNodes {
 		out.TestVariantAffectedness[i] = affectedness[n]
