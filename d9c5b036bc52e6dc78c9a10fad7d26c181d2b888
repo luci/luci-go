@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d29e37dc_a7112beb",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-18T06:37:39Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "9131ea28_ad45b022",
+      "range": {
+        "startLine": 266,
+        "startChar": 1,
+        "endLine": 268,
+        "endChar": 4
+      },
+      "revId": "d9c5b036bc52e6dc78c9a10fad7d26c181d2b888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39ad6222_5f9a0405",
@@ -37,6 +61,24 @@
       "writtenOn": "2020-12-17T00:08:52Z",
       "side": 1,
       "message": "what does this comment have to do with address?\nshould this be closer to the listener, or before `go`?",
+      "revId": "d9c5b036bc52e6dc78c9a10fad7d26c181d2b888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d9016ba_bd204d73",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-18T06:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39ad6222_5f9a0405",
       "revId": "d9c5b036bc52e6dc78c9a10fad7d26c181d2b888",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -88,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e33d1b8e_f564eaa5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-18T06:37:39Z",
+      "side": 1,
+      "message": "The address should be empty or end with :0 to assign a random port.\n\n\"localhost\" is an invalid address.\n\u003e\u003e listen tcp: address localhost: missing port in address\n\nAdded a comment, as Chan suggested.",
+      "parentUuid": "d539de78_d2293f9f",
+      "range": {
+        "startLine": 304,
+        "startChar": 20,
+        "endLine": 304,
+        "endChar": 21
+      },
+      "revId": "d9c5b036bc52e6dc78c9a10fad7d26c181d2b888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "beeeab7b_5a9aa710",
@@ -101,6 +167,30 @@
       "writtenOn": "2020-12-17T00:08:52Z",
       "side": 1,
       "message": "nit: s.err\u003derr is very unlikely to fail, so defer seems overkill",
+      "range": {
+        "startLine": 309,
+        "startChar": 2,
+        "endLine": 309,
+        "endChar": 21
+      },
+      "revId": "d9c5b036bc52e6dc78c9a10fad7d26c181d2b888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50c4effe_0a0de7d8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-12-18T06:37:39Z",
+      "side": 1,
+      "message": "good point. thanks. done",
+      "parentUuid": "beeeab7b_5a9aa710",
       "range": {
         "startLine": 309,
         "startChar": 2,
