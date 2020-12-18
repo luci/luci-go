@@ -336,8 +336,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			)
 			SELECT tr.*
 			FROM withOnlyUnexpected owu, owu.trs tr
+			WHERE true {{/* For optional conditions below */}}
 		{{else if .withUnexpected}}
 			SELECT * FROM withUnexpected
+			WHERE true {{/* For optional conditions below */}}
 		{{else}}
 			SELECT {{.columns}}
 			FROM TestResults tr
