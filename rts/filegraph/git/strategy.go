@@ -18,9 +18,48 @@ import (
 	"context"
 	"math"
 
+	"go.chromium.org/luci/common/data/stringset"
+
 	"go.chromium.org/luci/rts/filegraph"
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
+
+// TestSelectionModel implements a selection strategy based on a git graph.
+type TestSelectionModel struct {
+	Graph *Graph
+
+	// TestFiles are all existing test files.
+	// A test file must be in this set in order to be skipped.
+	TestFiles stringset.Set
+
+	// MaxDistance is the maximum distance to select a test.
+	MaxDistance float64
+	// MaxRank is the maximum rank to select a test.
+	MaxRank int
+}
+
+// Select calls skipTestFile for each test file that should be skipped.
+//
+// A file is skipped iff it is in the s.TestFiles, has distance greater than
+// s.MaxDistance and has rank greater than s.MaxRank.
+func (s *TestSelectionModel) Select(changedFiles []string, skipTestFile func(testFile string) error) (err error) {
+	runRTSQuery(s.Graph, changedFiles, func(sp *filegraph.ShortestPath, rank int) bool {
+		if rank <= s.MaxRank || sp.Distance <= s.MaxDistance {
+			// This file too close to skip it.
+			return true
+		}
+
+		fileName := sp.Node.Name()
+		if !s.TestFiles.Has(fileName) {
+			// This file is not recognized as a test file.
+			return true
+		}
+
+		err = skipTestFile(fileName)
+		return err == nil
+	})
+	return
+}
 
 // EvalStrategy implements eval.Strategy. It can be used to evaluate data
 // quality of the graph.
