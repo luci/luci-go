@@ -345,7 +345,10 @@ func TestQueryTestResults(t *testing.T) {
 			Convey(`only unexpected exclude exonerated`, func() {
 				st := q.genStatement("testResults", map[string]interface{}{
 					"params": map[string]interface{}{
-						"invIDs": q.InvocationIDs,
+						"invIDs":            q.InvocationIDs,
+						"afterInvocationId": "build-123",
+						"afterTestId":       "test",
+						"afterResultId":     "result",
 					},
 					"columns":           "InvocationId, TestId, VariantHash",
 					"onlyUnexpected":    true,
@@ -386,7 +389,13 @@ func TestQueryTestResults(t *testing.T) {
 						)
   				SELECT tr.*
   				FROM withOnlyUnexpected owu, owu.trs tr
-  				ORDER BY InvocationId, TestId, ResultId
+					WHERE true
+						AND (
+							(InvocationId > @afterInvocationId) OR
+							(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
+							(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ResultId > @afterResultId)
+						)
+					ORDER BY InvocationId, TestId, ResultId
 				`
 				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
 			})
@@ -394,8 +403,11 @@ func TestQueryTestResults(t *testing.T) {
 			Convey(`with unexpected filter by testID`, func() {
 				st := q.genStatement("testResults", map[string]interface{}{
 					"params": map[string]interface{}{
-						"invIDs":       q.InvocationIDs,
-						"testIdRegexp": "^T4$",
+						"invIDs":            q.InvocationIDs,
+						"testIdRegexp":      "^T4$",
+						"afterInvocationId": "build-123",
+						"afterTestId":       "test",
+						"afterResultId":     "result",
 					},
 					"columns":           "InvocationId, TestId, VariantHash",
 					"onlyUnexpected":    false,
@@ -418,6 +430,12 @@ func TestQueryTestResults(t *testing.T) {
 							WHERE InvocationId IN UNNEST(@invIDs)
 						)
 					SELECT * FROM withUnexpected
+					WHERE true
+						AND (
+							(InvocationId > @afterInvocationId) OR
+							(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
+							(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ResultId > @afterResultId)
+						)
 					ORDER BY InvocationId, TestId, ResultId
 					`
 				// Compare sql strings ignoring whitespaces.

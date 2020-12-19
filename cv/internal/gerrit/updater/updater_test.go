@@ -233,6 +233,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			cl := getCL(ctx, gHost, 123)
 			So(cl.ApplicableConfig.GetUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 			So(cl.ApplicableConfig.HasOnlyProject(lProject), ShouldBeTrue)
+			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
 			So(cl.Snapshot.GetGerrit().Info.GetProject(), ShouldEqual, gRepo)
 			So(cl.Snapshot.GetGerrit().Info.GetRef(), ShouldEqual, "refs/heads/main")
 			So(cl.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})

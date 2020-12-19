@@ -129,8 +129,8 @@ func (r *Result) Print(w io.Writer, minChangeRecall float64) error {
 	type changeRecall struct {
 		Threshold
 		Scores
-		DistanceChangeRecall int
-		RankChangeRecall     int
+		DistanceChangeRecall float64
+		RankChangeRecall     float64
 	}
 	changeRecalls := map[float64]changeRecall{}
 	for row := 0; row < 100; row++ {
@@ -145,8 +145,8 @@ func (r *Result) Print(w io.Writer, minChangeRecall float64) error {
 				changeRecalls[s.ChangeRecall] = changeRecall{
 					Threshold:            t,
 					Scores:               s,
-					DistanceChangeRecall: row + 1,
-					RankChangeRecall:     col + 1,
+					DistanceChangeRecall: float64(row+1) / 100.0,
+					RankChangeRecall:     float64(col+1) / 100.0,
 				}
 			}
 		}
@@ -158,19 +158,19 @@ func (r *Result) Print(w io.Writer, minChangeRecall float64) error {
 	}
 	sort.Float64s(keys)
 
-	p.printf("ChangeRecall | Savings | TestRecall | Distance, ChangeRecall | Rank, ChangeRecall\n")
-	p.printf("---------------------------------------------------------------------------------\n")
+	p.printf("ChangeRecall | Savings | TestRecall | Distance, ChangeRecall | Rank,     ChangeRecall\n")
+	p.printf("-------------------------------------------------------------------------------------\n")
 	for _, key := range keys {
 		e := changeRecalls[key]
 		p.printf(
-			"%7s      | % 7s | %7s    | %6.3f            %3d%% | %-9d     %3d%%\n",
+			"%7s      | % 7s | %7s    | %6.3f    %7s      | %-9d %7s\n",
 			scoreString(e.ChangeRecall),
 			scoreString(e.Savings),
 			scoreString(e.TestRecall),
 			e.Value.Distance,
-			e.DistanceChangeRecall,
+			scoreString(e.DistanceChangeRecall),
 			e.Value.Rank,
-			e.RankChangeRecall,
+			scoreString(e.RankChangeRecall),
 		)
 	}
 

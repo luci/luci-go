@@ -42,11 +42,11 @@ func TestResultPrint(t *testing.T) {
 		buf := &bytes.Buffer{}
 		r.Print(buf, 0)
 		So(buf.String(), ShouldEqual, `
-ChangeRecall | Savings | TestRecall | Distance, ChangeRecall | Rank, ChangeRecall
----------------------------------------------------------------------------------
-  0.00%      | 100.00% |   0.00%    |  1.000              1% | 0               1%
- 99.00%      |  25.00% |  99.00%    | 40.000             99% | 0              99%
-100.00%      |  50.00% | 100.00%    | 40.000            100% | 0             100%
+ChangeRecall | Savings | TestRecall | Distance, ChangeRecall | Rank,     ChangeRecall
+-------------------------------------------------------------------------------------
+  0.00%      | 100.00% |   0.00%    |  1.000      1.00%      | 0           1.00%
+ 99.00%      |  25.00% |  99.00%    | 40.000     99.00%      | 0          99.00%
+100.00%      |  50.00% | 100.00%    | 40.000    100.00%      | 0         100.00%
 
 based on 100 rejections, 100 test failures, 1h0m0s testing time
 `[1:])
