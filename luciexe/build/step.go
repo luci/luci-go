@@ -28,7 +28,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 // StepState represents the state of a single step.
@@ -173,7 +175,17 @@ func (s *StepState) End(err error) {
 // Log creates a new step-level line-oriented text log stream with the given name.
 //
 // You must close the stream when you're done with it.
-func (*StepState) Log(name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+func (s *StepState) Log(name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+	if s.noopMode() {
+		if desc, _ := streamclient.RenderOptions(opts...); desc.Type != streamproto.StreamType(logpb.StreamType_TEXT) {
+			// logpb.StreamType cast is necessary or .String() doesn't work.
+			typ := logpb.StreamType(desc.Type)
+			logging.Warningf(s.ctx, "dropping %s log %q", typ, name)
+			return nopStream{}, nil
+		}
+		return makeLoggingWriter(s.ctx, name), nil
+	}
+
 	panic("implement")
 }
 
@@ -182,7 +194,11 @@ func (*StepState) Log(name string, opts ...streamclient.Option) (io.WriteCloser,
 // stream.
 //
 // You must close the stream when you're done with it.
-func (*StepState) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+func (s *StepState) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+	if s.noopMode() {
+		logging.Warningf(s.ctx, "dropping DATAGRAM log %q", name)
+		return nopDatagramStream{}, nil
+	}
 	panic("implement")
 }
 

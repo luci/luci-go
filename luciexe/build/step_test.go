@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 func TestStepNoop(t *testing.T) {
@@ -117,6 +118,38 @@ func TestStepNoop(t *testing.T) {
 				step.SetSummaryMarkdown("cool story!")
 				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS\n  with SummaryMarkdown:\ncool story!")
+			})
+		})
+
+		Convey("Step logs", func() {
+			ctx := memlogger.Use(ctx)
+			logs := logging.Get(ctx).(*memlogger.MemLogger)
+			step, _ := Step(ctx, "some step")
+
+			Convey(`text`, func() {
+				log, err := step.Log("a log")
+				So(err, ShouldBeNil)
+				_, err = log.Write([]byte("this is stuff"))
+				So(err, ShouldBeNil)
+				So(log.Close(), ShouldBeNil)
+				So(logs, memlogger.ShouldHaveLog, logging.Info, "this is stuff")
+			})
+
+			Convey(`binary`, func() {
+				log, err := step.Log("a log", streamclient.Binary())
+				So(err, ShouldBeNil)
+				_, err = log.Write([]byte("this is stuff"))
+				So(err, ShouldBeNil)
+				So(log.Close(), ShouldBeNil)
+				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping BINARY log \"a log\"")
+			})
+
+			Convey(`datagram`, func() {
+				log, err := step.LogDatagram("a log")
+				So(err, ShouldBeNil)
+				So(log.WriteDatagram([]byte("this is stuff")), ShouldBeNil)
+				So(log.Close(), ShouldBeNil)
+				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping DATAGRAM log \"a log\"")
 			})
 		})
 	})
