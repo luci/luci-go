@@ -22,6 +22,29 @@ import (
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
+// SelectionModel implements a selection strategy based on a git graph.
+type SelectionModel struct {
+	Graph *Graph
+	// MaxDistance is the maximum distance to select a test.
+	MaxDistance float64
+	// MaxRank is the maximum rank to select a test.
+	MaxRank int
+}
+
+// Select calls skipTestFile for each test file that should be skipped.
+//
+// A file is skipped iff it is in the s.TestFiles, has distance greater than
+// s.MaxDistance and has rank greater than s.MaxRank.
+func (s *SelectionModel) Select(changedFiles []string, skipFile func(name string) (keepGoing bool)) {
+	runRTSQuery(s.Graph, changedFiles, func(sp *filegraph.ShortestPath, rank int) bool {
+		if rank <= s.MaxRank || sp.Distance <= s.MaxDistance {
+			// This file too close to skip it.
+			return true
+		}
+		return skipFile(sp.Node.Name())
+	})
+}
+
 // EvalStrategy implements eval.Strategy. It can be used to evaluate data
 // quality of the graph.
 //

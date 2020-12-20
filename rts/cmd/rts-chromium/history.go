@@ -16,20 +16,18 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
-	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
@@ -54,12 +52,10 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &presubmitHistoryRun{authOpt: authOpt}
 			r.Flags.StringVar(&r.out, "out", "", "Path to the output file")
-			r.Flags.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-02")
-			r.Flags.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-02")
+			r.dateRange.Register(&r.Flags)
 			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
 			r.Flags.DurationVar(&r.minDuration, "min-duration", time.Second, "Minimum duration to fetch")
 			r.Flags.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
-			r.Flags.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
 			r.Flags.IntVar(&r.minCLFlakes, "min-cl-flakes", 5, text.Doc(`
 				In order to conlude that a test variant is flaky and exclude it from analysis,
 				it must have mixed results in <min-cl-flakes> unique CLs.
@@ -72,8 +68,7 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 type presubmitHistoryRun struct {
 	baseCommandRun
 	out              string
-	startTime        time.Time
-	endTime          time.Time
+	dateRange        dateRangeFlags
 	durationDataFrac float64
 	builderRegex     string
 	testIDRegex      string
@@ -91,16 +86,16 @@ type presubmitHistoryRun struct {
 	recordCountNextReport time.Time
 }
 
-func (r *presubmitHistoryRun) validate() error {
+func (r *presubmitHistoryRun) validateFlags(args []string) error {
+	if err := r.dateRange.Validate(); err != nil {
+		return err
+	}
+
 	switch {
 	case r.out == "":
 		return errors.New("-out is required")
-	case r.startTime.IsZero():
-		return errors.New("-from is required")
-	case r.endTime.IsZero():
-		return errors.New("-to is required")
-	case r.endTime.Before(r.startTime):
-		return errors.New("the -to date must not be before the -from date")
+	case len(args) > 0:
+		return errors.New("unexpected positional arguments")
 	default:
 		return nil
 	}
@@ -112,7 +107,7 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 		return r.done(errors.New("unexpected positional arguments"))
 	}
 
-	if err := r.validate(); err != nil {
+	if err := r.validateFlags(args); err != nil {
 		return r.done(err)
 	}
 
@@ -129,6 +124,11 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	}
 	defer r.w.Close()
 
+	bqClient, err := newBQClient(ctx, r.authenticator)
+	if err != nil {
+		return r.done(err)
+	}
+
 	fmt.Printf("starting BigQuery queries...\n")
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -136,7 +136,13 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	// Fetch the rejections.
 	var rejections int
 	eg.Go(func() error {
-		err := r.rejections(ctx, func(frag *evalpb.RejectionFragment) error {
+		q := rejectionQuery{
+			startTime:     r.dateRange.from,
+			endTime:       r.dateRange.to,
+			minCLFlakes:   r.minCLFlakes,
+			builderRegexp: r.builderRegex,
+		}
+		err := q.run(ctx, bqClient, func(frag *evalpb.RejectionFragment) error {
 			if frag.Terminal {
 				rejections++
 			}
@@ -151,7 +157,7 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 	var durations int
 	if r.durationDataFrac > 0 {
 		eg.Go(func() error {
-			err := r.durations(ctx, func(td *evalpb.TestDuration) error {
+			err := r.durations(ctx, bqClient, func(td *evalpb.TestDuration) error {
 				durations++
 				return r.write(&evalpb.Record{
 					Data: &evalpb.Record_TestDuration{TestDuration: td},
@@ -194,58 +200,7 @@ func (r *presubmitHistoryRun) write(rec *evalpb.Record) error {
 	return nil
 }
 
-func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquery.Query, error) {
-	http, err := r.authenticator.Client()
-	if err != nil {
-		return nil, err
-	}
-	client, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithHTTPClient(http))
-	if err != nil {
-		return nil, err
-	}
-
-	prepRe := func(rgx string) string {
-		if rgx == "" || rgx == ".*" {
-			return ""
-		}
-		return fmt.Sprintf("^(%s)$", rgx)
-	}
-
-	q := client.Query(sql)
-	q.Parameters = []bigquery.QueryParameter{
-		{Name: "startTime", Value: r.startTime},
-		{Name: "endTime", Value: r.endTime},
-		{Name: "builder_regexp", Value: prepRe(r.builderRegex)},
-		{Name: "test_id_regexp", Value: prepRe(r.testIDRegex)},
-	}
-	return q, nil
-}
-
 var errPatchsetDeleted = errors.New("patchset deleted")
-
-// populateChangedFiles populates ps.ChangedFiles.
-// TODO(nodir): delete this function, gerrit.go and cache.go in February 2021,
-// when we have enough BigQuery data with gerrit info.
-func (r *presubmitHistoryRun) populateChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) error {
-	changedFiles, err := r.gerrit.ChangedFiles(ctx, ps)
-	switch {
-	case err != nil:
-		return err
-	case len(changedFiles) == 0:
-		return errPatchsetDeleted
-	}
-
-	repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
-
-	ps.ChangedFiles = make([]*evalpb.SourceFile, len(changedFiles))
-	for i, path := range changedFiles {
-		ps.ChangedFiles[i] = &evalpb.SourceFile{
-			Repo: repo,
-			Path: "//" + path,
-		}
-	}
-	return nil
-}
 
 // newGerritClient creates a new gitiles client. Does not mutate r.
 func (r *presubmitHistoryRun) newGerritClient() (*gerritClient, error) {
@@ -275,4 +230,34 @@ func (r *presubmitHistoryRun) newGerritClient() (*gerritClient, error) {
 		},
 		limiter: rate.NewLimiter(10, 1),
 	}, nil
+}
+
+// regexpParam prepares a regular expression for a BigQuery parameter.
+func regexpParam(rgx string) string {
+	if rgx == "" || rgx == ".*" {
+		return ""
+	}
+	return fmt.Sprintf("^(%s)$", rgx)
+}
+
+type dateRangeFlags struct {
+	from, to time.Time
+}
+
+func (f *dateRangeFlags) Register(fs *flag.FlagSet) {
+	fs.Var(luciflag.Date(&f.from), "from", "Fetch data starting from this date; format: 2020-01-15")
+	fs.Var(luciflag.Date(&f.to), "to", "Fetch data until this date; format: 2020-02-15")
+}
+
+func (f *dateRangeFlags) Validate() error {
+	switch {
+	case f.from.IsZero():
+		return errors.New("-from is required")
+	case f.to.IsZero():
+		return errors.New("-to is required")
+	case f.to.Before(f.from):
+		return errors.New("the -to date must not be before the -from date")
+	default:
+		return nil
+	}
 }

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -34,6 +35,9 @@ import (
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
+// TODO(nodir): delete gerrit.go and cache.go in February 2021,
+// when we have enough BigQuery data with gerrit info.
+
 type gerritClient struct {
 	// listFilesRPC makes a Gerrit RPC to fetch the list of changed files.
 	// Mockable.
@@ -44,6 +48,28 @@ type gerritClient struct {
 
 type changedFiles struct {
 	Names []string `json:"names"`
+}
+
+// populateChangedFiles populates ps.ChangedFiles.
+func (c *gerritClient) populateChangedFiles(ctx context.Context, ps *evalpb.GerritPatchset) error {
+	changedFiles, err := c.ChangedFiles(ctx, ps)
+	switch {
+	case err != nil:
+		return err
+	case len(changedFiles) == 0:
+		return errPatchsetDeleted
+	}
+
+	repo := fmt.Sprintf("https://%s/%s", ps.Change.Host, strings.TrimSuffix(ps.Change.Project, ".git"))
+
+	ps.ChangedFiles = make([]*evalpb.SourceFile, len(changedFiles))
+	for i, path := range changedFiles {
+		ps.ChangedFiles[i] = &evalpb.SourceFile{
+			Repo: repo,
+			Path: "//" + path,
+		}
+	}
+	return nil
 }
 
 // ChangedFiles returns the list of files changed in the given patchset.

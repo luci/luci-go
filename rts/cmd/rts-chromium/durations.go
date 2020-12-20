@@ -27,23 +27,15 @@ import (
 )
 
 // durations calls the callback for each found test duration.
-func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*evalpb.TestDuration) error) error {
-	q, err := r.bqQuery(ctx, testDurationsSQL)
-	if err != nil {
-		return err
+func (r *presubmitHistoryRun) durations(ctx context.Context, bqClient *bigquery.Client, callback func(*evalpb.TestDuration) error) error {
+	q := bqClient.Query(testDurationsSQL)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "startTime", Value: r.dateRange.from},
+		{Name: "endTime", Value: r.dateRange.to},
+		{Name: "builder_regexp", Value: regexpParam(r.builderRegex)},
+		{Name: "frac", Value: r.durationDataFrac},
+		{Name: "minDuration", Value: r.minDuration.Seconds()},
 	}
-
-	q.Parameters = append(q.Parameters,
-		bigquery.QueryParameter{
-			Name:  "frac",
-			Value: r.durationDataFrac,
-		},
-		bigquery.QueryParameter{
-			Name:  "minDuration",
-			Value: r.minDuration.Seconds(),
-		},
-	)
-
 	it, err := q.Read(ctx)
 	if err != nil {
 		return err
@@ -74,7 +66,7 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 	for i := 0; i < 100; i++ {
 		eg.Go(func() error {
 			for td := range withoutChangedFiles {
-				switch err := r.populateChangedFiles(ctx, td.Patchsets[0]); {
+				switch err := r.gerrit.populateChangedFiles(ctx, td.Patchsets[0]); {
 				case err == errPatchsetDeleted:
 					continue
 				case err != nil:
@@ -137,7 +129,6 @@ WITH
 		FROM luci-resultdb.chromium.try_test_results tr
 		WHERE partition_time BETWEEN @startTime and @endTime
 			AND RAND() <= @frac
-			AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
 			AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 			AND duration > @minDuration
 

@@ -29,18 +29,25 @@ var terminalRejectionFragment = &evalpb.RejectionFragment{
 	Terminal: true,
 }
 
-// rejections calls the callback for each found CQ rejection.
-func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*evalpb.RejectionFragment) error) error {
-	q, err := r.bqQuery(ctx, rejectedPatchSetsSQL)
-	if err != nil {
-		return err
-	}
-	q.Parameters = append(q.Parameters, bigquery.QueryParameter{
-		Name:  "minCLFlakes",
-		Value: r.minCLFlakes,
-	})
+type rejectionQuery struct {
+	startTime     time.Time
+	endTime       time.Time
+	minCLFlakes   int
+	builderRegexp string
 
-	it, err := q.Read(ctx)
+	gerrit *gerritClient
+}
+
+// rejections calls the callback for each found CQ rejection.
+func (q *rejectionQuery) run(ctx context.Context, bqClient *bigquery.Client, callback func(*evalpb.RejectionFragment) error) error {
+	bq := bqClient.Query(rejectedPatchSetsSQL)
+	bq.Parameters = []bigquery.QueryParameter{
+		{Name: "startTime", Value: q.startTime},
+		{Name: "endTime", Value: q.endTime},
+		{Name: "builder_regexp", Value: regexpParam(q.builderRegexp)},
+		{Name: "minCLFlakes", Value: q.minCLFlakes},
+	}
+	it, err := bq.Read(ctx)
 	if err != nil {
 		return err
 	}
@@ -61,6 +68,9 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 	// Iterate over results and call the callback.
 	// One fragment represents at most one BigQuery row.
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		// Read the next row.
 		var row rejectionRow
 		switch err := it.Next(&row); {
@@ -81,7 +91,7 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 
 			// Include the patchset-level info only in the first fragment.
 			row.populatePatchsetInfo(rej)
-			switch err := r.populateChangedFiles(ctx, rej.Patchsets[0]); {
+			switch err := q.gerrit.populateChangedFiles(ctx, rej.Patchsets[0]); {
 			case err == errPatchsetDeleted:
 				curPSIsDeleted = true
 			case err != nil:
@@ -184,7 +194,6 @@ const rejectedPatchSetsSQL = `
 			WHERE partition_time BETWEEN TIMESTAMP_SUB(@startTime, INTERVAL 1 DAY) and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
 				AND not exonerated
 				AND status != 'SKIP' -- not needed for RTS purposes
-				AND (@test_id_regexp = '' OR REGEXP_CONTAINS(test_id, @test_id_regexp))
 				AND (@builder_regexp = '' OR EXISTS (SELECT 0 FROM tr.variant WHERE key='builder' AND REGEXP_CONTAINS(value, @builder_regexp)))
 				-- Exclude broken test locations.
 				-- TODO(nodir): remove this after crbug.com/1130425 is fixed.

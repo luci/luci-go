@@ -70,7 +70,7 @@ func (p *Player) playback(ctx context.Context, withDurations, withRejections boo
 		p.r.Close()
 	}()
 
-	curRej := &evalpb.Rejection{}
+	var rejSynth RejectionSynth
 	for {
 		rec, err := p.r.Read()
 		switch {
@@ -85,14 +85,11 @@ func (p *Player) playback(ctx context.Context, withDurations, withRejections boo
 
 		case *evalpb.Record_RejectionFragment:
 			if withRejections {
-				proto.Merge(curRej, data.RejectionFragment.Rejection)
-				if data.RejectionFragment.Terminal {
+				if rej := rejSynth.Next(data.RejectionFragment); rej != nil {
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
-					case p.RejectionC <- curRej:
-						// Start a new rejection.
-						curRej = &evalpb.Rejection{}
+					case p.RejectionC <- rej:
 					}
 				}
 			}
@@ -110,4 +107,21 @@ func (p *Player) playback(ctx context.Context, withDurations, withRejections boo
 			panic(fmt.Sprintf("unexpected record %s", rec))
 		}
 	}
+}
+
+type RejectionSynth struct {
+	curRej *evalpb.Rejection
+}
+
+func (s *RejectionSynth) Next(frag *evalpb.RejectionFragment) *evalpb.Rejection {
+	if s.curRej == nil {
+		s.curRej = &evalpb.Rejection{}
+	}
+	proto.Merge(s.curRej, frag.Rejection)
+	if !frag.Terminal {
+		return nil
+	}
+	ret := s.curRej
+	s.curRej = nil
+	return ret
 }

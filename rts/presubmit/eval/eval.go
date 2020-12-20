@@ -44,10 +44,10 @@ type Eval struct {
 	Concurrency int
 
 	// Rejections are used to evaluate safety of the strategy.
-	Rejections *history.Player
+	RejectionC <-chan *evalpb.Rejection
 
 	// Durations are used to evaluate efficiency of the strategy.
-	Durations *history.Player
+	DurationC <-chan *evalpb.TestDuration
 
 	// LogFurthest instructs to log rejections that the selection strategy
 	// concluded that the failed tests have great distance.
@@ -57,36 +57,6 @@ type Eval struct {
 	//
 	// TODO(nodir): implement this.
 	LogFurthest int
-}
-
-// RegisterFlags registers flags for the Eval fields.
-func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
-	fs.IntVar(&e.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
-	fs.Var(&historyFileInputFlag{ptr: &e.Rejections}, "rejections", text.Doc(`
-		Path to the history file with change rejections. Used for safety evaluation.
-	`))
-	fs.Var(&historyFileInputFlag{ptr: &e.Durations}, "durations", text.Doc(`
-		Path to the history file with test durations. Used for efficiency evaluation.
-	`))
-	fs.IntVar(&e.LogFurthest, "log-furthest", 0, text.Doc(`
-		Instructs to log rejections that the selection strategy concluded that the
-		failed tests have great distance.
-		The flag value is the number of rejections to print, ordered by descending
-		distance.
-		This can help diagnosing the selection strategy.
-	`))
-	return nil
-}
-
-// ValidateFlags validates values of flags registered using RegisterFlags.
-func (e *Eval) ValidateFlags() error {
-	if e.Rejections == nil {
-		return errors.New("-rejections is required")
-	}
-	if e.Durations == nil {
-		return errors.New("-durations is required")
-	}
-	return nil
 }
 
 // Run evaluates the candidate strategy.
@@ -99,9 +69,13 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 		return nil, errors.Annotate(err, "failed to evaluate safety").Err()
 	}
 
-	logging.Infof(ctx, "evaluating efficiency...")
-	if err := e.evaluateEfficiency(ctx, res, grid); err != nil {
-		return nil, errors.Annotate(err, "failed to evaluate efficiency").Err()
+	if e.DurationC == nil {
+		logging.Infof(ctx, "no duration data; skipping efficiency evaluation")
+	} else {
+		logging.Infof(ctx, "evaluating efficiency...")
+		if err := e.evaluateEfficiency(ctx, res, grid); err != nil {
+			return nil, errors.Annotate(err, "failed to evaluate efficiency").Err()
+		}
 	}
 
 	res.Thresholds = grid.Slice()
@@ -115,17 +89,8 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 	var testAffectedness AffectednessSlice
 	var mu sync.Mutex
 
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-
-	// Play back the history.
-	eg.Go(func() error {
-		err := e.Rejections.PlaybackRejections(ctx)
-		return errors.Annotate(err, "failed to playback history").Err()
-	})
-
-	e.goMany(eg, func() error {
-		for rej := range e.Rejections.RejectionC {
+	err := e.parallelize(ctx, func(ctx context.Context) error {
+		for rej := range e.RejectionC {
 			// TODO(crbug.com/1112125): skip the patchset if it has a ton of failed tests.
 			// Most selection strategies would reject such a patchset, so it represents noise.
 
@@ -150,12 +115,10 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 		}
 		return nil
 	})
-
-	if err := eg.Wait(); err != nil {
+	switch {
+	case err != nil:
 		return nil, err
-	}
-
-	if len(changeAffectedness) == 0 {
+	case len(changeAffectedness) == 0:
 		return nil, errors.New("no change rejections")
 	}
 
@@ -205,19 +168,10 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 	var totalDuration int64
 	var dataPoints int64
 
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-
-	// Play back the history.
-	eg.Go(func() error {
-		err := e.Durations.PlaybackDurations(ctx)
-		return errors.Annotate(err, "failed to playback history").Err()
-	})
-
-	e.goMany(eg, func() error {
+	err := e.parallelize(ctx, func(ctx context.Context) error {
 		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
 		out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
-		for td := range e.Durations.DurationC {
+		for td := range e.DurationC {
 			// Invoke the strategy.
 			in.ChangedFiles = in.ChangedFiles[:0]
 			in.ensureChangedFilesInclude(td.Patchsets...)
@@ -238,8 +192,7 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 		}
 		return ctx.Err()
 	})
-
-	if err := eg.Wait(); err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -261,16 +214,19 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 	return nil
 }
 
-func (e *Eval) goMany(eg *errgroup.Group, f func() error) {
+func (e *Eval) parallelize(ctx context.Context, f func(ctx context.Context) error) error {
 	concurrency := e.Concurrency
 	if concurrency <= 0 {
 		concurrency = defaultConcurrency
 	}
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
 	for i := 0; i < concurrency; i++ {
 		eg.Go(func() error {
-			return f()
+			return f(ctx)
 		})
 	}
+	return eg.Wait()
 }
 
 // bucketGrid is an auxulary data structure to compute cumulative counters
@@ -322,4 +278,93 @@ func (b *bucketGrid) makeCumulative() {
 			b[row][col] += b[row+1][col]
 		}
 	}
+}
+
+// CLI adapts Eval for command line interface.
+type CLI struct {
+	Eval Eval
+
+	// RejectionsFileName is a name of the file with Eval.RejectionC contents.
+	RejectionsFileName string
+
+	// DurationFileName is a name of the file with Eval.DurationC contents.
+	DurationFileName string
+}
+
+// RegisterFlags registers flags for the Eval fields.
+func (cli *CLI) RegisterFlags(fs *flag.FlagSet) error {
+	fs.IntVar(&cli.Eval.Concurrency, "j", defaultConcurrency, "Number of job to run parallel")
+	fs.StringVar(&cli.RejectionsFileName, "rejections", "", text.Doc(`
+		Path to the history file with change rejections. Used for safety evaluation.
+	`))
+	fs.StringVar(&cli.DurationFileName, "durations", "", text.Doc(`
+		Path to the history file with test durations. Used for efficiency evaluation.
+	`))
+	fs.IntVar(&cli.Eval.LogFurthest, "log-furthest", 0, text.Doc(`
+		Instructs to log rejections that the selection strategy concluded that the
+		failed tests have great distance.
+		The flag value is the number of rejections to print, ordered by descending
+		distance.
+		This can help diagnosing the selection strategy.
+	`))
+	return nil
+}
+
+// ValidateFlags validates values of flags registered using RegisterFlags.
+func (cli *CLI) ValidateFlags() error {
+	if cli.RejectionsFileName == "" {
+		return errors.New("-rejections is required")
+	}
+	if cli.DurationFileName == "" {
+		return errors.New("-durations is required")
+	}
+	return nil
+}
+
+// Run runs the evaluation.
+func (cli *CLI) Run(ctx context.Context) (*Result, error) {
+	if err := cli.ValidateFlags(); err != nil {
+		return nil, err
+	}
+
+	rejectionPlayer, err := cli.openHistory(cli.RejectionsFileName)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to open %q", cli.RejectionsFileName).Err()
+	}
+
+	durationPlayer, err := cli.openHistory(cli.DurationFileName)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to open %q", cli.DurationFileName).Err()
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
+	eg.Go(func() error {
+		err := rejectionPlayer.PlaybackRejections(ctx)
+		return errors.Annotate(err, "failed to read rejections").Err()
+	})
+
+	eg.Go(func() error {
+		err := durationPlayer.PlaybackDurations(ctx)
+		return errors.Annotate(err, "failed to read durations").Err()
+	})
+
+	var res *Result
+	eg.Go(func() (err error) {
+		cli.Eval.RejectionC = rejectionPlayer.RejectionC
+		cli.Eval.DurationC = durationPlayer.DurationC
+		res, err = cli.Eval.Run(ctx)
+		return
+	})
+
+	return res, eg.Wait()
+}
+
+func (cli *CLI) openHistory(fileName string) (*history.Player, error) {
+	r, err := history.OpenFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	return history.NewPlayer(r), nil
 }
