@@ -16,19 +16,25 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/maruel/subcommands"
+	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/rts/filegraph/git"
 )
 
 var logCfg = gologger.LoggerConfig{
@@ -51,6 +57,7 @@ func main() {
 			cmdPresubmitHistory(&authOpt),
 			cmdEval(),
 			cmdSelect(),
+			cmdCreateModel(&authOpt),
 
 			{}, // a separator
 			authcli.SubcommandLogin(authOpt, "auth-login", false),
@@ -75,4 +82,41 @@ func (r *baseCommandRun) done(err error) int {
 		return 1
 	}
 	return 0
+}
+
+func newBQClient(ctx context.Context, auth *auth.Authenticator) (*bigquery.Client, error) {
+	http, err := auth.Client()
+	if err != nil {
+		return nil, err
+	}
+	return bigquery.NewClient(ctx, "chrome-rts", option.WithHTTPClient(http))
+}
+
+type graphLoader struct {
+	*git.Graph
+	checkout    string
+	loadOptions git.LoadOptions
+}
+
+func (g *graphLoader) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&g.checkout, "checkout", "", "Path to a src.git checkout")
+	fs.IntVar(&g.loadOptions.MaxCommitSize, "fg-max-commit-size", 100, text.Doc(`
+		Maximum number of files touched by a commit.
+		Commits that exceed this limit are ignored.
+		The rationale is that large commits provide a weak signal of file
+		relatedness and are expensive to process, O(N^2).
+	`))
+}
+
+func (g *graphLoader) ValidateFlags() error {
+	if g.checkout == "" {
+		return errors.New("-checkout is required")
+	}
+	return nil
+}
+
+func (g *graphLoader) Load(ctx context.Context) error {
+	var err error
+	g.Graph, err = git.Load(ctx, g.checkout, g.loadOptions)
+	return err
 }
