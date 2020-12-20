@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/rts"
 	"go.chromium.org/luci/rts/filegraph"
 	"go.chromium.org/luci/rts/filegraph/git"
 	"go.chromium.org/luci/rts/presubmit/eval"
@@ -135,7 +136,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		}
 	}
 
-	affectedness := make(map[filegraph.Node]eval.Affectedness, len(in.TestVariants))
+	affectedness := make(map[filegraph.Node]rts.Affectedness, len(in.TestVariants))
 	testNodes := make([]filegraph.Node, len(in.TestVariants))
 	for i, tv := range in.TestVariants {
 		// Android does not have locations.
@@ -147,7 +148,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 			return nil
 		}
 		// Too far away by default.
-		affectedness[n] = eval.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
+		affectedness[n] = rts.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
 		testNodes[i] = n
 	}
 
@@ -157,7 +158,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		// Note: the files are enumerated in the order of distance.
 		rank++
 		if _, ok := affectedness[sp.Node]; ok {
-			affectedness[sp.Node] = eval.Affectedness{
+			affectedness[sp.Node] = rts.Affectedness{
 				Distance: sp.Distance,
 				Rank:     rank,
 			}
