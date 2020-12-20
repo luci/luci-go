@@ -51,7 +51,7 @@ func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Outp
 		}
 	}
 
-	return r.fg.EvalStrategy(ctx, in, out)
+	return r.graph.EvalStrategy(ctx, in, out)
 }
 
 // requiresAllTests returns true if changedFile requires running all tests.
