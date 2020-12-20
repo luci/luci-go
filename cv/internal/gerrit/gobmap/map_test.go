@@ -16,18 +16,17 @@ package gobmap
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGobMap(t *testing.T) {
@@ -91,55 +90,66 @@ func TestGobMap(t *testing.T) {
 			So(mps, ShouldBeEmpty)
 		})
 
-		Convey("Lookup nonexistent project returns empty ApplicableConfig", func() {
-			ac, err := Lookup(ctx, "foo-review.googlesource.com", "repo", "refs/heads/main")
+		// Helper function to return just the projects and config group
+		// names returned by Lookup.
+		lookup := func(ctx context.Context, host, repo, ref string) map[string][]string {
+			ret := map[string][]string{}
+			ac, err := Lookup(ctx, host, repo, ref)
 			So(err, ShouldBeNil)
-			So(ac.Projects, ShouldBeEmpty)
+			for _, p := range ac.Projects {
+				var names []string
+				for _, id := range p.ConfigGroupIds {
+					parts := strings.Split(id, "/")
+					So(len(parts), ShouldEqual, 2)
+					names = append(names, parts[1])
+				}
+				ret[p.Name] = names
+			}
+			return ret
+		}
+
+		Convey("Lookup nonexistent project returns empty ApplicableConfig", func() {
+			So(lookup(ctx, "foo-review.googlesource.com", "repo", "refs/heads/main"), ShouldBeEmpty)
 		})
 
 		Convey("Update and Lookup existing project", func() {
 			err := Update(ctx, "chromium")
 			So(err, ShouldBeNil)
-
-			// TODO(qyearsley): Consider adding a helper function to reduce
-			// boilerplate. Also make a helper function to wrap Lookup
-			// so that we don't need to assert the hashes.
-
 			Convey("Lookup main ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/main")
-				So(err, ShouldBeNil)
 				// Note that even though the other config group also matches,
 				// only the main ref is applicable since the other one is the
 				// fallback config group.
-				So(ac.Projects, ShouldHaveLength, 1)
-				So(ac.Projects[0], ShouldResembleProto,
-					&changelist.ApplicableConfig_Project{
-						Name:           "chromium",
-						ConfigGroupIds: []string{"sha256:a5bf9aeca30c0177/group_main"},
+				So(
+					lookup(ctx, "chromium-review.googlesource.com",
+						"chromium/src", "refs/heads/main"),
+					ShouldResemble,
+					map[string][]string{
+						"chromium": []string{"group_main"},
 					})
 			})
 
 			Convey("Lookup other ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/something")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldHaveLength, 1)
-				So(ac.Projects[0], ShouldResembleProto,
-					&changelist.ApplicableConfig_Project{
-						Name:           "chromium",
-						ConfigGroupIds: []string{"sha256:a5bf9aeca30c0177/group_other"},
+				So(
+					lookup(ctx, "chromium-review.googlesource.com",
+						"chromium/src", "refs/heads/something"),
+					ShouldResemble,
+					map[string][]string{
+						"chromium": []string{"group_other"},
 					})
 			})
 
 			Convey("Lookup excluded ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/123")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldBeEmpty)
+				So(
+					lookup(ctx, "chromium-review.googlesource.com",
+						"chromium/src", "refs/heads/123"),
+					ShouldBeEmpty)
 			})
 
 			Convey("Lookup ref with no matches", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/branch-heads/beta")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldBeEmpty)
+				So(
+					lookup(ctx, "chromium-review.googlesource.com",
+						"chromium/src", "refs/branch-heads/beta"),
+					ShouldBeEmpty)
 			})
 
 			tc.Disable(ctx, "chromium")
