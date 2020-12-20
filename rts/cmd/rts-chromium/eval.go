@@ -15,8 +15,6 @@
 package main
 
 import (
-	"context"
-	"flag"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -66,9 +64,6 @@ func (r *evalRun) validate() error {
 	case err != nil:
 		return err
 
-	case len(flag.Args()) > 0:
-		return errors.New("unexpected positional arguments")
-
 	case r.checkout == "":
 		return errors.New("-checkout is required")
 
@@ -79,24 +74,24 @@ func (r *evalRun) validate() error {
 
 func (r *evalRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	return r.done(r.run(ctx))
-}
+	if len(args) != 0 {
+		return r.done(errors.New("unexpected positional arguments"))
+	}
 
-func (r *evalRun) run(ctx context.Context) error {
 	if err := r.validate(); err != nil {
-		return err
+		return r.done(err)
 	}
 
 	var err error
 	if r.fg, err = git.Load(ctx, r.checkout, r.loadOptions); err != nil {
-		return errors.Annotate(err, "failed to load the file graph").Err()
+		return r.done(errors.Annotate(err, "failed to load the file graph").Err())
 	}
 
 	r.ev.Strategy = r.selectTests
 	res, err := r.ev.Run(ctx)
 	if err != nil {
-		return err
+		return r.done(err)
 	}
 	res.Print(os.Stdout, 0.9)
-	return nil
+	return 0
 }
