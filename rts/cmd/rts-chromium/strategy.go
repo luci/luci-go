@@ -41,7 +41,7 @@ func (r *selectRun) selectTests(skipFile func(name string) error) (err error) {
 	return
 }
 
-func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
+func (r *createModelRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
 	for _, f := range in.ChangedFiles {
 		switch {
 		case f.Repo != "https://chromium-review.googlesource.com/chromium/src":
