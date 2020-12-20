@@ -20,7 +20,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/rts/filegraph/git"
@@ -37,13 +36,7 @@ func cmdEval() *subcommands.Command {
 			if err := r.ev.RegisterFlags(&r.Flags); err != nil {
 				panic(err) // should never happen
 			}
-			r.Flags.StringVar(&r.checkout, "checkout", "", "Path to a src.git checkout")
-			r.Flags.IntVar(&r.loadOptions.MaxCommitSize, "fg-max-commit-size", 100, text.Doc(`
-				Maximum number of files touched by a commit.
-				Commits that exceed this limit are ignored.
-				The rationale is that large commits provide a weak signal of file
-				relatedness and are expensive to process, O(N^2).
-			`))
+			r.graph.RegisterFlags(&r.Flags)
 			// TODO(nodir): add -fg-sibling-relevance flag.
 			return r
 		},
@@ -52,24 +45,20 @@ func cmdEval() *subcommands.Command {
 
 type evalRun struct {
 	baseCommandRun
-	ev          eval.Eval
-	checkout    string
-	loadOptions git.LoadOptions
+	graph graphLoader
+	ev    eval.Eval
 
 	fg *git.Graph
 }
 
-func (r *evalRun) validate() error {
-	switch err := r.ev.ValidateFlags(); {
-	case err != nil:
+func (r *evalRun) validateFlags() error {
+	if err := r.ev.ValidateFlags(); err != nil {
 		return err
-
-	case r.checkout == "":
-		return errors.New("-checkout is required")
-
-	default:
-		return nil
 	}
+	if err := r.graph.ValidateFlags(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *evalRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -78,12 +67,11 @@ func (r *evalRun) Run(a subcommands.Application, args []string, env subcommands.
 		return r.done(errors.New("unexpected positional arguments"))
 	}
 
-	if err := r.validate(); err != nil {
+	if err := r.validateFlags(); err != nil {
 		return r.done(err)
 	}
 
-	var err error
-	if r.fg, err = git.Load(ctx, r.checkout, r.loadOptions); err != nil {
+	if err := r.graph.Load(ctx); err != nil {
 		return r.done(errors.Annotate(err, "failed to load the file graph").Err())
 	}
 
