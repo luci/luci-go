@@ -17,9 +17,7 @@ package main
 import (
 	"context"
 	"flag"
-	"math"
 	"os"
-	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -27,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/rts"
-	"go.chromium.org/luci/rts/filegraph"
 	"go.chromium.org/luci/rts/filegraph/git"
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
@@ -102,78 +98,5 @@ func (r *evalRun) run(ctx context.Context) error {
 		return err
 	}
 	res.Print(os.Stdout, 0.9)
-	return nil
-}
-
-func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
-	// Run Dijkstra from the modified files and try to find all test files.
-
-	q := &filegraph.Query{
-		Sources: make([]filegraph.Node, len(in.ChangedFiles)),
-		EdgeReader: &git.EdgeReader{
-			// We run the query from changed files, but we need distance
-			// from test files to changed files, and not the other way around.
-			Reversed: true,
-		},
-	}
-
-	for i, f := range in.ChangedFiles {
-		switch {
-		case f.Repo != "https://chromium-review.googlesource.com/chromium/src":
-			return errors.Reason("unexpected repo %q", f.Repo).Err()
-		case strings.HasPrefix(f.Path, "//testing/"):
-			// This CL changes the way tests run or their configurations.
-			// Run all tests.
-			return nil
-		case f.Path == "//DEPS":
-			// The full list of modified files is not available, and the
-			// graph does not include DEPSed file changes anyway.
-			return nil
-		}
-
-		if q.Sources[i] = r.fg.Node(f.Path); q.Sources[i] == nil {
-			return nil
-		}
-	}
-
-	affectedness := make(map[filegraph.Node]rts.Affectedness, len(in.TestVariants))
-	testNodes := make([]filegraph.Node, len(in.TestVariants))
-	for i, tv := range in.TestVariants {
-		// Android does not have locations.
-		if tv.FileName == "" {
-			return nil
-		}
-		n := r.fg.Node(tv.FileName)
-		if n == nil {
-			return nil
-		}
-		// Too far away by default.
-		affectedness[n] = rts.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
-		testNodes[i] = n
-	}
-
-	found := 0
-	rank := 0
-	q.Run(func(sp *filegraph.ShortestPath) (keepGoing bool) {
-		// Note: the files are enumerated in the order of distance.
-		rank++
-		if _, ok := affectedness[sp.Node]; ok {
-			affectedness[sp.Node] = rts.Affectedness{
-				Distance: sp.Distance,
-				Rank:     rank,
-			}
-			found++
-			if found == len(affectedness) {
-				// We have found everything.
-				return false
-			}
-		}
-
-		return true
-	})
-
-	for i, n := range testNodes {
-		out.TestVariantAffectedness[i] = affectedness[n]
-	}
 	return nil
 }
