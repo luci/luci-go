@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c138982_9d7718d6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 26
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "agree",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 61
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98a28c55_e3b97933",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "hard to grasp on first read. How about:\n\nLog rejections for which failed tests have great distance,\nas concluded by the selection strategy.\n\nAlso, maybe s/great/large ?",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 73,
+        "endChar": 35
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "accc4f34_f6c2d6da",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 170,
+        "startChar": 41,
+        "endLine": 170,
+        "endChar": 51
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a6e38f1_8324eb05",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "qq: why int64 in bucketGrid but only int here? Do you expect int32 in bucketGrid to overflow? If yes, then IMO it should be int64 in Preserved*, too.\n\nupdate: oh, is this because you also use bucketGrid for savedDurations, which is certainly needs int64?",
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "892e6c96_364a1ca4",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "👍 comments in the rest of this file.\n\nI started reviewing an earlier version and had lots of \"WHAT?!\" moments, that the comments here helped clear out.",
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe9cfc5b_7a6c868f",
+        "filename": "rts/presubmit/eval/main.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "this is very cryptic (and same with 0.9 above).\nAlthough our style guide thinks it\u0027s fine, I prefer to document it:\n  ..., 0 /* minChangeRecall */)",
+      "range": {
+        "startLine": 47,
+        "startChar": 20,
+        "endLine": 47,
+        "endChar": 24
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9ec043f_408c25e7",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-21T23:25:17Z",
+      "side": 1,
+      "message": "(very minor) I fail to grasp why is this important. Are there many duplicates expected otherwise?\n\nif not, I think sort.Slice(thresholds, customCmp) would be less code and faster than creating best map \u0026 keys slices.",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 8
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
