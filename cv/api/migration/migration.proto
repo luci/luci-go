@@ -21,6 +21,7 @@ option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
 
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 
@@ -72,7 +73,40 @@ message FetchActiveRunsResponse {
 }
 
 message Run {
-  // Re-use BQ attempt for now
   bigquery.Attempt attempt = 1;
-  // TODO(tandrii/yiwzhang):  add more fields if needed
+
+  // The following fields are set only in FetchActiveRunsResponse.
+
+  // CV's run ID.
+  string id = 2;
+  repeated RunCL cls = 3;
+  string config_group_name = 4;
 }
+
+message RunCL {
+  // CV's CLID.
+  int64 id = 1;
+  bigquery.GerritChange gc = 2;
+  // Hint to CQDaemon to avoid needless re-fetching.
+  google.protobuf.Timestamp updated_time = 3;
+
+  message Trigger {
+    google.protobuf.Timestamp time = 1;
+    // True -> Dry, False -> Full run.
+    bool dry_run = 2;
+    // Gerrit account ID.
+    int64 account_id = 3;
+    // User email, if known.
+    string email = 4;
+  }
+  Trigger trigger = 4;
+
+  message Dep {
+    // CV's CLID.
+    int64 id = 1;
+    // True means Dep is the immediate git parent and must be submitted first.
+    bool hard = 2;
+  }
+  repeated Dep deps = 5;
+}
+
