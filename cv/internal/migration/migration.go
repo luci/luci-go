@@ -18,20 +18,30 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/run"
+	runImpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -100,6 +110,93 @@ func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.
 	return
 }
 
+// FetchActiveRuns returns all RUNNING runs for the given LUCI Project.
+func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.FetchActiveRunsRequest) (resp *migrationpb.FetchActiveRunsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return
+	}
+
+	runs := []run.Run{}
+	q := run.NewQueryWithLUCIProject(req.GetLuciProject()).Eq("Status", run.Status_RUNNING)
+	err = errors.Annotate(datastore.GetAll(ctx, q, &runs), "fetch Run entities").Tag(transient.Tag).Err()
+	if err != nil {
+		return
+	}
+
+	resp = &migrationpb.FetchActiveRunsResponse{}
+	if len(runs) == 0 {
+		return
+	}
+	poolSize := len(runs)
+	if poolSize > 20 {
+		poolSize = 20
+	}
+	var respMu sync.Mutex
+	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
+		for _, r := range runs {
+			workCh <- func() error {
+				runCLs := []runImpl.RunCL{}
+				// TODO(yiwzhang): Store CLIDs inside Run entity so that we can
+				// benefit from DSCache.
+				q := datastore.NewQuery("RunCL").Ancestor(datastore.KeyForObj(ctx, r))
+				if err := datastore.GetAll(ctx, q, &runCLs); err != nil {
+					return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
+				}
+				mcls := make([]*migrationpb.RunCL, len(runCLs))
+				mode := cvbqpb.Mode_FULL_RUN
+				if r.Mode == run.DryRun {
+					mode = cvbqpb.Mode_DRY_RUN
+				}
+				for i, cl := range runCLs {
+					trigger, err := findTrigger(cl.Detail.GetGerrit().GetInfo(), r.Mode)
+					if err != nil {
+						return errors.Annotate(err, "find trigger for CL %d", cl.ID).Err()
+					}
+					mcls[i] = &migrationpb.RunCL{
+						Id: int64(cl.ID),
+						Gc: &cvbqpb.GerritChange{
+							Host:                       cl.Detail.GetGerrit().GetHost(),
+							Project:                    cl.Detail.GetGerrit().GetInfo().GetProject(),
+							Change:                     cl.Detail.GetGerrit().GetInfo().GetNumber(),
+							Patchset:                   int64(cl.Detail.GetPatchset()),
+							EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
+							Mode:                       mode,
+						},
+						UpdatedTime: cl.Detail.GetExternalUpdateTime(),
+						Trigger:     trigger,
+						Deps:        make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
+					}
+					for j, dep := range cl.Detail.GetDeps() {
+						mcls[i].Deps[j] = &migrationpb.RunCL_Dep{
+							Id: dep.GetClid(),
+						}
+						if dep.GetKind() == changelist.DepKind_HARD {
+							mcls[i].Deps[j].Hard = true
+						}
+					}
+				}
+				respMu.Lock()
+				defer respMu.Unlock()
+				resp.Runs = append(resp.Runs, &migrationpb.Run{
+					Attempt: &cvbqpb.Attempt{
+						LuciProject: req.GetLuciProject(),
+						StartTime:   timestamppb.New(r.CreateTime),
+					},
+					Id:  string(r.ID),
+					Cls: mcls,
+				})
+				return nil
+			}
+		}
+	})
+
+	if err != nil {
+		resp.Runs = nil
+	}
+	return
+}
+
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
 	i := auth.CurrentIdentity(ctx)
 	if i.Kind() == identity.Project {
@@ -144,4 +241,35 @@ func clsOf(a *cvbqpb.Attempt) string {
 	}
 	emit(len(a.GerritChanges))
 	return buf.String()
+}
+
+const cqLabelName = "Commit-Queue"
+
+func findTrigger(ci *gerritpb.ChangeInfo, mode run.Mode) (*migrationpb.RunCL_Trigger, error) {
+	li := ci.GetLabels()[cqLabelName]
+	if li == nil {
+		return nil, errors.Reason("missing LabelInfo for Label %q", cqLabelName).Err()
+	}
+	var cqLabelVal int32 = 1
+	if mode == run.FullRun {
+		cqLabelVal = 2
+	}
+	var ret *migrationpb.RunCL_Trigger
+	// trigger is the earliest vote that has `cqLabelVal`.
+	for _, ai := range li.GetAll() {
+		if ai.GetValue() != cqLabelVal {
+			continue
+		}
+		if ret == nil || ai.GetDate().AsTime().Before(ai.GetDate().AsTime()) {
+			ret = &migrationpb.RunCL_Trigger{
+				Time:      ai.GetDate(),
+				AccountId: ai.GetUser().GetAccountId(),
+				Email:     ai.GetUser().GetEmail(),
+			}
+		}
+	}
+	if ret == nil {
+		return nil, errors.Reason("no vote found for %q +%d", cqLabelName, cqLabelVal).Err()
+	}
+	return ret, nil
 }
