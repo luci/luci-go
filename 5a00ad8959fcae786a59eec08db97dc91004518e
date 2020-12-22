@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba7e1e1b_711477ee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T22:59:46Z",
+      "side": 1,
+      "message": "hold on on this. The `findTrigger` logic isn\u0027t correct.",
+      "revId": "5a00ad8959fcae786a59eec08db97dc91004518e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

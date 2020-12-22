@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "28772664_c41183ac",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T22:59:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a2ddd0b9_52b25e7e",
+      "range": {
+        "startLine": 118,
+        "startChar": 34,
+        "endLine": 118,
+        "endChar": 54
+      },
+      "revId": "7fb7e7b57b047e338ad988a70d3cfe8cf454c377",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11c1c9b9_8b3292e5",
@@ -88,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0834258c_eb25f0e5",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T22:59:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "11c1c9b9_8b3292e5",
+      "range": {
+        "startLine": 139,
+        "startChar": 5,
+        "endLine": 143,
+        "endChar": 6
+      },
+      "revId": "7fb7e7b57b047e338ad988a70d3cfe8cf454c377",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a6fa7570_f7724eb1",
@@ -101,6 +149,30 @@
       "writtenOn": "2020-12-18T19:05:09Z",
       "side": 1,
       "message": "Consider \n\n  run :\u003d \u0026migrationpb.Run{Attempt: attempt}\n  lock.Lock()\n  resp.Runs \u003d append(resp.Runs, run)\n  lock.Unlock()\n\ninstead of a channel + defer + new goroutine + iterating over channel. It\u0027ll be slower than channel only under severe lock contention, which is highly unlikely.",
+      "range": {
+        "startLine": 165,
+        "startChar": 5,
+        "endLine": 165,
+        "endChar": 26
+      },
+      "revId": "7fb7e7b57b047e338ad988a70d3cfe8cf454c377",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67ac0c2f_1cd335f8",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T22:59:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6fa7570_f7724eb1",
       "range": {
         "startLine": 165,
         "startChar": 5,
