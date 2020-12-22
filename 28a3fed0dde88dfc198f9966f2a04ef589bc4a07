@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d8e6933_dcc0119d",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T18:41:13Z",
+      "side": 1,
+      "message": "This is actually in the attempt[1]. I\u0027m intentionally not populating it in my change because I think CQDaemon will need to figure out the ConfigGroup itself as the Config version in CV and CQDaemon may be mismatching.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto;l\u003d36;drc\u003da524ab5c5c417bd3f9746211b464c3c1ef351cde",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 31
+      },
+      "revId": "28a3fed0dde88dfc198f9966f2a04ef589bc4a07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "939de445_ca29f232",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-22T18:41:13Z",
+      "side": 1,
+      "message": "Do we need to expose this to CQDamon as this ID is supposed to be internal to CV?",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 15
+      },
+      "revId": "28a3fed0dde88dfc198f9966f2a04ef589bc4a07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
