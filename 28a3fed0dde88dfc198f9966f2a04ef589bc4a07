@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3b20fc7a_faf1f86e",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-22T18:51:51Z",
+      "side": 1,
+      "message": "This is a good point. It\u0027s non-essential to have config_group_name, though it simplifies code in CQDaemon, so let me get rid of this.",
+      "parentUuid": "6d8e6933_dcc0119d",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 31
+      },
+      "revId": "28a3fed0dde88dfc198f9966f2a04ef589bc4a07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "939de445_ca29f232",
         "filename": "cv/api/migration/migration.proto",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-22T18:41:13Z",
       "side": 1,
       "message": "Do we need to expose this to CQDamon as this ID is supposed to be internal to CV?",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 15
+      },
+      "revId": "28a3fed0dde88dfc198f9966f2a04ef589bc4a07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15eba87d_64c36b9e",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-22T18:51:51Z",
+      "side": 1,
+      "message": "Just for the sake of identifying deps. The assumption is that Dep.id will match one of the RunCL in the same Run.",
+      "parentUuid": "939de445_ca29f232",
       "range": {
         "startLine": 87,
         "startChar": 0,
