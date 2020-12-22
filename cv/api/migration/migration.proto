@@ -80,11 +80,10 @@ message Run {
   // CV's run ID.
   string id = 2;
   repeated RunCL cls = 3;
-  string config_group_name = 4;
 }
 
 message RunCL {
-  // CV's CLID.
+  // CV's CLID. Used to identify Deps.
   int64 id = 1;
   bigquery.GerritChange gc = 2;
   // Hint to CQDaemon to avoid needless re-fetching.
@@ -102,7 +101,7 @@ message RunCL {
   Trigger trigger = 4;
 
   message Dep {
-    // CV's CLID.
+    // CV's CLID. Guaranteed to match one of the RunCL in the same Run.
     int64 id = 1;
     // True means Dep is the immediate git parent and must be submitted first.
     bool hard = 2;
