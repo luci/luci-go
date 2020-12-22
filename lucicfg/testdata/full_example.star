@@ -146,6 +146,9 @@ luci.builder(
                 ),
             ),
         ],
+        history_options = resultdb.history_options(
+            index_results_by_timestamp=True,
+        ),
     ),
 )
 
