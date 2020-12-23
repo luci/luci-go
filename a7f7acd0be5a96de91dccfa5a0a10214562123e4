@@ -22,6 +22,30 @@
       },
       "revId": "a7f7acd0be5a96de91dccfa5a0a10214562123e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f13a236_be8d5d76",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-23T23:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1e6a339_8f1434e1",
+      "range": {
+        "startLine": 168,
+        "startChar": 37,
+        "endLine": 168,
+        "endChar": 41
+      },
+      "revId": "a7f7acd0be5a96de91dccfa5a0a10214562123e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
