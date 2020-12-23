@@ -16,6 +16,23 @@
       "message": "PTAL again",
       "revId": "9b2863098ca8d04fb1d60be2f7e89a46236f56d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a3adc84_e16d9e2a",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-23T17:13:39Z",
+      "side": 1,
+      "message": "👍 thanks for carefully following the original. The test coverage is IMO insufficient, but we can add it later once  this function is moved to its final place.",
+      "revId": "9b2863098ca8d04fb1d60be2f7e89a46236f56d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
