@@ -64,7 +64,7 @@ type Run struct {
 	// Mode dictates the behavior of this Run.
 	Mode Mode `gae:",noindex"`
 	// Status describes the status of this Run.
-	Status Status `gae:",noindex"`
+	Status Status
 	// EVersion is the entity version.
 	//
 	// It increments by one upon every successful modification.
