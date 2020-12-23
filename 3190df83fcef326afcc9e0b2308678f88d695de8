@@ -39,6 +39,47 @@
       },
       "revId": "3190df83fcef326afcc9e0b2308678f88d695de8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9316b79c_fb6641f6",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-23T21:10:29Z",
+      "side": 1,
+      "message": "and I didn\u0027t notice, again 😞",
+      "parentUuid": "3b9e3f3f_e08ce94d",
+      "range": {
+        "startLine": 139,
+        "startChar": 3,
+        "endLine": 139,
+        "endChar": 9
+      },
+      "revId": "3190df83fcef326afcc9e0b2308678f88d695de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b75b147_77429746",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-23T21:10:29Z",
+      "side": 1,
+      "message": "plz move inside func below.",
+      "revId": "3190df83fcef326afcc9e0b2308678f88d695de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
