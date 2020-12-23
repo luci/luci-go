@@ -136,12 +136,17 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 	var respMu sync.Mutex
 	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
 		for _, r := range runs {
+			r := r
 			workCh <- func() error {
-				runCLs := []runImpl.RunCL{}
-				// TODO(yiwzhang): Store CLIDs inside Run entity so that we can
-				// benefit from DSCache.
-				q := datastore.NewQuery("RunCL").Ancestor(datastore.KeyForObj(ctx, &r))
-				if err := datastore.GetAll(ctx, q, &runCLs); err != nil {
+				runKey := datastore.MakeKey(ctx, run.RunKind, string(r.ID))
+				runCLs := make([]runImpl.RunCL, len(r.CLs))
+				for i, cl := range r.CLs {
+					runCLs[i] = runImpl.RunCL{
+						ID:  cl,
+						Run: runKey,
+					}
+				}
+				if err := datastore.Get(ctx, runCLs); err != nil {
 					return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
 				}
 				mcls := make([]*migrationpb.RunCL, len(runCLs))
