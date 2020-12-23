@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 )
 
@@ -92,6 +93,8 @@ type Run struct {
 	// RunManager may update the ConfigGroup in the middle of the Run if it is
 	// notified that a new version of Config has been imported into CV.
 	ConfigGroupID config.ConfigGroupID `gae:",noindex"`
+	// CLs are IDs of all CLs invovled in this Run.
+	CLs []common.CLID `gae:",noindex"`
 	// TODO(yiwzhang): Define
 	//  * GerritAction (including posting comments and removing CQ labels).
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
