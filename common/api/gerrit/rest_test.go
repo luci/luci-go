@@ -178,9 +178,10 @@ func TestGetChange(t *testing.T) {
 				CurrentRevision: "deadbeef",
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
-						Number: 1,
-						Kind:   gerritpb.RevisionInfo_REWORK,
-						Ref:    "refs/changes/123",
+						Number:  1,
+						Kind:    gerritpb.RevisionInfo_REWORK,
+						Ref:     "refs/changes/123",
+						Created: timestamppb.New(parseTime("2016-03-29T17:47:23.751000000Z")),
 						Files: map[string]*gerritpb.FileInfo{
 							"go/to/file.go": {
 								LinesInserted: 32,
@@ -270,6 +271,7 @@ func TestGetChange(t *testing.T) {
 							"_number": 1,
 							"kind": "REWORK",
 							"ref": "refs/changes/123",
+							"created": "2016-03-29 17:47:23.751000000",
 							"files": {
 								"go/to/file.go": {
 									"lines_inserted": 32,
