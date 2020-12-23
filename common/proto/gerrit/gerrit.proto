@@ -431,6 +431,9 @@ message RevisionInfo {
   // The Git reference for the patch set.
   string ref = 4;
 
+  // The timestamp of when the patch set was created.
+  google.protobuf.Timestamp created = 7;
+
   // The commit metadata for the patchset.
   //
   // Only set if commit information is requested.

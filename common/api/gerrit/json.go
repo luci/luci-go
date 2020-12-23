@@ -223,15 +223,20 @@ func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
 }
 
 type revisionInfo struct {
-	Kind   string               `json:"kind"`
-	Number int                  `json:"_number"`
-	Ref    string               `json:"ref"`
-	Files  map[string]*fileInfo `json:"files"`
-	Commit *commitInfo          `json:"commit"`
+	Kind    string               `json:"kind"`
+	Number  int                  `json:"_number"`
+	Ref     string               `json:"ref"`
+	Created Timestamp            `json:"created"`
+	Files   map[string]*fileInfo `json:"files"`
+	Commit  *commitInfo          `json:"commit"`
 }
 
 func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
-	ret := &gerritpb.RevisionInfo{Number: int32(ri.Number), Ref: ri.Ref}
+	ret := &gerritpb.RevisionInfo{
+		Number:  int32(ri.Number),
+		Ref:     ri.Ref,
+		Created: timestamppb.New(ri.Created.Time),
+	}
 	if v, ok := gerritpb.RevisionInfo_Kind_value[ri.Kind]; ok {
 		ret.Kind = gerritpb.RevisionInfo_Kind(v)
 	}

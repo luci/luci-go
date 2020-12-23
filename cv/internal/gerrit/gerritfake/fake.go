@@ -193,8 +193,9 @@ func CI(change int, mods ...CIModifier) *gerritpb.ChangeInfo {
 
 func RevInfo(ps int) *gerritpb.RevisionInfo {
 	return &gerritpb.RevisionInfo{
-		Number: int32(ps),
-		Kind:   gerritpb.RevisionInfo_REWORK,
+		Number:  int32(ps),
+		Kind:    gerritpb.RevisionInfo_REWORK,
+		Created: timestamppb.New(testclock.TestRecentTimeUTC.Add(1 * time.Hour).Add(time.Duration(ps) * time.Minute)),
 		Files: map[string]*gerritpb.FileInfo{
 			fmt.Sprintf("ps%03d/c.cpp", ps): {Status: gerritpb.FileInfo_W},
 			"shared/s.py":                   {Status: gerritpb.FileInfo_W},
