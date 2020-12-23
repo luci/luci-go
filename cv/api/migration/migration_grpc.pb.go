@@ -24,6 +24,8 @@ type MigrationClient interface {
 	// Initially, this is just FYI for CV.
 	ReportRuns(ctx context.Context, in *ReportRunsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+	//
+	// If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
 	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
@@ -87,6 +89,8 @@ type MigrationServer interface {
 	// Initially, this is just FYI for CV.
 	ReportRuns(context.Context, *ReportRunsRequest) (*empty.Empty, error)
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+	//
+	// If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
 	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
