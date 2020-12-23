@@ -80,6 +80,24 @@
       "message": "plz move inside func below.",
       "revId": "3190df83fcef326afcc9e0b2308678f88d695de8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce1b6ccf_d70f1ee7",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-23T23:32:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b75b147_77429746",
+      "revId": "3190df83fcef326afcc9e0b2308678f88d695de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
