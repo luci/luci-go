@@ -31,6 +31,7 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
@@ -59,6 +60,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					ID:     rid,
 					Status: run.Status_RUNNING,
 					Mode:   run.DryRun,
+					CLs:    []common.CLID{1, 2},
 				},
 				&runImpl.RunCL{
 					ID:  1,
