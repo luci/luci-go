@@ -33,6 +33,24 @@
       "message": "Ah, glad I didn\u0027t write this one yet myself. Thanks!\n\nI\u0027ll move this code to the ProjectManager (or maybe some package it depends on) \nexcept `mode` arg is sorta backwards: PM will first scan the CL, determine what mode it\u0027s in, and then save triggering details first locally and then eventually as part of RunCL entity.\n\n\n\nSo, how about leave trigger info unfinished in this CL, and we\u0027ll finish it once we have RunCL entity with the necessary extracted info.",
       "revId": "5a00ad8959fcae786a59eec08db97dc91004518e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ba9a06b_85e43823",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-23T05:59:23Z",
+      "side": 1,
+      "message": "I actually fixed `findTrigger` to follow the exact behavior in legacy CQ and added left before you left this comment.\n\nI included it in the latest PS for sanity check in case I miss anything. I can take it out before I land this change or I can land it as is and you can delete it after you move this functionality to PM.",
+      "parentUuid": "75b0d911_12c6aa28",
+      "revId": "5a00ad8959fcae786a59eec08db97dc91004518e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "218664d8_b3be50ff",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-23T05:59:23Z",
+      "side": 1,
+      "message": "This works. I think datastore might be smart enough to order the order of filter (i.e. equality first then inequality).\n\nAdded test in the latest PS and do discover few bugs.",
+      "parentUuid": "4779ba99_2ee1ccb5",
+      "range": {
+        "startLine": 118,
+        "startChar": 56,
+        "endLine": 118,
+        "endChar": 88
+      },
+      "revId": "7fb7e7b57b047e338ad988a70d3cfe8cf454c377",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11c1c9b9_8b3292e5",
