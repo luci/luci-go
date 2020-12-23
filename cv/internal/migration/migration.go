@@ -169,9 +169,10 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 							EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
 							Mode:                       mode,
 						},
-						UpdatedTime: cl.Detail.GetExternalUpdateTime(),
-						Trigger:     trigger,
-						Deps:        make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
+						Files:   cl.Detail.GetGerrit().GetFiles(),
+						Info:    cl.Detail.GetGerrit().GetInfo(),
+						Trigger: trigger,
+						Deps:    make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
 					}
 					for i, dep := range cl.Detail.GetDeps() {
 						mcl.Deps[i] = &migrationpb.RunCL_Dep{

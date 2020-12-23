@@ -55,6 +55,56 @@ func TestFetchActiveRuns(t *testing.T) {
 		Convey("Returns migration Runs", func() {
 			const rid = "chromium/1111111111111/cafecafe"
 			updateTime := timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute))
+			ci1 := &gerritpb.ChangeInfo{
+				Project:         "infra/infra",
+				Number:          11111,
+				CurrentRevision: "deadbeef",
+				Revisions: map[string]*gerritpb.RevisionInfo{
+					"deadbeef": {
+						Number:  7,
+						Created: timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
+					},
+				},
+				Labels: map[string]*gerritpb.LabelInfo{
+					cqLabelName: {
+						All: []*gerritpb.ApprovalInfo{
+							{
+								User: &gerritpb.AccountInfo{
+									AccountId: 1,
+									Email:     "user@example.com",
+								},
+								Value: 1,
+								Date:  timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
+							},
+						},
+					},
+				},
+			}
+			ci2 := &gerritpb.ChangeInfo{
+				Project:         "infra/infra",
+				Number:          11110,
+				CurrentRevision: "deadbeef",
+				Revisions: map[string]*gerritpb.RevisionInfo{
+					"deadbeef": {
+						Number:  5,
+						Created: timestamppb.New(updateTime.AsTime().Add(-3 * time.Minute)),
+					},
+				},
+				Labels: map[string]*gerritpb.LabelInfo{
+					cqLabelName: {
+						All: []*gerritpb.ApprovalInfo{
+							{
+								User: &gerritpb.AccountInfo{
+									AccountId: 1,
+									Email:     "user@example.com",
+								},
+								Value: 1,
+								Date:  timestamppb.New(updateTime.AsTime().Add(-4 * time.Minute)),
+							},
+						},
+					},
+				},
+			}
 			err := datastore.Put(ctx,
 				&run.Run{
 					ID:     rid,
@@ -74,32 +124,9 @@ func TestFetchActiveRuns(t *testing.T) {
 						MinEquivalentPatchset: 6,
 						Kind: &changelist.Snapshot_Gerrit{
 							Gerrit: &changelist.Gerrit{
-								Host: "https://chromium-review.googlesource.com/",
-								Info: &gerritpb.ChangeInfo{
-									Project:         "infra/infra",
-									Number:          11111,
-									CurrentRevision: "deadbeef",
-									Revisions: map[string]*gerritpb.RevisionInfo{
-										"deadbeef": {
-											Number:  7,
-											Created: timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
-										},
-									},
-									Labels: map[string]*gerritpb.LabelInfo{
-										cqLabelName: &gerritpb.LabelInfo{
-											All: []*gerritpb.ApprovalInfo{
-												{
-													User: &gerritpb.AccountInfo{
-														AccountId: 1,
-														Email:     "user@example.com",
-													},
-													Value: 1,
-													Date:  timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
-												},
-											},
-										},
-									},
-								},
+								Host:  "https://chromium-review.googlesource.com/",
+								Files: []string{"1.cpp"},
+								Info:  ci1,
 							},
 						},
 					},
@@ -113,32 +140,9 @@ func TestFetchActiveRuns(t *testing.T) {
 						MinEquivalentPatchset: 5,
 						Kind: &changelist.Snapshot_Gerrit{
 							Gerrit: &changelist.Gerrit{
-								Host: "https://chromium-review.googlesource.com/",
-								Info: &gerritpb.ChangeInfo{
-									Project:         "infra/infra",
-									Number:          11110,
-									CurrentRevision: "deadbeef",
-									Revisions: map[string]*gerritpb.RevisionInfo{
-										"deadbeef": {
-											Number:  5,
-											Created: timestamppb.New(updateTime.AsTime().Add(-3 * time.Minute)),
-										},
-									},
-									Labels: map[string]*gerritpb.LabelInfo{
-										cqLabelName: &gerritpb.LabelInfo{
-											All: []*gerritpb.ApprovalInfo{
-												{
-													User: &gerritpb.AccountInfo{
-														AccountId: 1,
-														Email:     "user@example.com",
-													},
-													Value: 1,
-													Date:  timestamppb.New(updateTime.AsTime().Add(-4 * time.Minute)),
-												},
-											},
-										},
-									},
-								},
+								Host:  "https://chromium-review.googlesource.com/",
+								Files: []string{"2.cpp"},
+								Info:  ci2,
 							},
 						},
 					},
@@ -162,7 +166,8 @@ func TestFetchActiveRuns(t *testing.T) {
 							EarliestEquivalentPatchset: 6,
 							Mode:                       cvbqpb.Mode_DRY_RUN,
 						},
-						UpdatedTime: updateTime,
+						Files: []string{"1.cpp"},
+						Info:  ci1,
 						Trigger: &migrationpb.RunCL_Trigger{
 							Time:      timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
 							AccountId: 1,
@@ -182,7 +187,8 @@ func TestFetchActiveRuns(t *testing.T) {
 							EarliestEquivalentPatchset: 5,
 							Mode:                       cvbqpb.Mode_DRY_RUN,
 						},
-						UpdatedTime: updateTime,
+						Files: []string{"2.cpp"},
+						Info:  ci2,
 						Trigger: &migrationpb.RunCL_Trigger{
 							Time:      timestamppb.New(updateTime.AsTime().Add(-3 * time.Minute)),
 							AccountId: 1,
@@ -269,7 +275,7 @@ func TestFindTrigger(t *testing.T) {
 				},
 			},
 			Labels: map[string]*gerritpb.LabelInfo{
-				cqLabelName: &gerritpb.LabelInfo{
+				cqLabelName: {
 					All: []*gerritpb.ApprovalInfo{
 						{
 							User:  user1,
@@ -350,7 +356,7 @@ func TestFindTrigger(t *testing.T) {
 		})
 		Convey("Error when no vote on Commit-Queue label for given mode", func() {
 			ci.Labels = map[string]*gerritpb.LabelInfo{
-				cqLabelName: &gerritpb.LabelInfo{
+				cqLabelName: {
 					All: []*gerritpb.ApprovalInfo{
 						{
 							User:  user1,

@@ -23,6 +23,7 @@ option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 
 
@@ -86,8 +87,12 @@ message RunCL {
   // CV's CLID. Used to identify Deps.
   int64 id = 1;
   bigquery.GerritChange gc = 2;
-  // Hint to CQDaemon to avoid needless re-fetching.
-  google.protobuf.Timestamp updated_time = 3;
+
+  // The following are copy-pasted from CV's snapshot.
+  // Info is guaranteed to have current revision with the same patchset as
+  // as specified in bigquery.GerritChange.
+  gerrit.ChangeInfo info = 3;
+  repeated string files = 4;
 
   message Trigger {
     google.protobuf.Timestamp time = 1;
@@ -96,7 +101,7 @@ message RunCL {
     // User email, if known.
     string email = 4;
   }
-  Trigger trigger = 4;
+  Trigger trigger = 5;
 
   message Dep {
     // CV's CLID. Guaranteed to match one of the RunCL in the same Run.
@@ -104,6 +109,6 @@ message RunCL {
     // True means Dep is the immediate git parent and must be submitted first.
     bool hard = 2;
   }
-  repeated Dep deps = 5;
+  repeated Dep deps = 6;
 }
 
