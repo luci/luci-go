@@ -16,6 +16,23 @@
       "message": "hold on on this. The `findTrigger` logic isn\u0027t correct.",
       "revId": "5a00ad8959fcae786a59eec08db97dc91004518e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75b0d911_12c6aa28",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-23T00:38:57Z",
+      "side": 1,
+      "message": "Ah, glad I didn\u0027t write this one yet myself. Thanks!\n\nI\u0027ll move this code to the ProjectManager (or maybe some package it depends on) \nexcept `mode` arg is sorta backwards: PM will first scan the CL, determine what mode it\u0027s in, and then save triggering details first locally and then eventually as part of RunCL entity.\n\n\n\nSo, how about leave trigger info unfinished in this CL, and we\u0027ll finish it once we have RunCL entity with the necessary extracted info.",
+      "revId": "5a00ad8959fcae786a59eec08db97dc91004518e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
