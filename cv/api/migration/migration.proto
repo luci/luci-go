@@ -40,6 +40,8 @@ service Migration {
   rpc ReportRuns(ReportRunsRequest) returns (google.protobuf.Empty);
 
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
+  //
+  // If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
   rpc ReportFinishedRun(ReportFinishedRunRequest) returns (google.protobuf.Empty);
 
   // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
@@ -74,8 +76,6 @@ message FetchActiveRunsResponse {
 
 message Run {
   bigquery.Attempt attempt = 1;
-
-  // The following fields are set only in FetchActiveRunsResponse.
 
   // CV's run ID.
   string id = 2;

@@ -39,8 +39,15 @@ message Settings {
   // production CQDaemon can connect to both prod and dev migration API.
   repeated ApiHost api_hosts = 1;
 
+  // Determines which projects should start relying on CV for computing
+  // Runs to work on.
+  message UseCVRuns {
+    repeated string project_regexp = 1;
+  }
+  UseCVRuns use_cv_runs = 3;
+
   // TODO(tandrii): move this off migration-specific settings once CQDaemon is
-  // shutdown. This is located here only to avoid extra throw away code in
+  // shut down. This is located here only to avoid extra throw away code in
   // CQDaemon to read & refresh these from a different file.
   PSSAMigration pssa_migration = 2;
 }
