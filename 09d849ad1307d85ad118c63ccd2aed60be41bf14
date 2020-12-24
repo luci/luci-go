@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "09d849ad1307d85ad118c63ccd2aed60be41bf14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc434469_2b9be858",
+        "filename": "resultdb/sink/proto/v1/location_tag.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-24T04:46:02Z",
+      "side": 1,
+      "message": "value(s)?",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 16
+      },
+      "revId": "09d849ad1307d85ad118c63ccd2aed60be41bf14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "683e96a0_acbdde52",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-24T04:46:02Z",
+      "side": 1,
+      "message": "i think this doesn\u0027t implement the overriding described in the proto (and this was a bug before this CL as well).\nSuppose dir /a defines a tag k:v and dir /a/b defines k2:v2. Tets tests in /a/b should have both tags.",
+      "revId": "09d849ad1307d85ad118c63ccd2aed60be41bf14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
