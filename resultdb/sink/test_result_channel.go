@@ -111,9 +111,7 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	// found.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {
-			for k, v := range d.Tags {
-				tr.Tags = append(tr.Tags, pbutil.StringPair(k, v))
-			}
+			tr.Tags = append(tr.Tags, d.Tags...)
 			return
 		}
 		if dir == "." {
