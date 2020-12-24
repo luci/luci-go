@@ -179,6 +179,22 @@ func TestAddTask(t *testing.T) {
 			So(submitter.reqs, ShouldHaveLength, 0)
 		})
 
+		Convey("Bad task title: spaces", func() {
+			task.Title = "No spaces please"
+			err := d.AddTask(ctx, task)
+			So(err, ShouldErrLike, "bad task title")
+			So(err, ShouldErrLike, "must not contain spaces")
+			So(submitter.reqs, ShouldHaveLength, 0)
+		})
+
+		Convey("Bad task title: too long", func() {
+			task.Title = strings.Repeat("a", 2070)
+			err := d.AddTask(ctx, task)
+			So(err, ShouldErrLike, "bad task title")
+			So(err, ShouldErrLike, `too long; must not exceed 2083 characters when combined with "/internal/tasks/t/test-dur"`)
+			So(submitter.reqs, ShouldHaveLength, 0)
+		})
+
 		Convey("Custom task payload on GAE", func() {
 			d.GAE = true
 			d.DefaultTargetHost = ""
