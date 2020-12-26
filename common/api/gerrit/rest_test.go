@@ -176,6 +176,8 @@ func TestGetChange(t *testing.T) {
 				Project:         "example/repo",
 				Ref:             "refs/heads/master",
 				CurrentRevision: "deadbeef",
+				Submittable:     true,
+				IsPrivate:       true,
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
 						Number:  1,
@@ -266,6 +268,8 @@ func TestGetChange(t *testing.T) {
 					"project": "example/repo",
 					"branch":  "master",
 					"current_revision": "deadbeef",
+					"submittable": true,
+					"is_private": true,
 					"revisions": {
 						"deadbeef": {
 							"_number": 1,
