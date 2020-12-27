@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
@@ -56,7 +57,8 @@ func init() {
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			return Dispatch(ctx, task.GetLuciProject(), eta)
+			err := Dispatch(ctx, task.GetLuciProject(), eta)
+			return common.TQifyError(ctx, err)
 		},
 	})
 }

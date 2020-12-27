@@ -63,13 +63,8 @@ func init() {
 
 			err := refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
 				updatedHint, common.CLID(t.GetClidHint()))
-			if err != nil {
-				errors.Log(ctx, err)
-				if !transient.Tag.In(err) {
-					err = tq.Fatal.Apply(err)
-				}
-			}
-			return err
+
+			return common.TQifyError(ctx, err)
 		},
 	})
 }
