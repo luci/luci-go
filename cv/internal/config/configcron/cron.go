@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 )
@@ -100,10 +101,10 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*RefreshProjectConfigTask)
 			if err := refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
-				errors.Log(ctx, err)
 				// Never retry tasks because the refresh task is submitted every minute
 				// by AppEngine Cron.
-				return tq.Fatal.Apply(err)
+				err = tq.Fatal.Apply(err)
+				return common.TQifyError(ctx, err)
 			}
 			return nil
 		},

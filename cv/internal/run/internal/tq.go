@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 )
@@ -53,7 +54,8 @@ func init() {
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			return Dispatch(ctx, task.GetRunId(), eta)
+			err := Dispatch(ctx, task.GetRunId(), eta)
+			return common.TQifyError(ctx, err)
 		},
 	})
 }

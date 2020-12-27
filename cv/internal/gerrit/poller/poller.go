@@ -96,14 +96,8 @@ func init() {
 		Queue:     "poll-gerrit",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
-			if err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime()); err != nil {
-				errors.Log(ctx, err)
-				if !transient.Tag.In(err) {
-					err = tq.Fatal.Apply(err)
-				}
-				return err
-			}
-			return nil
+			err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
+			return common.TQifyError(ctx, err)
 		},
 	})
 }

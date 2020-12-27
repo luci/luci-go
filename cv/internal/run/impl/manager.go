@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/internal"
@@ -36,18 +36,10 @@ func init() {
 	internal.PokeRunTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*internal.PokeRunTask)
-			switch err := pokeRunTask(ctx, run.ID(task.GetRunId())); {
-			case err == nil:
-				return nil
-			case !transient.Tag.In(err):
-				err = tq.Fatal.Apply(err)
-				fallthrough
-			default:
-				errors.Log(ctx, err)
-				// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
-				// already scheduled for the next second.
-				return err
-			}
+			err := pokeRunTask(ctx, run.ID(task.GetRunId()))
+			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
+			// already scheduled for the next second.
+			return common.TQifyError(ctx, err)
 		},
 	)
 }
