@@ -56,13 +56,8 @@ func Poke(ctx context.Context, luciProject string) error {
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
 // Automatically enqueues a new task to perform next poll.
 func poll(ctx context.Context, luciProject string, eta time.Time) error {
-	if now := clock.Now(ctx); now.Add(100 * time.Millisecond).Before(eta) {
-		// NOTE: if this happens in production, it probably means that we have
-		// concurrent polling of gerrit than intended.
-		// TODO(tandrii): avoid concurent polling of the same project via cheap
-		// best-effort locking in Redis.
-		logging.Warningf(ctx, "TQ triggered this task before eta %s (now: %s)", eta, now)
-	}
+	// TODO(tandrii): avoid concurent polling of the same project via cheap
+	// best-effort locking in Redis.
 	meta, err := config.GetLatestMeta(ctx, luciProject)
 	switch {
 	case err != nil:
@@ -187,7 +182,7 @@ func projectOffset(luciProject string, pollInterval time.Duration) time.Duration
 type state struct {
 	_kind string `gae:"$kind,GerritPoller"`
 
-	// Project is the name of the LUCI Project for which poller is works.
+	// Project is the name of the LUCI Project for which poller is working.
 	LuciProject string `gae:"$id"`
 	// UpdateTime is the timestamp when this state was last updated.
 	UpdateTime time.Time `gae:",noindex"`
