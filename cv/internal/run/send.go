@@ -36,6 +36,27 @@ func Start(ctx context.Context, runID ID) error {
 	})
 }
 
+// Poke tells RunManager to check its own state.
+func Poke(ctx context.Context, runID ID) error {
+	return send(ctx, runID, &internal.Event{
+		Event: &internal.Event_Poke{
+			Poke: &internal.Poke{},
+		},
+	})
+}
+
+// UpdateConfig tells RunManager to update the given Run to new config.
+func UpdateConfig(ctx context.Context, runID ID, hash string, eversion int64) error {
+	return send(ctx, runID, &internal.Event{
+		Event: &internal.Event_UpdateConfig{
+			UpdateConfig: &internal.UpdateConfig{
+				Hash:     hash,
+				Eversion: eversion,
+			},
+		},
+	})
+}
+
 // Cancel tells RunManager to cancel the given run.
 func Cancel(ctx context.Context, runID ID) error {
 	return send(ctx, runID, &internal.Event{
