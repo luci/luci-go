@@ -415,7 +415,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 			// This error prevents a more cryptic HTTP error that would otherwise be
 			// returned by Gerrit if you try to call it with a GET request and a request
 			// body.
-			return -1, errors.New("data cannot be provided for a GET request")
+			panic("data cannot be provided for a GET request")
 		}
 		var err error
 		rawData, err = json.Marshal(data)
@@ -429,6 +429,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
+			logging.Errorf(ctx, "failed to deserialize response %v: %s", body, err)
 			return ret, status.Errorf(codes.Internal, "failed to deserialize response: %s", err)
 		}
 	}
