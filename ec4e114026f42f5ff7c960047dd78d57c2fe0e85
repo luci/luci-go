@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "94587b25_c5672e55",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-28T18:47:46Z",
+      "side": 1,
+      "message": "Oh, pointer is not necessary, since each element of a list is always non-nil.\n\nFixed my code. THanks!",
+      "parentUuid": "c3f129a4_7c2abb42",
+      "range": {
+        "startLine": 79,
+        "startChar": 19,
+        "endLine": 79,
+        "endChar": 36
+      },
+      "revId": "ec4e114026f42f5ff7c960047dd78d57c2fe0e85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2c3780c6_c8e3da23",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
