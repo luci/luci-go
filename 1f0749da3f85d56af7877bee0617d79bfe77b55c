@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "61a6bc97_f7b28956",
+        "filename": "rts/cmd/rts-chromium/eval.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-28T19:58:51Z",
+      "side": 1,
+      "message": "Have you tried other patterns from here? https://source.chromium.org/chromium/chromium/src/+/master:testing/buildbot/trybot_analyze_config.json?q\u003dtrybot_analyze_config.json\n\nI think this kind of thing should be configurable.",
+      "parentUuid": "7b2d4f35_38018fde",
+      "revId": "1f0749da3f85d56af7877bee0617d79bfe77b55c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "126a334d_73c147d0",
         "filename": "rts/cmd/rts-chromium/eval.go",
         "patchSetId": 18
@@ -67,6 +85,24 @@
       "side": 1,
       "message": "this was temporary. I plan to change this. Currently we disable RTS if at least one file is new/renamed.",
       "parentUuid": "126a334d_73c147d0",
+      "revId": "1f0749da3f85d56af7877bee0617d79bfe77b55c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5956d48_489d8e15",
+        "filename": "rts/cmd/rts-chromium/eval.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-28T19:58:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc70479b_71e627f3",
       "revId": "1f0749da3f85d56af7877bee0617d79bfe77b55c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
