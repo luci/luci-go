@@ -53,7 +53,7 @@ func TestFetchActiveRuns(t *testing.T) {
 		m := &MigrationServer{}
 
 		Convey("Returns migration Runs", func() {
-			const rid = "chromium/1111111111111/cafecafe"
+			const rid = "chromium/1111111111111-cafecafe"
 			updateTime := timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute))
 			ci1 := &gerritpb.ChangeInfo{
 				Project:         "infra/infra",
@@ -201,11 +201,11 @@ func TestFetchActiveRuns(t *testing.T) {
 		Convey("Excludes non-RUNNING runs", func() {
 			err := datastore.Put(ctx,
 				&run.Run{
-					ID:     "chromium/1111111111111/deadbeef",
+					ID:     "chromium/1111111111111-deadbeef",
 					Status: run.Status_SUCCEEDED,
 				},
 				&run.Run{
-					ID:     "chromium/2222222222222/baaaaaad",
+					ID:     "chromium/2222222222222-baaaaaad",
 					Status: run.Status_FAILED,
 				},
 			)

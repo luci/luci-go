@@ -38,7 +38,7 @@ func TestStartRun(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		const runID = "chromium/1111111111111/deadbeef"
+		const runID = "chromium/1111111111111-deadbeef"
 		runKey := datastore.MakeKey(ctx, run.RunKind, runID)
 		initialEversion := 10
 
@@ -108,7 +108,7 @@ func TestCancelRun(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		const runID = "chromium/1111111111111/deadbeef"
+		const runID = "chromium/1111111111111-deadbeef"
 		runKey := datastore.MakeKey(ctx, run.RunKind, runID)
 		initialEversion := 10
 

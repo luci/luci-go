@@ -15,6 +15,7 @@
 package run
 
 import (
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
@@ -32,13 +33,31 @@ const RunKind = "Run"
 
 // ID is an unique ID to identify a Run in CV.
 //
-// ID is a '/' separated string with following three parts:
-//  1. The LUCI Project that this Run belongs to.
-//  2. (`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros
-//     to 13 digits. See `Run.CreateTime` Doc.
-//  3. A hex digest string that uniquely identifying the set of CLs involved in
-//     this Run (a.k.a cl_group_hash).
+// ID is string like `luciProject/timeComponent-hexHashDigest` consisting of 5
+// parts:
+//   1. The LUCI Project that this Run belongs to.
+//      Purpose: separates load on Datastore from different projects.
+//   2. `/` separator.
+//   3. (`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros
+//      to 13 digits. See `Run.CreateTime` Doc.
+//      Purpose: ensures queries by default orders runs of the same project by
+//      most recent first.
+//   4. `-` separator.
+//   5. A hex digest string uniquely identifying the set of CLs involved in
+//      this Run.
+//      Purpose: ensures two simultaneously started Runs in the same project
+//      won't have the same ID.
 type ID string
+
+// LUCIProject this Run belongs to.
+func (id ID) LUCIProject() string {
+	for i, c := range id {
+		if c == '/' {
+			return string(id[:i])
+		}
+	}
+	panic(fmt.Errorf("invalid run ID %q", id))
+}
 
 // Mode dictates the behavior of this Run.
 type Mode string
