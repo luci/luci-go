@@ -105,7 +105,7 @@ func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesReque
 		return nil, errors.Reason("field Limit %d should be at most %d", req.Limit, maxQueryLimit).Err()
 	}
 	if req.Offset < 0 {
-		return nil, fmt.Errorf("field Offset %d must be nonnegative", req.Offset)
+		return nil, errors.Reason("field Offset %d must be nonnegative", req.Offset).Err()
 	}
 
 	params := url.Values{}
@@ -123,7 +123,11 @@ func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesReque
 
 	resp := &gerritpb.ListChangesResponse{}
 	for _, c := range changes {
-		resp.Changes = append(resp.Changes, c.ToProto())
+		p, err := c.ToProto()
+		if err != nil {
+			return nil, err
+		}
+		resp.Changes = append(resp.Changes, p)
 	}
 	if len(changes) > 0 {
 		resp.MoreChanges = changes[len(changes)-1].MoreChanges
@@ -150,7 +154,7 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, err
 	}
-	return resp.ToProto(), nil
+	return resp.ToProto()
 }
 
 type changeInput struct {
@@ -173,11 +177,14 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
-	ci := resp.ToProto()
-	if ci.Status != gerritpb.ChangeStatus_NEW {
-		return nil, fmt.Errorf("unknown status %s for newly created change", ci.Status)
+	switch ci, err := resp.ToProto(); {
+	case err != nil:
+		return nil, err
+	case ci.Status != gerritpb.ChangeStatus_NEW:
+		return nil, errors.Reason("unknown status %s for newly created change", ci.Status).Err()
+	default:
+		return ci, nil
 	}
-	return ci, nil
 }
 
 func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
@@ -274,7 +281,7 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "submit change").Err()
 	}
-	return resp.ToProto(), nil
+	return resp.ToProto()
 }
 
 func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
@@ -286,7 +293,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
-	return resp.ToProto(), nil
+	return resp.ToProto()
 }
 
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
@@ -408,7 +415,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 			// This error prevents a more cryptic HTTP error that would otherwise be
 			// returned by Gerrit if you try to call it with a GET request and a request
 			// body.
-			return -1, fmt.Errorf("data cannot be provided for a GET request")
+			return -1, errors.New("data cannot be provided for a GET request")
 		}
 		var err error
 		rawData, err = json.Marshal(data)
