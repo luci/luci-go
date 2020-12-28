@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf5edd2c_dfc43e5c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-28T21:15:58Z",
+      "side": 1,
+      "message": "lgtm, but please bump the version in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/version.go#27 to 1.21.4 (unless you plan to land more changes soon)",
+      "revId": "62597afc61a9a44f2049fef31ae959d8e31b7953",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
