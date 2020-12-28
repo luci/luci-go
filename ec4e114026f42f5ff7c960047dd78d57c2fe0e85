@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8addc5d7_4e5d7357",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T18:41:34Z",
+      "side": 1,
+      "message": "LGTM with question",
+      "revId": "ec4e114026f42f5ff7c960047dd78d57c2fe0e85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c3780c6_c8e3da23",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 626,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T18:41:34Z",
+      "side": 1,
+      "message": "I\u0027m still not 100% sure what a requirement is, even after reading this and the gerrit API doc. Do we use requirements? Do they have anything to do with dependencies? How are they used by CQ/CV?",
+      "revId": "ec4e114026f42f5ff7c960047dd78d57c2fe0e85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
