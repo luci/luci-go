@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "95ea34bd_39b36322",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-28T19:41:30Z",
+      "side": 1,
+      "message": "Something isn\u0027t right. The code looks correct, but there are no cr-buildbucket.cfg changes in full_example.star. Maybe you just need to update it?",
+      "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "98101a3c_eda0993d",
@@ -36,6 +53,29 @@
         "startChar": 24,
         "endLine": 46,
         "endChar": 38
+      },
+      "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a7cc310_3bc18edd",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-12-28T19:41:30Z",
+      "side": 1,
+      "message": "There should be corresponding change in the generated cr-buildbucket.cfg below.",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 10
       },
       "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
