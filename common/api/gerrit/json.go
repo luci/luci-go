@@ -15,7 +15,6 @@
 package gerrit
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -78,10 +77,12 @@ type changeInfo struct {
 	Revisions       map[string]*revisionInfo `json:"revisions"`
 	Labels          map[string]*labelInfo    `json:"labels"`
 	Messages        []changeMessageInfo      `json:"messages"`
-	Created         Timestamp                `json:"created"`
-	Updated         Timestamp                `json:"updated"`
-	Submittable     bool                     `json:"submittable,omitempty"`
-	IsPrivate       bool                     `json:"is_private,omitempty"`
+	Requirements    []requirement            `json:"requirements"`
+
+	Created     Timestamp `json:"created"`
+	Updated     Timestamp `json:"updated"`
+	Submittable bool      `json:"submittable,omitempty"`
+	IsPrivate   bool      `json:"is_private,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -89,7 +90,7 @@ type changeInfo struct {
 	MoreChanges bool `json:"_more_changes"`
 }
 
-func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
+func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
 		Owner:           ci.Owner,
@@ -120,7 +121,16 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 			ret.Messages[i] = msg.ToProto()
 		}
 	}
-	return ret
+	var err error
+	if ci.Requirements != nil {
+		ret.Requirements = make([]*gerritpb.Requirement, len(ci.Requirements))
+		for i, r := range ci.Requirements {
+			if ret.Requirements[i], err = r.ToProto(); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return ret, nil
 }
 
 type labelInfo struct {
@@ -206,6 +216,25 @@ func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
 		Date:       timestamppb.New(cmi.Date.Time),
 		Message:    cmi.Message,
 	}
+}
+
+type requirement struct {
+	Status       string `json:"status"`
+	FallbackText string `json:"fallback_text"`
+	Type         string `json:"type"`
+}
+
+func (r *requirement) ToProto() (*gerritpb.Requirement, error) {
+	stringVal := "REQUIREMENT_STATUS_" + r.Status
+	numVal, found := gerritpb.Requirement_Status_value[stringVal]
+	if !found {
+		return nil, errors.Reason("no Status enum value for %q", r.Status).Err()
+	}
+	return &gerritpb.Requirement{
+		Status:       gerritpb.Requirement_Status(numVal),
+		FallbackText: r.FallbackText,
+		Type:         r.Type,
+	}, nil
 }
 
 type fileInfo struct {
@@ -315,11 +344,11 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 	strategyEnumName := strings.Replace(strings.ToUpper(mi.Strategy), "-", "_", -1)
 	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
 	if !found {
-		return nil, fmt.Errorf("no MergeableStrategy enum value for %q", strategyEnumName)
+		return nil, errors.Reason("no MergeableStrategy enum value for %q", strategyEnumName).Err()
 	}
 	submitTypeEnumNum, found := gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]
 	if !found {
-		return nil, fmt.Errorf("no SubmitType enum value for %q", mi.SubmitType)
+		return nil, errors.Reason("no SubmitType enum value for %q", mi.SubmitType).Err()
 	}
 	return &gerritpb.MergeableInfo{
 		SubmitType:    gerritpb.MergeableInfo_SubmitType(submitTypeEnumNum),
@@ -431,7 +460,7 @@ func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
 	stateEnumVal := "PROJECT_STATE_" + pi.State
 	stateEnumNum, found := gerritpb.ProjectInfo_State_value[stateEnumVal]
 	if !found {
-		return nil, fmt.Errorf("no State enum value for %q", pi.State)
+		return nil, errors.Reason("no State enum value for %q", pi.State).Err()
 	}
 	projectName, err := url.QueryUnescape(pi.ID)
 	if err != nil {

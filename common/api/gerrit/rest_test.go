@@ -175,6 +175,7 @@ func TestGetChange(t *testing.T) {
 				},
 				Project:         "example/repo",
 				Ref:             "refs/heads/master",
+				Status:          gerritpb.ChangeStatus_NEW,
 				CurrentRevision: "deadbeef",
 				Submittable:     true,
 				IsPrivate:       true,
@@ -250,6 +251,13 @@ func TestGetChange(t *testing.T) {
 						Message: "Patch Set 1:\n\nThis is the second message.\n\nWith a line break.",
 					},
 				},
+				Requirements: []*gerritpb.Requirement{
+					{
+						Status:       gerritpb.Requirement_REQUIREMENT_STATUS_OK,
+						FallbackText: "nothing more required",
+						Type:         "alpha-numer1c-type",
+					},
+				},
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -258,6 +266,7 @@ func TestGetChange(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				fmt.Fprint(w, `)]}'{
 					"_number": 1,
+					"status": "NEW",
 					"owner": {
 						"name":             "John Doe",
 						"email":            "jdoe@example.com",
@@ -365,6 +374,13 @@ func TestGetChange(t *testing.T) {
 							"date": "2013-03-23 21:36:52.332000000",
 							"message": "Patch Set 1:\n\nThis is the second message.\n\nWith a line break.",
 							"_revision_number": 1
+						}
+					],
+					"requirements": [
+						{
+							"status": "OK",
+							"fallback_text": "nothing more required",
+							"type": "alpha-numer1c-type"
 						}
 					]
 				}`)
