@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fadb4c19_4109dff1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T19:23:22Z",
+      "side": 1,
+      "message": "Note, technically the names were cloneDeep and cloneShallow (IMO it could optionally be renamed to shallowClone though)",
+      "range": {
+        "startLine": 9,
+        "startChar": 6,
+        "endLine": 10,
+        "endChar": 21
+      },
+      "revId": "8214ad3248d153a7b2916f8728f712837462f52d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a794e636_8f1981e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T19:23:22Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "8214ad3248d153a7b2916f8728f712837462f52d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba6cf443_09a1d54e",
+        "filename": "cv/internal/run/run_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T19:23:22Z",
+      "side": 1,
+      "message": "Is this a convention (like python klass/cls)? Could also be called nilIDs or something.",
+      "range": {
+        "startLine": 29,
+        "startChar": 6,
+        "endLine": 29,
+        "endChar": 10
+      },
+      "revId": "8214ad3248d153a7b2916f8728f712837462f52d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c5d46d4_d5a9b599",
+        "filename": "cv/internal/run/run_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T19:23:22Z",
+      "side": 1,
+      "message": "Nit: line length could be reformatted",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 9
+      },
+      "revId": "8214ad3248d153a7b2916f8728f712837462f52d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
