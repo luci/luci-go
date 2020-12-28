@@ -81,6 +81,7 @@ type changeInfo struct {
 	Created         Timestamp                `json:"created"`
 	Updated         Timestamp                `json:"updated"`
 	Submittable     bool                     `json:"submittable,omitempty"`
+	IsPrivate       bool                     `json:"is_private,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -97,6 +98,7 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 		Status:          gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
 		CurrentRevision: ci.CurrentRevision,
 		Submittable:     ci.Submittable,
+		IsPrivate:       ci.IsPrivate,
 		Created:         timestamppb.New(ci.Created.Time),
 		Updated:         timestamppb.New(ci.Updated.Time),
 	}
