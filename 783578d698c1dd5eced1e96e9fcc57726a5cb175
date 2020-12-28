@@ -16,6 +16,29 @@
       "message": "lgtm",
       "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98101a3c_eda0993d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-28T19:01:37Z",
+      "side": 1,
+      "message": "omit? the param name would be shorter without losing the meaning.",
+      "range": {
+        "startLine": 46,
+        "startChar": 24,
+        "endLine": 46,
+        "endChar": 38
+      },
+      "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
