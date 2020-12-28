@@ -193,6 +193,10 @@ message Builder {
     // This can have multiple values to export results to multiple BigQuery
     // tables, or to support multiple test result predicates.
     repeated luci.resultdb.v1.BigQueryExport bq_exports = 2;
+
+    // Specifies if and how to index this build's test results for historical
+    // queries.
+    luci.resultdb.v1.HistoryOptions history_options = 3;
   }
 
   // Name of the builder or builder mixin.
