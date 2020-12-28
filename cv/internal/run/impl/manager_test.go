@@ -50,7 +50,7 @@ func TestStartRun(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(run.Start(ctx, runID), ShouldBeNil)
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			assertEventBoxSize(ctx, runKey, 0)
 
@@ -127,7 +127,7 @@ func TestCancelRun(t *testing.T) {
 				So(err, ShouldBeNil)
 				ct.Clock.Add(1 * time.Minute)
 				So(run.Cancel(ctx, runID), ShouldBeNil)
-				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
+				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 				assertEventBoxSize(ctx, runKey, 0)
 
@@ -194,7 +194,7 @@ func TestCancelRun(t *testing.T) {
 			So(run.Cancel(ctx, runID), ShouldBeNil)
 			assertEventBoxSize(ctx, runKey, 2)
 
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, []run.ID{runID})
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			// Consumed both events
 			assertEventBoxSize(ctx, runKey, 0)
