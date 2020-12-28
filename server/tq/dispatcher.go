@@ -931,10 +931,18 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 	}
 
 	relativeURI = pfx + cls.ID
-	if t.Title != "" {
+	switch {
+	case t.Title == "":
+		return
+	case strings.ContainsRune(t.Title, ' '):
+		return "", "", errors.Reason("bad task title %q: must not contain spaces", t.Title).Err()
+	case len(relativeURI)+1+len(t.Title) > 2083:
+		return "", "", errors.Reason("bad task title %q: too long;"+
+			" must not exceed 2083 characters when combined with %q", t.Title, relativeURI).Err()
+	default:
 		relativeURI += "/" + t.Title
+		return
 	}
-	return
 }
 
 // prepPubSubRequest prepares Cloud PubSub request based on a *Task.

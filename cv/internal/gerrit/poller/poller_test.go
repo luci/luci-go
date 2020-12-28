@@ -100,9 +100,9 @@ func TestSchedule(t *testing.T) {
 				So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
 
 				Convey("but only for the same project", func() {
-					So(schedule(ctx, "another project", time.Time{}), ShouldBeNil)
+					So(schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
 					So(pt.Projects(ct.TQ.Tasks()), ShouldResemble, []string{
-						project, "another project"})
+						project, "another-project"})
 				})
 			})
 
