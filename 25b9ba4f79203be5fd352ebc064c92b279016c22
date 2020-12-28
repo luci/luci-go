@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "548f4e12_976057f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-28T18:40:51Z",
+      "side": 1,
+      "message": "Yeah, to post CQ-ing patch after LGTM was given.",
+      "parentUuid": "563434c7_3ed162bc",
+      "revId": "25b9ba4f79203be5fd352ebc064c92b279016c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "13714381_1db5f148",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
