@@ -21,11 +21,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
-	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
@@ -57,6 +58,17 @@ func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversi
 			ClUpdated: &internal.CLUpdated{
 				Clid:     int64(clid),
 				Eversion: int64(eversion),
+			},
+		},
+	})
+}
+
+// RunFinished tells ProjectManager that a run has finalized its state.
+func RunFinished(ctx context.Context, runID run.ID) error {
+	return send(ctx, runID.LUCIProject(), &internal.Event{
+		Event: &internal.Event_RunFinished{
+			RunFinished: &internal.RunFinished{
+				RunId: string(runID),
 			},
 		},
 	})

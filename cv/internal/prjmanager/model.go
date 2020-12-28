@@ -44,7 +44,7 @@ type Project struct {
 	Status Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
-	// IncompleteRuns are IDs of Runs which aren't yet complete.
+	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
-	IncompleteRuns []run.ID `gae:",noindex"`
+	IncompleteRuns run.IDs `gae:",noindex"`
 }

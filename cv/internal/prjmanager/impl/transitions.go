@@ -32,16 +32,8 @@ import (
 type state struct {
 	Status         prjmanager.Status
 	ConfigHash     string
-	IncompleteRuns []run.ID
+	IncompleteRuns run.IDs // sorted, just like in Project.IncompleteRuns.
 	// TODO(tandrii): add CL grouping state.
-}
-
-func (s *state) cloneDeep() *state {
-	return &state{
-		Status:         s.Status,
-		ConfigHash:     s.ConfigHash,
-		IncompleteRuns: s.IncompleteRuns[:],
-	}
 }
 
 func (s *state) cloneShallow() *state {
@@ -52,8 +44,7 @@ func (s *state) cloneShallow() *state {
 	}
 }
 
-func updateConfig(ctx context.Context, luciProject string, s *state) (
-	eventbox.SideEffectFn, *state, error) {
+func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.SideEffectFn, *state, error) {
 	meta, err := config.GetLatestMeta(ctx, luciProject)
 	if err != nil {
 		return nil, nil, err
@@ -108,8 +99,7 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (
 	}
 }
 
-func poke(ctx context.Context, luciProject string, s *state) (
-	eventbox.SideEffectFn, *state, error) {
+func poke(ctx context.Context, luciProject string, s *state) (eventbox.SideEffectFn, *state, error) {
 	// First, check if updateConfig if necessary.
 	switch sideEffect, newState, err := updateConfig(ctx, luciProject, s); {
 	case err != nil:
@@ -127,8 +117,23 @@ func poke(ctx context.Context, luciProject string, s *state) (
 	return nil, s, nil
 }
 
-func clsUpdated(ctx context.Context, luciProject string, cls []*internal.CLUpdated, s *state) (
-	eventbox.SideEffectFn, *state, error) {
+func runsFinished(ctx context.Context, luciProject string, finished run.IDs, s *state) (eventbox.SideEffectFn, *state, error) {
+	remaining := s.IncompleteRuns.WithoutSorted(finished)
+	if len(remaining) == len(s.IncompleteRuns) {
+		return nil, s, nil // no change
+	}
+	s = s.cloneShallow()
+	s.IncompleteRuns = remaining
+
+	if s.Status == prjmanager.Status_STOPPING && len(s.IncompleteRuns) == 0 {
+		s.Status = prjmanager.Status_STOPPED
+		return nil, s, nil
+	}
+	// TODO(tandrii): re-evaluate pending CLs.
+	return nil, s, nil
+}
+
+func clsUpdated(ctx context.Context, luciProject string, cls []*internal.CLUpdated, s *state) (eventbox.SideEffectFn, *state, error) {
 	// TODO(tandrii): implement.
 	return nil, s, nil
 }
