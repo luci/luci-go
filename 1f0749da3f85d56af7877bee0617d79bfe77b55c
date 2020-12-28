@@ -74,6 +74,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa177f20_4b834367",
+        "filename": "rts/cmd/rts-chromium/eval.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-28T22:10:01Z",
+      "side": 1,
+      "message": "I don\u0027t think that\u0027s what we want either.\n\nMany of the files there are tests that gn analyze can\u0027t analyze because they\u0027re browsertests. And for the rest of the entries, I can\u0027t say which of them we should keep and which we should exclude. Perhaps trying each of them brute-force style in an eval run would be the thing to do here.",
+      "parentUuid": "72398051_cd14f1c7",
+      "revId": "1f0749da3f85d56af7877bee0617d79bfe77b55c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "126a334d_73c147d0",
         "filename": "rts/cmd/rts-chromium/eval.go",
         "patchSetId": 18
