@@ -15,8 +15,13 @@
 package common
 
 import (
+	"context"
+	"strings"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/tq"
 )
 
 // MostSevereError returns the most severer error in order of
@@ -33,4 +38,52 @@ func MostSevereError(errs errors.MultiError) error {
 		}
 	}
 	return firstTrans
+}
+
+// TQifyError does final error processing before returning from a TQ handler.
+//
+// * logs error stack,
+// * non-transient errors are tagged with tq.Fatal to avoid retries.
+func TQifyError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	logError(
+		ctx,
+		err,
+		64*1024, // Cloud Logging hard limit is 256KB.
+
+		// These packages are not useful in CV tests:
+		"github.com/smartystreets/goconvey/convey",
+		"github.com/jtolds/gls",
+		// These packages are not useful in production:
+		"go.chromium.org/luci/server",
+		"go.chromium.org/luci/server/tq",
+	)
+	if !transient.Tag.In(err) {
+		err = tq.Fatal.Apply(err)
+	}
+	return err
+}
+
+func logError(ctx context.Context, err error, maxBytesPerEntry int, excludePackages ...string) {
+	// TODO(tandrii): upstream this fork of errors.Log.
+	log := logging.Get(ctx)
+	lines := errors.RenderStack(err, excludePackages...)
+	for len(lines) > 0 {
+		bytes := 0
+		batch := lines
+		for i, l := range lines {
+			bytes += len(l)
+			// Always allow first line into the batch to ensure progress, even if it's
+			// too big. Practically, this should never happen, but if it doesn't, we
+			// shouldn't be looping forever.
+			if bytes > maxBytesPerEntry && i > 0 {
+				batch = lines[:i] // excluding i-th.
+				break
+			}
+		}
+		lines = lines[len(batch):]
+		log.Errorf("%s", strings.Join(batch, "\n"))
+	}
 }
