@@ -26,7 +26,14 @@ import (
 
 // MostSevereError returns the most severer error in order of
 // non-transient => transient => nil.
-func MostSevereError(errs errors.MultiError) error {
+func MostSevereError(err error) error {
+	if err == nil {
+		return nil
+	}
+	errs, ok := err.(errors.MultiError)
+	if !ok {
+		return err
+	}
 	var firstTrans error
 	for _, err := range errs {
 		switch {
