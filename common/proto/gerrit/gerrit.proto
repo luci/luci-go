@@ -439,6 +439,16 @@ message RevisionInfo {
   // The timestamp of when the patch set was created.
   google.protobuf.Timestamp created = 7;
 
+  // The description (aka title) of this patchset, as displayed in the patchset
+  // selector menu.
+  //
+  // Gerrit distinguishes empty string and no value, but here both are clamped
+  // into "".
+  //
+  // This is not CL description, aka Git commit message, which is stored in
+  // `commit.message`.
+  string description = 8;
+
   // The commit metadata for the patchset.
   //
   // Only set if commit information is requested.
