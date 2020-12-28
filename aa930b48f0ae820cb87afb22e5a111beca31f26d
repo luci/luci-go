@@ -33,6 +33,24 @@
       "message": "Ah, this is pretty neat",
       "revId": "aa930b48f0ae820cb87afb22e5a111beca31f26d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abc712e7_727d01fd",
+        "filename": "cv/internal/common/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-28T18:56:00Z",
+      "side": 1,
+      "message": "kudos go to Robbie 😊",
+      "parentUuid": "055998e2_110855c4",
+      "revId": "aa930b48f0ae820cb87afb22e5a111beca31f26d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
