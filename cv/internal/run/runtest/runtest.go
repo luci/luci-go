@@ -16,6 +16,8 @@
 package runtest
 
 import (
+	"sort"
+
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/run"
@@ -23,7 +25,7 @@ import (
 )
 
 // Runs returns list of runs from tasks for Run Manager.
-func Runs(in tqtesting.TaskList) (runs []run.ID) {
+func Runs(in tqtesting.TaskList) (runs run.IDs) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
 		case *internal.PokeRunTask:
@@ -32,5 +34,12 @@ func Runs(in tqtesting.TaskList) (runs []run.ID) {
 			runs = append(runs, run.ID(v.GetRunId()))
 		}
 	}
+	return runs
+}
+
+// SortedRuns returns sorted list of runs from tasks for Run Manager.
+func SortedRuns(in tqtesting.TaskList) run.IDs {
+	runs := Runs(in)
+	sort.Sort(runs)
 	return runs
 }
