@@ -39,6 +39,24 @@
       "message": "In addition, shouldn\u0027t changedFiles be copied into Sources?",
       "revId": "076314e3fe6f62c2299f08d7f345d2c95b604c89",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adb7f2a3_bfcce3bf",
+        "filename": "rts/filegraph/git/rts.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-28T23:34:08Z",
+      "side": 1,
+      "message": "isn\u0027t that what L92 doing?\notherwise, could you elaborate what do you mean by \"copied\"?",
+      "parentUuid": "bc40b034_42e8b8ca",
+      "revId": "076314e3fe6f62c2299f08d7f345d2c95b604c89",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
