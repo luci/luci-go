@@ -146,6 +146,9 @@ luci.builder(
                 ),
             ),
         ],
+        history_options = resultdb.history_options(
+            by_timestamp = True,
+        ),
     ),
 )
 
@@ -647,6 +650,9 @@ lucicfg.emit(
 #               expectancy: VARIANTS_WITH_UNEXPECTED_RESULTS
 #             }
 #           }
+#         }
+#         history_options {
+#           use_invocation_timestamp: true
 #         }
 #       }
 #       description_html: "this is a linux ci builder"
