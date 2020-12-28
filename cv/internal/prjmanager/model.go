@@ -40,11 +40,28 @@ type Project struct {
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
 
+	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
+	// ProjectManager is responsible for notifying these Runs of config change.
+	IncompleteRuns run.IDs `gae:",noindex"`
+}
+
+// ProjectStateOffload stores rarely changed project state offloaded from the
+// main Project entity for use in transactions creating Runs.
+//
+// Although this state could be stored in the main Project entity, doing so
+// would result in retries of Run creation transactions, since Project entity is
+// frequently modified in busy projects.
+//
+// On the other hand, ProjectStateOffload is highly likely to remain unchanged
+// by the time Run creation transaction commits, thus avoiding needless retries.
+type ProjectStateOffload struct {
+	_kind string `gae:"$kind,ProjectRarelyChanged"`
+	// ID is alaways the same, set/read only by the datastore ORM.
+	ID      string         `gae:"$id,const"`
+	Project *datastore.Key `gae:"$parent"`
+
 	// Status of project manager {STARTED, STOPPING, STOPPED (disabled)}.
 	Status Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
-	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
-	// ProjectManager is responsible for notifying these Runs of config change.
-	IncompleteRuns run.IDs `gae:",noindex"`
 }
