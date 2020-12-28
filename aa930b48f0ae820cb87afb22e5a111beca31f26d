@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff532ec5_dfbde789",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T18:52:34Z",
+      "side": 1,
+      "message": "LGTM, nice.",
+      "revId": "aa930b48f0ae820cb87afb22e5a111beca31f26d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "055998e2_110855c4",
+        "filename": "cv/internal/common/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-28T18:52:34Z",
+      "side": 1,
+      "message": "Ah, this is pretty neat",
+      "revId": "aa930b48f0ae820cb87afb22e5a111beca31f26d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
