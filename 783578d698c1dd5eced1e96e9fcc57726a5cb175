@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed8168e2_72b49166",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-12-28T21:13:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98101a3c_eda0993d",
+      "range": {
+        "startLine": 46,
+        "startChar": 24,
+        "endLine": 46,
+        "endChar": 38
+      },
+      "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9a7cc310_3bc18edd",
@@ -71,6 +95,30 @@
       "writtenOn": "2020-12-28T19:41:30Z",
       "side": 1,
       "message": "There should be corresponding change in the generated cr-buildbucket.cfg below.",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 10
+      },
+      "revId": "783578d698c1dd5eced1e96e9fcc57726a5cb175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4235bd6d_89784373",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-12-28T21:13:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a7cc310_3bc18edd",
       "range": {
         "startLine": 149,
         "startChar": 0,
