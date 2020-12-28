@@ -25,14 +25,21 @@ message Event {
     UpdateConfig update_config = 1;
     Poke poke = 2;
     CLUpdated cl_updated = 3;
+    RunFinished run_finished = 4;
   }
 }
 
 message UpdateConfig {}
+
 message Poke {}
+
 message CLUpdated {
   // Internal ID of a CL that was updated.
   int64 clid = 1;
   // EVersion of the updated CL entity.
   int64 eversion = 2;
+}
+
+message RunFinished {
+  string run_id = 1;
 }
