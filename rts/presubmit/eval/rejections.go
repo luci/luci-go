@@ -17,6 +17,7 @@ package eval
 import (
 	"sort"
 
+	"go.chromium.org/luci/rts"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
@@ -25,11 +26,13 @@ type rejectionPrinter struct {
 }
 
 // printRejection prints a rejection.
-func (p *rejectionPrinter) rejection(rej *evalpb.Rejection) error {
+func (p *rejectionPrinter) rejection(rej *evalpb.Rejection, mostAffected rts.Affectedness) error {
 	pf := p.printf
 
-	pf("Lost rejection:\n")
+	pf("Rejection:\n")
 	p.Level++
+
+	pf("Most affected test: %f distance, %d rank\n", mostAffected.Distance, mostAffected.Rank)
 
 	// Print patchsets.
 	if len(rej.Patchsets) == 1 {
