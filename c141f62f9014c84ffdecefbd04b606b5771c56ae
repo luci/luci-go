@@ -63,6 +63,30 @@
       },
       "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b305ec1_39a19e6a",
+        "filename": "resultdb/sink/proto/v1/location_tag.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T04:54:28Z",
+      "side": 1,
+      "message": "it would be inconsistent with all other tags in ResultDB protos though.",
+      "parentUuid": "1e63d481_b1ed8486",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 50
+      },
+      "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
