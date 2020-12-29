@@ -51,8 +51,8 @@ type Eval struct {
 	// Durations are used to evaluate efficiency of the strategy.
 	Durations *history.Player
 
-	// LogFurthest instructs to log rejections for which failed tests have large
-	// distance, as concluded by the selection strategy.
+	// LogFurthest instructs to log rejections that the selection strategy
+	// concluded that the failed tests have great distance.
 	// LogFurthest is the number of rejections to print, ordered by descending
 	// distance.
 	// This can help diagnosing the selection strategy.
@@ -71,8 +71,8 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 		Path to the history file with test durations. Used for efficiency evaluation.
 	`))
 	fs.IntVar(&e.LogFurthest, "log-furthest", 0, text.Doc(`
-		Log rejections for which failed tests have large distance,
-		as concluded by the selection strategy.
+		Instructs to log rejections that the selection strategy concluded that the
+		failed tests have great distance.
 		The flag value is the number of rejections to print, ordered by descending
 		distance.
 		This can help diagnosing the selection strategy.
@@ -169,7 +169,7 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 	logging.Infof(ctx, "Distance percentiles: %v", distancePercentiles)
 	logging.Infof(ctx, "Rank percentiles: %v", rankPercentiles)
 
-	// Evaluate safety of *combinations* of thresholds.
+	// Evaluate safety of *combinations* of threhsolds.
 
 	losses := func(afs []rts.Affectedness) *bucketGrid {
 		var buckets bucketGrid
@@ -306,22 +306,30 @@ func (g *thresholdGrid) init(afs []rts.Affectedness) (distancePercentiles []floa
 	return
 }
 
-// Slice returns a slice of thresholds, sorted by ChangeRecall and Savings.
-// Returned elements are pointes to the grid.
+// Slice returns a slice of thresholds, sorted by ChangeRecall.
+// If two thresholds have the same ChangeScore, the one with larger Savings
+// wins.
 func (g *thresholdGrid) Slice() []*Threshold {
-	ret := make([]*Threshold, 0, 1e4)
+	best := map[float64]*Threshold{}
 	for row := 0; row < 100; row++ {
 		for col := 0; col < 100; col++ {
-			ret = append(ret, &g[row][col])
+			t := &g[row][col]
+			if existing := best[t.ChangeRecall]; existing == nil || t.Savings > existing.Savings {
+				best[t.ChangeRecall] = t
+			}
 		}
 	}
 
-	sort.Slice(ret, func(i, j int) bool {
-		if ret[i].ChangeRecall != ret[j].ChangeRecall {
-			return ret[i].ChangeRecall < ret[i].ChangeRecall
-		}
-		return ret[i].Savings < ret[j].Savings
-	})
+	keys := make([]float64, 0, len(best))
+	for score := range best {
+		keys = append(keys, score)
+	}
+	sort.Float64s(keys)
+
+	ret := make([]*Threshold, len(best))
+	for i, key := range keys {
+		ret[i] = best[key]
+	}
 	return ret
 }
 

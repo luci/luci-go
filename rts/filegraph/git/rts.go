@@ -23,12 +23,32 @@ import (
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
+// SelectionStrategy implements a selection strategy based on a git graph.
+type SelectionStrategy struct {
+	Graph *Graph
+
+	// Threshold decides whether a test is to be selected: if it is closer or
+	// equal than distance OR rank, then it is selected. Otherwise, skipped.
+	Threshold rts.Affectedness
+}
+
+// Select calls skipTestFile for each test file that should be skipped.
+func (s *SelectionStrategy) Select(changedFiles []string, skipFile func(name string) (keepGoing bool)) {
+	runRTSQuery(s.Graph, changedFiles, func(sp *filegraph.ShortestPath, rank int) bool {
+		if rank <= s.Threshold.Rank || sp.Distance <= s.Threshold.Distance {
+			// This file too close to skip it.
+			return true
+		}
+		return skipFile(sp.Node.Name())
+	})
+}
+
 // EvalStrategy implements eval.Strategy. It can be used to evaluate data
 // quality of the graph.
 //
 // This function has minimal input validation. It is not designed to be called
 // by the evaluation framework directly. Instead it should be wrapped with
-// another strategy function that does the validation. In particular, this
+// another strategy function that does the validates. In particular, this
 // function does not check in.ChangedFiles[i].Repo and does not check for file
 // patterns that must be exempted from RTS.
 func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Output) error {

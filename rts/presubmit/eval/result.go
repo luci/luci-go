@@ -70,6 +70,7 @@ type Threshold struct {
 	Savings float64
 }
 
+
 // Print prints the results to w.
 func (r *Result) Print(w io.Writer, minChangeRecall float64) error {
 	p := newPrinter(w)
