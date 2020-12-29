@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"sort"
 	"time"
+
+	"go.chromium.org/luci/rts"
 )
 
 // Result is the result of evaluation of a selection strategy.
@@ -36,40 +37,9 @@ type Result struct {
 	TotalDuration time.Duration
 }
 
-// thresholdGrid is a 100x100 grid where each cell represents a distance/rank
-// threshold. All cells in the same row have the same distance value, and
-// all cells in the same column have the same rank value.
-//
-// The distance value of the row R is the minimal distance threshold required to
-// achieve ChangeRecall score of (R+1)/100.0 on the training set, while ignoring
-// rank threshold.
-// For example, thresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
-// on the training set.
-//
-// Similarly, rank value of the column C is the minimal rank threshold required
-// to achieve ChangeRecall score of (C+1)/100.0 on to the training set,
-// while ignoring distance threshold.
-//
-// The distances and ranks are computed independently of each other and then
-// combined into this grid.
-type thresholdGrid [100][100]Threshold
-
-// init clears the grid and initializes the rows/columns with distance/rank
-// percentiles in afs.
-func (g *thresholdGrid) init(afs AffectednessSlice) (distancePercentiles []float64, rankPercentiles []int) {
-	*g = thresholdGrid{}
-	distancePercentiles, rankPercentiles = afs.quantiles(100)
-	for row, distance := range distancePercentiles {
-		for col, rank := range rankPercentiles {
-			g[row][col].Value = Affectedness{Distance: distance, Rank: rank}
-		}
-	}
-	return
-}
-
 // Threshold is distance and rank thresholds, as well as their results.
 type Threshold struct {
-	Value Affectedness
+	Value rts.Affectedness
 
 	// PreservedRejections is the number of rejections where at least one failed
 	// test was selected.
@@ -98,25 +68,6 @@ type Threshold struct {
 	// Savings is the fraction of test duration that was cut.
 	// May return NaN.
 	Savings float64
-}
-
-// Slice returns a slice of thresholds, sorted by ChangeRecall and Savings.
-// Returned elements are pointes to the grid.
-func (g *thresholdGrid) Slice() []*Threshold {
-	ret := make([]*Threshold, 0, 1e4)
-	for row := 0; row < 100; row++ {
-		for col := 0; col < 100; col++ {
-			ret = append(ret, &g[row][col])
-		}
-	}
-
-	sort.Slice(ret, func(i, j int) bool {
-		if ret[i].ChangeRecall != ret[j].ChangeRecall {
-			return ret[i].ChangeRecall < ret[i].ChangeRecall
-		}
-		return ret[i].Savings < ret[j].Savings
-	})
-	return ret
 }
 
 // Print prints the results to w.
