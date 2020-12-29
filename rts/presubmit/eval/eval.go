@@ -15,6 +15,8 @@
 package eval
 
 import (
+	"bytes"
+	"container/heap"
 	"context"
 	"flag"
 	"math"
@@ -70,7 +72,7 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.Var(&historyFileInputFlag{ptr: &e.Durations}, "durations", text.Doc(`
 		Path to the history file with test durations. Used for efficiency evaluation.
 	`))
-	fs.IntVar(&e.LogFurthest, "log-furthest", 0, text.Doc(`
+	fs.IntVar(&e.LogFurthest, "log-furthest", 10, text.Doc(`
 		Log rejections for which failed tests have large distance,
 		as concluded by the selection strategy.
 		The flag value is the number of rejections to print, ordered by descending
@@ -115,6 +117,7 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid, error) {
 	var changeAffectedness []rts.Affectedness
 	var testAffectedness []rts.Affectedness
+	furthest := make(rejectionHeap, 0, e.LogFurthest)
 	var mu sync.Mutex
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -148,6 +151,7 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 			mu.Lock()
 			changeAffectedness = append(changeAffectedness, mostAffected)
 			testAffectedness = append(testAffectedness, out.TestVariantAffectedness...)
+			furthest.maybePush(rejectionHeapItem{Rejection: rej, MostAffected: mostAffected})
 			mu.Unlock()
 		}
 		return nil
@@ -168,6 +172,9 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 	distancePercentiles, rankPercentiles := grid.init(changeAffectedness)
 	logging.Infof(ctx, "Distance percentiles: %v", distancePercentiles)
 	logging.Infof(ctx, "Rank percentiles: %v", rankPercentiles)
+	if len(furthest) > 0 {
+		furthest.LogAndClear(ctx)
+	}
 
 	// Evaluate safety of *combinations* of thresholds.
 
@@ -446,4 +453,61 @@ func checkConsistency(a, b rts.Affectedness) error {
 		return errors.Reason("ranks and distances are inconsistent: %#v and %#v", a, b).Err()
 	}
 	return nil
+}
+
+type rejectionHeap []rejectionHeapItem
+type rejectionHeapItem struct {
+	Rejection    *evalpb.Rejection
+	MostAffected rts.Affectedness
+}
+
+// maybePush pushes the item if there is unused capacity, or replaces the closest
+// item in the heap if former is further than the latter.
+// Does nothing if cap(h) == 0.
+func (h *rejectionHeap) maybePush(item rejectionHeapItem) {
+	switch {
+	case cap(*h) == 0:
+		return
+
+	// If the heap has a free slot, just add the rejection.
+	case len(*h) < cap(*h):
+		heap.Push(h, item)
+
+	// Otherwise, if the rejection is further than heap's closest one, then
+	// replace the latter.
+	case (*h)[0].MostAffected.Distance < item.MostAffected.Distance:
+		(*h)[0] = item
+		heap.Fix(h, 0)
+	}
+}
+
+func (h *rejectionHeap) LogAndClear(ctx context.Context) {
+	buf := &bytes.Buffer{}
+	p := rejectionPrinter{printer: newPrinter(buf)}
+	p.printf("%d furthest rejections:\n", len(*h))
+	p.Level++
+	for len(*h) > 0 {
+		r := heap.Pop(h).(rejectionHeapItem)
+		p.rejection(r.Rejection, r.MostAffected)
+	}
+	p.Level--
+	logging.Infof(ctx, "%s", buf.Bytes())
+}
+
+func (h rejectionHeap) Len() int { return len(h) }
+func (h rejectionHeap) Less(i, j int) bool {
+	return h[i].MostAffected.Distance < h[j].MostAffected.Distance
+}
+func (h rejectionHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *rejectionHeap) Push(x interface{}) {
+	// Push and Pop use pointer receivers because they modify the slice's length,
+	// not just its contents.
+	*h = append(*h, x.(rejectionHeapItem))
+}
+func (h *rejectionHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
 }
