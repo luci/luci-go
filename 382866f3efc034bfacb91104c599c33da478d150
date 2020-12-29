@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a44ad1e_a94ac7a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 27
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:57:26Z",
+      "side": 1,
+      "message": "Greg, this CL blocks other CLs that you already LGTMed. Does this one LGTY?",
+      "revId": "382866f3efc034bfacb91104c599c33da478d150",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
