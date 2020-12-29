@@ -254,3 +254,23 @@ func TestQuantiles(t *testing.T) {
 		})
 	})
 }
+
+func TestThresholdGrid(t *testing.T) {
+	Convey("ThresholGrid", t, func() {
+		g := thresholdGrid{}
+		g[0][0].Savings = 1
+
+		g[98][0].ChangeRecall = 0.9
+
+		g[98][98].ChangeRecall = 0.9
+		g[98][98].Savings = 0.3
+
+		g[99][99].ChangeRecall = 1
+
+		So(g.Slice(), ShouldResemble, []*Threshold{
+			{ChangeRecall: 0, Savings: 1.0},
+			{ChangeRecall: 0.9, Savings: 0.3},
+			{ChangeRecall: 1, Savings: 0.0},
+		})
+	})
+}
