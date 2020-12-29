@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 func init() {
@@ -152,7 +151,7 @@ type triageResult struct {
 	runsFinished struct {
 		// events and runs are in random order.
 		events eventbox.Events
-		runs   run.IDs
+		runs   common.RunIDs
 	}
 }
 
@@ -174,7 +173,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.clupdated.cls = append(tr.clupdated.cls, v.ClUpdated)
 	case *internal.Event_RunFinished:
 		tr.clupdated.events = append(tr.clupdated.events, item)
-		tr.runsFinished.runs = append(tr.runsFinished.runs, run.ID(v.RunFinished.GetRunId()))
+		tr.runsFinished.runs = append(tr.runsFinished.runs, common.RunID(v.RunFinished.GetRunId()))
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}

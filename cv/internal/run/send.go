@@ -23,12 +23,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/internal"
 )
 
 // Start tells RunManager to start the given run.
-func Start(ctx context.Context, runID ID) error {
+func Start(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Start{
 			Start: &internal.Start{},
@@ -37,7 +38,7 @@ func Start(ctx context.Context, runID ID) error {
 }
 
 // Poke tells RunManager to check its own state.
-func Poke(ctx context.Context, runID ID) error {
+func Poke(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Poke{
 			Poke: &internal.Poke{},
@@ -46,7 +47,7 @@ func Poke(ctx context.Context, runID ID) error {
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
-func UpdateConfig(ctx context.Context, runID ID, hash string, eversion int64) error {
+func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_UpdateConfig{
 			UpdateConfig: &internal.UpdateConfig{
@@ -60,7 +61,7 @@ func UpdateConfig(ctx context.Context, runID ID, hash string, eversion int64) er
 // Cancel tells RunManager to cancel the given run.
 //
 // TODO(yiwzhang,tandrii): support reason.
-func Cancel(ctx context.Context, runID ID) error {
+func Cancel(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Cancel{
 			Cancel: &internal.Cancel{},
@@ -68,7 +69,7 @@ func Cancel(ctx context.Context, runID ID) error {
 	})
 }
 
-func send(ctx context.Context, runID ID, evt *internal.Event) error {
+func send(ctx context.Context, runID common.RunID, evt *internal.Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
@@ -50,7 +51,7 @@ func TestStartRun(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(run.Start(ctx, runID), ShouldBeNil)
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			assertEventBoxSize(ctx, runKey, 0)
 
@@ -127,7 +128,7 @@ func TestCancelRun(t *testing.T) {
 				So(err, ShouldBeNil)
 				ct.Clock.Add(1 * time.Minute)
 				So(run.Cancel(ctx, runID), ShouldBeNil)
-				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
+				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 				assertEventBoxSize(ctx, runKey, 0)
 
@@ -194,7 +195,7 @@ func TestCancelRun(t *testing.T) {
 			So(run.Cancel(ctx, runID), ShouldBeNil)
 			assertEventBoxSize(ctx, runKey, 2)
 
-			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, run.IDs{runID})
+			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			// Consumed both events
 			assertEventBoxSize(ctx, runKey, 0)

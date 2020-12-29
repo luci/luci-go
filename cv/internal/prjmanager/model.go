@@ -17,7 +17,7 @@ package prjmanager
 import (
 	"time"
 
-	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -42,7 +42,7 @@ type Project struct {
 
 	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
-	IncompleteRuns run.IDs `gae:",noindex"`
+	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
 
 // ProjectStateOffload stores rarely changed project state offloaded from the
