@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync/atomic"
 
 	"google.golang.org/protobuf/proto"
 
@@ -30,15 +29,9 @@ import (
 // Player can playback a history from a reader.
 // It takes care of reconstructing rejections from fragments.
 type Player struct {
-	RejectionC   chan *evalpb.Rejection
-	DurationC    chan *evalpb.TestDuration
-	r            *Reader
-	totalRecords int64
-}
-
-// TotalRecords returns the number of records observed thus far.
-func (p *Player) TotalRecords() int {
-	return int(atomic.LoadInt64(&p.totalRecords))
+	RejectionC chan *evalpb.Rejection
+	DurationC  chan *evalpb.TestDuration
+	r          *Reader
 }
 
 // NewPlayer returns a new Player.
@@ -53,17 +46,24 @@ func NewPlayer(r *Reader) *Player {
 // Playback reads historical records and dispatches them to p.RejectionC and
 // p.DurationC.
 // Before exiting, closes RejectionC, DurationC and the underlying reader.
+//
+// TODO(nodir): refactor this package and potentially the file format.
+// This function is never used.
 func (p *Player) Playback(ctx context.Context) error {
-	return p.playback(ctx, true)
+	return p.playback(ctx, true, true)
 }
 
-// PlaybackIgnoreDurations is like Playback, except it ignores all duration
-// data.
-func (p *Player) PlaybackIgnoreDurations(ctx context.Context) error {
-	return p.playback(ctx, false)
+// PlaybackRejections is like Playback, except reports only rejections.
+func (p *Player) PlaybackRejections(ctx context.Context) error {
+	return p.playback(ctx, false, true)
 }
 
-func (p *Player) playback(ctx context.Context, withDurations bool) error {
+// PlaybackDurations is like Playback, except reports only durations.
+func (p *Player) PlaybackDurations(ctx context.Context) error {
+	return p.playback(ctx, true, false)
+}
+
+func (p *Player) playback(ctx context.Context, withDurations, withRejections bool) error {
 	defer func() {
 		close(p.RejectionC)
 		close(p.DurationC)
@@ -80,20 +80,20 @@ func (p *Player) playback(ctx context.Context, withDurations bool) error {
 			return errors.Annotate(err, "failed to read history").Err()
 		}
 
-		atomic.AddInt64(&p.totalRecords, 1)
-
 		// Send the record to the appropriate channel.
 		switch data := rec.Data.(type) {
 
 		case *evalpb.Record_RejectionFragment:
-			proto.Merge(curRej, data.RejectionFragment.Rejection)
-			if data.RejectionFragment.Terminal {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case p.RejectionC <- curRej:
-					// Start a new rejection.
-					curRej = &evalpb.Rejection{}
+			if withRejections {
+				proto.Merge(curRej, data.RejectionFragment.Rejection)
+				if data.RejectionFragment.Terminal {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case p.RejectionC <- curRej:
+						// Start a new rejection.
+						curRej = &evalpb.Rejection{}
+					}
 				}
 			}
 

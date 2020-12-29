@@ -18,31 +18,32 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sort"
 	"time"
-
-	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
 
-// Result is the result of evaluation.
+// Result is the result of evaluation of a selection strategy.
 type Result struct {
-	Thresholds ThresholdGrid
+	// Thresholds are considered thresholds and their results.
+	// Sorted by ascending ChangeScore.
+	Thresholds []*Threshold
 
-	// TODO(nodir): refactor these fields by moving their data into this struct
-	// directly or into Thresholds.
-
-	Safety       Safety
-	Efficiency   Efficiency
-	TotalRecords int
+	// TotalRejections is the number of analyzed rejections.
+	TotalRejections int
+	// TotalTestFailures is the number of analyzed test failures.
+	TotalTestFailures int
+	// TotalDuration is the sum of analyzed test durations.
+	TotalDuration time.Duration
 }
 
-// ThresholdGrid is a 100x100 grid where each cell represents a distance/rank
+// thresholdGrid is a 100x100 grid where each cell represents a distance/rank
 // threshold. All cells in the same row have the same distance value, and
 // all cells in the same column have the same rank value.
 //
 // The distance value of the row R is the minimal distance threshold required to
 // achieve ChangeRecall score of (R+1)/100.0 on the training set, while ignoring
 // rank threshold.
-// For example, ThresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
+// For example, thresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
 // on the training set.
 //
 // Similarly, rank value of the column C is the minimal rank threshold required
@@ -51,12 +52,12 @@ type Result struct {
 //
 // The distances and ranks are computed independently of each other and then
 // combined into this grid.
-type ThresholdGrid [100][100]Threshold
+type thresholdGrid [100][100]Threshold
 
 // init clears the grid and initializes the rows/columns with distance/rank
 // percentiles in afs.
-func (g *ThresholdGrid) init(afs AffectednessSlice) (distancePercentiles []float64, rankPercentiles []int) {
-	*g = ThresholdGrid{}
+func (g *thresholdGrid) init(afs AffectednessSlice) (distancePercentiles []float64, rankPercentiles []int) {
+	*g = thresholdGrid{}
 	distancePercentiles, rankPercentiles = afs.quantiles(100)
 	for row, distance := range distancePercentiles {
 		for col, rank := range rankPercentiles {
@@ -66,164 +67,83 @@ func (g *ThresholdGrid) init(afs AffectednessSlice) (distancePercentiles []float
 	return
 }
 
-// Threshold is distance and rank thresholds, as well as their results on the
-// eval set.
+// Threshold is distance and rank thresholds, as well as their results.
 type Threshold struct {
 	Value Affectedness
 
-	// TODO(nodir): move safety and efficiency data here.
+	// PreservedRejections is the number of rejections where at least one failed
+	// test was selected.
+	PreservedRejections int
+
+	// PreservedTestFailures is the number of selected failed tests.
+	PreservedTestFailures int
+
+	// SavedDuration is the sum of test durations for skipped tests.
+	SavedDuration time.Duration
+
+	// ChangeRecall is the fraction of rejections that were preserved.
+	// May be NaN.
+	ChangeRecall float64
+
+	// DistanceChangeRecall is the ChangeRecall achieved only by Value.Distance.
+	DistanceChangeRecall float64
+
+	// RankChangeRecall is the ChangeRecall achieved only by Value.Rank.
+	RankChangeRecall float64
+
+	// TestRecall is the fraction of test failures that were preserved.
+	// May return NaN.
+	TestRecall float64
+
+	// Savings is the fraction of test duration that was cut.
+	// May return NaN.
+	Savings float64
 }
 
-// Safety is how safe the candidate strategy is.
-// A safe strategy does not let bad CLs pass CQ.
-type Safety struct {
-	ChangeRecall ChangeRecall
-	TestRecall   TestRecall
-}
+// Slice returns a slice of thresholds, sorted by ChangeRecall and Savings.
+// Returned elements are pointes to the grid.
+func (g *thresholdGrid) Slice() []*Threshold {
+	ret := make([]*Threshold, 0, 1e4)
+	for row := 0; row < 100; row++ {
+		for col := 0; col < 100; col++ {
+			ret = append(ret, &g[row][col])
+		}
+	}
 
-// ChangeRecall represents the fraction of code change rejections
-// that were preserved by the candidate strategy.
-type ChangeRecall struct {
-	// TotalRejections is the total number of analyzed rejections.
-	TotalRejections int
-
-	// LostRejections are the rejections that would not be preserved
-	// by the candidate strategy, i.e. the bad patchsets would land.
-	// The strategy did not select any of the failed tests in these rejections.
-	//
-	// Ideally this slice is empty.
-	LostRejections []*evalpb.Rejection
-}
-
-// TestRecall represents the fraction of test failures
-// that were preserved by the candidate strategy.
-// If a test is not selected by the strategy, then its failure is not
-// preserved.
-type TestRecall struct {
-	// TotalFailures is the total number of analyzed test failures.
-	TotalFailures int
-
-	// LostFailures are the failures which the candidate strategy did not preserve.
-	LostFailures []LostTestFailure
-}
-
-// LostTestFailure is a failure of a test that the candidate strategy did not select.
-type LostTestFailure struct {
-	Rejection   *evalpb.Rejection
-	TestVariant *evalpb.TestVariant
-}
-
-// Efficiency is result of evaluation how much compute time the candidate
-// strategy could save.
-type Efficiency struct {
-	// TestResults is the number of analyzed test results.
-	TestResults int
-
-	// SampleDuration is the sum of test durations in the analyzed data sample.
-	SampleDuration time.Duration
-
-	// ForecastDuration is the sum of test durations for tests selected by the
-	// strategy. It is a value between 0 and SampleDuration.
-	// The lower the number the better.
-	ForecastDuration time.Duration
+	sort.Slice(ret, func(i, j int) bool {
+		if ret[i].ChangeRecall != ret[j].ChangeRecall {
+			return ret[i].ChangeRecall < ret[i].ChangeRecall
+		}
+		return ret[i].Savings < ret[j].Savings
+	})
+	return ret
 }
 
 // Print prints the results to w.
-func (r *Result) Print(w io.Writer) error {
+func (r *Result) Print(w io.Writer, minChangeRecall float64) error {
 	p := newPrinter(w)
-	pf := p.printf
 
-	pf("Change recall:\n")
-	cr := r.Safety.ChangeRecall
-	p.Level++
-	switch {
-	case cr.TotalRejections == 0:
-		pf("Evaluation failed: rejections not found\n")
-
-	default:
-		pf("Score: %s\n", scoreString(cr.Score()))
-		pf("Rejections:           %d\n", cr.TotalRejections)
-		pf("Rejections preserved: %d\n", cr.preserved())
+	p.printf("ChangeRecall | Savings | TestRecall | Distance, ChangeRecall | Rank, ChangeRecall\n")
+	p.printf("---------------------------------------------------------------------------------\n")
+	for _, t := range r.Thresholds {
+		if t.ChangeRecall < minChangeRecall {
+			continue
+		}
+		p.printf(
+			"%7s      | % 7s | %7s    | %6.3f            %3.0f%% | %-9d     %3.0f%%\n",
+			scoreString(t.ChangeRecall),
+			scoreString(t.Savings),
+			scoreString(t.TestRecall),
+			t.Value.Distance,
+			t.DistanceChangeRecall*100,
+			t.Value.Rank,
+			t.RankChangeRecall*100,
+		)
 	}
-	p.Level--
 
-	pf("Test recall:\n")
-	tr := r.Safety.TestRecall
-	p.Level++
-	switch {
-	case tr.TotalFailures == 0:
-		pf("Evaluation failed: rejections not found\n")
+	p.printf("\nbased on %d rejections, %d test failures, %s testing time\n", r.TotalRejections, r.TotalTestFailures, r.TotalDuration)
 
-	default:
-		pf("Score: %s\n", scoreString(tr.Score()))
-		pf("Test failures:           %d\n", tr.TotalFailures)
-		pf("Test failures preserved: %d\n", tr.preserved())
-	}
-	p.Level--
-
-	pf("Efficiency:\n")
-	p.Level++
-	if r.Efficiency.SampleDuration == 0 {
-		pf("Evaluation failed: no test results with duration\n")
-	} else {
-		pf("Saved: %s\n", scoreString(r.Efficiency.Score()))
-		pf("Test results analyzed: %d\n", r.Efficiency.TestResults)
-		pf("Compute time in the sample: %s\n", r.Efficiency.SampleDuration)
-		pf("Forecasted compute time:    %s\n", r.Efficiency.ForecastDuration)
-	}
-	p.Level--
-
-	pf("Total records: %d\n", r.TotalRecords)
 	return p.err
-}
-
-func (r *Result) oneLine(w io.Writer) error {
-	p := newPrinter(w)
-	p.printf("change recall: %s", scoreString(r.Safety.ChangeRecall.Score()))
-	p.printf(" (%d data points)", r.Safety.ChangeRecall.TotalRejections)
-
-	p.printf(" | test recall: %s", scoreString(r.Safety.TestRecall.Score()))
-	p.printf(" (%d data points)", r.Safety.TestRecall.TotalFailures)
-
-	p.printf(" | efficiency: %s", scoreString(r.Efficiency.Score()))
-	p.printf(" (%d data points)", r.Efficiency.TestResults)
-	return p.err
-}
-
-func (r *ChangeRecall) preserved() int {
-	return r.TotalRejections - len(r.LostRejections)
-}
-
-// Score returns the fraction of rejections that were preserved.
-// May return NaN.
-func (r *ChangeRecall) Score() float64 {
-	if r.TotalRejections == 0 {
-		return math.NaN()
-	}
-	return float64(r.preserved()) / float64(r.TotalRejections)
-}
-
-func (r *TestRecall) preserved() int {
-	return r.TotalFailures - len(r.LostFailures)
-}
-
-// Score returns the fraction of test failures that were preserved.
-// May return NaN.
-func (r *TestRecall) Score() float64 {
-	if r.TotalFailures == 0 {
-		return math.NaN()
-	}
-	return float64(r.preserved()) / float64(r.TotalFailures)
-}
-
-// Score returns the efficiency score.
-// May return NaN.
-func (e *Efficiency) Score() float64 {
-	if e.SampleDuration == 0 {
-		return math.NaN()
-	}
-	saved := e.SampleDuration - e.ForecastDuration
-	return float64(saved) / float64(e.SampleDuration)
 }
 
 func scoreString(score float64) string {
