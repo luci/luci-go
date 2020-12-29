@@ -304,6 +304,30 @@
       },
       "revId": "d518a0939c38f7382083b2df568762286508b8a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50852d68_3f1c437d",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T16:17:19Z",
+      "side": 1,
+      "message": "wow. SGTM.",
+      "parentUuid": "d2e78e4e_71e9e4ee",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 8
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
