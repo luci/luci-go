@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa635e41_2223243d",
+        "filename": "rts/filegraph/git/rts.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T04:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a81fb4d3_0dfef0fe",
+      "range": {
+        "startLine": 31,
+        "startChar": 51,
+        "endLine": 31,
+        "endChar": 52
+      },
+      "revId": "076314e3fe6f62c2299f08d7f345d2c95b604c89",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc40b034_42e8b8ca",
