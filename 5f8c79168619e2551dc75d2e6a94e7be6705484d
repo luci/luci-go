@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f850350_892f71f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T17:39:27Z",
+      "side": 1,
+      "message": "ptal again the diff vs PS1, please.",
+      "revId": "5f8c79168619e2551dc75d2e6a94e7be6705484d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "45307e48_4546e021",
@@ -24,6 +41,53 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7b45211_10fab8a0",
+        "filename": "cv/internal/common/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T17:39:27Z",
+      "side": 1,
+      "message": "Done, also I forgot to recurse on L39, which is now done.\n\nI\u0027ve also added a test.",
+      "parentUuid": "45307e48_4546e021",
+      "range": {
+        "startLine": 28,
+        "startChar": 36,
+        "endLine": 28,
+        "endChar": 37
+      },
+      "revId": "5f8c79168619e2551dc75d2e6a94e7be6705484d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "040a3b1f_e0d5bc16",
+        "filename": "cv/internal/prjmanager/impl/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T17:39:27Z",
+      "side": 1,
+      "message": "renamed this to CancelRun.",
+      "range": {
+        "startLine": 59,
+        "startChar": 16,
+        "endLine": 59,
+        "endChar": 24
+      },
+      "revId": "5f8c79168619e2551dc75d2e6a94e7be6705484d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4b23fc12_03250b90",
@@ -41,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f41afd7b_78a754a8",
+        "filename": "cv/internal/prjmanager/impl/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T17:39:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b23fc12_03250b90",
+      "revId": "5f8c79168619e2551dc75d2e6a94e7be6705484d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aa1d13e7_9f639974",
@@ -54,6 +136,30 @@
       "writtenOn": "2020-12-28T23:17:22Z",
       "side": 1,
       "message": "Poke",
+      "range": {
+        "startLine": 81,
+        "startChar": 15,
+        "endLine": 81,
+        "endChar": 21
+      },
+      "revId": "5f8c79168619e2551dc75d2e6a94e7be6705484d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92f7c017_a96565d1",
+        "filename": "cv/internal/prjmanager/impl/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-29T17:39:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa1d13e7_9f639974",
       "range": {
         "startLine": 81,
         "startChar": 15,
