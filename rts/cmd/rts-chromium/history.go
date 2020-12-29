@@ -91,7 +91,7 @@ type presubmitHistoryRun struct {
 	recordCountNextReport time.Time
 }
 
-func (r *presubmitHistoryRun) validate() error {
+func (r *presubmitHistoryRun) validateFlags() error {
 	switch {
 	case r.out == "":
 		return errors.New("-out is required")
@@ -112,7 +112,7 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 		return r.done(errors.New("unexpected positional arguments"))
 	}
 
-	if err := r.validate(); err != nil {
+	if err := r.validateFlags(); err != nil {
 		return r.done(err)
 	}
 

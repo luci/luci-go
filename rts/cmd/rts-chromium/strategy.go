@@ -23,6 +23,24 @@ import (
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
+// selectTests calls skipFile for test files that should be skipped.
+func (r *selectRun) selectTests(skipFile func(name string) error) (err error) {
+	// Check if any of the changed files requires all tests.
+	for f := range r.changedFiles {
+		if requiresAllTests(f) {
+			return nil
+		}
+	}
+	r.strategy.Select(r.changedFiles.ToSlice(), func(fileName string) (keepGoing bool) {
+		if !r.testFiles.Has(fileName) {
+			return true
+		}
+		err = skipFile(fileName)
+		return err == nil
+	})
+	return
+}
+
 func (r *evalRun) selectTests(ctx context.Context, in eval.Input, out *eval.Output) error {
 	for _, f := range in.ChangedFiles {
 		switch {
