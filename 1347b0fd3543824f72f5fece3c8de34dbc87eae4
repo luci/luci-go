@@ -16,6 +16,23 @@
       "message": "PTAL. This is how I discovered the bug in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2605914/1",
       "revId": "1347b0fd3543824f72f5fece3c8de34dbc87eae4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19f10df2_4fe70efb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1377971
+      },
+      "writtenOn": "2020-12-29T23:29:42Z",
+      "side": 1,
+      "message": "lgtm!",
+      "revId": "1347b0fd3543824f72f5fece3c8de34dbc87eae4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
