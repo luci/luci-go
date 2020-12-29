@@ -47,6 +47,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c808dea0_8c1c0a41",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98a28c55_e3b97933",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 73,
+        "endChar": 35
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "accc4f34_f6c2d6da",
@@ -60,6 +84,30 @@
       "writtenOn": "2020-12-21T23:25:17Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 170,
+        "startChar": 41,
+        "endLine": 170,
+        "endChar": 51
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e251c6e_abc3d09f",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "accc4f34_f6c2d6da",
       "range": {
         "startLine": 170,
         "startChar": 41,
@@ -87,6 +135,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5969e2cf_56f268dc",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "yeah",
+      "parentUuid": "6a6e38f1_8324eb05",
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "892e6c96_364a1ca4",
@@ -100,6 +166,24 @@
       "writtenOn": "2020-12-21T23:25:17Z",
       "side": 1,
       "message": "👍 comments in the rest of this file.\n\nI started reviewing an earlier version and had lots of \"WHAT?!\" moments, that the comments here helped clear out.",
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74ca8f4b_544225fe",
+        "filename": "rts/presubmit/eval/eval.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "892e6c96_364a1ca4",
       "revId": "d518a0939c38f7382083b2df568762286508b8a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -127,6 +211,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54020415_74eac5bc",
+        "filename": "rts/presubmit/eval/main.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe9cfc5b_7a6c868f",
+      "range": {
+        "startLine": 47,
+        "startChar": 20,
+        "endLine": 47,
+        "endChar": 24
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9ec043f_408c25e7",
@@ -140,6 +248,30 @@
       "writtenOn": "2020-12-21T23:25:17Z",
       "side": 1,
       "message": "(very minor) I fail to grasp why is this important. Are there many duplicates expected otherwise?\n\nif not, I think sort.Slice(thresholds, customCmp) would be less code and faster than creating best map \u0026 keys slices.",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 8
+      },
+      "revId": "d518a0939c38f7382083b2df568762286508b8a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4c44d3e_3227848d",
+        "filename": "rts/presubmit/eval/result.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T01:45:46Z",
+      "side": 1,
+      "message": "you are right. I don\u0027t expect a lot of duplicates. \nThe code is simpler now.",
+      "parentUuid": "b9ec043f_408c25e7",
       "range": {
         "startLine": 104,
         "startChar": 2,
