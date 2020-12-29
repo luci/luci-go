@@ -54,11 +54,11 @@ func cmdEval() *subcommands.Command {
 
 type evalRun struct {
 	baseCommandRun
-	ev          eval.Eval
+	ev eval.Eval
+
 	checkout    string
 	loadOptions git.LoadOptions
-
-	fg *git.Graph
+	strategy    *git.SelectionStrategy
 }
 
 func (r *evalRun) validate() error {
@@ -88,7 +88,7 @@ func (r *evalRun) run(ctx context.Context) error {
 	}
 
 	var err error
-	if r.fg, err = git.Load(ctx, r.checkout, r.loadOptions); err != nil {
+	if r.strategy.Graph, err = git.Load(ctx, r.checkout, r.loadOptions); err != nil {
 		return errors.Annotate(err, "failed to load the file graph").Err()
 	}
 

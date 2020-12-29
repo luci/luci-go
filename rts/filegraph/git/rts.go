@@ -23,6 +23,28 @@ import (
 	"go.chromium.org/luci/rts/presubmit/eval"
 )
 
+// SelectionStrategy implements a selection strategy based on a git graph.
+type SelectionStrategy struct {
+	Graph *Graph
+
+	// Threshold decides whether a test is to be selected: if it is closer or
+	// equal than distance OR rank, then it is selected. Otherwise, skipped.
+	Threshold rts.Affectedness
+
+	// TODO(nodir): add MaxFiles.
+}
+
+// Select calls skipTestFile for each test file that should be skipped.
+func (s *SelectionStrategy) Select(changedFiles []string, skipFile func(name string) (keepGoing bool)) {
+	s.runRTSQuery(changedFiles, func(sp *filegraph.ShortestPath, rank int) bool {
+		if rank <= s.Threshold.Rank || sp.Distance <= s.Threshold.Distance {
+			// This file too close to skip it.
+			return true
+		}
+		return skipFile(sp.Node.Name())
+	})
+}
+
 // EvalStrategy implements eval.Strategy. It can be used to evaluate data
 // quality of the graph.
 //
@@ -31,7 +53,9 @@ import (
 // another strategy function that does the validation. In particular, this
 // function does not check in.ChangedFiles[i].Repo and does not check for file
 // patterns that must be exempted from RTS.
-func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Output) error {
+//
+// Ignores s.Threshold.
+func (s *SelectionStrategy) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Output) error {
 	changedFiles := make([]string, len(in.ChangedFiles))
 	for i, f := range in.ChangedFiles {
 		changedFiles[i] = f.Path
@@ -43,7 +67,7 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 		if tv.FileName == "" {
 			return nil
 		}
-		n := g.Node(tv.FileName)
+		n := s.Graph.Node(tv.FileName)
 		if n == nil {
 			// TODO(nodir): consider not bailing completely.
 			// It is probably just a new test file name that never made it to the
@@ -56,7 +80,7 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 	}
 
 	found := 0
-	runAllTests := runRTSQuery(g, changedFiles, func(sp *filegraph.ShortestPath, rank int) (keepGoing bool) {
+	runAllTests := s.runRTSQuery(changedFiles, func(sp *filegraph.ShortestPath, rank int) (keepGoing bool) {
 		if _, ok := affectedness[sp.Node]; ok {
 			affectedness[sp.Node] = rts.Affectedness{Distance: sp.Distance, Rank: rank}
 			found++
@@ -81,7 +105,7 @@ type rtsCallback func(sp *filegraph.ShortestPath, rank int) (keepGoing bool)
 
 // runQuery walks the file graph from the changed files, along reversed edges
 // and calls back for each found file.
-func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) (runAllTests bool) {
+func (s *SelectionStrategy) runRTSQuery(changedFiles []string, callback rtsCallback) (runAllTests bool) {
 	q := &filegraph.Query{
 		Sources: make([]filegraph.Node, len(changedFiles)),
 		EdgeReader: &EdgeReader{
@@ -92,7 +116,7 @@ func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) (runAllT
 	}
 
 	for i, f := range changedFiles {
-		if q.Sources[i] = g.Node(f); q.Sources[i] == nil {
+		if q.Sources[i] = s.Graph.Node(f); q.Sources[i] == nil {
 			// TODO(nodir): consider not bailing.
 			// We are bailing on all CLs where at least one file is new.
 			runAllTests = true

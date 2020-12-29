@@ -59,7 +59,8 @@ func TestEvalStrategy(t *testing.T) {
 			out := &eval.Output{
 				TestVariantAffectedness: make([]rts.Affectedness, 1),
 			}
-			err := g.EvalStrategy(ctx, in, out)
+			strategy := SelectionStrategy{Graph: g}
+			err := strategy.EvalStrategy(ctx, in, out)
 			So(err, ShouldBeNil)
 			af := out.TestVariantAffectedness[0]
 			if math.IsInf(expectedDistance, 1) {
