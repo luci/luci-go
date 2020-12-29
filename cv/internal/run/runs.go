@@ -62,6 +62,19 @@ func (ids IDs) WithoutSorted(exclude IDs) IDs {
 	}
 }
 
+// EqualSorted checks if two assumed-to-be-sorted slices are equal.
+func (ids IDs) EqualSorted(other IDs) bool {
+	if len(ids) != len(other) {
+		return false
+	}
+	for i, id := range ids {
+		if id != other[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // MakeIDs returns IDs from list of strings.
 func MakeIDs(ids ...string) IDs {
 	ret := make(IDs, len(ids))
