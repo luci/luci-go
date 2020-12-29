@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "539bdced_484daa29",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:54:52Z",
+      "side": 1,
+      "message": "IIUC, all these complexity should go away after generic is introduced in Go2?",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 19
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "056ed91c_f956ac47",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:54:52Z",
+      "side": 1,
+      "message": "These are from v1 library. Instead,\n\n```\n   \"google.golang.org/protobuf/encoding/protojson\"\n   \"google.golang.org/protobuf/proto\"\n\n```",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e000026_e5873b2d",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:54:52Z",
+      "side": 1,
+      "message": "nit: maybe move closer to where it is used (i.e. ~L104)",
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "938e817a_ccb4e0cc",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:54:52Z",
+      "side": 1,
+      "message": "Shall we merge to the existing property and then log?",
+      "range": {
+        "startLine": 275,
+        "startChar": 18,
+        "endLine": 275,
+        "endChar": 39
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee6a049b_e139e979",
+        "filename": "luciexe/build/properties_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:54:52Z",
+      "side": 1,
+      "message": "empty ns",
+      "range": {
+        "startLine": 57,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
