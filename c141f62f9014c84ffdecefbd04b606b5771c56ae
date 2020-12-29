@@ -39,6 +39,30 @@
       },
       "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e63d481_b1ed8486",
+        "filename": "resultdb/sink/proto/v1/location_tag.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T04:52:26Z",
+      "side": 1,
+      "message": "I am OK with this.",
+      "parentUuid": "53e4c66b_d052f349",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 50
+      },
+      "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
