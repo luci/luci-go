@@ -98,6 +98,24 @@
       "parentUuid": "683e96a0_acbdde52",
       "revId": "09d849ad1307d85ad118c63ccd2aed60be41bf14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1dad0ce2_9e02e45f",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-12-29T04:51:10Z",
+      "side": 1,
+      "message": "it will blow out the size of the file we pass over isolate. See comments in the other CL. I think it should take 20-30 lines of code to implement inheretance here.",
+      "parentUuid": "a0314a62_f362221e",
+      "revId": "09d849ad1307d85ad118c63ccd2aed60be41bf14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
