@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c05ae163_a86da3a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-29T19:05:29Z",
+      "side": 1,
+      "message": "LGTM, test is good but could be made clearer IMO",
+      "revId": "ddc0219f4e8f4538a0ee47e8eb23f22d2e73a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d159f563_dcafd4ee",
+        "filename": "cv/internal/common/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-29T19:05:29Z",
+      "side": 1,
+      "message": "most severe",
+      "range": {
+        "startLine": 27,
+        "startChar": 31,
+        "endLine": 27,
+        "endChar": 44
+      },
+      "revId": "ddc0219f4e8f4538a0ee47e8eb23f22d2e73a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6ac3613_b062d2c5",
+        "filename": "cv/internal/common/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-29T19:05:29Z",
+      "side": 1,
+      "message": "Returns only?",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 14
+      },
+      "revId": "ddc0219f4e8f4538a0ee47e8eb23f22d2e73a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac048637_359560db",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-29T19:05:29Z",
+      "side": 1,
+      "message": "If possible, it would be nice to note (either in convey strings if appropriate or in comments) what the expected behavior is and why.\n\nFor example, down below line 101 and line 107, you could note that run 111-beef is finished but run 222-cafe is still unfinished; then 222-cafe is finished too. And also for example why p.Status is stopping then stopped.",
+      "range": {
+        "startLine": 96,
+        "startChar": 13,
+        "endLine": 96,
+        "endChar": 24
+      },
+      "revId": "ddc0219f4e8f4538a0ee47e8eb23f22d2e73a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
