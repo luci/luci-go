@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/rts"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -35,7 +37,7 @@ func TestResultPrint(t *testing.T) {
 					Savings: 1,
 				},
 				{
-					Value:                Affectedness{Distance: 10},
+					Value:                rts.Affectedness{Distance: 10},
 					DistanceChangeRecall: 0.99,
 					RankChangeRecall:     0.99,
 					ChangeRecall:         0.99,
@@ -43,7 +45,7 @@ func TestResultPrint(t *testing.T) {
 					Savings:              0.25,
 				},
 				{
-					Value:                Affectedness{Distance: 40},
+					Value:                rts.Affectedness{Distance: 40},
 					DistanceChangeRecall: 1,
 					RankChangeRecall:     1,
 					ChangeRecall:         1,

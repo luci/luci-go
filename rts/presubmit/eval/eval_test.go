@@ -20,7 +20,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/rts"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGridBuckets(t *testing.T) {
@@ -29,36 +32,36 @@ func TestGridBuckets(t *testing.T) {
 		var b bucketGrid
 
 		Convey(`inc`, func() {
-			afs := make(AffectednessSlice, 10)
+			afs := make([]rts.Affectedness, 10)
 			for i := 0; i < len(afs); i++ {
-				afs[i] = Affectedness{Distance: float64(i + 1), Rank: i + 1}
+				afs[i] = rts.Affectedness{Distance: float64(i + 1), Rank: i + 1}
 			}
 			var g thresholdGrid
 			g.init(afs)
 
 			Convey(`(2, 2)`, func() {
-				b.inc(&g, Affectedness{Distance: 2, Rank: 2}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 2, Rank: 2}, 1)
 				So(g[8][0].Value.Distance, ShouldEqual, 1)
 				So(g[9][0].Value.Distance, ShouldEqual, 1)
 				So(g[10][0].Value.Distance, ShouldEqual, 2)
 				So(b[10][10], ShouldEqual, 1)
 			})
 			Convey(`(3, 3)`, func() {
-				b.inc(&g, Affectedness{Distance: 3, Rank: 3}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 3, Rank: 3}, 1)
 				So(g[18][0].Value.Distance, ShouldEqual, 2)
 				So(g[19][0].Value.Distance, ShouldEqual, 2)
 				So(g[20][0].Value.Distance, ShouldEqual, 3)
 				So(b[20][20], ShouldEqual, 1)
 			})
 			Convey(`(9, 9)`, func() {
-				b.inc(&g, Affectedness{Distance: 9, Rank: 9}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 9, Rank: 9}, 1)
 				So(g[78][0].Value.Distance, ShouldEqual, 8)
 				So(g[79][0].Value.Distance, ShouldEqual, 8)
 				So(g[80][0].Value.Distance, ShouldEqual, 9)
 				So(b[80][80], ShouldEqual, 1)
 			})
 			Convey(`(10, 10)`, func() {
-				b.inc(&g, Affectedness{Distance: 10, Rank: 10}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 10, Rank: 10}, 1)
 				So(g[88][0].Value.Distance, ShouldEqual, 9)
 				So(g[89][0].Value.Distance, ShouldEqual, 9)
 				So(g[90][0].Value.Distance, ShouldEqual, 10)
@@ -66,12 +69,12 @@ func TestGridBuckets(t *testing.T) {
 			})
 			Convey(`(0, 0)`, func() {
 				// This data point was not lost by any threshold.
-				b.inc(&g, Affectedness{Distance: 0, Rank: 0}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 0, Rank: 0}, 1)
 				So(b[0][0], ShouldEqual, 1)
 			})
 			Convey(`(11, 11)`, func() {
 				// This data point was lost by all thresholds.
-				b.inc(&g, Affectedness{Distance: 11, Rank: 11}, 1)
+				b.inc(&g, rts.Affectedness{Distance: 11, Rank: 11}, 1)
 				So(b[100][100], ShouldEqual, 1)
 			})
 		})
@@ -158,6 +161,96 @@ func TestGridBuckets(t *testing.T) {
 					0000000000
 				`)
 			})
+		})
+	})
+}
+
+func TestMostAffected(t *testing.T) {
+	t.Parallel()
+	Convey(`Test[]rts.Affectedness`, t, func() {
+		Convey(`mostAffected`, func() {
+			Convey(`Works`, func() {
+				most, err := mostAffected([]rts.Affectedness{
+					{Distance: 1, Rank: 2},
+					{Distance: 0, Rank: 1},
+				})
+				So(err, ShouldBeNil)
+				So(most, ShouldResemble, rts.Affectedness{Distance: 0, Rank: 1})
+			})
+
+			Convey(`Rank diff`, func() {
+				most, err := mostAffected([]rts.Affectedness{
+					{Distance: 0, Rank: 2},
+					{Distance: 0, Rank: 1},
+					{Distance: 0, Rank: 3},
+				})
+				So(err, ShouldBeNil)
+				So(most, ShouldResemble, rts.Affectedness{Distance: 0, Rank: 1})
+			})
+
+			Convey(`Empty`, func() {
+				_, err := mostAffected(nil)
+				So(err, ShouldErrLike, "empty")
+			})
+
+			Convey(`Single`, func() {
+				most, err := mostAffected([]rts.Affectedness{{Distance: 0}})
+				So(err, ShouldBeNil)
+				So(most, ShouldResemble, rts.Affectedness{Distance: 0})
+			})
+
+			Convey(`Inconsistent`, func() {
+				s := []rts.Affectedness{
+					{Distance: 0, Rank: 2},
+					{Distance: 1, Rank: 1},
+				}
+				_, err := mostAffected(s)
+				So(err, ShouldErrLike, `ranks and distances are inconsistent`)
+			})
+		})
+	})
+
+	Convey(`checkConsistency`, t, func() {
+		a := rts.Affectedness{Distance: 0, Rank: 2}
+		b := rts.Affectedness{Distance: 1, Rank: 1}
+		So(checkConsistency(a, b), ShouldErrLike, `ranks and distances are inconsistent: rts.Affectedness{Distance:0, Rank:2} and rts.Affectedness{Distance:1, Rank:1}`)
+		So(checkConsistency(b, a), ShouldErrLike, `ranks and distances are inconsistent: rts.Affectedness{Distance:1, Rank:1} and rts.Affectedness{Distance:0, Rank:2}`)
+	})
+}
+
+func TestQuantiles(t *testing.T) {
+	t.Parallel()
+	Convey(`Quantiles`, t, func() {
+		Convey(`median of 1, 2, 3, 4`, func() {
+			afs := []rts.Affectedness{
+				{Distance: 1, Rank: 1},
+				{Distance: 2, Rank: 2},
+				{Distance: 3, Rank: 3},
+				{Distance: 4, Rank: 4},
+			}
+			distances, ranks := affectednessQuantiles(afs, 2)
+			So(distances, ShouldResemble, []float64{2, 4})
+			So(ranks, ShouldResemble, []int{2, 4})
+		})
+		Convey(`4-quantiles of 1, 2, 3, 4`, func() {
+			afs := []rts.Affectedness{
+				{Distance: 1},
+				{Distance: 2},
+				{Distance: 3},
+				{Distance: 4},
+			}
+			distances, _ := affectednessQuantiles(afs, 4)
+			So(distances, ShouldResemble, []float64{1, 2, 3, 4})
+		})
+		Convey(`10-quantiles of 1, 2, 3, 4`, func() {
+			afs := []rts.Affectedness{
+				{Distance: 1},
+				{Distance: 2},
+				{Distance: 3},
+				{Distance: 4},
+			}
+			distances, _ := affectednessQuantiles(afs, 10)
+			So(distances, ShouldResemble, []float64{1, 1, 2, 2, 2, 3, 3, 4, 4, 4})
 		})
 	})
 }

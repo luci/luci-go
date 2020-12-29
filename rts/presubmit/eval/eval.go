@@ -17,6 +17,7 @@ package eval
 import (
 	"context"
 	"flag"
+	"math"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/rts"
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
@@ -111,8 +113,8 @@ func (e *Eval) Run(ctx context.Context) (*Result, error) {
 // evaluateSafety computes thresholds and total/preserved
 // rejections/testFailures.
 func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid, error) {
-	var changeAffectedness AffectednessSlice
-	var testAffectedness AffectednessSlice
+	var changeAffectedness []rts.Affectedness
+	var testAffectedness []rts.Affectedness
 	var mu sync.Mutex
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -132,19 +134,19 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 			// Invoke the strategy.
 			in := Input{TestVariants: rej.FailedTestVariants}
 			in.ensureChangedFilesInclude(rej.Patchsets...)
-			out := &Output{TestVariantAffectedness: make(AffectednessSlice, len(in.TestVariants))}
+			out := &Output{TestVariantAffectedness: make([]rts.Affectedness, len(in.TestVariants))}
 			if err := e.Strategy(ctx, in, out); err != nil {
 				return errors.Annotate(err, "the selection strategy failed").Err()
 			}
 
 			// The affectedness of a change is based on the most affected failed test.
-			closest, err := out.TestVariantAffectedness.closest()
+			mostAffected, err := mostAffected(out.TestVariantAffectedness)
 			if err != nil {
 				return err
 			}
 
 			mu.Lock()
-			changeAffectedness = append(changeAffectedness, out.TestVariantAffectedness[closest])
+			changeAffectedness = append(changeAffectedness, mostAffected)
 			testAffectedness = append(testAffectedness, out.TestVariantAffectedness...)
 			mu.Unlock()
 		}
@@ -169,7 +171,7 @@ func (e *Eval) evaluateSafety(ctx context.Context, res *Result) (*thresholdGrid,
 
 	// Evaluate safety of *combinations* of thresholds.
 
-	losses := func(afs AffectednessSlice) *bucketGrid {
+	losses := func(afs []rts.Affectedness) *bucketGrid {
 		var buckets bucketGrid
 		for _, af := range afs {
 			buckets.inc(grid, af, 1)
@@ -216,13 +218,13 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 
 	e.goMany(eg, func() error {
 		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
-		out := &Output{TestVariantAffectedness: make(AffectednessSlice, 1)}
+		out := &Output{TestVariantAffectedness: make([]rts.Affectedness, 1)}
 		for td := range e.Durations.DurationC {
 			// Invoke the strategy.
 			in.ChangedFiles = in.ChangedFiles[:0]
 			in.ensureChangedFilesInclude(td.Patchsets...)
 			in.TestVariants[0] = td.TestVariant
-			out.TestVariantAffectedness[0] = Affectedness{}
+			out.TestVariantAffectedness[0] = rts.Affectedness{}
 			if err := e.Strategy(ctx, in, out); err != nil {
 				return errors.Annotate(err, "the selection strategy failed").Err()
 			}
@@ -273,6 +275,80 @@ func (e *Eval) goMany(eg *errgroup.Group, f func() error) {
 	}
 }
 
+// thresholdGrid is a 100x100 grid where each cell represents a distance/rank
+// threshold. All cells in the same row have the same distance value, and
+// all cells in the same column have the same rank value.
+//
+// The distance value of the row R is the minimal distance threshold required to
+// achieve ChangeRecall score of (R+1)/100.0 on the training set, while ignoring
+// rank threshold.
+// For example, thresholdGrid[94][0].Value.Distance achieves 95% ChangeRecall
+// on the training set.
+//
+// Similarly, rank value of the column C is the minimal rank threshold required
+// to achieve ChangeRecall score of (C+1)/100.0 on to the training set,
+// while ignoring distance threshold.
+//
+// The distances and ranks are computed independently of each other and then
+// combined into this grid.
+type thresholdGrid [100][100]Threshold
+
+// init clears the grid and initializes the rows/columns with distance/rank
+// percentiles in afs.
+func (g *thresholdGrid) init(afs []rts.Affectedness) (distancePercentiles []float64, rankPercentiles []int) {
+	*g = thresholdGrid{}
+	distancePercentiles, rankPercentiles = affectednessQuantiles(afs, 100)
+	for row, distance := range distancePercentiles {
+		for col, rank := range rankPercentiles {
+			g[row][col].Value = rts.Affectedness{Distance: distance, Rank: rank}
+		}
+	}
+	return
+}
+
+// Slice returns a slice of thresholds, sorted by ChangeRecall and Savings.
+// Returned elements are pointes to the grid.
+func (g *thresholdGrid) Slice() []*Threshold {
+	ret := make([]*Threshold, 0, 1e4)
+	for row := 0; row < 100; row++ {
+		for col := 0; col < 100; col++ {
+			ret = append(ret, &g[row][col])
+		}
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		if ret[i].ChangeRecall != ret[j].ChangeRecall {
+			return ret[i].ChangeRecall < ret[i].ChangeRecall
+		}
+		return ret[i].Savings < ret[j].Savings
+	})
+	return ret
+}
+
+// quantiles returns distance and rank quantiles.
+// Panics if s is empty.
+func affectednessQuantiles(afs []rts.Affectedness, count int) (distances []float64, ranks []int) {
+	if len(afs) == 0 {
+		panic("s is empty")
+	}
+	allDistances := make([]float64, len(afs))
+	allRanks := make([]int, len(afs))
+	for i, af := range afs {
+		allDistances[i] = af.Distance
+		allRanks[i] = af.Rank
+	}
+	sort.Float64s(allDistances)
+	sort.Ints(allRanks)
+	distances = make([]float64, count)
+	ranks = make([]int, count)
+	for i := 0; i < count; i++ {
+		boundary := int(math.Ceil(float64(len(afs)*(i+1)) / float64(count)))
+		distances[i] = allDistances[boundary-1]
+		ranks[i] = allRanks[boundary-1]
+	}
+	return
+}
+
 // bucketGrid is an auxulary data structure to compute cumulative counters
 // in ThresholdGrid. Each cell contains the number of data points lost by that
 // bucket.
@@ -293,7 +369,7 @@ type bucketGrid [101][101]int64
 // point.
 //
 // Goroutine-safe.
-func (b *bucketGrid) inc(g *thresholdGrid, af Affectedness, delta int64) {
+func (b *bucketGrid) inc(g *thresholdGrid, af rts.Affectedness, delta int64) {
 	row := sort.Search(100, func(i int) bool {
 		return g[i][0].Value.Distance >= af.Distance
 	})
@@ -322,4 +398,41 @@ func (b *bucketGrid) makeCumulative() {
 			b[row][col] += b[row+1][col]
 		}
 	}
+}
+
+// mostAffected returns the most significant Affectedness, in terms of distance
+// and rank.
+// If two tests have the same distance and ranks are available, then ranks are
+// used to break the tie.
+//
+// Returns an error if an inconsistency is found among ranks and distances,
+// see also checkConsistency.
+func mostAffected(afs []rts.Affectedness) (rts.Affectedness, error) {
+	if len(afs) == 0 {
+		return rts.Affectedness{}, errors.New("empty")
+	}
+	most := afs[0]
+	for _, af := range afs {
+		if err := checkConsistency(most, af); err != nil {
+			return rts.Affectedness{}, err
+		}
+		haveRanks := af.Rank != 0 && most.Rank != 0
+		if most.Distance > af.Distance || haveRanks && most.Rank > af.Rank {
+			most = af
+		}
+	}
+	return most, nil
+}
+
+// checkConsistency returns a non-nil error if the order implied by ranks
+// and distances is inconsistent in a and b, e.g. a is closer, but its rank
+// is greater.
+func checkConsistency(a, b rts.Affectedness) error {
+	if a.Rank == 0 || b.Rank == 0 {
+		return nil
+	}
+	if (a.Distance < b.Distance && a.Rank >= b.Rank) || (a.Distance > b.Distance && a.Rank <= b.Rank) {
+		return errors.Reason("ranks and distances are inconsistent: %#v and %#v", a, b).Err()
+	}
+	return nil
 }
