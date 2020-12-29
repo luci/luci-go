@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,5 +39,28 @@ func TestTQifyError(t *testing.T) {
 		err := errors.New("oops")
 		err = TQifyError(ctx, err)
 		So(tq.Fatal.In(err), ShouldBeTrue)
+	})
+}
+
+func TestMostSevereError(t *testing.T) {
+	t.Parallel()
+
+	Convey("MostSevereError works", t, func() {
+		// fatal means non-transient here.
+		fatal1 := errors.New("fatal1")
+		fatal2 := errors.New("fatal2")
+		trans1 := errors.New("trans1", transient.Tag)
+		trans2 := errors.New("trans2", transient.Tag)
+		multFatal := errors.NewMultiError(trans1, nil, fatal1, fatal2)
+		multTrans := errors.NewMultiError(nil, trans1, nil, trans2, nil)
+		tensor := errors.NewMultiError(nil, errors.NewMultiError(nil, multTrans, multFatal))
+
+		So(MostSevereError(nil), ShouldBeNil)
+		So(MostSevereError(fatal1), ShouldEqual, fatal1)
+		So(MostSevereError(trans1), ShouldEqual, trans1)
+
+		So(MostSevereError(multFatal), ShouldEqual, fatal1)
+		So(MostSevereError(multTrans), ShouldEqual, trans1)
+		So(MostSevereError(tensor), ShouldEqual, fatal1)
 	})
 }
