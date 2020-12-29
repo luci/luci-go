@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14ac8980_0bd82869",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T05:17:31Z",
+      "side": 1,
+      "message": "I think it might panic during concurrent write and drain. Or is it guaranteed that one loggingWriter instance won\u0027t be shared between multiple goroutines?",
+      "range": {
+        "startLine": 105,
+        "startChar": 19,
+        "endLine": 105,
+        "endChar": 34
+      },
+      "revId": "8916064f5d97668baf2317986997859c38ee3b99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
