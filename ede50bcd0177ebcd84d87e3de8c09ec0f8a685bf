@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e65b72d6_f0607d9c",
+        "filename": "cv/internal/changelist/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T23:32:07Z",
+      "side": 1,
+      "message": "clock.Now(ctx).UTC()",
+      "range": {
+        "startLine": 92,
+        "startChar": 8,
+        "endLine": 92,
+        "endChar": 22
+      },
+      "revId": "ede50bcd0177ebcd84d87e3de8c09ec0f8a685bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "caabc1a6_eea07792",
+        "filename": "cv/internal/changelist/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T23:32:07Z",
+      "side": 1,
+      "message": "error is not returned.",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 50
+      },
+      "revId": "ede50bcd0177ebcd84d87e3de8c09ec0f8a685bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2714c7b_11bd31b5",
+        "filename": "cv/internal/changelist/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T23:32:07Z",
+      "side": 1,
+      "message": "Though unlikely, but it is also possible when .Save is called on BatchOp instance created via struct literal instead of `UpdateBatch`.",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 50
+      },
+      "revId": "ede50bcd0177ebcd84d87e3de8c09ec0f8a685bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
