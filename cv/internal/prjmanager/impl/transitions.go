@@ -67,7 +67,7 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 			return nil, nil, err
 		}
 		// TODO(tandrii): re-evaluate pending CLs.
-		return notifyIncompleteRuns, s, nil
+		return s.updateRunsConfigFactory(meta), s, nil
 
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
@@ -90,7 +90,7 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 			if err := poller.Poke(ctx, luciProject); err != nil {
 				return nil, nil, err
 			}
-			return notifyIncompleteRuns, s, nil
+			return s.cancelRuns, s, nil
 		default:
 			panic(fmt.Errorf("unexpected project status: %d", s.Status))
 		}
@@ -113,11 +113,14 @@ func poke(ctx context.Context, luciProject string, s *state) (eventbox.SideEffec
 	if err := poller.Poke(ctx, luciProject); err != nil {
 		return nil, nil, err
 	}
+	if err := s.pokeRuns(ctx); err != nil {
+		return nil, nil, err
+	}
 	// TODO(tandrii): implement.
 	return nil, s, nil
 }
 
-func runsFinished(ctx context.Context, luciProject string, finished run.IDs, s *state) (eventbox.SideEffectFn, *state, error) {
+func runsFinished(ctx context.Context, finished run.IDs, s *state) (eventbox.SideEffectFn, *state, error) {
 	remaining := s.IncompleteRuns.WithoutSorted(finished)
 	if len(remaining) == len(s.IncompleteRuns) {
 		return nil, s, nil // no change
