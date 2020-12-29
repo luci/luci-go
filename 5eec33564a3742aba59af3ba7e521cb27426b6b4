@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07fbbec1_c80f4734",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T01:00:47Z",
+      "side": 1,
+      "message": "nit: STARTED",
+      "range": {
+        "startLine": 42,
+        "startChar": 72,
+        "endLine": 42,
+        "endChar": 79
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a6a266a_66a572f1",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T01:00:47Z",
+      "side": 1,
+      "message": "Should it be `+\u003d`?",
+      "range": {
+        "startLine": 110,
+        "startChar": 19,
+        "endLine": 110,
+        "endChar": 20
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc8c7712_616a1a5c",
+        "filename": "luciexe/build/step_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-29T01:00:47Z",
+      "side": 1,
+      "message": "Why making another copy here? Can we de-reference `s` here instead?",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
