@@ -56,7 +56,7 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 	}
 
 	found := 0
-	runRTSQuery(g, changedFiles, func(sp *filegraph.ShortestPath, rank int) (keepGoing bool) {
+	runAllTests := runRTSQuery(g, changedFiles, func(sp *filegraph.ShortestPath, rank int) (keepGoing bool) {
 		if _, ok := affectedness[sp.Node]; ok {
 			affectedness[sp.Node] = rts.Affectedness{Distance: sp.Distance, Rank: rank}
 			found++
@@ -67,6 +67,9 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 		}
 		return true
 	})
+	if runAllTests {
+		return nil
+	}
 
 	for i, n := range testNodes {
 		out.TestVariantAffectedness[i] = affectedness[n]
@@ -78,7 +81,7 @@ type rtsCallback func(sp *filegraph.ShortestPath, rank int) (keepGoing bool)
 
 // runQuery walks the file graph from the changed files, along reversed edges
 // and calls back for each found file.
-func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) {
+func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) (runAllTests bool) {
 	q := &filegraph.Query{
 		Sources: make([]filegraph.Node, len(changedFiles)),
 		EdgeReader: &EdgeReader{
@@ -92,6 +95,7 @@ func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) {
 		if q.Sources[i] = g.Node(f); q.Sources[i] == nil {
 			// TODO(nodir): consider not bailing.
 			// We are bailing on all CLs where at least one file is new.
+			runAllTests = true
 			return
 		}
 	}
@@ -102,4 +106,5 @@ func runRTSQuery(g *Graph, changedFiles []string, callback rtsCallback) {
 		rank++
 		return callback(sp, rank)
 	})
+	return
 }

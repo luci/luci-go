@@ -27,17 +27,20 @@ func TestApply(t *testing.T) {
 		g := &Graph{}
 		g.ensureInitialized()
 
-		Convey(`Empty change`, func() {
-			err := g.apply(nil)
+		applyChanges := func(changes []fileChange) {
+			err := g.apply(changes)
 			So(err, ShouldBeNil)
+		}
+
+		Convey(`Empty change`, func() {
+			applyChanges(nil)
 			So(g.root, ShouldResemble, node{name: "//"})
 		})
 
 		Convey(`Add one file`, func() {
-			err := g.apply([]fileChange{
+			applyChanges([]fileChange{
 				{Path: "a", Status: 'A'},
 			})
-			So(err, ShouldBeNil)
 			// The file is registered, but the commit is otherwise ignored.
 			So(g.root, ShouldResemble, node{
 				name: "//",
@@ -50,11 +53,10 @@ func TestApply(t *testing.T) {
 		})
 
 		Convey(`Add two files`, func() {
-			err := g.apply([]fileChange{
+			applyChanges([]fileChange{
 				{Path: "a", Status: 'A'},
 				{Path: "b", Status: 'A'},
 			})
-			So(err, ShouldBeNil)
 			So(g.root, ShouldResemble, node{
 				name: "//",
 				children: map[string]*node{
@@ -72,11 +74,10 @@ func TestApply(t *testing.T) {
 			})
 
 			Convey(`Add two more`, func() {
-				err := g.apply([]fileChange{
+				applyChanges([]fileChange{
 					{Path: "b", Status: 'A'},
 					{Path: "c/d", Status: 'A'},
 				})
-				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
 					children: map[string]*node{
@@ -108,11 +109,10 @@ func TestApply(t *testing.T) {
 			})
 
 			Convey(`Modify them again`, func() {
-				err := g.apply([]fileChange{
+				applyChanges([]fileChange{
 					{Path: "a", Status: 'M'},
 					{Path: "b", Status: 'M'},
 				})
-				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
 					children: map[string]*node{
@@ -132,11 +132,10 @@ func TestApply(t *testing.T) {
 			})
 
 			Convey(`Modify one and add another`, func() {
-				err := g.apply([]fileChange{
+				applyChanges([]fileChange{
 					{Path: "b", Status: 'M'},
 					{Path: "c", Status: 'M'},
 				})
-				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
 					children: map[string]*node{
@@ -163,10 +162,9 @@ func TestApply(t *testing.T) {
 			})
 
 			Convey(`Rename one`, func() {
-				err := g.apply([]fileChange{
+				applyChanges([]fileChange{
 					{Path: "b", Path2: "c", Status: 'R'},
 				})
-				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
 					children: map[string]*node{
@@ -192,10 +190,9 @@ func TestApply(t *testing.T) {
 			})
 
 			Convey(`Remove one`, func() {
-				err := g.apply([]fileChange{
+				applyChanges([]fileChange{
 					{Path: "b", Status: 'D'},
 				})
-				So(err, ShouldBeNil)
 				So(g.root, ShouldResemble, node{
 					name: "//",
 					children: map[string]*node{
