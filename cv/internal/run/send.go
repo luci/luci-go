@@ -58,6 +58,8 @@ func UpdateConfig(ctx context.Context, runID ID, hash string, eversion int64) er
 }
 
 // Cancel tells RunManager to cancel the given run.
+//
+// TODO(yiwzhang,tandrii): support reason.
 func Cancel(ctx context.Context, runID ID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Cancel{

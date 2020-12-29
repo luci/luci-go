@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"google.golang.org/protobuf/proto"
 
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 func init() {
@@ -135,6 +137,11 @@ type triageResult struct {
 		events eventbox.Events
 		cls    []*internal.CLUpdated
 	}
+	runsFinished struct {
+		// events and runs are in random order.
+		events eventbox.Events
+		runs   run.IDs
+	}
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -153,6 +160,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *internal.Event_ClUpdated:
 		tr.clupdated.events = append(tr.clupdated.events, item)
 		tr.clupdated.cls = append(tr.clupdated.cls, v.ClUpdated)
+	case *internal.Event_RunFinished:
+		tr.clupdated.events = append(tr.clupdated.events, item)
+		tr.runsFinished.runs = append(tr.runsFinished.runs, run.ID(v.RunFinished.GetRunId()))
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -173,6 +183,16 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.poke) > 0 {
 		t := eventbox.Transition{Events: tr.poke}
 		t.SideEffectFn, s, err = poke(ctx, pm.luciProject, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+	if len(tr.runsFinished.runs) > 0 {
+		sort.Sort(tr.runsFinished.runs)
+		t := eventbox.Transition{Events: tr.runsFinished.events}
+		t.SideEffectFn, s, err = runsFinished(ctx, tr.runsFinished.runs, s)
 		if err != nil {
 			return nil, err
 		}

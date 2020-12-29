@@ -16,6 +16,7 @@ package impl
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -29,14 +30,16 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestUpdateConfig(t *testing.T) {
+func TestProjectLifeCycle(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateConfig works alone", t, func() {
+	Convey("Project can be created, updated, deleted", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -44,9 +47,10 @@ func TestUpdateConfig(t *testing.T) {
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
-		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 		Convey("with new project", func() {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			// Second event is noop, but should still be consumed at once.
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
@@ -58,11 +62,59 @@ func TestUpdateConfig(t *testing.T) {
 			So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
-			Convey("... and just deleted project", func() {
-				ct.Clock.Add(time.Hour) // ensure first poller task gets executed.
+			// Ensure first poller task gets executed.
+			ct.Clock.Add(time.Hour)
+
+			Convey("update config with runs", func() {
+				// Simulate some runs.
+				p.IncompleteRuns = run.MakeIDs(lProject+"/111-beef", lProject+"/222-cafe")
+				So(datastore.Put(ctx, p), ShouldBeNil)
+
+				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
+				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+				// Must schedule a task per Run for config updates.
+				runsWithTasks := runtest.SortedRuns(ct.TQ.Tasks())
+				So(runsWithTasks, ShouldResemble, p.IncompleteRuns)
+
+				Convey("disable project with incomplete runs", func() {
+					ct.Cfg.Disable(ctx, lProject)
+					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+
+					p := getProject(ctx, lProject)
+					So(p.EVersion, ShouldEqual, 3)
+					So(p.Status, ShouldEqual, prjmanager.Status_STOPPING)
+					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+
+					// Must schedule a task per Run for cancelation on top of already
+					// scheduled ones before for config disabling.
+					expected := append(runsWithTasks, p.IncompleteRuns...)
+					sort.Sort(expected)
+					So(runtest.SortedRuns(ct.TQ.Tasks()), ShouldResemble, expected)
+
+					Convey("wait for all IncompleteRuns to finish", func() {
+						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/111-beef")), ShouldBeNil)
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+						p := getProject(ctx, lProject)
+						So(p.Status, ShouldEqual, prjmanager.Status_STOPPING)
+						So(p.IncompleteRuns, ShouldResemble, run.MakeIDs(lProject+"/222-cafe"))
+
+						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/222-cafe")), ShouldBeNil)
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+						p = getProject(ctx, lProject)
+						So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
+						So(p.IncompleteRuns, ShouldBeEmpty)
+					})
+				})
+			})
+
+			Convey("delete project without incomplete runs", func() {
+				p.IncompleteRuns = nil
 				ct.Cfg.Delete(ctx, lProject)
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+
 				p := getProject(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
 				So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)

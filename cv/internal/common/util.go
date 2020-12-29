@@ -24,12 +24,23 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
-// MostSevereError returns the most severer error in order of
+// MostSevereError returns the most severe error in order of
 // non-transient => transient => nil.
-func MostSevereError(errs errors.MultiError) error {
+//
+// Walks over potentially recursive errors.MultiError errors only.
+//
+// Returns only singular errors or nil if input was nil.
+func MostSevereError(err error) error {
+	if err == nil {
+		return nil
+	}
+	errs, ok := err.(errors.MultiError)
+	if !ok {
+		return err
+	}
 	var firstTrans error
 	for _, err := range errs {
-		switch {
+		switch err = MostSevereError(err); {
 		case err == nil:
 		case !transient.Tag.In(err):
 			return err
