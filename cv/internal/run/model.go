@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 )
@@ -85,4 +86,33 @@ type Run struct {
 	// TODO(yiwzhang): Define
 	//  * GerritAction (including posting comments and removing CQ labels).
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
+}
+
+// RunOwner keeps tracks of all open (active or pending) Runs for a user.
+type RunOwner struct {
+	_kind string `gae:"$kind,RunOwner"`
+
+	// ID is the user identity.
+	ID identity.Identity `gae:"$id"`
+	// ActiveRuns are all Runs triggered by this user that are active.
+	ActiveRuns common.RunIDs `gae:",noindex"`
+	// PendingRuns are all Runs triggered by this user that are
+	// yet-to-be-launched (i.e. quota doesn't permit).
+	PendingRuns common.RunIDs `gae:",noindex"`
+}
+
+// RunCL is the snapshot of a CL involved in this Run.
+//
+// TODO(yiwzhang): Figure out if RunCL needs to be updated in the middle
+// of the Run, because CV might need this for removing votes (new votes
+// may come in between) and for avoiding posting duplicated comments.
+// Alternatively, CV could always re-query Gerrit right before those
+// operations so that there's no need for updating the snapshot.
+type RunCL struct {
+	_kind string `gae:"$kind,RunCL"`
+
+	// ID is the CL internal ID.
+	ID     common.CLID    `gae:"$id"`
+	Run    *datastore.Key `gae:"$parent"`
+	Detail *changelist.Snapshot
 }

@@ -42,7 +42,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
-	runImpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -139,9 +138,9 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 			r := r
 			workCh <- func() error {
 				runKey := datastore.MakeKey(ctx, run.RunKind, string(r.ID))
-				runCLs := make([]runImpl.RunCL, len(r.CLs))
+				runCLs := make([]run.RunCL, len(r.CLs))
 				for i, cl := range r.CLs {
-					runCLs[i] = runImpl.RunCL{
+					runCLs[i] = run.RunCL{
 						ID:  cl,
 						Run: runKey,
 					}
