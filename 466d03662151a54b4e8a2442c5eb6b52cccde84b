@@ -117,6 +117,30 @@
       },
       "revId": "466d03662151a54b4e8a2442c5eb6b52cccde84b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42435821_efb24924",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2020-12-30T06:30:46Z",
+      "side": 1,
+      "message": "np! Done",
+      "parentUuid": "ad9a3a26_272d3e10",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 13
+      },
+      "revId": "466d03662151a54b4e8a2442c5eb6b52cccde84b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
