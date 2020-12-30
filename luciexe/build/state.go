@@ -51,7 +51,7 @@ var _ Loggable = (*State)(nil)
 // their correct visual representation, End the State like:
 //
 //    var err error
-//    state, ctx := build.Start(ctx, initialBuild, ...)
+//    state, ctx := build.Start(ctx, inputBuild, ...)
 //    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
@@ -71,7 +71,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 // End must be invoked like:
 //
 //    var err error
-//    state, ctx := build.Start(ctx, initialBuild, ...)
+//    state, ctx := build.Start(ctx, inputBuild, ...)
 //    defer func() { state.End(err) }()
 //
 //    err = opThatErrsOrPanics(ctx)
