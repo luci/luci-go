@@ -22,6 +22,30 @@
       },
       "revId": "566a4930c87f87552a2ea3a625414f03e0b6fb05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68e4a0fb_338411a3",
+        "filename": "cv/internal/run/runs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T01:48:23Z",
+      "side": 1,
+      "message": "True. Fixed here to avoid 3 rebase conflicts: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2606925",
+      "parentUuid": "3e5035c4_42d4e31b",
+      "range": {
+        "startLine": 66,
+        "startChar": 15,
+        "endLine": 66,
+        "endChar": 26
+      },
+      "revId": "566a4930c87f87552a2ea3a625414f03e0b6fb05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
