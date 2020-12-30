@@ -188,6 +188,30 @@
       },
       "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01564598_e59a8e91",
+        "filename": "luciexe/build/step_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T21:59:47Z",
+      "side": 1,
+      "message": "no problem :). I think it\u0027s a bit clearer in that later CL with Step/StepView instead of StepState/StepView",
+      "parentUuid": "80d42118_91a9db5c",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
