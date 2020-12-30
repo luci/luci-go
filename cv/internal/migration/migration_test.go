@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
-	runImpl "go.chromium.org/luci/cv/internal/run/impl"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -112,7 +111,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					Mode:   run.DryRun,
 					CLs:    []common.CLID{1, 2},
 				},
-				&runImpl.RunCL{
+				&run.RunCL{
 					ID:  1,
 					Run: datastore.MakeKey(ctx, run.RunKind, rid),
 					Detail: &changelist.Snapshot{
@@ -131,7 +130,7 @@ func TestFetchActiveRuns(t *testing.T) {
 						},
 					},
 				},
-				&runImpl.RunCL{
+				&run.RunCL{
 					ID:  2,
 					Run: datastore.MakeKey(ctx, run.RunKind, rid),
 					Detail: &changelist.Snapshot{
