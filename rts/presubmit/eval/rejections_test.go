@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/rts"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,7 +31,7 @@ func TestPrintLostRejection(t *testing.T) {
 	assert := func(rej *evalpb.Rejection, expectedText string) {
 		buf := &bytes.Buffer{}
 		p := rejectionPrinter{printer: newPrinter(buf)}
-		So(p.rejection(rej), ShouldBeNil)
+		So(p.rejection(rej, rts.Affectedness{Distance: 5, Rank: 3}), ShouldBeNil)
 		expectedText = strings.Replace(expectedText, "\t", "  ", -1)
 		So(buf.String(), ShouldEqual, expectedText)
 	}
@@ -59,7 +60,8 @@ func TestPrintLostRejection(t *testing.T) {
 				FailedTestVariants: []*evalpb.TestVariant{{Id: "test1"}},
 			}
 
-			assert(rej, `Lost rejection:
+			assert(rej, `Rejection:
+	Most affected test: 5.000000 distance, 3 rank
 	https://chromium-review.googlesource.com/c/123/4
 	Failed and not selected tests:
 		- <empty test variant>
@@ -76,7 +78,8 @@ func TestPrintLostRejection(t *testing.T) {
 				}},
 			}
 
-			assert(rej, `Lost rejection:
+			assert(rej, `Rejection:
+	Most affected test: 5.000000 distance, 3 rank
 	https://chromium-review.googlesource.com/c/123/4
 	Failed and not selected tests:
 		- <empty test variant>
@@ -111,7 +114,8 @@ func TestPrintLostRejection(t *testing.T) {
 				},
 			}
 
-			assert(rej, `Lost rejection:
+			assert(rej, `Rejection:
+	Most affected test: 5.000000 distance, 3 rank
 	https://chromium-review.googlesource.com/c/123/4
 	Failed and not selected tests:
 		- a:0
@@ -128,7 +132,8 @@ func TestPrintLostRejection(t *testing.T) {
 				FailedTestVariants: []*evalpb.TestVariant{{Id: "test1"}},
 			}
 
-			assert(rej, `Lost rejection:
+			assert(rej, `Rejection:
+	Most affected test: 5.000000 distance, 3 rank
 	- patchsets:
 		https://chromium-review.googlesource.com/c/123/4
 		https://chromium-review.googlesource.com/c/223/4

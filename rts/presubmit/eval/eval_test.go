@@ -16,6 +16,7 @@ package eval
 
 import (
 	"bytes"
+	"container/heap"
 	"fmt"
 	"strings"
 	"testing"
@@ -272,5 +273,21 @@ func TestThresholdGrid(t *testing.T) {
 			{ChangeRecall: 0.9, Savings: 0.3},
 			{ChangeRecall: 1, Savings: 0.0},
 		})
+	})
+}
+
+func TestFurthestRejections(t *testing.T) {
+	Convey("FurthestRejections", t, func() {
+		furthest := make(furthestRejections, 3)
+		furthest.Consider(affectedRejection{MostAffected: rts.Affectedness{Distance: 1}})
+		furthest.Consider(affectedRejection{MostAffected: rts.Affectedness{Distance: 2}})
+		furthest.Consider(affectedRejection{MostAffected: rts.Affectedness{Distance: 3}})
+		furthest.Consider(affectedRejection{MostAffected: rts.Affectedness{Distance: 4}})
+		furthest.Consider(affectedRejection{MostAffected: rts.Affectedness{Distance: 5}})
+
+		So(len(furthest), ShouldEqual, 3)
+		So(heap.Pop(&furthest), ShouldResemble, affectedRejection{MostAffected: rts.Affectedness{Distance: 3}})
+		So(heap.Pop(&furthest), ShouldResemble, affectedRejection{MostAffected: rts.Affectedness{Distance: 4}})
+		So(heap.Pop(&furthest), ShouldResemble, affectedRejection{MostAffected: rts.Affectedness{Distance: 5}})
 	})
 }
