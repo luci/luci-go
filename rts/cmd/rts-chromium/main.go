@@ -21,7 +21,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/maruel/subcommands"
+	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
@@ -49,7 +51,7 @@ func main() {
 		},
 		Commands: []*subcommands.Command{
 			cmdPresubmitHistory(&authOpt),
-			cmdEval(),
+			cmdCreateModel(&authOpt),
 			cmdSelect(),
 
 			{}, // a separator
@@ -75,4 +77,12 @@ func (r *baseCommandRun) done(err error) int {
 		return 1
 	}
 	return 0
+}
+
+func newBQClient(ctx context.Context, auth *auth.Authenticator) (*bigquery.Client, error) {
+	http, err := auth.Client()
+	if err != nil {
+		return nil, err
+	}
+	return bigquery.NewClient(ctx, "chrome-rts", option.WithHTTPClient(http))
 }
