@@ -22,6 +22,30 @@
       },
       "revId": "8916064f5d97668baf2317986997859c38ee3b99",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0723889d_6adefec7",
+        "filename": "luciexe/build/logging.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:47:49Z",
+      "side": 1,
+      "message": "Hm... you\u0027re right, this could be shared between goroutines. It wouldn\u0027t panic, but it may lead to messed up output. Fixed to make Write and Close atomic... though if you share a log between goroutines it may lead to messed up output anyway.",
+      "parentUuid": "14ac8980_0bd82869",
+      "range": {
+        "startLine": 105,
+        "startChar": 19,
+        "endLine": 105,
+        "endChar": 34
+      },
+      "revId": "8916064f5d97668baf2317986997859c38ee3b99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
