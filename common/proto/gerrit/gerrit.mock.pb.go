@@ -195,6 +195,26 @@ func (mr *MockGerritClientMockRecorder) GetRelatedChanges(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritClient)(nil).GetRelatedChanges), varargs...)
 }
 
+// GetPureRevert mocks base method.
+func (m *MockGerritClient) GetPureRevert(ctx context.Context, in *GetPureRevertRequest, opts ...grpc.CallOption) (*PureRevertInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPureRevert", varargs...)
+	ret0, _ := ret[0].(*PureRevertInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPureRevert indicates an expected call of GetPureRevert.
+func (mr *MockGerritClientMockRecorder) GetPureRevert(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPureRevert", reflect.TypeOf((*MockGerritClient)(nil).GetPureRevert), varargs...)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -536,6 +556,21 @@ func (m *MockGerritServer) GetRelatedChanges(arg0 context.Context, arg1 *GetRela
 func (mr *MockGerritServerMockRecorder) GetRelatedChanges(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritServer)(nil).GetRelatedChanges), arg0, arg1)
+}
+
+// GetPureRevert mocks base method.
+func (m *MockGerritServer) GetPureRevert(arg0 context.Context, arg1 *GetPureRevertRequest) (*PureRevertInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPureRevert", arg0, arg1)
+	ret0, _ := ret[0].(*PureRevertInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPureRevert indicates an expected call of GetPureRevert.
+func (mr *MockGerritServerMockRecorder) GetPureRevert(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPureRevert", reflect.TypeOf((*MockGerritServer)(nil).GetPureRevert), arg0, arg1)
 }
 
 // CreateChange mocks base method.

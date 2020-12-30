@@ -84,6 +84,8 @@ type changeInfo struct {
 	Submittable bool      `json:"submittable,omitempty"`
 	IsPrivate   bool      `json:"is_private,omitempty"`
 
+	RevertOf int64 `json:"revert_of,omitempty"`
+
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
 	// needed in gerritpb.ChangeInfo.
@@ -102,6 +104,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		IsPrivate:       ci.IsPrivate,
 		Created:         timestamppb.New(ci.Created.Time),
 		Updated:         timestamppb.New(ci.Updated.Time),
+		RevertOf:        ci.RevertOf,
 	}
 	if ci.Revisions != nil {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
