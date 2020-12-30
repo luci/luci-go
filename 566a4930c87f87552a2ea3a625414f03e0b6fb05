@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e5035c4_42d4e31b",
+        "filename": "cv/internal/run/runs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T01:15:42Z",
+      "side": 1,
+      "message": "Can it just be `Equal`? It looks like this function doesn\u0027t rely on the assumptions that two IDs are sorted and it also doesn\u0027t check for it.",
+      "range": {
+        "startLine": 66,
+        "startChar": 15,
+        "endLine": 66,
+        "endChar": 26
+      },
+      "revId": "566a4930c87f87552a2ea3a625414f03e0b6fb05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
