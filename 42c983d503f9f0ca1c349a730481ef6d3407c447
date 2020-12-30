@@ -20,6 +20,46 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d8242abe_990151ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b376746f_61fdeb34",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "Nit: \"a special comment\"",
+      "range": {
+        "startLine": 53,
+        "startChar": 52,
+        "endLine": 53,
+        "endChar": 75
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b969e475_c75751ab",
         "filename": "cv/internal/gerrit/trigger/trigger.go",
         "patchSetId": 1
@@ -85,6 +125,86 @@
         "endLine": 61,
         "endChar": 2
       },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60805267_4ba0b4fd",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "Has this happened in practice? Is the Commit-Queue label configured in Gerrit to have the range [0,2]?",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "477ac682_5dd8de01",
+        "filename": "cv/internal/gerrit/trigger/trigger_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "Or: It\u0027s possible for the Email field to be empty\n\n\"No email is possible\" sounds to me like maybe in some cases email is forbidden",
+      "range": {
+        "startLine": 42,
+        "startChar": 20,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98316d64_07e90658",
+        "filename": "cv/internal/gerrit/trigger/trigger_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "Optional nit, you could put dryRun \u003d 1 and fullRun \u003d 2 as constants, even if just in this file, to avoid the need for comments.",
+      "range": {
+        "startLine": 98,
+        "startChar": 12,
+        "endLine": 98,
+        "endChar": 24
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c27fd17c_0797c113",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:07:00Z",
+      "side": 1,
+      "message": "e.g. \"DryRun\" or \"FullRun\", right?",
       "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
