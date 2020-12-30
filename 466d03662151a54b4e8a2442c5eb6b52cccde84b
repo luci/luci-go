@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44870e64_97aaacb0",
+        "filename": "common/api/gerrit/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2020-12-30T02:10:23Z",
+      "side": 1,
+      "message": "I see. I think there would be no new attributes so I\u0027ve removed the json struct.",
+      "parentUuid": "e2bfedd9_b594211e",
+      "range": {
+        "startLine": 482,
+        "startChar": 0,
+        "endLine": 491,
+        "endChar": 1
+      },
+      "revId": "466d03662151a54b4e8a2442c5eb6b52cccde84b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f511ceff_8512f07a",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-30T01:10:24Z",
       "side": 1,
       "message": "I looked at the referenced Gerrit\u0027s doc and I don\u0027t see what `revertOf` actually is. Do you know?\nHow does a user of the API gets hold of it? Should it be part of ChangeInfo?",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 13
+      },
+      "revId": "466d03662151a54b4e8a2442c5eb6b52cccde84b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62413655_a5137e11",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2020-12-30T02:10:23Z",
+      "side": 1,
+      "message": "Yes `revertOf` is part of ChangeInfo[1]. The GetPureRevert API returns code `not found` when the queried CL doesn\u0027t have a `revertOf` field. \n\nI\u0027ve added `revertOf` in ChangeInfo in patchset 3.\n\n[1]https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info",
+      "parentUuid": "f511ceff_8512f07a",
       "range": {
         "startLine": 84,
         "startChar": 5,
