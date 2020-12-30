@@ -94,7 +94,7 @@ func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*eval
 type durationRow struct {
 	Change      int
 	Patchset    int
-	TestVariant testVariantRow
+	TestVariant *evalpb.TestVariant
 	Duration    float64
 }
 
@@ -113,7 +113,7 @@ func (r *durationRow) proto() *evalpb.TestDuration {
 				Patchset: int64(r.Patchset),
 			},
 		},
-		TestVariant: r.TestVariant.proto(),
+		TestVariant: r.TestVariant,
 		Duration:    ptypes.DurationProto(time.Duration(r.Duration * 1e9)),
 	}
 }
