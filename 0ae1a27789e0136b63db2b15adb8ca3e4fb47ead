@@ -130,6 +130,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc125609_a1590723",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T20:19:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "58817175_aa36b30c",
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "938e817a_ccb4e0cc",
@@ -167,6 +185,30 @@
       "side": 1,
       "message": "There\u0027s no existing property value because there\u0027s no build in context",
       "parentUuid": "938e817a_ccb4e0cc",
+      "range": {
+        "startLine": 275,
+        "startChar": 18,
+        "endLine": 275,
+        "endChar": 39
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fe60f04_7e90b7a5",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T20:19:00Z",
+      "side": 1,
+      "message": "Ah right! how can I forget this.",
+      "parentUuid": "9e3929b9_803f57ec",
       "range": {
         "startLine": 275,
         "startChar": 18,
