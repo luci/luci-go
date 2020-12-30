@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebfe2586_c97cd19f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:57:39Z",
+      "side": 1,
+      "message": "Yep",
+      "parentUuid": "539bdced_484daa29",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 19
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "056ed91c_f956ac47",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-12-29T05:54:52Z",
       "side": 1,
       "message": "These are from v1 library. Instead,\n\n```\n   \"google.golang.org/protobuf/encoding/protojson\"\n   \"google.golang.org/protobuf/proto\"\n\n```",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3ec56a7_d006dddb",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:57:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "056ed91c_f956ac47",
       "range": {
         "startLine": 24,
         "startChar": 0,
@@ -66,6 +114,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "58817175_aa36b30c",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:57:39Z",
+      "side": 1,
+      "message": "Eh... the group 102-104 shouldn\u0027t be broken up, and this variable applies to 102-104 and 109-114. I think I\u0027d prefer to keep it here (though I agree, it looks far away... the reflect api here is pretty verbose)",
+      "parentUuid": "7e000026_e5873b2d",
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "938e817a_ccb4e0cc",
         "filename": "luciexe/build/properties.go",
         "patchSetId": 1
@@ -89,6 +155,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9e3929b9_803f57ec",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:57:39Z",
+      "side": 1,
+      "message": "There\u0027s no existing property value because there\u0027s no build in context",
+      "parentUuid": "938e817a_ccb4e0cc",
+      "range": {
+        "startLine": 275,
+        "startChar": 18,
+        "endLine": 275,
+        "endChar": 39
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ee6a049b_e139e979",
         "filename": "luciexe/build/properties_test.go",
         "patchSetId": 1
@@ -100,6 +190,30 @@
       "writtenOn": "2020-12-29T05:54:52Z",
       "side": 1,
       "message": "empty ns",
+      "range": {
+        "startLine": 57,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "0ae1a27789e0136b63db2b15adb8ca3e4fb47ead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f9db84f_430c25d3",
+        "filename": "luciexe/build/properties_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:57:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee6a049b_e139e979",
       "range": {
         "startLine": 57,
         "startChar": 12,
