@@ -39,6 +39,30 @@
       },
       "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbe5e956_3731e656",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T16:28:40Z",
+      "side": 1,
+      "message": "CV should store cancelation fact in datastore somehow, possibly the way you described.",
+      "parentUuid": "b969e475_c75751ab",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 2
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
