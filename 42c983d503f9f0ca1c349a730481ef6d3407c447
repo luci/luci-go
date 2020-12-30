@@ -60,6 +60,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "024dcff9_d30cf7f6",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T19:28:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b376746f_61fdeb34",
+      "range": {
+        "startLine": 53,
+        "startChar": 52,
+        "endLine": 53,
+        "endChar": 75
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b969e475_c75751ab",
         "filename": "cv/internal/gerrit/trigger/trigger.go",
         "patchSetId": 1
@@ -146,6 +170,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e25f6a0_de4ce01a",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T19:28:26Z",
+      "side": 1,
+      "message": "Yes, CrOS used to use CQ0..3 range where CQ+3 meant \"commit even if tree is closed\", which was copied to a few repos, even though CQDaemon didn\u0027t care.\n\nI don\u0027t think I saw this during the last year, so we could change this, but it\u0027s easier to clamp down for now.",
+      "parentUuid": "60805267_4ba0b4fd",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "477ac682_5dd8de01",
@@ -169,6 +211,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0876d3f_ecb3c199",
+        "filename": "cv/internal/gerrit/trigger/trigger_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T19:28:26Z",
+      "side": 1,
+      "message": "Removed it. It\u0027s not relevant here.",
+      "parentUuid": "477ac682_5dd8de01",
+      "range": {
+        "startLine": 42,
+        "startChar": 20,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "98316d64_07e90658",
@@ -182,6 +248,30 @@
       "writtenOn": "2020-12-30T19:07:00Z",
       "side": 1,
       "message": "Optional nit, you could put dryRun \u003d 1 and fullRun \u003d 2 as constants, even if just in this file, to avoid the need for comments.",
+      "range": {
+        "startLine": 98,
+        "startChar": 12,
+        "endLine": 98,
+        "endChar": 24
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bedaee0c_c0807784",
+        "filename": "cv/internal/gerrit/trigger/trigger_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T19:28:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98316d64_07e90658",
       "range": {
         "startLine": 98,
         "startChar": 12,
