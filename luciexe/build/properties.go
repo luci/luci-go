@@ -58,7 +58,6 @@ func MakePropertyReader(ns string, fnptr interface{}) {
 //   var propWriter func(context.Context, *MyMessage)
 //   var propMerger func(context.Context, *MyMessage)
 //
-//   ... = Start(, ..., OptOutputProperties(&writer, &merger))
 //   func init() {
 //     // one of the two function pointers may be nil
 //     MakePropertyModifier("$some/namespace", &propWriter, &propMerger)
