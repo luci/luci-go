@@ -93,23 +93,16 @@ func TestPrintLostRejection(t *testing.T) {
 				Patchsets: []*evalpb.GerritPatchset{ps1},
 				FailedTestVariants: []*evalpb.TestVariant{
 					{
-						Id: "test1",
-						Variant: map[string]string{
-							"a": "0",
-						},
+						Id:      "test1",
+						Variant: []string{"a:0"},
 					},
 					{
-						Id: "test2",
-						Variant: map[string]string{
-							"a": "0",
-						},
+						Id:      "test2",
+						Variant: []string{"a:0"},
 					},
 					{
-						Id: "test1",
-						Variant: map[string]string{
-							"a": "0",
-							"b": "0",
-						},
+						Id:      "test1",
+						Variant: []string{"a:0", "b:0"},
 					},
 				},
 			}
