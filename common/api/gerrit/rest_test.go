@@ -1117,6 +1117,36 @@ func TestGetBranchInfo(t *testing.T) {
 	})
 }
 
+func TestGetPureRevert(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Get Pure Revert", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"is_pure_revert" : false
+			}`)
+		})
+		defer srv.Close()
+
+		req := &gerritpb.GetPureRevertRequest{
+			Number:  42,
+			Project: "someproject",
+		}
+		res, err := c.GetPureRevert(ctx, req)
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/pure_revert")
+		So(res, ShouldResemble, &gerritpb.PureRevertInfo{
+			IsPureRevert: false,
+		})
+	})
+}
+
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
