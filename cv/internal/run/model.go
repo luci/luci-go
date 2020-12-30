@@ -15,7 +15,6 @@
 package run
 
 import (
-	"fmt"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
@@ -25,39 +24,8 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 )
 
-// CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
-var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
-
 // RunKind is Datastore entity kind for Run.
 const RunKind = "Run"
-
-// ID is an unique ID to identify a Run in CV.
-//
-// ID is string like `luciProject/timeComponent-hexHashDigest` consisting of 5
-// parts:
-//   1. The LUCI Project that this Run belongs to.
-//      Purpose: separates load on Datastore from different projects.
-//   2. `/` separator.
-//   3. (`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros
-//      to 13 digits. See `Run.CreateTime` Doc.
-//      Purpose: ensures queries by default orders runs of the same project by
-//      most recent first.
-//   4. `-` separator.
-//   5. A hex digest string uniquely identifying the set of CLs involved in
-//      this Run.
-//      Purpose: ensures two simultaneously started Runs in the same project
-//      won't have the same ID.
-type ID string
-
-// LUCIProject this Run belongs to.
-func (id ID) LUCIProject() string {
-	for i, c := range id {
-		if c == '/' {
-			return string(id[:i])
-		}
-	}
-	panic(fmt.Errorf("invalid run ID %q", id))
-}
 
 // Mode dictates the behavior of this Run.
 type Mode string
@@ -79,8 +47,8 @@ type Run struct {
 
 	// ID is the RunID generated at triggering time.
 	//
-	// See doc for type `RunID` about the format
-	ID ID `gae:"$id"`
+	// See doc for type `common.RunID` about the format.
+	ID common.RunID `gae:"$id"`
 	// Mode dictates the behavior of this Run.
 	Mode Mode `gae:",noindex"`
 	// Status describes the status of this Run.

@@ -20,25 +20,25 @@ import (
 
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run/internal"
 )
 
 // Runs returns list of runs from tasks for Run Manager.
-func Runs(in tqtesting.TaskList) (runs run.IDs) {
+func Runs(in tqtesting.TaskList) (runs common.RunIDs) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
 		case *internal.PokeRunTask:
-			runs = append(runs, run.ID(v.GetRunId()))
+			runs = append(runs, common.RunID(v.GetRunId()))
 		case *internal.KickPokeRunTask:
-			runs = append(runs, run.ID(v.GetRunId()))
+			runs = append(runs, common.RunID(v.GetRunId()))
 		}
 	}
 	return runs
 }
 
 // SortedRuns returns sorted list of runs from tasks for Run Manager.
-func SortedRuns(in tqtesting.TaskList) run.IDs {
+func SortedRuns(in tqtesting.TaskList) common.RunIDs {
 	runs := Runs(in)
 	sort.Sort(runs)
 	return runs
