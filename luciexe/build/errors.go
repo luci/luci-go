@@ -39,7 +39,7 @@ var statusTag = errors.NewTagKey("build Status")
 // AttachStatus allows overriding the attached status if the error already has
 // one.
 //
-// This panics if the status is a non-terminal status like SCHEDULED or STARTED.
+// This panics if the status is a non-terminal status like SCHEDULED or RUNNING.
 //
 // This is a no-op if the error is nil.
 func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) error {
