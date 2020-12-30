@@ -32,6 +32,9 @@ func TestIDs(t *testing.T) {
 		sort.Sort(ids)
 		So(ids, ShouldResemble, MakeIDs("2", "5", "8"))
 
+		So(ids.EqualSorted(MakeIDs("2", "5", "8")), ShouldBeTrue)
+		So(ids.EqualSorted(MakeIDs("2", "5", "8", "8")), ShouldBeFalse)
+
 		assertSameSlice(ids.WithoutSorted(nil), ids)
 		So(ids, ShouldResemble, MakeIDs("2", "5", "8"))
 
