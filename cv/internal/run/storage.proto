@@ -18,6 +18,7 @@ package cv.run;
 
 option go_package = "go.chromium.org/luci/cv/internal/run;run";
 
+import "google/protobuf/timestamp.proto";
 
 // Status describes the status of a CV Run.
 enum Status {
@@ -51,4 +52,22 @@ enum Status {
   FAILED = 66;
   // Run is cancelled.
   CANCELLED = 67;
+}
+
+// Trigger describes who/how CV was triggered on a specific CL.
+message Trigger {
+  google.protobuf.Timestamp time = 1;
+  // Mode is string value of run.Mode.
+  string mode = 2;
+  // Triggering user email if known.
+  //
+  // Gerrit doesn't guarantee that every user has set their preferred email,
+  // but LUCI ACLs are based entirely on user emails. Thus, Runs with the email
+  // unset are quickly aborted by CQDaemon.
+  //
+  // TODO(tandrii): once CQDaemon is deleted, require email to start a Run,
+  // and remove Gerrit-specific gerrit_account_id.
+  string email = 3;
+  // Gerrit account ID. Always known.
+  int64 gerrit_account_id = 4;
 }
