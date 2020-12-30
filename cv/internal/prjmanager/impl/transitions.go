@@ -18,12 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // state stores serializable state of a ProjectManager.
@@ -32,7 +32,7 @@ import (
 type state struct {
 	Status         prjmanager.Status
 	ConfigHash     string
-	IncompleteRuns run.IDs // sorted, just like in Project.IncompleteRuns.
+	IncompleteRuns common.RunIDs // sorted, just like in Project.IncompleteRuns.
 	// TODO(tandrii): add CL grouping state.
 }
 
@@ -120,7 +120,7 @@ func poke(ctx context.Context, luciProject string, s *state) (eventbox.SideEffec
 	return nil, s, nil
 }
 
-func runsFinished(ctx context.Context, finished run.IDs, s *state) (eventbox.SideEffectFn, *state, error) {
+func runsFinished(ctx context.Context, finished common.RunIDs, s *state) (eventbox.SideEffectFn, *state, error) {
 	remaining := s.IncompleteRuns.WithoutSorted(finished)
 	if len(remaining) == len(s.IncompleteRuns) {
 		return nil, s, nil // no change
