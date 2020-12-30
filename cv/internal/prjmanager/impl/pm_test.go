@@ -25,13 +25,13 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
-	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -68,7 +68,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 			Convey("update config with runs", func() {
 				// Simulate some runs.
-				p.IncompleteRuns = run.MakeIDs(lProject+"/111-beef", lProject+"/222-cafe")
+				p.IncompleteRuns = common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe")
 				So(datastore.Put(ctx, p), ShouldBeNil)
 
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
@@ -95,13 +95,13 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(runtest.SortedRuns(ct.TQ.Tasks()), ShouldResemble, expected)
 
 					Convey("wait for all IncompleteRuns to finish", func() {
-						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/111-beef")), ShouldBeNil)
+						So(prjmanager.RunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
-						So(p.IncompleteRuns, ShouldResemble, run.MakeIDs(lProject+"/222-cafe"))
+						So(p.IncompleteRuns, ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
-						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/222-cafe")), ShouldBeNil)
+						So(prjmanager.RunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)

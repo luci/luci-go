@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // ExternalID is a unique CL ID deterministically constructed based on CL data.
@@ -107,7 +106,7 @@ type CL struct {
 	// IncompleteRuns tracks not yet finalized Runs working on this CL.
 	//
 	// It's updated transactionally with the Run being modified.
-	IncompleteRuns run.IDs `gae:",noindex"`
+	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
 
 // clMap is CLMap entity in Datastore which ensures strict 1:1 mapping

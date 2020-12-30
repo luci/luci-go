@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // RunOwner keeps tracks of all open (active or pending) Runs for a user.
@@ -31,10 +30,10 @@ type RunOwner struct {
 	// ID is the user identity.
 	ID identity.Identity `gae:"$id"`
 	// ActiveRuns are all Runs triggered by this user that are active.
-	ActiveRuns []run.ID `gae:",noindex"`
+	ActiveRuns common.RunIDs `gae:",noindex"`
 	// PendingRuns are all Runs triggered by this user that are
 	// yet-to-be-launched (i.e. quota doesn't permit).
-	PendingRuns []run.ID `gae:",noindex"`
+	PendingRuns common.RunIDs `gae:",noindex"`
 }
 
 // RunCL is the snapshot of a CL involved in this Run.

@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
@@ -64,7 +63,7 @@ func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversi
 }
 
 // RunFinished tells ProjectManager that a run has finalized its state.
-func RunFinished(ctx context.Context, runID run.ID) error {
+func RunFinished(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID.LUCIProject(), &internal.Event{
 		Event: &internal.Event_RunFinished{
 			RunFinished: &internal.RunFinished{
