@@ -12,15 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+package common
 
-// IDs is a convenience type to faciliate handling of run IDs.
-type IDs []ID
+import (
+	"fmt"
+	"time"
+)
+
+// RunID is an unique RunID to identify a Run in CV.
+//
+// RunID is string like `luciProject/timeComponent-hexHashDigest` consisting of
+// 5 parts:
+//   1. The LUCI Project that this Run belongs to.
+//      Purpose: separates load on Datastore from different projects.
+//   2. `/` separator.
+//   3. (`endOfTheWorld` - CreateTime) in ms precision, left-padded with zeros
+//      to 13 digits. See `Run.CreateTime` Doc.
+//      Purpose: ensures queries by default orders runs of the same project by
+//      most recent first.
+//   4. `-` separator.
+//   5. A hex digest string uniquely identifying the set of CLs involved in
+//      this Run.
+//      Purpose: ensures two simultaneously started Runs in the same project
+//      won't have the same RunID.
+type RunID string
+
+// CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
+var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
+
+// LUCIProject this Run belongs to.
+func (id RunID) LUCIProject() string {
+	for i, c := range id {
+		if c == '/' {
+			return string(id[:i])
+		}
+	}
+	panic(fmt.Errorf("invalid run ID %q", id))
+}
+
+// RunIDs is a convenience type to faciliate handling of run RunIDs.
+type RunIDs []RunID
 
 // sort.Interface copy-pasta.
-func (ids IDs) Less(i, j int) bool { return ids[i] < ids[j] }
-func (ids IDs) Len() int           { return len(ids) }
-func (ids IDs) Swap(i, j int)      { ids[i], ids[j] = ids[j], ids[i] }
+func (ids RunIDs) Less(i, j int) bool { return ids[i] < ids[j] }
+func (ids RunIDs) Len() int           { return len(ids) }
+func (ids RunIDs) Swap(i, j int)      { ids[i], ids[j] = ids[j], ids[i] }
 
 // WithoutSorted returns a subsequence of IDs without excluded IDs.
 //
@@ -28,7 +64,7 @@ func (ids IDs) Swap(i, j int)      { ids[i], ids[j] = ids[j], ids[i] }
 //
 // If this and excluded IDs are disjoint, return this slice.
 // Otherwise, returns a copy without excluded IDs.
-func (ids IDs) WithoutSorted(exclude IDs) IDs {
+func (ids RunIDs) WithoutSorted(exclude RunIDs) RunIDs {
 	remaining := ids
 	ret := ids
 	mutated := false
@@ -53,7 +89,7 @@ func (ids IDs) WithoutSorted(exclude IDs) IDs {
 				// Must copy all IDs that were skipped.
 				mutated = true
 				n := len(ids) - len(remaining)
-				ret = make(IDs, n, len(ids)-1)
+				ret = make(RunIDs, n, len(ids)-1)
 				copy(ret, ids) // copies len(ret) == n elements.
 			}
 			remaining = remaining[1:]
@@ -63,7 +99,7 @@ func (ids IDs) WithoutSorted(exclude IDs) IDs {
 }
 
 // EqualSorted checks if two assumed-to-be-sorted slices are equal.
-func (ids IDs) EqualSorted(other IDs) bool {
+func (ids RunIDs) EqualSorted(other RunIDs) bool {
 	if len(ids) != len(other) {
 		return false
 	}
@@ -75,11 +111,11 @@ func (ids IDs) EqualSorted(other IDs) bool {
 	return true
 }
 
-// MakeIDs returns IDs from list of strings.
-func MakeIDs(ids ...string) IDs {
-	ret := make(IDs, len(ids))
+// MakeRunIDs returns RunIDs from list of strings.
+func MakeRunIDs(ids ...string) RunIDs {
+	ret := make(RunIDs, len(ids))
 	for i, id := range ids {
-		ret[i] = ID(id)
+		ret[i] = RunID(id)
 	}
 	return ret
 }

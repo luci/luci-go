@@ -36,7 +36,7 @@ func init() {
 	internal.PokeRunTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*internal.PokeRunTask)
-			err := pokeRunTask(ctx, run.ID(task.GetRunId()))
+			err := pokeRunTask(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
 			return common.TQifyError(ctx, err)
@@ -44,7 +44,7 @@ func init() {
 	)
 }
 
-func pokeRunTask(ctx context.Context, runID run.ID) error {
+func pokeRunTask(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
 	return eventbox.ProcessBatch(ctx, recipient, &runManager{runID: runID})
@@ -52,7 +52,7 @@ func pokeRunTask(ctx context.Context, runID run.ID) error {
 
 // runManager implements eventbox.Processor.
 type runManager struct {
-	runID run.ID
+	runID common.RunID
 }
 
 // state represents the current state of a Run.

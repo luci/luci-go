@@ -21,11 +21,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func start(ctx context.Context, runID run.ID, s *state) (eventbox.SideEffectFn, *state, error) {
+func start(ctx context.Context, runID common.RunID, s *state) (eventbox.SideEffectFn, *state, error) {
 	switch status := s.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", runID).Err()
