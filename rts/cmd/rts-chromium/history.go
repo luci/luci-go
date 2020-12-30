@@ -29,7 +29,6 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
-	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
@@ -195,11 +194,7 @@ func (r *presubmitHistoryRun) write(rec *evalpb.Record) error {
 }
 
 func (r *presubmitHistoryRun) bqQuery(ctx context.Context, sql string) (*bigquery.Query, error) {
-	http, err := r.authenticator.Client()
-	if err != nil {
-		return nil, err
-	}
-	client, err := bigquery.NewClient(ctx, "chrome-trooper-analytics", option.WithHTTPClient(http))
+	client, err := newBQClient(ctx, r.authenticator)
 	if err != nil {
 		return nil, err
 	}
