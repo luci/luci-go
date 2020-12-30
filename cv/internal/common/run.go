@@ -15,6 +15,7 @@
 package common
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 )
@@ -39,6 +40,14 @@ type RunID string
 
 // CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
 var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
+
+func MakeRunID(luciProject string, createTime time.Time, clsDigest []byte) RunID {
+	ms := endOfTheWorld.Sub(createTime).Milliseconds()
+	if ms < 0 {
+		panic(fmt.Errorf("Can't create run at %s which is after endOfTheWorld %s", createTime, endOfTheWorld))
+	}
+	return RunID(fmt.Sprintf("%s/%013d-%s", luciProject, ms, hex.EncodeToString(clsDigest)))
+}
 
 // LUCIProject this Run belongs to.
 func (id RunID) LUCIProject() string {
