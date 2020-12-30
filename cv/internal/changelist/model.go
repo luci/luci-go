@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // ExternalID is a unique CL ID deterministically constructed based on CL data.
@@ -80,6 +81,15 @@ type CL struct {
 	// See Update() function.
 	EVersion int `gae:",noindex"`
 
+	// UpdateTime is exact time of when this entity was last updated.
+	//
+	// It's not indexed to avoid hot areas in the index.
+	UpdateTime time.Time `gae:",noindex"`
+
+	// TODO(tandrii): implement deletion of the oldest entities via additional
+	// indexed field based on UpdateTime but with entropy in the lowest bits to
+	// avoid hotspots.
+
 	// Snapshot is latest known state of a CL.
 	// It may and often is behind the source of truth -- the code reveview site
 	// (e.g. Gerrit).
@@ -94,14 +104,10 @@ type CL struct {
 	// See description in protobuf type with the same name.
 	DependentMeta *DependentMeta
 
-	// UpdateTime is exact time of when this entity was last updated.
+	// IncompleteRuns tracks not yet finalized Runs working on this CL.
 	//
-	// It's not indexed to avoid hot areas in the index.
-	UpdateTime time.Time `gae:",noindex"`
-
-	// TODO(tandrii): implement deletion of the oldest entities via additional
-	// indexed field based on UpdateTime but with entropy in the lowest bits to
-	// avoid hotspots.
+	// It's updated transactionally with the Run being modified.
+	IncompleteRuns run.IDs `gae:",noindex"`
 }
 
 // clMap is CLMap entity in Datastore which ensures strict 1:1 mapping
