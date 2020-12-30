@@ -98,8 +98,8 @@ func (ids RunIDs) WithoutSorted(exclude RunIDs) RunIDs {
 	}
 }
 
-// EqualSorted checks if two assumed-to-be-sorted slices are equal.
-func (ids RunIDs) EqualSorted(other RunIDs) bool {
+// Equal checks if two assumed-to-be-sorted slices are equal.
+func (ids RunIDs) Equal(other RunIDs) bool {
 	if len(ids) != len(other) {
 		return false
 	}
