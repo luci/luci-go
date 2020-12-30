@@ -307,7 +307,6 @@ func TestEventboxFails(t *testing.T) {
 		Convey("Failed Save aborts any side effects, too", func() {
 			p.saveState = func(ctx context.Context, st State, ev EVersion) error {
 				s := *(st.(*int))
-				logging.Debugf(ctx, "wtf?")
 				So(ev, ShouldEqual, 1)
 				So(s, ShouldNotEqual, initState)
 				So(s, ShouldEqual, secondState)
