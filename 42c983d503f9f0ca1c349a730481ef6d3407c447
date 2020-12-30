@@ -188,6 +188,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "52797435_46dbab14",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:44:37Z",
+      "side": 1,
+      "message": "Got it, thanks",
+      "parentUuid": "3e25f6a0_de4ce01a",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "477ac682_5dd8de01",
@@ -313,6 +331,24 @@
       "side": 1,
       "message": "*currently*. We\u0027ll very likely extend this soon.",
       "parentUuid": "c27fd17c_0797c113",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f92e8016_6f6c40fe",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T19:44:37Z",
+      "side": 1,
+      "message": "Yes, it will be extended, but IMO in general it\u0027s still useful to give examples of possible values, even if not exhaustive.",
+      "parentUuid": "15314ae1_ffb06e69",
       "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
