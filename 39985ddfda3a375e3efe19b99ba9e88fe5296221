@@ -46,6 +46,30 @@
       },
       "revId": "39985ddfda3a375e3efe19b99ba9e88fe5296221",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "634e14a8_3ac78b98",
+        "filename": "logdog/client/butlerlib/streamclient/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T19:50:21Z",
+      "side": 1,
+      "message": "Ack. For some reason, I though it\u0027s public already :(",
+      "parentUuid": "7ed83dcc_76655cf1",
+      "range": {
+        "startLine": 39,
+        "startChar": 36,
+        "endLine": 39,
+        "endChar": 76
+      },
+      "revId": "39985ddfda3a375e3efe19b99ba9e88fe5296221",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
