@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -65,7 +63,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					},
 				},
 				Labels: map[string]*gerritpb.LabelInfo{
-					cqLabelName: {
+					"Commit-Queue": {
 						All: []*gerritpb.ApprovalInfo{
 							{
 								User: &gerritpb.AccountInfo{
@@ -90,7 +88,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					},
 				},
 				Labels: map[string]*gerritpb.LabelInfo{
-					cqLabelName: {
+					"Commit-Queue": {
 						All: []*gerritpb.ApprovalInfo{
 							{
 								User: &gerritpb.AccountInfo{
@@ -129,6 +127,12 @@ func TestFetchActiveRuns(t *testing.T) {
 							},
 						},
 					},
+					Trigger: &run.Trigger{
+						Time:            timestamppb.New(updateTime.AsTime().Add(-2 * time.Minute)),
+						Mode:            string(run.DryRun),
+						Email:           "user@example.com",
+						GerritAccountId: 1,
+					},
 				},
 				&run.RunCL{
 					ID:  2,
@@ -144,6 +148,12 @@ func TestFetchActiveRuns(t *testing.T) {
 								Info:  ci2,
 							},
 						},
+					},
+					Trigger: &run.Trigger{
+						Time:            timestamppb.New(updateTime.AsTime().Add(-3 * time.Minute)),
+						Mode:            string(run.DryRun),
+						Email:           "user@example.com",
+						GerritAccountId: 1,
 					},
 				},
 			)
@@ -242,131 +252,5 @@ func TestClsOf(t *testing.T) {
 			{Host: "abc", Change: 5, Patchset: 6},
 		}
 		So(clsOf(a), ShouldEqual, "5 CLs: [abc 1/2] [xyz 2/3 3/4] [abc 4/5 5/6]")
-	})
-}
-
-func TestFindTrigger(t *testing.T) {
-	t.Parallel()
-	user1 := &gerritpb.AccountInfo{
-		AccountId: 1,
-		Email:     "user.one@example.com",
-	}
-	user2 := &gerritpb.AccountInfo{
-		AccountId: 2,
-		Email:     "user.two@example.com",
-	}
-	user3 := &gerritpb.AccountInfo{
-		AccountId: 3,
-		Email:     "user.three@example.com",
-	}
-	Convey("findTrigger", t, func() {
-		now := testclock.TestRecentTimeUTC
-		ci := &gerritpb.ChangeInfo{
-			CurrentRevision: "deadbeef~1",
-			Revisions: map[string]*gerritpb.RevisionInfo{
-				"deadbeef~1": {
-					Number:  2,
-					Created: timestamppb.New(now.Add(-30 * time.Minute)),
-				},
-				"deadbeef~2": {
-					Number:  1,
-					Created: timestamppb.New(now.Add(-1 * time.Hour)),
-				},
-			},
-			Labels: map[string]*gerritpb.LabelInfo{
-				cqLabelName: {
-					All: []*gerritpb.ApprovalInfo{
-						{
-							User:  user1,
-							Value: 1, // DryRun
-							Date:  timestamppb.New(now.Add(-15 * time.Minute)),
-						},
-						{
-							User:  user2,
-							Value: 1, // DryRun
-							Date:  timestamppb.New(now.Add(-20 * time.Minute)),
-						},
-						{
-							User:  user3,
-							Value: 2, // FullRun
-							Date:  timestamppb.New(now.Add(-10 * time.Minute)),
-						},
-					},
-				},
-			},
-		}
-		Convey("Single Vote", func() {
-			trigger, err := findTrigger(ci, run.FullRun)
-			So(err, ShouldBeNil)
-			So(trigger, ShouldResembleProto, &migrationpb.RunCL_Trigger{
-				Time:      timestamppb.New(now.Add(-10 * time.Minute)),
-				AccountId: user3.GetAccountId(),
-				Email:     user3.GetEmail(),
-			})
-		})
-		Convey("Multiple Votes", func() {
-			trigger, err := findTrigger(ci, run.DryRun)
-			So(err, ShouldBeNil)
-			// expect the earlier one
-			So(trigger, ShouldResembleProto, &migrationpb.RunCL_Trigger{
-				Time:      timestamppb.New(now.Add(-20 * time.Minute)),
-				AccountId: user2.GetAccountId(),
-				Email:     user2.GetEmail(),
-			})
-		})
-		Convey("Sticky Vote", func() {
-			ci.CurrentRevision = "deadbeef"
-			ci.Revisions["deadbeef"] = &gerritpb.RevisionInfo{
-				Number:  3,
-				Created: timestamppb.New(now.Add(-5 * time.Minute)),
-			}
-			trigger, err := findTrigger(ci, run.FullRun)
-			So(err, ShouldBeNil)
-			So(trigger, ShouldResembleProto, &migrationpb.RunCL_Trigger{
-				Time:      ci.Revisions["deadbeef"].Created,
-				AccountId: user3.GetAccountId(),
-				Email:     user3.GetEmail(),
-			})
-		})
-		Convey("Excludes vote from previous attempt", func() {
-			cancelMsg, err := botdata.Append("", botdata.BotData{
-				Action:      botdata.Cancel,
-				TriggeredAt: now.Add(-18 * time.Minute),
-				Revision:    "deadbeef~1",
-			})
-			So(err, ShouldBeNil)
-			ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{
-				Message: cancelMsg,
-			})
-			trigger, err := findTrigger(ci, run.DryRun)
-			So(err, ShouldBeNil)
-			// Vote from user2 belongs to previously cancelled attempt of the same
-			// revision.
-			So(trigger, ShouldResembleProto, &migrationpb.RunCL_Trigger{
-				Time:      timestamppb.New(now.Add(-15 * time.Minute)),
-				AccountId: user1.GetAccountId(),
-				Email:     user1.GetEmail(),
-			})
-		})
-		Convey("Error when no Commit-Queue label info", func() {
-			ci.Labels = nil
-			_, err := findTrigger(ci, run.DryRun)
-			So(err, ShouldErrLike, "missing LabelInfo for label \"Commit-Queue\"")
-		})
-		Convey("Error when no vote on Commit-Queue label for given mode", func() {
-			ci.Labels = map[string]*gerritpb.LabelInfo{
-				cqLabelName: {
-					All: []*gerritpb.ApprovalInfo{
-						{
-							User:  user1,
-							Value: 1,
-							Date:  timestamppb.New(now.Add(-15 * time.Minute)),
-						},
-					},
-				},
-			}
-			_, err := findTrigger(ci, run.FullRun)
-			So(err, ShouldErrLike, "no vote found for \"Commit-Queue\" +2")
-		})
 	})
 }
