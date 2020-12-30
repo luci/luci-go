@@ -140,7 +140,7 @@ func TestExternalID(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateSnapshot", t, func() {
+	Convey("Update works", t, func() {
 		epoch := testclock.TestRecentTimeUTC
 		ctx := memory.Use(context.Background())
 		eid, err := GobID("x-review.example.com", 12)
