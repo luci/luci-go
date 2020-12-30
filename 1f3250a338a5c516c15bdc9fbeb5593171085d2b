@@ -34,6 +34,24 @@
       "parentUuid": "1f2edf5f_3fb6a5f3",
       "revId": "1f3250a338a5c516c15bdc9fbeb5593171085d2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7db004c9_9e92b368",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T19:43:07Z",
+      "side": 1,
+      "message": "Make sense. Sounds like a very useful feature for user to avoid duplicate code/effort. Kudos!",
+      "parentUuid": "ff0414cc_12d6fc0c",
+      "revId": "1f3250a338a5c516c15bdc9fbeb5593171085d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
