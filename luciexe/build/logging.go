@@ -19,7 +19,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"sync"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
@@ -63,7 +62,6 @@ func LogFromFile(l Loggable, name string, filepath string, opts ...streamclient.
 }
 
 type loggingWriter struct {
-	mu   sync.Mutex
 	buf  *bytes.Buffer
 	logf func(string)
 }
@@ -90,9 +88,6 @@ func makeLoggingWriter(ctx context.Context, name string) io.WriteCloser {
 }
 
 func (l *loggingWriter) Write(bs []byte) (n int, err error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	if n, err = l.buf.Write(bs); err != nil {
 		return
 	}
@@ -121,9 +116,6 @@ func (l *loggingWriter) drainLines() {
 }
 
 func (l *loggingWriter) Close() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	l.drainLines()
 	if l.buf.Len() > 0 {
 		l.logf(l.buf.String())
