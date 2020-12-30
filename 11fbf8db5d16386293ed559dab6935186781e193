@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5e660ef_94fb3379",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T22:20:56Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fe80020_8e059466",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T22:20:56Z",
+      "side": 1,
+      "message": "or \"reads all non-CL entities from datastore that are required for a Run\"",
+      "range": {
+        "startLine": 134,
+        "startChar": 14,
+        "endLine": 134,
+        "endChar": 50
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "952e4e9d_c4a43557",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T22:20:56Z",
+      "side": 1,
+      "message": "I\u0027d recommend being more specific and precise. If it\u0027s complicated, IMO that\u0027s even more reason to explain it (and hypothetically if it could potentially be refactored so that the comment is easier to write, then that might be an improvement).\n\nAlso, ideally explain why CLs are loaded separately from all non-CL entities, rather than just having one load function (or one load function per datastore kind or something).",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c756a9e2_94cc3e05",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T22:20:56Z",
+      "side": 1,
+      "message": "Nit: Could this be unixMicrosecs? (For consistency)",
+      "range": {
+        "startLine": 156,
+        "startChar": 2,
+        "endLine": 156,
+        "endChar": 11
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "446344d7_4329bbf7",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-30T22:20:56Z",
+      "side": 1,
+      "message": "separator",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 9
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
