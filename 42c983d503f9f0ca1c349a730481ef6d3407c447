@@ -297,6 +297,24 @@
       "message": "e.g. \"DryRun\" or \"FullRun\", right?",
       "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15314ae1_ffb06e69",
+        "filename": "cv/internal/run/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-30T19:29:13Z",
+      "side": 1,
+      "message": "*currently*. We\u0027ll very likely extend this soon.",
+      "parentUuid": "c27fd17c_0797c113",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
