@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f1269d1_5a71381b",
+        "filename": "luciexe/build/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:38:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07fbbec1_c80f4734",
+      "range": {
+        "startLine": 42,
+        "startChar": 72,
+        "endLine": 42,
+        "endChar": 79
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a6a266a_66a572f1",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7483040c_4540c9db",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:38:57Z",
+      "side": 1,
+      "message": "ret.stepPb.Name already contains the old prefix (see line 97 above)",
+      "parentUuid": "8a6a266a_66a572f1",
+      "range": {
+        "startLine": 110,
+        "startChar": 19,
+        "endLine": 110,
+        "endChar": 20
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fc8c7712_616a1a5c",
@@ -60,6 +108,30 @@
       "writtenOn": "2020-12-29T01:00:47Z",
       "side": 1,
       "message": "Why making another copy here? Can we de-reference `s` here instead?",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32ba5e98_3076d917",
+        "filename": "luciexe/build/step_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:38:57Z",
+      "side": 1,
+      "message": "StepView is a different (temporary) type than StepState. The goal is to avoid giving users a mutable handle to any of the important state. They just get a pointer to this StepView object, which is then discarded after the callback returns.",
+      "parentUuid": "fc8c7712_616a1a5c",
       "range": {
         "startLine": 65,
         "startChar": 1,
