@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "668ef891_5cfa2a12",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T19:46:05Z",
+      "side": 1,
+      "message": "Yup! This CL https://crrev.com/c/2599431 actually clear all my questions. I was very confused about how it is gonna be used while reviewing this CL.",
+      "parentUuid": "9b5f666f_e4aa17e7",
+      "range": {
+        "startLine": 37,
+        "startChar": 35,
+        "endLine": 37,
+        "endChar": 40
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "060ff157_6e29e513",
@@ -167,6 +191,30 @@
       "side": 1,
       "message": "No, because then that would imply the function allows users to dynamically change the type associated with a namespace; I don\u0027t want to allow this.\n\nI strongly prefer to push the type safety as close to the user as I can.",
       "parentUuid": "41344914_66ddc94b",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 6
+      },
+      "revId": "159cd4a41f7c2fdc7193f84a6a04ed39fa49135b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "239993c9_d3c2adc8",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T19:46:05Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7b7ad1c9_378e2d1a",
       "range": {
         "startLine": 68,
         "startChar": 0,
