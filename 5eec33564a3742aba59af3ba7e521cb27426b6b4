@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab5c4c43_63d7f12e",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T20:15:13Z",
+      "side": 1,
+      "message": "Ah.. missed that",
+      "parentUuid": "7483040c_4540c9db",
+      "range": {
+        "startLine": 110,
+        "startChar": 19,
+        "endLine": 110,
+        "endChar": 20
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fc8c7712_616a1a5c",
@@ -132,6 +156,30 @@
       "side": 1,
       "message": "StepView is a different (temporary) type than StepState. The goal is to avoid giving users a mutable handle to any of the important state. They just get a pointer to this StepView object, which is then discarded after the callback returns.",
       "parentUuid": "fc8c7712_616a1a5c",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "5eec33564a3742aba59af3ba7e521cb27426b6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80d42118_91a9db5c",
+        "filename": "luciexe/build/step_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T20:15:13Z",
+      "side": 1,
+      "message": "oh my bad. I saw StepView struct is defined here so I assumed all functions defined here are received by StepView instead of StepState.",
+      "parentUuid": "32ba5e98_3076d917",
       "range": {
         "startLine": 65,
         "startChar": 1,
