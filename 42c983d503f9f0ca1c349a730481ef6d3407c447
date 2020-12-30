@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "75db09bc_317c8b43",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T05:26:33Z",
+      "side": 1,
+      "message": "Nice!`",
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b969e475_c75751ab",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T05:26:33Z",
+      "side": 1,
+      "message": "Not related to this CL. But I\u0027m wondering if everything has moved to CV, will we still need this logic or is it replaced by, for example, querying the last cancelled Run for a given CL.",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 2
+      },
+      "revId": "42c983d503f9f0ca1c349a730481ef6d3407c447",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
