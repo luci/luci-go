@@ -16,6 +16,24 @@
       "message": "Doc lgtm.\n\nWhat is the plan for this mode? Will it be removed after the development of this library finishes? I think eventually we should panic when this library is called w/o build in the context.",
       "revId": "1f3250a338a5c516c15bdc9fbeb5593171085d2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff0414cc_12d6fc0c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-12-30T18:21:11Z",
+      "side": 1,
+      "message": "No, this is a long-term feature, for the reasons I documented in doc.go and the design doc. I believe it\u0027s important to be able to run this code without a Build in context (like, for example, as a CLI application). Otherwise you\u0027d have to write \"recipe code\" and \"normal code\" as two separate efforts. This way you can write a program or library as normal code, and then sprinkle steps in the middle without rendering that code useless outside the context of a build.\n\nIt also means that you can write tests for your code without setting up a Build, which I think will be useful.",
+      "parentUuid": "1f2edf5f_3fb6a5f3",
+      "revId": "1f3250a338a5c516c15bdc9fbeb5593171085d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
