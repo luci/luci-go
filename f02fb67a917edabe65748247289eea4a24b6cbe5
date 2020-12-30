@@ -16,6 +16,24 @@
       "message": "This leaves the job of figuring out what CLs digest looks like to the project manager.\n\nNote, that I intentionally removed how digest is computed OR how long it is from RunID description. I think we\u0027ll evolve this with time, but start with truncated cl_group_hash as planned.",
       "revId": "f02fb67a917edabe65748247289eea4a24b6cbe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fea3f89_eb44575a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-12-30T05:06:16Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "8c11faef_ae1ad5d5",
+      "revId": "f02fb67a917edabe65748247289eea4a24b6cbe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
