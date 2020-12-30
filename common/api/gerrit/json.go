@@ -479,3 +479,13 @@ func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
 		WebLinks:    pi.WebLinks,
 	}, nil
 }
+
+type pureRevertInfo struct {
+	IsPureRevert bool `json:"is_pure_revert"`
+}
+
+func (p *pureRevertInfo) ToProto() (*gerritpb.PureRevertInfo, error) {
+	return &gerritpb.PureRevertInfo{
+		IsPureRevert: p.IsPureRevert,
+	}, nil
+}

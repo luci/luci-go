@@ -345,6 +345,19 @@ func (c *client) GetRelatedChanges(ctx context.Context, req *gerritpb.GetRelated
 	return &gerritpb.GetRelatedChangesResponse{Changes: changes}, nil
 }
 
+func (c *client) GetPureRevert(ctx context.Context, req *gerritpb.GetPureRevertRequest, opts ...grpc.CallOption) (*gerritpb.PureRevertInfo, error) {
+	var resp pureRevertInfo
+	path := fmt.Sprintf("/changes/%s/pure_revert", gerritChangeIDForRouting(req.Number, req.Project))
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "pure revert").Err()
+	}
+	rr, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "decoding response").Err()
+	}
+	return rr, nil
+}
+
 func (c *client) ListFileOwners(ctx context.Context, req *gerritpb.ListFileOwnersRequest, opts ...grpc.CallOption) (*gerritpb.ListOwnersResponse, error) {
 	var resp []ownerInfo
 	params := url.Values{}
