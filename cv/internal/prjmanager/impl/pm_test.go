@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -57,9 +58,9 @@ func TestProjectLifeCycle(t *testing.T) {
 			events, err := eventbox.List(ctx, lProjectKey)
 			So(err, ShouldBeNil)
 			So(events, ShouldHaveLength, 0)
-			p := getProject(ctx, lProject)
+			p, ps := loadProjectEntities(ctx, lProject)
 			So(p.EVersion, ShouldEqual, 1)
-			So(p.Status, ShouldEqual, prjmanager.Status_STARTED)
+			So(ps.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			// Ensure first poller task gets executed.
@@ -82,9 +83,9 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 
-					p := getProject(ctx, lProject)
+					p, ps := loadProjectEntities(ctx, lProject)
 					So(p.EVersion, ShouldEqual, 3)
-					So(p.Status, ShouldEqual, prjmanager.Status_STOPPING)
+					So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 					// Must schedule a task per Run for cancelation on top of already
@@ -96,14 +97,14 @@ func TestProjectLifeCycle(t *testing.T) {
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
-						p := getProject(ctx, lProject)
-						So(p.Status, ShouldEqual, prjmanager.Status_STOPPING)
+						p, ps := loadProjectEntities(ctx, lProject)
+						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
 						So(p.IncompleteRuns, ShouldResemble, run.MakeIDs(lProject+"/222-cafe"))
 
 						So(prjmanager.RunFinished(ctx, run.ID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
-						p = getProject(ctx, lProject)
-						So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
+						p, ps = loadProjectEntities(ctx, lProject)
+						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
 						So(p.IncompleteRuns, ShouldBeEmpty)
 					})
 				})
@@ -115,24 +116,27 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 
-				p := getProject(ctx, lProject)
+				p, ps := loadProjectEntities(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
-				So(p.Status, ShouldEqual, prjmanager.Status_STOPPED)
+				So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
 				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			})
 		})
 	})
 }
 
-func getProject(ctx context.Context, luciProject string) *prjmanager.Project {
+func loadProjectEntities(ctx context.Context, luciProject string) (*prjmanager.Project, *prjmanager.ProjectStateOffload) {
 	p := &prjmanager.Project{ID: luciProject}
-	switch err := datastore.Get(ctx, p); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil
-	default:
-		So(err, ShouldBeNil)
-		return p
+	ps := &prjmanager.ProjectStateOffload{
+		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject),
 	}
+	err := datastore.Get(ctx, p, ps)
+	if merr, ok := err.(errors.MultiError); ok && merr[0] == datastore.ErrNoSuchEntity {
+		So(merr[1], ShouldEqual, datastore.ErrNoSuchEntity)
+		return nil, nil
+	}
+	So(err, ShouldBeNil)
+	return p, ps
 }
 
 func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {

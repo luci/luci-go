@@ -55,21 +55,28 @@ func pokePMTask(ctx context.Context, luciProject string) error {
 // projectManager implements eventbox.Processor.
 type projectManager struct {
 	luciProject string
+
+	// modified by LoadState and read by SaveState.
+	stateOffload *prjmanager.ProjectStateOffload
 }
 
 // LoadState is called to load the state before a transaction.
 func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	p := &prjmanager.Project{ID: pm.luciProject}
-	switch err := datastore.Get(ctx, p); {
-	case err == datastore.ErrNoSuchEntity:
+	pm.stateOffload = &prjmanager.ProjectStateOffload{
+		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
+	}
+	err := datastore.Get(ctx, p, pm.stateOffload)
+	merr, multiple := err.(errors.MultiError)
+	switch {
+	case multiple && merr[0] == datastore.ErrNoSuchEntity:
 		return &state{}, 0, nil
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(
-			transient.Tag).Err()
+		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	default:
 		s := &state{
-			Status:         p.Status,
-			ConfigHash:     p.ConfigHash,
+			Status:         pm.stateOffload.Status,
+			ConfigHash:     pm.stateOffload.ConfigHash,
 			IncompleteRuns: p.IncompleteRuns,
 		}
 		return s, eventbox.EVersion(p.EVersion), nil
@@ -80,8 +87,7 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (
-	[]eventbox.Transition, error) {
+func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, error) {
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)
@@ -113,15 +119,21 @@ func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion,
 // returned before.
 func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	s := st.(*state)
-	p := &prjmanager.Project{
-		ID:         pm.luciProject,
-		EVersion:   int(ev),
-		UpdateTime: clock.Now(ctx).UTC(),
+	entities := make([]interface{}, 1, 2)
+	entities[0] = &prjmanager.Project{
+		ID:             pm.luciProject,
+		EVersion:       int(ev),
+		UpdateTime:     clock.Now(ctx).UTC(),
+		IncompleteRuns: s.IncompleteRuns,
 	}
-	p.Status = s.Status
-	p.ConfigHash = s.ConfigHash
-	p.IncompleteRuns = s.IncompleteRuns
-	if err := datastore.Put(ctx, p); err != nil {
+	if s.ConfigHash != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
+		entities = append(entities, &prjmanager.ProjectStateOffload{
+			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
+			Status:     s.Status,
+			ConfigHash: s.ConfigHash,
+		})
+	}
+	if err := datastore.Put(ctx, entities...); err != nil {
 		return errors.Annotate(err, "failed to put Project").Tag(transient.Tag).Err()
 	}
 	return nil
