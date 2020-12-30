@@ -112,7 +112,8 @@ type RunCL struct {
 	_kind string `gae:"$kind,RunCL"`
 
 	// ID is the CL internal ID.
-	ID     common.CLID    `gae:"$id"`
-	Run    *datastore.Key `gae:"$parent"`
-	Detail *changelist.Snapshot
+	ID      common.CLID    `gae:"$id"`
+	Run     *datastore.Key `gae:"$parent"`
+	Detail  *changelist.Snapshot
+	Trigger *Trigger
 }

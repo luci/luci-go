@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
@@ -28,7 +27,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -40,7 +38,6 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -154,9 +151,10 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 					mode = cvbqpb.Mode_DRY_RUN
 				}
 				for i, cl := range runCLs {
-					trigger, err := findTrigger(cl.Detail.GetGerrit().GetInfo(), r.Mode)
-					if err != nil {
-						return errors.Annotate(err, "find trigger for CL %d", cl.ID).Err()
+					trigger := &migrationpb.RunCL_Trigger{
+						Email:     cl.Trigger.GetEmail(),
+						Time:      cl.Trigger.GetTime(),
+						AccountId: cl.Trigger.GetGerritAccountId(),
 					}
 					mcl := &migrationpb.RunCL{
 						Id: int64(cl.ID),
@@ -247,64 +245,4 @@ func clsOf(a *cvbqpb.Attempt) string {
 	}
 	emit(len(a.GerritChanges))
 	return buf.String()
-}
-
-const cqLabelName = "Commit-Queue"
-
-var modeToVoteValue = map[run.Mode]int32{
-	run.DryRun:  1,
-	run.FullRun: 2,
-}
-
-func findTrigger(ci *gerritpb.ChangeInfo, mode run.Mode) (*migrationpb.RunCL_Trigger, error) {
-	li := ci.GetLabels()[cqLabelName]
-	if li == nil {
-		return nil, errors.Reason("missing LabelInfo for label %q", cqLabelName).Err()
-	}
-
-	voteVal, ok := modeToVoteValue[mode]
-	if !ok {
-		return nil, errors.Reason("mode %q doesn't have a corresponding vote value for label %q", mode, cqLabelName).Err()
-	}
-
-	// Check if there was a previous attempt that got canceled by means of a
-	// comment. Normally, CQDaemon would remove appropriate label, but in case
-	// of ACLs misconfiguration preventing CQDaemon from removing votes on
-	// behalf of users, CQDaemon will abort attempt by posting special comment.
-	var prevAttemptTs time.Time
-	for _, msg := range ci.GetMessages() {
-		if bd, ok := botdata.Parse(msg); ok {
-			if bd.Action == botdata.Cancel && bd.Revision == ci.GetCurrentRevision() && bd.TriggeredAt.After(prevAttemptTs) {
-				prevAttemptTs = bd.TriggeredAt
-			}
-		}
-	}
-
-	// Trigger is the earliest vote that has value == `voteVal`.
-	var ret *migrationpb.RunCL_Trigger
-	for _, ai := range li.GetAll() {
-		if ai.GetValue() != voteVal {
-			continue
-		}
-		if voteTs := ai.GetDate().AsTime(); voteTs.After(prevAttemptTs) && (ret == nil || voteTs.Before(ret.GetTime().AsTime())) {
-			ret = &migrationpb.RunCL_Trigger{
-				Time:      ai.GetDate(),
-				AccountId: ai.GetUser().GetAccountId(),
-				Email:     ai.GetUser().GetEmail(),
-			}
-		}
-	}
-	if ret == nil {
-		return nil, errors.Reason("no vote found for %q +%d", cqLabelName, voteVal).Err()
-	}
-
-	// Gerrit may copy CQ vote(s) to next patchset in some project configurations.
-	// In such cases, CQ vote timestamp will be *before* new patchset creation,
-	// and yet *this* CQ attempt started only when new patchset was created.
-	// So, attempt start is the latest of timestamps (CQ vote, this patchset
-	// creation).
-	if revisionTs := ci.Revisions[ci.GetCurrentRevision()].GetCreated(); ret.GetTime().AsTime().Before(revisionTs.AsTime()) {
-		ret.Time = revisionTs
-	}
-	return ret, nil
 }
