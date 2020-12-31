@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -258,8 +259,72 @@ func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 }
 
 func (rb *RunBuilder) save(ctx context.Context) error {
-	// TODO(tandrii): implement.
-	return nil
+	rb.dsBatcher.reset()
+	// This will be written to .CreateTime | .UpdateTime of entities, of which
+	// run.Run will be returned to the caller of RunBuilder.Create, so round it
+	// now s.t. returned value is exactly what would be loadable from Datstore.
+	now := datastore.RoundTime(clock.Now(ctx).UTC())
+	rb.saveRun(ctx, now)
+	for i := range rb.InputCLs {
+		rb.saveRunCL(ctx, i)
+		rb.saveCL(ctx, i, now)
+	}
+	if err := rb.savePMNotification(ctx); err != nil {
+		return err
+	}
+	return rb.dsBatcher.put(ctx)
+}
+
+func (rb *RunBuilder) saveRun(ctx context.Context, now time.Time) {
+	ids := make([]common.CLID, len(rb.InputCLs))
+	for i, cl := range rb.InputCLs {
+		ids[i] = cl.ID
+	}
+	rb.run = &run.Run{
+		ID:                  rb.run.ID,
+		EVersion:            1,
+		CreationOperationID: rb.OperationID,
+		CreateTime:          now,
+		UpdateTime:          now,
+		// EndTime & StartTime intentionally left unset.
+
+		CLs:           ids,
+		ConfigGroupID: rb.ConfigGroupID,
+		Mode:          rb.Mode,
+		Status:        run.Status_PENDING,
+		Owner:         rb.Owner,
+	}
+	rb.dsBatcher.register(rb.run, func(err error) error {
+		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()
+	})
+}
+
+func (rb *RunBuilder) saveRunCL(ctx context.Context, index int) {
+	inputCL := rb.InputCLs[index]
+	entity := &run.RunCL{
+		Run:     datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
+		ID:      inputCL.ID,
+		Trigger: inputCL.TriggerInfo,
+		Detail:  rb.cls[index].Snapshot,
+	}
+	rb.dsBatcher.register(entity, func(err error) error {
+		return errors.Annotate(err, "failed to save RunCL %d", inputCL.ID).Tag(transient.Tag).Err()
+	})
+}
+
+func (rb *RunBuilder) saveCL(ctx context.Context, index int, now time.Time) {
+	cl := rb.cls[index]
+	cl.EVersion++
+	cl.UpdateTime = now
+	cl.IncompleteRuns.InsertSorted(rb.runID)
+	rb.dsBatcher.register(cl, func(err error) error {
+		return errors.Annotate(err, "failed to save CL %d", cl.ID).Tag(transient.Tag).Err()
+	})
+}
+func (rb *RunBuilder) savePMNotification(ctx context.Context) error {
+	// TODO(tandrii): consider also using rb.dsBatcher here,
+	// or at least doing this concurrently with rb.dsBatcher.put.
+	return runStartedInternal(ctx, rb.runID)
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
