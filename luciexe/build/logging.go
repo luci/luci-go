@@ -15,8 +15,13 @@
 package build
 
 import (
+	"bytes"
+	"context"
 	"io"
+	"strings"
+	"sync"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
@@ -56,3 +61,86 @@ type Loggable interface {
 func LogFromFile(l Loggable, name string, filepath string, opts ...streamclient.Option) error {
 	panic("implement me")
 }
+
+type loggingWriter struct {
+	mu   sync.Mutex
+	buf  *bytes.Buffer
+	logf func(string)
+}
+
+var _ io.WriteCloser = (*loggingWriter)(nil)
+
+func makeLoggingWriter(ctx context.Context, name string) io.WriteCloser {
+	ctx = logging.SetField(ctx, "build.logname", name)
+	targetLevel := logging.Info
+	if strings.HasPrefix(name, "$") {
+		targetLevel = logging.Debug
+	}
+	if !logging.IsLogging(ctx, targetLevel) {
+		return nopStream{}
+	}
+
+	rawLogFn := logging.Get(ctx).LogCall
+	return &loggingWriter{
+		buf: &bytes.Buffer{},
+		logf: func(line string) {
+			rawLogFn(targetLevel, 0, "%s", []interface{}{line})
+		},
+	}
+}
+
+func (l *loggingWriter) Write(bs []byte) (n int, err error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if n, err = l.buf.Write(bs); err != nil {
+		return
+	}
+	l.drainLines()
+	return
+}
+
+func (l *loggingWriter) drainLines() {
+	maybeReadLine := func() (string, bool) {
+		i := bytes.IndexByte(l.buf.Bytes(), '\n')
+		if i < 0 {
+			return "", false
+		}
+		line := make([]byte, i+1)
+		l.buf.Read(line) // cannot panic
+		return string(line), true
+	}
+
+	for {
+		line, ok := maybeReadLine()
+		if !ok {
+			return
+		}
+		l.logf(line)
+	}
+}
+
+func (l *loggingWriter) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.drainLines()
+	if l.buf.Len() > 0 {
+		l.logf(l.buf.String())
+	}
+	return nil
+}
+
+type nopStream struct{}
+
+var _ io.WriteCloser = nopStream{}
+
+func (n nopStream) Write(dg []byte) (int, error) { return len(dg), nil }
+func (n nopStream) Close() error                 { return nil }
+
+type nopDatagramStream struct{}
+
+var _ streamclient.DatagramStream = nopDatagramStream{}
+
+func (n nopDatagramStream) WriteDatagram(dg []byte) error { return nil }
+func (n nopDatagramStream) Close() error                  { return nil }
