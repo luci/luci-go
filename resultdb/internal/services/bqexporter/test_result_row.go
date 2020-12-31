@@ -258,10 +258,15 @@ func (i *rowInput) row() *TestResultRow {
 		ret.SummaryHTML = "[Trimmed] " + ret.SummaryHTML[:maxSummaryLength]
 	}
 
-	if tr.TestLocation != nil {
+	// Import test location.
+	testLoc := tr.TestMetadata.Location
+	if testLoc == nil {
+		testLoc = tr.TestLocation
+	}
+	if testLoc != nil {
 		ret.TestLocation = &TestLocation{
-			FileName: tr.TestLocation.FileName,
-			Line:     int(tr.TestLocation.Line),
+			FileName: testLoc.FileName,
+			Line:     int(testLoc.Line),
 		}
 	}
 

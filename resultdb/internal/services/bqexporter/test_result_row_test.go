@@ -43,9 +43,11 @@ func TestGenerateBQRow(t *testing.T) {
 			},
 		}
 		Convey("TestLocation", func() {
-			input.tr.TestLocation = &pb.TestLocation{
-				FileName: "//a_test.go",
-				Line:     54,
+			input.tr.TestMetadata = &pb.TestMetadata{
+				Location: &pb.TestLocation{
+					FileName: "//a_test.go",
+					Line:     54,
+				},
 			}
 			actual := input.row()
 			So(actual.TestLocation, ShouldResemble, &TestLocation{
