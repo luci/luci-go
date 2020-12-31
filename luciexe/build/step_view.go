@@ -34,9 +34,9 @@ type StepView struct {
 // initializes StartTime.
 //
 // This must only be called for ScheduleStep invocations. If the step is already
-// started (e.g. it was produced via Step() or Start() was already called), this
-// panics.
-func (s *StepState) Start() {
+// started (e.g. it was produced via StartStep() or Start() was already called),
+// this panics.
+func (s *Step) Start() {
 	s.mutate(func() {
 		if status := s.stepPb.GetStatus(); status != bbpb.Status_SCHEDULED {
 			panic(errors.Reason("cannot start step %q: not SCHEDULED: %s", s.stepPb.Name, status).Err())
@@ -51,7 +51,7 @@ func (s *StepState) Start() {
 	})
 }
 
-// Modify allows you to atomically manipulate the StepView for this StepState.
+// Modify allows you to atomically manipulate the StepView for this Step.
 //
 // Blocking in Modify will block other callers of Modify and Set*, as well as
 // the ability for the build State to be sent (with the function set by
@@ -59,7 +59,7 @@ func (s *StepState) Start() {
 //
 // The Set* methods should be preferred unless you need to read/modify/write
 // View items.
-func (s *StepState) Modify(cb func(*StepView)) {
+func (s *Step) Modify(cb func(*StepView)) {
 	logSM := ""
 	s.mutate(func() {
 		oldView := StepView{s.stepPb.SummaryMarkdown}
@@ -76,7 +76,7 @@ func (s *StepState) Modify(cb func(*StepView)) {
 }
 
 // SetSummaryMarkdown atomically sets the step's SummaryMarkdown field.
-func (s *StepState) SetSummaryMarkdown(summaryMarkdown string) {
+func (s *Step) SetSummaryMarkdown(summaryMarkdown string) {
 	s.Modify(func(v *StepView) {
 		v.SummaryMarkdown = summaryMarkdown
 	})

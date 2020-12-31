@@ -28,7 +28,7 @@ import (
 // Loggable is the common interface for build entities which have log data
 // associated with them.
 //
-// Implemented by State and StepState.
+// Implemented by State and Step.
 //
 // Logs all have a name which is an arbitrary bit of text to identify the log to
 // human users (it will appear as the link on the build UI page). In particular
