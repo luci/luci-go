@@ -15,111 +15,104 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/api/iterator"
+	"github.com/maruel/subcommands"
 
-	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/errors"
 )
 
-// durations calls the callback for each found test duration.
-func (r *presubmitHistoryRun) durations(ctx context.Context, callback func(*evalpb.TestDuration) error) error {
-	q, err := r.bqQuery(ctx, testDurationsSQL)
-	if err != nil {
-		return err
+func cmdFetchDurations(authOpt *auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: `fetch-durations`,
+		ShortDesc: "fetch test duration data",
+		LongDesc: text.Doc(`
+			Fetch test duration data, suitable for selection strategy evaluation.
+			For format details, see comments of TestDurationRecord protobuf message.
+		`),
+		CommandRun: func() subcommands.CommandRun {
+			r := &fetchDurationsRun{}
+			r.authOpt = authOpt
+			r.RegisterBaseFlags(&r.Flags)
+			r.Flags.Float64Var(&r.frac, "frac", 0.001, "Fraction of the data to fetch")
+			r.Flags.DurationVar(&r.minDuration, "min-duration", time.Second, "Minimum duration to fetch")
+			return r
+		},
+	}
+}
+
+type fetchDurationsRun struct {
+	baseCommandRun
+	baseHistoryRun
+	frac        float64
+	minDuration time.Duration
+}
+
+func (r *fetchDurationsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, r, env)
+	if len(args) != 0 {
+		return r.done(errors.New("unexpected positional arguments"))
 	}
 
-	q.Parameters = append(q.Parameters,
+	if err := r.baseHistoryRun.Init(ctx); err != nil {
+		return r.done(err)
+	}
+
+	return r.done(r.runAndFetchResults(
+		ctx,
+		testDurationsSQL,
 		bigquery.QueryParameter{
 			Name:  "frac",
-			Value: r.durationDataFrac,
+			Value: r.frac,
 		},
 		bigquery.QueryParameter{
 			Name:  "minDuration",
 			Value: r.minDuration.Seconds(),
 		},
-	)
-
-	it, err := q.Read(ctx)
-	if err != nil {
-		return err
-	}
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	withoutChangedFiles := make(chan *evalpb.TestDuration)
-	eg.Go(func() error {
-		defer close(withoutChangedFiles)
-		for {
-			var row durationRow
-			switch err := it.Next(&row); {
-			case err == iterator.Done:
-				return nil
-			case err != nil:
-				return err
-			}
-
-			select {
-			case withoutChangedFiles <- row.proto():
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-	})
-
-	for i := 0; i < 100; i++ {
-		eg.Go(func() error {
-			for td := range withoutChangedFiles {
-				switch err := r.populateChangedFiles(ctx, td.Patchsets[0]); {
-				case err == errPatchsetDeleted:
-					continue
-				case err != nil:
-					return err
-				}
-				if err := callback(td); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-	}
-
-	return eg.Wait()
-}
-
-type durationRow struct {
-	Change      int
-	Patchset    int
-	TestVariant *evalpb.TestVariant
-	Duration    float64
-}
-
-func (r *durationRow) proto() *evalpb.TestDuration {
-	return &evalpb.TestDuration{
-		Patchsets: []*evalpb.GerritPatchset{
-			{
-				Change: &evalpb.GerritChange{
-					// Assume all Chromium source code is in
-					// https://chromium.googlesource.com/chromium/src
-					// TOOD(nodir): make it fail if it is not.
-					Host:    "chromium-review.googlesource.com",
-					Project: "chromium/src",
-					Number:  int64(r.Change),
-				},
-				Patchset: int64(r.Patchset),
-			},
-		},
-		TestVariant: r.TestVariant,
-		Duration:    ptypes.DurationProto(time.Duration(r.Duration * 1e9)),
-	}
+	))
 }
 
 const testDurationsSQL = `
 WITH
+	affected_files_raw AS (
+		SELECT
+			ps.change,
+			ps.patchset,
+			-- Extract affected files from the property
+			-- and replace "src/" prefix with "//".
+			ARRAY(
+					SELECT REGEXP_REPLACE(JSON_EXTRACT_SCALAR(file_name_json, "$"), "^src/", "//")
+					FROM UNNEST(JSON_EXTRACT_ARRAY(b.output.properties, "$.affected_files.first_100")) file_name_json
+			) AS files,
+		FROM cr-buildbucket.chromium.builds b, b.input.gerrit_changes ps
+		WHERE create_time BETWEEN @startTime and TIMESTAMP_ADD(@endTime, INTERVAL 1 DAY)
+			-- Skip patchsets that modified >100 files, because we don't have the full
+			-- list. This also skips builds that don't have affected flies, e.g. CI builds,
+			-- because the value is NULL.
+			AND CAST(JSON_EXTRACT(b.output.properties, "$.affected_files.total_count") as FLOAT64) <= 100
+
+			-- Ignore any builds that modified non-src.git files.
+			AND NOT EXISTS (
+				SELECT 0
+				FROM UNNEST(JSON_EXTRACT_ARRAY(b.output.properties, "$.affected_files.first_100")) f
+				-- The leading quote is there because it is a JSON string.
+				WHERE f NOT LIKE '"src/%'
+			)
+	),
+
+	affected_files AS (
+		-- Choose the longest file list.
+		-- File lists for the same patchset can be different if the parent CL landed
+		-- between bot_updates of different tryjobs.
+		SELECT change, patchset, ARRAY_AGG(af ORDER BY ARRAY_LENGTH(files) DESC LIMIT 1)[OFFSET(0)].files
+		FROM affected_files_raw af
+		GROUP BY change, patchset
+	),
+
 	tryjobs AS (
 		SELECT
 			b.id,
@@ -148,15 +141,33 @@ WITH
 			-- TODO(nodir): remove after crbug.com/1017288 is fixed.
 			AND (test_id NOT LIKE 'ninja://:blink_web_tests/%' OR test_location.file_name LIKE '//third_party/%')
 	)
+
+-- Join all tables and produce rows in the TestDurationRecord protojson format.
 SELECT
-	ps.change as Change,
-	ps.patchset as Patchset,
-	STRUCT(
-		test_id as ID,
-		ARRAY(SELECT FORMAT("%s:%s", key, value) kv FROM UNNEST(variant) ORDER BY kv) as Variant,
-		file_name as FileName
-	) as TestVariant,
-	duration as Duration
+	[STRUCT(
+		STRUCT(
+			"chromium-review.googlesource.com" AS host,
+			"chromium/src" AS project,
+			ps.change AS number
+		) AS change,
+		ps.patchset,
+		ANY_VALUE(ARRAY(
+			SELECT AS STRUCT
+				"https://chromium.googlesource.com/chromium/src" AS repo,
+				f as path
+			FROM UNNEST(af.files) f
+		)) AS changedFiles
+	)] AS patchsets,
+	ARRAY_AGG(STRUCT(
+		STRUCT(
+			test_id AS id,
+			ARRAY(SELECT FORMAT("%s:%s", key, value) kv FROM UNNEST(variant) ORDER BY kv) as variant,
+			file_name as fileName
+		) as testVariant,
+		FORMAT("%fs", duration) as duration
+	)) AS testDurations,
 FROM tryjobs t
 JOIN test_results tr ON t.id = tr.build_id
+JOIN affected_files af ON ps.change = af.change AND ps.patchset = af.patchset
+GROUP BY ps.change, ps.patchset
 `
