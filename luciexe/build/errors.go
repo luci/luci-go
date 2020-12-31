@@ -15,8 +15,21 @@
 package build
 
 import (
+	"context"
+
+	"github.com/golang/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/errors"
 )
+
+type buildStatus struct {
+	status  bbpb.Status
+	details *bbpb.StatusDetails
+}
+
+var statusTag = errors.NewTagKey("build Status")
 
 // AttachStatus attaches a buildbucket status (and details) to a given error.
 //
@@ -26,11 +39,20 @@ import (
 // AttachStatus allows overriding the attached status if the error already has
 // one.
 //
-// This panics if the status is a non-terminal status like SCHEDULED or RUNNING.
+// This panics if the status is a non-terminal status like SCHEDULED or STARTED.
 //
 // This is a no-op if the error is nil.
-func AttachStatus(error, bbpb.Status, *bbpb.StatusDetails) error {
-	panic("implement")
+func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) error {
+	if !protoutil.IsEnded(status) {
+		panic(errors.Reason("AttachStatus cannot be used with non-terminal status %q", status).Err())
+	}
+	if err == nil {
+		return nil
+	}
+	if details != nil {
+		details = proto.Clone(details).(*bbpb.StatusDetails)
+	}
+	return errors.TagValue{Key: statusTag, Value: &buildStatus{status, details}}.Apply(err)
 }
 
 // ExtractStatus retrieves the Buildbucket status (and details) from a given
@@ -46,6 +68,25 @@ func AttachStatus(error, bbpb.Status, *bbpb.StatusDetails) error {
 //
 // This function is used internally by StepState.End and State.End, but is
 // provided publically for completeness.
-func ExtractStatus(error) (bbpb.Status, *bbpb.StatusDetails) {
-	panic("implement")
+func ExtractStatus(err error) (bbpb.Status, *bbpb.StatusDetails) {
+	if err == nil {
+		return bbpb.Status_SUCCESS, nil
+	}
+	if value, ok := errors.TagValueIn(statusTag, err); ok {
+		bs := value.(*buildStatus)
+		details := bs.details
+		if details != nil {
+			details = proto.Clone(details).(*bbpb.StatusDetails)
+		}
+		return bs.status, details
+	}
+	switch err {
+	case context.Canceled:
+		return bbpb.Status_CANCELED, nil
+	case context.DeadlineExceeded:
+		return bbpb.Status_INFRA_FAILURE, &bbpb.StatusDetails{
+			Timeout: &bbpb.StatusDetails_Timeout{},
+		}
+	}
+	return bbpb.Status_FAILURE, nil
 }
