@@ -21,6 +21,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"google.golang.org/protobuf/proto"
 )
 
 // State is the state of the current Build.
@@ -37,6 +38,9 @@ import (
 type State struct {
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
+
+	stepsMu   sync.Mutex
+	stepNames nameTracker
 }
 
 var _ Loggable = (*State)(nil)
@@ -64,7 +68,13 @@ var _ Loggable = (*State)(nil)
 // `recover()` the panic. Please use conventional Go error handling and control
 // flow mechanisms.
 func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
-	panic("not implemented")
+	ret := &State{
+		buildPb: proto.Clone(initial).(*bbpb.Build),
+	}
+	for _, opt := range opts {
+		opt(ret)
+	}
+	return ret, setState(ctx, ctxState{ret, ""})
 }
 
 // End sets the build's final status, according to `err` (See ExtractStatus).
@@ -135,5 +145,14 @@ func (s *State) registerStep(step *bbpb.Step) *bbpb.Step {
 	if s == nil {
 		return step
 	}
-	panic("not implemented")
+
+	s.excludeCopy(func() {
+		s.stepsMu.Lock()
+		defer s.stepsMu.Unlock()
+
+		step.Name = s.stepNames.resolveName(step.Name)
+		s.buildPb.Steps = append(s.buildPb.Steps, step)
+	})
+
+	return step
 }
