@@ -71,7 +71,7 @@ func (r *presubmitHistoryRun) rejections(ctx context.Context, callback func(*eva
 		}
 
 		rej := &evalpb.Rejection{
-			FailedTestVariants: []*evalpb.TestVariant{row.FailedTestVariant.proto()},
+			FailedTestVariants: []*evalpb.TestVariant{row.FailedTestVariant},
 		}
 		// Finalize the current rejection if this patchset is different.
 		if curChange != row.Change || curPS != row.Patchset {
@@ -106,7 +106,7 @@ type rejectionRow struct {
 	Change            int
 	Patchset          int
 	Timestamp         time.Time
-	FailedTestVariant testVariantRow
+	FailedTestVariant *evalpb.TestVariant
 }
 
 func (r *rejectionRow) populatePatchsetInfo(rej *evalpb.Rejection) {
@@ -122,27 +122,6 @@ func (r *rejectionRow) populatePatchsetInfo(rej *evalpb.Rejection) {
 		Patchset: int64(r.Patchset),
 	}}
 	rej.Timestamp, _ = ptypes.TimestampProto(r.Timestamp)
-}
-
-type testVariantRow struct {
-	ID       string
-	FileName string
-	Variant  []struct {
-		Key   string
-		Value string
-	}
-}
-
-func (t *testVariantRow) proto() *evalpb.TestVariant {
-	ret := &evalpb.TestVariant{
-		Id:       t.ID,
-		FileName: t.FileName,
-		Variant:  make(map[string]string, len(t.Variant)),
-	}
-	for _, kv := range t.Variant {
-		ret.Variant[kv.Key] = kv.Value
-	}
-	return ret
 }
 
 // rejectedPatchSetsSQL is a BigQuery query that returns patchsets with test
@@ -250,8 +229,8 @@ const rejectedPatchSetsSQL = `
 		patchset as Patchset,
 		ps_approx_timestamp as Timestamp,
 		STRUCT(
-			test_id as ID,
-			variant as Variant,
+			test_id as Id,
+			ARRAY(SELECT FORMAT("%s:%s", key, value) kv FROM UNNEST(variant) ORDER BY kv) as Variant,
 			file_name as FileName
 		) as FailedTestVariant
 	FROM failed_test_variants_per_ps

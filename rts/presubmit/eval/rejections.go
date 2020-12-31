@@ -16,6 +16,7 @@ package eval
 
 import (
 	"sort"
+	"strings"
 
 	"go.chromium.org/luci/rts"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -76,7 +77,8 @@ func (p *rejectionPrinter) testVariant(testVariants []*evalpb.TestVariant) {
 	byVariant := map[string][]*evalpb.TestVariant{}
 	var keys []string
 	for _, tv := range testVariants {
-		key := variantString(tv.Variant)
+		sort.Strings(tv.Variant) // a side effect, but innocuous.
+		key := strings.Join(tv.Variant, " | ")
 		tests, ok := byVariant[key]
 		byVariant[key] = append(tests, tv)
 		if !ok {
