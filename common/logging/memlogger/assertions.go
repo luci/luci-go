@@ -42,8 +42,12 @@ func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
 
 		data, ok = expected[2].(map[string]interface{})
 		if !ok {
-			return fmt.Sprintf(
-				"Third argument to this assertion must be an map[string]interface{} (was %T)", expected[2])
+			fields, ok := expected[2].(logging.Fields)
+			if !ok {
+				return fmt.Sprintf(
+					"Third argument to this assertion must be an map[string]interface{} (was %T)", expected[2])
+			}
+			data = fields
 		}
 		fallthrough
 	case 2:

@@ -17,6 +17,7 @@ package build
 import (
 	"context"
 	"io"
+	"sync"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
@@ -33,7 +34,10 @@ import (
 //
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
-type State struct{}
+type State struct {
+	copyExclusionMu sync.RWMutex
+	buildPb         *bbpb.Build
+}
 
 var _ Loggable = (*State)(nil)
 
@@ -97,4 +101,39 @@ func (*State) Log(name string, opts ...streamclient.Option) (io.WriteCloser, err
 // You must close the stream when you're done with it.
 func (*State) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
 	panic("implement")
+}
+
+// private functions
+
+type ctxState struct {
+	state *State
+
+	// stepPrefix is the full step prefix including trailing "|"
+	stepPrefix string
+}
+
+var contextStateKey = "holds a ctxState"
+
+func setState(ctx context.Context, state ctxState) context.Context {
+	return context.WithValue(ctx, &contextStateKey, state)
+}
+
+func getState(ctx context.Context) ctxState {
+	ret, _ := ctx.Value(&contextStateKey).(ctxState)
+	return ret
+}
+
+func (s *State) excludeCopy(cb func()) {
+	if s != nil {
+		s.copyExclusionMu.RLock()
+		defer s.copyExclusionMu.RUnlock()
+	}
+	cb()
+}
+
+func (s *State) registerStep(step *bbpb.Step) *bbpb.Step {
+	if s == nil {
+		return step
+	}
+	panic("not implemented")
 }
