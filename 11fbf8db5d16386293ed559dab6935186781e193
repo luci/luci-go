@@ -159,6 +159,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b14259e_5f83404c",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-12-31T22:34:10Z",
+      "side": 1,
+      "message": "Thanks, SGTM",
+      "parentUuid": "c1eb2489_494d2394",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c756a9e2_94cc3e05",
