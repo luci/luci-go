@@ -125,7 +125,7 @@ func (g *Graph) ensureInitialized() {
 }
 
 // Node returns a node by its name.
-// Returns nil if the node is not found.
+// Returns nil if the node is not found or if the name is empty.
 // See also Node.Name().
 //
 // Idempotent: calling many times with the same name returns the same Node
@@ -138,8 +138,12 @@ func (g *Graph) Node(name string) filegraph.Node {
 	return nil
 }
 
-// node retrieves a graph node by name. Returns nil if it doesn't exist.
+// node retrieves a graph node by name.
+// Returns nil if it doesn't exist or if the name is empty.
 func (g *Graph) node(name string) *node {
+	if name == "" {
+		return nil
+	}
 	cur := &g.root
 	for _, component := range splitName(name) {
 		if cur = cur.children[component]; cur == nil {
