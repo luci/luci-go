@@ -33,8 +33,8 @@ var statusTag = errors.NewTagKey("build Status")
 
 // AttachStatus attaches a buildbucket status (and details) to a given error.
 //
-// If such an error is handled by StepState.End or State.End, that step/build
-// will have its status updated to match.
+// If such an error is handled by Step.End or State.End, that step/build will
+// have its status updated to match.
 //
 // AttachStatus allows overriding the attached status if the error already has
 // one.
@@ -66,8 +66,8 @@ func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) er
 //     context.DeadlineExceeded
 //   * (FAILURE, nil) otherwise
 //
-// This function is used internally by StepState.End and State.End, but is
-// provided publically for completeness.
+// This function is used internally by Step.End and State.End, but is provided
+// publically for completeness.
 func ExtractStatus(err error) (bbpb.Status, *bbpb.StatusDetails) {
 	if err == nil {
 		return bbpb.Status_SUCCESS, nil

@@ -50,8 +50,8 @@ func TestStepNoop(t *testing.T) {
 				So(step.Start, ShouldPanicLike, "cannot start step")
 			})
 
-			Convey("Step", func() {
-				step, ctx := Step(ctx, "some step")
+			Convey("StartStep", func() {
+				step, ctx := StartStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SCHEDULED")
@@ -65,14 +65,14 @@ func TestStepNoop(t *testing.T) {
 
 			Convey("Bad step name", func() {
 				So(func() {
-					Step(ctx, "bad | step")
+					StartStep(ctx, "bad | step")
 				}, ShouldPanicLike, "reserved character")
 			})
 		})
 
 		Convey("Step closure", func() {
 			Convey("SUCCESS", func() {
-				step, _ := Step(ctx, "some step")
+				step, ctx := StartStep(ctx, "some step")
 				step.End(nil)
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
 
@@ -82,10 +82,13 @@ func TestStepNoop(t *testing.T) {
 					So(func() { step.End(nil) }, ShouldPanicLike, "cannot mutate ended step")
 				})
 
+				Convey("cancels context as well", func() {
+					So(ctx.Err(), ShouldResemble, context.Canceled)
+				})
 			})
 
 			Convey("error", func() {
-				step, _ := Step(ctx, "some step")
+				step, _ := StartStep(ctx, "some step")
 				step.End(errors.New("bad stuff"))
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_FAILURE)
 
@@ -93,7 +96,7 @@ func TestStepNoop(t *testing.T) {
 			})
 
 			Convey("CANCELED", func() {
-				step, _ := Step(ctx, "some step")
+				step, _ := StartStep(ctx, "some step")
 				step.End(context.Canceled)
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_CANCELED)
 
@@ -101,7 +104,7 @@ func TestStepNoop(t *testing.T) {
 			})
 
 			Convey("panic", func() {
-				step, _ := Step(ctx, "some step")
+				step, _ := StartStep(ctx, "some step")
 				func() {
 					defer func() {
 						step.End(nil)
@@ -114,17 +117,25 @@ func TestStepNoop(t *testing.T) {
 			})
 
 			Convey("with SummaryMarkdown", func() {
-				step, _ := Step(ctx, "some step")
+				step, _ := StartStep(ctx, "some step")
 				step.SetSummaryMarkdown("cool story!")
 				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS\n  with SummaryMarkdown:\ncool story!")
+			})
+
+			Convey("closure of un-started step", func() {
+				step, ctx := ScheduleStep(ctx, "some step")
+				So(func() { step.End(nil) }, ShouldNotPanic)
+				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
+				So(step.stepPb.StartTime, ShouldNotBeNil)
+				So(ctx.Err(), ShouldResemble, context.Canceled)
 			})
 		})
 
 		Convey("Step logs", func() {
 			ctx := memlogger.Use(ctx)
 			logs := logging.Get(ctx).(*memlogger.MemLogger)
-			step, _ := Step(ctx, "some step")
+			step, _ := StartStep(ctx, "some step")
 
 			Convey(`text`, func() {
 				log, err := step.Log("a log")

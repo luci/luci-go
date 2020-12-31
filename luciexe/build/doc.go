@@ -49,9 +49,9 @@
 //     libraries should handle having no configuration in the context if this is
 //     possible.
 //   * There will be no *State object, because there is no Start call.
-//   * Step/ScheduleStep will return a *StepState which is detached. Step
+//   * StartStep/ScheduleStep will return a *Step which is detached. Step
 //     namespacing will still work in context (but name deduplication will not).
-//   * The result of State.Modify/StepState.Modify (and Set) calls will be
+//   * The result of State.Modify/Step.Modify (and Set) calls will be
 //     logged at DEBUG.
 //   * Step scheduled/started/ended messages will be logged at INFO.
 //     Ended log messages will include the final summary markdown as well.

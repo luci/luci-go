@@ -29,7 +29,7 @@ import (
 // "End"ed, you can manipulate it with the State's various methods.
 //
 // The State is preserved in the context.Context for use with the ScheduleStep
-// and Step functions. These will add a new manipulatable step to the build
+// and StartStep functions. These will add a new manipulatable step to the build
 // State.
 //
 // All manipulations to the build State will result in an invocation of the
