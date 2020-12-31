@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6a665b77_4bff741d",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-31T01:22:20Z",
+      "side": 1,
+      "message": "it does, but cl.Snapshot will be loaded anyway from datastore as part of loadCLs, it ought to be the same Snapshot.\n\nNote also that prjmanager itself doesn\u0027t store Snapshots, only the run.Trigger.\nHence, prjmanager will effectively need to load CL twice:\n  1. Decide to start a run based on (triggerInfo + basic CL metadata)\n  2. Load snapshots \n  3. Init RunBuilder using data from #2.\n  4. RunBuilder.Create()\n  4.1. LoadCLs\n  4.2. Write RunCLs with snapshots.\n\nThe #2 is only needed for compat with CQDaemon.",
+      "parentUuid": "5a478e5b_25b0ccab",
+      "range": {
+        "startLine": 66,
+        "startChar": 39,
+        "endLine": 66,
+        "endChar": 79
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4fe80020_8e059466",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 1
@@ -54,6 +78,30 @@
       "writtenOn": "2020-12-30T22:20:56Z",
       "side": 1,
       "message": "or \"reads all non-CL entities from datastore that are required for a Run\"",
+      "range": {
+        "startLine": 134,
+        "startChar": 14,
+        "endLine": 134,
+        "endChar": 50
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6654ba4_d54e012a",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-31T01:22:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fe80020_8e059466",
       "range": {
         "startLine": 134,
         "startChar": 14,
@@ -89,6 +137,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c1eb2489_494d2394",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-31T01:22:20Z",
+      "side": 1,
+      "message": "Well, it\u0027s not implemented, so nothing to write about yet.\n\nYou have a very good question about why not bundle CLs in the same spot.\n\nI originally used a single multi-get for everything in my quick and dirty approach.\nThen, I started splitting \u0026 cleaning my code into CLs for review, and I thought that changelist.BatchUpdate is better.\nI\u0027ve just re-checked it\u0027s code, and I no longer think it reduces cognitive load.\n\nSince I wasn\u0027t able to cleanup my code to reviewable chunks, \nI\u0027ll keep thinking of the best way to do it and will sent you CLs on Monday -- maybe I\u0027ll inline CLBatchOp into this code.",
+      "parentUuid": "952e4e9d_c4a43557",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c756a9e2_94cc3e05",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 1
@@ -100,6 +172,30 @@
       "writtenOn": "2020-12-30T22:20:56Z",
       "side": 1,
       "message": "Nit: Could this be unixMicrosecs? (For consistency)",
+      "range": {
+        "startLine": 156,
+        "startChar": 2,
+        "endLine": 156,
+        "endChar": 11
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "997e6a1c_b00adee5",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-31T01:22:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c756a9e2_94cc3e05",
       "range": {
         "startLine": 156,
         "startChar": 2,
@@ -123,6 +219,30 @@
       "writtenOn": "2020-12-30T22:20:56Z",
       "side": 1,
       "message": "separator",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 9
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "514308d0_47185956",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-12-31T01:22:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "446344d7_4329bbf7",
       "range": {
         "startLine": 181,
         "startChar": 1,
