@@ -16,9 +16,12 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -26,9 +29,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/storage"
 	"github.com/maruel/subcommands"
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
@@ -37,11 +42,218 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
 )
+
+type baseHistoryRun struct {
+	out          string
+	startTime    time.Time
+	endTime      time.Time
+	builderRegex string
+	testIDRegex  string
+
+	authOpt       *auth.Options
+	authenticator *auth.Authenticator
+	http          *http.Client
+}
+
+func (r *baseHistoryRun) RegisterBaseFlags(fs *flag.FlagSet) {
+	fs.StringVar(&r.out, "out", "", "Path to the output directory")
+	fs.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-15")
+	fs.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-15")
+	fs.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
+	fs.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
+}
+
+func (r *baseHistoryRun) ValidateBaseFlags() error {
+	switch {
+	case r.out == "":
+		return errors.New("-out is required")
+	case r.startTime.IsZero():
+		return errors.New("-from is required")
+	case r.endTime.IsZero():
+		return errors.New("-to is required")
+	case r.endTime.Before(r.startTime):
+		return errors.New("the -to date must not be before the -from date")
+	default:
+		return nil
+	}
+}
+
+// Init initializes r. Validates flags as well.
+func (r *baseHistoryRun) Init(ctx context.Context) error {
+	if err := r.ValidateBaseFlags(); err != nil {
+		return err
+	}
+
+	r.authenticator = auth.NewAuthenticator(ctx, auth.InteractiveLogin, *r.authOpt)
+	var err error
+	r.http, err = r.authenticator.Client()
+	return err
+}
+
+// runAndFetchResults runs the BigQuery query and saves results to r.out directory,
+// as GZIP-compressed JSON Lines files.
+func (r *baseHistoryRun) runAndFetchResults(ctx context.Context, sql string, extraParams ...bigquery.QueryParameter) error {
+	fmt.Printf("starting a BigQuery query...\n")
+	table, err := r.runQuery(ctx, sql, extraParams...)
+	if err != nil {
+		return err
+	}
+
+	logging.Infof(ctx, "extracting results...\n")
+	return r.fetchResults(ctx, table)
+}
+
+// runQuery runs the query and returns the table with results.
+func (r *baseHistoryRun) runQuery(ctx context.Context, sql string, extraParams ...bigquery.QueryParameter) (*bigquery.Table, error) {
+	client, err := newBQClient(ctx, r.authenticator)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare the query.
+
+	prepRe := func(rgx string) string {
+		if rgx == "" || rgx == ".*" {
+			return ""
+		}
+		return fmt.Sprintf("^(%s)$", rgx)
+	}
+
+	q := client.Query(sql)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "startTime", Value: r.startTime},
+		{Name: "endTime", Value: r.endTime},
+		{Name: "builder_regexp", Value: prepRe(r.builderRegex)},
+		{Name: "test_id_regexp", Value: prepRe(r.testIDRegex)},
+	}
+	q.Parameters = append(q.Parameters, extraParams...)
+
+	// Run the query.
+
+	job, err := q.Run(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := waitForSuccess(ctx, job); err != nil {
+		return nil, err
+	}
+
+	cfg, err := job.Config()
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*bigquery.QueryConfig).Dst, nil
+}
+
+// fetchResults fetches the table to GZIP-compressed JSON Lines files in r.out
+// directory.
+func (r *baseHistoryRun) fetchResults(ctx context.Context, table *bigquery.Table) error {
+	// The fetching processing is done in two phases:
+	// 1. Extract the table to GCS.
+	//    This also takes care of the converting from tabular format to a file format.
+	// 2. Download the prepared files to the destination directory.
+
+	if err := r.prepareOutDir(); err != nil {
+		return err
+	}
+
+	// Extract the table to GCS.
+	bucketName := "chrome-rts"
+	dirName := fmt.Sprintf("tmp/extract-%s", table.TableID)
+	gcsRef := &bigquery.GCSReference{
+		// Start the object name with a date, so that the user can merge
+		// data directories if needed.
+		URIs:              []string{fmt.Sprintf("gs://%s/%s/%s-*.jsonl.gz", bucketName, dirName, r.startTime.Format("2006-01-02"))},
+		DestinationFormat: bigquery.JSON,
+		Compression:       bigquery.Gzip,
+	}
+	job, err := table.ExtractorTo(gcsRef).Run(ctx)
+	if err != nil {
+		return err
+	}
+	if err := waitForSuccess(ctx, job); err != nil {
+		return errors.Annotate(err, "extract job %q failed", job.ID()).Err()
+	}
+
+	// Fetch the extracted files from GCS to the file system.
+	gcs, err := storage.NewClient(ctx, option.WithHTTPClient(r.http))
+	if err != nil {
+		return err
+	}
+	bucket := gcs.Bucket(bucketName)
+	// Find all files in the temp GCS dir and fetch them all, concurrently.
+	iter := bucket.Objects(ctx, &storage.Query{Prefix: dirName})
+	return parallel.WorkPool(100, func(work chan<- func() error) {
+		for {
+			objAttrs, err := iter.Next()
+			switch {
+			case err == iterator.Done:
+				return
+			case err != nil:
+				work <- func() error { return err }
+				return
+			}
+
+			// Fetch the file.
+			work <- func() error {
+				// Prepare the source.
+				rd, err := bucket.Object(objAttrs.Name).NewReader(ctx)
+				if err != nil {
+					return err
+				}
+				defer rd.Close()
+
+				// Prepare the sink.
+				f, err := os.Create(filepath.Join(r.out, path.Base(objAttrs.Name)))
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+
+				_, err = io.Copy(f, rd)
+				return err
+			}
+		}
+	})
+}
+
+// prepareOutDir ensures that r.out dir exists and does not have .jsonl.gz
+// files.
+func (r *baseHistoryRun) prepareOutDir() error {
+	if err := os.MkdirAll(r.out, 0777); err != nil {
+		return err
+	}
+
+	// Remove existing .jsonl.gz files.
+	existing, err := filepath.Glob(filepath.Join(r.out, "*.jsonl.gz"))
+	if err != nil {
+		return err
+	}
+	for _, f := range existing {
+		if err := os.Remove(f); err != nil {
+			return errors.Annotate(err, "failed to remove %q", f).Err()
+		}
+	}
+	return nil
+}
+
+func waitForSuccess(ctx context.Context, job *bigquery.Job) error {
+	st, err := job.Wait(ctx)
+	if err != nil {
+		return err
+	}
+	return st.Err()
+}
+
+// TODO(nodir): transform the code below into a new subcommand fetch-rejections
+// based on baseHistoryRun.
 
 func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 	return &subcommands.Command{
@@ -55,8 +267,6 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 			r.Flags.StringVar(&r.out, "out", "", "Path to the output file")
 			r.Flags.Var(luciflag.Date(&r.startTime), "from", "Fetch results starting from this date; format: 2020-01-02")
 			r.Flags.Var(luciflag.Date(&r.endTime), "to", "Fetch results until this date; format: 2020-01-02")
-			r.Flags.Float64Var(&r.durationDataFrac, "duration-data-frac", 0.001, "Fraction of duration data to fetch")
-			r.Flags.DurationVar(&r.minDuration, "min-duration", time.Second, "Minimum duration to fetch")
 			r.Flags.StringVar(&r.builderRegex, "builder", ".*", "A regular expression for builder. Implicitly wrapped with ^ and $.")
 			r.Flags.StringVar(&r.testIDRegex, "test", ".*", "A regular expression for test. Implicitly wrapped with ^ and $.")
 			r.Flags.IntVar(&r.minCLFlakes, "min-cl-flakes", 5, text.Doc(`
@@ -70,14 +280,12 @@ func cmdPresubmitHistory(authOpt *auth.Options) *subcommands.Command {
 
 type presubmitHistoryRun struct {
 	baseCommandRun
-	out              string
-	startTime        time.Time
-	endTime          time.Time
-	durationDataFrac float64
-	builderRegex     string
-	testIDRegex      string
-	minDuration      time.Duration
-	minCLFlakes      int
+	out          string
+	startTime    time.Time
+	endTime      time.Time
+	builderRegex string
+	testIDRegex  string
+	minCLFlakes  int
 
 	gerrit *gerritClient
 
@@ -130,42 +338,21 @@ func (r *presubmitHistoryRun) Run(a subcommands.Application, args []string, env 
 
 	fmt.Printf("starting BigQuery queries...\n")
 
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// Fetch the rejections.
 	var rejections int
-	eg.Go(func() error {
-		err := r.rejections(ctx, func(frag *evalpb.RejectionFragment) error {
-			if frag.Terminal {
-				rejections++
-			}
-			return r.write(&evalpb.Record{
-				Data: &evalpb.Record_RejectionFragment{RejectionFragment: frag},
-			})
+	err = r.rejections(ctx, func(frag *evalpb.RejectionFragment) error {
+		if frag.Terminal {
+			rejections++
+		}
+		return r.write(&evalpb.Record{
+			Data: &evalpb.Record_RejectionFragment{RejectionFragment: frag},
 		})
-		return errors.Annotate(err, "failed to fetch rejections").Err()
 	})
-
-	// Fetch test durations.
-	var durations int
-	if r.durationDataFrac > 0 {
-		eg.Go(func() error {
-			err := r.durations(ctx, func(td *evalpb.TestDuration) error {
-				durations++
-				return r.write(&evalpb.Record{
-					Data: &evalpb.Record_TestDuration{TestDuration: td},
-				})
-			})
-			return errors.Annotate(err, "failed to fetch test durations").Err()
-		})
-	}
-
-	if err = eg.Wait(); err != nil {
+	if err != nil {
 		return r.done(err)
 	}
 
 	r.mu.Lock()
-	fmt.Printf("total: %d rejections, %d durations, %d records\n", rejections, durations, r.recordsWrote)
+	fmt.Printf("total: %d rejections, %d records\n", rejections, r.recordsWrote)
 	r.mu.Unlock()
 
 	return r.done(r.w.Close())
