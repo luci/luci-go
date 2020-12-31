@@ -27,20 +27,20 @@ func TestID(t *testing.T) {
 	t.Parallel()
 
 	Convey("ID works", t, func() {
-		id := MakeRunID("infra", endOfTheWorld.Add(-time.Minute), []byte{65, 15})
-		So(id, ShouldEqual, "infra/0000000060000-410f")
+		id := MakeRunID("infra", endOfTheWorld.Add(-time.Minute), 1, []byte{65, 15})
+		So(id, ShouldEqual, "infra/0000000060000-1-410f")
 		digits := id[strings.IndexRune(string(id), '/')+1 : strings.IndexRune(string(id), '-')]
 		So(len(digits), ShouldEqual, 13)
 
 		Convey("lexical ordering is oldest last", func() {
-			earlierId := MakeRunID("infra", endOfTheWorld.Add(-time.Hour), []byte{31, 44})
-			So(earlierId, ShouldEqual, "infra/0000003600000-1f2c")
+			earlierId := MakeRunID("infra", endOfTheWorld.Add(-time.Hour), 2, []byte{31, 44})
+			So(earlierId, ShouldEqual, "infra/0000003600000-2-1f2c")
 			So(earlierId, ShouldBeGreaterThan, id)
 		})
 
 		Convey("panics if computers survive after endOfTheWorld", func() {
 			So(func() {
-				MakeRunID("infra", endOfTheWorld.Add(time.Millisecond), []byte{31, 44})
+				MakeRunID("infra", endOfTheWorld.Add(time.Millisecond), 1, []byte{31, 44})
 			}, ShouldPanic)
 		})
 	})

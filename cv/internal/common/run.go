@@ -22,8 +22,8 @@ import (
 
 // RunID is an unique RunID to identify a Run in CV.
 //
-// RunID is string like `luciProject/timeComponent-hexHashDigest` consisting of
-// 5 parts:
+// RunID is string like `luciProject/timeComponent-1-hexHashDigest` consisting of
+// 7 parts:
 //   1. The LUCI Project that this Run belongs to.
 //      Purpose: separates load on Datastore from different projects.
 //   2. `/` separator.
@@ -32,7 +32,9 @@ import (
 //      Purpose: ensures queries by default orders runs of the same project by
 //      most recent first.
 //   4. `-` separator.
-//   5. A hex digest string uniquely identifying the set of CLs involved in
+//   5. Digest version (see part 7).
+//   6. `-` separator.
+//   7. A hex digest string uniquely identifying the set of CLs involved in
 //      this Run.
 //      Purpose: ensures two simultaneously started Runs in the same project
 //      won't have the same RunID.
@@ -41,12 +43,13 @@ type RunID string
 // CV will be dead on 2336-10-19T17:46:40Z (10^10s after 2020-01-01T00:00:00Z).
 var endOfTheWorld = time.Date(2336, 10, 19, 17, 46, 40, 0, time.UTC)
 
-func MakeRunID(luciProject string, createTime time.Time, clsDigest []byte) RunID {
+func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsDigest []byte) RunID {
 	ms := endOfTheWorld.Sub(createTime).Milliseconds()
 	if ms < 0 {
 		panic(fmt.Errorf("Can't create run at %s which is after endOfTheWorld %s", createTime, endOfTheWorld))
 	}
-	return RunID(fmt.Sprintf("%s/%013d-%s", luciProject, ms, hex.EncodeToString(clsDigest)))
+	id := fmt.Sprintf("%s/%013d-%d-%s", luciProject, ms, digestVersion, hex.EncodeToString(clsDigest))
+	return RunID(id)
 }
 
 // LUCIProject this Run belongs to.
