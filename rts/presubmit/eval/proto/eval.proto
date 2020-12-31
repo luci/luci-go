@@ -111,9 +111,13 @@ message TestVariant {
   string id = 1;
 
   // One particular way to run this test, expressed as domain-specific key-value
-  // pairs.
+  // pairs. Each element has format "<key>:<value>".
   // For Chromium, this is a ResultDB test variant.
-  map<string, string> variant = 2;
+  //
+  // The keys must be unique. This is not a map for conveniency of extracting
+  // from BigQuery which cannot convert tabular data to JSON objects with
+  // dynamic keys.
+  repeated string variant = 2;
 
   // Path of the file where the test is defined.
   string file_name = 3;

@@ -17,11 +17,8 @@ package eval
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"go.chromium.org/luci/common/data/text/indented"
-	"go.chromium.org/luci/resultdb/pbutil"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/rts/presubmit/eval/history"
 	evalpb "go.chromium.org/luci/rts/presubmit/eval/proto"
@@ -46,11 +43,6 @@ func (p *printer) printf(format string, args ...interface{}) {
 	if p.err == nil {
 		_, p.err = fmt.Fprintf(&p.Writer, format, args...)
 	}
-}
-
-func variantString(v map[string]string) string {
-	pairs := pbutil.VariantToStrings(&resultpb.Variant{Def: v})
-	return strings.Join(pairs, " | ")
 }
 
 // psURL returns the patchset URL.
