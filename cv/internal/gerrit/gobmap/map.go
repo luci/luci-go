@@ -233,9 +233,9 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 				}
 			}
 		}
-		// If there are two groups that match and one of them has fallback
-		// set to true, then the one with Fallback set to false is the one
-		// to use.
+		// If there are two groups that match, one fallback and one non-fallback,
+		// the non-fallback group is the one to use.
+		// The fallback group will be used if it's the only group that matches.
 		if len(ids) == 0 && fallbackId != "" {
 			ids = []string{fallbackId}
 		}
