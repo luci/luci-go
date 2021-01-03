@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "497db14c_6d1a43ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-03T20:25:05Z",
+      "side": 1,
+      "message": "Quinten, thanks! Please, land it ASAP, as I have a few CLs to land on top.",
+      "revId": "c6fded1c82d00c09a0c73b05a517aaa12e728359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6881660_2fd3b1ca",
+        "filename": "cv/internal/gerrit/gobmap/map_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-03T20:25:05Z",
+      "side": 1,
+      "message": "now",
+      "range": {
+        "startLine": 148,
+        "startChar": 30,
+        "endLine": 148,
+        "endChar": 32
+      },
+      "revId": "c6fded1c82d00c09a0c73b05a517aaa12e728359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
