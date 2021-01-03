@@ -183,6 +183,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "164c5003_b3dd8232",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-03T23:37:06Z",
+      "side": 1,
+      "message": "Thank to your question, I\u0027ve re-worked the structure.",
+      "parentUuid": "7b14259e_5f83404c",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "11fbf8db5d16386293ed559dab6935186781e193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c756a9e2_94cc3e05",

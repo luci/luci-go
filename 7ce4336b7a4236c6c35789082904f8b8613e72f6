@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76489f19_a6165fd9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-03T23:37:06Z",
+      "side": 1,
+      "message": "I\u0027ve reworked this to simplify structure, hence PTAL again.\nYou can see the final result by looking at 3 CLs on top of this one.",
+      "revId": "7ce4336b7a4236c6c35789082904f8b8613e72f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
