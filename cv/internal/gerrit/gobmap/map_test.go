@@ -16,41 +16,147 @@ package gobmap
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGobMap(t *testing.T) {
+func TestGobMapUpdateAndLookup(t *testing.T) {
 	t.Parallel()
 
-	Convey("Update and Lookup", t, func() {
-		ctx := memory.Use(context.Background())
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
+	ctx := memory.Use(context.Background())
+	datastore.GetTestable(ctx).AutoIndex(true)
+	datastore.GetTestable(ctx).Consistent(true)
 
-		// Example config used in tests below.
-		var cfg = &pb.Config{
-			// Note: Config also has other fields which are excluded here
-			// because only ConfiGroups matter for this functionality.
+	// First set up an example project with two config groups to show basic
+	// regular usage; there is a "main" group which matches a main ref, and
+	// another fallback group that matches many other refs, but not all.
+	tc := config.TestController{}
+	tc.Create(ctx, "chromium", &pb.Config{
+		ConfigGroups: []*pb.ConfigGroup{
+			{
+				Name: "group_main",
+				Gerrit: []*pb.ConfigGroup_Gerrit{
+					{
+						Url: "https://cr-review.gs.com/",
+						Projects: []*pb.ConfigGroup_Gerrit_Project{
+							{
+								Name:      "cr/src",
+								RefRegexp: []string{"refs/heads/main"},
+							},
+						},
+					},
+				},
+			},
+			{
+				// This is the fallback group, so "refs/heads/main" should be
+				// handled by the main group but not this one, even though it
+				// matches the include regexp list.
+				Name:     "group_other",
+				Fallback: pb.Toggle_YES,
+				Gerrit: []*pb.ConfigGroup_Gerrit{
+					{
+						Url: "https://cr-review.gs.com/",
+						Projects: []*pb.ConfigGroup_Gerrit_Project{
+							{
+								Name:             "cr/src",
+								RefRegexp:        []string{"refs/heads/.*"},
+								RefRegexpExclude: []string{"refs/heads/123"},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	Convey("Update with nonexistent project stores nothing", t, func() {
+		So(Update(ctx, "bogus"), ShouldBeNil)
+		mps := []*mapPart{}
+		q := datastore.NewQuery(mapKind)
+		So(datastore.GetAll(ctx, q, &mps), ShouldBeNil)
+		So(mps, ShouldBeEmpty)
+	})
+
+	Convey("Lookup nonexistent project returns empty result", t, func() {
+		So(
+			lookup(ctx, "foo-review.gs.com", "repo", "refs/heads/main"),
+			ShouldBeEmpty)
+	})
+
+	Convey("Basic behavior with one project", t, func() {
+		So(Update(ctx, "chromium"), ShouldBeNil)
+
+		Convey("Lookup with main ref returns main group", func() {
+			// Note that even though the other config group also matches,
+			// only the main config group is applicable since the other one
+			// is the fallback config group.
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				ShouldResemble,
+				map[string][]string{
+					"chromium": []string{"group_main"},
+				})
+		})
+
+		Convey("Lookup with other ref returns other group", func() {
+			// refs/heads/something matches other group, but not main group.
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
+				ShouldResemble,
+				map[string][]string{
+					"chromium": []string{"group_other"},
+				})
+		})
+
+		Convey("Lookup excluded ref returns nothing", func() {
+			// refs/heads/123 is specifically excluded from the "other" group,
+			// and also not included in main group.
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/123"),
+				ShouldBeEmpty)
+		})
+
+		Convey("For a ref with no matching groups the result is empty", func() {
+			// If a ref doesn't match any include patterns then no groups
+			// match.
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/branch-heads/beta"),
+				ShouldBeEmpty)
+		})
+	})
+
+	Convey("Lookup again returns nothing for disabled project", t, func() {
+		// Simulate deleting project. Projects that are deleted are first
+		// disabled in practice.
+		tc.Disable(ctx, "chromium")
+		So(Update(ctx, "chromium"), ShouldBeNil)
+		So(
+			lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+			ShouldBeEmpty)
+	})
+
+	Convey("With two matches and no fallback...", t, func() {
+		// Simulate the project being updated so that the "other" group is no
+		// longer a fallback group. Now some refs will match both groups.
+		tc.Enable(ctx, "chromium")
+		tc.Update(ctx, "chromium", &pb.Config{
 			ConfigGroups: []*pb.ConfigGroup{
 				{
 					Name: "group_main",
 					Gerrit: []*pb.ConfigGroup_Gerrit{
 						{
-							Url: "https://chromium-review.googlesource.com/",
+							Url: "https://cr-review.gs.com/",
 							Projects: []*pb.ConfigGroup_Gerrit_Project{
 								{
-									Name:      "chromium/src",
+									Name:      "cr/src",
 									RefRegexp: []string{"refs/heads/main"},
 								},
 							},
@@ -59,164 +165,55 @@ func TestGobMap(t *testing.T) {
 				},
 				{
 					Name: "group_other",
-					// This is the fallback group, so "refs/heads/main" should
-					// be handled by the other group but not this one, even
-					// though it matches the include regexp list.
 					Gerrit: []*pb.ConfigGroup_Gerrit{
 						{
-							Url: "https://chromium-review.googlesource.com/",
+							Url: "https://cr-review.gs.com/",
 							Projects: []*pb.ConfigGroup_Gerrit_Project{
 								{
-									Name:             "chromium/src",
+									Name:             "cr/src",
 									RefRegexp:        []string{"refs/heads/.*"},
 									RefRegexpExclude: []string{"refs/heads/123"},
 								},
 							},
 						},
 					},
-					Fallback: pb.Toggle_YES,
+					Fallback: pb.Toggle_NO,
 				},
 			},
-		}
-
-		tc := config.TestController{}
-		tc.Create(ctx, "chromium", cfg)
-
-		Convey("Update nonexistent project does not store anything", func() {
-			err := Update(ctx, "bogus")
-			So(err, ShouldBeNil)
-			mps := []*mapPart{}
-			q := datastore.NewQuery(mapKind)
-			So(datastore.GetAll(ctx, q, &mps), ShouldBeNil)
-			So(mps, ShouldBeEmpty)
 		})
 
-		Convey("Lookup nonexistent project returns empty ApplicableConfig", func() {
-			ac, err := Lookup(ctx, "foo-review.googlesource.com", "repo", "refs/heads/main")
-			So(err, ShouldBeNil)
-			So(ac.Projects, ShouldBeEmpty)
-		})
-
-		Convey("Update and Lookup existing project", func() {
-			err := Update(ctx, "chromium")
-			So(err, ShouldBeNil)
-
-			// TODO(qyearsley): Consider adding a helper function to reduce
-			// boilerplate. Also make a helper function to wrap Lookup
-			// so that we don't need to assert the hashes.
-
-			Convey("Lookup main ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/main")
-				So(err, ShouldBeNil)
-				// Note that even though the other config group also matches,
-				// only the main ref is applicable since the other one is the
-				// fallback config group.
-				So(ac.Projects, ShouldHaveLength, 1)
-				So(ac.Projects[0], ShouldResembleProto,
-					&changelist.ApplicableConfig_Project{
-						Name:           "chromium",
-						ConfigGroupIds: []string{"sha256:a5bf9aeca30c0177/group_main"},
-					})
-			})
-
-			Convey("Lookup other ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/something")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldHaveLength, 1)
-				So(ac.Projects[0], ShouldResembleProto,
-					&changelist.ApplicableConfig_Project{
-						Name:           "chromium",
-						ConfigGroupIds: []string{"sha256:a5bf9aeca30c0177/group_other"},
-					})
-			})
-
-			Convey("Lookup excluded ref", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/123")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldBeEmpty)
-			})
-
-			Convey("Lookup ref with no matches", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/branch-heads/beta")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldBeEmpty)
-			})
-
-			tc.Disable(ctx, "chromium")
-			err = Update(ctx, "chromium")
-			So(err, ShouldBeNil)
-
-			Convey("Lookup again returns nothing for deleted project", func() {
-				ac, err := Lookup(ctx, "chromium-review.googlesource.com", "chromium/src", "refs/heads/main")
-				So(err, ShouldBeNil)
-				So(ac.Projects, ShouldBeEmpty)
-			})
+		Convey("Lookup main ref matching two refs", func() {
+			// This adds coverage for matching two groups.
+			So(Update(ctx, "chromium"), ShouldBeNil)
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				ShouldResemble,
+				map[string][]string{"chromium": []string{"group_main", "group_other"}})
 		})
 	})
 
-	// TODO(qyearsley): Instead of testing listUpdates, add more cases
-	// using Update and Lookup above, for example:
-	// Update/Lookup, e.g.:
-	//  1. Re-enable the project by updating fallback group name to no longer be
-	//  fallback. This also adds coverage for matching 2 groups, which I think
-	//  is missing right now.
-	//  2. Add new host/repo to the main group and delete ex-fallback group.
-	//  This adds both deletes & puts in an update, and also tests multiple hosts.
-	//  3. Add new LUCI project watching the previously deleted fallback group;
-	//  we need coverage for >1 LUCI project.
-	Convey("listUpdates", t, func() {
-		ctx := memory.Use(context.Background())
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-
-		// Sample MapPart entities and ConfigGroups to use in the test below.
-		mps := []*mapPart{
-			&mapPart{
-				ID:      "foo",
-				Project: "foo",
-				Parent:  datastore.MakeKey(ctx, parentKind, "foo-review.googlesource.com/repo/one"),
-				Groups: &internal.Groups{
-					Groups: []*internal.Group{
-						&internal.Group{
-							Id:      "sha256:c0ffee/main",
-							Include: []string{"refs/heads/main"},
-						},
-						&internal.Group{
-							Id:       "sha256:c0ffee/other",
-							Include:  []string{"refs/heads/.*"},
-							Fallback: true,
-						},
-					},
-				},
-				ConfigHash: "c0ffee",
-			},
-			&mapPart{
-				ID:      "foo",
-				Project: "foo",
-				Parent:  datastore.MakeKey(ctx, parentKind, "foo-review.googlesource.com/repo/two"),
-				Groups: &internal.Groups{
-					Groups: []*internal.Group{
-						&internal.Group{
-							Id:      "sha256:c0ffee/main",
-							Include: []string{"refs/heads/main"},
-						},
-					},
-				},
-				ConfigHash: "c0ffee",
-			},
-		}
-
-		cgs := []*config.ConfigGroup{
-			&config.ConfigGroup{
-				ID: "sha256:c0ffee/main",
-				Content: &pb.ConfigGroup{
-					Name: "main",
+	Convey("With two repos in main group and no other group...", t, func() {
+		// This update includes both additions and removals,
+		// and also tests multiple hosts.
+		tc.Update(ctx, "chromium", &pb.Config{
+			ConfigGroups: []*pb.ConfigGroup{
+				{
+					Name: "group_main",
 					Gerrit: []*pb.ConfigGroup_Gerrit{
-						&pb.ConfigGroup_Gerrit{
-							Url: "https://foo-review.googlesource.com/",
+						{
+							Url: "https://cr-review.gs.com/",
 							Projects: []*pb.ConfigGroup_Gerrit_Project{
-								&pb.ConfigGroup_Gerrit_Project{
-									Name:      "repo/one",
+								{
+									Name:      "cr/src",
+									RefRegexp: []string{"refs/heads/main"},
+								},
+							},
+						},
+						{
+							Url: "https://cr2-review.gs.com/",
+							Projects: []*pb.ConfigGroup_Gerrit_Project{
+								{
+									Name:      "cr2/src",
 									RefRegexp: []string{"refs/heads/main"},
 								},
 							},
@@ -224,34 +221,42 @@ func TestGobMap(t *testing.T) {
 					},
 				},
 			},
-			&config.ConfigGroup{
-				ID: "sha256:c0ffee/other",
-				Content: &pb.ConfigGroup{
-					Name: "other",
+		})
+
+		So(Update(ctx, "chromium"), ShouldBeNil)
+
+		Convey("main group matches two different hosts", func() {
+
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				ShouldResemble,
+				map[string][]string{"chromium": []string{"group_main"}})
+			So(
+				lookup(ctx, "cr2-review.gs.com", "cr2/src", "refs/heads/main"),
+				ShouldResemble,
+				map[string][]string{"chromium": []string{"group_main"}})
+		})
+
+		Convey("other group no longer exists", func() {
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
+				ShouldBeEmpty)
+		})
+	})
+
+	Convey("With another project matching the same ref...", t, func() {
+		// Below another project is created that watches the same repo and ref.
+		// This tests multiple projects matching for one Lookup.
+		tc.Create(ctx, "foo", &pb.Config{
+			ConfigGroups: []*pb.ConfigGroup{
+				{
+					Name: "group_foo",
 					Gerrit: []*pb.ConfigGroup_Gerrit{
-						&pb.ConfigGroup_Gerrit{
-							Url: "https://foo-review.googlesource.com/",
+						{
+							Url: "https://cr-review.gs.com/",
 							Projects: []*pb.ConfigGroup_Gerrit_Project{
-								&pb.ConfigGroup_Gerrit_Project{
-									Name:      "repo/one",
-									RefRegexp: []string{"refs/heads/.*"},
-								},
-							},
-						},
-					},
-					Fallback: pb.Toggle_YES,
-				},
-			},
-			&config.ConfigGroup{
-				ID: "sha256:c0ffee/maintwo",
-				Content: &pb.ConfigGroup{
-					Name: "maintwo",
-					Gerrit: []*pb.ConfigGroup_Gerrit{
-						&pb.ConfigGroup_Gerrit{
-							Url: "https://foo-review.googlesource.com/",
-							Projects: []*pb.ConfigGroup_Gerrit_Project{
-								&pb.ConfigGroup_Gerrit_Project{
-									Name:      "repo/two",
+								{
+									Name:      "cr/src",
 									RefRegexp: []string{"refs/heads/main"},
 								},
 							},
@@ -259,30 +264,36 @@ func TestGobMap(t *testing.T) {
 					},
 				},
 			},
-		}
-
-		Convey("deletes all 2 GWMs if latest config is empty", func() {
-			put, delete := listUpdates(ctx, mps, nil, "c0ffee", "foo")
-			So(put, ShouldHaveLength, 0)
-			So(delete, ShouldHaveLength, 2)
 		})
 
-		Convey("puts all if stored GWMs is empty", func() {
-			put, delete := listUpdates(ctx, nil, cgs, "c0ffee", "foo")
-			So(put, ShouldHaveLength, 2)
-			So(delete, ShouldHaveLength, 0)
-		})
+		So(Update(ctx, "foo"), ShouldBeNil)
 
-		Convey("Changes nothing if hash matches", func() {
-			put, delete := listUpdates(ctx, mps, cgs, "c0ffee", "foo")
-			So(put, ShouldHaveLength, 0)
-			So(delete, ShouldHaveLength, 0)
-		})
-
-		Convey("Updates if groups exist but hash is different", func() {
-			put, delete := listUpdates(ctx, mps, cgs, "newhash", "foo")
-			So(put, ShouldHaveLength, 2)
-			So(delete, ShouldHaveLength, 0)
+		Convey("main group matches two different projects", func() {
+			So(
+				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
+				ShouldResemble,
+				map[string][]string{
+					"chromium": []string{"group_main"},
+					"foo":      []string{"group_foo"},
+				})
 		})
 	})
+}
+
+// lookup is a test helper function to return just the projects and config
+// group names returned by Lookup.
+func lookup(ctx context.Context, host, repo, ref string) map[string][]string {
+	ret := map[string][]string{}
+	ac, err := Lookup(ctx, host, repo, ref)
+	So(err, ShouldBeNil)
+	for _, p := range ac.Projects {
+		var names []string
+		for _, id := range p.ConfigGroupIds {
+			parts := strings.Split(id, "/")
+			So(len(parts), ShouldEqual, 2)
+			names = append(names, parts[1])
+		}
+		ret[p.Name] = names
+	}
+	return ret
 }
