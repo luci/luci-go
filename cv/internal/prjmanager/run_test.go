@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -240,6 +241,56 @@ func TestRunBuilder(t *testing.T) {
 				So(r, ShouldNotBeNil)
 				So(err, ShouldBeNil)
 			})
+		})
+
+		Convey("New Run is created", func() {
+			ct.Clock.Add(time.Hour)
+			r, err := rb.Create(ctx)
+			So(err, ShouldBeNil)
+			expectedRun := &run.Run{
+				ID:         expectedRunID,
+				EVersion:   1,
+				CreateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
+				UpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
+				CLs:        []common.CLID{cl1.ID, cl2.ID},
+				Status:     run.Status_PENDING,
+
+				CreationOperationID: rb.run.CreationOperationID,
+				ConfigGroupID:       rb.ConfigGroupID,
+				Mode:                rb.Mode,
+				Owner:               rb.Owner,
+			}
+			So(r, ShouldResemble, expectedRun)
+			for i, cl := range rb.cls {
+				So(cl.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
+				So(cl.UpdateTime, ShouldResemble, r.CreateTime)
+			}
+
+			Convey("Run is properly saved", func() {
+				saved := &run.Run{ID: expectedRunID}
+				So(datastore.Get(ctx, saved), ShouldBeNil)
+				So(saved, ShouldResemble, expectedRun)
+			})
+
+			for i := range rb.InputCLs {
+				i := i
+				Convey(fmt.Sprintf("RunCL %d is properly saved", rb.InputCLs[i].ID), func() {
+					saved := &run.RunCL{
+						ID:  rb.InputCLs[i].ID,
+						Run: datastore.MakeKey(ctx, run.RunKind, expectedRunID),
+					}
+					So(datastore.Get(ctx, saved), ShouldBeNil)
+					So(saved.Trigger, ShouldResembleProto, rb.InputCLs[i].TriggerInfo)
+					So(saved.Detail, ShouldResembleProto, rb.cls[i].Snapshot)
+				})
+				Convey(fmt.Sprintf("CL %d is properly updated", rb.InputCLs[i].ID), func() {
+					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
+					So(datastore.Get(ctx, saved), ShouldBeNil)
+					So(saved.IncompleteRuns.ContainsSorted(expectedRunID), ShouldBeTrue)
+					So(saved.UpdateTime, ShouldResemble, expectedRun.UpdateTime)
+					So(saved.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
+				})
+			}
 		})
 	})
 }
