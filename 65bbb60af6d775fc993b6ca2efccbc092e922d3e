@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bfecfb20_8bdac0c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "LGTM with nits",
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "308f6494_88b47714",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "extra blank line",
+      "range": {
+        "startLine": 425,
+        "startChar": 1,
+        "endLine": 425,
+        "endChar": 2
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6c27b88_4b2dd424",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "could this be a struct with two fields instead of interface{}? (would it make the below code simpler?)",
+      "range": {
+        "startLine": 426,
+        "startChar": 50,
+        "endLine": 426,
+        "endChar": 61
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26988fe2_8a8c06a5",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "com",
+      "range": {
+        "startLine": 473,
+        "startChar": 50,
+        "endLine": 473,
+        "endChar": 53
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eaac7b2b_656a21d1",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "AccountID",
+      "range": {
+        "startLine": 475,
+        "startChar": 3,
+        "endLine": 475,
+        "endChar": 12
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85af047d_899211cc",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-04T16:36:28Z",
+      "side": 1,
+      "message": "taken from",
+      "range": {
+        "startLine": 475,
+        "startChar": 28,
+        "endLine": 475,
+        "endChar": 33
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
