@@ -60,19 +60,11 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 	affectedness := make(map[filegraph.Node]rts.Affectedness, len(in.TestVariants))
 	testNodes := make([]filegraph.Node, len(in.TestVariants))
 	for i, tv := range in.TestVariants {
-		if tv.FileName == "" {
-			return nil
+		if n := g.Node(tv.FileName); n != nil {
+			// Too far away by default.
+			affectedness[n] = rts.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
+			testNodes[i] = n
 		}
-		n := g.Node(tv.FileName)
-		if n == nil {
-			// TODO(nodir): consider not bailing completely.
-			// It is probably just a new test file name that never made it to the
-			// repo.
-			return nil
-		}
-		// Too far away by default.
-		affectedness[n] = rts.Affectedness{Distance: math.Inf(1), Rank: math.MaxInt32}
-		testNodes[i] = n
 	}
 
 	found := 0
@@ -80,19 +72,17 @@ func (g *Graph) EvalStrategy(ctx context.Context, in eval.Input, out *eval.Outpu
 		if _, ok := affectedness[sp.Node]; ok {
 			affectedness[sp.Node] = rts.Affectedness{Distance: sp.Distance, Rank: rank}
 			found++
-			if found == len(affectedness) {
-				// We have found everything.
-				return false
-			}
 		}
-		return true
+		return found < len(affectedness)
 	})
 	if runAllTests {
 		return nil
 	}
 
 	for i, n := range testNodes {
-		out.TestVariantAffectedness[i] = affectedness[n]
+		if n != nil {
+			out.TestVariantAffectedness[i] = affectedness[n]
+		}
 	}
 	return nil
 }

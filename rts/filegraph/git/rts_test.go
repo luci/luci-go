@@ -106,6 +106,27 @@ func TestEvalStrategy(t *testing.T) {
 			assertAffectedness(in, 0, 0)
 		})
 
+		Convey(`One of tests is unknown`, func() {
+			in := eval.Input{
+				ChangedFiles: []*evalpb.SourceFile{
+					{Path: "//a"},
+				},
+				TestVariants: []*evalpb.TestVariant{
+					{FileName: "//b"},
+					{FileName: "//unknown"},
+				},
+			}
+			out := &eval.Output{
+				TestVariantAffectedness: make([]rts.Affectedness, 2),
+			}
+			err := g.EvalStrategy(ctx, in, out)
+			So(err, ShouldBeNil)
+			So(out.TestVariantAffectedness[0].Distance, ShouldAlmostEqual, -math.Log(0.5))
+			So(out.TestVariantAffectedness[0].Rank, ShouldEqual, 2)
+			So(out.TestVariantAffectedness[1].Distance, ShouldEqual, 0)
+			So(out.TestVariantAffectedness[1].Rank, ShouldEqual, 0)
+		})
+
 		Convey(`Test without a file name`, func() {
 			in := eval.Input{
 				ChangedFiles: []*evalpb.SourceFile{
