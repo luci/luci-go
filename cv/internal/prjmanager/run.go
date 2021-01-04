@@ -324,7 +324,7 @@ func (rb *RunBuilder) saveCL(ctx context.Context, index int, now time.Time) {
 func (rb *RunBuilder) savePMNotification(ctx context.Context) error {
 	// TODO(tandrii): consider also using rb.dsBatcher here,
 	// or at least doing this concurrently with rb.dsBatcher.put.
-	return runCreated(ctx, rb.runID)
+	return NotifyRunCreated(ctx, rb.runID)
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
