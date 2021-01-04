@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2921fc6d_5820fca6",
+        "filename": "rts/cmd/rts-chromium/select.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-04T19:02:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57be36c9_881444da",
+      "range": {
+        "startLine": 201,
+        "startChar": 66,
+        "endLine": 201,
+        "endChar": 75
+      },
+      "revId": "412f66fd0b41ebe3fe0c4d400d3ae55b3e0d661d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cba3c01c_a50a5d5f",
@@ -54,6 +78,24 @@
       "writtenOn": "2020-12-29T18:06:52Z",
       "side": 1,
       "message": "nit: can you add explicit statement \"So, no sync is done\" ?",
+      "revId": "412f66fd0b41ebe3fe0c4d400d3ae55b3e0d661d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a4e819b_2e419b37",
+        "filename": "rts/cmd/rts-chromium/select.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-04T19:02:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cba3c01c_a50a5d5f",
       "revId": "412f66fd0b41ebe3fe0c4d400d3ae55b3e0d661d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
