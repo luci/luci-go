@@ -21,11 +21,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/cv/internal/dsset"
 )
@@ -83,10 +84,11 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 
 	// Compute resulting state before transaction.
 	transitions, err := p.Mutate(ctx, toEvents(listing.Items), state)
-	switch {
-	case err != nil:
+	if err != nil {
 		return err
-	case len(transitions) == 0:
+	}
+	transitions = withoutNoops(transitions, state)
+	if len(transitions) == 0 {
 		return nil // nothing to do.
 	}
 
@@ -186,9 +188,20 @@ type EVersion int
 type SideEffectFn func(context.Context) error
 
 // Chain combines several SideEffectFn.
+//
+// NOTE: modifies incoming ... slice.
 func Chain(fs ...SideEffectFn) SideEffectFn {
+	nonNil := fs[:0]
+	for _, f := range fs {
+		if f != nil {
+			nonNil = append(nonNil, f)
+		}
+	}
+	if len(nonNil) == 0 {
+		return nil
+	}
 	return func(ctx context.Context) error {
-		for _, f := range fs {
+		for _, f := range nonNil {
 			if err := f(ctx); err != nil {
 				return err
 			}
@@ -227,4 +240,24 @@ func (t *Transition) apply(ctx context.Context, p *dsset.PopOp) error {
 		_ = p.Pop(e.ID) // silently ignore if event has already been consumed.
 	}
 	return nil
+}
+
+// isNoop returns true if the Transition can be skiped entirely.
+func (t *Transition) isNoop(oldState State) bool {
+	return t.SideEffectFn == nil && len(t.Events) == 0 && t.TransitionTo == oldState
+}
+
+// withoutNoops returns only actionable transitions in the original order.
+//
+// Modifies incoming slice.
+func withoutNoops(all []Transition, s State) []Transition {
+	ret := all[:0]
+	for _, t := range all {
+		if t.isNoop(s) {
+			continue
+		}
+		ret = append(ret, t)
+		s = t.TransitionTo
+	}
+	return ret
 }

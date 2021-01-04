@@ -331,10 +331,77 @@ func TestEventboxFails(t *testing.T) {
 	})
 }
 
+func TestEventboxNoops(t *testing.T) {
+	t.Parallel()
+
+	Convey("Noop Transitions are detected", t, func() {
+		t := Transition{}
+		So(t.isNoop(nil), ShouldBeTrue)
+		initState := int(99)
+		t.TransitionTo = initState
+		So(t.isNoop(nil), ShouldBeFalse)
+		So(t.isNoop(initState), ShouldBeTrue)
+		t.Events = Events{Event{}}
+		So(t.isNoop(initState), ShouldBeFalse)
+		t.Events = nil
+		t.SideEffectFn = func(context.Context) error { return nil }
+		So(t.isNoop(initState), ShouldBeFalse)
+	})
+
+	Convey("eventbox doesn't transact on nil transitions", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		recipient := key(ctx, 77)
+		initState := int(99)
+		panicErr := errors.New("must not be transact!")
+
+		p := &mockProc{
+			loadState: func(_ context.Context) (State, EVersion, error) {
+				return State(&initState), EVersion(0), nil
+			},
+			fetchEVersion: func(_ context.Context) (EVersion, error) {
+				panic(panicErr)
+			},
+		}
+
+		Convey("Mutate returns no transitions", func() {
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+				return nil, nil
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+		})
+		Convey("Mutate returns empty slice of transitions", func() {
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+				return []Transition{}, nil
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+		})
+		Convey("Mutate returns noop transitions only", func() {
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+				return []Transition{
+					{TransitionTo: s},
+				}, nil
+			}
+			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+		})
+
+		Convey("Test's own sanity check that fetchEVersion is called and panics", func() {
+			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, error) {
+				return []Transition{
+					{TransitionTo: new(int)},
+				}, nil
+			}
+			So(func() { ProcessBatch(ctx, recipient, p) }, ShouldPanicLike, panicErr)
+		})
+	})
+}
+
 type mockProc struct {
 	loadState     func(_ context.Context) (State, EVersion, error)
 	mutate        func(_ context.Context, _ Events, _ State) ([]Transition, error)
-	fetchEVersion func(ctx context.Context) (EVersion, error)
+	fetchEVersion func(_ context.Context) (EVersion, error)
 	saveState     func(_ context.Context, _ State, _ EVersion) error
 }
 
@@ -349,4 +416,39 @@ func (m *mockProc) FetchEVersion(ctx context.Context) (EVersion, error) {
 }
 func (m *mockProc) SaveState(ctx context.Context, s State, e EVersion) error {
 	return m.saveState(ctx, s, e)
+}
+
+func TestChain(t *testing.T) {
+	t.Parallel()
+
+	Convey("Chain of SideEffectFn works", t, func() {
+		ctx := context.Background()
+		var ops []string
+		f1 := func(context.Context) error {
+			ops = append(ops, "f1")
+			return nil
+		}
+		f2 := func(context.Context) error {
+			ops = append(ops, "f2")
+			return nil
+		}
+		breakChain := errors.New("break")
+		ferr := func(context.Context) error {
+			ops = append(ops, "ferr")
+			return breakChain
+		}
+		Convey("all nils chain to nil", func() {
+			So(Chain(), ShouldBeNil)
+			So(Chain(nil), ShouldBeNil)
+			So(Chain(nil, nil), ShouldBeNil)
+		})
+		Convey("order is respected", func() {
+			So(Chain(nil, f2, nil, f1, f2, f1, nil)(ctx), ShouldBeNil)
+			So(ops, ShouldResemble, []string{"f2", "f1", "f2", "f1"})
+		})
+		Convey("error aborts", func() {
+			So(Chain(f1, nil, ferr, f2)(ctx), ShouldErrLike, breakChain)
+			So(ops, ShouldResemble, []string{"f1", "ferr"})
+		})
+	})
 }
