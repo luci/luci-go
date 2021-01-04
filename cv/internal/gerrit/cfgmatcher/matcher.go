@@ -17,12 +17,111 @@
 package cfgmatcher
 
 import (
+	"context"
 	"fmt"
 	"regexp"
+
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/config"
 )
+
+type Matcher struct {
+	state                  *MatcherState
+	cachedConfigGroupNames []config.ConfigGroupID
+}
+
+// LoadMatcher instantiates Matcher from config stored in Datastore.
+func LoadMatcher(ctx context.Context, luciProject, configHash string) (*Matcher, error) {
+	meta, err := config.GetHashMeta(ctx, luciProject, configHash)
+	if err != nil {
+		return nil, err
+	}
+	configGroups, err := meta.GetConfigGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m := &Matcher{
+		state: &MatcherState{
+			// 1-2 Gerrit hosts is typical as of 2020.
+			Hosts:            make(map[string]*MatcherState_Projects, 2),
+			ConfigGroupNames: make([]string, len(configGroups)),
+			ConfigHash:       configHash,
+		},
+		cachedConfigGroupNames: meta.ConfigGroupIDs,
+	}
+	for i, cg := range configGroups {
+		cg.ID.Hash()
+		m.state.ConfigGroupNames[i] = cg.ID.Name()
+		for _, gerrit := range cg.Content.GetGerrit() {
+			host := config.GerritHost(gerrit)
+			var projectsMap map[string]*Groups
+			if ps, ok := m.state.GetHosts()[host]; ok {
+				projectsMap = ps.GetProjects()
+			} else {
+				// Either 1 Gerrit project or lots of them is typical as 2020.
+				projectsMap = make(map[string]*Groups, 1)
+				m.state.GetHosts()[host] = &MatcherState_Projects{Projects: projectsMap}
+			}
+
+			for _, p := range gerrit.GetProjects() {
+				g := MakeGroup(cg, p)
+				// Don't store exact ID, it can be computed from the rest of matcher
+				// state if index is known. This reduces RAM usage after
+				// serialize/deserialize cycle.
+				g.Id = ""
+				g.Index = int32(i)
+				if groups, ok := projectsMap[p.GetName()]; ok {
+					groups.Groups = append(groups.GetGroups(), g)
+				} else {
+					projectsMap[p.GetName()] = &Groups{Groups: []*Group{g}}
+				}
+			}
+		}
+	}
+	return m, nil
+}
+
+func (m *Matcher) Serialize() ([]byte, error) {
+	return proto.Marshal(m.state)
+}
+
+func Deserialize(buf []byte) (*Matcher, error) {
+	m := &Matcher{state: &MatcherState{}}
+	if err := proto.Unmarshal(buf, m.state); err != nil {
+		return nil, errors.Annotate(err, "failed to Deserialize Matcher").Err()
+	}
+	m.cachedConfigGroupNames = make([]config.ConfigGroupID, len(m.state.ConfigGroupNames))
+	hash := m.state.GetConfigHash()
+	for i, name := range m.state.ConfigGroupNames {
+		m.cachedConfigGroupNames[i] = config.MakeConfigGroupID(hash, name)
+	}
+	return m, nil
+}
+
+// Match returns ConfigGroupID matched for a given triple.
+func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
+	ps, ok := m.state.GetHosts()[host]
+	if !ok {
+		return nil
+	}
+	gs, ok := ps.GetProjects()[project]
+	if !ok {
+		return nil
+	}
+	matched := gs.Match(ref)
+	if len(matched) == 0 {
+		return nil
+	}
+	ret := make([]config.ConfigGroupID, len(matched))
+	for i, g := range matched {
+		ret[i] = m.cachedConfigGroupNames[g.GetIndex()]
+	}
+	return ret
+}
 
 // MakeGroup returns a new Group based Gerrit Project section of a ConfigGroup.
 func MakeGroup(g *config.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Group {
@@ -61,9 +160,19 @@ func (gs *Groups) Match(ref string) []*Group {
 	return ret
 }
 
+// TODO(tandrii): add "main" branch too to ease migration once either:
+//   * CQDaemon is no longer involved,
+//   * CQDaemon does the same at the same time.
+var defaultRefRegexp = []string{"refs/heads/master"}
+
 // Match returns true iff ref matches given Group.
 func (g *Group) Match(ref string) bool {
-	return matchesAny(g.GetInclude(), ref) && !matchesAny(g.GetExclude(), ref)
+	inc := g.GetInclude()
+	if len(inc) == 0 {
+		// Compatibility with CQDaemon.
+		inc = defaultRefRegexp
+	}
+	return matchesAny(inc, ref) && !matchesAny(g.GetExclude(), ref)
 }
 
 // matchesAny returns true iff s matches any of the patterns.

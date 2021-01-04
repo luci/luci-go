@@ -102,6 +102,34 @@ func GetLatestMeta(ctx context.Context, project string) (Meta, error) {
 	return m, nil
 }
 
+// GetHashMeta returns metadata for a project for a given config hash.
+//
+// Doesn't check whether a project currently exists.
+// Returns error if specific (project, hash) combo doesn't exist in Datastore.
+func GetHashMeta(ctx context.Context, project, hash string) (Meta, error) {
+	h := ConfigHashInfo{
+		Project: datastore.MakeKey(ctx, projectConfigKind, project),
+		Hash:    hash,
+	}
+	if err := datastore.Get(ctx, &h); err != nil {
+		if err != datastore.ErrNoSuchEntity {
+			err = transient.Tag.Apply(err)
+		}
+		return Meta{}, errors.Annotate(err, "failed to get ProjectConfig(project=%q @ %q)", project, hash).Err()
+	}
+	m := Meta{
+		Project:        project,
+		EVersion:       h.ProjectEVersion,
+		Status:         StatusEnabled,
+		ConfigGroupIDs: make([]ConfigGroupID, len(h.ConfigGroupNames)),
+		hashLen:        len(hash),
+	}
+	for i, name := range h.ConfigGroupNames {
+		m.ConfigGroupIDs[i] = makeConfigGroupID(hash, name, -1 /* not required */)
+	}
+	return m, nil
+}
+
 // GetConfigGroups loads all ConfigGroups from datastore for this meta.
 //
 // Meta must correspond to existing project.
