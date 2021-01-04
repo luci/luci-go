@@ -14,5 +14,4 @@
 
 //go:generate cproto
 
-// Package internal contains GobMap storage protobufs.
-package internal
+package cfgmatcher
