@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6236d0a9_70e2cbf1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:54:38Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "f531bb4dade00ce4a3c03e62c5a1bcd4efdd6445",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89dd55f0_25b7899d",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:54:38Z",
+      "side": 1,
+      "message": "(Because it\u0027s mostly a copy of a file with copyright 2020, right?)",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "f531bb4dade00ce4a3c03e62c5a1bcd4efdd6445",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bec45c53_e47c1e58",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:54:38Z",
+      "side": 1,
+      "message": "based on the...\n\n(technically it also uses the parent ConfigGroup for fallback status, but that\u0027s clear enough from the code, and I think the function description doesn\u0027t need to mention that)",
+      "range": {
+        "startLine": 27,
+        "startChar": 33,
+        "endLine": 27,
+        "endChar": 53
+      },
+      "revId": "f531bb4dade00ce4a3c03e62c5a1bcd4efdd6445",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
