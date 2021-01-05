@@ -107,6 +107,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "eeffa743_cd1dbce7",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T21:00:15Z",
+      "side": 1,
+      "message": "No. See L175 in old code.",
+      "parentUuid": "67f5ffbb_7f602d4a",
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2a25278d_0d466f9d",
         "filename": "cv/internal/prjmanager/impl/transitions.go",
         "patchSetId": 3
@@ -118,6 +136,30 @@
       "writtenOn": "2021-01-05T20:45:50Z",
       "side": 1,
       "message": "Note: I guess that technically in the GAE logs this will show up as \"error\" level and not \"critical\" level (there\u0027s no logging.Criticalf, https://godoc.org/go.chromium.org/luci/common/logging#Level)",
+      "range": {
+        "startLine": 144,
+        "startChar": 10,
+        "endLine": 144,
+        "endChar": 16
+      },
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba340a34_ab7f567c",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T21:00:15Z",
+      "side": 1,
+      "message": "Exactly.",
+      "parentUuid": "2a25278d_0d466f9d",
       "range": {
         "startLine": 144,
         "startChar": 10,

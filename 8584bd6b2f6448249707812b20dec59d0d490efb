@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab42e3ff_0fe7bf81",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T21:00:15Z",
+      "side": 0,
+      "message": "this was the bug.",
+      "range": {
+        "startLine": 175,
+        "startChar": 5,
+        "endLine": 175,
+        "endChar": 14
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
