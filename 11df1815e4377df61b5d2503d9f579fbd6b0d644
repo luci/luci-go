@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "78f92c37_5c5d61f0",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:48:37Z",
+      "side": 1,
+      "message": "NVM, I see this is done in a later CL",
+      "parentUuid": "c63bca82_62b658f0",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 10
+      },
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4524c755_5a5e6c18",
