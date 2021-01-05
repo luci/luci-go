@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -46,12 +45,6 @@ func TestNewServer(t *testing.T) {
 			srv, err := NewServer(ctx, cfg)
 			So(err, ShouldBeNil)
 			So(srv, ShouldNotBeNil)
-		})
-		Convey("uses the default address, if missing", func() {
-			cfg.Address = ""
-			srv, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(srv.cfg.Address, ShouldNotEqual, "")
 		})
 		Convey("generates a random auth token, if missing", func() {
 			cfg.AuthToken = ""
@@ -127,13 +120,15 @@ func TestServer(t *testing.T) {
 		req := &sinkpb.ReportTestResultsRequest{}
 		ctx := context.Background()
 
-		// a test server with a test listener
 		srvCfg := testServerConfig(ctl, "", "secret")
-		addr, cleanup := installTestListener(&srvCfg)
-		defer cleanup()
 		srv, err := NewServer(ctx, srvCfg)
 		So(err, ShouldBeNil)
 
+		Convey("Start assigns a random port, if missing cfg.Address", func() {
+			So(srv.Config().Address, ShouldBeEmpty)
+			So(srv.Start(ctx), ShouldBeNil)
+			So(srv.Config().Address, ShouldNotBeEmpty)
+		})
 		Convey("Start fails", func() {
 			So(srv.Start(ctx), ShouldBeNil)
 
@@ -151,7 +146,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 			So(srv.Close(ctx), ShouldBeNil)
 
-			_, err := reportTestResults(ctx, addr, "secret", req)
+			_, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
 			// The error could be a connection error or write-error.
 			// e.g.,
 			// "No connection could be made", "connection refused", "write: broken pipe"
@@ -177,7 +172,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// wait until the server is up.
-			_, err := reportTestResults(ctx, addr, "secret", req)
+			_, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
 			So(err, ShouldBeNil)
 
 			So(isClosed(), ShouldBeFalse)
@@ -204,49 +199,24 @@ func TestServer(t *testing.T) {
 				So(<-runErr, ShouldEqual, expected)
 			})
 
-			Convey("aborts after server error", func() {
-				// launch a go routine with Run
-				started := make(chan bool)
-				go func() {
-					runErr <- Run(ctx, srvCfg, func(ctx context.Context, cfg ServerConfig) error {
-						started <- true
-						<-ctx.Done()
-						return ctx.Err()
-					})
-				}()
+			Convey("serves requests", func() {
+				So(srv.Start(ctx), ShouldBeNil)
 
-				// wait until the server is up.
-				sctx, scancel := context.WithTimeout(ctx, 3*time.Second)
-				defer scancel()
-				select {
-				case <-sctx.Done():
-				case <-started:
-				}
-				So(sctx.Err(), ShouldBeNil)
+				Convey("with 200 OK", func() {
+					res, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
+					So(err, ShouldBeNil)
+					So(res, ShouldNotBeNil)
+				})
 
-				// close the test listener so that the server terminates.
-				cleanup()
-				So(<-runErr, ShouldEqual, context.Canceled)
-			})
-		})
+				Convey("with 401 Unauthorized if the auth_token missing", func() {
+					_, err := reportTestResults(ctx, srv.Config().Address, "", req)
+					So(status.Code(err), ShouldEqual, codes.Unauthenticated)
+				})
 
-		Convey("serves requests", func() {
-			So(srv.Start(ctx), ShouldBeNil)
-
-			Convey("with 200 OK", func() {
-				res, err := reportTestResults(ctx, addr, "secret", req)
-				So(err, ShouldBeNil)
-				So(res, ShouldNotBeNil)
-			})
-
-			Convey("with 401 Unauthorized if the auth_token missing", func() {
-				_, err := reportTestResults(ctx, addr, "", req)
-				So(status.Code(err), ShouldEqual, codes.Unauthenticated)
-			})
-
-			Convey("with 403 Forbidden if auth_token mismatched", func() {
-				_, err := reportTestResults(ctx, addr, "not-a-secret", req)
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+				Convey("with 403 Forbidden if auth_token mismatched", func() {
+					_, err := reportTestResults(ctx, srv.Config().Address, "not-a-secret", req)
+					So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+				})
 			})
 		})
 	})
