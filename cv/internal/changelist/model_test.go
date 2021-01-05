@@ -28,12 +28,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
