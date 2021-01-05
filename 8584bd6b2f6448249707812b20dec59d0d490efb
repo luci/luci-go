@@ -107,6 +107,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9d155163_2d9c6f40",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T19:08:22Z",
+      "side": 1,
+      "message": "I see -- I think that would be helpful to write:\n\n   save saves all entities for a Run in one multiPut.\n\n   It may be retried multiple times on failure.",
+      "parentUuid": "d6a375bd_333ccac4",
+      "range": {
+        "startLine": 261,
+        "startChar": 22,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c05dc8b0_46f68dcd",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 4
@@ -154,6 +178,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5458ec29_6c0a82a7",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T19:08:22Z",
+      "side": 1,
+      "message": "It makes sense -- the part that tripped me up was \"of which run.Run will be returned...\", and I\u0027m wondering whether that part of the sentence could be removed.",
+      "parentUuid": "6f6102fe_8f485897",
+      "range": {
+        "startLine": 263,
+        "startChar": 67,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f44d2e6f_b9a7a91b",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 4
@@ -189,6 +237,30 @@
       "side": 1,
       "message": "good question 😊 no actual save, as it happens in L275 dsBatcher.put(ctx).\n\nI was uncomfortable about the name \"saveXXX\" for exactly this reason. Wdyt about \"registerSaveXXX\"?",
       "parentUuid": "f44d2e6f_b9a7a91b",
+      "range": {
+        "startLine": 278,
+        "startChar": 22,
+        "endLine": 278,
+        "endChar": 29
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74b162e8_e1ba216b",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T19:08:22Z",
+      "side": 1,
+      "message": "registerSaveXXX SGTM",
+      "parentUuid": "4266bb06_205fe4bb",
       "range": {
         "startLine": 278,
         "startChar": 22,
