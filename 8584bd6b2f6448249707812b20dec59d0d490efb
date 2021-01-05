@@ -361,6 +361,30 @@
       },
       "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "414ad83f_bff0be23",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T23:16:16Z",
+      "side": 1,
+      "message": "Exactly right.\n\nRuns are created strictly before the transaction on PM\u0027s own state, for scalability, so failures after Run creation are very likely. If you have suggestion for better comment, LMK.",
+      "parentUuid": "85d6ef31_651a6547",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 15
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
