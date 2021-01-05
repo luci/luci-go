@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4938072b_0e7fdc94",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "A few questions and nits",
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "72366733_cdf5363a",
+        "filename": "cv/internal/common/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "technically `ids` below\n\nOr it could be rephrased as \"ContainsSorted checks if a given RunID is found in a sorted RunIDs list\"?",
+      "range": {
+        "startLine": 132,
+        "startChar": 34,
+        "endLine": 132,
+        "endChar": 37
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52863d1e_692a1fb4",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "You could probably add a comment for this function.\n\nMy first question when looking at this is: this is called to store entities to Datastore during Run creation, right? And if it is called and succeeds and then Run creation doesn\u0027t succeed for some reason, then are the entities reloaded on another attempt at Run creation?",
+      "range": {
+        "startLine": 261,
+        "startChar": 22,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c05dc8b0_46f68dcd",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "I think that this part could be rephrased slightly for clarity.\n\nFrom the first part, I see that `now` will be written to CreateTime or UpdateTime of entities that are created or modified, and from looking up datastore.RoundTime I see that datastore saves only the microsecond level... Does the second part here mean that run.Run is one of those entities that is created or modified? (Potentially you don\u0027t need to mention this, if we want to store rounded time values datastore in general?)",
+      "range": {
+        "startLine": 263,
+        "startChar": 67,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f44d2e6f_b9a7a91b",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "all of these save functions call rb.dsBatcher.register, do they actually store in Datastore or just \"register\" with dsBatcher (in preparation for dsBatcher.put)? If the latter, could they also be called registerRun etc.?",
+      "range": {
+        "startLine": 278,
+        "startChar": 22,
+        "endLine": 278,
+        "endChar": 29
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32cf0369_6132570b",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "event-sending funcs",
+      "range": {
+        "startLine": 68,
+        "startChar": 16,
+        "endLine": 68,
+        "endChar": 36
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77533502_eec68ef6",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:45:40Z",
+      "side": 1,
+      "message": "nit: I\u0027d remove this comma",
+      "range": {
+        "startLine": 77,
+        "startChar": 41,
+        "endLine": 77,
+        "endChar": 42
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
