@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "73264369_af7f4d35",
+        "filename": "cv/internal/gerrit/gobmap/map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:50:46Z",
+      "side": 0,
+      "message": "Thanks :-)",
+      "revId": "6f3768c37f4f1ff2b62d161ee23ee71486aed290",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
