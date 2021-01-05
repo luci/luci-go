@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "927f42ec_f20ea908",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:36:13Z",
+      "side": 1,
+      "message": "Was this going to be used for saving multiple CL entities in one transaction? Was it not necessary because dsBatcher in RunBuilder does this, or for some other reason?",
+      "revId": "bc5f5d2f62e3d90c8d6f69d34e6f380ca9973fdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cafa3010_e148c38f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:36:13Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "bc5f5d2f62e3d90c8d6f69d34e6f380ca9973fdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
