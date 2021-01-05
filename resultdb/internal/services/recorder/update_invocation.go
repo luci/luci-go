@@ -16,6 +16,8 @@ package recorder
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -28,6 +30,25 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// validateCommitPosition returns a non-nil error if commit is invalid.
+// Partially copied from go/chromium.org/luci/buildbucket/appengine/rpc.validateCommit
+func validateCommitPosition(cm *pb.CommitPosition) error {
+	if cm == nil {
+		return errors.Reason("commit is required").Err()
+	}
+	switch {
+	case cm.GetHost() == "":
+		return errors.Reason("host is required").Err()
+	case cm.GetProject() == "":
+		return errors.Reason("project is required").Err()
+	case cm.GetRef() == "" || !strings.HasPrefix(cm.Ref, "refs/"):
+		return errors.Reason("ref must match refs/.*").Err()
+	case cm.GetPosition() <= 0:
+		return errors.Reason("position is required").Err()
+	}
+	return nil
+}
 
 // validateUpdateInvocationRequest returns non-nil error if req is invalid.
 func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.Time) error {
@@ -47,6 +68,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "deadline":
 			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), now); err != nil {
 				return errors.Annotate(err, "invocation: deadline").Err()
+			}
+
+		case "history_options.commit":
+			if err := validateCommitPosition(req.Invocation.GetHistoryOptions().GetCommit()); err != nil {
+				return errors.Annotate(err, "invocation: history_options: commit").Err()
 			}
 
 		default:
@@ -84,6 +110,15 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "deadline":
 				values["Deadline"] = in.Invocation.Deadline
 				ret.Deadline = in.Invocation.Deadline
+
+			case "history_options.commit":
+				if ret.HistoryOptions == nil {
+					ret.HistoryOptions = &pb.HistoryOptions{}
+				}
+				cm := in.Invocation.GetHistoryOptions().GetCommit()
+				ret.HistoryOptions.Commit = cm
+				values["OrdinalDomain"] = fmt.Sprintf("gitiles://%s/%s/%s", cm.Host, cm.Project, cm.Ref)
+				values["Ordinal"] = cm.Position
 
 			default:
 				panic("impossible")

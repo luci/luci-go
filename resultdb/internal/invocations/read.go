@@ -16,6 +16,7 @@ package invocations
 
 import (
 	"context"
+	"regexp"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -72,6 +73,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.ProducerResource,
 		 i.Realm,
 		 i.HistoryTime,
+		 i.OrdinalDomain,
+		 i.Ordinal,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -89,6 +92,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var producerResource spanner.NullString
 		var realm spanner.NullString
 		var historyTime *timestamppb.Timestamp
+		var ordinalDomain string
+		var ordinal spanner.NullInt64
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -100,7 +105,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&historyTime)
+			&historyTime,
+			&ordinalDomain,
+			&ordinal,
+		)
 		if err != nil {
 			return err
 		}
@@ -120,14 +128,37 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 				}
 			}
 		}
-		if historyTime != nil {
+		if historyTime != nil || ordinalDomain != "" {
 			inv.HistoryOptions = &pb.HistoryOptions{
-				UseInvocationTimestamp: true,
+				UseInvocationTimestamp: historyTime != nil,
+				Commit:                 commitFromOrdinal(ordinalDomain, ordinal.Int64),
 			}
 		}
 
 		return f(id, inv)
 	})
+}
+
+func commitFromOrdinal(domain string, ordinal int64) *pb.CommitPosition {
+	if domain == "" {
+		return nil
+	}
+	host, project, ref, err := parseGitilesDomain(domain)
+	// Currently, only gitiles ordinal domains are supported:
+	if err != nil {
+		panic(err)
+	}
+	return &pb.CommitPosition{Host: host, Project: project, Ref: ref, Position: ordinal}
+
+}
+
+func parseGitilesDomain(domain string) (host, project, ref string, err error) {
+	re := regexp.MustCompile(`gitiles://([^/]*)/(.*)/(refs/.*)`)
+	matches := re.FindStringSubmatch(domain)
+	if matches == nil || len(matches) != 4 {
+		return "", "", "", errors.Reason("unsupported ordinal domain %s", domain).Err()
+	}
+	return matches[1], matches[2], matches[3], nil
 }
 
 // Read reads one invocation from Spanner.
