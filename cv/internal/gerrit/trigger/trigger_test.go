@@ -24,6 +24,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,22 +34,10 @@ import (
 func TestTrigger(t *testing.T) {
 	t.Parallel()
 
-	user1 := &gerritpb.AccountInfo{
-		AccountId: 1,
-		Email:     "user.one@example.com",
-	}
-	user2 := &gerritpb.AccountInfo{
-		AccountId: 2,
-		Email:     "user.two@example.com",
-	}
-	user3 := &gerritpb.AccountInfo{
-		AccountId: 3,
-		Email:     "user.three@example.com",
-	}
-	user4 := &gerritpb.AccountInfo{
-		AccountId: 3,
-		Email:     "user.four@example.com",
-	}
+	user1 := gf.U("u-1")
+	user2 := gf.U("u-2")
+	user3 := gf.U("u-3")
+	user4 := gf.U("u-4")
 	const dryRunVote = 1
 	const fullRunVote = 2
 	Convey("Find", t, func() {

@@ -17,6 +17,7 @@ package gerritfake
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -421,29 +422,70 @@ func Status(s interface{}) CIModifier {
 
 // Vote sets a label to the given value by the given user(s) on the latest
 // patchset.
-func Vote(label string, value int, users ...string) CIModifier {
-	if len(users) > 0 {
-		panic("not implemented yet")
+func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
+	var who *gerritpb.AccountInfo
+	var when time.Time
+	switch {
+	case len(timeAndUser) == 0:
+		// Larger than default rev creation time even with lots of patchsets.
+		when = testclock.TestRecentTimeUTC.Add(10 * time.Hour)
+		who = U("user-1")
+	case len(timeAndUser) != 2:
+		panic(fmt.Errorf("incorret usage, must have 2 params, not %d", len(timeAndUser)))
+	default:
+		var ok bool
+		if when, ok = timeAndUser[0].(time.Time); !ok {
+			panic(fmt.Errorf("expected time.Time, got %T", timeAndUser[0]))
+		}
+		if who, ok = timeAndUser[1].(*gerritpb.AccountInfo); !ok {
+			panic(fmt.Errorf("expected *gerritpb.AccountInfo, got %T", timeAndUser[1]))
+		}
 	}
+
+	ai := &gerritpb.ApprovalInfo{User: who, Date: timestamppb.New(when), Value: int32(value)}
 	return func(ci *gerritpb.ChangeInfo) {
 		if ci.GetLabels() == nil {
-			ci.Labels = map[string]*gerritpb.LabelInfo{
-				label: {Value: int32(value)},
+			ci.Labels = map[string]*gerritpb.LabelInfo{}
+		}
+		li, ok := ci.GetLabels()[label]
+		if !ok {
+			ci.GetLabels()[label] = &gerritpb.LabelInfo{
+				Value: int32(value),
+				All:   []*gerritpb.ApprovalInfo{ai},
 			}
 			return
 		}
-		switch li, ok := ci.GetLabels()[label]; {
-		case !ok:
-			ci.GetLabels()[label] = &gerritpb.LabelInfo{Value: int32(value)}
-		case li.GetValue() < int32(value):
+		if li.GetValue() < int32(value) {
 			li.Value = int32(value)
 		}
+		li.All = append(li.GetAll(), ai)
 	}
 }
 
 // CQ is a shorthand for Vote("Commit-Queue", ...).
-func CQ(value int, users ...string) CIModifier {
-	return Vote("Commit-Queue", value, users...)
+func CQ(value int, timeAndUser ...interface{}) CIModifier {
+	return Vote("Commit-Queue", value, timeAndUser...)
+}
+
+var usernameToAccountIDRegexp = regexp.MustCompile(`^.+[-.\alpha](\d+)$`)
+
+// U returns a Gerrit User for `username`@example.com as gerritpb.AccountInfo.
+//
+// AccountID is either 1 or taken from the ending digits of a username.
+func U(username string) *gerritpb.AccountInfo {
+	accountID := int64(1)
+	if subs := usernameToAccountIDRegexp.FindSubmatch([]byte(username)); len(subs) > 0 {
+		i, err := strconv.ParseInt(string(subs[1]), 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		accountID = i
+	}
+	email := username + "@example.com"
+	return &gerritpb.AccountInfo{
+		Email:     email,
+		AccountId: accountID,
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -401,7 +401,7 @@ func TestListChanges(t *testing.T) {
 		u1 := Updated(epoch.Add(time.Minute))
 		u2 := Updated(epoch.Add(2 * time.Minute))
 		f.AddFrom(WithCIs("chromium", ACLPublic(),
-			CI(8001, u1, Project("infra/infra"), Vote("Commit-Queue", +2)),
+			CI(8001, u1, Project("infra/infra"), CQ(+2)),
 			CI(8002, u2, Project("infra/luci/luci-go"), Vote("Commit-Queue", +1), Vote("Code-Review", -1)),
 			CI(8003, u0, Project("infra/luci/luci-go"), Status("MERGED"), Vote("Code-Review", +1)),
 		))
