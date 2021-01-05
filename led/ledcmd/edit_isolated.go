@@ -219,7 +219,7 @@ func uploadToCas(ctx context.Context, client *client.Client, dir string) (*diges
 		return nil, errors.Annotate(err, "failed to compute Merkle Tree").Err()
 	}
 
-	_, err = client.UploadIfMissing(ctx, entries...)
+	_, _, err = client.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to upload items").Err()
 	}

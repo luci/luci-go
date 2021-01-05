@@ -134,11 +134,11 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	start = time.Now()
-	uploadedDigests, err := client.UploadIfMissing(ctx, entries...)
+	uploadedDigests, moved, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
-	logging.Infof(ctx, "UploadIfMissing took %s", time.Since(start))
+	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
