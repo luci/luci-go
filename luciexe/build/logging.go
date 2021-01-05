@@ -40,16 +40,24 @@ type Loggable interface {
 	// Log creates a new log stream (by default, line-oriented text) with the
 	// given name.
 	//
+	// To uphold the requirements of the Build proto message, duplicate log names
+	// will be deduplicated with the same algorithm used for deduplicating step
+	// names.
+	//
 	// To create a binary stream, pass streamclient.Binary() as one of the
 	// options.
 	//
-	// You must close the stream when you're done with it.
-	Log(name string, opts ...streamclient.Option) (io.WriteCloser, error)
+	// The stream will close when the associated object (step or build) is End'd.
+	Log(name string, opts ...streamclient.Option) io.Writer
 
 	// Log creates a new datagram-oriented log stream with the given name.
 	//
-	// You must close the stream when you're done with it.
-	LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error)
+	// To uphold the requirements of the Build proto message, duplicate log names
+	// will be deduplicated with the same algorithm used for deduplicating step
+	// names.
+	//
+	// The stream will close when the associated object (step or build) is End'd.
+	LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter
 }
 
 // LogFromFile is a convenience function which allows you to record a file from
