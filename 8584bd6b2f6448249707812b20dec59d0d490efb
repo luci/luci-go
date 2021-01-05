@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "60af717e_e68ce854",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T18:58:50Z",
+      "side": 1,
+      "message": "thanks, Quinten, for review!",
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "72366733_cdf5363a",
@@ -66,6 +83,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d6a375bd_333ccac4",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T18:58:50Z",
+      "side": 1,
+      "message": "save() saves entities in one multiPut, I don\u0027t know what else to write as a comment, but it would not clarify your 2nd question anyway. Suggestions for what would be useful?\n\nAs for 2nd question:\nneither load() nor save() deal with transaction retries, they do exact the same work regardless of first or n-th try. This is how datastore.RunInTransaction(ctx, func, retryPolicy) works: if func fails, the whole func may be retried.",
+      "parentUuid": "52863d1e_692a1fb4",
+      "range": {
+        "startLine": 261,
+        "startChar": 22,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c05dc8b0_46f68dcd",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 4
@@ -89,6 +130,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6f6102fe_8f485897",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T18:58:50Z",
+      "side": 1,
+      "message": "Facts:\n Datastore stores time up to us precision.\n Go\u0027s time.Time has ns precision.\n\nThus, writing arbitrary time.Time into Datastore followed by reading it back results in precision loss.\nRoundTime emulates this loss.\n\nSo, I use it immediately, s.t. returned object is exactly the same as if it was read from datastore after the transaction.\n\n1. Does it make sense?\n2. Any better way to phrase my comment in code?",
+      "parentUuid": "c05dc8b0_46f68dcd",
+      "range": {
+        "startLine": 263,
+        "startChar": 67,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f44d2e6f_b9a7a91b",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 4
@@ -100,6 +165,30 @@
       "writtenOn": "2021-01-05T18:45:40Z",
       "side": 1,
       "message": "all of these save functions call rb.dsBatcher.register, do they actually store in Datastore or just \"register\" with dsBatcher (in preparation for dsBatcher.put)? If the latter, could they also be called registerRun etc.?",
+      "range": {
+        "startLine": 278,
+        "startChar": 22,
+        "endLine": 278,
+        "endChar": 29
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4266bb06_205fe4bb",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T18:58:50Z",
+      "side": 1,
+      "message": "good question 😊 no actual save, as it happens in L275 dsBatcher.put(ctx).\n\nI was uncomfortable about the name \"saveXXX\" for exactly this reason. Wdyt about \"registerSaveXXX\"?",
+      "parentUuid": "f44d2e6f_b9a7a91b",
       "range": {
         "startLine": 278,
         "startChar": 22,
