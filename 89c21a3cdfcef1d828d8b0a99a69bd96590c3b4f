@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06f1c121_dd52dd7d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T17:58:47Z",
+      "side": 1,
+      "message": "oh, right. done!",
+      "parentUuid": "1bc5d67f_952b7652",
+      "revId": "89c21a3cdfcef1d828d8b0a99a69bd96590c3b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5113d52e_70a56959",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-01-05T17:44:58Z",
       "side": 1,
       "message": "Remember to add an actual bug before submitting",
+      "range": {
+        "startLine": 105,
+        "startChar": 9,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "89c21a3cdfcef1d828d8b0a99a69bd96590c3b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57ce9f7d_6e8de51d",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T17:58:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5113d52e_70a56959",
       "range": {
         "startLine": 105,
         "startChar": 9,
