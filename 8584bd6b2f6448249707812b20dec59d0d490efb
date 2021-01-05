@@ -37,6 +37,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9c62c62c_1ac2a5ea",
+        "filename": "cv/internal/common/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T23:10:02Z",
+      "side": 1,
+      "message": "nit: I think you mean pointer receiver method?",
+      "range": {
+        "startLine": 116,
+        "startChar": 21,
+        "endLine": 116,
+        "endChar": 36
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "72366733_cdf5363a",
         "filename": "cv/internal/common/run.go",
         "patchSetId": 4
@@ -312,6 +335,29 @@
         "startChar": 41,
         "endLine": 77,
         "endChar": 42
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85d6ef31_651a6547",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T23:10:02Z",
+      "side": 1,
+      "message": "I\u0027m trying to understand the reason why PM needs to notify itself for RunStarted. Is it solely because PM may fail at any point after Run is created but before it act on the Run and sending RunStarted Event to PM mailbox enable PM to continue in the next batch processing?",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 15
       },
       "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
