@@ -102,6 +102,9 @@ func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*Su
 	}
 
 	// Split remainingRepos into SubPollers minimizing max of repos per SubPoller.
+	// TODO(crbug/1163177): take ref_regexp into account, since most LUCI projects
+	// watching >1 project use the same ref(s) for each, which in turn allows to
+	// specify `branch:` search term for Gerrit.
 	// Note that rounding up positive int division is (x-1)/y + 1.
 	neededSubPollers := (len(remainingRepos)-1)/maxReposPerQuery + 1
 	maxPerSubPoller := (len(remainingRepos)-1)/neededSubPollers + 1
