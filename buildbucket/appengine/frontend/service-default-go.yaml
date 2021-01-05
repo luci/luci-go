@@ -11,7 +11,7 @@ luci_gae_vars:
 
 automatic_scaling:
   min_idle_instances: 1
-  max_concurrent_requests: 30
+  max_concurrent_requests: 50
 
 instance_class: F4
 
