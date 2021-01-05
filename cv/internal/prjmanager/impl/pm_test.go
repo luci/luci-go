@@ -50,7 +50,7 @@ func TestProjectLifeCycle(t *testing.T) {
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
 		Convey("with new project", func() {
-			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+			ct.Cfg.Create(ctx, lProject, singleHostConfig("host", "repo"))
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			// Second event is noop, but should still be consumed at once.
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
@@ -83,7 +83,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				simulateRunCreated("111-beef")
 				simulateRunCreated("222-cafe")
 
-				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
+				ct.Cfg.Update(ctx, lProject, singleHostConfig("host", "repo2"))
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
@@ -156,7 +156,7 @@ func loadProjectEntities(ctx context.Context, luciProject string) (*prjmanager.P
 	return p, ps
 }
 
-func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
+func singleHostConfig(gHost string, gRepos ...string) *cfgpb.Config {
 	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
 	for i, gRepo := range gRepos {
 		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{

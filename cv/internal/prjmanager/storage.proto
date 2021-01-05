@@ -14,14 +14,105 @@
 
 syntax = "proto3";
 
-package internal.prjmanager;
+package cv.prjmanager;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager;prjmanager";
 
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
 
 enum Status {
   STATUS_UNSPECIFIED = 0;
   STARTED = 1;
   STOPPING = 2;
   STOPPED = 3;
+}
+
+// PendingCLs is the Project Manager state of a specific LUCI project.
+//
+// PendingCLs records pending `cls`, which are in-scope for the current LUCI
+// project, meaning only this LUCI project is handling these CLs.
+//
+// The `cls` are grouped into disjoint connected components treating thir
+// dependency graph as undirected. Thus, individual components are processed
+// (e.g. new Run started) independently from one another.
+message PendingCLs {
+  // These are raw CLs, each watched by the LUCI project.
+  //
+  // Sorted by CL ID.
+  repeated PendingCL cls = 1;
+  // Component is a distjoint partition of CLs in the list above.
+  repeated Component components = 2;
+  // TODO(tandrii): move IncompleteRuns list from `Project` entity to here
+  // if this is necessary for acting on PendingCLs.
+
+  // Config group names intern of the names referenced in PendingCL.
+  //
+  // The group names don't contain hash, because entire PendingCL is specific to
+  // a ConfigHash.
+  //
+  // See also https://en.wikipedia.org/wiki/String_interning.
+  repeated string config_group_names = 3;
+
+  // If true, components partition must be redone soon as possible.
+  bool dirty_components = 11;
+}
+
+message PendingCL {
+  int64 clid = 1;
+  int64 eversion = 2;
+  // Index in of a config group in a State.config_group_names to which this CL
+  // refers.
+  //
+  // Special value -1 implies that it's unknown because CL doesn't have a
+  // snapshot.
+  int32 config_group_index = 3;
+  // Used to store and eventually signal to CV users that CL matches >1 config
+  // group.
+  repeated int32 excess_config_group_indexes = 4;
+
+  // Deps typically reference another pending CL in the same LUCI project,
+  // but may sometimes refer a CL not in scope for the LUCI project due to user
+  // error or CV misconfiguration.
+  repeated changelist.Dep deps = 11;
+
+  // Trigger is CQDaemon-compatible record of who/when trigger CV on this CL.
+  cv.run.Trigger trigger = 12;
+}
+
+// Component is a set of CLs related to each other.
+message Component {
+  // CL IDs of the PendingCL in this component. Sorted.
+  //
+  // Each referenced PendingCL must be in State.cls list.
+  // Each referenced PendingCL may have dependencies which aren't in `State.cls`
+  // list.
+  repeated int64 pending_ids = 1;
+
+  // Decision time is the earliest time when this component should be
+  // re-evaluated.
+  //
+  // Can be set to far future meaning no need for re-evaluation without an
+  // external event, e.g. CLUpdated or RunFinished.
+  google.protobuf.Timestamp decision_time = 2;
+
+  message Run {
+    // Using embedded message to avoid potentially confusing top-level Run.
+
+    // Run ID.
+    string id = 1;
+    // IDs of CLs involved. Sorted.
+    //
+    // Actual Run orders CLs in different way.
+    //
+    // Must be a subset of Component's pending_ids.
+    repeated int64 cls = 2;
+  }
+  // Incomplete Runs working on CLs from this component.
+  repeated Run runs = 3;
+
+  // If true, this component must be re-evaluated as soon as possible.
+  bool dirty = 11;
 }

@@ -500,7 +500,7 @@ func (f *Fake) Has(host string, change int) bool {
 	return ok
 }
 
-// Change returns a mutable Change that must exist. Panics otherwise.
+// GetChange returns a mutable Change that must exist. Panics otherwise.
 //
 // The returned Change can be modified, but such modification won't be atomic
 // from perspective of concurrent RPCs. Recommended for use in between the RPCs.
@@ -512,6 +512,21 @@ func (f *Fake) GetChange(host string, change int) *Change {
 		panic(fmt.Errorf("CL %s/%d not found", host, change))
 	}
 	return c
+}
+
+// CreateChange adds a change that must not yet exist.
+func (f *Fake) CreateChange(c *Change) {
+	f.m.Lock()
+	defer f.m.Unlock()
+	k := key(c.Host, int(c.Info.GetNumber()))
+	if f.cs == nil {
+		f.cs = map[string]*Change{k: c}
+		return
+	}
+	if _, ok := f.cs[k]; ok {
+		panic(fmt.Errorf("CL %s already exists", k))
+	}
+	f.cs[k] = c
 }
 
 // MutateChange modifies a change while holding a lock blocking concurrent RPCs.

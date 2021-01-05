@@ -29,6 +29,9 @@ import (
 )
 
 // state tracks state of a ProjectManager during its mutation.
+//
+// The state is modified via copy-on-write a.k.a. COW
+// (https://en.wikipedia.org/wiki/Copy-on-write).
 type state struct {
 	luciProject string
 
@@ -37,6 +40,7 @@ type state struct {
 	status         prjmanager.Status // stored in a ProjectStateOffload entity.
 	configHash     string            // stored in a ProjectStateOffload entity.
 	incompleteRuns common.RunIDs     // sorted; stored in a Project entity.
+	pendingCLs     *pendingCLs       // stored in a Project entity.
 }
 
 func (s *state) cloneShallow() *state {
@@ -44,6 +48,8 @@ func (s *state) cloneShallow() *state {
 	*ret = *s
 	return ret
 }
+
+// Top-level transitions funcs.
 
 func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn, error) {
 	meta, err := config.GetLatestMeta(ctx, s.luciProject)
@@ -67,8 +73,12 @@ func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn
 		if err := poller.Poke(ctx, s.luciProject); err != nil {
 			return nil, nil, err
 		}
-		// TODO(tandrii): re-evaluate pending CLs.
-		return s, s.updateRunsConfigFactory(meta), nil
+		p, sideEffectFn, err := s.pendingCLs.updateConfig(ctx, meta)
+		if err != nil {
+			return nil, nil, err
+		}
+		s.pendingCLs = p
+		return s, eventbox.Chain(sideEffectFn, s.updateRunsConfigFactory(meta)), nil
 
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
@@ -117,8 +127,12 @@ func (s *state) poke(ctx context.Context) (*state, eventbox.SideEffectFn, error)
 	if err := s.pokeRuns(ctx); err != nil {
 		return nil, nil, err
 	}
-	// TODO(tandrii): implement.
-	return s, nil, nil
+	p, sideEffectFn, err := s.pendingCLs.poke(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	s.pendingCLs = p
+	return s, sideEffectFn, nil
 }
 
 func (s *state) onRunsCreated(ctx context.Context, created common.RunIDs) (*state, eventbox.SideEffectFn, error) {
@@ -139,32 +153,84 @@ func (s *state) onRunsCreated(ctx context.Context, created common.RunIDs) (*stat
 	if !mutated {
 		return s, nil, nil
 	}
-	if s.status == prjmanager.Status_STOPPED {
+	switch s.status {
+	case prjmanager.Status_STOPPED:
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
 		return s, nil, nil
+
+	case prjmanager.Status_STOPPING:
+		// No need to update pendingCLs since no actions will be taken anyhow.
+		return s, nil, nil
+
+	case prjmanager.Status_STARTED:
+		p, sideEffectFn, err := s.pendingCLs.onRunsCreated(ctx, created)
+		if err != nil {
+			return nil, nil, err
+		}
+		s.pendingCLs = p
+		return s, sideEffectFn, nil
+
+	default:
+		panic(fmt.Errorf("unexpected project status: %d", s.status))
 	}
-	// TODO(tandrii): re-evaluate pending CLs.
-	return s, nil, nil
 }
 
 func (s *state) onRunsFinished(ctx context.Context, finished common.RunIDs) (*state, eventbox.SideEffectFn, error) {
 	remaining := s.incompleteRuns.WithoutSorted(finished)
 	if len(remaining) == len(s.incompleteRuns) {
-		return s, nil, nil // no change
+		return s, nil, nil // noop.
 	}
 	s = s.cloneShallow()
 	s.incompleteRuns = remaining
 
-	if s.status == prjmanager.Status_STOPPING && len(s.incompleteRuns) == 0 {
-		s.status = prjmanager.Status_STOPPED
+	switch s.status {
+	case prjmanager.Status_STOPPED:
+		// This must not happen, but handle it anyway.
+		logging.Errorf(ctx, "CRITICAL: RunFinished %s events on STOPPED Project Manager", finished)
 		return s, nil, nil
+
+	case prjmanager.Status_STOPPING:
+		if len(remaining) == 0 {
+			s.status = prjmanager.Status_STOPPED
+		}
+		return s, nil, nil
+
+	case prjmanager.Status_STARTED:
+		p, sideEffectFn, err := s.pendingCLs.onRunsFinished(ctx, finished)
+		if err != nil {
+			return nil, nil, err
+		}
+		s.pendingCLs = p
+		return s, sideEffectFn, nil
+
+	default:
+		panic(fmt.Errorf("unexpected project status: %d", s.status))
 	}
-	// TODO(tandrii): re-evaluate pending CLs.
-	return s, nil, nil
 }
 
 func (s *state) onCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*state, eventbox.SideEffectFn, error) {
-	// TODO(tandrii): implement.
-	return s, nil, nil
+	switch p, sideEffectFn, err := s.pendingCLs.updateCLs(ctx, cls); {
+	case err != nil:
+		return nil, nil, err
+	case p == s.pendingCLs:
+		return s, sideEffectFn, nil // no state change
+	default:
+		s = s.cloneShallow()
+		s.pendingCLs = p
+		return s, sideEffectFn, nil
+	}
+}
+
+func (s *state) execDeferred(ctx context.Context) (*state, eventbox.SideEffectFn, error) {
+	switch p, sideEffectFn, err := s.pendingCLs.execDeferred(ctx); {
+	case err != nil:
+		return nil, nil, err
+	case p == s.pendingCLs:
+		return s, sideEffectFn, nil // no state change
+	default:
+		s = s.cloneShallow()
+		s.pendingCLs = p
+		return s, sideEffectFn, nil
+	}
 }

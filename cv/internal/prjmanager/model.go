@@ -43,6 +43,13 @@ type Project struct {
 	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
 	IncompleteRuns common.RunIDs `gae:",noindex"`
+
+	// PendingCLs are CLs of current interest to Project Manager.
+	//
+	// NOTE: CLs already handled IncompleteRuns are typically not here,
+	// unless something changed and Project Manager think a new Run has to be
+	// started.
+	PendingCLs *PendingCLs
 }
 
 // ProjectStateOffload stores rarely changed project state offloaded from the

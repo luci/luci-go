@@ -69,16 +69,29 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	merr, multiple := err.(errors.MultiError)
 	switch {
 	case multiple && merr[0] == datastore.ErrNoSuchEntity:
-		return &state{luciProject: pm.luciProject}, 0, nil
+		s := &state{
+			luciProject: pm.luciProject,
+			pendingCLs:  &pendingCLs{PendingCLs: &prjmanager.PendingCLs{}},
+		}
+		return s, 0, nil
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	default:
 		s := &state{
-			luciProject: pm.luciProject,
-
+			luciProject:    pm.luciProject,
 			status:         pm.stateOffload.Status,
 			configHash:     pm.stateOffload.ConfigHash,
 			incompleteRuns: p.IncompleteRuns,
+			pendingCLs: &pendingCLs{
+				PendingCLs:  p.PendingCLs,
+				luciProject: pm.luciProject,
+				configHash:  pm.stateOffload.ConfigHash,
+			},
+		}
+		// TODO(tandrii): remove this after all project entities have been saved
+		// with non-nil PendingCLs.
+		if s.pendingCLs.PendingCLs == nil {
+			s.pendingCLs.PendingCLs = &prjmanager.PendingCLs{}
 		}
 		return s, eventbox.EVersion(p.EVersion), nil
 	}
@@ -125,6 +138,7 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 		EVersion:       int(ev),
 		UpdateTime:     clock.Now(ctx).UTC(),
 		IncompleteRuns: s.incompleteRuns,
+		PendingCLs:     s.pendingCLs.PendingCLs,
 	}
 	if s.configHash != pm.stateOffload.ConfigHash || s.status != pm.stateOffload.Status {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
@@ -247,5 +261,11 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 		t.TransitionTo = s
 		ret = append(ret, t)
 	}
+
+	s, sideEffectFn, err := s.execDeferred(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ret = append(ret, eventbox.Transition{SideEffectFn: sideEffectFn, TransitionTo: s})
 	return
 }

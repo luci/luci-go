@@ -33,6 +33,9 @@ import (
 type Matcher struct {
 	state                  *MatcherState
 	cachedConfigGroupNames []config.ConfigGroupID
+	// TODO(tandrii): since `regexp` package doesn't cache regexps,
+	// consider caching regexps here if `regexp.MustCompile` takes considerable
+	// time.
 }
 
 // LoadMatcher instantiates Matcher from config stored in Datastore.
@@ -122,6 +125,11 @@ func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
 		ret[i] = m.cachedConfigGroupNames[g.GetIndex()]
 	}
 	return ret
+}
+
+// ConfigHash returns of this Matcher instance.
+func (m *Matcher) ConfigHash() string {
+	return m.state.GetConfigHash()
 }
 
 // MakeGroup returns a new Group based Gerrit Project section of a ConfigGroup.
