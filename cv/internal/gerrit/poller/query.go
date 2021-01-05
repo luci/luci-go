@@ -207,6 +207,9 @@ func buildQuery(sp *SubPoller) string {
 	buf.WriteString("status:NEW ")
 	// TODO(tandrii): make label optional to support Tricium use-case.
 	buf.WriteString("label:Commit-Queue>0 ")
+	// TODO(crbug/1163177): specify `branch:` search term to restrict search to
+	// specific refs. This requires changing partitioning poller into subpollers,
+	// but will provide more targeted queries, reducing load on CV & Gerrit.
 
 	emitProjectValue := func(p string) {
 		// Even though it appears to work without, Gerrit doc says project names
