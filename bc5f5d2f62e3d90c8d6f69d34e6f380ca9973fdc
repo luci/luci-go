@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d972c93c_cafb24fd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T19:02:09Z",
+      "side": 1,
+      "message": "yep and yes, exactly. Thanks to your comment, i came up with dsBatcher, which removed the need for this complexity.",
+      "parentUuid": "927f42ec_f20ea908",
+      "revId": "bc5f5d2f62e3d90c8d6f69d34e6f380ca9973fdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "cafa3010_e148c38f",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
