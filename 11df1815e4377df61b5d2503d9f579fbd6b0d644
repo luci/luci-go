@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c09ed29_f7702c18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:45:50Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c63bca82_62b658f0",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:45:50Z",
+      "side": 1,
+      "message": "Nit unrelated to this CL, this could perhaps be named clUpdated?",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 10
+      },
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4524c755_5a5e6c18",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:45:50Z",
+      "side": 1,
+      "message": "\"runsCreated and runsFinished\"?",
+      "range": {
+        "startLine": 194,
+        "startChar": 52,
+        "endLine": 194,
+        "endChar": 76
+      },
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67f5ffbb_7f602d4a",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:45:50Z",
+      "side": 1,
+      "message": "Is this the bug fix mentioned in the CL description?",
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a25278d_0d466f9d",
+        "filename": "cv/internal/prjmanager/impl/transitions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T20:45:50Z",
+      "side": 1,
+      "message": "Note: I guess that technically in the GAE logs this will show up as \"error\" level and not \"critical\" level (there\u0027s no logging.Criticalf, https://godoc.org/go.chromium.org/luci/common/logging#Level)",
+      "range": {
+        "startLine": 144,
+        "startChar": 10,
+        "endLine": 144,
+        "endChar": 16
+      },
+      "revId": "11df1815e4377df61b5d2503d9f579fbd6b0d644",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
