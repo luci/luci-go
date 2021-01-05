@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9efbfd11_83dbf635",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T02:51:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "308f6494_88b47714",
+      "range": {
+        "startLine": 425,
+        "startChar": 1,
+        "endLine": 425,
+        "endChar": 2
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e6c27b88_4b2dd424",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "739efbd6_a288a9e3",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T02:51:22Z",
+      "side": 1,
+      "message": "Yes, of course it could and it would make code *this* simpler.\nBut not the call sites, which would require more boilerplate.\n\nWhat I really want is Py equivalent of:\n\n  def vote(label, value, time\u003dNone, user\u003dNone):\n    assert (time is None) \u003d\u003d (user is None)\n\ns.t. usage is concise and easy to read:\ngf.CQ(+2)\ngf.CQ(+2, epoch.Add(time.Minute), gf.U(\"user-1\"))\n\nMy ideal is avoiding the need for `gf.U()` by passing just \"user-1\", but I guess I can tolerate gf.U for now.",
+      "parentUuid": "e6c27b88_4b2dd424",
+      "range": {
+        "startLine": 426,
+        "startChar": 50,
+        "endLine": 426,
+        "endChar": 61
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "26988fe2_8a8c06a5",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-01-04T16:36:28Z",
       "side": 1,
       "message": "com",
+      "range": {
+        "startLine": 473,
+        "startChar": 50,
+        "endLine": 473,
+        "endChar": 53
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e01e1cee_46027ced",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T02:51:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26988fe2_8a8c06a5",
       "range": {
         "startLine": 473,
         "startChar": 50,
@@ -128,6 +200,54 @@
         "startChar": 28,
         "endLine": 475,
         "endChar": 33
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa8cf169_72749546",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T02:51:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85af047d_899211cc",
+      "range": {
+        "startLine": 475,
+        "startChar": 28,
+        "endLine": 475,
+        "endChar": 33
+      },
+      "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8cc39a6_3125ab7a",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-05T02:51:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eaac7b2b_656a21d1",
+      "range": {
+        "startLine": 475,
+        "startChar": 3,
+        "endLine": 475,
+        "endChar": 12
       },
       "revId": "65bbb60af6d775fc993b6ca2efccbc092e922d3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
