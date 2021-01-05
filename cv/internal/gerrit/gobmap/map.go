@@ -17,7 +17,6 @@ package gobmap
 import (
 	"context"
 	"regexp"
-	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -29,7 +28,7 @@ import (
 	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/gerrit/gobmap/internal"
+	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 )
 
 const (
@@ -64,7 +63,7 @@ type mapPart struct {
 
 	// Groups keeps config groups of a LUCI project applicable to this
 	// host/repo.
-	Groups *internal.Groups
+	Groups *cfgmatcher.Groups
 
 	// ConfigHash is the hash of latest CV project config imported from LUCI
 	// Config; this is updated based on ProjectConfig entity.
@@ -164,20 +163,17 @@ func listUpdates(ctx context.Context, mps []*mapPart, latestConfigGroups []*conf
 	return toPut, toDelete
 }
 
-// internalGroups converts config.ConfigGroups to internal.Groups.
+// internalGroups converts config.ConfigGroups to cfgmatcher.Groups.
 //
-// It returns a map of host/repo to internal.Groups.
-func internalGroups(configGroups []*config.ConfigGroup) map[string]*internal.Groups {
-	ret := make(map[string]*internal.Groups)
+// It returns a map of host/repo to cfgmatcher.Groups.
+func internalGroups(configGroups []*config.ConfigGroup) map[string]*cfgmatcher.Groups {
+	ret := make(map[string]*cfgmatcher.Groups)
 	for _, g := range configGroups {
 		for _, gerrit := range g.Content.Gerrit {
-			// Gerrit hosts are assumed to always use https.
-			// TODO(qyearsley): Use helper function config.GerritHost().
-			host := strings.TrimPrefix(gerrit.Url, "https://")
-			host = strings.TrimSuffix(host, "/")
+			host := config.GerritHost(gerrit)
 			for _, p := range gerrit.Projects {
 				hostRepo := host + "/" + p.Name
-				group := &internal.Group{
+				group := &cfgmatcher.Group{
 					Id:       string(g.ID),
 					Include:  p.RefRegexp,
 					Exclude:  p.RefRegexpExclude,
@@ -186,8 +182,8 @@ func internalGroups(configGroups []*config.ConfigGroup) map[string]*internal.Gro
 				if groups, ok := ret[hostRepo]; ok {
 					groups.Groups = append(groups.Groups, group)
 				} else {
-					ret[hostRepo] = &internal.Groups{
-						Groups: []*internal.Group{group},
+					ret[hostRepo] = &cfgmatcher.Groups{
+						Groups: []*cfgmatcher.Group{group},
 					}
 				}
 			}
