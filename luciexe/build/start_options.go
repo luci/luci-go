@@ -44,8 +44,10 @@ type StartOption func(*State)
 // If no logsink is configured, the go.chromium.org/luci/common/logging library
 // will be unaffected, and data written to the Loggable interface will go to
 // an ioutil.NopWriteCloser.
-func OptLogsink(*streamclient.Client) StartOption {
-	panic("not implemented")
+func OptLogsink(c *streamclient.Client) StartOption {
+	return func(s *State) {
+		s.logsink = c
+	}
 }
 
 // OptSend allows you to get a callback when the state of the underlying Build

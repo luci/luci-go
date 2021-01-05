@@ -143,7 +143,6 @@ func TestPropertiesNoop(t *testing.T) {
 
 				Convey(`merge msg`, func() {
 					merger(ctx, &bbpb.Build{SummaryMarkdown: "hidey-ho"})
-					memlogger.MustDumpStdout(ctx)
 					So(logs, memlogger.ShouldHaveLog, logging.Info, "merging output property \"ns\"")
 				})
 			})
