@@ -16,6 +16,69 @@
       "message": "I\u0027ve reworked this to simplify structure, hence PTAL again.\nYou can see the final result by looking at 3 CLs on top of this one.",
       "revId": "7ce4336b7a4236c6c35789082904f8b8613e72f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62f2b7fe_8b335ded",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:30:26Z",
+      "side": 1,
+      "message": "LGTM with usual small questions/nits",
+      "revId": "7ce4336b7a4236c6c35789082904f8b8613e72f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cf72316_42fe106f",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:30:26Z",
+      "side": 1,
+      "message": "This sentence looks like it could be rephrased for clarity.\n\nSo, some fields (cls, run) might be read from Datastore, e.g. if part of creation fails and is retried? When would it be a \"saved Run\"? (it sounds like a saved run might also be read from Datastore?)",
+      "range": {
+        "startLine": 81,
+        "startChar": 11,
+        "endLine": 81,
+        "endChar": 56
+      },
+      "revId": "7ce4336b7a4236c6c35789082904f8b8613e72f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49b0fe60_f4b1926b",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T18:30:26Z",
+      "side": 1,
+      "message": "all other errors are",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 30
+      },
+      "revId": "7ce4336b7a4236c6c35789082904f8b8613e72f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
