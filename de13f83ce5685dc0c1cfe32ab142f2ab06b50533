@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "924b48b0_4665b06c",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T20:57:41Z",
+      "side": 1,
+      "message": "Tag with StateChangedTag? Otherwise, prjmanager won\u0027t initiate this Run.",
+      "range": {
+        "startLine": 227,
+        "startChar": 104,
+        "endLine": 227,
+        "endChar": 110
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11bd9ca0_eed47620",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T20:57:41Z",
+      "side": 1,
+      "message": "Curious: What does ml stand for?",
+      "range": {
+        "startLine": 331,
+        "startChar": 6,
+        "endLine": 331,
+        "endChar": 8
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06078a8c_3cd84a5b",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T20:57:41Z",
+      "side": 1,
+      "message": "+callback MUST be non-nil.\n\nas we assume that in `execCallbacks`",
+      "range": {
+        "startLine": 339,
+        "startChar": 62,
+        "endLine": 339,
+        "endChar": 63
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd93151a_ab4d8597",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-05T20:57:41Z",
+      "side": 1,
+      "message": "put entities to",
+      "range": {
+        "startLine": 375,
+        "startChar": 41,
+        "endLine": 375,
+        "endChar": 60
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
