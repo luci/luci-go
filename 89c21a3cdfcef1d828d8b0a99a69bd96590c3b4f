@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bc5d67f_952b7652",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T17:44:58Z",
+      "side": 1,
+      "message": "LGTM when you\u0027re ready, you may want to file a bug and write the bug number in",
+      "revId": "89c21a3cdfcef1d828d8b0a99a69bd96590c3b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5113d52e_70a56959",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-05T17:44:58Z",
+      "side": 1,
+      "message": "Remember to add an actual bug before submitting",
+      "range": {
+        "startLine": 105,
+        "startChar": 9,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "89c21a3cdfcef1d828d8b0a99a69bd96590c3b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
