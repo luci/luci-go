@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0a2865c_88dcd022",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-06T04:54:57Z",
+      "side": 1,
+      "message": "Do we need to check ordinal.Valid?",
+      "range": {
+        "startLine": 134,
+        "startChar": 51,
+        "endLine": 134,
+        "endChar": 64
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adb853f9_0d03ad1e",
+        "filename": "resultdb/pbutil/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-06T04:54:57Z",
+      "side": 1,
+      "message": "Nit: name this file commit_position.go?",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
