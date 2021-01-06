@@ -25,7 +25,8 @@ message Event {
     UpdateConfig update_config = 1;
     Poke poke = 2;
     CLUpdated cl_updated = 3;
-    RunFinished run_finished = 4;
+    RunCreated run_created = 4;
+    RunFinished run_finished = 5;
   }
 }
 
@@ -38,6 +39,10 @@ message CLUpdated {
   int64 clid = 1;
   // EVersion of the updated CL entity.
   int64 eversion = 2;
+}
+
+message RunCreated {
+  string run_id = 1;
 }
 
 message RunFinished {
