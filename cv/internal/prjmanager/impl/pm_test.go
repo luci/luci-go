@@ -68,7 +68,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			ct.Clock.Add(time.Hour)
 
 			Convey("update config with incomplete runs", func() {
-				// This is what prjmanager.runCreated func does,
+				// This is what prjmanager.notifyRunCreated func does,
 				// but because it's private, it can't be called from this package.
 				simulateRunCreated := func(suffix string) {
 					e := &internal.Event{Event: &internal.Event_RunCreated{
@@ -112,13 +112,13 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(runtest.SortedRuns(ct.TQ.Tasks()), ShouldResemble, expected)
 
 					Convey("wait for all IncompleteRuns to finish", func() {
-						So(prjmanager.RunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
+						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
 						So(p.IncompleteRuns, ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
-						So(prjmanager.RunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
+						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)

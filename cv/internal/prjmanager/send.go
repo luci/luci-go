@@ -34,8 +34,8 @@ import (
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
 func UpdateConfig(ctx context.Context, luciProject string) error {
 	return send(ctx, luciProject, &internal.Event{
-		Event: &internal.Event_UpdateConfig{
-			UpdateConfig: &internal.UpdateConfig{},
+		Event: &internal.Event_NewConfig{
+			NewConfig: &internal.NewConfig{},
 		},
 	})
 }
@@ -50,8 +50,8 @@ func Poke(ctx context.Context, luciProject string) error {
 	})
 }
 
-// CLUpdated tells ProjectManager to check latest version of a given CL.
-func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
+// NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
+func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
 	return send(ctx, luciProject, &internal.Event{
 		Event: &internal.Event_ClUpdated{
 			ClUpdated: &internal.CLUpdated{
@@ -62,7 +62,7 @@ func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversi
 	})
 }
 
-// runCreated is sent by ProjectManager to itself within a Run creation
+// NotifyRunCreated is sent by ProjectManager to itself within a Run creation
 // transaction.
 //
 // Unlike other event-sending funcs, this only creates an event and doesn't
@@ -78,7 +78,7 @@ func CLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversi
 //     failure OR ProjectManager fails at any point before it can act on
 //     RunCreation, then the existing TQ task running ProjectManager will be
 //     retried. So once again there is no need to create a TQ task.
-func runCreated(ctx context.Context, runID common.RunID) error {
+func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
 	return sendWithoutDispatch(ctx, runID.LUCIProject(), &internal.Event{
 		Event: &internal.Event_RunCreated{
 			RunCreated: &internal.RunCreated{
@@ -88,8 +88,8 @@ func runCreated(ctx context.Context, runID common.RunID) error {
 	})
 }
 
-// RunFinished tells ProjectManager that a run has finalized its state.
-func RunFinished(ctx context.Context, runID common.RunID) error {
+// NotifyRunFinished tells ProjectManager that a run has finalized its state.
+func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID.LUCIProject(), &internal.Event{
 		Event: &internal.Event_RunFinished{
 			RunFinished: &internal.RunFinished{

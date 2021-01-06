@@ -121,7 +121,7 @@ func (s *state) poke(ctx context.Context) (*state, eventbox.SideEffectFn, error)
 	return s, nil, nil
 }
 
-func (s *state) runsCreated(ctx context.Context, created common.RunIDs) (*state, eventbox.SideEffectFn, error) {
+func (s *state) onRunsCreated(ctx context.Context, created common.RunIDs) (*state, eventbox.SideEffectFn, error) {
 	mutated := false
 	for _, id := range created {
 		if !mutated {
@@ -148,7 +148,7 @@ func (s *state) runsCreated(ctx context.Context, created common.RunIDs) (*state,
 	return s, nil, nil
 }
 
-func (s *state) runsFinished(ctx context.Context, finished common.RunIDs) (*state, eventbox.SideEffectFn, error) {
+func (s *state) onRunsFinished(ctx context.Context, finished common.RunIDs) (*state, eventbox.SideEffectFn, error) {
 	remaining := s.incompleteRuns.WithoutSorted(finished)
 	if len(remaining) == len(s.incompleteRuns) {
 		return s, nil, nil // no change
@@ -164,7 +164,7 @@ func (s *state) runsFinished(ctx context.Context, finished common.RunIDs) (*stat
 	return s, nil, nil
 }
 
-func (s *state) clsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*state, eventbox.SideEffectFn, error) {
+func (s *state) onCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*state, eventbox.SideEffectFn, error) {
 	// TODO(tandrii): implement.
 	return s, nil, nil
 }
