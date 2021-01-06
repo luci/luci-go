@@ -189,7 +189,7 @@ export class TestResultsTabElement extends MobxLitElement {
     `: html ``;
   }
 
-  private renderVariants(variants: ReadonlyVariant[], expandFirst: boolean = false) {
+  private renderVariants(variants: ReadonlyVariant[], expandFirst = false) {
     return html`
       ${repeat(
         variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),

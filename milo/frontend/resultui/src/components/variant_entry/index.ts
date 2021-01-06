@@ -99,7 +99,7 @@ export class VariantEntryElement extends MobxLitElement {
       return 0;
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
-    return this.variant!.results.findIndex((e) => !e.expected)
+    return this.variant!.results.findIndex((e) => !e.expected);
   }
 
   private renderBody() {
