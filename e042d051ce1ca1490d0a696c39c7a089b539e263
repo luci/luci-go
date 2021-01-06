@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c17c7450_8c5c9372",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-06T18:50:39Z",
+      "side": 1,
+      "message": "should we also check and update the realm values in BQ, if there is any?",
+      "revId": "e042d051ce1ca1490d0a696c39c7a089b539e263",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
