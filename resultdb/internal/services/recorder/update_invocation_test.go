@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -34,6 +36,46 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestValidateCommitPosition(t *testing.T) {
+	t.Parallel()
+	Convey(`TestValidateCommitPosition`, t, func() {
+		param := &pb.CommitPosition{
+			Host:     "chromium.googlesource.com",
+			Project:  "chromium/src",
+			Ref:      "refs/heads/master",
+			Position: 123456,
+		}
+		Convey(`valid`, func() {
+			So(validateCommitPosition(param), ShouldBeNil)
+		})
+		Convey(`no host`, func() {
+			param.Host = ""
+			err := validateCommitPosition(param)
+			So(err, ShouldErrLike, `host is required`)
+		})
+		Convey(`no project`, func() {
+			param.Project = ""
+			err := validateCommitPosition(param)
+			So(err, ShouldErrLike, `project is required`)
+		})
+		Convey(`no ref`, func() {
+			param.Ref = ""
+			err := validateCommitPosition(param)
+			So(err, ShouldErrLike, `ref must match refs/.*`)
+		})
+		Convey(`bad ref`, func() {
+			param.Ref = "master"
+			err := validateCommitPosition(param)
+			So(err, ShouldErrLike, `ref must match refs/.*`)
+		})
+		Convey(`no position`, func() {
+			param.Position = 0
+			err := validateCommitPosition(param)
+			So(err, ShouldErrLike, `position is required`)
+		})
+	})
+}
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
 	t.Parallel()
@@ -108,7 +150,7 @@ func TestUpdateInvocation(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(start.Add(day))
-		updateMask := &field_mask.FieldMask{
+		deadlineUpdateMask := &field_mask.FieldMask{
 			Paths: []string{"deadline"},
 		}
 
@@ -124,7 +166,7 @@ func TestUpdateInvocation(t *testing.T) {
 					Name:     "invocations/inv",
 					Deadline: validDeadline,
 				},
-				UpdateMask: updateMask,
+				UpdateMask: deadlineUpdateMask,
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
@@ -133,14 +175,14 @@ func TestUpdateInvocation(t *testing.T) {
 		// Insert the invocation.
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
-		Convey("e2e", func() {
+		Convey("e2e - deadline", func() {
 			expected := &pb.Invocation{
 				Name:     "invocations/inv",
 				Deadline: validDeadline,
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: expected,
-				UpdateMask: updateMask,
+				UpdateMask: deadlineUpdateMask,
 			}
 			inv, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldBeNil)
@@ -157,6 +199,55 @@ func TestUpdateInvocation(t *testing.T) {
 				"Deadline": &actual.Deadline,
 			})
 			So(actual, ShouldResembleProto, expected)
+		})
+
+		// Insert the invocation.
+		testutil.MustApply(ctx, insert.Invocation("inv-cp", pb.Invocation_ACTIVE, nil))
+		Convey("e2e - commit position", func() {
+			token, err = generateInvocationToken(ctx, "inv-cp")
+			So(err, ShouldBeNil)
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+			commitPositionUpdateMask := &field_mask.FieldMask{
+				Paths: []string{"history_options.commit"},
+			}
+			host := "chromium.googlesource.com"
+			project := "chromium/src"
+			ref := "refs/heads/master"
+			var position int64 = 123456
+
+			expected := &pb.Invocation{
+				Name: "invocations/inv-cp",
+				HistoryOptions: &pb.HistoryOptions{
+					Commit: &pb.CommitPosition{
+						Host:     host,
+						Project:  project,
+						Ref:      ref,
+						Position: position,
+					},
+				},
+			}
+			req := &pb.UpdateInvocationRequest{
+				Invocation: expected,
+				UpdateMask: commitPositionUpdateMask,
+			}
+			inv, err := recorder.UpdateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(inv.Name, ShouldEqual, expected.Name)
+			So(inv.HistoryOptions.Commit, ShouldResembleProto, expected.HistoryOptions.Commit)
+
+			var ordinal int64
+			var domain string
+
+			invID := invocations.ID("inv-cp")
+			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
+				"OrdinalDomain": &domain,
+				"Ordinal":       &ordinal,
+			})
+			So(domain, ShouldEqual, fmt.Sprintf("gitiles://%s/%s/%s", host, project, ref))
+			So(ordinal, ShouldEqual, position)
+			actual, err := invocations.Read(span.Single(ctx), invID)
+			So(err, ShouldBeNil)
+			So(actual.HistoryOptions.Commit, ShouldResembleProto, expected.HistoryOptions.Commit)
 		})
 	})
 }

@@ -39,9 +39,11 @@ func TestRead(t *testing.T) {
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			insertInvocation("including", map[string]interface{}{
-				"State":      pb.Invocation_ACTIVE,
-				"CreateTime": start,
-				"Deadline":   start.Add(time.Hour),
+				"State":         pb.Invocation_ACTIVE,
+				"CreateTime":    start,
+				"Deadline":      start.Add(time.Hour),
+				"Ordinal":       123456,
+				"OrdinalDomain": "gitiles://chromium.googlesource.com/chromium/src/refs/heads/master",
 			}),
 			insertInvocation("included0", nil),
 			insertInvocation("included1", nil),
@@ -61,6 +63,14 @@ func TestRead(t *testing.T) {
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
+			HistoryOptions: &pb.HistoryOptions{
+				Commit: &pb.CommitPosition{
+					Host:     "chromium.googlesource.com",
+					Project:  "chromium/src",
+					Ref:      "refs/heads/master",
+					Position: 123456,
+				},
+			},
 		})
 	})
 }
