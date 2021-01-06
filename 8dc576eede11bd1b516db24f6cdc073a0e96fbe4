@@ -22,6 +22,30 @@
       },
       "revId": "8dc576eede11bd1b516db24f6cdc073a0e96fbe4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6568c0f_74f8e7de",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-06T22:37:51Z",
+      "side": 0,
+      "message": "Yes. Lazy rendering isn\u0027t implemented yet. It will come in a following CL.",
+      "parentUuid": "36234e20_1e044da2",
+      "range": {
+        "startLine": 175,
+        "startChar": 8,
+        "endLine": 179,
+        "endChar": 13
+      },
+      "revId": "8dc576eede11bd1b516db24f6cdc073a0e96fbe4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
