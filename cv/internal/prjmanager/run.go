@@ -17,12 +17,14 @@ package prjmanager
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
 	"sort"
 	"strconv"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -157,14 +159,102 @@ func (rb *RunBuilder) prepare(ctx context.Context) error {
 
 func (rb *RunBuilder) createTransactionally(ctx context.Context) (*run.Run, error) {
 	rb.computeRunID(ctx)
-	// TODO(tandrii): implement.
+	switch err := rb.load(ctx); {
+	case err == errAlreadyCreated:
+		return rb.run, nil
+	case err != nil:
+		return nil, err
+	}
+	if err := rb.save(ctx); err != nil {
+		return nil, err
+	}
 	return rb.run, nil
 }
 
 // load reads latest state from Datastore and verifies creation can proceed.
 func (rb *RunBuilder) load(ctx context.Context) error {
-	// TODO(tandrii): implement.
-	return nil
+	rb.dsBatcher.reset()
+	rb.checkRunExists(ctx)
+	rb.checkProjectState(ctx)
+	rb.checkCLsUnchanged(ctx)
+	return rb.dsBatcher.get(ctx)
+}
+
+// errAlreadyCreated is an internal error to signal that save is not necessary,
+// since the intended Run is already created.
+var errAlreadyCreated = errors.New("already created")
+
+// checkRunExists checks if Run already exists in datastore,
+// and if it was created by us.
+func (rb *RunBuilder) checkRunExists(ctx context.Context) {
+	rb.run = &run.Run{ID: rb.runID}
+	rb.dsBatcher.register(rb.run, func(err error) error {
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			// Run doesn't exist, which is expected.
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to load Run entity").Tag(transient.Tag).Err()
+
+		case rb.run.CreationOperationID == rb.OperationID:
+			// This is quite likely if prior transaction attempt actually succeeds
+			// succeeded on Datastore side, but CV failed to receive an ACK and is now
+			// retrying the transaction body.
+			logging.Debugf(ctx, "Run(ID:%s) already created by us", rb.runID)
+			return errAlreadyCreated
+		default:
+			// Concurrent request computing RunID at exact same time should not
+			// normally happen, so log it as suspicious.
+			logging.Warningf(ctx, "Run(ID:%s) already created with OperationID %q", rb.runID, rb.run.CreationOperationID)
+			return errors.Reason("Run(ID:%s) already created with OperationID %q", rb.runID, rb.run.CreationOperationID).Err()
+		}
+	})
+}
+
+// checkProjectState checks if projet is running and uses the expected
+// ConfigHash.
+func (rb *RunBuilder) checkProjectState(ctx context.Context) {
+	ps := &ProjectStateOffload{
+		Project: datastore.MakeKey(ctx, ProjectKind, rb.LUCIProject),
+	}
+	rb.dsBatcher.register(ps, func(err error) error {
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			return errors.Annotate(err, "failed to load ProjectStateOffload").Err()
+		case err != nil:
+			return errors.Annotate(err, "failed to load ProjectStateOffload").Tag(transient.Tag).Err()
+		case ps.Status != Status_STARTED:
+			return errors.Reason("project %q status is %s, expected STARTED", rb.LUCIProject, ps.Status.String()).Tag(StateChangedTag).Err()
+		case ps.ConfigHash != rb.ConfigGroupID.Hash():
+			return errors.Reason("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()).Tag(StateChangedTag).Err()
+		default:
+			return nil
+		}
+	})
+}
+
+// checkCLsUnchanged sets `.cls` with latest Datastore value and verifies thier
+// EVersion match what's expected.
+func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
+	rb.cls = make([]*changelist.CL, len(rb.InputCLs))
+	for i, inputCL := range rb.InputCLs {
+		rb.cls[i] = &changelist.CL{ID: inputCL.ID}
+		i := i
+		id := inputCL.ID
+		expected := inputCL.ExpectedEVersion
+		rb.dsBatcher.register(rb.cls[i], func(err error) error {
+			switch {
+			case err == datastore.ErrNoSuchEntity:
+				return errors.Annotate(err, "CL %d doesn't exist", id).Err()
+			case err != nil:
+				return errors.Annotate(err, "failed to load CL %d", id).Tag(transient.Tag).Err()
+			case rb.cls[i].EVersion != expected:
+				return errors.Reason("CL %d changed since EVersion %d", id, expected).Tag(StateChangedTag).Err()
+			default:
+				return nil
+			}
+		})
+	}
 }
 
 func (rb *RunBuilder) save(ctx context.Context) error {
@@ -234,5 +324,77 @@ func (rb *RunBuilder) computeRunID(ctx context.Context) {
 // dsBatcher faciliates processing of many different kind of entities in a
 // single Get/Put operation while handling errors in entity-specific code.
 type dsBatcher struct {
-	// TODO(tandrii): implement.
+	entities  []interface{}
+	callbacks []func(error) error
+}
+
+func (d *dsBatcher) reset() {
+	d.entities = d.entities[:0]
+	d.callbacks = d.callbacks[:0]
+}
+
+// register registers an entity for future get/put and a callback to handle errors.
+//
+// entity must be a pointer to an entity object.
+// callback is called with entity specific error, possibly nil.
+// callback must not be nil.
+func (d *dsBatcher) register(entity interface{}, callback func(error) error) {
+	d.entities = append(d.entities, entity)
+	d.callbacks = append(d.callbacks, callback)
+}
+
+// get loads entities from datastore and performs error handling.
+//
+// Aborts and returns the first non-nil error returned by a callback.
+// Oherwise, returns nil.
+func (d *dsBatcher) get(ctx context.Context) error {
+	err := datastore.Get(ctx, d.entities)
+	if err == nil {
+		return d.execCallbacks(nil)
+	}
+	switch errs, ok := err.(errors.MultiError); {
+	case !ok:
+		return errors.Annotate(err, "failed to load entities from Datastore").Tag(transient.Tag).Err()
+	case len(errs) != len(d.entities):
+		panic(fmt.Errorf("%d errors for %d entities", len(errs), len(d.entities)))
+	default:
+		return d.execCallbacks(errs)
+	}
+}
+
+// put saves entities to datastore and performs error handling.
+//
+// Aborts and returns the first non-nil error returned by a callback.
+// Oherwise, returns nil.
+func (d *dsBatcher) put(ctx context.Context) error {
+	err := datastore.Put(ctx, d.entities)
+	if err == nil {
+		return d.execCallbacks(nil)
+	}
+	switch errs, ok := err.(errors.MultiError); {
+	case !ok:
+		return errors.Annotate(err, "failed to put entities to Datastore").Tag(transient.Tag).Err()
+	case len(errs) != len(d.entities):
+		panic(fmt.Errorf("%d errors for %d entities", len(errs), len(d.entities)))
+	default:
+		return d.execCallbacks(errs)
+	}
+}
+
+func (d *dsBatcher) execCallbacks(errs errors.MultiError) error {
+	if errs == nil {
+		for _, f := range d.callbacks {
+			if err := f(nil); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for i, f := range d.callbacks {
+		if err := f(errs[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

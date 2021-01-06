@@ -50,6 +50,8 @@ type Run struct {
 	//
 	// See doc for type `common.RunID` about the format.
 	ID common.RunID `gae:"$id"`
+	// CreationOperationID is a string used to de-dup Run creation attempts.
+	CreationOperationID string `gae:",noindex"`
 	// Mode dictates the behavior of this Run.
 	Mode Mode `gae:",noindex"`
 	// Status describes the status of this Run.
