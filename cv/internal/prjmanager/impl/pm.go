@@ -76,9 +76,9 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 		s := &state{
 			luciProject: pm.luciProject,
 
-			Status:         pm.stateOffload.Status,
-			ConfigHash:     pm.stateOffload.ConfigHash,
-			IncompleteRuns: p.IncompleteRuns,
+			status:         pm.stateOffload.Status,
+			configHash:     pm.stateOffload.ConfigHash,
+			incompleteRuns: p.IncompleteRuns,
 		}
 		return s, eventbox.EVersion(p.EVersion), nil
 	}
@@ -124,13 +124,13 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 		ID:             pm.luciProject,
 		EVersion:       int(ev),
 		UpdateTime:     clock.Now(ctx).UTC(),
-		IncompleteRuns: s.IncompleteRuns,
+		IncompleteRuns: s.incompleteRuns,
 	}
-	if s.ConfigHash != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
+	if s.configHash != pm.stateOffload.ConfigHash || s.status != pm.stateOffload.Status {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-			Status:     s.Status,
-			ConfigHash: s.ConfigHash,
+			Status:     s.status,
+			ConfigHash: s.configHash,
 		})
 	}
 	if err := datastore.Put(ctx, entities...); err != nil {

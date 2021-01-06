@@ -34,10 +34,9 @@ type state struct {
 
 	// Serializable state.
 
-	// TODO(tandrii): make all remaining members private.
-	Status         prjmanager.Status // stored in a ProjectStateOffload entity.
-	ConfigHash     string            // stored in a ProjectStateOffload entity.
-	IncompleteRuns common.RunIDs     // sorted; stored in a Project entity.
+	status         prjmanager.Status // stored in a ProjectStateOffload entity.
+	configHash     string            // stored in a ProjectStateOffload entity.
+	incompleteRuns common.RunIDs     // sorted; stored in a Project entity.
 }
 
 func (s *state) cloneShallow() *state {
@@ -54,16 +53,16 @@ func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn
 
 	switch meta.Status {
 	case config.StatusEnabled:
-		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.ConfigHash {
+		if s.status == prjmanager.Status_STARTED && meta.Hash() == s.configHash {
 			return s, nil, nil // already up-to-date.
 		}
 		s = s.cloneShallow()
-		s.ConfigHash = meta.Hash()
+		s.configHash = meta.Hash()
 		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
 		// themselves, while others haven't yet even noticed the stopping.
 		// The former will eventually be removed from s.IncompleteRuns,
 		// while the latter will continue running.
-		s.Status = prjmanager.Status_STARTED
+		s.status = prjmanager.Status_STARTED
 
 		if err := poller.Poke(ctx, s.luciProject); err != nil {
 			return nil, nil, err
@@ -74,7 +73,7 @@ func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
 		// since it's not actionable.
-		switch s.Status {
+		switch s.status {
 		case prjmanager.Status_STATUS_UNSPECIFIED:
 			// Project entity doesn't exist. No need to create it.
 			return s, nil, nil
@@ -82,19 +81,19 @@ func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn
 			return s, nil, nil
 		case prjmanager.Status_STARTED:
 			s = s.cloneShallow()
-			s.Status = prjmanager.Status_STOPPING
+			s.status = prjmanager.Status_STOPPING
 			fallthrough
 		case prjmanager.Status_STOPPING:
-			if len(s.IncompleteRuns) == 0 {
+			if len(s.incompleteRuns) == 0 {
 				s = s.cloneShallow()
-				s.Status = prjmanager.Status_STOPPED
+				s.status = prjmanager.Status_STOPPED
 			}
 			if err := poller.Poke(ctx, s.luciProject); err != nil {
 				return nil, nil, err
 			}
 			return s, s.cancelRuns, nil
 		default:
-			panic(fmt.Errorf("unexpected project status: %d", s.Status))
+			panic(fmt.Errorf("unexpected project status: %d", s.status))
 		}
 	default:
 		panic(fmt.Errorf("unexpected config status: %d", meta.Status))
@@ -126,21 +125,21 @@ func (s *state) runsCreated(ctx context.Context, created common.RunIDs) (*state,
 	mutated := false
 	for _, id := range created {
 		if !mutated {
-			if s.IncompleteRuns.ContainsSorted(id) {
+			if s.incompleteRuns.ContainsSorted(id) {
 				continue
 			}
 			mutated = true
 			s = s.cloneShallow()
-			cpy := make(common.RunIDs, len(s.IncompleteRuns), len(s.IncompleteRuns)+1)
-			copy(cpy, s.IncompleteRuns)
-			s.IncompleteRuns = cpy
+			cpy := make(common.RunIDs, len(s.incompleteRuns), len(s.incompleteRuns)+1)
+			copy(cpy, s.incompleteRuns)
+			s.incompleteRuns = cpy
 		}
-		s.IncompleteRuns.InsertSorted(id)
+		s.incompleteRuns.InsertSorted(id)
 	}
 	if !mutated {
 		return s, nil, nil
 	}
-	if s.Status == prjmanager.Status_STOPPED {
+	if s.status == prjmanager.Status_STOPPED {
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
 		return s, nil, nil
@@ -150,15 +149,15 @@ func (s *state) runsCreated(ctx context.Context, created common.RunIDs) (*state,
 }
 
 func (s *state) runsFinished(ctx context.Context, finished common.RunIDs) (*state, eventbox.SideEffectFn, error) {
-	remaining := s.IncompleteRuns.WithoutSorted(finished)
-	if len(remaining) == len(s.IncompleteRuns) {
+	remaining := s.incompleteRuns.WithoutSorted(finished)
+	if len(remaining) == len(s.incompleteRuns) {
 		return s, nil, nil // no change
 	}
 	s = s.cloneShallow()
-	s.IncompleteRuns = remaining
+	s.incompleteRuns = remaining
 
-	if s.Status == prjmanager.Status_STOPPING && len(s.IncompleteRuns) == 0 {
-		s.Status = prjmanager.Status_STOPPED
+	if s.status == prjmanager.Status_STOPPING && len(s.incompleteRuns) == 0 {
+		s.status = prjmanager.Status_STOPPED
 		return s, nil, nil
 	}
 	// TODO(tandrii): re-evaluate pending CLs.
