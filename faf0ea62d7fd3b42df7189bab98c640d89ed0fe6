@@ -3,6 +3,46 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "000bb555_27e9c6ec",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "this seems to be still far away from the regexp? having them in one file, as close to each other as possible, would be best, I think.\n\nstepping back, the history package is probably the the best for them, because it is more specific and because it already has domain-specific code.",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19626fef_edc1cf8e",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "surround with ^ and $",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a0a2865c_88dcd022",
         "filename": "resultdb/internal/invocations/read.go",
         "patchSetId": 3
@@ -26,6 +66,149 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "509d2c4e_3bbab4ae",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "in Go, error messages must not start with an upper-case letter",
+      "range": {
+        "startLine": 136,
+        "startChar": 33,
+        "endLine": 136,
+        "endChar": 34
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f42a758_c12d96be",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4168fce4_596e38fd",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "this is not possible, right?\n\nif it is, then `matches \u003d\u003d nil` is not needed",
+      "range": {
+        "startLine": 163,
+        "startChar": 19,
+        "endLine": 163,
+        "endChar": 40
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65d5a0e8_d1426b76",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "q",
+      "range": {
+        "startLine": 164,
+        "startChar": 64,
+        "endLine": 164,
+        "endChar": 65
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3fbb409_6139170d",
+        "filename": "resultdb/internal/services/recorder/update_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "intentional?",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f470b5ab_56a7786d",
+        "filename": "resultdb/internal/services/recorder/update_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "why this isn\u0027t a part of the Convey below?\n\nif someone adds another Convey, unrelated to CP, they might be surprised.",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da46c435_4585ee6d",
+        "filename": "resultdb/internal/services/recorder/update_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "nit: position :\u003d int64(123456)",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 176,
+        "endChar": 30
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "adb853f9_0d03ad1e",
         "filename": "resultdb/pbutil/misc.go",
         "patchSetId": 3
@@ -37,6 +220,24 @@
       "writtenOn": "2021-01-06T04:54:57Z",
       "side": 1,
       "message": "Nit: name this file commit_position.go?",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2cc555d_b5cb1251",
+        "filename": "resultdb/pbutil/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T07:43:23Z",
+      "side": 1,
+      "message": "or history.go so that we can add other history-related things if needed",
+      "parentUuid": "adb853f9_0d03ad1e",
       "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
