@@ -422,6 +422,7 @@ func Status(s interface{}) CIModifier {
 
 // Vote sets a label to the given value by the given user(s) on the latest
 // patchset.
+//
 func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 	var who *gerritpb.AccountInfo
 	var when time.Time
@@ -469,9 +470,9 @@ func CQ(value int, timeAndUser ...interface{}) CIModifier {
 
 var usernameToAccountIDRegexp = regexp.MustCompile(`^.+[-.\alpha](\d+)$`)
 
-// U returns a Gerrit User for `username`@example.com as gerritpb.AccountInfo.
+// U returns a Gerrit User for `username`@example.net as gerritpb.AccountInfo.
 //
-// AccountID is either 1 or taken from the ending digits of a username.
+// AccoutnID is either 1 or taken ending digits of a username.
 func U(username string) *gerritpb.AccountInfo {
 	accountID := int64(1)
 	if subs := usernameToAccountIDRegexp.FindSubmatch([]byte(username)); len(subs) > 0 {
