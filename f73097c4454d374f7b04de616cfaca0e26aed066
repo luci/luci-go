@@ -253,6 +253,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "52384308_cef998e0",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T20:16:02Z",
+      "side": 1,
+      "message": "This is the annoying UX side of things 😞",
+      "parentUuid": "2e159ac3_e3390145",
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ca38f458_5cd90e6f",
