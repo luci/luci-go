@@ -203,11 +203,6 @@ func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
 		return "", err
 	}
 
-	// TODO(nodir): remove this code after 2020-04-20
-	if realm == "chromium/public" {
-		return "chromium", nil
-	}
-
 	project, _ := realms.Split(realm)
 	return project, nil
 }
