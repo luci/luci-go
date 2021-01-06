@@ -147,6 +147,22 @@ func (c ConfigGroupID) Hash() string {
 	panic(fmt.Errorf("invalid ConfigGroupID %q", c))
 }
 
+// Returns name component only.
+func (c ConfigGroupID) Name() string {
+	s := string(c)
+	if i := strings.IndexRune(s, '/'); i >= 0 {
+		return s[i+1:]
+	}
+	panic(fmt.Errorf("invalid ConfigGroupID %q", c))
+}
+
+func MakeConfigGroupID(hash, name string) ConfigGroupID {
+	if name == "" {
+		panic(fmt.Errorf("name must be given"))
+	}
+	return makeConfigGroupID(hash, name, 0)
+}
+
 func makeConfigGroupID(hash, name string, index int) ConfigGroupID {
 	return ConfigGroupID(fmt.Sprintf("%s/%s", hash, makeConfigGroupName(name, index)))
 }

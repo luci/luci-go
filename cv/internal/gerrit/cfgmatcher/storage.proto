@@ -35,7 +35,14 @@ message Groups {
 // For full documentation, see ConfigGroup of api/config/v2/cq.proto.
 message Group {
   // ConfigGroupID, as stored in ConfigGroup datastore entity.
+  //
+  // Used by gobmap.
   string id = 1;
+  // Index of the ConfigGroup names interned in MatcherState.
+  //
+  // Used by MatcherState.
+  int32 index = 3;
+
   // If set, this ConfigGroup will be selected if no other ConfigGroup matches
   // refspec. At most 1 group will have this set (this is validated before
   // config is injected).
@@ -48,4 +55,23 @@ message Group {
   // one.
   repeated string include = 11;
   repeated string exclude = 12;
+}
+
+// MatcherState is serializable state of a matcher for a single LUCI project at
+// specific config hash (version).
+message MatcherState {
+  string config_hash = 1;
+
+  // Interned config group names.
+  //
+  // Combine with config_hash to obtain config.ConfigGroupID.
+  repeated string config_group_names = 2;
+
+  // Maps Gerrit hosts to watched projects.
+  map<string, Projects> hosts = 3;
+
+  message Projects {
+    // Maps Gerrit project (aka Gerrit repo) to one or more config groups.
+    map<string, Groups> projects = 1;
+  }
 }
