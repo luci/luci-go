@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-	"go.chromium.org/luci/logdog/common/types"
+	ldTypes "go.chromium.org/luci/logdog/common/types"
 )
 
 // State is the state of the current Build.
@@ -46,7 +46,7 @@ type State struct {
 	ctx       context.Context
 	ctxCloser func()
 
-	// NOTE: copyExclusionMu is "backwards", intentionally.
+	// copyExclusionMu is "backwards", intentionally.
 	//
 	// The lock is held in "WRITE" mode in order to do `proto.Clone` on buildPb,
 	// since the Clone operation actually can write metadata to the struct, and is
@@ -58,7 +58,6 @@ type State struct {
 	//
 	// This is done to allow e.g. multiple Steps to be mutated concurrently, but
 	// allow `proto.Clone` to proceed safely.
-
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
 
@@ -170,7 +169,7 @@ func (s *State) End(err error) {
 //   * `dedupedName` - the deduplicated version of `name`
 //   * `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
-func (s *State) addLog(name string, openStream func(dedupedName string, relLdName types.StreamName) io.Closer) {
+func (s *State) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""
 	s.mutate(func() {
 		name = s.logNames.resolveName(name)
@@ -179,7 +178,7 @@ func (s *State) addLog(name string, openStream func(dedupedName string, relLdNam
 			Name: name,
 			Url:  relLdName,
 		})
-		if closer := openStream(name, types.StreamName(relLdName)); closer != nil {
+		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer.Close
 		}
 	})
@@ -192,7 +191,7 @@ func (s *State) Log(name string, opts ...streamclient.Option) io.Writer {
 	var ret io.WriteCloser
 
 	if ls := s.logsink; ls != nil {
-		s.addLog(name, func(name string, relLdName types.StreamName) io.Closer {
+		s.addLog(name, func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
 			if err != nil {
@@ -214,7 +213,7 @@ func (s *State) LogDatagram(name string, opts ...streamclient.Option) streamclie
 	var ret streamclient.DatagramStream
 
 	if ls := s.logsink; ls != nil {
-		s.addLog(name, func(name string, relLdName types.StreamName) io.Closer {
+		s.addLog(name, func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			ret, err = ls.NewDatagramStream(s.ctx, relLdName, opts...)
 			if err != nil {

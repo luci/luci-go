@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-	"go.chromium.org/luci/logdog/common/types"
+	ldTypes "go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
 )
 
@@ -136,7 +136,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 		ctx = logging.SetField(ctx, "build.step", ret.stepPb.Name)
 		logging.Infof(ctx, "set status: %s", ret.stepPb.Status)
 	} else {
-		ret.addLog("log", func(name string, relLdName types.StreamName) io.Closer {
+		ret.addLog("log", func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			var stream io.WriteCloser
 			stream, err = ls.NewStream(ret.ctx, relLdName)
@@ -220,7 +220,7 @@ func (s *Step) End(err error) {
 //   * `dedupedName` - the deduplicated version of `name`
 //   * `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
-func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName types.StreamName) io.Closer) {
+func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""
 	s.mutate(func() {
 		name = s.logNames.resolveName(name)
@@ -229,7 +229,7 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 			Name: name,
 			Url:  relLdName,
 		})
-		if closer := openStream(name, types.StreamName(relLdName)); closer != nil {
+		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer.Close
 		}
 	})
@@ -241,10 +241,10 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 	ls := s.logsink()
 	var ret io.WriteCloser
-	var openStream func(string, types.StreamName) io.Closer
+	var openStream func(string, ldTypes.StreamName) io.Closer
 
 	if ls == nil {
-		openStream = func(name string, relLdName types.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
 			if desc, _ := streamclient.RenderOptions(opts...); desc.Type != streamproto.StreamType(logpb.StreamType_TEXT) {
 				// logpb.StreamType cast is necessary or .String() doesn't work.
 				typ := logpb.StreamType(desc.Type)
@@ -256,7 +256,7 @@ func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 			return ret
 		}
 	} else {
-		openStream = func(name string, relLdName types.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
 			if err != nil {
@@ -278,15 +278,15 @@ func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 func (s *Step) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
 	ls := s.logsink()
 	var ret streamclient.DatagramStream
-	var openStream func(string, types.StreamName) io.Closer
+	var openStream func(string, ldTypes.StreamName) io.Closer
 	if ls == nil {
-		openStream = func(name string, relLdName types.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
 			logging.Warningf(s.ctx, "dropping DATAGRAM log %q", name)
 			ret = nopDatagramStream{}
 			return ret
 		}
 	} else {
-		openStream = func(name string, relLdName types.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
 			var err error
 			ret, err = ls.NewDatagramStream(s.ctx, relLdName, opts...)
 			if err != nil {
