@@ -51,11 +51,8 @@ message Group {
   // Regular expressions to include/exclude a ref from config group.
   // Config group is applicable iff ref matches at least 1 include and
   // doesn't match any exclude regexps.
-  // TODO(tandrii): remove old values.
-  repeated string include = 11; // DEPRECATED.
-  repeated string exclude = 12; // DEPRECATED.
-  string includeRegexp = 13;
-  string excludeRegexp = 14;
+  string include = 13;
+  string exclude = 14;
 }
 
 // MatcherState is serializable state of a matcher for a single LUCI project at
