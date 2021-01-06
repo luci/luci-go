@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc84e04c_337f77c9",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "ConfigHashInfo",
+      "range": {
+        "startLine": 118,
+        "startChar": 53,
+        "endLine": 118,
+        "endChar": 66
+      },
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5691641d_b5ac1284",
+        "filename": "cv/internal/config/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "why not use MakeConfigGroupID method you\u0027ve just created then?",
+      "range": {
+        "startLine": 128,
+        "startChar": 54,
+        "endLine": 128,
+        "endChar": 75
+      },
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "924c198e_029e5549",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "cachedConfigGroupIDs",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 23
+      },
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c955769a_e6c225ca",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 57,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39c9b9e8_e0c8b81c",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "IDs",
+      "range": {
+        "startLine": 105,
+        "startChar": 28,
+        "endLine": 105,
+        "endChar": 30
+      },
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca38f458_5cd90e6f",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:50:23Z",
+      "side": 1,
+      "message": "Del",
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
