@@ -171,9 +171,40 @@ export interface QueryArtifactsResponse {
   readonly nextPageToken?: string;
 }
 
-const SERVICE = 'luci.resultdb.v1.ResultDB';
+export interface QueryTestVariantsRequest {
+  readonly invocations: readonly string[];
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface QueryTestVariantsResponse {
+  readonly testVariants: readonly TestVariant[];
+  readonly nextPageToken?: string;
+}
+
+export interface TestVariant {
+  readonly testId: string;
+  readonly variant: Variant;
+  readonly variantHash: string;
+  readonly status: TestVariantStatus;
+  readonly results: readonly TestResultBundle[];
+  readonly exonerations: readonly TestExoneration[];
+}
+
+export const enum TestVariantStatus {
+  TEST_VARIANT_STATUS_UNSPECIFIED = 'TEST_VARIANT_STATUS_UNSPECIFIED',
+  UNEXPECTED = 'UNEXPECTED',
+  FLAKY = 'FLAKY',
+  EXONERATED = 'EXONERATED',
+  EXPECTED = 'EXPECTED',
+}
+
+export interface TestResultBundle {
+  readonly result: TestResult;
+}
 
 export class ResultDb {
+  private static SERVICE = 'luci.resultdb.v1.ResultDB';
   private prpcClient: PrpcClient;
 
   constructor(readonly host: string, accessToken: string) {
@@ -255,7 +286,31 @@ export class ResultDb {
 
   private call(method: string, message: object) {
     return this.prpcClient.call(
-      SERVICE,
+      ResultDb.SERVICE,
+      method,
+      message,
+    );
+  }
+}
+
+export class UISpecificService {
+  private prpcClient: PrpcClient;
+  private static SERVICE = 'luci.resultdb.internal.ui.UI';
+
+  constructor(readonly host: string, accessToken: string) {
+    this.prpcClient = new PrpcClient({host, accessToken});
+  }
+
+  async queryTestVariants(req: QueryTestVariantsRequest) {
+    return await this.call(
+      'QueryTestVariants',
+      req,
+    ) as QueryTestVariantsResponse;
+  }
+
+  private call(method: string, message: object) {
+    return this.prpcClient.call(
+      UISpecificService.SERVICE,
       method,
       message,
     );
