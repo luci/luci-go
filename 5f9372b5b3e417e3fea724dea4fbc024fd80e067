@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "086f5881_f73bb7f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-06T06:51:18Z",
+      "side": 1,
+      "message": "Demo: https://jsca-dot-luci-milo-dev.appspot.com/b/8858880285925938112#blamelist-tab",
+      "revId": "5f9372b5b3e417e3fea724dea4fbc024fd80e067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
