@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/proto"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -66,15 +67,31 @@ func TestProjectLifeCycle(t *testing.T) {
 			// Ensure first poller task gets executed.
 			ct.Clock.Add(time.Hour)
 
-			Convey("update config with runs", func() {
-				// Simulate some runs.
-				p.IncompleteRuns = common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe")
-				So(datastore.Put(ctx, p), ShouldBeNil)
+			Convey("update config with incomplete runs", func() {
+				// This is what prjmanager.runCreated func does,
+				// but because it's private, it can't be called from this package.
+				simulateRunCreated := func(suffix string) {
+					e := &internal.Event{Event: &internal.Event_RunCreated{
+						RunCreated: &internal.RunCreated{
+							RunId: lProject + "/" + suffix,
+						},
+					}}
+					value, err := proto.Marshal(e)
+					So(err, ShouldBeNil)
+					So(eventbox.Emit(ctx, value, lProjectKey), ShouldBeNil)
+				}
+				simulateRunCreated("111-beef")
+				simulateRunCreated("222-cafe")
 
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
-				// Must schedule a task per Run for config updates.
+
+				p, _ = loadProjectEntities(ctx, lProject)
+				So(p.IncompleteRuns, ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
+				// Must schedule a task per Run for config updates for each of the
+				// started run.
 				runsWithTasks := runtest.SortedRuns(ct.TQ.Tasks())
 				So(runsWithTasks, ShouldResemble, p.IncompleteRuns)
 

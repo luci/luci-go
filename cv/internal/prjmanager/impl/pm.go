@@ -105,8 +105,7 @@ func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion,
 	case err == datastore.ErrNoSuchEntity:
 		return 0, nil
 	case err != nil:
-		return 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(
-			transient.Tag).Err()
+		return 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	default:
 		return eventbox.EVersion(p.EVersion), nil
 	}
@@ -148,6 +147,11 @@ type triageResult struct {
 		events eventbox.Events
 		cls    []*internal.CLUpdated
 	}
+	runsCreated struct {
+		// events and runs are in random order.
+		events eventbox.Events
+		runs   common.RunIDs
+	}
 	runsFinished struct {
 		// events and runs are in random order.
 		events eventbox.Events
@@ -171,8 +175,11 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *internal.Event_ClUpdated:
 		tr.clupdated.events = append(tr.clupdated.events, item)
 		tr.clupdated.cls = append(tr.clupdated.cls, v.ClUpdated)
+	case *internal.Event_RunCreated:
+		tr.runsCreated.events = append(tr.runsCreated.events, item)
+		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
 	case *internal.Event_RunFinished:
-		tr.clupdated.events = append(tr.clupdated.events, item)
+		tr.runsFinished.events = append(tr.runsFinished.events, item)
 		tr.runsFinished.runs = append(tr.runsFinished.runs, common.RunID(v.RunFinished.GetRunId()))
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
@@ -182,18 +189,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state) (
 	ret []eventbox.Transition, err error) {
 	// Visit all non-empty fields of triageResult and emit Transitions.
-	if len(tr.updateConfig) > 0 {
-		t := eventbox.Transition{Events: tr.updateConfig}
-		t.SideEffectFn, s, err = updateConfig(ctx, pm.luciProject, s)
-		if err != nil {
-			return nil, err
-		}
-		t.TransitionTo = s
-		ret = append(ret, t)
-	}
-	if len(tr.poke) > 0 {
-		t := eventbox.Transition{Events: tr.poke}
-		t.SideEffectFn, s, err = poke(ctx, pm.luciProject, s)
+	// The order of visit matters.
+
+	// It's possible that the same Run will be in both runCreated & runFinished,
+	// so process created first.
+	if len(tr.runsCreated.runs) > 0 {
+		sort.Sort(tr.runsCreated.runs)
+		t := eventbox.Transition{Events: tr.runsCreated.events}
+		t.SideEffectFn, s, err = runsCreated(ctx, tr.runsCreated.runs, s)
 		if err != nil {
 			return nil, err
 		}
@@ -204,6 +207,29 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 		sort.Sort(tr.runsFinished.runs)
 		t := eventbox.Transition{Events: tr.runsFinished.events}
 		t.SideEffectFn, s, err = runsFinished(ctx, tr.runsFinished.runs, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+
+	// UpdateConfig event may result in stopping the PM, which requires notifying
+	// each of IncompleteRuns to stop. Thus, runsCreated must be processed before
+	// to ensure no Run will be missed.
+	if len(tr.updateConfig) > 0 {
+		t := eventbox.Transition{Events: tr.updateConfig}
+		t.SideEffectFn, s, err = updateConfig(ctx, pm.luciProject, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+
+	if len(tr.poke) > 0 {
+		t := eventbox.Transition{Events: tr.poke}
+		t.SideEffectFn, s, err = poke(ctx, pm.luciProject, s)
 		if err != nil {
 			return nil, err
 		}
