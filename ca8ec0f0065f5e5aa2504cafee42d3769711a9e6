@@ -16,6 +16,24 @@
       "message": "Curious, what would be the long term mechanism for this kind of action?",
       "revId": "ca8ec0f0065f5e5aa2504cafee42d3769711a9e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9522b6c3_e084bd54",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T19:59:58Z",
+      "side": 1,
+      "message": "I don\u0027t know. We briefly chatted yesterday with Vadim. Among ideas were a dedicated rpc. Not clear whom to allow calling it though.\nOne sub-idea is a dedicated rpc triggerable via cloud cron or cloud scheduler, which is diasbled, but can be manually triggered by whoever has access to the cloud project.",
+      "parentUuid": "82dfcaac_aa4c1762",
+      "revId": "ca8ec0f0065f5e5aa2504cafee42d3769711a9e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
