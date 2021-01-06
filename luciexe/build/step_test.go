@@ -200,8 +200,7 @@ func TestStepLog(t *testing.T) {
 		lc := streamclient.NewFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		buildState, ctx := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
-		// TODO(iannucci): implement State.End
-		// defer func() { buildState.End(nil) }()
+		defer func() { buildState.End(nil) }()
 		So(buildState, ShouldNotBeNil)
 
 		Convey(`logging redirects`, func() {

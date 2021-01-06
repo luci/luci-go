@@ -31,8 +31,11 @@ func TestState(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		nowpb := timestamppb.New(testclock.TestRecentTimeUTC)
 		st, ctx := Start(ctx, &bbpb.Build{})
-		// TODO(iannucci): implement State.End
-		// defer func() { st.End(nil) }()
+		defer func() {
+			if st != nil {
+				st.End(nil)
+			}
+		}()
 
 		Convey(`StartStep`, func() {
 			step, _ := StartStep(ctx, "some step")
@@ -40,6 +43,14 @@ func TestState(t *testing.T) {
 
 			So(st.buildPb.Steps, assertions.ShouldResembleProto, []*bbpb.Step{
 				{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
+			})
+		})
+
+		Convey(`End`, func() {
+			Convey(`cannot End twice`, func() {
+				st.End(nil)
+				So(func() { st.End(nil) }, assertions.ShouldPanicLike, "cannot mutate ended build")
+				st = nil
 			})
 		})
 	})

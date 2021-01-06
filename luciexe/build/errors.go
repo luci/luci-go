@@ -16,12 +16,14 @@ package build
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/golang/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 type buildStatus struct {
@@ -89,4 +91,39 @@ func ExtractStatus(err error) (bbpb.Status, *bbpb.StatusDetails) {
 		}
 	}
 	return bbpb.Status_FAILURE, nil
+}
+
+func computePanicStatus(err error) (status bbpb.Status, message string) {
+	if errors.IsPanicking(2) {
+		message = "PANIC"
+		// TODO(iannucci): include details of panic in SummaryMarkdown or log?
+		// How to prevent panic dump from showing up at every single step on the
+		// stack?
+		status = bbpb.Status_INFRA_FAILURE
+	} else {
+		status, _ = ExtractStatus(err)
+		if err != nil {
+			message = err.Error()
+		}
+	}
+	return
+}
+
+func logStatus(ctx context.Context, status bbpb.Status, message, markdown string) {
+	logf := logging.Errorf
+	switch status {
+	case bbpb.Status_SUCCESS:
+		logf = logging.Infof
+	case bbpb.Status_CANCELED:
+		logf = logging.Warningf
+	}
+
+	logMsg := fmt.Sprintf("set status: %s", status)
+	if len(message) > 0 {
+		logMsg += ": " + message
+	}
+	if len(markdown) > 0 {
+		logMsg += "\n  with SummaryMarkdown:\n" + markdown
+	}
+	logf(ctx, "%s", logMsg)
 }
