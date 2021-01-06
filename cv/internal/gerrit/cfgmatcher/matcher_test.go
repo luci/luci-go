@@ -58,6 +58,8 @@ func TestPartitionConfig(t *testing.T) {
 					projects {
 						name: "luci/go"
 						ref_regexp:         "refs/heads/.+"
+						# NOTE: \\d is for proto parser s.t. actual regexp is just \d
+						ref_regexp:         "refs/branch-heads/[\\d]{3,4}"
 					}
 				}
 			}
@@ -107,9 +109,13 @@ func TestPartitionConfig(t *testing.T) {
 				So(m.Match(gHost1, "luci/go", "refs/heads/exclud-not-really"), ShouldResemble, ids("g1"))
 				So(m.Match(gHost1, "luci/go", "refs/heads/excluded"), ShouldResemble, ids("fallback"))
 
+				So(m.Match(gHost1, "luci/go", "refs/branch-heads/12"), ShouldBeEmpty)
+				So(m.Match(gHost1, "luci/go", "refs/branch-heads/123"), ShouldResemble, ids("fallback"))
+				So(m.Match(gHost1, "luci/go", "refs/branch-heads/1234"), ShouldResemble, ids("fallback"))
+				So(m.Match(gHost1, "luci/go", "refs/branch-heads/12345"), ShouldBeEmpty)
+
 				So(m.Match(gHost1, "luci/go", "refs/heads/g2"), ShouldResemble, ids("g1", "g2"))
-				// TODO(tandrii): fix matching bug.
-				// So(m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), ShouldResemble, ids("g1"))
+				So(m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), ShouldResemble, ids("g1"))
 				// Test default.
 				So(m.Match(gHost1, "default", "refs/heads/stuff"), ShouldBeEmpty)
 				So(m.Match(gHost1, "default", "refs/heads/main"), ShouldBeEmpty)
