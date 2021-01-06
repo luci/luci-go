@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -27,26 +28,26 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
-// state stores serializable state of a ProjectManager.
-//
-// The state is stored in Project entity.
+// state tracks state of a ProjectManager during its mutation.
 type state struct {
-	Status         prjmanager.Status
-	ConfigHash     string
-	IncompleteRuns common.RunIDs // sorted, just like in Project.IncompleteRuns.
-	// TODO(tandrii): add CL grouping state.
+	luciProject string
+
+	// Serializable state.
+
+	// TODO(tandrii): make all remaining members private.
+	Status         prjmanager.Status // stored in a ProjectStateOffload entity.
+	ConfigHash     string            // stored in a ProjectStateOffload entity.
+	IncompleteRuns common.RunIDs     // sorted; stored in a Project entity.
 }
 
 func (s *state) cloneShallow() *state {
-	return &state{
-		Status:         s.Status,
-		ConfigHash:     s.ConfigHash,
-		IncompleteRuns: s.IncompleteRuns,
-	}
+	ret := &state{}
+	*ret = *s
+	return ret
 }
 
-func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.SideEffectFn, *state, error) {
-	meta, err := config.GetLatestMeta(ctx, luciProject)
+func (s *state) updateConfig(ctx context.Context) (*state, eventbox.SideEffectFn, error) {
+	meta, err := config.GetLatestMeta(ctx, s.luciProject)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,21 +55,21 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 	switch meta.Status {
 	case config.StatusEnabled:
 		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.ConfigHash {
-			return nil, s, nil // already up-to-date.
+			return s, nil, nil // already up-to-date.
 		}
 		s = s.cloneShallow()
 		s.ConfigHash = meta.Hash()
 		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
 		// themselves, while others haven't yet even noticed the stopping.
-		// The former will eventually be removed from sm.pe.IncompleteRuns,
+		// The former will eventually be removed from s.IncompleteRuns,
 		// while the latter will continue running.
 		s.Status = prjmanager.Status_STARTED
 
-		if err := poller.Poke(ctx, luciProject); err != nil {
+		if err := poller.Poke(ctx, s.luciProject); err != nil {
 			return nil, nil, err
 		}
 		// TODO(tandrii): re-evaluate pending CLs.
-		return s.updateRunsConfigFactory(meta), s, nil
+		return s, s.updateRunsConfigFactory(meta), nil
 
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
@@ -76,9 +77,9 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 		switch s.Status {
 		case prjmanager.Status_STATUS_UNSPECIFIED:
 			// Project entity doesn't exist. No need to create it.
-			return nil, s, nil
+			return s, nil, nil
 		case prjmanager.Status_STOPPED:
-			return nil, s, nil
+			return s, nil, nil
 		case prjmanager.Status_STARTED:
 			s = s.cloneShallow()
 			s.Status = prjmanager.Status_STOPPING
@@ -88,10 +89,10 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 				s = s.cloneShallow()
 				s.Status = prjmanager.Status_STOPPED
 			}
-			if err := poller.Poke(ctx, luciProject); err != nil {
+			if err := poller.Poke(ctx, s.luciProject); err != nil {
 				return nil, nil, err
 			}
-			return s.cancelRuns, s, nil
+			return s, s.cancelRuns, nil
 		default:
 			panic(fmt.Errorf("unexpected project status: %d", s.Status))
 		}
@@ -100,28 +101,28 @@ func updateConfig(ctx context.Context, luciProject string, s *state) (eventbox.S
 	}
 }
 
-func poke(ctx context.Context, luciProject string, s *state) (eventbox.SideEffectFn, *state, error) {
+func (s *state) poke(ctx context.Context) (*state, eventbox.SideEffectFn, error) {
 	// First, check if updateConfig if necessary.
-	switch sideEffect, newState, err := updateConfig(ctx, luciProject, s); {
+	switch newState, sideEffect, err := s.updateConfig(ctx); {
 	case err != nil:
 		return nil, nil, err
 	case newState != s:
 		// updateConfig noticed a change and its SideEffectFn will propagate it
 		// downstream.
-		return sideEffect, newState, nil
+		return newState, sideEffect, nil
 	}
 	// Propagate downstream.
-	if err := poller.Poke(ctx, luciProject); err != nil {
+	if err := poller.Poke(ctx, s.luciProject); err != nil {
 		return nil, nil, err
 	}
 	if err := s.pokeRuns(ctx); err != nil {
 		return nil, nil, err
 	}
 	// TODO(tandrii): implement.
-	return nil, s, nil
+	return s, nil, nil
 }
 
-func runsCreated(ctx context.Context, created common.RunIDs, s *state) (eventbox.SideEffectFn, *state, error) {
+func (s *state) runsCreated(ctx context.Context, created common.RunIDs) (*state, eventbox.SideEffectFn, error) {
 	mutated := false
 	for _, id := range created {
 		if !mutated {
@@ -137,34 +138,34 @@ func runsCreated(ctx context.Context, created common.RunIDs, s *state) (eventbox
 		s.IncompleteRuns.InsertSorted(id)
 	}
 	if !mutated {
-		return nil, s, nil
+		return s, nil, nil
 	}
 	if s.Status == prjmanager.Status_STOPPED {
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
-		return nil, s, nil
+		return s, nil, nil
 	}
 	// TODO(tandrii): re-evaluate pending CLs.
-	return nil, s, nil
+	return s, nil, nil
 }
 
-func runsFinished(ctx context.Context, finished common.RunIDs, s *state) (eventbox.SideEffectFn, *state, error) {
+func (s *state) runsFinished(ctx context.Context, finished common.RunIDs) (*state, eventbox.SideEffectFn, error) {
 	remaining := s.IncompleteRuns.WithoutSorted(finished)
 	if len(remaining) == len(s.IncompleteRuns) {
-		return nil, s, nil // no change
+		return s, nil, nil // no change
 	}
 	s = s.cloneShallow()
 	s.IncompleteRuns = remaining
 
 	if s.Status == prjmanager.Status_STOPPING && len(s.IncompleteRuns) == 0 {
 		s.Status = prjmanager.Status_STOPPED
-		return nil, s, nil
+		return s, nil, nil
 	}
 	// TODO(tandrii): re-evaluate pending CLs.
-	return nil, s, nil
+	return s, nil, nil
 }
 
-func clsUpdated(ctx context.Context, luciProject string, cls []*internal.CLUpdated, s *state) (eventbox.SideEffectFn, *state, error) {
+func (s *state) clsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*state, eventbox.SideEffectFn, error) {
 	// TODO(tandrii): implement.
-	return nil, s, nil
+	return s, nil, nil
 }
