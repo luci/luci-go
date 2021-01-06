@@ -34,6 +34,24 @@
       "parentUuid": "28a48f74_c93f4421",
       "revId": "73a6a6cc1401baf9c24545b023b6a4c6639b1080",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2bbd9c5_74e78120",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T01:51:01Z",
+      "side": 1,
+      "message": "Yup! just reviewed the following up CL. lgtm",
+      "parentUuid": "db816aab_14032e0e",
+      "revId": "73a6a6cc1401baf9c24545b023b6a4c6639b1080",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
