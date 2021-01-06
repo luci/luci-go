@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -126,11 +127,22 @@ func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
 // MakeGroup returns a new Group based on the Gerrit Project section of a
 // ConfigGroup.
 func MakeGroup(g *config.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Group {
+	var inc, exc []string
+	if inc = p.GetRefRegexp(); len(inc) == 0 {
+		inc = defaultRefRegexpInclude
+	}
+	if exc = p.GetRefRegexpExclude(); len(exc) == 0 {
+		exc = defaultRefRegexpExclude
+	}
 	return &Group{
-		Id:       string(g.ID),
-		Include:  p.RefRegexp,
-		Exclude:  p.RefRegexpExclude,
-		Fallback: g.Content.Fallback == cfgpb.Toggle_YES,
+		Id: string(g.ID),
+		// Backwards compatibility.
+		// TODO(tandrii): remove.
+		Include:       p.GetRefRegexp(),
+		Exclude:       p.GetRefRegexpExclude(),
+		IncludeRegexp: disjunctiveOfRegexps(inc),
+		ExcludeRegexp: disjunctiveOfRegexps(exc),
+		Fallback:      g.Content.Fallback == cfgpb.Toggle_YES,
 	}
 }
 
@@ -164,16 +176,24 @@ func (gs *Groups) Match(ref string) []*Group {
 // TODO(tandrii): add "main" branch too to ease migration once either:
 //   * CQDaemon is no longer involved,
 //   * CQDaemon does the same at the same time.
-var defaultRefRegexp = []string{"refs/heads/master"}
+var defaultRefRegexpInclude = []string{"refs/heads/master"}
+var defaultRefRegexpExclude = []string{"^$" /* matches nothing */}
 
 // Match returns true iff ref matches given Group.
 func (g *Group) Match(ref string) bool {
-	inc := g.GetInclude()
-	if len(inc) == 0 {
-		// Compatibility with CQDaemon.
-		inc = defaultRefRegexp
+	if g.GetIncludeRegexp() == "" {
+		// TODO(tandrii): remove backwards compatibility.
+		inc := g.GetInclude()
+		if len(inc) == 0 {
+			// Compatibility with CQDaemon.
+			inc = defaultRefRegexpInclude
+		}
+		return matchesAny(inc, ref) && !matchesAny(g.GetExclude(), ref)
 	}
-	return matchesAny(inc, ref) && !matchesAny(g.GetExclude(), ref)
+	if !regexp.MustCompile(g.GetIncludeRegexp()).MatchString(ref) {
+		return false
+	}
+	return !regexp.MustCompile(g.GetExcludeRegexp()).MatchString(ref)
 }
 
 // matchesAny returns true iff s matches any of the patterns.
@@ -187,4 +207,19 @@ func matchesAny(patterns []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func disjunctiveOfRegexps(rs []string) string {
+	sb := strings.Builder{}
+	sb.WriteString("^(")
+	for i, r := range rs {
+		if i > 0 {
+			sb.WriteRune('|')
+		}
+		sb.WriteRune('(')
+		sb.WriteString(r)
+		sb.WriteRune(')')
+	}
+	sb.WriteString(")$")
+	return sb.String()
 }
