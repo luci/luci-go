@@ -236,6 +236,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e159ac3_e3390145",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-06T20:15:07Z",
+      "side": 1,
+      "message": "Ah, interesting! So a config can contain no include patterns, and in that case it matches the master (or later main) branch? Thanks for fixing this.",
+      "revId": "f73097c4454d374f7b04de616cfaca0e26aed066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ca38f458_5cd90e6f",
