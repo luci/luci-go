@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -117,6 +118,33 @@ func poke(ctx context.Context, luciProject string, s *state) (eventbox.SideEffec
 		return nil, nil, err
 	}
 	// TODO(tandrii): implement.
+	return nil, s, nil
+}
+
+func runsCreated(ctx context.Context, created common.RunIDs, s *state) (eventbox.SideEffectFn, *state, error) {
+	mutated := false
+	for _, id := range created {
+		if !mutated {
+			if s.IncompleteRuns.ContainsSorted(id) {
+				continue
+			}
+			mutated = true
+			s = s.cloneShallow()
+			cpy := make(common.RunIDs, len(s.IncompleteRuns), len(s.IncompleteRuns)+1)
+			copy(cpy, s.IncompleteRuns)
+			s.IncompleteRuns = cpy
+		}
+		s.IncompleteRuns.InsertSorted(id)
+	}
+	if !mutated {
+		return nil, s, nil
+	}
+	if s.Status == prjmanager.Status_STOPPED {
+		// This must not happen. Log, but do nothing.
+		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
+		return nil, s, nil
+	}
+	// TODO(tandrii): re-evaluate pending CLs.
 	return nil, s, nil
 }
 
