@@ -124,6 +124,12 @@ func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
 	return ret
 }
 
+// TODO(tandrii): add "main" branch too to ease migration once either:
+//   * CQDaemon is no longer involved,
+//   * CQDaemon does the same at the same time.
+var defaultRefRegexpInclude = []string{"refs/heads/master"}
+var defaultRefRegexpExclude = []string{"^$" /* matches nothing */}
+
 // MakeGroup returns a new Group based on the Gerrit Project section of a
 // ConfigGroup.
 func MakeGroup(g *config.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Group {
@@ -135,14 +141,10 @@ func MakeGroup(g *config.ConfigGroup, p *cfgpb.ConfigGroup_Gerrit_Project) *Grou
 		exc = defaultRefRegexpExclude
 	}
 	return &Group{
-		Id: string(g.ID),
-		// Backwards compatibility.
-		// TODO(tandrii): remove.
-		Include:       p.GetRefRegexp(),
-		Exclude:       p.GetRefRegexpExclude(),
-		IncludeRegexp: disjunctiveOfRegexps(inc),
-		ExcludeRegexp: disjunctiveOfRegexps(exc),
-		Fallback:      g.Content.Fallback == cfgpb.Toggle_YES,
+		Id:       string(g.ID),
+		Include:  disjunctiveOfRegexps(inc),
+		Exclude:  disjunctiveOfRegexps(exc),
+		Fallback: g.Content.Fallback == cfgpb.Toggle_YES,
 	}
 }
 
@@ -173,27 +175,12 @@ func (gs *Groups) Match(ref string) []*Group {
 	return ret
 }
 
-// TODO(tandrii): add "main" branch too to ease migration once either:
-//   * CQDaemon is no longer involved,
-//   * CQDaemon does the same at the same time.
-var defaultRefRegexpInclude = []string{"refs/heads/master"}
-var defaultRefRegexpExclude = []string{"^$" /* matches nothing */}
-
 // Match returns true iff ref matches given Group.
 func (g *Group) Match(ref string) bool {
-	if g.GetIncludeRegexp() == "" {
-		// TODO(tandrii): remove backwards compatibility.
-		inc := g.GetInclude()
-		if len(inc) == 0 {
-			// Compatibility with CQDaemon.
-			inc = defaultRefRegexpInclude
-		}
-		return matchesAny(inc, ref) && !matchesAny(g.GetExclude(), ref)
-	}
-	if !regexp.MustCompile(g.GetIncludeRegexp()).MatchString(ref) {
+	if !regexp.MustCompile(g.GetInclude()).MatchString(ref) {
 		return false
 	}
-	return !regexp.MustCompile(g.GetExcludeRegexp()).MatchString(ref)
+	return !regexp.MustCompile(g.GetExclude()).MatchString(ref)
 }
 
 // matchesAny returns true iff s matches any of the patterns.
