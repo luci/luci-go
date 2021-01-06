@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e659ec22_e38454a8",
+        "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T02:02:10Z",
+      "side": 1,
+      "message": "TIL. `^(^$)$` actually works: https://play.golang.org/p/v49MnwRDT2F",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 66
+      },
+      "revId": "ea14dd2165c7be72c7c62d7b31338c4e990dcfa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
