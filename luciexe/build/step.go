@@ -28,9 +28,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luciexe"
 )
 
 // Step represents the state of a single step.
@@ -41,8 +45,18 @@ type Step struct {
 	ctxCloser func()
 	state     *State
 
+	// duplicated from stepPb.Name at construction time to avoid need for locks.
+	// Read-only.
+	name string
+
 	stepPbMu sync.Mutex
 	stepPb   *bbpb.Step
+
+	logPrefix     string
+	relLogPrefix  string
+	logNames      nameTracker
+	logClosers    map[string]func() error
+	loggingStream io.Closer
 }
 
 var _ Loggable = (*Step)(nil)
@@ -62,6 +76,12 @@ var _ Loggable = (*Step)(nil)
 //
 // The returned context will have `name` embedded in it; Calling StartStep or
 // ScheduleStep with this context will generate a sub-step.
+//
+// The returned context also has an updated `environ.FromCtx` containing
+// a unique $LOGDOG_NAMESPACE value. If you launch a subprocess, you should use
+// this environment to correctly namespace any logdog log streams your
+// subprocess attempts to open. Using `go.chromium.org/luci/luciexe/build/exec`
+// does this automatically.
 //
 // You MUST call Step.End. To automatically map errors and panics to their
 // correct visual representation, End the Step like:
@@ -95,25 +115,52 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 	cstate := getState(ctx)
 	ctx, ctxCloser := context.WithCancel(ctx)
 
+	if cstate.step != nil {
+		cstate.step.ensureStarted(nil)
+	}
+
 	ret := &Step{
 		ctx:       ctx,
 		ctxCloser: ctxCloser,
 		state:     cstate.state,
-		stepPb: cstate.state.registerStep(&bbpb.Step{
-			Name:   cstate.stepPrefix + name,
-			Status: bbpb.Status_SCHEDULED,
-		}),
-	}
 
-	if ret.noopMode() /* || no logsink */ {
+		logClosers: map[string]func() error{},
+	}
+	ret.stepPb, ret.relLogPrefix, ret.logPrefix = cstate.state.registerStep(&bbpb.Step{
+		Name:   cstate.stepNamePrefix() + name,
+		Status: bbpb.Status_SCHEDULED,
+	})
+	ret.name = ret.stepPb.Name
+
+	if ls := ret.logsink(); ls == nil {
 		ctx = logging.SetField(ctx, "build.step", ret.stepPb.Name)
 		logging.Infof(ctx, "set status: %s", ret.stepPb.Status)
 	} else {
-		// TODO(iannucci): set up logging redirection
+		ret.addLog("log", func(name string, relLdName types.StreamName) io.Closer {
+			var err error
+			var stream io.WriteCloser
+			stream, err = ls.NewStream(ret.ctx, relLdName)
+			if err != nil {
+				panic(err)
+			}
+
+			// TODO(iannucci): figure out how to preserve log format from context?
+			ctx = (&gologger.LoggerConfig{Out: stream}).Use(ctx)
+			// we track this in ret.loggingStream so don't have addLog track it.
+			ret.loggingStream = stream
+
+			return nil
+		})
+
+		// Each step gets its own logdog namespace "step/X/u". Any subprocesses
+		// running within this ctx SHOULD use environ.FromCtx to pick this up.
+		env := environ.FromCtx(ctx)
+		env.Set(luciexe.LogdogNamespaceEnv, ret.logPrefix+"/u")
+		ctx = env.SetInCtx(ctx)
 	}
 	ret.ctx = ctx
 
-	cstate.stepPrefix = ret.stepPb.Name + "|"
+	cstate.step = ret
 	return ret, setState(ctx, cstate)
 }
 
@@ -121,6 +168,9 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 //
 // End will also be able to set INFRA_FAILURE status and log additional
 // information if the program is panic'ing.
+//
+// End'ing a Step will Cancel the context associated with this step (returned
+// from StartStep or ScheduleStep).
 //
 // End must be invoked like:
 //
@@ -153,6 +203,13 @@ func (s *Step) End(err error) {
 			// In case the user scheduled the step, but never Start'd it.
 			s.stepPb.StartTime = s.stepPb.EndTime
 		}
+
+		for logName, closer := range s.logClosers {
+			if err := closer(); err != nil {
+				logging.Warningf(s.ctx, "error closing log %q: %s", logName, err)
+			}
+		}
+		s.logClosers = nil
 	})
 	// stepPb is immutable after mutate ends, so we should be fine to access it
 	// outside the locks.
@@ -172,48 +229,107 @@ func (s *Step) End(err error) {
 		logMsg += "\n  with SummaryMarkdown:\n" + s.stepPb.SummaryMarkdown
 	}
 	logf(s.ctx, "%s", logMsg)
-	s.ctxCloser()
 
-	if s.noopMode() {
-		return
+	if s.loggingStream != nil {
+		s.loggingStream.Close()
 	}
 
-	// TODO(iannucci): close all logs opened for this step.
-	panic("not implemented")
+	s.ctxCloser()
+}
+
+// addLog adds a new Log entry to this Step.
+//
+// `name` is the user-provided name for the log.
+//
+// `openStream` is a callback which takes
+//   * `dedupedName` - the deduplicated version of `name`
+//   * `relLdName` - The logdog stream name, relative to this process'
+//     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
+func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName types.StreamName) io.Closer) {
+	relLdName := ""
+	s.mutate(func() {
+		name = s.logNames.resolveName(name)
+		relLdName = fmt.Sprintf("%s/log/%d", s.relLogPrefix, len(s.stepPb.Logs))
+		s.stepPb.Logs = append(s.stepPb.Logs, &bbpb.Log{
+			Name: name,
+			Url:  relLdName,
+		})
+		if closer := openStream(name, types.StreamName(relLdName)); closer != nil {
+			s.logClosers[relLdName] = closer.Close
+		}
+	})
 }
 
 // Log creates a new step-level line-oriented text log stream with the given name.
 //
-// You must close the stream when you're done with it.
-func (s *Step) Log(name string, opts ...streamclient.Option) (io.WriteCloser, error) {
-	if s.noopMode() {
-		if desc, _ := streamclient.RenderOptions(opts...); desc.Type != streamproto.StreamType(logpb.StreamType_TEXT) {
-			// logpb.StreamType cast is necessary or .String() doesn't work.
-			typ := logpb.StreamType(desc.Type)
-			logging.Warningf(s.ctx, "dropping %s log %q", typ, name)
-			return nopStream{}, nil
+// The stream will close when the step is End'd.
+func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
+	ls := s.logsink()
+	var ret io.WriteCloser
+	var openStream func(string, types.StreamName) io.Closer
+
+	if ls == nil {
+		openStream = func(name string, relLdName types.StreamName) io.Closer {
+			if desc, _ := streamclient.RenderOptions(opts...); desc.Type != streamproto.StreamType(logpb.StreamType_TEXT) {
+				// logpb.StreamType cast is necessary or .String() doesn't work.
+				typ := logpb.StreamType(desc.Type)
+				logging.Warningf(s.ctx, "dropping %s log %q", typ, name)
+				ret = nopStream{}
+			} else {
+				ret = makeLoggingWriter(s.ctx, name)
+			}
+			return ret
 		}
-		return makeLoggingWriter(s.ctx, name), nil
+	} else {
+		openStream = func(name string, relLdName types.StreamName) io.Closer {
+			var err error
+			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
+			if err != nil {
+				panic(err)
+			}
+			return ret
+		}
 	}
 
-	panic("implement")
+	s.addLog(name, openStream)
+	return ret
 }
 
 // LogDatagram creates a new step-level datagram log stream with the given name.
 // Each call to WriteDatagram will produce a single datagram message in the
 // stream.
 //
-// You must close the stream when you're done with it.
-func (s *Step) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
-	if s.noopMode() {
-		logging.Warningf(s.ctx, "dropping DATAGRAM log %q", name)
-		return nopDatagramStream{}, nil
+// The stream will close when the step is End'd.
+func (s *Step) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
+	ls := s.logsink()
+	var ret streamclient.DatagramStream
+	var openStream func(string, types.StreamName) io.Closer
+	if ls == nil {
+		openStream = func(name string, relLdName types.StreamName) io.Closer {
+			logging.Warningf(s.ctx, "dropping DATAGRAM log %q", name)
+			ret = nopDatagramStream{}
+			return ret
+		}
+	} else {
+		openStream = func(name string, relLdName types.StreamName) io.Closer {
+			var err error
+			ret, err = ls.NewDatagramStream(s.ctx, relLdName, opts...)
+			if err != nil {
+				panic(err)
+			}
+			return ret
+		}
 	}
-	panic("implement")
+
+	s.addLog(name, openStream)
+	return ret
 }
 
-func (s *Step) noopMode() bool {
-	return s.state == nil
+func (s *Step) logsink() *streamclient.Client {
+	if s.state == nil {
+		return nil
+	}
+	return s.state.logsink
 }
 
 // mutate gives exclusive access to read+write stepPb

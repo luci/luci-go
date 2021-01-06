@@ -64,3 +64,8 @@
 //   * MakePropertyModifier property manipulators will log their emitted
 //     properties at INFO.
 package build
+
+// BUG(iannucci): When OptLogsink is used and `logging` output is redirected to
+// a Step log entitled "log", the current log format is reset to
+// `gologger.StdFormat` instead of preserving the current log format from the
+// context.

@@ -16,16 +16,22 @@ package build
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/assertions"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/luciexe"
 )
 
 func TestStepNoop(t *testing.T) {
@@ -42,7 +48,7 @@ func TestStepNoop(t *testing.T) {
 					logging.Info, "set status: SCHEDULED", logging.Fields{"build.step": "some step"})
 
 				So(step, ShouldNotBeNil)
-				So(getState(ctx), ShouldResemble, ctxState{stepPrefix: "some step|"})
+				So(getState(ctx).stepNamePrefix(), ShouldResemble, "some step|")
 
 				So(step.Start, ShouldNotPanic)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
@@ -58,7 +64,7 @@ func TestStepNoop(t *testing.T) {
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
 
 				So(step, ShouldNotBeNil)
-				So(getState(ctx), ShouldResemble, ctxState{stepPrefix: "some step|"})
+				So(getState(ctx).stepNamePrefix(), ShouldResemble, "some step|")
 
 				So(step.Start, ShouldPanicLike, "cannot start step")
 			})
@@ -132,36 +138,137 @@ func TestStepNoop(t *testing.T) {
 			})
 		})
 
+		Convey("Recursive steps", func() {
+			Convey("basic", func() {
+				parent, ctx := StartStep(ctx, "parent")
+				defer func() { parent.End(nil) }()
+
+				child, ctx := StartStep(ctx, "child")
+				defer func() { child.End(nil) }()
+
+				So(parent.name, ShouldResemble, "parent")
+				So(child.name, ShouldResemble, "parent|child")
+			})
+
+			Convey("creating child step starts parent", func() {
+				parent, ctx := ScheduleStep(ctx, "parent")
+				defer func() { parent.End(nil) }()
+
+				child, ctx := ScheduleStep(ctx, "child")
+				defer func() { child.End(nil) }()
+
+				So(parent.name, ShouldResemble, "parent")
+				So(parent.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
+				So(child.name, ShouldResemble, "parent|child")
+				So(child.stepPb.Status, ShouldResemble, bbpb.Status_SCHEDULED)
+			})
+		})
+
 		Convey("Step logs", func() {
 			ctx := memlogger.Use(ctx)
 			logs := logging.Get(ctx).(*memlogger.MemLogger)
 			step, _ := StartStep(ctx, "some step")
 
 			Convey(`text`, func() {
-				log, err := step.Log("a log")
+				log := step.Log("a log")
+				_, err := log.Write([]byte("this is stuff"))
 				So(err, ShouldBeNil)
-				_, err = log.Write([]byte("this is stuff"))
-				So(err, ShouldBeNil)
-				So(log.Close(), ShouldBeNil)
+				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "this is stuff")
 			})
 
 			Convey(`binary`, func() {
-				log, err := step.Log("a log", streamclient.Binary())
+				log := step.Log("a log", streamclient.Binary())
+				_, err := log.Write([]byte("this is stuff"))
 				So(err, ShouldBeNil)
-				_, err = log.Write([]byte("this is stuff"))
-				So(err, ShouldBeNil)
-				So(log.Close(), ShouldBeNil)
+				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping BINARY log \"a log\"")
 			})
 
 			Convey(`datagram`, func() {
-				log, err := step.LogDatagram("a log")
-				So(err, ShouldBeNil)
+				log := step.LogDatagram("a log")
 				So(log.WriteDatagram([]byte("this is stuff")), ShouldBeNil)
-				So(log.Close(), ShouldBeNil)
+				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping DATAGRAM log \"a log\"")
 			})
+		})
+	})
+}
+
+func TestStepLog(t *testing.T) {
+	Convey(`Step logging`, t, func() {
+		lc := streamclient.NewFake("fakeNS")
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		buildState, ctx := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		// TODO(iannucci): implement State.End
+		// defer func() { buildState.End(nil) }()
+		So(buildState, ShouldNotBeNil)
+
+		Convey(`logging redirects`, func() {
+			step, ctx := StartStep(ctx, "some step")
+			logging.Infof(ctx, "hi there!")
+			step.End(nil)
+
+			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+				Name:      "some step",
+				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
+				Status:    bbpb.Status_SUCCESS,
+				Logs: []*bbpb.Log{
+					{Name: "log", Url: "step/0/log/0"},
+				},
+			})
+
+			So(lc.GetFakeData()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "set status: SUCCESS")
+			So(lc.GetFakeData()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "hi there!")
+		})
+
+		Convey(`can open logs`, func() {
+			step, _ := StartStep(ctx, "some step")
+			log := step.Log("some log")
+			fmt.Fprintln(log, "here's some stuff")
+			step.End(nil)
+
+			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+				Name:      "some step",
+				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
+				Status:    bbpb.Status_SUCCESS,
+				Logs: []*bbpb.Log{
+					{Name: "log", Url: "step/0/log/0"},
+					{Name: "some log", Url: "step/0/log/1"},
+				},
+			})
+
+			So(lc.GetFakeData()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+		})
+
+		Convey(`can open datagram logs`, func() {
+			step, _ := StartStep(ctx, "some step")
+			log := step.LogDatagram("some log")
+			log.WriteDatagram([]byte("here's some stuff"))
+			step.End(nil)
+
+			So(step.stepPb, assertions.ShouldResembleProto, &bbpb.Step{
+				Name:      "some step",
+				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
+				Status:    bbpb.Status_SUCCESS,
+				Logs: []*bbpb.Log{
+					{Name: "log", Url: "step/0/log/0"},
+					{Name: "some log", Url: "step/0/log/1"},
+				},
+			})
+
+			So(lc.GetFakeData()["fakeNS/step/0/log/1"].GetDatagrams(), ShouldContain, "here's some stuff")
+		})
+
+		Convey(`sets LOGDOG_NAMESPACE`, func() {
+			_, subCtx := StartStep(ctx, "some step")
+			So(environ.FromCtx(subCtx).GetEmpty(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/0/u")
+
+			_, subSubCtx := StartStep(ctx, "some sub step")
+			So(environ.FromCtx(subSubCtx).GetEmpty(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/1/u")
 		})
 	})
 }
