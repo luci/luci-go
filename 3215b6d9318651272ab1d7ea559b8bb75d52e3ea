@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d917375a_6eb8e5e8",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T06:28:14Z",
+      "side": 1,
+      "message": "Should we assign stream to ret.loggingStream then?",
+      "revId": "3215b6d9318651272ab1d7ea559b8bb75d52e3ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43c69b9a_b9749e34",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T06:28:14Z",
+      "side": 1,
+      "message": "I think this worth at least `Warningf` as we might end up losing log if it is not closed successfully IIUC.",
+      "range": {
+        "startLine": 207,
+        "startChar": 12,
+        "endLine": 207,
+        "endChar": 18
+      },
+      "revId": "3215b6d9318651272ab1d7ea559b8bb75d52e3ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
