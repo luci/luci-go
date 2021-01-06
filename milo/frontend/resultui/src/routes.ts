@@ -31,6 +31,14 @@ const notFoundRoute: Route = {
 
 export const NOT_FOUND_URL = '/ui/not-found';
 
+// Map of legacy URI fragments to new tab names.
+const LEGACY_FRAGMENT_MAP: Record<string, string> = {
+  '#overview-tab': 'overview',
+  '#related-tab': 'related',
+  '#timeline-tab': 'timeline',
+  '#blamelist-tab': 'blamelist',
+};
+
 const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot, {baseUrl: '/ui/'});
 router.setRoutes({
@@ -121,6 +129,9 @@ router.setRoutes({
                   path: '/',
                   redirect: '/p/:project/builders/:bucket/:builder/:build_num_or_id/overview',
                   action: async (_ctx, cmd) => {
+                    if (LEGACY_FRAGMENT_MAP[window.location.hash]) {
+                      return cmd.redirect('/p/:project/builders/:bucket/:builder/:build_num_or_id/' + LEGACY_FRAGMENT_MAP[window.location.hash]);
+                    }
                     await import(
                       /* webpackChunkName: "build_default_tab" */
                       /* webpackPrefetch: true */
