@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "79ed2854_f67f1fb9",
+        "filename": "cv/internal/common/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c62c62c_1ac2a5ea",
+      "range": {
+        "startLine": 116,
+        "startChar": 21,
+        "endLine": 116,
+        "endChar": 36
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "72366733_cdf5363a",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-01-05T18:45:40Z",
       "side": 1,
       "message": "technically `ids` below\n\nOr it could be rephrased as \"ContainsSorted checks if a given RunID is found in a sorted RunIDs list\"?",
+      "range": {
+        "startLine": 132,
+        "startChar": 34,
+        "endLine": 132,
+        "endChar": 37
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cce9f77f_470054dc",
+        "filename": "cv/internal/common/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72366733_cdf5363a",
       "range": {
         "startLine": 132,
         "startChar": 34,
@@ -152,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca7bcecc_b5ef735a",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "OK! Changed slightly to \n\n// save saves all modified/created Datastore entities.\n//\n// It may be retried multiple times on failure.\n\n(it\u0027s actually not yet 100% about 1 multiPut due to PMNotification).",
+      "parentUuid": "9d155163_2d9c6f40",
+      "range": {
+        "startLine": 261,
+        "startChar": 22,
+        "endLine": 261,
+        "endChar": 26
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c05dc8b0_46f68dcd",
@@ -213,6 +285,30 @@
       "side": 1,
       "message": "It makes sense -- the part that tripped me up was \"of which run.Run will be returned...\", and I\u0027m wondering whether that part of the sentence could be removed.",
       "parentUuid": "6f6102fe_8f485897",
+      "range": {
+        "startLine": 263,
+        "startChar": 67,
+        "endLine": 264,
+        "endChar": 63
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88698e23_07a9c568",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "Rephrased differently.",
+      "parentUuid": "5458ec29_6c0a82a7",
       "range": {
         "startLine": 263,
         "startChar": 67,
@@ -294,6 +390,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "97f32b22_496cdbbe",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "74b162e8_e1ba216b",
+      "range": {
+        "startLine": 278,
+        "startChar": 22,
+        "endLine": 278,
+        "endChar": 29
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32cf0369_6132570b",
@@ -317,6 +437,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "324dfe34_0ddb22a4",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32cf0369_6132570b",
+      "range": {
+        "startLine": 68,
+        "startChar": 16,
+        "endLine": 68,
+        "endChar": 36
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "77533502_eec68ef6",
@@ -330,6 +474,30 @@
       "writtenOn": "2021-01-05T18:45:40Z",
       "side": 1,
       "message": "nit: I\u0027d remove this comma",
+      "range": {
+        "startLine": 77,
+        "startChar": 41,
+        "endLine": 77,
+        "endChar": 42
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72fbc001_09f96c45",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:25:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77533502_eec68ef6",
       "range": {
         "startLine": 77,
         "startChar": 41,
