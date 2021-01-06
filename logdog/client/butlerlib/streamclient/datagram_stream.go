@@ -20,12 +20,19 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 )
 
+// DatagramWriter is the interface for writing datagrams.
+//
+// You'll typically use DatagramStream instaed, but it's occasionally useful to
+// separate this from io.Closer.
+type DatagramWriter interface {
+	// WriteDatagram writes `dg` as a single datagram.
+	WriteDatagram(dg []byte) error
+}
+
 // DatagramStream is the interface for datagram oriented streams.
 type DatagramStream interface {
 	io.Closer
-
-	// WriteDatagram writes `dg` as a single datagram.
-	WriteDatagram(dg []byte) error
+	DatagramWriter
 }
 
 // datagramStreamWriter implements a recordio.Frame-based DatagramStream on top

@@ -37,15 +37,27 @@ type StepView struct {
 // started (e.g. it was produced via StartStep() or Start() was already called),
 // this panics.
 func (s *Step) Start() {
+	s.ensureStarted(func(status bbpb.Status) {
+		if status != bbpb.Status_SCHEDULED {
+			panic(errors.Reason("cannot start step %q: not SCHEDULED: %s", s.name, status).Err())
+		}
+	})
+}
+
+func (s *Step) ensureStarted(chk func(bbpb.Status)) {
 	s.mutate(func() {
-		if status := s.stepPb.GetStatus(); status != bbpb.Status_SCHEDULED {
-			panic(errors.Reason("cannot start step %q: not SCHEDULED: %s", s.stepPb.Name, status).Err())
+		cur := s.stepPb.GetStatus()
+		if chk != nil {
+			chk(cur)
+		}
+		if cur != bbpb.Status_SCHEDULED {
+			return
 		}
 
 		s.stepPb.Status = bbpb.Status_STARTED
 		s.stepPb.StartTime = timestamppb.New(clock.Now(s.ctx))
 
-		if s.noopMode() /* || no logsink */ {
+		if s.logsink() == nil {
 			logging.Infof(s.ctx, "set status: %s", bbpb.Status_STARTED)
 		}
 	})
@@ -70,7 +82,7 @@ func (s *Step) Modify(cb func(*StepView)) {
 			s.stepPb.SummaryMarkdown = newView.SummaryMarkdown
 		}
 	})
-	if s.noopMode() && len(logSM) > 0 {
+	if s.logsink() == nil && len(logSM) > 0 {
 		logging.Debugf(s.ctx, "changed SummaryMarkdown: %s", logSM)
 	}
 }

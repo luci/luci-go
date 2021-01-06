@@ -155,3 +155,13 @@ func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, o
 	ret, err := c.dial.DialDgramStream(fullOpts.desc)
 	return ret, errors.Annotate(err, "attempting to connect datagram stream %q", name).Err()
 }
+
+// GetNamespace returns the LOGDOG_NAMESPACE value associated with this Client.
+//
+// Safe to call on a nil client; will return an empty StreamName.
+func (c *Client) GetNamespace() types.StreamName {
+	if c == nil {
+		return types.StreamName("")
+	}
+	return c.ns
+}

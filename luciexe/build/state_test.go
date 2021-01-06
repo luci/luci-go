@@ -36,9 +36,7 @@ func TestState(t *testing.T) {
 
 		Convey(`StartStep`, func() {
 			step, _ := StartStep(ctx, "some step")
-			// TODO(iannucci): implement Step.End
-			// defer func() {step.End(nil)}()
-			So(step, ShouldNotBeNil)
+			defer func() { step.End(nil) }()
 
 			So(st.buildPb.Steps, assertions.ShouldResembleProto, []*bbpb.Step{
 				{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},

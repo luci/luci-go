@@ -16,12 +16,14 @@ package build
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-	"google.golang.org/protobuf/proto"
 )
 
 // State is the state of the current Build.
@@ -38,6 +40,8 @@ import (
 type State struct {
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
+
+	logsink *streamclient.Client
 
 	stepsMu   sync.Mutex
 	stepNames nameTracker
@@ -74,7 +78,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	for _, opt := range opts {
 		opt(ret)
 	}
-	return ret, setState(ctx, ctxState{ret, ""})
+	return ret, setState(ctx, ctxState{ret, nil})
 }
 
 // End sets the build's final status, according to `err` (See ExtractStatus).
@@ -100,7 +104,7 @@ func (*State) End(err error) {
 // Log creates a new build-level line-oriented text log stream with the given name.
 //
 // You must close the stream when you're done with it.
-func (*State) Log(name string, opts ...streamclient.Option) (io.WriteCloser, error) {
+func (*State) Log(name string, opts ...streamclient.Option) io.Writer {
 	panic("implement")
 }
 
@@ -109,7 +113,7 @@ func (*State) Log(name string, opts ...streamclient.Option) (io.WriteCloser, err
 // stream.
 //
 // You must close the stream when you're done with it.
-func (*State) LogDatagram(name string, opts ...streamclient.Option) (streamclient.DatagramStream, error) {
+func (*State) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
 	panic("implement")
 }
 
@@ -117,9 +121,15 @@ func (*State) LogDatagram(name string, opts ...streamclient.Option) (streamclien
 
 type ctxState struct {
 	state *State
+	step  *Step
+}
 
-	// stepPrefix is the full step prefix including trailing "|"
-	stepPrefix string
+// Returns the step name prefix including terminal "|".
+func (c ctxState) stepNamePrefix() string {
+	if c.step == nil {
+		return ""
+	}
+	return c.step.name + "|"
 }
 
 var contextStateKey = "holds a ctxState"
@@ -141,9 +151,10 @@ func (s *State) excludeCopy(cb func()) {
 	cb()
 }
 
-func (s *State) registerStep(step *bbpb.Step) *bbpb.Step {
+func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPrefix, logPrefix string) {
+	passthrough = step
 	if s == nil {
-		return step
+		return
 	}
 
 	s.excludeCopy(func() {
@@ -152,7 +163,13 @@ func (s *State) registerStep(step *bbpb.Step) *bbpb.Step {
 
 		step.Name = s.stepNames.resolveName(step.Name)
 		s.buildPb.Steps = append(s.buildPb.Steps, step)
+		relLogPrefix = fmt.Sprintf("step/%d", len(s.buildPb.Steps)-1)
 	})
 
-	return step
+	logPrefix = relLogPrefix
+	if ns := string(s.logsink.GetNamespace()); ns != "" {
+		logPrefix = fmt.Sprintf("%s/%s", ns, relLogPrefix)
+	}
+
+	return
 }
