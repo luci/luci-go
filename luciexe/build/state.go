@@ -21,8 +21,12 @@ import (
 	"sync"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
@@ -38,6 +42,21 @@ import (
 // All manipulations to the build State will result in an invocation of the
 // configured Send function (see OptSend).
 type State struct {
+	ctx       context.Context
+	ctxCloser func()
+
+	// NOTE: copyExclusionMu is "backwards", intentionally.
+	//
+	// The lock is held in "WRITE" mode in order to do `proto.Clone` on buildPb,
+	// since the Clone operation actually can write metadata to the struct, and is
+	// not safe with concurrent writes to the proto message.
+	//
+	// The lock is held in "READ" mode for all other mutations to buildPb; The
+	// library has other mutexes to protect indivitual portions of the buildPb
+	// from concurrent modification.
+	//
+	// This is done to allow e.g. multiple Steps to be mutated concurrently, but
+	// allow `proto.Clone` to proceed safely.
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
 
@@ -72,12 +91,25 @@ var _ Loggable = (*State)(nil)
 // `recover()` the panic. Please use conventional Go error handling and control
 // flow mechanisms.
 func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
+	if initial == nil {
+		initial = &bbpb.Build{}
+	}
+
 	ret := &State{
 		buildPb: proto.Clone(initial).(*bbpb.Build),
 	}
+	ret.ctx, ret.ctxCloser = context.WithCancel(ctx)
+
 	for _, opt := range opts {
 		opt(ret)
 	}
+
+	// in case our buildPb is unstarted, start it now.
+	if ret.buildPb.StartTime == nil {
+		ret.buildPb.StartTime = timestamppb.New(clock.Now(ctx))
+		ret.buildPb.Status = bbpb.Status_STARTED
+	}
+
 	return ret, setState(ctx, ctxState{ret, nil})
 }
 
@@ -97,8 +129,20 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control
 // flow mechanisms.
-func (*State) End(err error) {
-	panic("not implemented")
+func (s *State) End(err error) {
+	var message string
+	s.mutate(func() {
+		s.buildPb.Status, message = computePanicStatus(err)
+		s.buildPb.EndTime = timestamppb.New(clock.Now(s.ctx))
+
+		// TODO(iannucci): handle closing logs
+	})
+	// buildPb is immutable after mutate ends, so we should be fine to access it
+	// outside the locks.
+
+	logStatus(s.ctx, s.buildPb.Status, message, s.buildPb.SummaryMarkdown)
+
+	s.ctxCloser()
 }
 
 // Log creates a new build-level line-oriented text log stream with the given name.
@@ -143,10 +187,14 @@ func getState(ctx context.Context) ctxState {
 	return ret
 }
 
-func (s *State) excludeCopy(cb func()) {
+func (s *State) mutate(cb func()) {
 	if s != nil {
 		s.copyExclusionMu.RLock()
 		defer s.copyExclusionMu.RUnlock()
+
+		if protoutil.IsEnded(s.buildPb.Status) {
+			panic(errors.New("cannot mutate ended build"))
+		}
 	}
 	cb()
 }
@@ -157,7 +205,7 @@ func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPre
 		return
 	}
 
-	s.excludeCopy(func() {
+	s.mutate(func() {
 		s.stepsMu.Lock()
 		defer s.stepsMu.Unlock()
 
