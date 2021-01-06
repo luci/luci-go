@@ -48,14 +48,14 @@ message Group {
   // config is injected).
   bool fallback = 2;
 
-  // Regular expressions to include/exclude a ref from config group.
-  // Config group is applicable iff ref matches at least 1 include and
-  // doesn't match any exclude regexps.
-  // TODO(tandrii): remove old values.
-  repeated string include = 11; // DEPRECATED.
-  repeated string exclude = 12; // DEPRECATED.
-  string includeRegexp = 13;
-  string excludeRegexp = 14;
+  // Regular expression that a CL's target ref must match. Required.
+  //
+  // It's constructed from `ref_regexp`s of CV config.
+  string include = 13;
+  // Regular expression that a CL's target ref must NOT match. Required.
+  //
+  // It's constructed from `ref_regexp_exclude`s of CV config.
+  string exclude = 14;
 }
 
 // MatcherState is serializable state of a matcher for a single LUCI project at
