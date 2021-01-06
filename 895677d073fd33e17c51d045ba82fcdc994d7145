@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccdf9391_caf9c22c",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T20:21:45Z",
+      "side": 1,
+      "message": "nit: I feel like\n\n```\nif ret.buildPb.GetOutput() \u003d\u003d nil {\n  ret.buildPb.Output \u003d  \u0026bbpb.Build_Output{}\n}\n```\n\nis clearer here unless you have a few more fields to intialize.",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 3
+      },
+      "revId": "895677d073fd33e17c51d045ba82fcdc994d7145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
