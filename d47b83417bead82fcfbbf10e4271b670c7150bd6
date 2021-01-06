@@ -50,6 +50,24 @@
       "message": "missing space",
       "revId": "d47b83417bead82fcfbbf10e4271b670c7150bd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9700c2bf_428f5952",
+        "filename": "rts/presubmit/eval/history_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T17:05:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b610ca04_bc08a624",
+      "revId": "d47b83417bead82fcfbbf10e4271b670c7150bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
