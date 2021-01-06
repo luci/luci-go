@@ -22,7 +22,7 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/internal;intern
 // Event is a container for all kinds of events a project manager can receive.
 message Event {
   oneof event {
-    UpdateConfig update_config = 1;
+    NewConfig new_config = 1;
     Poke poke = 2;
     CLUpdated cl_updated = 3;
     RunCreated run_created = 4;
@@ -30,7 +30,7 @@ message Event {
   }
 }
 
-message UpdateConfig {}
+message NewConfig {}
 
 message Poke {}
 

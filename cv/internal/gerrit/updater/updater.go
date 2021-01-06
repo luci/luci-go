@@ -223,7 +223,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	default:
 		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate,
 			func(ctx context.Context, clid common.CLID, eversion int) error {
-				return prjmanager.CLUpdated(ctx, f.luciProject, clid, eversion)
+				return prjmanager.NotifyCLUpdated(ctx, f.luciProject, clid, eversion)
 			})
 	}
 }

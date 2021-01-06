@@ -329,7 +329,7 @@ func (rb *RunBuilder) registerSaveCL(ctx context.Context, index int, now time.Ti
 }
 
 func (rb *RunBuilder) savePMNotification(ctx context.Context) error {
-	return runCreated(ctx, rb.runID)
+	return NotifyRunCreated(ctx, rb.runID)
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.

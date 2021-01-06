@@ -141,10 +141,10 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	updateConfig eventbox.Events
-	poke         eventbox.Events
+	newConfig eventbox.Events
+	poke      eventbox.Events
 
-	clupdated struct {
+	clsUpdated struct {
 		// i-th event corresponds to i-th cl.
 		events eventbox.Events
 		cls    []*internal.CLUpdated
@@ -170,13 +170,13 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		panic(err)
 	}
 	switch v := e.GetEvent().(type) {
-	case *internal.Event_UpdateConfig:
-		tr.updateConfig = append(tr.updateConfig, item)
+	case *internal.Event_NewConfig:
+		tr.newConfig = append(tr.newConfig, item)
 	case *internal.Event_Poke:
 		tr.poke = append(tr.poke, item)
 	case *internal.Event_ClUpdated:
-		tr.clupdated.events = append(tr.clupdated.events, item)
-		tr.clupdated.cls = append(tr.clupdated.cls, v.ClUpdated)
+		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
+		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClUpdated)
 	case *internal.Event_RunCreated:
 		tr.runsCreated.events = append(tr.runsCreated.events, item)
 		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
@@ -197,7 +197,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.runsCreated.runs) > 0 {
 		sort.Sort(tr.runsCreated.runs)
 		t := eventbox.Transition{Events: tr.runsCreated.events}
-		s, t.SideEffectFn, err = s.runsCreated(ctx, tr.runsCreated.runs)
+		s, t.SideEffectFn, err = s.onRunsCreated(ctx, tr.runsCreated.runs)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.runsFinished.runs) > 0 {
 		sort.Sort(tr.runsFinished.runs)
 		t := eventbox.Transition{Events: tr.runsFinished.events}
-		s, t.SideEffectFn, err = s.runsFinished(ctx, tr.runsFinished.runs)
+		s, t.SideEffectFn, err = s.onRunsFinished(ctx, tr.runsFinished.runs)
 		if err != nil {
 			return nil, err
 		}
@@ -218,8 +218,8 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	// UpdateConfig event may result in stopping the PM, which requires notifying
 	// each of IncompleteRuns to stop. Thus, runsCreated must be processed before
 	// to ensure no Run will be missed.
-	if len(tr.updateConfig) > 0 {
-		t := eventbox.Transition{Events: tr.updateConfig}
+	if len(tr.newConfig) > 0 {
+		t := eventbox.Transition{Events: tr.newConfig}
 		s, t.SideEffectFn, err = s.updateConfig(ctx)
 		if err != nil {
 			return nil, err
@@ -238,9 +238,9 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 		ret = append(ret, t)
 	}
 
-	if len(tr.clupdated.cls) > 0 {
-		t := eventbox.Transition{Events: tr.clupdated.events}
-		s, t.SideEffectFn, err = s.clsUpdated(ctx, tr.clupdated.cls)
+	if len(tr.clsUpdated.cls) > 0 {
+		t := eventbox.Transition{Events: tr.clsUpdated.events}
+		s, t.SideEffectFn, err = s.onCLsUpdated(ctx, tr.clsUpdated.cls)
 		if err != nil {
 			return nil, err
 		}
