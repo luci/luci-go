@@ -178,6 +178,7 @@ func (s *Step) End(err error) {
 		return
 	}
 
+	// TODO(iannucci): close all logs opened for this step.
 	panic("not implemented")
 }
 
