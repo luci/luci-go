@@ -22,6 +22,30 @@
       },
       "revId": "48eb4e1fcbacfc5d4ae8e7f20dc8ff85f3f36f10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3224138_d041a884",
+        "filename": "cv/internal/gerrit/cfgmatcher/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T19:55:08Z",
+      "side": 1,
+      "message": "I\u0027m 90% certain it\u0027s faster, more so if re cache resulting regexps, but I also think it\u0027s simpler.",
+      "parentUuid": "c664418c_83be3be1",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 22
+      },
+      "revId": "48eb4e1fcbacfc5d4ae8e7f20dc8ff85f3f36f10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
