@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3f3723b2_5e4d9e2b",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:10:11Z",
+      "side": 1,
+      "message": "True. Done.",
+      "parentUuid": "924b48b0_4665b06c",
+      "range": {
+        "startLine": 227,
+        "startChar": 104,
+        "endLine": 227,
+        "endChar": 110
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "11bd9ca0_eed47620",
         "filename": "cv/internal/prjmanager/run.go",
         "patchSetId": 3
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-05T20:57:41Z",
       "side": 1,
       "message": "Curious: What does ml stand for?",
+      "range": {
+        "startLine": 331,
+        "startChar": 6,
+        "endLine": 331,
+        "endChar": 8
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c0b3ffb_3451cc8a",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:10:11Z",
+      "side": 1,
+      "message": "multiLoader, after which I realized that I need exactly the same for the save.\nFixed.",
+      "parentUuid": "11bd9ca0_eed47620",
       "range": {
         "startLine": 331,
         "startChar": 6,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac954790_835d3872",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:10:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06078a8c_3cd84a5b",
+      "range": {
+        "startLine": 339,
+        "startChar": 62,
+        "endLine": 339,
+        "endChar": 63
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd93151a_ab4d8597",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-01-05T20:57:41Z",
       "side": 1,
       "message": "put entities to",
+      "range": {
+        "startLine": 375,
+        "startChar": 41,
+        "endLine": 375,
+        "endChar": 60
+      },
+      "revId": "de13f83ce5685dc0c1cfe32ab142f2ab06b50533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c550fb3_97f7ecf1",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-06T03:10:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd93151a_ab4d8597",
       "range": {
         "startLine": 375,
         "startChar": 41,
