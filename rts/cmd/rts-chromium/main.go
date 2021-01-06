@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/storage"
 	"github.com/maruel/subcommands"
 	"google.golang.org/api/option"
 
@@ -41,7 +42,7 @@ var logCfg = gologger.LoggerConfig{
 func main() {
 	mathrand.SeedRandomly()
 	authOpt := chromeinfra.DefaultAuthOptions()
-	authOpt.Scopes = append(authOpt.Scopes, bigquery.Scope, gerrit.OAuthScope)
+	authOpt.Scopes = append(authOpt.Scopes, bigquery.Scope, gerrit.OAuthScope, storage.ScopeReadOnly)
 
 	app := &cli.Application{
 		Name:  "rts-chromium",
@@ -51,6 +52,7 @@ func main() {
 		},
 		Commands: []*subcommands.Command{
 			cmdPresubmitHistory(&authOpt),
+			cmdFetchDurations(&authOpt),
 			cmdCreateModel(&authOpt),
 			cmdSelect(),
 

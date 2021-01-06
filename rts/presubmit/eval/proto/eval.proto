@@ -37,6 +37,8 @@ message Rejection {
 //
 // Multiple fragments are combined with proto.Merge() called on their
 // "rejection" fields. Note that repeated fields are concatenated.
+//
+// TODO(nodir): remove this message.
 message RejectionFragment {
   // Rejection data in this fragment.
   // May be unset, e.g. if this is a terminal fragment.
@@ -54,8 +56,21 @@ message RejectionFragment {
   bool terminal = 2;
 }
 
+// Code changes and a sample of test runs with their durations.
+//
+// Normally these records are in a directory where .jsonl.gz files are
+// GZIP-compressed JSON Lines files, where each entry is a protojson-encoded
+// TestDurationRecord message.
+message TestDurationRecord {
+  // The patchset set that observed the test durations.
+  repeated GerritPatchset patchsets = 1;
+  // A sample of test durations from results of the patchsets.
+  repeated TestDuration test_durations = 2;
+}
+
 // How long a test took.
 message TestDuration {
+  // TODO(nodir): remove this field.
   // The patchsets that were tested.
   repeated GerritPatchset patchsets = 1;
 
@@ -125,6 +140,7 @@ message TestVariant {
 
 // One historical record.
 // Used for streaming messages above.
+// TODO(nodir): remove this message.
 message Record {
   oneof data {
     // A code change rejection due to test failures.

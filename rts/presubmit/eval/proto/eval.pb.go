@@ -107,6 +107,8 @@ func (x *Rejection) GetFailedTestVariants() []*TestVariant {
 //
 // Multiple fragments are combined with proto.Merge() called on their
 // "rejection" fields. Note that repeated fields are concatenated.
+//
+// TODO(nodir): remove this message.
 type RejectionFragment struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -173,12 +175,75 @@ func (x *RejectionFragment) GetTerminal() bool {
 	return false
 }
 
+// Code changes and a sample of test runs with their durations.
+//
+// Normally these records are in a directory where .jsonl.gz files are
+// GZIP-compressed JSON Lines files, where each entry is a protojson-encoded
+// TestDurationRecord message.
+type TestDurationRecord struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The patchset set that observed the test durations.
+	Patchsets []*GerritPatchset `protobuf:"bytes,1,rep,name=patchsets,proto3" json:"patchsets,omitempty"`
+	// A sample of test durations from results of the patchsets.
+	TestDurations []*TestDuration `protobuf:"bytes,2,rep,name=test_durations,json=testDurations,proto3" json:"test_durations,omitempty"`
+}
+
+func (x *TestDurationRecord) Reset() {
+	*x = TestDurationRecord{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestDurationRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestDurationRecord) ProtoMessage() {}
+
+func (x *TestDurationRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestDurationRecord.ProtoReflect.Descriptor instead.
+func (*TestDurationRecord) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TestDurationRecord) GetPatchsets() []*GerritPatchset {
+	if x != nil {
+		return x.Patchsets
+	}
+	return nil
+}
+
+func (x *TestDurationRecord) GetTestDurations() []*TestDuration {
+	if x != nil {
+		return x.TestDurations
+	}
+	return nil
+}
+
 // How long a test took.
 type TestDuration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// TODO(nodir): remove this field.
 	// The patchsets that were tested.
 	Patchsets []*GerritPatchset `protobuf:"bytes,1,rep,name=patchsets,proto3" json:"patchsets,omitempty"`
 	// The test variant that was measured.
@@ -190,7 +255,7 @@ type TestDuration struct {
 func (x *TestDuration) Reset() {
 	*x = TestDuration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[2]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -203,7 +268,7 @@ func (x *TestDuration) String() string {
 func (*TestDuration) ProtoMessage() {}
 
 func (x *TestDuration) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -216,7 +281,7 @@ func (x *TestDuration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestDuration.ProtoReflect.Descriptor instead.
 func (*TestDuration) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TestDuration) GetPatchsets() []*GerritPatchset {
@@ -259,7 +324,7 @@ type GerritChange struct {
 func (x *GerritChange) Reset() {
 	*x = GerritChange{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -272,7 +337,7 @@ func (x *GerritChange) String() string {
 func (*GerritChange) ProtoMessage() {}
 
 func (x *GerritChange) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -285,7 +350,7 @@ func (x *GerritChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GerritChange.ProtoReflect.Descriptor instead.
 func (*GerritChange) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GerritChange) GetHost() string {
@@ -326,7 +391,7 @@ type GerritPatchset struct {
 func (x *GerritPatchset) Reset() {
 	*x = GerritPatchset{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -339,7 +404,7 @@ func (x *GerritPatchset) String() string {
 func (*GerritPatchset) ProtoMessage() {}
 
 func (x *GerritPatchset) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +417,7 @@ func (x *GerritPatchset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GerritPatchset.ProtoReflect.Descriptor instead.
 func (*GerritPatchset) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GerritPatchset) GetChange() *GerritChange {
@@ -393,7 +458,7 @@ type SourceFile struct {
 func (x *SourceFile) Reset() {
 	*x = SourceFile{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -406,7 +471,7 @@ func (x *SourceFile) String() string {
 func (*SourceFile) ProtoMessage() {}
 
 func (x *SourceFile) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +484,7 @@ func (x *SourceFile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourceFile.ProtoReflect.Descriptor instead.
 func (*SourceFile) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SourceFile) GetRepo() string {
@@ -461,7 +526,7 @@ type TestVariant struct {
 func (x *TestVariant) Reset() {
 	*x = TestVariant{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -474,7 +539,7 @@ func (x *TestVariant) String() string {
 func (*TestVariant) ProtoMessage() {}
 
 func (x *TestVariant) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -487,7 +552,7 @@ func (x *TestVariant) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestVariant.ProtoReflect.Descriptor instead.
 func (*TestVariant) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TestVariant) GetId() string {
@@ -513,6 +578,7 @@ func (x *TestVariant) GetFileName() string {
 
 // One historical record.
 // Used for streaming messages above.
+// TODO(nodir): remove this message.
 type Record struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -527,7 +593,7 @@ type Record struct {
 func (x *Record) Reset() {
 	*x = Record{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -540,7 +606,7 @@ func (x *Record) String() string {
 func (*Record) ProtoMessage() {}
 
 func (x *Record) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -553,7 +619,7 @@ func (x *Record) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Record.ProtoReflect.Descriptor instead.
 func (*Record) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP(), []int{8}
 }
 
 func (m *Record) GetData() isRecord_Data {
@@ -629,7 +695,18 @@ var file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDesc = []by
 	0x2e, 0x65, 0x76, 0x61, 0x6c, 0x2e, 0x52, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52,
 	0x09, 0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x74, 0x65,
 	0x72, 0x6d, 0x69, 0x6e, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x74, 0x65,
-	0x72, 0x6d, 0x69, 0x6e, 0x61, 0x6c, 0x22, 0xd9, 0x01, 0x0a, 0x0c, 0x54, 0x65, 0x73, 0x74, 0x44,
+	0x72, 0x6d, 0x69, 0x6e, 0x61, 0x6c, 0x22, 0xad, 0x01, 0x0a, 0x12, 0x54, 0x65, 0x73, 0x74, 0x44,
+	0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12, 0x47, 0x0a,
+	0x09, 0x70, 0x61, 0x74, 0x63, 0x68, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x29, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x65, 0x2e, 0x72, 0x74, 0x73, 0x2e, 0x70, 0x72,
+	0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x2e, 0x65, 0x76, 0x61, 0x6c, 0x2e, 0x47, 0x65, 0x72,
+	0x72, 0x69, 0x74, 0x50, 0x61, 0x74, 0x63, 0x68, 0x73, 0x65, 0x74, 0x52, 0x09, 0x70, 0x61, 0x74,
+	0x63, 0x68, 0x73, 0x65, 0x74, 0x73, 0x12, 0x4e, 0x0a, 0x0e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x64,
+	0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x65, 0x2e, 0x72, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x65, 0x73,
+	0x75, 0x62, 0x6d, 0x69, 0x74, 0x2e, 0x65, 0x76, 0x61, 0x6c, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x44,
+	0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x44, 0x75, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0xd9, 0x01, 0x0a, 0x0c, 0x54, 0x65, 0x73, 0x74, 0x44,
 	0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x47, 0x0a, 0x09, 0x70, 0x61, 0x74, 0x63, 0x68,
 	0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x63, 0x68, 0x72,
 	0x6f, 0x6d, 0x65, 0x2e, 0x72, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x65, 0x73, 0x75, 0x62, 0x6d, 0x69,
@@ -700,36 +777,39 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescGZIP()
 	return file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_goTypes = []interface{}{
 	(*Rejection)(nil),             // 0: chrome.rts.presubmit.eval.Rejection
 	(*RejectionFragment)(nil),     // 1: chrome.rts.presubmit.eval.RejectionFragment
-	(*TestDuration)(nil),          // 2: chrome.rts.presubmit.eval.TestDuration
-	(*GerritChange)(nil),          // 3: chrome.rts.presubmit.eval.GerritChange
-	(*GerritPatchset)(nil),        // 4: chrome.rts.presubmit.eval.GerritPatchset
-	(*SourceFile)(nil),            // 5: chrome.rts.presubmit.eval.SourceFile
-	(*TestVariant)(nil),           // 6: chrome.rts.presubmit.eval.TestVariant
-	(*Record)(nil),                // 7: chrome.rts.presubmit.eval.Record
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),   // 9: google.protobuf.Duration
+	(*TestDurationRecord)(nil),    // 2: chrome.rts.presubmit.eval.TestDurationRecord
+	(*TestDuration)(nil),          // 3: chrome.rts.presubmit.eval.TestDuration
+	(*GerritChange)(nil),          // 4: chrome.rts.presubmit.eval.GerritChange
+	(*GerritPatchset)(nil),        // 5: chrome.rts.presubmit.eval.GerritPatchset
+	(*SourceFile)(nil),            // 6: chrome.rts.presubmit.eval.SourceFile
+	(*TestVariant)(nil),           // 7: chrome.rts.presubmit.eval.TestVariant
+	(*Record)(nil),                // 8: chrome.rts.presubmit.eval.Record
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 10: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_depIdxs = []int32{
-	4,  // 0: chrome.rts.presubmit.eval.Rejection.patchsets:type_name -> chrome.rts.presubmit.eval.GerritPatchset
-	8,  // 1: chrome.rts.presubmit.eval.Rejection.timestamp:type_name -> google.protobuf.Timestamp
-	6,  // 2: chrome.rts.presubmit.eval.Rejection.failed_test_variants:type_name -> chrome.rts.presubmit.eval.TestVariant
+	5,  // 0: chrome.rts.presubmit.eval.Rejection.patchsets:type_name -> chrome.rts.presubmit.eval.GerritPatchset
+	9,  // 1: chrome.rts.presubmit.eval.Rejection.timestamp:type_name -> google.protobuf.Timestamp
+	7,  // 2: chrome.rts.presubmit.eval.Rejection.failed_test_variants:type_name -> chrome.rts.presubmit.eval.TestVariant
 	0,  // 3: chrome.rts.presubmit.eval.RejectionFragment.rejection:type_name -> chrome.rts.presubmit.eval.Rejection
-	4,  // 4: chrome.rts.presubmit.eval.TestDuration.patchsets:type_name -> chrome.rts.presubmit.eval.GerritPatchset
-	6,  // 5: chrome.rts.presubmit.eval.TestDuration.test_variant:type_name -> chrome.rts.presubmit.eval.TestVariant
-	9,  // 6: chrome.rts.presubmit.eval.TestDuration.duration:type_name -> google.protobuf.Duration
-	3,  // 7: chrome.rts.presubmit.eval.GerritPatchset.change:type_name -> chrome.rts.presubmit.eval.GerritChange
-	5,  // 8: chrome.rts.presubmit.eval.GerritPatchset.changed_files:type_name -> chrome.rts.presubmit.eval.SourceFile
-	1,  // 9: chrome.rts.presubmit.eval.Record.rejection_fragment:type_name -> chrome.rts.presubmit.eval.RejectionFragment
-	2,  // 10: chrome.rts.presubmit.eval.Record.test_duration:type_name -> chrome.rts.presubmit.eval.TestDuration
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	5,  // 4: chrome.rts.presubmit.eval.TestDurationRecord.patchsets:type_name -> chrome.rts.presubmit.eval.GerritPatchset
+	3,  // 5: chrome.rts.presubmit.eval.TestDurationRecord.test_durations:type_name -> chrome.rts.presubmit.eval.TestDuration
+	5,  // 6: chrome.rts.presubmit.eval.TestDuration.patchsets:type_name -> chrome.rts.presubmit.eval.GerritPatchset
+	7,  // 7: chrome.rts.presubmit.eval.TestDuration.test_variant:type_name -> chrome.rts.presubmit.eval.TestVariant
+	10, // 8: chrome.rts.presubmit.eval.TestDuration.duration:type_name -> google.protobuf.Duration
+	4,  // 9: chrome.rts.presubmit.eval.GerritPatchset.change:type_name -> chrome.rts.presubmit.eval.GerritChange
+	6,  // 10: chrome.rts.presubmit.eval.GerritPatchset.changed_files:type_name -> chrome.rts.presubmit.eval.SourceFile
+	1,  // 11: chrome.rts.presubmit.eval.Record.rejection_fragment:type_name -> chrome.rts.presubmit.eval.RejectionFragment
+	3,  // 12: chrome.rts.presubmit.eval.Record.test_duration:type_name -> chrome.rts.presubmit.eval.TestDuration
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() }
@@ -763,7 +843,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestDuration); i {
+			switch v := v.(*TestDurationRecord); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -775,7 +855,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GerritChange); i {
+			switch v := v.(*TestDuration); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -787,7 +867,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GerritPatchset); i {
+			switch v := v.(*GerritChange); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -799,7 +879,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SourceFile); i {
+			switch v := v.(*GerritPatchset); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -811,7 +891,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestVariant); i {
+			switch v := v.(*SourceFile); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -823,6 +903,18 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariant); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Record); i {
 			case 0:
 				return &v.state
@@ -835,7 +927,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			}
 		}
 	}
-	file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[7].OneofWrappers = []interface{}{
+	file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_msgTypes[8].OneofWrappers = []interface{}{
 		(*Record_RejectionFragment)(nil),
 		(*Record_TestDuration)(nil),
 	}
@@ -845,7 +937,7 @@ func file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_rts_presubmit_eval_proto_eval_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -22,6 +22,5 @@
 // More specifically, it is a Zstd-compressed RecordIO-encoded sequence of
 // Records.
 //
-// TODO(nodir): consider generalizing. It might be needed for file graph
-// storage.
+// TODO(nodir): delete this package in favor of .jsonl.gz files.
 package history
