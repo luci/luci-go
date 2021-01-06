@@ -16,6 +16,7 @@ package build
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -24,9 +25,12 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 func TestState(t *testing.T) {
+	t.Parallel()
+
 	Convey(`State`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		nowpb := timestamppb.New(testclock.TestRecentTimeUTC)
@@ -53,5 +57,50 @@ func TestState(t *testing.T) {
 				st = nil
 			})
 		})
+	})
+}
+
+func TestStateLogging(t *testing.T) {
+	Convey(`State logging`, t, func() {
+		lc := streamclient.NewFake("fakeNS")
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		st, ctx := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		defer func() { st.End(nil) }()
+		So(st, ShouldNotBeNil)
+
+		Convey(`can open logs`, func() {
+			log := st.Log("some log")
+			fmt.Fprintln(log, "here's some stuff")
+
+			So(st.buildPb, assertions.ShouldResembleProto, &bbpb.Build{
+				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				Status:    bbpb.Status_STARTED,
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{
+						{Name: "some log", Url: "log/0"},
+					},
+				},
+			})
+
+			So(lc.GetFakeData()["fakeNS/log/0"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+		})
+
+		Convey(`can open datagram logs`, func() {
+			log := st.LogDatagram("some log")
+			log.WriteDatagram([]byte("here's some stuff"))
+
+			So(st.buildPb, assertions.ShouldResembleProto, &bbpb.Build{
+				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				Status:    bbpb.Status_STARTED,
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{
+						{Name: "some log", Url: "log/0"},
+					},
+				},
+			})
+
+			So(lc.GetFakeData()["fakeNS/log/0"].GetDatagrams(), ShouldContain, "here's some stuff")
+		})
+
 	})
 }
