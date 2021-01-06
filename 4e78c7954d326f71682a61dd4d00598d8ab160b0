@@ -16,6 +16,24 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n\nI\u0027ll add\n1. loading next page automatically when nothing is rendered.\n2. lazy rendering.\nIn following CLs.\n",
       "revId": "4e78c7954d326f71682a61dd4d00598d8ab160b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff58be1c_fba07840",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-06T06:07:15Z",
+      "side": 1,
+      "message": "Is this demo hardcoded to only show 5 variants at first?",
+      "parentUuid": "264ad5a3_7c14149a",
+      "revId": "4e78c7954d326f71682a61dd4d00598d8ab160b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

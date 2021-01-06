@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36234e20_1e044da2",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-06T06:07:15Z",
+      "side": 0,
+      "message": "Should we just remove this whole \"Known issues\" section? Are we planning to make any more performance improvements after this CL?",
+      "range": {
+        "startLine": 175,
+        "startChar": 8,
+        "endLine": 179,
+        "endChar": 13
+      },
+      "revId": "8dc576eede11bd1b516db24f6cdc073a0e96fbe4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
