@@ -70,6 +70,7 @@ func TQifyError(ctx context.Context, err error) error {
 		// These packages are not useful in production:
 		"go.chromium.org/luci/server",
 		"go.chromium.org/luci/server/tq",
+		"go.chromium.org/luci/server/router",
 	)
 	if !transient.Tag.In(err) {
 		err = tq.Fatal.Apply(err)
