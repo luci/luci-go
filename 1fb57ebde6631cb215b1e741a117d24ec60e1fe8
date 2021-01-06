@@ -161,6 +161,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b0a4839d_2f79bbc1",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-06T03:48:06Z",
+      "side": 1,
+      "message": "I\u0027m not 100% sure. That could depend on how many builders don\u0027t run tests. If vast majority of the builders have tests, we always should the test results for consistency. Otherwise, we hide it for builds that don\u0027t have tests.",
+      "parentUuid": "0bee4648_c8e5a740",
+      "revId": "1fb57ebde6631cb215b1e741a117d24ec60e1fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3516add7_0e6f1a00",
         "filename": "milo/frontend/resultui/src/components/page_layout.ts",
         "patchSetId": 6
