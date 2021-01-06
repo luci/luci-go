@@ -16,6 +16,24 @@
       "message": "ha! I thought the blank is intentional. Maybe you can remove `NOTE: ` at the beginning of the comments so that it follows the convention.",
       "revId": "94bf1c716aba199294e833739b2ceb4b55130d82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57beaad4_075d29d5",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-06T21:51:31Z",
+      "side": 0,
+      "message": "Ah... Yeah I should just do that.",
+      "parentUuid": "ebfd4e2e_1a80b3ce",
+      "revId": "94bf1c716aba199294e833739b2ceb4b55130d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
