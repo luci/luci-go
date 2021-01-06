@@ -16,6 +16,155 @@
       "message": "PTAL",
       "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65d3d572_3c862d77",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "i just realized this format seems to have a flaw: it does not work for projects that have \"refs\" in the name.\nnormally gitiles URLs use + as separator, e.g. .../\u003cproject\u003e/+/\u003cref\u003e.\ncan we still fix this?",
+      "range": {
+        "startLine": 153,
+        "startChar": 50,
+        "endLine": 153,
+        "endChar": 56
+      },
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e43cc3d_dd053d22",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "should uses pluses, I think, not asterisks",
+      "range": {
+        "startLine": 153,
+        "startChar": 42,
+        "endLine": 153,
+        "endChar": 43
+      },
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68ced95b_7e13aa4e",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "this compiles the regex each time this func is called.\nplease move to a global variable",
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8f8acac_437dba4c",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "please return an error\nwe should generally avoid panics unless it causes a problem",
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "884d9c58_e610f3b3",
+        "filename": "resultdb/internal/services/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "is this generic enough to be in pbutil?",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 36,
+        "endChar": 27
+      },
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb6269eb_8a97ae4a",
+        "filename": "resultdb/internal/services/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "any reason this isn\u0027t a case below?",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 15
+      },
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d10d0e8f_cec7604f",
+        "filename": "resultdb/internal/services/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-06T00:32:44Z",
+      "side": 1,
+      "message": "i think this code should be close to the code that parses this string.\nplease consider a function that returns this string, in the `invocations` package",
+      "range": {
+        "startLine": 120,
+        "startChar": 41,
+        "endLine": 120,
+        "endChar": 63
+      },
+      "revId": "c29d5e144d6a8a869641c6c98d25b992f08a0845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
