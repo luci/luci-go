@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd386048_f6f400dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-06T19:58:50Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "f64c741c877c91ba4f2c8102db588a7e27fa33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5e7ffe2_21ba030c",
+        "filename": "cv/internal/gerrit/cfgmatcher/storage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-06T19:58:50Z",
+      "side": 1,
+      "message": "So the comment as-is refers to plural \"regexps\".\n\nI recommend clarifying that each of the two regexps below is just one regexp, but often composed of a disjunction of multiple regexps.",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 39
+      },
+      "revId": "f64c741c877c91ba4f2c8102db588a7e27fa33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
