@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // State is the state of the current Build.
@@ -57,10 +58,13 @@ type State struct {
 	//
 	// This is done to allow e.g. multiple Steps to be mutated concurrently, but
 	// allow `proto.Clone` to proceed safely.
+
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
 
-	logsink *streamclient.Client
+	logsink    *streamclient.Client
+	logNames   nameTracker
+	logClosers map[string]func() error
 
 	stepsMu   sync.Mutex
 	stepNames nameTracker
@@ -96,7 +100,8 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	}
 
 	ret := &State{
-		buildPb: proto.Clone(initial).(*bbpb.Build),
+		buildPb:    proto.Clone(initial).(*bbpb.Build),
+		logClosers: map[string]func() error{},
 	}
 	ret.ctx, ret.ctxCloser = context.WithCancel(ctx)
 
@@ -104,10 +109,22 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		opt(ret)
 	}
 
+	// initialize proto sections which other code in this module assumes exist.
+	proto.Merge(ret.buildPb, &bbpb.Build{
+		Output: &bbpb.Build_Output{},
+	})
+
 	// in case our buildPb is unstarted, start it now.
 	if ret.buildPb.StartTime == nil {
 		ret.buildPb.StartTime = timestamppb.New(clock.Now(ctx))
 		ret.buildPb.Status = bbpb.Status_STARTED
+	}
+
+	// initialize all log names already in ret.buildPb; likely this includes
+	// stdout/stderr which may already be populated by our parent process, such as
+	// `bbagent`.
+	for _, l := range ret.buildPb.Output.Logs {
+		ret.logNames.resolveName(l.Name)
 	}
 
 	return ret, setState(ctx, ctxState{ret, nil})
@@ -145,11 +162,47 @@ func (s *State) End(err error) {
 	s.ctxCloser()
 }
 
+// addLog adds a new Log entry to this Step.
+//
+// `name` is the user-provided name for the log.
+//
+// `openStream` is a callback which takes
+//   * `dedupedName` - the deduplicated version of `name`
+//   * `relLdName` - The logdog stream name, relative to this process'
+//     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
+func (s *State) addLog(name string, openStream func(dedupedName string, relLdName types.StreamName) io.Closer) {
+	relLdName := ""
+	s.mutate(func() {
+		name = s.logNames.resolveName(name)
+		relLdName = fmt.Sprintf("log/%d", len(s.buildPb.Output.Logs))
+		s.buildPb.Output.Logs = append(s.buildPb.Output.Logs, &bbpb.Log{
+			Name: name,
+			Url:  relLdName,
+		})
+		if closer := openStream(name, types.StreamName(relLdName)); closer != nil {
+			s.logClosers[relLdName] = closer.Close
+		}
+	})
+}
+
 // Log creates a new build-level line-oriented text log stream with the given name.
 //
 // You must close the stream when you're done with it.
-func (*State) Log(name string, opts ...streamclient.Option) io.Writer {
-	panic("implement")
+func (s *State) Log(name string, opts ...streamclient.Option) io.Writer {
+	var ret io.WriteCloser
+
+	if ls := s.logsink; ls != nil {
+		s.addLog(name, func(name string, relLdName types.StreamName) io.Closer {
+			var err error
+			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
+			if err != nil {
+				panic(err)
+			}
+			return ret
+		})
+	}
+
+	return ret
 }
 
 // LogDatagram creates a new build-level datagram log stream with the given name.
@@ -157,8 +210,21 @@ func (*State) Log(name string, opts ...streamclient.Option) io.Writer {
 // stream.
 //
 // You must close the stream when you're done with it.
-func (*State) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
-	panic("implement")
+func (s *State) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
+	var ret streamclient.DatagramStream
+
+	if ls := s.logsink; ls != nil {
+		s.addLog(name, func(name string, relLdName types.StreamName) io.Closer {
+			var err error
+			ret, err = ls.NewDatagramStream(s.ctx, relLdName, opts...)
+			if err != nil {
+				panic(err)
+			}
+			return ret
+		})
+	}
+
+	return ret
 }
 
 // private functions
