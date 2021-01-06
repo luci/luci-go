@@ -186,18 +186,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 func (s *Step) End(err error) {
 	var message string
 	s.mutate(func() {
-		if errors.IsPanicking(1) {
-			message = "PANIC"
-			// TODO(iannucci): include details of panic in SummaryMarkdown or log?
-			// How to prevent panic dump from showing up at every single step on the
-			// stack?
-			s.stepPb.Status = bbpb.Status_INFRA_FAILURE
-		} else {
-			s.stepPb.Status, _ = ExtractStatus(err)
-			if err != nil {
-				message = err.Error()
-			}
-		}
+		s.stepPb.Status, message = computePanicStatus(err)
 		s.stepPb.EndTime = timestamppb.New(clock.Now(s.ctx))
 		if s.stepPb.StartTime == nil {
 			// In case the user scheduled the step, but never Start'd it.
@@ -214,21 +203,7 @@ func (s *Step) End(err error) {
 	// stepPb is immutable after mutate ends, so we should be fine to access it
 	// outside the locks.
 
-	logf := logging.Errorf
-	switch s.stepPb.Status {
-	case bbpb.Status_SUCCESS:
-		logf = logging.Infof
-	case bbpb.Status_CANCELED:
-		logf = logging.Warningf
-	}
-	logMsg := fmt.Sprintf("set status: %s", s.stepPb.Status)
-	if len(message) > 0 {
-		logMsg += ": " + message
-	}
-	if len(s.stepPb.SummaryMarkdown) > 0 {
-		logMsg += "\n  with SummaryMarkdown:\n" + s.stepPb.SummaryMarkdown
-	}
-	logf(s.ctx, "%s", logMsg)
+	logStatus(s.ctx, s.stepPb.Status, message, s.stepPb.SummaryMarkdown)
 
 	if s.loggingStream != nil {
 		s.loggingStream.Close()
@@ -336,7 +311,7 @@ func (s *Step) logsink() *streamclient.Client {
 //
 // Will panic if stepPb is in a terminal (ended) state.
 func (s *Step) mutate(cb func()) {
-	s.state.excludeCopy(func() {
+	s.state.mutate(func() {
 		s.stepPbMu.Lock()
 		defer s.stepPbMu.Unlock()
 		if protoutil.IsEnded(s.stepPb.Status) {
