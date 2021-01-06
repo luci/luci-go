@@ -385,6 +385,30 @@
       },
       "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ad432f8_a1bec4ee",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T00:04:50Z",
+      "side": 1,
+      "message": "Ack. I think the comment is good enough. I\u0027m just afraid of missing other purposes that this event serves, hence asked.",
+      "parentUuid": "414ad83f_bff0be23",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 15
+      },
+      "revId": "8584bd6b2f6448249707812b20dec59d0d490efb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
