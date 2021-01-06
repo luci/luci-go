@@ -29,7 +29,8 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
+import { TestNode } from '../models/test_node';
+import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 /**
  * Display a list of test results.
@@ -124,23 +125,23 @@ export class TestResultsTabElement extends MobxLitElement {
   }
 
   private renderAllVariants() {
-    const exoneratedVariants: ReadonlyVariant[] = [];
-    const expectedVariants: ReadonlyVariant[] = [];
-    const unexpectedVariants: ReadonlyVariant[] = [];
-    const flakyVariants: ReadonlyVariant[] = [];
+    const exoneratedVariants: TestVariant[] = [];
+    const expectedVariants: TestVariant[] = [];
+    const unexpectedVariants: TestVariant[] = [];
+    const flakyVariants: TestVariant[] = [];
     for (const test of this.invocationState.selectedNode.tests()) {
       for (const variant of test.variants) {
         switch (variant.status) {
-          case VariantStatus.Exonerated:
+          case TestVariantStatus.EXONERATED:
             exoneratedVariants.push(variant);
             break;
-          case VariantStatus.Expected:
+          case TestVariantStatus.EXPECTED:
             expectedVariants.push(variant);
             break;
-          case VariantStatus.Unexpected:
+          case TestVariantStatus.UNEXPECTED:
             unexpectedVariants.push(variant);
             break;
-          case VariantStatus.Flaky:
+          case TestVariantStatus.FLAKY:
             flakyVariants.push(variant);
             break;
           default:
@@ -155,11 +156,11 @@ export class TestResultsTabElement extends MobxLitElement {
       <hr class="divider">
       ` : html ``}
       ${this.renderIntegrationHint()}
-      ${this.renderLoadMore()}
       ${this.renderVariants(unexpectedVariants, true)}
       ${this.renderVariants(flakyVariants)}
       ${this.renderVariants(exoneratedVariants)}
       ${this.renderVariants(expectedVariants)}
+      ${this.renderLoadMore()}
     `;
   }
 
@@ -175,7 +176,6 @@ export class TestResultsTabElement extends MobxLitElement {
         Known issues:
         <ul id="knownissues">
           <li>Test result tab is currently slow: <a href="https://crbug.com/1114935">crbug.com/1114935</a>.</li>
-          <li>Sometimes no test failures are displayed at first load: <a href="https://crbug.com/1111683">crbug.com/1111683</a>. You may need to click on "Load More" link.</li>
         </ul>
         <span
           id="hide-hint"
@@ -189,10 +189,10 @@ export class TestResultsTabElement extends MobxLitElement {
     `: html ``;
   }
 
-  private renderVariants(variants: ReadonlyVariant[], expandFirst = false) {
+  private renderVariants(variants: TestVariant[], expandFirst = false) {
     return html`
       ${repeat(
-        variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),
+        variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
         ([_, v]) => `${v.testId} ${v.variantHash}`,
         ([prev, v, next]) => html`
         <milo-variant-entry
@@ -228,7 +228,6 @@ export class TestResultsTabElement extends MobxLitElement {
           >
             Loading <milo-dot-spinner></milo-dot-spinner>
           </span>
-          <mwc-icon class="inline-icon" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
         </span>
       </div>
     `;

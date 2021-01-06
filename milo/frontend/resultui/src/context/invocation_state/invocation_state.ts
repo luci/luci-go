@@ -18,9 +18,9 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
-import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
-import { TestNode, VariantStatus } from '../../models/test_node';
-import { Expectancy, Invocation } from '../../services/resultdb';
+import { streamTestBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
+import { TestNode } from '../../models/test_node';
+import { Invocation, TestVariantStatus } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
 import { UserConfigs } from '../app_state/user_configs';
 
@@ -77,52 +77,34 @@ export class InvocationState {
 
   @observable.ref selectedNode!: TestNode;
 
-  @computed private get testResultBatchIterFn() {
-    if (!this.appState.resultDb || !this.invocationName) {
+  @computed private get testVariantBatchFn() {
+    if (!this.appState.uiSpecificService || !this.invocationName) {
       return async function*() { yield Promise.race([]); };
     }
-    return iter.teeAsync(streamTestResultBatches(
+
+    return iter.teeAsync(streamVariantBatches(
       {
         invocations: [this.invocationName],
-        predicate: {
-          expectancy: this.userConfigs.tests.showExpectedVariant ? Expectancy.All : Expectancy.VariantsWithUnexpectedResults,
-        },
-        readMask: '*',
       },
-      this.appState.resultDb,
-    ));
-  }
-
-  @computed private get testExonerationBatchIterFn() {
-    if (!this.appState.resultDb || !this.invocationName) {
-      return async function*() {};
-    }
-    return iter.teeAsync(streamTestExonerationBatches(
-      {invocations: [this.invocationName]},
-      this.appState.resultDb,
+      this.appState.uiSpecificService,
     ));
   }
 
   @computed
   private get testIterFn() {
-    let variantBatches = streamVariantBatches(
-      this.testResultBatchIterFn(),
-      this.testExonerationBatchIterFn(),
-    );
+    let variantBatches = this.testVariantBatchFn();
+
+    variantBatches = this.userConfigs.tests.showExpectedVariant ?
+      variantBatches :
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.EXPECTED));
 
     variantBatches = this.userConfigs.tests.showExoneratedVariant ?
       variantBatches :
-      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Exonerated));
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.EXONERATED));
 
-    // Known Issue:
-    // A variant's status may change after filtering from expected/unexpected to
-    // flaky if a result with a different expected value is received in the next
-    // batch. In that case, some flaky variants are not filtered out.
-    // This should be a rare occurrence. Since usually, results of the same test
-    // variant should be in the same batch.
     variantBatches = this.userConfigs.tests.showFlakyVariant ?
       variantBatches :
-      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Flaky));
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.FLAKY));
 
     return iter.teeAsync(streamTestBatches(variantBatches));
   }
