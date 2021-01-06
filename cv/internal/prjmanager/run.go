@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -273,12 +274,11 @@ func (rb *RunBuilder) save(ctx context.Context) error {
 		rb.registerSaveRunCL(ctx, i)
 		rb.registerSaveCL(ctx, i, now)
 	}
-	// TODO(tandrii): consider also using rb.dsBatcher for PM notification,
-	// or at least doing this concurrently with rb.dsBatcher.put.
-	if err := rb.savePMNotification(ctx); err != nil {
-		return err
-	}
-	return rb.dsBatcher.put(ctx)
+	// TODO(tandrii): consider also using rb.dsBatcher for PM notification.
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error { return rb.savePMNotification(ctx) })
+	eg.Go(func() error { return rb.dsBatcher.put(ctx) })
+	return eg.Wait()
 }
 
 func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
