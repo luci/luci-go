@@ -17,7 +17,7 @@ import { computed, observable } from 'mobx';
 import { consumeContext, provideContext } from '../../libs/context';
 import { BuildsService } from '../../services/buildbucket';
 import { MiloInternal } from '../../services/milo_internal';
-import { ResultDb } from '../../services/resultdb';
+import { ResultDb, UISpecificService } from '../../services/resultdb';
 
 /**
  * Records the app-level state.
@@ -43,6 +43,14 @@ export class AppState {
       return null;
     }
     return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
+  }
+
+  @computed
+  get uiSpecificService(): UISpecificService | null {
+    if (this.accessToken === null) {
+      return null;
+    }
+    return new UISpecificService(CONFIGS.RESULT_DB.HOST, this.accessToken);
   }
 
   @computed
