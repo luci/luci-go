@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac26610b_82f873c5",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-06T08:27:06Z",
+      "side": 1,
+      "message": "ha. yes.",
+      "parentUuid": "d917375a_6eb8e5e8",
+      "revId": "3215b6d9318651272ab1d7ea559b8bb75d52e3ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43c69b9a_b9749e34",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-01-06T06:28:14Z",
       "side": 1,
       "message": "I think this worth at least `Warningf` as we might end up losing log if it is not closed successfully IIUC.",
+      "range": {
+        "startLine": 207,
+        "startChar": 12,
+        "endLine": 207,
+        "endChar": 18
+      },
+      "revId": "3215b6d9318651272ab1d7ea559b8bb75d52e3ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "20088174_2c968919",
+        "filename": "luciexe/build/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-06T08:27:06Z",
+      "side": 1,
+      "message": "yeah; I originally was allowing users to manually close logs, but realized that this lead to this line RELIABLY printing errors, so I moved it to Debug... before eventually removing Closer from the Loggable interface. I\u0027ll bump this back up.",
+      "parentUuid": "43c69b9a_b9749e34",
       "range": {
         "startLine": 207,
         "startChar": 12,
