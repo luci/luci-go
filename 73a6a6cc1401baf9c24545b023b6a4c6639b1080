@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28a48f74_c93f4421",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T00:12:45Z",
+      "side": 1,
+      "message": "Shall we also move some tests from gobmap to here or do we still want to test at gobmap level?",
+      "revId": "73a6a6cc1401baf9c24545b023b6a4c6639b1080",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
