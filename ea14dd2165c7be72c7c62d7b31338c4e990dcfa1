@@ -3,6 +3,29 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "478c30b3_3ab32b3e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-06T02:02:43Z",
+      "side": 1,
+      "message": "😞 but 👍",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 0
+      },
+      "revId": "ea14dd2165c7be72c7c62d7b31338c4e990dcfa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e659ec22_e38454a8",
         "filename": "cv/internal/gerrit/cfgmatcher/matcher.go",
         "patchSetId": 1
