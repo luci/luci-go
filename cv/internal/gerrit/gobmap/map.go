@@ -16,7 +16,6 @@ package gobmap
 
 import (
 	"context"
-	"regexp"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -25,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	pb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
@@ -173,18 +171,11 @@ func internalGroups(configGroups []*config.ConfigGroup) map[string]*cfgmatcher.G
 			host := config.GerritHost(gerrit)
 			for _, p := range gerrit.Projects {
 				hostRepo := host + "/" + p.Name
-				group := &cfgmatcher.Group{
-					Id:       string(g.ID),
-					Include:  p.RefRegexp,
-					Exclude:  p.RefRegexpExclude,
-					Fallback: g.Content.Fallback == pb.Toggle_YES,
-				}
+				group := cfgmatcher.MakeGroup(g, p)
 				if groups, ok := ret[hostRepo]; ok {
 					groups.Groups = append(groups.Groups, group)
 				} else {
-					ret[hostRepo] = &cfgmatcher.Groups{
-						Groups: []*cfgmatcher.Group{group},
-					}
+					ret[hostRepo] = &cfgmatcher.Groups{Groups: []*cfgmatcher.Group{group}}
 				}
 			}
 		}
@@ -218,24 +209,11 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 	// apply for the given ref.
 	ac := &changelist.ApplicableConfig{UpdateTime: now}
 	for _, mp := range mps {
-		var fallbackId string
-		var ids []string
-		for _, g := range mp.Groups.Groups {
-			if matchesAny(g.Include, ref) && !matchesAny(g.Exclude, ref) {
-				if g.Fallback {
-					fallbackId = g.Id
-				} else {
-					ids = append(ids, g.Id)
-				}
+		if groups := mp.Groups.Match(ref); len(groups) != 0 {
+			ids := make([]string, len(groups))
+			for i, g := range groups {
+				ids[i] = g.GetId()
 			}
-		}
-		// If there are two groups that match, one fallback and one non-fallback,
-		// the non-fallback group is the one to use.
-		// The fallback group will be used if it's the only group that matches.
-		if len(ids) == 0 && fallbackId != "" {
-			ids = []string{fallbackId}
-		}
-		if len(ids) != 0 {
 			ac.Projects = append(ac.Projects, &changelist.ApplicableConfig_Project{
 				Name:           mp.Project,
 				ConfigGroupIds: ids,
@@ -243,18 +221,4 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 		}
 	}
 	return ac, nil
-}
-
-// matchesAny returns true iff s matches any of the patterns.
-//
-// It is assumed that all patterns have been pre-validated and
-// are valid regexps.
-func matchesAny(patterns []string, s string) bool {
-	for _, pattern := range patterns {
-		if regexp.MustCompile(pattern).MatchString(s) {
-			return true
-		}
-	}
-	return false
-
 }
