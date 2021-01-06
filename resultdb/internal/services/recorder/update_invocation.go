@@ -49,6 +49,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: deadline").Err()
 			}
 
+		case "history_options.commit":
+			if err := pbutil.ValidateCommitPosition(req.Invocation.GetHistoryOptions().GetCommit()); err != nil {
+				return errors.Annotate(err, "invocation: history_options: commit").Err()
+			}
+
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
 		}
@@ -84,6 +89,16 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "deadline":
 				values["Deadline"] = in.Invocation.Deadline
 				ret.Deadline = in.Invocation.Deadline
+
+			case "history_options.commit":
+				if ret.HistoryOptions == nil {
+					ret.HistoryOptions = &pb.HistoryOptions{}
+				}
+				cm := in.Invocation.GetHistoryOptions().GetCommit()
+				ret.HistoryOptions.Commit = cm
+				values["OrdinalDomain"] = invocations.GitilesCommitDomain(cm)
+
+				values["Ordinal"] = cm.Position
 
 			default:
 				panic("impossible")

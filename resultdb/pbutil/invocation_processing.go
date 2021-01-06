@@ -22,23 +22,23 @@ import (
 
 // ValidateBigQueryExport returns a non-nil error if bq_export is determined to
 // be invalid.
-func ValidateBigQueryExport(bq_export *pb.BigQueryExport) error {
+func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	switch {
-	case bq_export.Project == "":
+	case bqExport.Project == "":
 		return errors.Annotate(unspecified(), "project").Err()
-	case bq_export.Dataset == "":
+	case bqExport.Dataset == "":
 		return errors.Annotate(unspecified(), "dataset").Err()
-	case bq_export.Table == "":
+	case bqExport.Table == "":
 		return errors.Annotate(unspecified(), "table").Err()
-	case bq_export.GetTestResults() == nil:
+	case bqExport.GetTestResults() == nil:
 		return errors.Annotate(unspecified(), "test_results").Err()
 	}
 
-	if bq_export.TestResults.GetPredicate() == nil {
+	if bqExport.TestResults.GetPredicate() == nil {
 		return nil
 	}
 
-	if err := ValidateTestResultPredicate(bq_export.TestResults.Predicate); err != nil {
+	if err := ValidateTestResultPredicate(bqExport.TestResults.Predicate); err != nil {
 		return errors.Annotate(err, "test_results: predicate").Err()
 	}
 

@@ -16,6 +16,7 @@ package invocations
 
 import (
 	"context"
+	"regexp"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -31,6 +32,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+var gitilesDomainRE = regexp.MustCompile(`gitiles://([^/]+)/(.+)/\+/(.+)`)
 
 // ReadColumns reads the specified columns from an invocation Spanner row.
 // If the invocation does not exist, the returned error is annotated with
@@ -72,6 +75,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.ProducerResource,
 		 i.Realm,
 		 i.HistoryTime,
+		 i.OrdinalDomain,
+		 i.Ordinal,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -89,6 +94,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var producerResource spanner.NullString
 		var realm spanner.NullString
 		var historyTime *timestamppb.Timestamp
+		var ordinalDomain string
+		var ordinal spanner.NullInt64
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -100,7 +107,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&historyTime)
+			&historyTime,
+			&ordinalDomain,
+			&ordinal,
+		)
 		if err != nil {
 			return err
 		}
@@ -120,14 +130,40 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 				}
 			}
 		}
-		if historyTime != nil {
+		if historyTime != nil || ordinalDomain != "" {
+			commit, err := commitFromOrdinal(ordinalDomain, ordinal.Int64)
+			if err != nil {
+				return errors.Annotate(err, "Unable to parse commit position from ordinal fields: %s, %d", ordinalDomain, ordinal.Int64).Err()
+			}
 			inv.HistoryOptions = &pb.HistoryOptions{
-				UseInvocationTimestamp: true,
+				UseInvocationTimestamp: historyTime != nil,
+				Commit:                 commit,
 			}
 		}
 
 		return f(id, inv)
 	})
+}
+
+func commitFromOrdinal(domain string, ordinal int64) (*pb.CommitPosition, error) {
+	if domain == "" {
+		return nil, nil
+	}
+	host, project, ref, err := parseGitilesDomain(domain)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.CommitPosition{Host: host, Project: project, Ref: ref, Position: ordinal}, nil
+
+}
+
+func parseGitilesDomain(domain string) (host, project, ref string, err error) {
+
+	matches := gitilesDomainRE.FindStringSubmatch(domain)
+	if matches == nil || len(matches) != 4 {
+		return "", "", "", errors.Reason("unsupported ordinal domain %s", domain).Err()
+	}
+	return matches[1], matches[2], matches[3], nil
 }
 
 // Read reads one invocation from Spanner.

@@ -16,6 +16,7 @@ package invocations
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // Shards is the sharding level for the Invocations table.
@@ -112,4 +114,10 @@ func cloneStatement(st spanner.Statement) spanner.Statement {
 		clone.Params[k] = v
 	}
 	return clone
+}
+
+// GitilesCommitDomain composes a string that identifies the gitiles ref that a
+// commit's position exists in.
+func GitilesCommitDomain(cm *pb.CommitPosition) string {
+	return fmt.Sprintf("gitiles://%s/%s/+/%s", cm.Host, cm.Project, cm.Ref)
 }
