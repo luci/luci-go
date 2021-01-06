@@ -22,6 +22,30 @@
       },
       "revId": "895677d073fd33e17c51d045ba82fcdc994d7145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8be75c1_c2d210dc",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-06T20:33:51Z",
+      "side": 1,
+      "message": "I was anticipating more fields to initialize later; The if/then tree gets really verbose. I don\u0027t think this will have any performance impact in the grand scheme of things. If it turns out I don\u0027t need to add more fields here then I\u0027ll simplify it.",
+      "parentUuid": "ccdf9391_caf9c22c",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 3
+      },
+      "revId": "895677d073fd33e17c51d045ba82fcdc994d7145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
