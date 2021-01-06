@@ -187,8 +187,8 @@ export interface TestVariant {
   readonly variant: Variant;
   readonly variantHash: string;
   readonly status: TestVariantStatus;
-  readonly results: readonly TestResultBundle[];
-  readonly exonerations: readonly TestExoneration[];
+  readonly results?: readonly TestResultBundle[];
+  readonly exonerations?: readonly TestExoneration[];
 }
 
 export const enum TestVariantStatus {

@@ -14,7 +14,7 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { TestExoneration, TestResult, Variant } from '../services/resultdb';
+import { TestVariant } from '../services/resultdb';
 
 
 /**
@@ -37,41 +37,7 @@ export const ID_SEG_REGEX = /[a-zA-Z0-9_-]*([^a-zA-Z0-9_-]|$)/g;
  */
 export interface ReadonlyTest {
   readonly id: string;
-  readonly variants: ReadonlyArray<ReadonlyVariant>;
-}
-
-/**
- * Indicates the status of the variant.
- */
-export enum VariantStatus {
-  /**
-   * No test results (only exonerations).
-   */
-  Exonerated,
-  /**
-   * No results are unexpected.
-   */
-  Expected,
-  /**
-   * All results are unexpected.
-   */
-  Unexpected,
-  /**
-   * Some of the results are expected while others are unexpected.
-   */
-  Flaky,
-}
-
-/**
- * Contains test results and exonerations for the given test variant.
- */
-export interface ReadonlyVariant {
-  readonly testId: string;
-  readonly variantHash: string;
-  readonly status: VariantStatus;
-  readonly variant: Variant;
-  readonly results: ReadonlyArray<TestResult>;
-  readonly exonerations: ReadonlyArray<TestExoneration>;
+  readonly variants: readonly TestVariant[];
 }
 
 /**

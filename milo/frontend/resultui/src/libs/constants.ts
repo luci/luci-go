@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { VariantStatus } from '../models/test_node';
 import { BuildStatus } from '../services/buildbucket';
-import { InvocationState, TestStatus } from '../services/resultdb';
+import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
 
 export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
@@ -25,26 +24,29 @@ export const INVOCATION_STATE_DISPLAY_MAP = {
 
 
 export const VARIANT_STATUS_DISPLAY_MAP = Object.freeze({
-  [VariantStatus.Exonerated]: 'exonerated',
-  [VariantStatus.Expected]: 'expected',
-  [VariantStatus.Unexpected]: 'unexpected',
-  [VariantStatus.Flaky]: 'flaky',
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.EXONERATED]: 'exonerated',
+  [TestVariantStatus.EXPECTED]: 'expected',
+  [TestVariantStatus.UNEXPECTED]: 'unexpected',
+  [TestVariantStatus.FLAKY]: 'flaky',
 });
 
 // Just so happens to be the same as VARIANT_STATUS_DISPLAY_MAP.
 export const VARIANT_STATUS_CLASS_MAP = Object.freeze({
-  [VariantStatus.Exonerated]: 'exonerated',
-  [VariantStatus.Expected]: 'expected',
-  [VariantStatus.Unexpected]: 'unexpected',
-  [VariantStatus.Flaky]: 'flaky',
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.EXONERATED]: 'exonerated',
+  [TestVariantStatus.EXPECTED]: 'expected',
+  [TestVariantStatus.UNEXPECTED]: 'unexpected',
+  [TestVariantStatus.FLAKY]: 'flaky',
 });
 
 export const VARIANT_STATUS_ICON_MAP = Object.freeze({
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
   // TODO(weiweilin): find an appropriate icon for exonerated
-  [VariantStatus.Exonerated]: 'check',
-  [VariantStatus.Expected]: 'check',
-  [VariantStatus.Flaky]: 'warning',
-  [VariantStatus.Unexpected]: 'error',
+  [TestVariantStatus.EXONERATED]: 'check',
+  [TestVariantStatus.EXPECTED]: 'check',
+  [TestVariantStatus.FLAKY]: 'warning',
+  [TestVariantStatus.UNEXPECTED]: 'error',
 });
 
 

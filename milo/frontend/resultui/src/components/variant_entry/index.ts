@@ -23,7 +23,8 @@ import { computed, observable } from 'mobx';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ID_SEG_REGEX, ReadonlyVariant } from '../../models/test_node';
+import { ID_SEG_REGEX } from '../../models/test_node';
+import { TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
 import './result_entry';
 
@@ -40,9 +41,9 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
  */
 @customElement('milo-variant-entry')
 export class VariantEntryElement extends MobxLitElement {
-  @observable.ref variant!: ReadonlyVariant;
+  @observable.ref variant!: TestVariant;
   @observable.ref prevTestId = '';
-  @observable.ref prevVariant?: ReadonlyVariant;
+  @observable.ref prevVariant?: TestVariant;
   @observable.ref displayVariantId = true;
 
   @observable.ref private _expanded = false;
@@ -70,7 +71,7 @@ export class VariantEntryElement extends MobxLitElement {
 
   @computed
   private get hasSingleChild() {
-    return (this.variant!.results.length + this.variant!.exonerations.length) === 1;
+    return ((this.variant.results?.length ?? 0) + (this.variant.exonerations?.length ?? 0)) === 1;
   }
 
   @computed
@@ -99,7 +100,7 @@ export class VariantEntryElement extends MobxLitElement {
       return 0;
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
-    return this.variant!.results.findIndex((e) => !e.expected);
+    return this.variant.results?.findIndex((e) => !e.result.expected) ?? -1;
   }
 
   private renderBody() {
@@ -123,15 +124,15 @@ export class VariantEntryElement extends MobxLitElement {
             `)}
           </span>
         </span>
-        ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e) => html`
+        ${repeat(this.variant.exonerations || [], (e) => e.exonerationId, (e) => html`
         <div class="explanation-html">
           ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
         </div>
         `)}
-        ${repeat(this.variant!.results, (r) => r.resultId, (r, i) => html`
+        ${repeat(this.variant.results || [], (r) => r.result.resultId, (r, i) => html`
         <milo-result-entry
           .id=${i + 1}
-          .testResult=${r}
+          .testResult=${r.result}
           .expanded=${i === this.expandedResultIndex}
         ></milo-result-entry>
         `)}

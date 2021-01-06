@@ -17,86 +17,47 @@ import chai from 'chai';
 import sinon from 'sinon';
 
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
-import { QueryTestExonerationsRequest, QueryTestResultsRequest, ResultDb, TestExoneration, TestResult } from '../services/resultdb';
-import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from './test_loader';
-import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
+import { QueryTestVariantsRequest, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { streamTestBatches, streamVariantBatches, TestLoader } from './test_loader';
+import { ReadonlyTest, TestNode } from './test_node';
 
 
 chai.use(chaiRecursiveDeepInclude);
 
 describe('test_loader', () => {
-  const testResult1 = {testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1', expected: true} as Partial<TestResult> as TestResult;
-  // Result with the same test ID and the same variant.
-  const testResult2 = {testId: 'a', resultId: '2', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1', expected: true} as Partial<TestResult> as TestResult;
-  // Result with the same test ID and a different variant.
-  const testResult3 = {testId: 'a', resultId: '3', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2', expected: false} as Partial<TestResult> as TestResult;
-
-  // Result with a different test ID and the same variant.
-  const testResult4 = {testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2', expected: false} as Partial<TestResult> as TestResult;
-  // Result with multiple variant keys.
-  const testResult5 = {testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, variantHash: 'key1:val2|key2:val1', expected: true} as Partial<TestResult> as TestResult;
-  // Result with the same variant but variant keys are in different order.
-  const testResult6 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, variantHash: 'key1:val2|key2:val1', expected: false} as Partial<TestResult> as TestResult;
-  // Result with partially different variant.
-  const testResult7 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, variantHash: 'key1:val2|key2:val2', expected: true} as Partial<TestResult> as TestResult;
-  // Result with an out of order test ID.
-  const testResult8 = {testId: 'b', resultId: '2', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2',expected: false} as Partial<TestResult> as TestResult;
-
-  // Exoneration that shares the same ID and variant with a result.
-  // TODO(weiweilin): is this possible?
-  const testExoneration1 = {testId: 'a', exonerationId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1'} as Partial<TestExoneration> as TestExoneration;
-  // Exoneration that shares the same ID but a different variant with a result.
-  const testExoneration2 = {testId: 'a', exonerationId: '2', variant: {def: {'key1': 'val3'}}, variantHash: 'key1:val3'} as Partial<TestExoneration> as TestExoneration;
-  // Exoneration that has a different testId but shares the same variant with a result.
-  const testExoneration3 = {testId: 'd', exonerationId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1'} as Partial<TestExoneration> as TestExoneration;
-  // Exoneration that shares the same ID but a different variant with an exoneration.
-  const testExoneration4 = {testId: 'd', exonerationId: '2', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2'} as Partial<TestExoneration> as TestExoneration;
-  // Exoneration that has a different ID but shared the same variant with an exoneration.
-  const testExoneration5 = {testId: 'e', exonerationId: '1', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2'} as Partial<TestExoneration> as TestExoneration;
-
   const variant1 = {
     testId: 'a',
     variant: {'def': {'key1': 'val1'}},
     variantHash: 'key1:val1',
-    status: VariantStatus.Exonerated,
-    results: [testResult1, testResult2],
-    exonerations: [testExoneration1],
+    status: TestVariantStatus.EXONERATED,
   };
 
   const variant2 = {
     testId: 'a',
     variant: {def: {'key1': 'val2'}},
     variantHash: 'key1:val2',
-    status: VariantStatus.Unexpected,
-    results: [testResult3],
-    exonerations: [],
+    status: TestVariantStatus.UNEXPECTED,
   };
 
   const variant3 = {
     testId: 'a',
     variant: {def: {'key1': 'val3'}},
     variantHash: 'key1:val3',
-    status: VariantStatus.Exonerated,
-    results: [],
-    exonerations: [testExoneration2],
+    status: TestVariantStatus.EXONERATED,
   };
 
   const variant4 = {
     testId: 'b',
     variant: {'def': {'key1': 'val2'}},
     variantHash: 'key1:val2',
-    status: VariantStatus.Unexpected,
-    results: [testResult4, testResult8],
-    exonerations: [],
+    status: TestVariantStatus.UNEXPECTED,
   };
 
   const variant5 = {
     testId: 'c',
     variant: {def: {'key1': 'val2', 'key2': 'val1'}},
     variantHash: 'key1:val2|key2:val1',
-    status: VariantStatus.Flaky,
-    results: [testResult5, testResult6],
-    exonerations: [],
+    status: TestVariantStatus.FLAKY,
   };
 
 
@@ -104,36 +65,28 @@ describe('test_loader', () => {
     testId: 'c',
     variant: {def: {'key1': 'val2', 'key2': 'val2'}},
     variantHash: 'key1:val2|key2:val2',
-    status: VariantStatus.Expected,
-    results: [testResult7],
-    exonerations: [],
+    status: TestVariantStatus.EXPECTED,
   };
 
   const variant7 = {
     testId: 'd',
     variant: {def: {'key1': 'val1'}},
     variantHash: 'key1:val1',
-    status: VariantStatus.Exonerated,
-    results: [],
-    exonerations: [testExoneration3],
+    status: TestVariantStatus.EXONERATED,
   };
 
   const variant8 = {
     testId: 'd',
     variant: {def: {'key1': 'val2'}},
     variantHash: 'key1:val2',
-    status: VariantStatus.Exonerated,
-    results: [],
-    exonerations: [testExoneration4],
+    status: TestVariantStatus.EXONERATED,
   };
 
   const variant9 = {
     testId: 'e',
     variant: {def: {'key1': 'val2'}},
     variantHash: 'key1:val2',
-    status: VariantStatus.Exonerated,
-    results: [],
-    exonerations: [testExoneration5],
+    status: TestVariantStatus.EXONERATED,
   };
 
   const test1 = {
@@ -258,93 +211,29 @@ describe('test_loader', () => {
     });
   });
 
-  describe('streamTestResultBatches', () => {
-    it('should stream test results from multiple pages', async () => {
-      const req = {invocations: ['invocation']} as Partial<QueryTestResultsRequest> as QueryTestResultsRequest;
-      const stub = sinon.stub();
-      const res1 = {testResults: [testResult1, testResult2, testResult3, testResult4, testResult5 ], nextPageToken: 'token'};
-      const res2 = {testResults: [testResult6, testResult7]};
-      stub.onCall(0).resolves(res1);
-      stub.onCall(1).resolves(res2);
-      const resultDb = {queryTestResults: stub} as Partial<ResultDb> as ResultDb;
-
-      const expectedTestResultBatches = [
-        [testResult1, testResult2, testResult3, testResult4, testResult5],
-        [testResult6, testResult7],
-      ];
-      let i = 0;
-      for await (const testResultBatch of streamTestResultBatches(req, resultDb)) {
-        assert.deepStrictEqual(testResultBatch, expectedTestResultBatches[i]);
-        i++;
-      }
-      assert.strictEqual(i, expectedTestResultBatches.length);
-
-      assert.equal(stub.callCount, 2);
-      assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: undefined});
-      assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: res1.nextPageToken});
-    });
-  });
-
-  describe('streamTestExoneration', () => {
-    it('should stream test exonerations from multiple pages', async () => {
-      const req = {invocations: ['invocation']} as Partial<QueryTestExonerationsRequest> as QueryTestExonerationsRequest;
-      const stub = sinon.stub();
-      const res1 = {testExonerations: [testExoneration1, testExoneration2, testExoneration3], nextPageToken: 'token'};
-      const res2 = {testExonerations: [testExoneration4, testExoneration5]};
-      stub.onCall(0).resolves(res1);
-      stub.onCall(1).resolves(res2);
-      const resultDb = {queryTestExonerations: stub} as Partial<ResultDb> as ResultDb;
-
-      const expectedTestExonerationBatches = [
-        [testExoneration1, testExoneration2, testExoneration3],
-        [testExoneration4, testExoneration5],
-      ];
-      let i = 0;
-      for await (const testExonerationBatch of streamTestExonerationBatches(req, resultDb)) {
-        assert.deepStrictEqual(testExonerationBatch, expectedTestExonerationBatches[i]);
-        i++;
-      }
-
-      assert.equal(stub.callCount, 2);
-      assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: undefined});
-      assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: res1.nextPageToken});
-    });
-  });
-
   describe('streamVariantBatches', () => {
-    it('can group test results and exonerations into test variants correctly', async () => {
-      const resultIter = (async function*() {
-        yield [testResult1, testResult2, testResult3];
-        yield [testResult4, testResult5, testResult6];
-        yield [testResult7, testResult8];
-      })();
-      const exonerationIter = (async function*() {
-        yield [testExoneration1, testExoneration2, testExoneration3];
-        yield [testExoneration4, testExoneration5];
-      })();
-      const expectedTestVariants: ReadonlyVariant[] = [];
-      for await (const testVariants of streamVariantBatches(resultIter, exonerationIter)) {
-        for (const variant of testVariants) {
-          expectedTestVariants.push(variant);
-        }
+    it('should stream test exonerations from multiple pages', async () => {
+      const req = {invocations: ['invocation']} as Partial<QueryTestVariantsRequest> as QueryTestVariantsRequest;
+      const stub = sinon.stub();
+      const res1 = {testVariants: [variant1, variant2, variant3, variant4, variant5], nextPageToken: 'token'};
+      const res2 = {testVariants: [variant6, variant7, variant8, variant9]};
+      stub.onCall(0).resolves(res1);
+      stub.onCall(1).resolves(res2);
+      const resultDb = {queryTestVariants: stub} as Partial<UISpecificService> as UISpecificService;
+
+      const expectedTestVariantBatches = [
+        [variant1, variant2, variant3, variant4, variant5],
+        [variant6, variant7, variant8, variant9],
+      ];
+      let i = 0;
+      for await (const testVariantBatch of streamVariantBatches(req, resultDb)) {
+        assert.deepStrictEqual(testVariantBatch, expectedTestVariantBatches[i]);
+        i++;
       }
 
-      assert.strictEqual(expectedTestVariants.length, 9);
-
-      // The order doesn't matter.
-      expectedTestVariants.sort((v1, v2) => v1.testId.localeCompare(v2.testId));
-
-      // Use recursiveDeepInclude to avoid (nested) private properties in actual
-      // causing the test to fail.
-      assert.recursiveDeepInclude(expectedTestVariants[0], variant1);
-      assert.recursiveDeepInclude(expectedTestVariants[1], variant2);
-      assert.recursiveDeepInclude(expectedTestVariants[2], variant3);
-      assert.recursiveDeepInclude(expectedTestVariants[3], variant4);
-      assert.recursiveDeepInclude(expectedTestVariants[4], variant5);
-      assert.recursiveDeepInclude(expectedTestVariants[5], variant6);
-      assert.recursiveDeepInclude(expectedTestVariants[6], variant7);
-      assert.recursiveDeepInclude(expectedTestVariants[7], variant8);
-      assert.recursiveDeepInclude(expectedTestVariants[8], variant9);
+      assert.equal(stub.callCount, 2);
+      assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: undefined});
+      assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: res1.nextPageToken});
     });
   });
 
