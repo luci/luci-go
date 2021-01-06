@@ -17,6 +17,7 @@ package common
 import (
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -108,6 +109,30 @@ func (ids RunIDs) WithoutSorted(exclude RunIDs) RunIDs {
 			exclude = exclude[1:]
 		}
 	}
+}
+
+// InsertSorted adds given ID if not yet exists to the list keeping list sorted.
+//
+// InsertSorted is a pointer receiver method, because it modifies slice itself.
+func (p *RunIDs) InsertSorted(id RunID) {
+	ids := *p
+	switch i := sort.Search(len(ids), func(i int) bool { return ids[i] >= id }); {
+	case i == len(ids):
+		*p = append(ids, id)
+	case ids[i] > id:
+		// Insert new ID at position i and shift the rest of slice to the right.
+		toInsert := id
+		for ; i < len(ids); i++ {
+			ids[i], toInsert = toInsert, ids[i]
+		}
+		*p = append(ids, toInsert)
+	}
+}
+
+// ContainsSorted returns true if ids contain the given one.
+func (ids RunIDs) ContainsSorted(id RunID) bool {
+	i := sort.Search(len(ids), func(i int) bool { return ids[i] >= id })
+	return i < len(ids) && ids[i] == id
 }
 
 // Equal checks if two assumed-to-be-sorted slices are equal.

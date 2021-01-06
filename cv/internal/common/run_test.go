@@ -49,7 +49,7 @@ func TestID(t *testing.T) {
 func TestIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("IDs helper works", t, func() {
+	Convey("IDs WithoutSorted works", t, func() {
 		So(MakeRunIDs().WithoutSorted(MakeRunIDs("1")), ShouldResemble, MakeRunIDs())
 		So(RunIDs(nil).WithoutSorted(MakeRunIDs("1")), ShouldEqual, nil)
 
@@ -71,6 +71,25 @@ func TestIDs(t *testing.T) {
 
 		So(ids.WithoutSorted(MakeRunIDs("1", "5", "5", "7")), ShouldResemble, MakeRunIDs("2", "8"))
 		So(ids, ShouldResemble, MakeRunIDs("2", "5", "8"))
+	})
+
+	Convey("IDs InsertSorted & ContainsSorted works", t, func() {
+		ids := MakeRunIDs()
+
+		So(ids.ContainsSorted(RunID("5")), ShouldBeFalse)
+		ids.InsertSorted(RunID("5"))
+		So(ids, ShouldResemble, MakeRunIDs("5"))
+		So(ids.ContainsSorted(RunID("5")), ShouldBeTrue)
+
+		So(ids.ContainsSorted(RunID("2")), ShouldBeFalse)
+		ids.InsertSorted(RunID("2"))
+		So(ids, ShouldResemble, MakeRunIDs("2", "5"))
+		So(ids.ContainsSorted(RunID("2")), ShouldBeTrue)
+
+		So(ids.ContainsSorted(RunID("3")), ShouldBeFalse)
+		ids.InsertSorted(RunID("3"))
+		So(ids, ShouldResemble, MakeRunIDs("2", "3", "5"))
+		So(ids.ContainsSorted(RunID("3")), ShouldBeTrue)
 	})
 }
 
