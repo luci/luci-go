@@ -70,15 +70,11 @@ message TestDurationRecord {
 
 // How long a test took.
 message TestDuration {
-  // TODO(nodir): remove this field.
-  // The patchsets that were tested.
-  repeated GerritPatchset patchsets = 1;
-
   // The test variant that was measured.
-  TestVariant test_variant = 2;
+  TestVariant test_variant = 1;
 
   // How long test execution took.
-  google.protobuf.Duration duration = 3;
+  google.protobuf.Duration duration = 2;
 }
 
 // A Gerrit CL.

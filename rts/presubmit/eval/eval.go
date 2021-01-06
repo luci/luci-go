@@ -50,8 +50,9 @@ type Eval struct {
 	// Rejections are used to evaluate safety of the strategy.
 	Rejections *history.Player
 
-	// Durations are used to evaluate efficiency of the strategy.
-	Durations *history.Player
+	// Durations is a path to a directory with test duration records.
+	// For format details, see comments of TestDurationRecord protobuf message.
+	Durations string
 
 	// LogFurthest instructs to log rejections for which failed tests have large
 	// distance, as concluded by the selection strategy.
@@ -69,8 +70,10 @@ func (e *Eval) RegisterFlags(fs *flag.FlagSet) error {
 	fs.Var(&historyFileInputFlag{ptr: &e.Rejections}, "rejections", text.Doc(`
 		Path to the history file with change rejections. Used for safety evaluation.
 	`))
-	fs.Var(&historyFileInputFlag{ptr: &e.Durations}, "durations", text.Doc(`
-		Path to the history file with test durations. Used for efficiency evaluation.
+	fs.StringVar(&e.Durations, "durations", "", text.Doc(`
+		Path to a directory with test duration records.
+		For format details, see comments of TestDurationRecord protobuf message.
+		Used for efficiency evaluation.
 	`))
 	fs.IntVar(&e.LogFurthest, "log-furthest", 10, text.Doc(`
 		Log rejections for which failed tests have large distance,
@@ -87,7 +90,7 @@ func (e *Eval) ValidateFlags() error {
 	if e.Rejections == nil {
 		return errors.New("-rejections is required")
 	}
-	if e.Durations == nil {
+	if e.Durations == "" {
 		return errors.New("-durations is required")
 	}
 	return nil
@@ -212,38 +215,46 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 	// Process test durations in parallel and increment appropriate counters.
 	var savedDurations bucketGrid
 	var totalDuration int64
-	var dataPoints int64
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
 	// Play back the history.
+	recordC := make(chan *evalpb.TestDurationRecord)
 	eg.Go(func() error {
-		err := e.Durations.PlaybackDurations(ctx)
-		return errors.Annotate(err, "failed to playback history").Err()
+		defer close(recordC)
+		err := readTestDurations(ctx, e.Durations, recordC)
+		return errors.Annotate(err, "failed to read test duration records").Err()
 	})
 
 	e.goMany(eg, func() error {
-		in := Input{TestVariants: make([]*evalpb.TestVariant, 1)}
-		out := &Output{TestVariantAffectedness: make([]rts.Affectedness, 1)}
-		for td := range e.Durations.DurationC {
+		in := Input{}
+		out := &Output{}
+		for rec := range recordC {
 			// Invoke the strategy.
+			if cap(in.TestVariants) < len(rec.TestDurations) {
+				in.TestVariants = make([]*evalpb.TestVariant, len(rec.TestDurations))
+			}
+			in.TestVariants = in.TestVariants[:len(rec.TestDurations)]
+			for i, td := range rec.TestDurations {
+				in.TestVariants[i] = td.TestVariant
+			}
 			in.ChangedFiles = in.ChangedFiles[:0]
-			in.ensureChangedFilesInclude(td.Patchsets...)
-			in.TestVariants[0] = td.TestVariant
-			out.TestVariantAffectedness[0] = rts.Affectedness{}
+			in.ensureChangedFilesInclude(rec.Patchsets...)
+
+			out.TestVariantAffectedness = make([]rts.Affectedness, len(in.TestVariants))
 			if err := e.Strategy(ctx, in, out); err != nil {
 				return errors.Annotate(err, "the selection strategy failed").Err()
 			}
 
 			// Record results.
-			dur := int64(td.Duration.AsDuration())
-			atomic.AddInt64(&totalDuration, dur)
-			savedDurations.inc(grid, out.TestVariantAffectedness[0], dur)
-
-			if curCount := atomic.AddInt64(&dataPoints, 1); curCount%1000 == 0 {
-				logging.Infof(ctx, "processed %d durations", curCount)
+			durSum := int64(0)
+			for i, td := range rec.TestDurations {
+				dur := int64(td.Duration.AsDuration())
+				durSum += dur
+				savedDurations.inc(grid, out.TestVariantAffectedness[i], dur)
 			}
+			atomic.AddInt64(&totalDuration, durSum)
 		}
 		return ctx.Err()
 	})
@@ -256,7 +267,7 @@ func (e *Eval) evaluateEfficiency(ctx context.Context, res *Result, grid *thresh
 		return errors.New("sum of test durations is 0")
 	}
 
-	// Incroporate the counters into dest.
+	// Incroporate the counters into res.
 
 	res.TotalDuration = time.Duration(totalDuration)
 	savedDurations.makeCumulative()
