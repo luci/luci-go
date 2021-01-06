@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c664418c_83be3be1",
+        "filename": "cv/internal/gerrit/cfgmatcher/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-06T19:20:30Z",
+      "side": 1,
+      "message": "Wait - I should have asked about this earlier, but why do one disjunctive regexp instead of a list of regexps? Is that mainly for performance?",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 22
+      },
+      "revId": "48eb4e1fcbacfc5d4ae8e7f20dc8ff85f3f36f10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
