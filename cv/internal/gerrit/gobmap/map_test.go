@@ -102,7 +102,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				ShouldResemble,
 				map[string][]string{
-					"chromium": []string{"group_main"},
+					"chromium": {"group_main"},
 				})
 		})
 
@@ -112,7 +112,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
 				ShouldResemble,
 				map[string][]string{
-					"chromium": []string{"group_other"},
+					"chromium": {"group_other"},
 				})
 		})
 
@@ -188,7 +188,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			So(
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				ShouldResemble,
-				map[string][]string{"chromium": []string{"group_main", "group_other"}})
+				map[string][]string{"chromium": {"group_main", "group_other"}})
 		})
 	})
 
@@ -230,11 +230,11 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			So(
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				ShouldResemble,
-				map[string][]string{"chromium": []string{"group_main"}})
+				map[string][]string{"chromium": {"group_main"}})
 			So(
 				lookup(ctx, "cr2-review.gs.com", "cr2/src", "refs/heads/main"),
 				ShouldResemble,
-				map[string][]string{"chromium": []string{"group_main"}})
+				map[string][]string{"chromium": {"group_main"}})
 		})
 
 		Convey("other group no longer exists", func() {
@@ -273,8 +273,8 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				ShouldResemble,
 				map[string][]string{
-					"chromium": []string{"group_main"},
-					"foo":      []string{"group_foo"},
+					"chromium": {"group_main"},
+					"foo":      {"group_foo"},
 				})
 		})
 	})
