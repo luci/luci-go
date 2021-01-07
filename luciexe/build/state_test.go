@@ -232,3 +232,50 @@ func TestStateSend(t *testing.T) {
 
 	})
 }
+
+func TestStateView(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test State View functionality`, t, func() {
+		st, _ := Start(context.Background(), nil)
+		defer func() { st.End(nil) }()
+
+		Convey(`SetSummaryMarkdown`, func() {
+			st.SetSummaryMarkdown("hi")
+
+			So(st.buildPb.SummaryMarkdown, ShouldResemble, "hi")
+
+			st.SetSummaryMarkdown("there")
+
+			So(st.buildPb.SummaryMarkdown, ShouldResemble, "there")
+		})
+
+		Convey(`SetCritical`, func() {
+			st.SetCritical(bbpb.Trinary_YES)
+
+			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_YES)
+
+			st.SetCritical(bbpb.Trinary_NO)
+
+			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_NO)
+
+			st.SetCritical(bbpb.Trinary_UNSET)
+
+			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_UNSET)
+		})
+
+		Convey(`SetGitilesCommit`, func() {
+			st.SetGitilesCommit(&bbpb.GitilesCommit{
+				Host: "a host",
+			})
+
+			So(st.buildPb.Output.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+				Host: "a host",
+			})
+
+			st.SetGitilesCommit(nil)
+
+			So(st.buildPb.Output.GitilesCommit, ShouldBeNil)
+		})
+	})
+}
