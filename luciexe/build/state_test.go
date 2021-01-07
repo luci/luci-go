@@ -64,9 +64,23 @@ func TestStateLogging(t *testing.T) {
 	Convey(`State logging`, t, func() {
 		lc := streamclient.NewFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		st, ctx := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		st, ctx := Start(ctx, &bbpb.Build{
+			Output: &bbpb.Build_Output{
+				Logs: []*bbpb.Log{
+					{Name: "something"},
+					{Name: "other"},
+				},
+			},
+		}, OptLogsink(lc.Client))
 		defer func() { st.End(nil) }()
 		So(st, ShouldNotBeNil)
+
+		Convey(`existing logs are reserved`, func() {
+			So(st.logNames.pool, ShouldResemble, map[string]int{
+				"something": 1,
+				"other":     1,
+			})
+		})
 
 		Convey(`can open logs`, func() {
 			log := st.Log("some log")
@@ -77,12 +91,14 @@ func TestStateLogging(t *testing.T) {
 				Status:    bbpb.Status_STARTED,
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
-						{Name: "some log", Url: "log/0"},
+						{Name: "something"},
+						{Name: "other"},
+						{Name: "some log", Url: "log/2"},
 					},
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/log/0"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+			So(lc.GetFakeData()["fakeNS/log/2"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
 		})
 
 		Convey(`can open datagram logs`, func() {
@@ -94,12 +110,14 @@ func TestStateLogging(t *testing.T) {
 				Status:    bbpb.Status_STARTED,
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
-						{Name: "some log", Url: "log/0"},
+						{Name: "something"},
+						{Name: "other"},
+						{Name: "some log", Url: "log/2"},
 					},
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/log/0"].GetDatagrams(), ShouldContain, "here's some stuff")
+			So(lc.GetFakeData()["fakeNS/log/2"].GetDatagrams(), ShouldContain, "here's some stuff")
 		})
 
 	})
