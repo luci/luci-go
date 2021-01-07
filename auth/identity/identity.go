@@ -28,7 +28,7 @@ const (
 	// is always 'anonymous'.
 	Anonymous Kind = "anonymous"
 
-	// Bot is used for bots authenticated via IP whitelist. Used primarily by
+	// Bot is used for bots authenticated via IP allowlist. Used primarily by
 	// Swarming. Identity value encodes bot ID.
 	Bot Kind = "bot"
 
