@@ -37,6 +37,7 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -80,9 +81,12 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	if err = m.checkAllowed(ctx); err != nil {
 		return
 	}
-
-	a := req.Run.Attempt
-	logging.Infof(ctx, "CQD[%s] finished working on %s (%s) attempt with %s", a.LuciProject, a.Key, clsOf(a), a.Status.String())
+	if err = storeFinishedRun(ctx, req.GetRun()); err != nil {
+		return
+	}
+	if err = run.Finalize(ctx, common.RunID(req.GetRun().GetId())); err != nil {
+		return
+	}
 	resp = &empty.Empty{}
 	return
 }

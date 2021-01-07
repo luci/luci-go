@@ -22,13 +22,15 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func onFinalize(ctx context.Context, runID common.RunID, s *state) (eventbox.SideEffectFn, *state, error) {
+func onFinalize(ctx context.Context, runID common.RunID, s *state) (se eventbox.SideEffectFn, ret *state, err error) {
 	switch status := s.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
+		err = errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		errors.Log(ctx, err)
 		panic(err)
 	case run.IsEnded(status):
@@ -38,5 +40,12 @@ func onFinalize(ctx context.Context, runID common.RunID, s *state) (eventbox.Sid
 	// TODO(yiwzhang): Check whether this Run is still qualified for finalization
 	// again because it is possible that the Config used by this Run has been
 	// changed, hence, new Tryjobs are requested.
-	panic("implement")
+	ret = s.shallowCopy()
+	if err = migration.FinalizeRun(ctx, &ret.Run); err != nil {
+		return
+	}
+	se = func(ctx context.Context) error {
+		return prjmanager.NotifyRunFinished(ctx, runID)
+	}
+	return
 }
