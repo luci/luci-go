@@ -119,7 +119,7 @@ func (r *selectRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(errors.Reason("no threshold for target change recall %.4f", r.targetChangeRecall).Err())
 	} else {
 		r.strategy.Threshold = t.Value
-		logging.Infof(ctx, "chosen threhsold: %#v", r.strategy.Threshold)
+		logging.Infof(ctx, "chosen threshold: %#v", r.strategy.Threshold)
 	}
 
 	f, err := os.Create(r.skipTestFilesPath)
@@ -176,7 +176,7 @@ func (r *selectRun) loadInput(ctx context.Context) error {
 	return eg.Wait()
 }
 
-// loadEvalResult loads r.evalResult, including threhsolds.
+// loadEvalResult loads r.evalResult, including thresholds.
 func (r *selectRun) loadEvalResult(fileName string) error {
 	f, err := os.Open(fileName)
 	if err != nil {
