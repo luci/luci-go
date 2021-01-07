@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a5357ea_98549687",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-07T19:48:48Z",
+      "side": 1,
+      "message": "PTAL. Mostly moving things around.",
+      "revId": "53f605d2b3404f86e2d696ccf65669416bd31c7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "945c5189_03363971",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-07T19:48:48Z",
+      "side": 1,
+      "message": "This is the only place where I have actually changed. The previous implementation use append + lock.",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 5
+      },
+      "revId": "53f605d2b3404f86e2d696ccf65669416bd31c7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
