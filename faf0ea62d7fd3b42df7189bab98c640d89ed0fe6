@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7d31e4e_3610f417",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "History already depends on invocations, this causes circular dependency (which made my VSCode spin its wheels until I fixed it with vim)\n\nInstead I moved it to spanutil, after all these functions convert to/from the database encoding of (domain + ordinal)",
+      "parentUuid": "000bb555_27e9c6ec",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "19626fef_edc1cf8e",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-01-06T07:43:23Z",
       "side": 1,
       "message": "surround with ^ and $",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3beabb7_3448ac2a",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19626fef_edc1cf8e",
       "range": {
         "startLine": 36,
         "startChar": 41,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d5f02b6_c813183c",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0a2865c_88dcd022",
+      "range": {
+        "startLine": 134,
+        "startChar": 51,
+        "endLine": 134,
+        "endChar": 64
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "509d2c4e_3bbab4ae",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-01-06T07:43:23Z",
       "side": 1,
       "message": "in Go, error messages must not start with an upper-case letter",
+      "range": {
+        "startLine": 136,
+        "startChar": 33,
+        "endLine": 136,
+        "endChar": 34
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe9845d9_3c06a618",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "509d2c4e_3bbab4ae",
       "range": {
         "startLine": 136,
         "startChar": 33,
@@ -104,6 +194,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc1d2d33_0b3b2db5",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f42a758_c12d96be",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4168fce4_596e38fd",
@@ -117,6 +225,30 @@
       "writtenOn": "2021-01-06T07:43:23Z",
       "side": 1,
       "message": "this is not possible, right?\n\nif it is, then `matches \u003d\u003d nil` is not needed",
+      "range": {
+        "startLine": 163,
+        "startChar": 19,
+        "endLine": 163,
+        "endChar": 40
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ecdf8e3_faf52f18",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4168fce4_596e38fd",
       "range": {
         "startLine": 163,
         "startChar": 19,
@@ -150,6 +282,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "12b88194_207d94aa",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65d5a0e8_d1426b76",
+      "range": {
+        "startLine": 164,
+        "startChar": 64,
+        "endLine": 164,
+        "endChar": 65
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b3fbb409_6139170d",
@@ -163,6 +319,24 @@
       "writtenOn": "2021-01-06T07:43:23Z",
       "side": 1,
       "message": "intentional?",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67ee66cd_18c2a9e3",
+        "filename": "resultdb/internal/services/recorder/update_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3fbb409_6139170d",
       "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -184,6 +358,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "071f6a3b_c6d46e7e",
+        "filename": "resultdb/internal/services/recorder/update_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f470b5ab_56a7786d",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da46c435_4585ee6d",
@@ -197,6 +389,30 @@
       "writtenOn": "2021-01-06T07:43:23Z",
       "side": 1,
       "message": "nit: position :\u003d int64(123456)",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 176,
+        "endChar": 30
+      },
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c9b71be_775d3ea4",
+        "filename": "resultdb/internal/services/recorder/update_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da46c435_4585ee6d",
       "range": {
         "startLine": 176,
         "startChar": 3,
@@ -238,6 +454,24 @@
       "side": 1,
       "message": "or history.go so that we can add other history-related things if needed",
       "parentUuid": "adb853f9_0d03ad1e",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd232fcb_666b7085",
+        "filename": "resultdb/pbutil/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-07T02:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2cc555d_b5cb1251",
       "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
