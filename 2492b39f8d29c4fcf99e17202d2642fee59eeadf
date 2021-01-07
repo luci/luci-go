@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e2477ef_e69bdb34",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-07T09:31:41Z",
+      "side": 1,
+      "message": "This makes it more efficient to get 4 separate sections of test variants.\nAnd enable us to look at the number of variants in each section to load/preload the page more intelligently in the following CLs.\n\nDemo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n",
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
