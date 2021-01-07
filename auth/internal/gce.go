@@ -179,7 +179,7 @@ func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 	// from [1], except it uses our custom metadataClient which is more forgiving
 	// of the slowness of the gke-metadata-server.
 	//
-	// [1]: https://github.com/golang/oauth2/blob/master/google/google.go
+	// [1]: google/google.go file in https://github.com/golang/oauth2
 
 	tokenJSON, err := metadataClient.Get("instance/service-accounts/" + p.account + "/token")
 	if err != nil {

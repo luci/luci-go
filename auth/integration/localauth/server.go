@@ -240,7 +240,7 @@ const minTokenLifetime = 3 * time.Minute
 //    }
 //
 // See also python counterpart of this code:
-// https://github.com/luci/luci-py/blob/master/client/utils/auth_server.py
+// https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/utils/auth_server.py
 type protocolHandler struct {
 	ctx    context.Context           // the parent context
 	wg     *sync.WaitGroup           // used for graceful shutdown
