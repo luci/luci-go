@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c2d902d_bb4704da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-01-07T07:46:30Z",
+      "side": 1,
+      "message": "This is blocked by \nhttps://github.com/bazelbuild/remote-apis-sdks/pull/265",
+      "revId": "c777a67d9890f9513f635dc9ff839ee55a95cc8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06fd2461_a99bdd71",
+        "filename": "client/cas/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-01-07T07:46:30Z",
+      "side": 1,
+      "message": "Need to land https://github.com/bazelbuild/remote-apis-sdks/pull/265 to resolve this TODO.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 103
+      },
+      "revId": "c777a67d9890f9513f635dc9ff839ee55a95cc8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
