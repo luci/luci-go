@@ -158,6 +158,7 @@ func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev event
 type triageResult struct {
 	starts        eventbox.Events
 	cancels       eventbox.Events
+	finalizes     eventbox.Events
 	pokes         eventbox.Events
 	updateConfigs eventbox.Events
 }
@@ -175,6 +176,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.starts = append(tr.starts, item)
 	case *internal.Event_Cancel:
 		tr.cancels = append(tr.cancels, item)
+	case *internal.Event_Finalize:
+		tr.finalizes = append(tr.finalizes, item)
 	case *internal.Event_Poke:
 		tr.pokes = append(tr.pokes, item)
 	case *internal.Event_UpdateConfig:
@@ -213,6 +216,15 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 	if len(tr.updateConfigs) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
 		ret = append(ret, eventbox.Transition{Events: tr.updateConfigs, TransitionTo: s})
+	}
+	if len(tr.finalizes) > 0 {
+		t := eventbox.Transition{Events: tr.finalizes}
+		t.SideEffectFn, s, err = onFinalize(ctx, rm.runID, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
 	}
 	if len(tr.pokes) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.

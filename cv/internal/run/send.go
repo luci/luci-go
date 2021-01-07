@@ -69,6 +69,18 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 	})
 }
 
+// Finalize tells RunManager to finalize the given run.
+//
+// TODO(yiwzhang): Remove after RunManager is able to finalize the Run
+// itself and no longer rely on the Finished Run reported from CQDaemon.
+func Finalize(ctx context.Context, runID common.RunID) error {
+	return send(ctx, runID, &internal.Event{
+		Event: &internal.Event_Cancel{
+			Cancel: &internal.Cancel{},
+		},
+	})
+}
+
 func send(ctx context.Context, runID common.RunID, evt *internal.Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {

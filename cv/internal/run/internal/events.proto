@@ -39,6 +39,8 @@ message Event {
     // Sent by Project Manager, which guarantees these events are sent in order
     // of config updates. See also its `eversion` field.
     UpdateConfig update_config= 4;
+    // On Finalize event, Run Manager will finalize the Run.
+    Finalize finalize = 5;
     // TODO(yiwzhang): Define following events that Run Manager may receive:
     //  * CLUpdate
     //  * TryjobUpdate
@@ -62,4 +64,7 @@ message UpdateConfig {
   // Provided for identifying the latest UpdateConfig message
   // if there are more than one outstanding UpdateConfig event.
   int64 eversion = 2;
+}
+
+message Finalize {
 }
