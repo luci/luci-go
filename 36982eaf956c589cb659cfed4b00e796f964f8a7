@@ -16,6 +16,24 @@
       "message": "please mention that repeated keys are allowed",
       "revId": "36982eaf956c589cb659cfed4b00e796f964f8a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fecec85_87c5d179",
+        "filename": "resultdb/sink/proto/v1/location_tag.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-07T20:37:37Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "49562d31_fe2ed8be",
+      "revId": "36982eaf956c589cb659cfed4b00e796f964f8a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
