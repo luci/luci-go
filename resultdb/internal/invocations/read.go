@@ -72,6 +72,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.ProducerResource,
 		 i.Realm,
 		 i.HistoryTime,
+		 i.OrdinalDomain,
+		 i.Ordinal,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -89,6 +91,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var producerResource spanner.NullString
 		var realm spanner.NullString
 		var historyTime *timestamppb.Timestamp
+		var ordinalDomain string
+		var ordinal spanner.NullInt64
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -100,7 +104,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&historyTime)
+			&historyTime,
+			&ordinalDomain,
+			&ordinal,
+		)
 		if err != nil {
 			return err
 		}
@@ -120,9 +127,14 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 				}
 			}
 		}
-		if historyTime != nil {
+		if historyTime != nil || ordinalDomain != "" {
+			commit, err := spanutil.GitilesCommitFromOrdinalFields(ordinalDomain, ordinal)
+			if err != nil {
+				return err
+			}
 			inv.HistoryOptions = &pb.HistoryOptions{
-				UseInvocationTimestamp: true,
+				UseInvocationTimestamp: historyTime != nil,
+				Commit:                 commit,
 			}
 		}
 

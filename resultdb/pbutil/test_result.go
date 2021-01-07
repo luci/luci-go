@@ -68,7 +68,7 @@ func ValidateTestID(testID string) error {
 	return validateWithRe(testIDRe, testID)
 }
 
-// ValidateTestResultID returns a non-nil error if resultID is invalid.
+// ValidateResultID returns a non-nil error if resultID is invalid.
 func ValidateResultID(resultID string) error {
 	return validateWithRe(resultIDRe, resultID)
 }

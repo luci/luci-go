@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package span contains utility functions to interact with the underlying
+// Package spanutil contains utility functions to interact with the underlying
 // Spanner storage. It does not attempt to encapsulate Spanner.
 package spanutil
