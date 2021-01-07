@@ -115,7 +115,7 @@ func (r *selectRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(err)
 	}
 
-	if t := r.chooseThreshold(); t != nil {
+	if t := r.chooseThreshold(); t == nil {
 		return r.done(errors.Reason("no threshold for target change recall %.4f", r.targetChangeRecall).Err())
 	} else {
 		r.strategy.Threshold = t.Value
@@ -159,7 +159,7 @@ func (r *selectRun) loadInput(ctx context.Context) error {
 		return errors.Annotate(err, "failed to load file graph").Err()
 	})
 	eg.Go(func() error {
-		err := r.loadEvalResult(filepath.Join(gitGraphDir, "eval-result.json"))
+		err := r.loadEvalResult(filepath.Join(gitGraphDir, "eval-results.json"))
 		return errors.Annotate(err, "failed to load eval results").Err()
 	})
 
@@ -186,6 +186,7 @@ func (r *selectRun) loadEvalResult(fileName string) error {
 
 	// TODO(nodir): consider turning eval.Result into a protobuf message for
 	// encoding stability.
+	r.evalResult = &eval.Result{}
 	return json.NewDecoder(f).Decode(r.evalResult)
 }
 
