@@ -18,27 +18,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -114,90 +107,8 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 		return
 	}
 
-	runs := []run.Run{}
-	q := run.NewQueryWithLUCIProject(ctx, req.GetLuciProject()).Eq("Status", run.Status_RUNNING)
-	err = errors.Annotate(datastore.GetAll(ctx, q, &runs), "fetch Run entities").Tag(transient.Tag).Err()
-	if err != nil {
-		return
-	}
-
 	resp = &migrationpb.FetchActiveRunsResponse{}
-	if len(runs) == 0 {
-		return
-	}
-	poolSize := len(runs)
-	if poolSize > 20 {
-		poolSize = 20
-	}
-	var respMu sync.Mutex
-	err = parallel.WorkPool(poolSize, func(workCh chan<- func() error) {
-		for _, r := range runs {
-			r := r
-			workCh <- func() error {
-				runKey := datastore.MakeKey(ctx, run.RunKind, string(r.ID))
-				runCLs := make([]run.RunCL, len(r.CLs))
-				for i, cl := range r.CLs {
-					runCLs[i] = run.RunCL{
-						ID:  cl,
-						Run: runKey,
-					}
-				}
-				if err := datastore.Get(ctx, runCLs); err != nil {
-					return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
-				}
-				mcls := make([]*migrationpb.RunCL, len(runCLs))
-				mode := cvbqpb.Mode_FULL_RUN
-				if r.Mode == run.DryRun {
-					mode = cvbqpb.Mode_DRY_RUN
-				}
-				for i, cl := range runCLs {
-					trigger := &migrationpb.RunCL_Trigger{
-						Email:     cl.Trigger.GetEmail(),
-						Time:      cl.Trigger.GetTime(),
-						AccountId: cl.Trigger.GetGerritAccountId(),
-					}
-					mcl := &migrationpb.RunCL{
-						Id: int64(cl.ID),
-						Gc: &cvbqpb.GerritChange{
-							Host:                       cl.Detail.GetGerrit().GetHost(),
-							Project:                    cl.Detail.GetGerrit().GetInfo().GetProject(),
-							Change:                     cl.Detail.GetGerrit().GetInfo().GetNumber(),
-							Patchset:                   int64(cl.Detail.GetPatchset()),
-							EarliestEquivalentPatchset: int64(cl.Detail.GetMinEquivalentPatchset()),
-							Mode:                       mode,
-						},
-						Files:   cl.Detail.GetGerrit().GetFiles(),
-						Info:    cl.Detail.GetGerrit().GetInfo(),
-						Trigger: trigger,
-						Deps:    make([]*migrationpb.RunCL_Dep, len(cl.Detail.GetDeps())),
-					}
-					for i, dep := range cl.Detail.GetDeps() {
-						mcl.Deps[i] = &migrationpb.RunCL_Dep{
-							Id: dep.GetClid(),
-						}
-						if dep.GetKind() == changelist.DepKind_HARD {
-							mcl.Deps[i].Hard = true
-						}
-					}
-					mcls[i] = mcl
-				}
-				respMu.Lock()
-				defer respMu.Unlock()
-				resp.Runs = append(resp.Runs, &migrationpb.Run{
-					Attempt: &cvbqpb.Attempt{
-						LuciProject: req.GetLuciProject(),
-					},
-					Id:  string(r.ID),
-					Cls: mcls,
-				})
-				return nil
-			}
-		}
-	})
-
-	if err != nil {
-		resp.Runs = nil
-	}
+	resp.Runs, err = fetchActiveRuns(ctx, req.GetLuciProject())
 	return
 }
 
