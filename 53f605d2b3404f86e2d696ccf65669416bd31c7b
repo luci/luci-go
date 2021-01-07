@@ -18,6 +18,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "220a3c9e_b60d1359",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-07T19:58:46Z",
+      "side": 1,
+      "message": "while at it, please move to L36. No need to alloc empty slice.",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 2
+      },
+      "revId": "53f605d2b3404f86e2d696ccf65669416bd31c7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "945c5189_03363971",
@@ -31,6 +54,30 @@
       "writtenOn": "2021-01-07T19:48:48Z",
       "side": 1,
       "message": "This is the only place where I have actually changed. The previous implementation use append + lock.",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 5
+      },
+      "revId": "53f605d2b3404f86e2d696ccf65669416bd31c7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac4d249a_843c9c91",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-07T19:58:46Z",
+      "side": 1,
+      "message": "oh yeah, nice one.",
+      "parentUuid": "945c5189_03363971",
       "range": {
         "startLine": 96,
         "startChar": 0,
