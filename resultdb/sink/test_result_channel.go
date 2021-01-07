@@ -96,13 +96,13 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 
 // setTestTags sets the test tags in tr by looking for the directory of
 // tr.TestMetadata.Location.FileName in the location tags file.
-func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
+func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) error {
 	if c.cfg.LocationTags == nil || tr.TestMetadata.GetLocation().GetFileName() == "" {
-		return
+		return nil
 	}
 	repo, ok := c.cfg.LocationTags.Repos[tr.TestMetadata.Location.Repo]
 	if !ok || len(repo.GetDirs()) == 0 {
-		return
+		return nil
 	}
 	// fileName must start with "//" and it has been validated.
 	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
@@ -111,14 +111,14 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	// found.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {
-			for k, v := range d.Tags {
-				tr.Tags = append(tr.Tags, pbutil.StringPair(k, v))
-			}
-			return
+			// TODO(crbug.com/1103287): Also append tags from ancestors, if the tag
+			// key is new.
+			tr.Tags = append(tr.Tags, d.Tags...)
+			return nil
 		}
 		if dir == "." {
 			// Have reached the root.
-			return
+			return nil
 		}
 		dir = path.Dir(dir)
 	}
@@ -130,7 +130,9 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
-			c.setTestTags(tr)
+			if err := c.setTestTags(tr); err != nil {
+				return err
+			}
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
 
 			pbutil.SortStringPairs(tags)
