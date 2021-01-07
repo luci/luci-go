@@ -39,6 +39,30 @@
       },
       "revId": "c66e2a35a860266b991d0973f95f1b31c0718084",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4695d483_d6e65eaa",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-07T22:50:08Z",
+      "side": 1,
+      "message": "By default. It will be false. But the parent element can set this to true.\nSo lazy-rendering becomes an \"opt-in\" feature of this element rather than an \"opt-out\" feature.",
+      "parentUuid": "8247a1bf_bbb69642",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 35
+      },
+      "revId": "c66e2a35a860266b991d0973f95f1b31c0718084",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
