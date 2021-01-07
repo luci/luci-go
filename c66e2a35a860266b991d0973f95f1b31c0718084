@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n",
       "revId": "c66e2a35a860266b991d0973f95f1b31c0718084",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8247a1bf_bbb69642",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-07T22:05:46Z",
+      "side": 1,
+      "message": "Should this be initialize to be true? By setting it to be false, line 155 will never be called?",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 35
+      },
+      "revId": "c66e2a35a860266b991d0973f95f1b31c0718084",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
