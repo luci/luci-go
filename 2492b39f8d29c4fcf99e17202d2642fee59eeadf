@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b9f5427_dc7f5860",
+        "filename": "milo/frontend/resultui/src/models/test_node_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-07T22:48:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5c13c3d_a57f2c99",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 58
+      },
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "198f03c3_a02cba9e",
@@ -83,6 +107,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "65093ee1_66ca681f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-07T22:48:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "198f03c3_a02cba9e",
+      "range": {
+        "startLine": 57,
+        "startChar": 16,
+        "endLine": 57,
+        "endChar": 42
+      },
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9a9bcf00_7509a18f",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 4
@@ -94,6 +142,24 @@
       "writtenOn": "2021-01-07T22:31:23Z",
       "side": 1,
       "message": "Perhaps not in this CL, but if we decide to keep the filter, we should keep the order consistent (unexpected - flaky - exonerated - expected): https://screenshot.googleplex.com/B4PQHnmk6xZRKNb",
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bf67442_29aa7750",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-07T22:48:11Z",
+      "side": 1,
+      "message": "will do",
+      "parentUuid": "9a9bcf00_7509a18f",
       "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
