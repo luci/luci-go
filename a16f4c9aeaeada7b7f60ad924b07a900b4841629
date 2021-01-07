@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e0ccfa5_1c7d03ef",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-07T07:30:44Z",
+      "side": 1,
+      "message": "I think this should be s.buildPbVers instead because by the time the dispatcher channel sees vers, s.buildpb might have been updated with several new versions already. Therefore `vers` may not match the version of `s.buildPb`. Not sure if it is a problem though.",
+      "range": {
+        "startLine": 84,
+        "startChar": 11,
+        "endLine": 84,
+        "endChar": 32
+      },
+      "revId": "a16f4c9aeaeada7b7f60ad924b07a900b4841629",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "680a24c7_3930afce",
+        "filename": "luciexe/build/state_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-07T07:30:44Z",
+      "side": 1,
+      "message": "nit: may be we can merge this with `adding/closing a step sends`, i.e.\n\n```\n\t\tConvey(`adding step sends`, func() {\n\t\t\t...\n\t\t\tConvey(`closing step sends`, func() {\n\t\t\t\t...\n\t\t\t})\n\t\t\tConvey(`manipulating step sends`, func() {\n\t\t\t\t...\n\t\t\t})\n\t\t})\n```",
+      "revId": "a16f4c9aeaeada7b7f60ad924b07a900b4841629",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
