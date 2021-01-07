@@ -22,10 +22,12 @@ import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
+import '../../components/lazy_list';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ID_SEG_REGEX } from '../../models/test_node';
 import { TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
+import { OnEnterList } from '../lazy_list';
 import './result_entry';
 
 // This list defines the order in which variant def keys should be displayed.
@@ -40,7 +42,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-variant-entry')
-export class VariantEntryElement extends MobxLitElement {
+export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref prevTestId = '';
   @observable.ref prevVariant?: TestVariant;
@@ -55,6 +57,15 @@ export class VariantEntryElement extends MobxLitElement {
     // Always render the content once it was expanded so the descendants' states
     // don't get reset after the node is collapsed.
     this.shouldRenderContent = this.shouldRenderContent || newVal;
+  }
+
+  /**
+   * If set to true, render a place holder until onEnterList is called.
+   */
+  @observable.ref prerender = false;
+
+  onEnterList() {
+    this.prerender = false;
   }
 
   @observable.ref private shouldRenderContent = false;
@@ -141,6 +152,10 @@ export class VariantEntryElement extends MobxLitElement {
   }
 
   protected render() {
+    if (this.prerender) {
+      return html`<div id="place-holder"></div>`;
+    }
+
     return html`
       <div>
         <div
@@ -185,6 +200,10 @@ export class VariantEntryElement extends MobxLitElement {
   static styles = css`
     :host {
       display: block;
+    }
+
+    #place-holder {
+      height: 24px;
     }
 
     .expandable-header {

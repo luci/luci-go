@@ -204,6 +204,7 @@ export class TestResultsTabElement extends MobxLitElement {
           .prevVariant=${prev?.testId === v.testId ? prev : null}
           .expanded=${this.totalDisplayedVariantCount === 1 || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
+          .prerender=${true}
         ></milo-variant-entry>
       `)}
       ${variants.length !== 0 ? html`<hr class="divider">` : ''}
@@ -262,9 +263,9 @@ export class TestResultsTabElement extends MobxLitElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
       ></milo-hotkey>
-      <div id="test-result-view" tabindex="-1">
+      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1">
         ${this.renderAllVariants()}
-      </div>
+      </milo-lazy-list>
     `;
   }
 
