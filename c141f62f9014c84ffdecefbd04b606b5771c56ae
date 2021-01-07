@@ -87,6 +87,30 @@
       },
       "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f20cfb98_e458c3ab",
+        "filename": "resultdb/sink/proto/v1/location_tag.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-07T20:04:56Z",
+      "side": 1,
+      "message": "Yeah I changed my mind, using StringPair is OK.",
+      "parentUuid": "5b305ec1_39a19e6a",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 50
+      },
+      "revId": "c141f62f9014c84ffdecefbd04b606b5771c56ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
