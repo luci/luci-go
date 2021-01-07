@@ -195,17 +195,21 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		Convey("with ServerConfig.LocationTags", func() {
+			tags := pbutil.StringPairs(
+				"feature", "feature1",
+				"feature", "feature2",
+				"monorail_project", "chromium",
+				"monorail_component", "Monorail>Component",
+				"teamEmail", "team_email@chromium.org",
+				"os", "WINDOWS",
+			)
+
 			cfg.LocationTags = &sinkpb.LocationTags{
 				Repos: map[string]*sinkpb.LocationTags_Repo{
 					"https://chromium.googlesource.com/chromium/src": {
 						Dirs: map[string]*sinkpb.LocationTags_Dir{
 							"artifact_dir": {
-								Tags: map[string]string{
-									"monorail_project":   "chromium",
-									"monorail_component": "Monorail>Component",
-									"teamEmail":          "team_email@chromium.org",
-									"os":                 "WINDOWS",
-								},
+								Tags: tags,
 							},
 						},
 					},
@@ -218,12 +222,8 @@ func TestReportTestResults(t *testing.T) {
 					FileName: "//artifact_dir/a_test.cc",
 				},
 			}
-			expected.Tags = pbutil.StringPairs(
-				"k1", "v1",
-				"monorail_component", "Monorail>Component",
-				"monorail_project", "chromium",
-				"os", "WINDOWS",
-				"teamEmail", "team_email@chromium.org")
+			expected.Tags = append(expected.Tags, tags...)
+			pbutil.SortStringPairs(expected.Tags)
 			checkTestResults(ctx, cfg, tr, expected)
 		})
 
