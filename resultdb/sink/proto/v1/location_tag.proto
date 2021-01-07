@@ -52,9 +52,9 @@ message LocationTags {
 
   // Extra tags to attach to TestResults for a directory.
   message Dir {
-    // If a key is not defined for subdir, but defined for a ancestor dir, then
-    // the value in the ancestor is implied.
-    map<string, string> tags = 1;
+    // If a key is not defined for subdir, but defined for an ancestor dir, then
+    // the value(s) in the ancestor is implied.
+    repeated string tags = 1;
   }
 
   // The key is a Gitiles URL as the identifier for a repo.

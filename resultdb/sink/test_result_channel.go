@@ -94,15 +94,31 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
+func stringsToTags(strs []string) ([]*pb.StringPair, error) {
+	tags := make([]*pb.StringPair, len(strs))
+	for i, str := range strs {
+		// Split the string by the first ":".
+		parts := strings.SplitN(str, ":", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("failed to convert to a tag")
+		}
+		tags[i] = &pb.StringPair{
+			Key:   parts[0],
+			Value: parts[1],
+		}
+	}
+	return tags, nil
+}
+
 // setTestTags sets the test tags in tr by looking for the directory of
 // tr.TestMetadata.Location.FileName in the location tags file.
-func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
+func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) error {
 	if c.cfg.LocationTags == nil || tr.TestMetadata.GetLocation().GetFileName() == "" {
-		return
+		return nil
 	}
 	repo, ok := c.cfg.LocationTags.Repos[tr.TestMetadata.Location.Repo]
 	if !ok || len(repo.GetDirs()) == 0 {
-		return
+		return nil
 	}
 	// fileName must start with "//" and it has been validated.
 	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
@@ -111,14 +127,16 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	// found.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {
-			for k, v := range d.Tags {
-				tr.Tags = append(tr.Tags, pbutil.StringPair(k, v))
+			tags, err := stringsToTags(d.Tags)
+			if err != nil {
+				return err
 			}
-			return
+			tr.Tags = append(tr.Tags, tags...)
+			return nil
 		}
 		if dir == "." {
 			// Have reached the root.
-			return
+			return nil
 		}
 		dir = path.Dir(dir)
 	}
@@ -130,7 +148,9 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.(*sinkpb.TestResult)
-			c.setTestTags(tr)
+			if err := c.setTestTags(tr); err != nil {
+				return err
+			}
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
 
 			pbutil.SortStringPairs(tags)
