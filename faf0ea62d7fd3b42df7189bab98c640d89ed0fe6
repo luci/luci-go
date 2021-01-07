@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "56d776b9_3d49295b",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-07T05:00:05Z",
+      "side": 1,
+      "message": "ehh, invocations package was better than spanutil. \nspanutil is supposed to be a set of generic spanner tools",
+      "parentUuid": "b7d31e4e_3610f417",
+      "revId": "faf0ea62d7fd3b42df7189bab98c640d89ed0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "19626fef_edc1cf8e",

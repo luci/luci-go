@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17aaeee8_e69044cc",
+        "filename": "resultdb/internal/spanutil/ordinal_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-07T05:00:05Z",
+      "side": 1,
+      "message": "nit: blank space between resultdb imports and others",
+      "revId": "d21553b6abe41fcf3b187c1cfd056d569a919652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9bf3f6ed_cf4d7b1e",
+        "filename": "resultdb/internal/spanutil/ordinal_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-07T05:00:05Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "d21553b6abe41fcf3b187c1cfd056d569a919652",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
