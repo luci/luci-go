@@ -19,18 +19,13 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { QueryTestVariantsRequest, TestVariant, UISpecificService } from '../services/resultdb';
-import { ReadonlyTest, TestNode } from './test_node';
+import { QueryTestVariantsRequest, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { TestNode } from './test_node';
 
 
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
  * request.
- * Instead of taking QueryTestResultRequest/QueryTestExonerationRequest,
- * TestLoader takes an AsyncIterator<ReadonlyTest[]>, which can be constructed
- * by combining stream... functions in this file.
- * This enables the caller to filter the result, exoneration, or tests at
- * different levels.
  */
 export class TestLoader {
   @computed get isLoading() { return !this.done && this.loadingReqCount !== 0; }
@@ -39,11 +34,16 @@ export class TestLoader {
   @computed get done() { return this._done; }
   @observable.ref private _done = false;
 
-  private nextBatch: Promise<IteratorResult<readonly ReadonlyTest[]>>;
+  @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
+  @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
+  @observable.shallow readonly exoneratedTestVariants: TestVariant[] = [];
+  @observable.shallow readonly expectedTestVariants: TestVariant[] = [];
+
+  private nextBatch: Promise<IteratorResult<readonly TestVariant[]>>;
 
   constructor(
     readonly node: TestNode,
-    private readonly testBatches: AsyncIterator<readonly ReadonlyTest[]>,
+    private readonly testBatches: AsyncIterator<readonly TestVariant[]>,
   ) {
     this.nextBatch = this.testBatches.next();
     this.nextBatch.then((v) => this._done = Boolean(v.done));
@@ -80,36 +80,30 @@ export class TestLoader {
     this.nextBatch = this.testBatches.next();
     this.nextBatch.then((v) => this._done = Boolean(v.done));
 
-    this.processTests(next.value);
+    this.processTestVariants(next.value);
   }
 
   @action
-  private processTests(tests: readonly ReadonlyTest[]) {
-    for (const test of tests) {
-      this.node.addTest(test);
+  private processTestVariants(testVariants: readonly TestVariant[]) {
+    for (const testVariant of testVariants) {
+      switch (testVariant.status) {
+        case TestVariantStatus.UNEXPECTED:
+          this.unexpectedTestVariants.push(testVariant);
+          break;
+        case TestVariantStatus.FLAKY:
+          this.flakyTestVariants.push(testVariant);
+          break;
+        case TestVariantStatus.EXONERATED:
+          this.exoneratedTestVariants.push(testVariant);
+          break;
+        case TestVariantStatus.EXPECTED:
+          this.expectedTestVariants.push(testVariant);
+          break;
+        default:
+          break;
+      }
+      this.node.addTestId(testVariant.testId);
     }
-  }
-}
-
-/**
- * Test with methods to help grouping test results or exonerations by variants.
- */
-// Use an unexported class that implements an exported interface to artificially
-// create file-scoped access modifier.
-class Test implements ReadonlyTest {
-  // Use a map for O(1) lookup.
-  private readonly variantMap = observable.map(new Map<string, TestVariant>(), {deep: false});
-
-  @computed get variants(): readonly TestVariant[] {
-    return [...this.variantMap.entries()]
-      .sort(([key1], [key2]) => key1.localeCompare(key2))
-      .map(([_k, v]) => v);
-  }
-
-  constructor(readonly id: string) {}
-
-  addTestVariant(testVariant: TestVariant) {
-    this.variantMap.set(testVariant.variantHash, testVariant);
   }
 }
 
@@ -128,27 +122,4 @@ export async function* streamVariantBatches(req: QueryTestVariantsRequest, uiSpe
     pageToken = res.nextPageToken;
     yield res.testVariants || [];
   } while (pageToken);
-}
-
-/**
- * Groups test variants into tests.
- * Yielded tests could be modified when new variants are processed.
- * The order of tests is not guaranteed.
- */
-export async function* streamTestBatches(variantBatches: AsyncIterable<readonly TestVariant[]>): AsyncIterableIterator<readonly ReadonlyTest[]> {
-  const testMap = new Map<string, Test>();
-
-  for await (const variantBatch of variantBatches) {
-    const newTests = [] as Test[];
-    for (const variant of variantBatch) {
-      let test = testMap.get(variant.testId);
-      if (!test) {
-        test = new Test(variant.testId);
-        testMap.set(test.id, test);
-        newTests.push(test);
-      }
-      test.addTestVariant(variant);
-    }
-    yield newTests;
-  }
 }
