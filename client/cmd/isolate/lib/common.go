@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -292,6 +293,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 	}
 	defer cl.Close()
 
+	start := time.Now()
 	fmCache := filemetadata.NewSingleFlightCache()
 	var rootDgs []digest.Digest
 	var entries []*uploadinfo.Entry
@@ -307,10 +309,16 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		rootDgs = append(rootDgs, rootDg)
 		entries = append(entries, entrs...)
 	}
+
+	logger := logging.Get(ctx)
+	logger.Infof("finished %d ComputeMerkleTree calls, took %s", len(opts), time.Since(start))
+
+	start = time.Now()
 	uploadedDgs, _, err := cl.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return nil, err
 	}
+	logger.Infof("finished UploadIfMissing for %d entries (%d uploaded), took %s", len(entries), len(uploadedDgs), time.Since(start))
 
 	if al != nil {
 		missing := int64(len(uploadedDgs))
