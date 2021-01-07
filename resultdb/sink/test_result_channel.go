@@ -106,15 +106,24 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	}
 	// fileName must start with "//" and it has been validated.
 	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
+	tagKeySet := map[string]struct{}{}
 
-	// Start from the directory of the file, then try upper directories if not
-	// found.
+	// Start from the directory of the file, then traverse to upper directories.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {
-			// TODO(crbug.com/1103287): Also append tags from ancestors, if the tag
-			// key is new.
-			tr.Tags = append(tr.Tags, d.Tags...)
-			return
+			// To temporarily hold new tag keys in this dir.
+			// We cannot add the new key to tagKeySet directly because tag keys
+			// for this dir could be repeated.
+			newTagKeys := map[string]struct{}{}
+			for _, t := range d.Tags {
+				if _, ok := tagKeySet[t.Key]; !ok {
+					newTagKeys[t.Key] = struct{}{}
+					tr.Tags = append(tr.Tags, t)
+				}
+			}
+			for k, _ := range newTagKeys {
+				tagKeySet[k] = struct{}{}
+			}
 		}
 		if dir == "." {
 			// Have reached the root.
