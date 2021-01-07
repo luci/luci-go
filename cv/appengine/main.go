@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 
 	"go.chromium.org/luci/server"
@@ -62,11 +61,6 @@ func main() {
 		srv.Routes.GET("/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) {
-				if r, err := redisconn.Get(rc.Context); err == nil {
-					res, err := r.Do("FLUSHDB")
-					logging.Debugf(rc.Context, "FLUSH: %s | %s", res, err)
-					r.Close()
-				}
 				// The cron job interval is 1 minute.
 				ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
 				defer cancel()
