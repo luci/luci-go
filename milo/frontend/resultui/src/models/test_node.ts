@@ -50,7 +50,6 @@ export class TestNode {
   // Can be used as an identifier of this node.
   private readonly unelidedPath: string;
   @observable.shallow private readonly unelidedChildrenMap = new Map<string, TestNode>();
-  @observable.shallow private readonly unelidedTests: ReadonlyTest[] = [];
   @computed private get unelidedChildren() {
     return [...this.unelidedChildrenMap.values()].sort((v1, v2) => {
       return v1.unelidedName.localeCompare(v2.unelidedName);
@@ -74,45 +73,27 @@ export class TestNode {
     return {name, node};
   }
 
-  /**
-   * Total number of tests in this node.
-   */
-  @computed get testCount() { return this._testCount; }
-  @observable private _testCount = 0;
-
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
     this.unelidedPath = prefix + unelidedName;
   }
 
   /**
-   * Iterates through all tests belonging to this node and its descendants.
-   */
-  *tests(): Iterable<ReadonlyTest> {
-    yield *this.unelidedTests;
-    for (const child of this.unelidedChildren) {
-      yield *child.tests();
-    }
-  }
-
-  /**
    * Takes a test and adds it to the appropriate place in the tree,
    * creating new nodes as necessary.
-   * @param test test.id must be alphabetically greater than the id of any
+   * @param testId test.id must be alphabetically greater than the id of any
    *     previously added test.
    */
   @action
-  addTest(test: ReadonlyTest) {
-    const idSegs = test.id.match(ID_SEG_REGEX)!;
+  addTestId(testId: string) {
+    const idSegs = testId.match(ID_SEG_REGEX)!;
     idSegs.reverse();
-    this.addTestWithIdSegs(test, idSegs);
+    this.addTestIdSegs(idSegs);
   }
 
-  private addTestWithIdSegs(test: ReadonlyTest, idSegStack: string[]) {
-    this._testCount++;
+  private addTestIdSegs(idSegStack: string[]) {
     const nextSeg = idSegStack.pop();
     if (nextSeg === undefined) {
-      this.unelidedTests.push(test);
       return;
     }
     let child = this.unelidedChildrenMap.get(nextSeg);
@@ -120,6 +101,6 @@ export class TestNode {
       child = new TestNode(this.unelidedPath, nextSeg);
       this.unelidedChildrenMap.set(nextSeg, child);
     }
-    child.addTestWithIdSegs(test, idSegStack);
+    child.addTestIdSegs(idSegStack);
   }
 }

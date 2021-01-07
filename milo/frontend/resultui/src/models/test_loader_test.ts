@@ -18,8 +18,8 @@ import sinon from 'sinon';
 
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
 import { QueryTestVariantsRequest, TestVariantStatus, UISpecificService } from '../services/resultdb';
-import { streamTestBatches, streamVariantBatches, TestLoader } from './test_loader';
-import { ReadonlyTest, TestNode } from './test_node';
+import { streamVariantBatches, TestLoader } from './test_loader';
+import { TestNode } from './test_node';
 
 
 chai.use(chaiRecursiveDeepInclude);
@@ -89,56 +89,17 @@ describe('test_loader', () => {
     status: TestVariantStatus.EXONERATED,
   };
 
-  const test1 = {
-    id: 'a',
-    variants: [
-      variant1,
-      variant2,
-      variant3,
-    ],
-  };
-
-  const test2 = {
-    id: 'b',
-    variants: [
-      variant4,
-    ],
-  };
-
-  const test3 = {
-    id: 'c',
-    variants: [
-      variant5,
-      variant6,
-    ],
-  };
-
-  const test4 = {
-    id: 'd',
-    variants: [
-      variant7,
-      variant8,
-    ],
-  };
-
-  const test5 = {
-    id: 'e',
-    variants: [
-      variant9,
-    ],
-  };
-
   describe('TestLoader', () => {
     let addTestSpy = sinon.spy();
     let testLoader: TestLoader;
     beforeEach(() => {
       addTestSpy = sinon.spy();
       testLoader = new TestLoader(
-        {addTest: addTestSpy} as Partial<TestNode> as TestNode,
+        {addTestId: addTestSpy} as Partial<TestNode> as TestNode,
         (async function*() {
-          yield [test1, test2];
-          yield [test3, test4];
-          yield [test5];
+          yield [variant1, variant2, variant3, variant4];
+          yield [variant5, variant6, variant7, variant8];
+          yield [variant9];
         })(),
       );
     });
@@ -146,35 +107,41 @@ describe('test_loader', () => {
     it('should load tests to test node on request', async () => {
       assert.strictEqual(addTestSpy.callCount, 0);
       await testLoader.loadNextPage();
-      assert.strictEqual(addTestSpy.callCount, 2);
+      assert.strictEqual(addTestSpy.callCount, 4);
 
-      assert.strictEqual(addTestSpy.getCall(0).args[0], test1);
-      assert.strictEqual(addTestSpy.getCall(1).args[0], test2);
+      assert.strictEqual(addTestSpy.getCall(0).args[0], variant1.testId);
+      assert.strictEqual(addTestSpy.getCall(1).args[0], variant2.testId);
+      assert.strictEqual(addTestSpy.getCall(2).args[0], variant3.testId);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], variant4.testId);
     });
 
     it('should preserve loading progress', async () => {
       assert.isFalse(testLoader.done);
 
       await testLoader.loadNextPage();
-      assert.strictEqual(addTestSpy.callCount, 2);
-      assert.strictEqual(addTestSpy.getCall(0).args[0], test1);
-      assert.strictEqual(addTestSpy.getCall(1).args[0], test2);
-      assert.isFalse(testLoader.done);
-
-      await testLoader.loadNextPage();
       assert.strictEqual(addTestSpy.callCount, 4);
-      assert.strictEqual(addTestSpy.getCall(2).args[0], test3);
-      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
+      assert.strictEqual(addTestSpy.getCall(0).args[0], variant1.testId);
+      assert.strictEqual(addTestSpy.getCall(1).args[0], variant2.testId);
+      assert.strictEqual(addTestSpy.getCall(2).args[0], variant3.testId);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], variant4.testId);
       assert.isFalse(testLoader.done);
 
       await testLoader.loadNextPage();
-      assert.strictEqual(addTestSpy.callCount, 5);
-      assert.strictEqual(addTestSpy.getCall(4).args[0], test5);
+      assert.strictEqual(addTestSpy.callCount, 8);
+      assert.strictEqual(addTestSpy.getCall(4).args[0], variant5.testId);
+      assert.strictEqual(addTestSpy.getCall(5).args[0], variant6.testId);
+      assert.strictEqual(addTestSpy.getCall(6).args[0], variant7.testId);
+      assert.strictEqual(addTestSpy.getCall(7).args[0], variant8.testId);
+      assert.isFalse(testLoader.done);
+
+      await testLoader.loadNextPage();
+      assert.strictEqual(addTestSpy.callCount, 9);
+      assert.strictEqual(addTestSpy.getCall(8).args[0], variant9.testId);
       assert.isTrue(testLoader.done);
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextPage();
-      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 9);
       assert.isTrue(testLoader.done);
     });
 
@@ -187,25 +154,25 @@ describe('test_loader', () => {
       assert.isTrue(testLoader.isLoading);
 
       await loadReq1;
-      assert.strictEqual(addTestSpy.callCount, 2);
+      assert.strictEqual(addTestSpy.callCount, 4);
       // loadReq2 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
       assert.isFalse(testLoader.done);
 
       await loadReq2;
-      assert.strictEqual(addTestSpy.callCount, 4);
+      assert.strictEqual(addTestSpy.callCount, 8);
       // loadReq3 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
       assert.isFalse(testLoader.done);
 
       await loadReq3;
-      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 9);
       // The list is exhausted, loadReq4 should not change the loading state.
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
 
       await loadReq4;
-      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 9);
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
     });
@@ -234,34 +201,6 @@ describe('test_loader', () => {
       assert.equal(stub.callCount, 2);
       assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: undefined});
       assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: res1.nextPageToken});
-    });
-  });
-
-  describe('streamTestBatches', () => {
-    it('can group test variants into tests correctly', async () => {
-      const variantIter = (async function*() {
-        yield [variant1, variant2, variant3, variant4, variant5];
-        yield [variant6, variant7, variant8, variant9];
-      })();
-      const expectedTests: ReadonlyTest[] = [];
-      for await (const tests of streamTestBatches(variantIter)) {
-        for (const test of tests) {
-          expectedTests.push(test);
-        }
-      }
-
-      assert.strictEqual(expectedTests.length, 5);
-
-      // The order doesn't matter.
-      expectedTests.sort((v1, v2) => v1.id.localeCompare(v2.id));
-
-      // Use recursiveDeepInclude to avoid (nested) private properties in actual
-      // causing the test to fail.
-      assert.recursiveDeepInclude(expectedTests[0], test1);
-      assert.recursiveDeepInclude(expectedTests[1], test2);
-      assert.recursiveDeepInclude(expectedTests[2], test3);
-      assert.recursiveDeepInclude(expectedTests[3], test4);
-      assert.recursiveDeepInclude(expectedTests[4], test5);
     });
   });
 });

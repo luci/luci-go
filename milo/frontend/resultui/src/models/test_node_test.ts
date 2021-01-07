@@ -20,38 +20,30 @@ import { TestNode } from './test_node';
 describe('TestNode', () => {
   it('should elide test id segments with no branches', async () => {
     const node = TestNode.newRoot();
-    const test1 = {id: 'a/b/c/d', variants: []};
-    const test2 = {id: 'a/b/c/e', variants: []};
-    node.addTest(test1);
-    node.addTest(test2);
+    node.addTestId('a/b/c/d');
+    node.addTestId('a/b/c/e');
 
     assert.equal(node.path, 'a/b/c/');
     assert.equal(node.name, 'a/b/c/');
     assert.equal(node.children.length, 2);
-    assert.deepEqual([...node.tests()], [test1, test2]);
 
     assert.equal(node.children[0].path, 'a/b/c/d');
     assert.equal(node.children[0].name, 'd');
     assert.equal(node.children[0].children.length, 0);
-    assert.deepEqual([...node.children[0].tests()], [test1]);
 
     assert.equal(node.children[1].path, 'a/b/c/e');
     assert.equal(node.children[1].name, 'e');
     assert.equal(node.children[1].children.length, 0);
-    assert.deepEqual([...node.children[1].tests()], [test2]);
   });
 
   it('should un-elide test id segments after a new branch is added', async () => {
     const node = TestNode.newRoot();
-    const test1 = {id: 'a/b/c/d', variants: []};
-    const test2 = {id: 'a/b/c/e', variants: []};
-    node.addTest(test1);
-    node.addTest(test2);
+    node.addTestId('a/b/c/d');
+    node.addTestId('a/b/c/e');
     assert.equal(node.name, 'a/b/c/');
     assert.equal(node.children.length, 2);
 
-    const test3 = {id: 'a/b/f', variants: []};
-    node.addTest(test3);
+    node.addTestId('a/b/f');
     assert.equal(node.name, 'a/b/');
     assert.equal(node.children.length, 2);
 
@@ -64,12 +56,10 @@ describe('TestNode', () => {
 
   it('should not elide test ids when one is the prefix of another', async () => {
     const node = TestNode.newRoot();
-    // test1 should not be treated as the parent of test2.
+    // 'a/b/c/d/' should not be treated as the parent of 'a/b/c/d/e'.
     // All tests should be treated as leaves.
-    const test1 = {id: 'a/b/c/d/', variants: []};
-    const test2 = {id: 'a/b/c/d/e', variants: []};
-    node.addTest(test1);
-    node.addTest(test2);
+    node.addTestId('a/b/c/d/');
+    node.addTestId('a/b/c/d/e');
     assert.equal(node.name, 'a/b/c/d/');
     assert.equal(node.children.length, 2);
     assert.equal(node.children[0].name, '');
