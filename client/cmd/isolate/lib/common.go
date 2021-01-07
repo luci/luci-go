@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -32,6 +33,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/uploadinfo"
 	"github.com/maruel/subcommands"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -295,19 +297,40 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 
 	start := time.Now()
 	fmCache := filemetadata.NewSingleFlightCache()
-	var rootDgs []digest.Digest
+
+	var mu sync.Mutex
+	rootDgs := make([]digest.Digest, len(opts))
 	var entries []*uploadinfo.Entry
-	for _, o := range opts {
-		execRoot, is, err := buildCASInputSpec(o)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to call buildCASInputSpec").Err()
-		}
-		rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
-		}
-		rootDgs = append(rootDgs, rootDg)
-		entries = append(entries, entrs...)
+
+	var eg errgroup.Group
+	ioCh := make(chan struct{}, 8)
+
+	for i, o := range opts {
+		i, o := i, o
+		eg.Go(func() error {
+			ioCh <- struct{}{}
+			defer func() { <-ioCh }()
+
+			execRoot, is, err := buildCASInputSpec(o)
+			if err != nil {
+				return errors.Annotate(err, "failed to call buildCASInputSpec").Err()
+			}
+			rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
+			if err != nil {
+				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+			}
+
+			rootDgs[i] = rootDg
+			mu.Lock()
+			entries = append(entries, entrs...)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
 	}
 
 	logger := logging.Get(ctx)
