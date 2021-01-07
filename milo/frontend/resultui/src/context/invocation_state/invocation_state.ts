@@ -18,11 +18,10 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
-import { streamTestBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
+import { streamVariantBatches, TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
-import { Invocation, TestVariantStatus } from '../../services/resultdb';
+import { Invocation } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
-import { UserConfigs } from '../app_state/user_configs';
 
 /**
  * Records state of an invocation.
@@ -31,7 +30,7 @@ export class InvocationState {
   @observable.ref invocationId = '';
   @observable.ref initialized = false;
 
-  constructor(private appState: AppState, private userConfigs: UserConfigs) {}
+  constructor(private appState: AppState) {}
 
   @observable.ref private isDisposed = false;
 
@@ -90,31 +89,12 @@ export class InvocationState {
     ));
   }
 
-  @computed
-  private get testIterFn() {
-    let variantBatches = this.testVariantBatchFn();
-
-    variantBatches = this.userConfigs.tests.showExpectedVariant ?
-      variantBatches :
-      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.EXPECTED));
-
-    variantBatches = this.userConfigs.tests.showExoneratedVariant ?
-      variantBatches :
-      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.EXONERATED));
-
-    variantBatches = this.userConfigs.tests.showFlakyVariant ?
-      variantBatches :
-      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== TestVariantStatus.FLAKY));
-
-    return iter.teeAsync(streamTestBatches(variantBatches));
-  }
-
   @computed({keepAlive: true})
   get testLoader(): TestLoader {
     if (this.isDisposed) {
       return new TestLoader(TestNode.newRoot(), (async function*() {})());
     }
-    return new TestLoader(TestNode.newRoot(), this.testIterFn());
+    return new TestLoader(TestNode.newRoot(), this.testVariantBatchFn());
   }
 }
 
