@@ -33,6 +33,69 @@
       "message": "I\u0027ll turn this class into a generic trie in a following CL.\nLater, we can use it for implementing a tree of user defined categories rather than a tree of test IDs.",
       "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5c13c3d_a57f2c99",
+        "filename": "milo/frontend/resultui/src/models/test_node_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-07T22:31:23Z",
+      "side": 1,
+      "message": "Update this comment to \n\"a/b/c/d/\" should not be treated as the parent of \"a/b/c/d/e\"?",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 58
+      },
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "198f03c3_a02cba9e",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-07T22:31:23Z",
+      "side": 1,
+      "message": "naming nits: Perhaps plural form displayedUnexpectedVariants, ...",
+      "range": {
+        "startLine": 57,
+        "startChar": 16,
+        "endLine": 57,
+        "endChar": 42
+      },
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a9bcf00_7509a18f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-07T22:31:23Z",
+      "side": 1,
+      "message": "Perhaps not in this CL, but if we decide to keep the filter, we should keep the order consistent (unexpected - flaky - exonerated - expected): https://screenshot.googleplex.com/B4PQHnmk6xZRKNb",
+      "revId": "2492b39f8d29c4fcf99e17202d2642fee59eeadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
