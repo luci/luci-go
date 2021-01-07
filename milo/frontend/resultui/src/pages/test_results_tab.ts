@@ -30,7 +30,7 @@ import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
 import { TestNode } from '../models/test_node';
-import { TestVariant, TestVariantStatus } from '../services/resultdb';
+import { TestVariant } from '../services/resultdb';
 
 /**
  * Display a list of test results.
@@ -54,11 +54,39 @@ export class TestResultsTabElement extends MobxLitElement {
     }
   }
 
+  @computed get displayedUnexpectedVariants() {
+    return this.invocationState.testLoader.unexpectedTestVariants
+      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
+  }
+
+  @computed get displayedFlakyVariants() {
+    if (!this.configsStore.userConfigs.tests.showFlakyVariant) {
+      return [];
+    }
+    return this.invocationState.testLoader.flakyTestVariants
+      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
+  }
+  @computed get displayedExoneratedVariants() {
+    if (!this.configsStore.userConfigs.tests.showExoneratedVariant) {
+      return [];
+    }
+    return this.invocationState.testLoader.exoneratedTestVariants
+      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
+  }
+  @computed get displayedExpectedVariants() {
+    if (!this.configsStore.userConfigs.tests.showExpectedVariant) {
+      return [];
+    }
+    return this.invocationState.testLoader.expectedTestVariants
+      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
+  }
+
   @computed
-  private get hasSingleVariant() {
-    // this operation should be fast since the iterator is executed only when
-    // there's only one test.
-    return this.invocationState.selectedNode.testCount === 1 && [...this.invocationState.selectedNode.tests()].length === 1;
+  private get totalDisplayedVariantCount() {
+    return this.displayedUnexpectedVariants.length +
+      this.displayedFlakyVariants.length +
+      this.displayedExoneratedVariants.length +
+      this.displayedExpectedVariants.length;
   }
 
   @observable.ref private allVariantsWereExpanded = false;
@@ -82,7 +110,7 @@ export class TestResultsTabElement extends MobxLitElement {
         // The previous instance of the test results tab could've triggered
         // the loading operation already. In that case we don't want to load
         // more test results.
-        if (this.invocationState.selectedNode.testCount === 0 && !this.invocationState.testLoader.isLoading) {
+        if (this.totalDisplayedVariantCount === 0 && !this.invocationState.testLoader.isLoading) {
           this.loadNextPage();
         }
       },
@@ -125,41 +153,16 @@ export class TestResultsTabElement extends MobxLitElement {
   }
 
   private renderAllVariants() {
-    const exoneratedVariants: TestVariant[] = [];
-    const expectedVariants: TestVariant[] = [];
-    const unexpectedVariants: TestVariant[] = [];
-    const flakyVariants: TestVariant[] = [];
-    for (const test of this.invocationState.selectedNode.tests()) {
-      for (const variant of test.variants) {
-        switch (variant.status) {
-          case TestVariantStatus.EXONERATED:
-            exoneratedVariants.push(variant);
-            break;
-          case TestVariantStatus.EXPECTED:
-            expectedVariants.push(variant);
-            break;
-          case TestVariantStatus.UNEXPECTED:
-            unexpectedVariants.push(variant);
-            break;
-          case TestVariantStatus.FLAKY:
-            flakyVariants.push(variant);
-            break;
-          default:
-            console.error('unexpected variant type', variant);
-            break;
-        }
-      }
-    }
     return html`
-      ${unexpectedVariants.length === 0 ? html`
+      ${this.displayedUnexpectedVariants.length === 0 ? html`
       <div class="list-entry">No unexpected test results.</div>
       <hr class="divider">
       ` : html ``}
       ${this.renderIntegrationHint()}
-      ${this.renderVariants(unexpectedVariants, true)}
-      ${this.renderVariants(flakyVariants)}
-      ${this.renderVariants(exoneratedVariants)}
-      ${this.renderVariants(expectedVariants)}
+      ${this.renderVariants(this.displayedUnexpectedVariants, true)}
+      ${this.renderVariants(this.displayedFlakyVariants)}
+      ${this.renderVariants(this.displayedExoneratedVariants)}
+      ${this.renderVariants(this.displayedExpectedVariants)}
       ${this.renderLoadMore()}
     `;
   }
@@ -199,7 +202,7 @@ export class TestResultsTabElement extends MobxLitElement {
           .variant=${v}
           .prevTestId=${prev?.testId ?? ''}
           .prevVariant=${prev?.testId === v.testId ? prev : null}
-          .expanded=${this.hasSingleVariant || (prev === undefined && expandFirst)}
+          .expanded=${this.totalDisplayedVariantCount === 1 || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
         ></milo-variant-entry>
       `)}
@@ -211,7 +214,7 @@ export class TestResultsTabElement extends MobxLitElement {
     const state = this.invocationState;
     return html`
       <div id="loadmore" class="list-entry">
-        <span>Showing ${state.selectedNode.testCount} tests.</span>
+        <span>Showing ${this.totalDisplayedVariantCount} tests.</span>
         <span
           id="load"
           style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
