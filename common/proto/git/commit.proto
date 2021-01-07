@@ -85,4 +85,6 @@ message Commit {
     string new_path = 7;
   }
   repeated TreeDiff tree_diff = 7;
+
+  User owner = 8;
 }
