@@ -55,7 +55,7 @@ func pokePMTask(ctx context.Context, luciProject string) error {
 type projectManager struct {
 	luciProject string
 
-	// modified by LoadState and read by SaveState.
+	// Modified by LoadState and read by SaveState.
 	stateOffload *prjmanager.ProjectStateOffload
 }
 

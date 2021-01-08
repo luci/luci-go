@@ -25,7 +25,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// This file contains notifications sent by PM to other CV parts.
+// This file contains notifications sent by Project Manager to other parts of
+// CV.
 //
 // Some must be executed transactionally with updating Project entity
 // (see also eventbox.SideEffectFn). These must be kept as fast as possible
