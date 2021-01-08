@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28a93ac6_8ac7e657",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-08T17:13:32Z",
+      "side": 1,
+      "message": "i think this belongs to the callsite more than this func, because SRP",
+      "revId": "469219751499ca47d5143f9f533c1c017f00ba7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
