@@ -64,7 +64,11 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
 		}, &client.PerRPCCreds{Creds: creds},
-		client.CASConcurrency(casConcurrency))
+		client.CASConcurrency(casConcurrency),
+		client.UnifiedUploadBufferSize(client.DefaultUnifiedUploadBufferSize*10),
+		client.UnifiedUploadTickDuration(client.DefaultUnifiedUploadTickDuration),
+		client.UnifiedUploads(true),
+	)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
