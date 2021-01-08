@@ -15,9 +15,11 @@
 package run
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -88,6 +90,21 @@ type Run struct {
 	// TODO(yiwzhang): Define
 	//  * GerritAction (including posting comments and removing CQ labels).
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
+}
+
+// Mutate mutates the Run by executing `mut`.
+//
+// It ensures EVersion and UpdateTime are correctly updated if `mut` has
+// changed the Run.
+func (r *Run) Mutate(ctx context.Context, mut func(*Run) (updated bool)) (updated bool) {
+	prevEV := r.EVersion
+	updated = mut(r)
+	if !updated {
+		return false
+	}
+	r.EVersion = prevEV + 1
+	r.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	return true
 }
 
 // RunOwner keeps tracks of all open (active or pending) Runs for a user.
