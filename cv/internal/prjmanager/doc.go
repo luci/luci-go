@@ -13,4 +13,7 @@
 // limitations under the License.
 
 // Package prjmanager implements public API for Project Manager.
+//
+// The Project Manager keeps track of the project config and incomplete runs,
+// and notifies runs when the project config changes.
 package prjmanager

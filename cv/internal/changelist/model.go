@@ -89,9 +89,9 @@ type CL struct {
 	// indexed field based on UpdateTime but with entropy in the lowest bits to
 	// avoid hotspots.
 
-	// Snapshot is latest known state of a CL.
-	// It may and often is behind the source of truth -- the code reveview site
-	// (e.g. Gerrit).
+	// Snapshot is the latest known state of a CL.
+	// It may and often is behind the source of truth, which is the code review
+	// site, e.g. Gerrit.
 	Snapshot *Snapshot
 
 	// ApplicableConfig keeps track of configs applicable to the CL.
@@ -111,7 +111,7 @@ type CL struct {
 
 // Mutate mutates the CL by executing `mut`.
 //
-// It does basic sanity check and ensures EVersion and UpdateTime are
+// It does a basic sanity check and ensures EVersion and UpdateTime are
 // correctly updated if `mut` has changed the CL.
 func (cl *CL) Mutate(ctx context.Context, mut func(*CL) (updated bool)) (updated bool) {
 	prevEV := cl.EVersion
@@ -187,7 +187,7 @@ func (eid ExternalID) GetOrInsert(ctx context.Context, populate func(cl *CL)) (*
 	return cl, nil
 }
 
-// Delete deletes CL and its CLMap entities trasactionally.
+// Delete deletes a CL and its CLMap entities transactionally.
 //
 // Thus, Delete and insertion (part of ExternalID.getOrInsert)
 // are atomic with respect to one another.
@@ -350,7 +350,7 @@ func getExisting(ctx context.Context, clid common.CLID, eid ExternalID) (*CL, er
 	return cl, nil
 }
 
-// insert creates new CL entity for given external ID.
+// insert creates a new CL entity for given external ID.
 //
 // Must be called after verifying that such CLMap record doesn't exist.
 func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error) {
