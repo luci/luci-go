@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -74,8 +75,10 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 		return
 	}
 
-	a := req.Run.Attempt
-	logging.Infof(ctx, "CQD[%s] finished working on %s (%s) attempt with %s", a.LuciProject, a.Key, clsOf(a), a.Status.String())
+	if err = finalizeRun(ctx, req.GetRun()); err != nil {
+		err = errors.Annotate(err, "failed to finalize Run %q", req.GetRun().GetId()).Err()
+		return
+	}
 	resp = &empty.Empty{}
 	return
 }
