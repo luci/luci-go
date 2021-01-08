@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "5327b5a20e9a83034683011476545c5861bf0f91",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "acfca6df_1862ab50",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-08T02:18:17Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/data/stringset would be less code",
+      "revId": "5327b5a20e9a83034683011476545c5861bf0f91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27650fca_2a3d1950",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-08T02:18:17Z",
+      "side": 1,
+      "message": "it might be simpler and as fast to separate the two things we are trying to do here\n\n  for _, t :\u003d range d.Tags {\n    if !tagKeys.Has(t.Key) {\n      tr.Tags \u003d append(tr.Tags, t)\n    }\n  }\n  for _, t :\u003d range d.Tags {\n    tagKeys.Add(t.Key)\n  }",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 4
+      },
+      "revId": "5327b5a20e9a83034683011476545c5861bf0f91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
