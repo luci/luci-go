@@ -347,7 +347,7 @@ func TestConcurrentUpdate(t *testing.T) {
 		)
 		cl, err := eid.Get(ctx)
 		So(err, ShouldBeNil)
-		// Since all workers have succeded, the latest snapshot
+		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
