@@ -93,6 +93,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2635bc24_d4d1fee5",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T15:27:14Z",
+      "side": 1,
+      "message": "I forgot that it sets .StartTime. LGTM!",
+      "parentUuid": "8967a5bf_818f829e",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f44d5f4c_88b5407f",
