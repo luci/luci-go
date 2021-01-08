@@ -109,6 +109,22 @@ type CL struct {
 	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
 
+// Mutate mutates the CL by executing `mut`.
+//
+// It does basic sanity check and ensures EVersion and UpdateTime are
+// correctly updated if `mut` has changed the CL.
+func (cl *CL) Mutate(ctx context.Context, mut func(*CL) (updated bool)) (updated bool) {
+	prevEV := cl.EVersion
+	updated = mut(cl)
+	if !updated {
+		return false
+	}
+	cl.Snapshot.PanicIfNotValid()
+	cl.EVersion = prevEV + 1
+	cl.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	return true
+}
+
 // clMap is CLMap entity in Datastore which ensures strict 1:1 mapping
 // between internal and external IDs.
 type clMap struct {
@@ -366,19 +382,14 @@ func insert(ctx context.Context, eid ExternalID, populate func(*CL)) (*CL, error
 	return cl, nil
 }
 
-func update(ctx context.Context, justRead *CL, mut func(*CL) (update bool)) (updated bool, err error) {
+func update(ctx context.Context, justRead *CL, mut func(*CL) (updated bool)) (updated bool, err error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in transaction context")
 	}
-
-	before := *justRead // shallow copy, avoiding cloning Snapshot.
-	updated = mut(justRead)
+	updated = justRead.Mutate(ctx, mut)
 	if !updated {
 		return false, nil
 	}
-	justRead.Snapshot.PanicIfNotValid()
-	justRead.EVersion = before.EVersion + 1
-	justRead.UpdateTime = clock.Now(ctx).UTC()
 	if err = datastore.Put(ctx, justRead); err != nil {
 		err = errors.Annotate(err, "failed to put CL entity").Tag(transient.Tag).Err()
 	}
