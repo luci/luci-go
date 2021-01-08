@@ -45,13 +45,13 @@ func (s *Step) Start() {
 }
 
 func (s *Step) ensureStarted(chk func(bbpb.Status)) {
-	s.mutate(func() {
+	s.mutate(func() bool {
 		cur := s.stepPb.GetStatus()
 		if chk != nil {
 			chk(cur)
 		}
 		if cur != bbpb.Status_SCHEDULED {
-			return
+			return false
 		}
 
 		s.stepPb.Status = bbpb.Status_STARTED
@@ -60,6 +60,8 @@ func (s *Step) ensureStarted(chk func(bbpb.Status)) {
 		if s.logsink() == nil {
 			logging.Infof(s.ctx, "set status: %s", bbpb.Status_STARTED)
 		}
+
+		return true
 	})
 }
 
@@ -73,14 +75,16 @@ func (s *Step) ensureStarted(chk func(bbpb.Status)) {
 // View items.
 func (s *Step) Modify(cb func(*StepView)) {
 	logSM := ""
-	s.mutate(func() {
+	s.mutate(func() bool {
 		oldView := StepView{s.stepPb.SummaryMarkdown}
 		newView := oldView // shallow copy
 		cb(&newView)
 		if oldView.SummaryMarkdown != newView.SummaryMarkdown {
 			logSM = newView.SummaryMarkdown
 			s.stepPb.SummaryMarkdown = newView.SummaryMarkdown
+			return true
 		}
+		return false
 	})
 	if s.logsink() == nil && len(logSM) > 0 {
 		logging.Debugf(s.ctx, "changed SummaryMarkdown: %s", logSM)

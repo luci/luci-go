@@ -185,7 +185,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 // flow mechanisms.
 func (s *Step) End(err error) {
 	var message string
-	s.mutate(func() {
+	s.mutate(func() bool {
 		s.stepPb.Status, message = computePanicStatus(err)
 		s.stepPb.EndTime = timestamppb.New(clock.Now(s.ctx))
 		if s.stepPb.StartTime == nil {
@@ -199,6 +199,8 @@ func (s *Step) End(err error) {
 			}
 		}
 		s.logClosers = nil
+
+		return true
 	})
 	// stepPb is immutable after mutate ends, so we should be fine to access it
 	// outside the locks.
@@ -222,7 +224,7 @@ func (s *Step) End(err error) {
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
 func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""
-	s.mutate(func() {
+	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
 		relLdName = fmt.Sprintf("%s/log/%d", s.relLogPrefix, len(s.stepPb.Logs))
 		s.stepPb.Logs = append(s.stepPb.Logs, &bbpb.Log{
@@ -232,6 +234,7 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer.Close
 		}
+		return true
 	})
 }
 
@@ -310,13 +313,13 @@ func (s *Step) logsink() *streamclient.Client {
 // mutate gives exclusive access to read+write stepPb
 //
 // Will panic if stepPb is in a terminal (ended) state.
-func (s *Step) mutate(cb func()) {
-	s.state.mutate(func() {
+func (s *Step) mutate(cb func() bool) {
+	s.state.mutate(func() bool {
 		s.stepPbMu.Lock()
 		defer s.stepPbMu.Unlock()
 		if protoutil.IsEnded(s.stepPb.Status) {
 			panic(errors.Reason("cannot mutate ended step %q", s.stepPb.Name).Err())
 		}
-		cb()
+		return cb()
 	})
 }
