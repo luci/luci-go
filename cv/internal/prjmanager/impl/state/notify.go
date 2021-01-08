@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package state
 
 import (
 	"context"
@@ -38,11 +38,11 @@ const concurrency = 16
 
 // updateRunsConfigFactory returns a function to ask run manager to update
 // config for each of IncompleteRuns.
-func (s *state) updateRunsConfigFactory(meta config.Meta) eventbox.SideEffectFn {
+func (s *State) updateRunsConfigFactory(meta config.Meta) eventbox.SideEffectFn {
 	hash := meta.Hash()
 	return func(ctx context.Context) error {
 		err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-			for _, id := range s.incompleteRuns {
+			for _, id := range s.IncompleteRuns {
 				id := id
 				work <- func() error {
 					return run.UpdateConfig(ctx, id, hash, meta.EVersion)
@@ -56,9 +56,9 @@ func (s *state) updateRunsConfigFactory(meta config.Meta) eventbox.SideEffectFn 
 // cancelRuns asks run manager to cancel each of IncompleteRuns.
 //
 // Expects to be called in a transaction as a eventbox.SideEffectFn.
-func (s *state) cancelRuns(ctx context.Context) error {
+func (s *State) cancelRuns(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-		for _, id := range s.incompleteRuns {
+		for _, id := range s.IncompleteRuns {
 			id := id
 			work <- func() error {
 				// TODO(tandrii): pass "Project disabled" as a reason.
@@ -72,9 +72,9 @@ func (s *state) cancelRuns(ctx context.Context) error {
 // pokeRuns pokes run manager of each of IncompleteRuns.
 //
 // Doesn't have to be called in a transaction.
-func (s *state) pokeRuns(ctx context.Context) error {
+func (s *State) pokeRuns(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-		for _, id := range s.incompleteRuns {
+		for _, id := range s.IncompleteRuns {
 			id := id
 			work <- func() error {
 				return run.Poke(ctx, id)
