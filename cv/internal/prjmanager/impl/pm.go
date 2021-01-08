@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
@@ -69,16 +70,16 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	merr, multiple := err.(errors.MultiError)
 	switch {
 	case multiple && merr[0] == datastore.ErrNoSuchEntity:
-		return &state{luciProject: pm.luciProject}, 0, nil
+		return state.NewInitial(pm.luciProject), 0, nil
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	default:
-		s := &state{
-			luciProject: pm.luciProject,
+		s := &state.State{
+			LUCIProject: pm.luciProject,
 
-			status:         pm.stateOffload.Status,
-			configHash:     pm.stateOffload.ConfigHash,
-			incompleteRuns: p.IncompleteRuns,
+			Status:         pm.stateOffload.Status,
+			ConfigHash:     pm.stateOffload.ConfigHash,
+			IncompleteRuns: p.IncompleteRuns,
 		}
 		return s, eventbox.EVersion(p.EVersion), nil
 	}
@@ -93,7 +94,7 @@ func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s 
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	return pm.mutate(ctx, tr, s.(*state))
+	return pm.mutate(ctx, tr, s.(*state.State))
 }
 
 // FetchEVersion is called at the beginning of a transaction.
@@ -118,19 +119,19 @@ func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion,
 // The passed EVersion is the incremented value of EVersion of what GetState
 // returned before.
 func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
-	s := st.(*state)
+	s := st.(*state.State)
 	entities := make([]interface{}, 1, 2)
 	entities[0] = &prjmanager.Project{
 		ID:             pm.luciProject,
 		EVersion:       int(ev),
 		UpdateTime:     clock.Now(ctx).UTC(),
-		IncompleteRuns: s.incompleteRuns,
+		IncompleteRuns: s.IncompleteRuns,
 	}
-	if s.configHash != pm.stateOffload.ConfigHash || s.status != pm.stateOffload.Status {
+	if s.ConfigHash != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-			Status:     s.status,
-			ConfigHash: s.configHash,
+			Status:     s.Status,
+			ConfigHash: s.ConfigHash,
 		})
 	}
 	if err := datastore.Put(ctx, entities...); err != nil {
@@ -188,7 +189,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 }
 
-func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state) (ret []eventbox.Transition, err error) {
+func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) (ret []eventbox.Transition, err error) {
 	// Visit all non-empty fields of triageResult and emit Transitions.
 	// The order of visit matters.
 
@@ -197,7 +198,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.runsCreated.runs) > 0 {
 		sort.Sort(tr.runsCreated.runs)
 		t := eventbox.Transition{Events: tr.runsCreated.events}
-		s, t.SideEffectFn, err = s.onRunsCreated(ctx, tr.runsCreated.runs)
+		s, t.SideEffectFn, err = s.OnRunsCreated(ctx, tr.runsCreated.runs)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +208,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	if len(tr.runsFinished.runs) > 0 {
 		sort.Sort(tr.runsFinished.runs)
 		t := eventbox.Transition{Events: tr.runsFinished.events}
-		s, t.SideEffectFn, err = s.onRunsFinished(ctx, tr.runsFinished.runs)
+		s, t.SideEffectFn, err = s.OnRunsFinished(ctx, tr.runsFinished.runs)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +221,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	// to ensure no Run will be missed.
 	if len(tr.newConfig) > 0 {
 		t := eventbox.Transition{Events: tr.newConfig}
-		s, t.SideEffectFn, err = s.updateConfig(ctx)
+		s, t.SideEffectFn, err = s.UpdateConfig(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +231,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 
 	if len(tr.poke) > 0 {
 		t := eventbox.Transition{Events: tr.poke}
-		s, t.SideEffectFn, err = s.poke(ctx)
+		s, t.SideEffectFn, err = s.Poke(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +241,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 
 	if len(tr.clsUpdated.cls) > 0 {
 		t := eventbox.Transition{Events: tr.clsUpdated.events}
-		s, t.SideEffectFn, err = s.onCLsUpdated(ctx, tr.clsUpdated.cls)
+		s, t.SideEffectFn, err = s.OnCLsUpdated(ctx, tr.clsUpdated.cls)
 		if err != nil {
 			return nil, err
 		}
