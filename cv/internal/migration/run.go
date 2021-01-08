@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -25,7 +26,10 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
+	runImpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, error) {
@@ -109,4 +113,52 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 		return nil, err
 	}
 	return ret, nil
+}
+
+var terminalStatusMapping = map[cvbqpb.AttemptStatus]run.Status{
+	cvbqpb.AttemptStatus_SUCCESS:       run.Status_SUCCEEDED,
+	cvbqpb.AttemptStatus_FAILURE:       run.Status_FAILED,
+	cvbqpb.AttemptStatus_INFRA_FAILURE: run.Status_FAILED,
+	cvbqpb.AttemptStatus_ABORTED:       run.Status_CANCELLED,
+}
+
+// finalizeRun updates the Run in CV with the reported finished Run from
+// CQDaemon and then notifies Project Manager.
+func finalizeRun(ctx context.Context, mr *migrationpb.Run) error {
+	attempt := mr.GetAttempt()
+	terminalStatus, ok := terminalStatusMapping[attempt.GetStatus()]
+	if !ok {
+		return errors.Reason("expected terminal status for attempt %q; got %s", attempt.GetKey(), attempt.GetStatus()).Err()
+	}
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		r := &run.Run{ID: common.RunID(mr.Id)}
+		switch err := datastore.Get(ctx, r); {
+		case err == datastore.ErrNoSuchEntity:
+			return errors.Reason("run doesn't exist in CV").Err()
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		}
+		if run.IsEnded(r.Status) {
+			logging.Warningf(ctx, "Run %q has already ended", r.ID)
+			return nil
+		}
+		r.Mutate(ctx, func(r *run.Run) (updated bool) {
+			r.Status = terminalStatus
+			r.EndTime = attempt.GetEndTime().AsTime()
+			return true
+		})
+		// TODO(yiwzhang): Store rest of the data (e.g. tryjobs) reported by
+		// CQDaemon. This will help CV accumulate more historical data.
+		if err := datastore.Put(ctx, r); err != nil {
+			return errors.Annotate(err, "failed to put Run").Tag(transient.Tag).Err()
+		}
+		if err := runImpl.RemoveRunFromCLs(ctx, r); err != nil {
+			return err
+		}
+		return prjmanager.NotifyRunFinished(ctx, r.ID)
+	}, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
