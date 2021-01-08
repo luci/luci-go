@@ -59,24 +59,29 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		casConcurrency = runtime.NumCPU()
 	}
 
+	clOpts := []client.Opt{
+		&client.PerRPCCreds{Creds: creds},
+		client.CASConcurrency(casConcurrency),
+		client.UtilizeLocality(true),
+		&client.TreeSymlinkOpts{Preserved: true, FollowsTarget: false},
+		client.DirMode(0700),
+		client.ExecutableMode(0700),
+		client.RegularMode(0600),
+	}
 	cl, err := client.NewClient(ctx, instance,
 		client.DialParams{
 			Service:            "remotebuildexecution.googleapis.com:443",
 			TransportCredsOnly: true,
-		}, &client.PerRPCCreds{Creds: creds},
-		client.CASConcurrency(casConcurrency))
+		}, clOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
 
 	// Set restricted permission for written files.
+	// TODO(jwata): define DirMode and ExecutableMode, and RegularMode in remote-apis-sdks client package.
 	cl.DirMode = 0700
 	cl.ExecutableMode = 0700
 	cl.RegularMode = 0600
-	cl.UtilizeLocality = true
-	cl.TreeSymlinkOpts = client.DefaultTreeSymlinkOpts()
-	cl.TreeSymlinkOpts.Preserved = true
-	cl.TreeSymlinkOpts.FollowsTarget = false
 
 	return cl, nil
 }
