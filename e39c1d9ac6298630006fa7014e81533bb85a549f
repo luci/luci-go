@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b873d1a8_7631d6e3",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-08T21:49:07Z",
+      "side": 1,
+      "message": "Yeah I didn\u0027t b/c of copyExclusionMu, but I think you\u0027re right that it\u0027s less confusing to make it symmetric. Done.",
+      "parentUuid": "fbce6ca5_1e84ef2f",
+      "range": {
+        "startLine": 87,
+        "startChar": 28,
+        "endLine": 87,
+        "endChar": 42
+      },
+      "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3c8db102_de049078",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-01-08T18:58:48Z",
       "side": 1,
       "message": "nit: period at the end",
+      "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8654f2f3_521b986a",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-08T21:49:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c8db102_de049078",
       "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
