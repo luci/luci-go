@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -214,6 +215,80 @@ func TestFetchActiveRuns(t *testing.T) {
 			runs, err := fetchActiveRuns(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 0)
+		})
+	})
+}
+
+func TestFinalizeRun(t *testing.T) {
+	Convey("FetchActiveRuns", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		Convey("Error if migration run reports non-ended status", func() {
+			err := finalizeRun(ctx, &migrationpb.Run{
+				Attempt: &cvbqpb.Attempt{
+					Status: cvbqpb.AttemptStatus_STARTED,
+				},
+			})
+			So(err, ShouldErrLike, "expected terminal status for attempt")
+		})
+		Convey("Noop if Run has already ended", func() {
+			t := clock.Now(ctx).UTC()
+			err := datastore.Put(ctx, &run.Run{
+				ID:         common.RunID("chromium/111-2-deadbeef"),
+				Status:     run.Status_FAILED,
+				EVersion:   3,
+				UpdateTime: t,
+			})
+			So(err, ShouldBeNil)
+
+			ct.Clock.Add(1 * time.Hour)
+			err = finalizeRun(ctx, &migrationpb.Run{
+				Attempt: &cvbqpb.Attempt{
+					Status: cvbqpb.AttemptStatus_SUCCESS,
+				},
+				Id: "chromium/111-2-deadbeef",
+			})
+			So(err, ShouldBeNil)
+
+			r := run.Run{ID: common.RunID("chromium/111-2-deadbeef")}
+			So(datastore.Get(ctx, &r), ShouldBeNil)
+			So(r, ShouldResemble, run.Run{
+				ID:         common.RunID("chromium/111-2-deadbeef"),
+				Status:     run.Status_FAILED,
+				EVersion:   3,
+				UpdateTime: t,
+			})
+		})
+		Convey("Set Run Status to terminal", func() {
+			err := datastore.Put(ctx, &run.Run{
+				ID:         common.RunID("chromium/111-2-deadbeef"),
+				Status:     run.Status_RUNNING,
+				EVersion:   3,
+				UpdateTime: clock.Now(ctx).UTC(),
+			})
+			So(err, ShouldBeNil)
+
+			ct.Clock.Add(1 * time.Hour)
+			now := clock.Now(ctx).UTC()
+			err = finalizeRun(ctx, &migrationpb.Run{
+				Attempt: &cvbqpb.Attempt{
+					Status: cvbqpb.AttemptStatus_SUCCESS,
+				},
+				Id: "chromium/111-2-deadbeef",
+			})
+			So(err, ShouldBeNil)
+
+			r := run.Run{ID: common.RunID("chromium/111-2-deadbeef")}
+			So(datastore.Get(ctx, &r), ShouldBeNil)
+			So(r, ShouldResemble, run.Run{
+				ID:         common.RunID("chromium/111-2-deadbeef"),
+				Status:     run.Status_SUCCEEDED,
+				EVersion:   4,
+				UpdateTime: now,
+			})
+			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
 		})
 	})
 }
