@@ -63,7 +63,7 @@ func (id RunID) LUCIProject() string {
 	panic(fmt.Errorf("invalid run ID %q", id))
 }
 
-// RunIDs is a convenience type to faciliate handling of run RunIDs.
+// RunIDs is a convenience type to facilitate handling of run RunIDs.
 type RunIDs []RunID
 
 // sort.Interface copy-pasta.
@@ -127,6 +127,22 @@ func (p *RunIDs) InsertSorted(id RunID) {
 		}
 		*p = append(ids, toInsert)
 	}
+}
+
+// DelSorted removes the given ID if it exists.
+//
+// DelSorted is a pointer receiver method, because it modifies slice itself.
+func (p *RunIDs) DelSorted(id RunID) bool {
+	ids := *p
+	i := sort.Search(len(ids), func(i int) bool { return ids[i] >= id })
+	if i == len(ids) || ids[i] != id {
+		return false
+	}
+
+	copy(ids[i:], ids[i+1:])
+	ids[len(ids)-1] = ""
+	*p = ids[:len(ids)-1]
+	return true
 }
 
 // ContainsSorted returns true if ids contain the given one.

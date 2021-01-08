@@ -91,6 +91,21 @@ func TestIDs(t *testing.T) {
 		So(ids, ShouldResemble, MakeRunIDs("2", "3", "5"))
 		So(ids.ContainsSorted(RunID("3")), ShouldBeTrue)
 	})
+
+	Convey("IDs DelSorted works", t, func() {
+		ids := MakeRunIDs()
+		So(ids.DelSorted(RunID("1")), ShouldBeFalse)
+
+		ids = MakeRunIDs("2", "3", "5")
+		So(ids.DelSorted(RunID("1")), ShouldBeFalse)
+		So(ids.DelSorted(RunID("10")), ShouldBeFalse)
+		So(ids.DelSorted(RunID("3")), ShouldBeTrue)
+		So(ids, ShouldResemble, MakeRunIDs("2", "5"))
+		So(ids.DelSorted(RunID("5")), ShouldBeTrue)
+		So(ids, ShouldResemble, MakeRunIDs("2"))
+		So(ids.DelSorted(RunID("2")), ShouldBeTrue)
+		So(ids, ShouldResemble, MakeRunIDs())
+	})
 }
 
 func assertSameSlice(a, b RunIDs) {
