@@ -15,10 +15,14 @@
 package build
 
 import (
+	"sync/atomic"
+
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
@@ -54,14 +58,60 @@ func OptLogsink(c *streamclient.Client) StartOption {
 // changes.
 //
 // This callback will be called at most as frequently as `rate` allows, up to
-// once per Build change, and is called with a copy of Build. Only one
-// outstanding invocation of this callback can occur at once.
+// once per Build change, and is called with the version number and a copy of
+// Build. Only one outstanding invocation of this callback can occur at once.
 //
 // If new updates come in while this callback is blocking, they will apply
 // silently in the background, and as soon as the callback returns (and rate
 // allows), it will be invoked again with the current Build state.
-func OptSend(rate.Limit, func(*bbpb.Build)) StartOption {
-	panic("not implemented")
+//
+// Every modification of the Build state increments the version number by one,
+// even if it doesn't result in an invocation of the callback. If your program
+// modifies the build state from multiple threads, then the version assignment
+// is arbitrary, but if you make 10 parallel changes, you'll see the version
+// number jump by 10 (and you may, or may not, observe versions in between).
+func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
+	return func(s *State) {
+		var err error
+		s.sendCh, err = dispatcher.NewChannel(s.ctx, &dispatcher.Options{
+			QPSLimit: rate.NewLimiter(lim, 1),
+			Buffer: buffer.Options{
+				MaxLeases: 1,
+				BatchSize: 1,
+				FullBehavior: &buffer.DropOldestBatch{
+					MaxLiveItems: 1,
+				},
+			},
+		}, func(batch *buffer.Batch) error {
+			buildPb, vers := func() (*bbpb.Build, int64) {
+				s.copyExclusionMu.Lock()
+				defer s.copyExclusionMu.Unlock()
+
+				// technically we don't need atomic here because copyExclusionMu is held
+				// in WRITE mode, but it's clearer to mirror usage directly.
+				vers := atomic.LoadInt64(&s.buildPbVers)
+
+				if s.buildPbVersSent >= vers {
+					return nil, 0
+				}
+				s.buildPbVersSent = vers
+				return proto.Clone(s.buildPb).(*bbpb.Build), vers
+			}()
+			if buildPb == nil {
+				return nil
+			}
+
+			callback(vers, buildPb)
+			return nil
+		})
+
+		if err != nil {
+			// This can only happen if Options is malformed.
+			// Since it's statically computed above, that's not possible (or the tests
+			// are also panicing).
+			panic(err)
+		}
+	}
 }
 
 // OptSuppressExit will supress the call to os.Exit from Start in the event that

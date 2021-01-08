@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	ldTypes "go.chromium.org/luci/logdog/common/types"
 )
@@ -60,6 +62,13 @@ type State struct {
 	// allow `proto.Clone` to proceed safely.
 	copyExclusionMu sync.RWMutex
 	buildPb         *bbpb.Build
+	// buildPbVers updated/read with sync/atomic while holding copyExclusionMu in
+	// either WRITE/READ mode.
+	buildPbVers int64
+	// buildPbVersSent only updated when copyExclusionMu is held in WRITE mode.
+	buildPbVersSent int64
+
+	sendCh dispatcher.Channel
 
 	logsink    *streamclient.Client
 	logNames   nameTracker
@@ -147,14 +156,20 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 // flow mechanisms.
 func (s *State) End(err error) {
 	var message string
-	s.mutate(func() {
+	s.mutate(func() bool {
 		s.buildPb.Status, message = computePanicStatus(err)
 		s.buildPb.EndTime = timestamppb.New(clock.Now(s.ctx))
 
 		// TODO(iannucci): handle closing logs
+
+		return true
 	})
 	// buildPb is immutable after mutate ends, so we should be fine to access it
 	// outside the locks.
+
+	if s.sendCh.C != nil {
+		s.sendCh.CloseAndDrain(s.ctx)
+	}
 
 	logStatus(s.ctx, s.buildPb.Status, message, s.buildPb.SummaryMarkdown)
 
@@ -171,7 +186,7 @@ func (s *State) End(err error) {
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
 func (s *State) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""
-	s.mutate(func() {
+	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
 		relLdName = fmt.Sprintf("log/%d", len(s.buildPb.Output.Logs))
 		s.buildPb.Output.Logs = append(s.buildPb.Output.Logs, &bbpb.Log{
@@ -181,6 +196,7 @@ func (s *State) addLog(name string, openStream func(dedupedName string, relLdNam
 		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
 			s.logClosers[relLdName] = closer.Close
 		}
+		return true
 	})
 }
 
@@ -252,7 +268,8 @@ func getState(ctx context.Context) ctxState {
 	return ret
 }
 
-func (s *State) mutate(cb func()) {
+// cb returns true if some portion of buildPB was mutated.
+func (s *State) mutate(cb func() bool) {
 	if s != nil {
 		s.copyExclusionMu.RLock()
 		defer s.copyExclusionMu.RUnlock()
@@ -261,7 +278,10 @@ func (s *State) mutate(cb func()) {
 			panic(errors.New("cannot mutate ended build"))
 		}
 	}
-	cb()
+	changed := cb()
+	if changed && s != nil && s.sendCh.C != nil {
+		s.sendCh.C <- atomic.AddInt64(&s.buildPbVers, 1)
+	}
 }
 
 func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPrefix, logPrefix string) {
@@ -270,13 +290,15 @@ func (s *State) registerStep(step *bbpb.Step) (passthrough *bbpb.Step, relLogPre
 		return
 	}
 
-	s.mutate(func() {
+	s.mutate(func() bool {
 		s.stepsMu.Lock()
 		defer s.stepsMu.Unlock()
 
 		step.Name = s.stepNames.resolveName(step.Name)
 		s.buildPb.Steps = append(s.buildPb.Steps, step)
 		relLogPrefix = fmt.Sprintf("step/%d", len(s.buildPb.Steps)-1)
+
+		return true
 	})
 
 	logPrefix = relLogPrefix
