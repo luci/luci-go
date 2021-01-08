@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54b2afdf_8900aec9",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-01-08T05:37:34Z",
+      "side": 1,
+      "message": "Use NumCPU()?\n\nAlso better to use NumCPU() * 2 for non Windows like CasConcurrency?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cas/client.go;l\u003d56?q\u003df:.go$%20NumCPU\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 306,
+        "startChar": 29,
+        "endLine": 306,
+        "endChar": 30
+      },
+      "revId": "08c0359cd124bf89d69a067b9d6763469ac4e52b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
