@@ -16,6 +16,103 @@
       "message": "PTAL",
       "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aca438a5_0ad4925a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T03:09:45Z",
+      "side": 1,
+      "message": "good % error handling",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91df4947_5b1e0a55",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T03:09:45Z",
+      "side": 1,
+      "message": "Note to self: one more thing to do on CQ side: make ReportRun blocking completion.",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 3
+      },
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49ccc0a5_7ec2cadc",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T03:09:45Z",
+      "side": 1,
+      "message": "and .StartTime \u003d CreateTime, right?",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f44d5f4c_88b5407f",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T03:09:45Z",
+      "side": 1,
+      "message": "please add TODO to store almost everything that reported Run contains (e.g. tryjobs). This will help us accumulate more historic data during the split-brain mode, and I think should allow switching CQ status app faster.",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fcf3aff5_42149c3a",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T03:09:45Z",
+      "side": 1,
+      "message": "must bail if they error out",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 41
+      },
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
