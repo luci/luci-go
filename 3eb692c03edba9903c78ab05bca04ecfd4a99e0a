@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83be5d5d_d52e1acd",
+        "filename": "cv/internal/prjmanager/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-08T21:19:31Z",
+      "side": 1,
+      "message": "Is this accurate?",
+      "revId": "3eb692c03edba9903c78ab05bca04ecfd4a99e0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
