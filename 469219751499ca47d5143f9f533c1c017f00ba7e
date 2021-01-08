@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fdb13b9e_1ad7406e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-08T18:55:34Z",
+      "side": 1,
+      "message": "Should we check the condition where -include is given without -new here?",
+      "revId": "469219751499ca47d5143f9f533c1c017f00ba7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "28a93ac6_8ac7e657",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 2
