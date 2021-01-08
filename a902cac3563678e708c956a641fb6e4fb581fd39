@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c95cb8af_53656d3e",
+        "filename": "cv/internal/prjmanager/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-08T23:25:31Z",
+      "side": 1,
+      "message": "and CLs in flight",
+      "range": {
+        "startLine": 17,
+        "startChar": 57,
+        "endLine": 17,
+        "endChar": 77
+      },
+      "revId": "a902cac3563678e708c956a641fb6e4fb581fd39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
