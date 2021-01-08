@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -106,15 +107,22 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	}
 	// fileName must start with "//" and it has been validated.
 	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
+	tagKeySet := stringset.New(0)
 
-	// Start from the directory of the file, then try upper directories if not
-	// found.
+	// Start from the directory of the file, then traverse to upper directories.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {
-			// TODO(crbug.com/1103287): Also append tags from ancestors, if the tag
-			// key is new.
-			tr.Tags = append(tr.Tags, d.Tags...)
-			return
+			for _, t := range d.Tags {
+				if !tagKeySet.Has(t.Key) {
+					tr.Tags = append(tr.Tags, t)
+				}
+			}
+
+			// Add new keys to tagKeySet.
+			// We cannot do this above because tag keys for this dir could be repeated.
+			for _, t := range d.Tags {
+				tagKeySet.Add(t.Key)
+			}
 		}
 		if dir == "." {
 			// Have reached the root.
