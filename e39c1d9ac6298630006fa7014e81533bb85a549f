@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a7c3867_d1055f79",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T18:58:48Z",
+      "side": 1,
+      "message": "lgtm % nits",
+      "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fbce6ca5_1e84ef2f",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T18:58:48Z",
+      "side": 1,
+      "message": "s.buildVers is modified by atomic.AddInt64. Should we also load it with atomic.LoadInt64. I mean technically it is goroutine safe because it is read when copyExclusionMu is held in WRITE mode. But this is kind of implicit.",
+      "range": {
+        "startLine": 87,
+        "startChar": 28,
+        "endLine": 87,
+        "endChar": 42
+      },
+      "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c8db102_de049078",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T18:58:48Z",
+      "side": 1,
+      "message": "nit: period at the end",
+      "revId": "e39c1d9ac6298630006fa7014e81533bb85a549f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
