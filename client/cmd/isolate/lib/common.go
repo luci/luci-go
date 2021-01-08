@@ -311,6 +311,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		ioN = runtime.NumCPU()
 	}
 	ch := make(chan struct{}, ioN)
+	logger := logging.Get(ctx)
 
 	for i, o := range opts {
 		i, o := i, o
@@ -322,10 +323,13 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			if err != nil {
 				return errors.Annotate(err, "failed to call buildCASInputSpec").Err()
 			}
+
+			start := time.Now()
 			rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
 			if err != nil {
 				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 			}
+			logger.Infof("ComputeMerkleTree returns %d entries for %s, took %s", len(entrs), o.Isolate, time.Since(start))
 
 			rootDgs[i] = rootDg
 			mu.Lock()
@@ -340,7 +344,6 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		return nil, err
 	}
 
-	logger := logging.Get(ctx)
 	logger.Infof("finished %d ComputeMerkleTree calls, took %s", len(opts), time.Since(start))
 
 	start = time.Now()
