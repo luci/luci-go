@@ -64,9 +64,6 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		client.CASConcurrency(casConcurrency),
 		client.UtilizeLocality(true),
 		&client.TreeSymlinkOpts{Preserved: true, FollowsTarget: false},
-		client.DirMode(0700),
-		client.ExecutableMode(0700),
-		client.RegularMode(0600),
 	}
 	cl, err := client.NewClient(ctx, instance,
 		client.DialParams{
