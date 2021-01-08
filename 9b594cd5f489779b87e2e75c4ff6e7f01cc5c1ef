@@ -64,6 +64,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8c22cdc_b51e146b",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "deleted this func",
+      "parentUuid": "5d291dfd_a1762297",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 53
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce5c49ba_70ce358d",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a1761ec_4963252e",
+      "range": {
+        "startLine": 32,
+        "startChar": 28,
+        "endLine": 32,
+        "endChar": 51
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b349ce75_246e8c2c",
@@ -77,6 +125,30 @@
       "writtenOn": "2020-11-06T05:31:43Z",
       "side": 1,
       "message": "simpler: strings.TrimPrefix(s, \"_\")",
+      "range": {
+        "startLine": 35,
+        "startChar": 26,
+        "endLine": 35,
+        "endChar": 57
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80eaabe0_f7d60608",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b349ce75_246e8c2c",
       "range": {
         "startLine": 35,
         "startChar": 26,
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd9f22c1_e50e2d6a",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22a174dd_ce8c6343",
+      "range": {
+        "startLine": 42,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5be22dc4_7ef70763",
@@ -123,6 +219,30 @@
       "writtenOn": "2020-11-06T05:31:43Z",
       "side": 1,
       "message": "simpler: pyBatchReq :\u003d \u0026pb.BatchRequest{}\n\n[]*pb.BatchRequest_Request{} creates an empty slice which will be immediately discarded on the first append()",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ce8ddf8_b0c40ce0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5be22dc4_7ef70763",
       "range": {
         "startLine": 48,
         "startChar": 0,
@@ -156,6 +276,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "af80c943_efa151cc",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Yeah, type-switch is much better.",
+      "parentUuid": "85073415_c0e2a10e",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 20
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7291144f_3ad95e32",
@@ -169,6 +313,24 @@
       "writtenOn": "2020-11-06T05:31:43Z",
       "side": 1,
       "message": "what if it something else?",
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e93193c4_f17db736",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Added the default section to handle any unexpected type.",
+      "parentUuid": "7291144f_3ad95e32",
       "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -196,6 +358,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d7f7492_e4504f5d",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12d8cd96_7948bdd6",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 7
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ad735371_bafeb7cb",
@@ -213,6 +399,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db0dc794_8133a04f",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "no, it\u0027s not needed.",
+      "parentUuid": "ad735371_bafeb7cb",
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d8e26afe_4f094249",
@@ -226,6 +430,30 @@
       "writtenOn": "2020-11-06T05:31:43Z",
       "side": 1,
       "message": "reflection should generally be avoided, and this doesn\u0027t look robust / not Go idimatic.\ni recommend type-switch like above",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2f15599_8ca5d4db",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8e26afe_4f094249",
       "range": {
         "startLine": 77,
         "startChar": 0,
@@ -259,6 +487,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a7be665_39eb13b0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Yeah, should return as a BatchResponse_Response_Error type with internal error code.",
+      "parentUuid": "6c9dd700_55f045d1",
+      "range": {
+        "startLine": 89,
+        "startChar": 23,
+        "endLine": 89,
+        "endChar": 33
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7203e9f3_3509de12",
@@ -282,6 +534,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "88307670_03adfe7a",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7203e9f3_3509de12",
+      "range": {
+        "startLine": 92,
+        "startChar": 71,
+        "endLine": 92,
+        "endChar": 72
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32f533ed_aa606ba0",
@@ -295,6 +571,30 @@
       "writtenOn": "2020-11-06T05:31:43Z",
       "side": 1,
       "message": "with type witch, you don\u0027t have to do type cast\n  switch res :\u003d response.Response.(type) { \n  case *pb.BatchResponse_Response_GetBuild:\n    // here res.Build is of type *pb.Build",
+      "range": {
+        "startLine": 101,
+        "startChar": 62,
+        "endLine": 101,
+        "endChar": 83
+      },
+      "revId": "9b594cd5f489779b87e2e75c4ff6e7f01cc5c1ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "509ef200_e828d6b5",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Merged the handling response part into the first type-switch code block.",
+      "parentUuid": "32f533ed_aa606ba0",
       "range": {
         "startLine": 101,
         "startChar": 62,

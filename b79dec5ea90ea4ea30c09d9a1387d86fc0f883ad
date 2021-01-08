@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86a46d52_fc513814",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-08T04:57:31Z",
+      "side": 1,
+      "message": "Hi Nodir, sorry for the late reply and thanks so much for your previous comments. I suspended this CL  due to another higher priority task in Nov. Recently, I\u0027ve resumed to work on Batch rewriting.",
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
