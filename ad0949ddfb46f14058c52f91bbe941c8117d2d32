@@ -77,6 +77,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8967a5bf_818f829e",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T05:34:18Z",
+      "side": 1,
+      "message": "RunManager is already setting StartTime when processing Start event so Run is guaranteed to have StartTime . And my thought was migration api only needs to fill in the data which CV is not able to produce. That\u0027s why I am intentionally not overriding the StartTime with the time reported by CQDaemon. WDYT?",
+      "parentUuid": "49ccc0a5_7ec2cadc",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f44d5f4c_88b5407f",
         "filename": "cv/internal/migration/run.go",
         "patchSetId": 3
@@ -88,6 +106,24 @@
       "writtenOn": "2021-01-08T03:09:45Z",
       "side": 1,
       "message": "please add TODO to store almost everything that reported Run contains (e.g. tryjobs). This will help us accumulate more historic data during the split-brain mode, and I think should allow switching CQ status app faster.",
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd7896bf_d8d2f591",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T05:34:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f44d5f4c_88b5407f",
       "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -105,6 +141,30 @@
       "writtenOn": "2021-01-08T03:09:45Z",
       "side": 1,
       "message": "must bail if they error out",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 41
+      },
+      "revId": "ad0949ddfb46f14058c52f91bbe941c8117d2d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7ba3bc5_3b480c4d",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-08T05:34:18Z",
+      "side": 1,
+      "message": "oops.. missed both of them (shame on me :()",
+      "parentUuid": "fcf3aff5_42149c3a",
       "range": {
         "startLine": 153,
         "startChar": 2,
