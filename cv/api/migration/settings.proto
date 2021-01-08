@@ -26,9 +26,10 @@ message Settings {
   message ApiHost {
     // e.g. luci-change-verifier-dev.appspot.com.
     string host = 1;
-    // If a LUCI Project matches any of the regexps,
+    // If a LUCI Project matches any of regexps and none of _exclude ones,
     // CQDaemon will connect to the above Migration API host.
     repeated string project_regexp = 2;
+    repeated string project_regexp_exclude = 4;
 
     // If true and several hosts are configured, all other hosts' responses are
     // ignored.
@@ -43,6 +44,7 @@ message Settings {
   // Runs to work on.
   message UseCVRuns {
     repeated string project_regexp = 1;
+    repeated string project_regexp_exclude = 2;
   }
   UseCVRuns use_cv_runs = 3;
 
