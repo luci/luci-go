@@ -26,10 +26,14 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"gopkg.in/russross/blackfriday.v2"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/data/text/sanitizehtml"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -47,7 +51,33 @@ var Funcs = map[string]interface{}{
 		t, _ := ptypes.Timestamp(ts)
 		return t
 	},
+
 	"formatBuilderID": protoutil.FormatBuilderID,
+
+	// markdown renders the given text as markdown HTML.
+	// This uses blackfriday to convert from markdown to HTML,
+	// and sanitizehtml to allow only a small subset of HTML through.
+	"formatMarkdown": func(inputMD string) html.HTML {
+		// We don't want auto punctuation, which changes "foo" into “foo”
+		r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
+			Flags: blackfriday.UseXHTML,
+		})
+		buf := bytes.NewBuffer(blackfriday.Run(
+			[]byte(inputMD),
+			blackfriday.WithRenderer(r),
+			blackfriday.WithExtensions(
+				blackfriday.NoIntraEmphasis|
+					blackfriday.FencedCode|
+					blackfriday.Autolink,
+				// TODO(tandrii): support Tables.
+			)))
+		out := bytes.NewBuffer(nil)
+		if err := sanitizehtml.Sanitize(out, buf); err != nil {
+			return html.HTML(fmt.Sprintf("Failed to render markdown: %s", html.HTMLEscapeString(err.Error())))
+		}
+		return html.HTML(out.String())
+	},
+
 	"stepNames": func(steps []*buildbucketpb.Step) string {
 		var sb strings.Builder
 		for i, step := range steps {
@@ -59,6 +89,7 @@ var Funcs = map[string]interface{}{
 
 		return sb.String()
 	},
+
 	"buildUrl": func(input *config.TemplateInput) string {
 		return fmt.Sprintf("https://%s/build/%d",
 			input.BuildbucketHostname, input.Build.Id)
