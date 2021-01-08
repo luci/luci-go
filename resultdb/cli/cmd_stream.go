@@ -74,6 +74,10 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, create and use a new invocation for the test command.
 				If false, use the current invocation, set in LUCI_CONTEXT.
 			`))
+			r.Flags.BoolVar(&r.isIncluded, "include", false, text.Doc(`
+				If true with -new, the new invocation will be included in the current
+				invocation, set in LUCI_CONTEXT.
+			`))
 			r.Flags.StringVar(&r.realm, "realm", "", text.Doc(`
 				Realm to create the new invocation in. Required if -new is set,
 				ignored otherwise.
@@ -122,6 +126,7 @@ type streamRun struct {
 
 	// flags
 	isNew                  bool
+	isIncluded             bool
 	realm                  string
 	testIDPrefix           string
 	testTestLocationBase   string
@@ -176,11 +181,20 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
 	if r.isNew {
+		if r.isIncluded && r.resultdbCtx == nil {
+			return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT, but -new and -include were given").Err())
+		}
+
 		ninv, err := r.createInvocation(ctx, r.realm)
 		if err != nil {
 			return r.done(err)
 		}
 		r.invocation = ninv
+		if r.isIncluded {
+			if err := r.includeInvocation(ctx, r.resultdbCtx.CurrentInvocation, &ninv); err != nil {
+				return r.done(err)
+			}
+		}
 
 		// Update lucictx with the new invocation.
 		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
@@ -189,7 +203,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		})
 	} else {
 		if r.resultdbCtx == nil {
-			return r.done(errors.Reason("the environment does not have an existing invocation; use -new to create a new one").Err())
+			return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT; use -new to create a new one").Err())
 		}
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -311,6 +325,18 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
 	fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - https://ci.chromium.org/ui/inv/%s\n", invID)
 	return
+}
+
+func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucictx.ResultDBInvocation) error {
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, parent.UpdateToken)
+	_, err := r.recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
+		IncludingInvocation: parent.Name,
+		AddInvocations:      []string{child.Name},
+	})
+	if err == nil {
+		fmt.Fprintf(os.Stderr, "rdb-stream: included %q in %q\n", child.Name, parent.Name)
+	}
+	return err
 }
 
 // finalizeInvocation finalizes the invocation.
