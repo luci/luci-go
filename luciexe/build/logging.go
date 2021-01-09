@@ -60,16 +60,6 @@ type Loggable interface {
 	LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter
 }
 
-// LogFromFile is a convenience function which allows you to record a file from
-// the filesystem as a log on a Loggable object.
-//
-// Example:
-//
-//    LogFromFile(step, "thingy.log", "/path/to/thingy.log")
-func LogFromFile(l Loggable, name string, filepath string, opts ...streamclient.Option) error {
-	panic("implement me")
-}
-
 type loggingWriter struct {
 	mu   sync.Mutex
 	buf  *bytes.Buffer
