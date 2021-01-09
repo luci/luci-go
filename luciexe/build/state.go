@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	ldTypes "go.chromium.org/luci/logdog/common/types"
@@ -160,7 +161,12 @@ func (s *State) End(err error) {
 		s.buildPb.Status, message = computePanicStatus(err)
 		s.buildPb.EndTime = timestamppb.New(clock.Now(s.ctx))
 
-		// TODO(iannucci): handle closing logs
+		for logName, closer := range s.logClosers {
+			if err := closer(); err != nil {
+				logging.Warningf(s.ctx, "error closing log %q: %s", logName, err)
+			}
+		}
+		s.logClosers = nil
 
 		return true
 	})
