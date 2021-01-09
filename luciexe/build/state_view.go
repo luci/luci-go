@@ -16,12 +16,17 @@ package build
 
 import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // View is a window into the build State.
 //
 // You can obtain/manipulate this with the State.Modify method.
-type View struct{}
+type View struct {
+	SummaryMarkdown string
+	Critical        bbpb.Trinary
+	GitilesCommit   *bbpb.GitilesCommit
+}
 
 // Modify allows you to atomically manipulate the View on the build State.
 //
@@ -31,24 +36,55 @@ type View struct{}
 //
 // The Set* methods should be preferred unless you need to read/modify/write
 // View items.
-func (*State) Modify(func(*View)) {
-	panic("implement")
+func (s *State) Modify(cb func(*View)) {
+	s.mutate(func() bool {
+		v := View{
+			s.buildPb.SummaryMarkdown,
+			s.buildPb.Critical,
+			nil,
+		}
+		if s.buildPb.Output.GitilesCommit != nil {
+			v.GitilesCommit = proto.Clone(s.buildPb.Output.GitilesCommit).(*bbpb.GitilesCommit)
+		}
+
+		cb(&v)
+		modified := false
+		if v.SummaryMarkdown != s.buildPb.SummaryMarkdown {
+			modified = true
+			s.buildPb.SummaryMarkdown = v.SummaryMarkdown
+		}
+		if v.Critical != s.buildPb.Critical {
+			modified = true
+			s.buildPb.Critical = v.Critical
+		}
+		if !proto.Equal(v.GitilesCommit, s.buildPb.Output.GitilesCommit) {
+			modified = true
+			s.buildPb.Output.GitilesCommit = proto.Clone(v.GitilesCommit).(*bbpb.GitilesCommit)
+		}
+		return modified
+	})
 }
 
 // SetSummaryMarkdown atomically sets the build's SummaryMarkdown field.
-func (*State) SetSummaryMarkdown(string) {
-	panic("implement")
+func (s *State) SetSummaryMarkdown(summaryMarkdown string) {
+	s.Modify(func(v *View) {
+		v.SummaryMarkdown = summaryMarkdown
+	})
 }
 
 // SetCritical atomically sets the build's Critical field.
-func (*State) SetCritical(bbpb.Trinary) {
-	panic("implement")
+func (s *State) SetCritical(critical bbpb.Trinary) {
+	s.Modify(func(v *View) {
+		v.Critical = critical
+	})
 }
 
 // SetGitilesCommit atomically sets the GitilesCommit.
 //
 // This will make a copy of the GitilesCommit object to store in the build
 // State.
-func (*State) SetGitilesCommit(*bbpb.GitilesCommit) {
-	panic("implement")
+func (s *State) SetGitilesCommit(gc *bbpb.GitilesCommit) {
+	s.Modify(func(v *View) {
+		v.GitilesCommit = gc
+	})
 }
