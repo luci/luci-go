@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "003f3555_ec0a282f",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1625be3c_e1003350",
+      "range": {
+        "startLine": 43,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 32
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a3931c2_c8f1ef51",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-08T17:06:28Z",
       "side": 1,
       "message": "err is the standard variable name for an error, probably the most ubiquitous standard in Go.\nwhy break the standard?",
+      "range": {
+        "startLine": 65,
+        "startChar": 10,
+        "endLine": 65,
+        "endChar": 11
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "120eceee_32dbb4be",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "It was a legacy when I tried to refactor the code in last version. But in the newest version, I keep the \"e\" as the \"err\" is taken in deduplicating the error check condition.",
+      "parentUuid": "4a3931c2_c8f1ef51",
       "range": {
         "startLine": 65,
         "startChar": 10,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "31f89a44_5afa32c5",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "created a response variable.",
+      "parentUuid": "e3370394_207fa432",
+      "range": {
+        "startLine": 67,
+        "startChar": 6,
+        "endLine": 67,
+        "endChar": 34
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e6b026a_7fe016ad",
@@ -100,6 +172,30 @@
       "writtenOn": "2021-01-08T17:06:28Z",
       "side": 1,
       "message": "optional: this code is repeated twice. why not move the error variable before the switch, and move this condition after the switch?",
+      "range": {
+        "startLine": 73,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 69
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68335dd3_51c12fff",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "extracted outside.",
+      "parentUuid": "2e6b026a_7fe016ad",
       "range": {
         "startLine": 73,
         "startChar": 5,
@@ -127,6 +223,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2486dfe4_fa1dbe0d",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7063856e_432ffbb5",
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "99455b0f_76fb0984",
@@ -140,6 +254,30 @@
       "writtenOn": "2021-01-08T17:06:28Z",
       "side": 1,
       "message": "err is already an error. why is this needed?",
+      "range": {
+        "startLine": 91,
+        "startChar": 28,
+        "endLine": 91,
+        "endChar": 36
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a652b88b_12376707",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99455b0f_76fb0984",
       "range": {
         "startLine": 91,
         "startChar": 28,
@@ -167,6 +305,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "17d563f3_c60262a9",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "714bc2e3_0e846a35",
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97f571f2_a784d045",
@@ -190,6 +346,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9917496b_a7ee9347",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "yeah, those can be merged into one transaction.",
+      "parentUuid": "97f571f2_a784d045",
+      "range": {
+        "startLine": 47,
+        "startChar": 15,
+        "endLine": 47,
+        "endChar": 18
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f6419d5_b7a67e47",
@@ -203,6 +383,30 @@
       "writtenOn": "2021-01-08T17:06:28Z",
       "side": 1,
       "message": "nit: unrealistic test case",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 52
+      },
+      "revId": "b79dec5ea90ea4ea30c09d9a1387d86fc0f883ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9f21ad8_0f506e9b",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f6419d5_b7a67e47",
       "range": {
         "startLine": 88,
         "startChar": 0,

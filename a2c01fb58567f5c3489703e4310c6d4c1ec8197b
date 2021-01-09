@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "710c5ba9_2df41421",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-09T00:52:26Z",
+      "side": 1,
+      "message": "Hi Nodir, PTAL, thx.",
+      "revId": "a2c01fb58567f5c3489703e4310c6d4c1ec8197b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
