@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7a6320e_60128399",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-09T08:41:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd049c52_2cb90a9d",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 25
+      },
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "527a76cd_9866dd82",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-11-24T17:17:57Z",
       "side": 1,
       "message": "maybe invocationProtoToRecord ?",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 32
+      },
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "faaeaf1b_2256d72d",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-09T08:41:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "527a76cd_9866dd82",
       "range": {
         "startLine": 89,
         "startChar": 5,
@@ -95,6 +143,24 @@
       "side": 1,
       "message": "+1",
       "parentUuid": "b7d425db_2af59c35",
+      "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b94b547_824006f2",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-09T08:41:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5857e58a_f2a02d08",
       "revId": "7db21fb75ea853dfb705f680e2bf9c57455176f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
