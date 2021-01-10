@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f33285c3_1fd5b54c",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-10T19:58:49Z",
+      "side": 1,
+      "message": "renamed back to `markdown`.",
+      "parentUuid": "33ad52ef_55506009",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 12
+      },
+      "revId": "e05becddf5460df276aef1899bf5908d598f9d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20fbc482_0377e52f",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-09T03:18:57Z",
       "side": 1,
       "message": "bytes.NewReader would be more lightweight.\n\nalso this seems to be related to sanitizehtml call than this line. Consider moving bytes.NewReader call there.",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 65,
+        "endChar": 24
+      },
+      "revId": "e05becddf5460df276aef1899bf5908d598f9d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e29bb1e8_ee1e9a0c",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-10T19:58:49Z",
+      "side": 1,
+      "message": "Done. Also, updated Milo in the same way.",
+      "parentUuid": "20fbc482_0377e52f",
       "range": {
         "startLine": 65,
         "startChar": 15,
