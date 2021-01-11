@@ -119,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f80c1e58_8a5b2f87",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-11T22:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ffbf6116_e6c00c8e",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 26
+      },
+      "revId": "cb18a49d04935e10c24459b3678bc1acd0db4139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d8d8b10_5327aad5",

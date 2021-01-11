@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06daa6e8_3d38c9e1",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-11T22:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12afb4df_8d26ba44",
+      "range": {
+        "startLine": 25,
+        "startChar": 57,
+        "endLine": 25,
+        "endChar": 65
+      },
+      "revId": "4df4c4b465129dac54eed3be7105244a1787b228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c358589_c4cbb87c",
@@ -37,6 +61,30 @@
       "writtenOn": "2020-11-25T17:16:11Z",
       "side": 1,
       "message": "i think this can be omitted: these are instructions for those who create artifacts. The reader of this file only consumes artifacts. I think this can be replaced with a reference to Artifact.artifact_id field comments.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 32
+      },
+      "revId": "4df4c4b465129dac54eed3be7105244a1787b228",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c269775_2656cc93",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-11T22:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c358589_c4cbb87c",
       "range": {
         "startLine": 42,
         "startChar": 0,
