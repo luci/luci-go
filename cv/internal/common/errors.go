@@ -59,10 +59,9 @@ func TQifyError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	logError(
+	LogError(
 		ctx,
 		err,
-		64*1024, // Cloud Logging hard limit is 256KB.
 
 		// These packages are not useful in CV tests:
 		"github.com/smartystreets/goconvey/convey",
@@ -76,6 +75,11 @@ func TQifyError(ctx context.Context, err error) error {
 		err = tq.Fatal.Apply(err)
 	}
 	return err
+}
+
+func LogError(ctx context.Context, err error, excludePackages ...string) {
+	const maxBytesPerEntry = 64 * 1024 // Cloud Logging hard limit is 256KB.
+	logError(ctx, err, maxBytesPerEntry, excludePackages...)
 }
 
 func logError(ctx context.Context, err error, maxBytesPerEntry int, excludePackages ...string) {

@@ -101,7 +101,7 @@ func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.E
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
 		err = errors.Reason("CRITICAL: requested run entity %q is missing in datastore.", rm.runID).Err()
-		errors.Log(ctx, err)
+		common.LogError(ctx, err)
 		panic(err)
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rm.runID).Tag(transient.Tag).Err()

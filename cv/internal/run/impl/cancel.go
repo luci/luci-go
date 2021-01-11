@@ -30,7 +30,7 @@ func cancel(ctx context.Context, runID common.RunID, s *state) (eventbox.SideEff
 	switch status := s.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
-		errors.Log(ctx, err)
+		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_FINALIZING:
 		logging.Debugf(ctx, "can't cancel run as it is currently finalizing")
