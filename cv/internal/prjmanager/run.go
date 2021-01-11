@@ -38,9 +38,9 @@ import (
 
 // RunBuilder creates a new Run.
 //
-// If Expected<...> parameters differ from what's read from Datastore
-// during transaction, the creation is aborted with error tagged with
-// StateChangedTag. See RunBuilder.Create doc.
+// If Expected<...> parameters differ from what's read from Datastore during
+// transaction, the creation is aborted with error tagged with StateChangedTag.
+// See RunBuilder.Create doc.
 type RunBuilder struct {
 	// All public fields are required.
 
@@ -51,10 +51,11 @@ type RunBuilder struct {
 	// TODO(tandrii): support triggering via API calls by validating Run creation
 	// request against the latest config *before* transaction.
 	ConfigGroupID config.ConfigGroupID
-	// InputCLs will reference the newly created Run via their IncompleteRuns field,
-	// and Run's RunCL entities will reference these InputCLs back. Required.
+	// InputCLs will reference the newly created Run via their IncompleteRuns
+	// field, and Run's RunCL entities will reference these InputCLs back.
+	// Required.
 	InputCLs []RunBuilderCL
-	// Mode is the run's mode. Required.
+	// Mode is the Run's mode. Required.
 	Mode run.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
@@ -91,11 +92,11 @@ type RunBuilderCL struct {
 	ID               common.CLID
 	ExpectedEVersion int
 	TriggerInfo      *run.Trigger
-	Snapshot         *changelist.Snapshot // only needed for compat with CQDaemon.
+	Snapshot         *changelist.Snapshot // Only needed for compat with CQDaemon.
 }
 
-// StateChangedTag is an error tag used to indicate that state read from Datastore
-// differs from the expected state.
+// StateChangedTag is an error tag used to indicate that state read from
+// Datastore differs from the expected state.
 var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped")}
 
 // Create atomically creates a new Run.
@@ -186,8 +187,8 @@ func (rb *RunBuilder) load(ctx context.Context) error {
 // since the intended Run is already created.
 var errAlreadyCreated = errors.New("already created")
 
-// checkRunExists checks if Run already exists in datastore,
-// and if it was created by us.
+// checkRunExists checks whether a Run already exists in datastore, and whether
+// it was created by us.
 func (rb *RunBuilder) checkRunExists(ctx context.Context) {
 	rb.run = &run.Run{ID: rb.runID}
 	rb.dsBatcher.register(rb.run, func(err error) error {
@@ -213,7 +214,7 @@ func (rb *RunBuilder) checkRunExists(ctx context.Context) {
 	})
 }
 
-// checkProjectState checks if projet is running and uses the expected
+// checkProjectState checks if the project is enabled and uses the expected
 // ConfigHash.
 func (rb *RunBuilder) checkProjectState(ctx context.Context) {
 	ps := &ProjectStateOffload{
@@ -235,8 +236,8 @@ func (rb *RunBuilder) checkProjectState(ctx context.Context) {
 	})
 }
 
-// checkCLsUnchanged sets `.cls` with latest Datastore value and verifies thier
-// EVersion match what's expected.
+// checkCLsUnchanged sets `.cls` with the latest Datastore value and verifies
+// that their EVersion matches what's expected.
 func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 	rb.cls = make([]*changelist.CL, len(rb.InputCLs))
 	for i, inputCL := range rb.InputCLs {
@@ -259,12 +260,12 @@ func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 	}
 }
 
-// save saves all modified/created Datastore entities.
+// save saves all modified and created Datastore entities.
 //
 // It may be retried multiple times on failure.
 func (rb *RunBuilder) save(ctx context.Context) error {
 	rb.dsBatcher.reset()
-	// Keep .CreateTime and | .UpdateTime entities the same across all saved
+	// Keep .CreateTime and .UpdateTime entities the same across all saved
 	// entities. Do pre-emptive rounding before Datastore layer does it such
 	// rb.run entityRun entity has exactly values as what would be read from
 	// Datastore later.
@@ -334,10 +335,9 @@ func (rb *RunBuilder) savePMNotification(ctx context.Context) error {
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
 func (rb *RunBuilder) computeCLsDigest() {
-	// 1st version uses truncated CQDaemon's `attempt_key_hash`
-	// aimed for ease of comparison / log grepping during migration.
-	// However, this assumes Gerrit CLs and requires having changelist.Snapshot
-	// pre-loaded.
+	// The first version uses truncated CQDaemon's `attempt_key_hash` aimed for
+	// ease of comparison and log grepping during migration. However, this
+	// assumes Gerrit CLs and requires having changelist.Snapshot pre-loaded.
 	// TODO(tandrii): after migration is over, change to hash CLIDs instead, since
 	// it's good enough for the purpose of avoiding spurious collision of RunIDs.
 	rb.runIDBuilder.version = 1
@@ -391,7 +391,7 @@ func (rb *RunBuilder) computeRunID(ctx context.Context) {
 	rb.runID = common.MakeRunID(rb.LUCIProject, clock.Now(ctx), b.version, b.digest)
 }
 
-// dsBatcher faciliates processing of many different kind of entities in a
+// dsBatcher facilitates processing of many different kind of entities in a
 // single Get/Put operation while handling errors in entity-specific code.
 type dsBatcher struct {
 	entities  []interface{}
@@ -416,7 +416,7 @@ func (d *dsBatcher) register(entity interface{}, callback func(error) error) {
 // get loads entities from datastore and performs error handling.
 //
 // Aborts and returns the first non-nil error returned by a callback.
-// Oherwise, returns nil.
+// Otherwise, returns nil.
 func (d *dsBatcher) get(ctx context.Context) error {
 	err := datastore.Get(ctx, d.entities)
 	if err == nil {
@@ -435,7 +435,7 @@ func (d *dsBatcher) get(ctx context.Context) error {
 // put saves entities to datastore and performs error handling.
 //
 // Aborts and returns the first non-nil error returned by a callback.
-// Oherwise, returns nil.
+// Otherwise, returns nil.
 func (d *dsBatcher) put(ctx context.Context) error {
 	err := datastore.Put(ctx, d.entities)
 	if err == nil {

@@ -431,7 +431,7 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 		when = testclock.TestRecentTimeUTC.Add(10 * time.Hour)
 		who = U("user-1")
 	case len(timeAndUser) != 2:
-		panic(fmt.Errorf("incorret usage, must have 2 params, not %d", len(timeAndUser)))
+		panic(fmt.Errorf("incorrect usage, must have 2 params, not %d", len(timeAndUser)))
 	default:
 		var ok bool
 		if when, ok = timeAndUser[0].(time.Time); !ok {

@@ -80,22 +80,22 @@ func (p *processor) Mutate(ctx context.Context, events Events, s State) (ts []Tr
 					logging.Debugf(ctx, "advertised to %d to migrate", p.index+1)
 					return Emit(ctx, []byte{'-'}, key(ctx, p.index+1))
 				},
-				Events:       nil,        // don't consume any events
-				TransitionTo: population, // same state
+				Events:       nil,        // Don't consume any events.
+				TransitionTo: population, // Same state.
 			})
 		case *population < 3:
 			population = add(+3)
 			logging.Debugf(ctx, "growing +3=> %d", *population)
 			ts = append(ts, Transition{
 				SideEffectFn: nil,
-				Events:       nil, // don't consume any events
+				Events:       nil, // Don't consume any events.
 				TransitionTo: population,
 			})
 		}
 		return
 	}
 
-	// triage events
+	// Triage events.
 	var minus, plus Events
 	for _, e := range events {
 		if e.Value[0] == '-' {
@@ -117,7 +117,7 @@ func (p *processor) Mutate(ctx context.Context, events Events, s State) (ts []Tr
 	}
 	if len(minus) > 0 {
 		t := Transition{
-			Events: minus, // always consume all advertisments to emmigrate.
+			Events: minus, // Always consume all advertisements to emmigrate.
 		}
 		if *population <= 1 {
 			logging.Debugf(ctx, "consuming %d ads", len(minus))

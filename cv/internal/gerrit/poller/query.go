@@ -161,8 +161,8 @@ func (q *singleQuery) fetch(ctx context.Context, after time.Time) ([]*gerritpb.C
 	req := gerritpb.ListChangesRequest{
 		Options: []gerritpb.QueryOption{
 			// TODO(https://crbug.com/gerrit/10749): remove CURRENT_REVISION.
-			// CV doesnt actually need the whole current revision info, but that's the
-			// only way to get actual "current_revision" hash.
+			// CV doesn't actually need the whole current revision info, but
+			// that's the only way to get actual "current_revision" hash.
 			gerritpb.QueryOption_CURRENT_REVISION,
 			gerritpb.QueryOption_SKIP_MERGEABLE,
 		},

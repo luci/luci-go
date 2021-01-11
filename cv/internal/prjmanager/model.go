@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// ProjectKind is Datastore entity kind for Project.
+// ProjectKind is the Datastore entity kind for Project.
 const ProjectKind = "Project"
 
 // Project is an entity per LUCI Project in Datastore.
@@ -45,15 +45,16 @@ type Project struct {
 	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
 
-// ProjectStateOffload stores rarely changed project state offloaded from the
+// ProjectStateOffload stores rarely-changed project state, offloaded from the
 // main Project entity for use in transactions creating Runs.
 //
 // Although this state could be stored in the main Project entity, doing so
-// would result in retries of Run creation transactions, since Project entity is
-// frequently modified in busy projects.
+// would result in retries of Run creation transactions, since Project entity
+// is frequently modified in busy projects.
 //
 // On the other hand, ProjectStateOffload is highly likely to remain unchanged
-// by the time Run creation transaction commits, thus avoiding needless retries.
+// by the time Run creation transaction commits, thus avoiding needless
+// retries.
 type ProjectStateOffload struct {
 	_kind string `gae:"$kind,ProjectRarelyChanged"`
 	// ID is alaways the same, set/read only by the datastore ORM.

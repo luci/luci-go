@@ -237,12 +237,12 @@ func (t *Transition) apply(ctx context.Context, p *dsset.PopOp) error {
 		}
 	}
 	for _, e := range t.Events {
-		_ = p.Pop(e.ID) // silently ignore if event has already been consumed.
+		_ = p.Pop(e.ID) // Silently ignore if event has already been consumed.
 	}
 	return nil
 }
 
-// isNoop returns true if the Transition can be skiped entirely.
+// isNoop returns true if the Transition can be skipped entirely.
 func (t *Transition) isNoop(oldState State) bool {
 	return t.SideEffectFn == nil && len(t.Events) == 0 && t.TransitionTo == oldState
 }

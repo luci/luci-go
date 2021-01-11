@@ -56,7 +56,7 @@ func Poke(ctx context.Context, luciProject string) error {
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
 // Automatically enqueues a new task to perform next poll.
 func poll(ctx context.Context, luciProject string, eta time.Time) error {
-	// TODO(tandrii): avoid concurent polling of the same project via cheap
+	// TODO(tandrii): avoid concurrent polling of the same project via cheap
 	// best-effort locking in Redis.
 	meta, err := config.GetLatestMeta(ctx, luciProject)
 	switch {

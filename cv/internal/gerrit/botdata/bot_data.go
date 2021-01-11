@@ -67,7 +67,7 @@ func (at *ActionType) UnmarshalJSON(b []byte) error {
 	}
 }
 
-// ChangeID is the unique identifer for a Gerrit Change.
+// ChangeID is the unique identifier for a Gerrit Change.
 type ChangeID struct {
 	// Host is the Gerrit host name for the Change.
 	Host string

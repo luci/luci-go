@@ -27,22 +27,22 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 )
 
-// RunKind is Datastore entity kind for Run.
+// RunKind is the Datastore entity kind for Run.
 const RunKind = "Run"
 
 // Mode dictates the behavior of this Run.
 type Mode string
 
 const (
-	// DryRun triggers all defined Tryjobs but doesn't submit.
+	// DryRun triggers all defined Tryjobs, but doesn't submit.
 	DryRun Mode = "DryRun"
-	// FullRun is DryRun + submit.
+	// FullRun is DryRun followed by submit.
 	FullRun Mode = "FullRun"
 )
 
-// Run is an entity contains high-level information of a CV Run.
+// Run is an entity that contains high-level information about a CV Run.
 //
-// Detail information about CL and Tryjobs are stored in its child entities.
+// Detailed information about CLs and Tryjobs are stored in its child entities.
 type Run struct {
 	// $kind must match RunKind.
 	_kind  string                `gae:"$kind,Run"`
@@ -76,9 +76,9 @@ type Run struct {
 	EndTime time.Time `gae:",noindex"`
 	// Owner is the identity of the owner of this Run.
 	//
-	// Currently, it is the same as owner of the CL. If `combine_cls` is enabled
-	// for the ConfigGroup used by this Run, the owner is the CL which has latest
-	// triggering timestamp.
+	// Currently, it is the same as owner of the CL. If `combine_cls` is
+	// enabled for the ConfigGroup used by this Run, the owner is the CL which
+	// has latest triggering timestamp.
 	Owner identity.Identity `gae:",noindex"`
 	// ConfigGroupID is ID of the ConfigGroup that is used by this Run.
 	//
