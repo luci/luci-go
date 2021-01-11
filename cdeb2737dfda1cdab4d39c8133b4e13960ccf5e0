@@ -63,6 +63,24 @@
       "message": "LGTM; it would also be good to add a note about why (either as a comment in the CL or in the CL description)",
       "revId": "cdeb2737dfda1cdab4d39c8133b4e13960ccf5e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57d10fd3_4a6ba84e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-11T19:09:12Z",
+      "side": 1,
+      "message": "hm, too late -- you\u0027ve CQ-ed it. Yiwei\u0027s note is as good as it gets.",
+      "parentUuid": "352f2a01_d1cd6e87",
+      "revId": "cdeb2737dfda1cdab4d39c8133b4e13960ccf5e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
