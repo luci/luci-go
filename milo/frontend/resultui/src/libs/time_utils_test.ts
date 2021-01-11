@@ -38,4 +38,12 @@ describe('Time Utils Tests', () => {
     const duration = Duration.fromMillis(999);
     assert.strictEqual(displayDuration(duration), '999 ms');
   });
+  it('should ignore milliseconds if duration > 1 second', async () => {
+    const duration = Duration.fromMillis(1999);
+    assert.strictEqual(displayDuration(duration), '1 sec');
+  });
+  it('should display zero duration correctly', async () => {
+    const duration = Duration.fromMillis(0);
+    assert.strictEqual(displayDuration(duration), '0 ms');
+  });
 });

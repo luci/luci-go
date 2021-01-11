@@ -35,7 +35,7 @@ export function displayDuration(duration: Duration) {
     parts.push(shifted.seconds + ' ' + (shifted.seconds === 1 ? 'sec' : 'secs'));
   }
   // We only care about ms if there are no other part
-  if (shifted.milliseconds > 0 && parts.length === 0) {
+  if (parts.length === 0) {
     parts.push(Math.floor(shifted.milliseconds) + ' ms');
   }
   return parts.join(' ');
