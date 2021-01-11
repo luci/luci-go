@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "91c166af_841ad8ea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-11T22:13:18Z",
+      "side": 1,
+      "message": "It works on staging: https://screenshot.googleplex.com/6kgwCTjQWVGJGD9\n\nI\u0027ll release it to canary.",
+      "parentUuid": "568a39f6_2189ee50",
+      "revId": "591a15c568d1d82e6388a43eb7e56cd7020b1c87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6ecc6726_b8c95c97",
