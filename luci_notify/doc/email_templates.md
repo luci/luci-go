@@ -51,6 +51,8 @@ The following functions are available to templates in addition to the
   [BuilderID](https://godoc.org/go.chromium.org/luci/buildbucket/proto#BuilderID)
   to a `<project>/<bucket>/<builder>` string.
   Example: `{{.Build.Builder | formatBuilderID}}`
+* `markdown`: converts a presumed Markdown string to safe HTML.
+  Example: `{{.Build.SummaryMarkdown | markdown}}`
 * `stepNames`: converts a
   [`[]*Step`](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Step) to
   a comma-separated list of quoted step names.
