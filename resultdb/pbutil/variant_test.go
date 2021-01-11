@@ -76,4 +76,14 @@ func TestVariantUtils(t *testing.T) {
 		)
 		So(SortedVariantKeys(vr), ShouldResemble, []string{"k1", "k2", "k3"})
 	})
+
+	Convey(`VariantToStringPairs`, t, func() {
+		pairs := []string{
+			"k1", "v1",
+			"k2", "v2",
+			"k3", "v3",
+		}
+		vr := Variant(pairs...)
+		So(VariantToStringPairs(vr), ShouldResemble, StringPairs(pairs...))
+	})
 }

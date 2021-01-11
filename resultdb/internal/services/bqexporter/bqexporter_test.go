@@ -28,6 +28,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,12 +47,12 @@ import (
 )
 
 type mockPassInserter struct {
-	insertedMessages []*bigquery.StructSaver
+	insertedMessages []*bq.Row
 	mu               sync.Mutex
 }
 
 func (i *mockPassInserter) Put(ctx context.Context, src interface{}) error {
-	messages := src.([]*bigquery.StructSaver)
+	messages := src.([]*bq.Row)
 	i.mu.Lock()
 	i.insertedMessages = append(i.insertedMessages, messages...)
 	i.mu.Unlock()
@@ -110,13 +112,13 @@ func TestExportToBigQuery(t *testing.T) {
 
 			expectedTestIDs := []string{"A", "B", "C", "D"}
 			for _, m := range i.insertedMessages {
-				tr := m.Struct.(*TestResultRow)
-				So(tr.TestID, ShouldBeIn, expectedTestIDs)
-				So(tr.ParentInvocation.ID, ShouldBeIn, []string{"a", "b"})
-				So(tr.ParentInvocation.Realm, ShouldEqual, "testproject:testrealm")
-				So(tr.ExportedInvocation.ID, ShouldEqual, "a")
-				So(tr.ExportedInvocation.Realm, ShouldEqual, "testproject:testrealm")
-				So(tr.Exonerated, ShouldEqual, tr.TestID == "A" || tr.TestID == "D")
+				tr := m.Message.(*bqpb.TestResultRow)
+				So(tr.TestId, ShouldBeIn, expectedTestIDs)
+				So(tr.Parent.Id, ShouldBeIn, []string{"a", "b"})
+				So(tr.Parent.Realm, ShouldEqual, "testproject:testrealm")
+				So(tr.Exported.Id, ShouldEqual, "a")
+				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
+				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
 			}
 		})
 

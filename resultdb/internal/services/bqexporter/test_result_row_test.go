@@ -50,10 +50,7 @@ func TestGenerateBQRow(t *testing.T) {
 				},
 			}
 			actual := input.row()
-			So(actual.TestLocation, ShouldResemble, &TestLocation{
-				FileName: "//a_test.go",
-				Line:     54,
-			})
+			So(actual.TestLocation, ShouldResemble, input.tr.TestLocation)
 		})
 	})
 }

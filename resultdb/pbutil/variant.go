@@ -112,3 +112,18 @@ func VariantHash(vr *pb.Variant) string {
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
 }
+
+// VariantToStringPairs returns a slice of StringPair derived from *pb.Variant.
+func VariantToStringPairs(vr *pb.Variant) []*pb.StringPair {
+	defMap := vr.GetDef()
+	if len(defMap) == 0 {
+		return nil
+	}
+
+	keys := SortedVariantKeys(vr)
+	sp := make([]*pb.StringPair, len(keys))
+	for i, k := range keys {
+		sp[i] = StringPair(k, defMap[k])
+	}
+	return sp
+}

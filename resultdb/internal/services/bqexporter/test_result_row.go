@@ -17,7 +17,6 @@ package bqexporter
 import (
 	"crypto/sha512"
 	"encoding/hex"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/descriptor"
@@ -66,150 +65,16 @@ func generateSchema() (schema bigquery.Schema, err error) {
 	return schema, err
 }
 
-// Row size limit is 1Mib according to
+// Row size limit is 5MB according to
 // https://cloud.google.com/bigquery/quotas#streaming_inserts
-// Cap the summaryHTML's length to 0.6M to ensure the row size is under
+// Cap the summaryHTML's length to 4MB to ensure the row size is under
 // limit.
-const maxSummaryLength = 6e5
+const maxSummaryLength = 4e6
 
-// StringPair is a copy of pb.StringPair, suitable for representing a
-// key:value pair in a BQ table.
-// Inferred to be a field of type RECORD with Key and Value string fields.
-type StringPair struct {
-	Key   string `bigquery:"key"`
-	Value string `bigquery:"value"`
-}
-
-// Invocation is a subset of pb.Invocation for the invocation fields that need
-// to be saved in a BQ table.
-type Invocation struct {
-	// ID is the ID of the invocation.
-	ID string `bigquery:"id"`
-
-	// Tags represents Invocation-level string key-value pairs.
-	// A key can be repeated.
-	Tags []StringPair `bigquery:"tags"`
-
-	// The LUCI Realm the invocation exists under.
-	Realm string `bigquery:"realm"`
-}
-
-// TestResultRow represents a row in a BigQuery table for result of a functional
-// test case.
-type TestResultRow struct {
-	// ExportedInvocation contains info of the exported invocation.
-	//
-	// Note: it's possible that this invocation is not the result's
-	// immediate parent invocation, but the including invocation.
-	// For example if the BigQuery table is for all test results of CI builds,
-	// then the exported invocation is for a CI build, which includes multiple
-	// invocations for swarming tasks within that build.
-	ExportedInvocation Invocation `bigquery:"exported"`
-
-	// ParentInvocation contains info of the result's immediate parent
-	// invocation.
-	ParentInvocation Invocation `bigquery:"parent"`
-
-	// TestID is a unique identifier of the test in a LUCI project.
-	// Refer to pb.TestResult.TestId for details.
-	TestID string `bigquery:"test_id"`
-
-	// ResultID identifies a test result in a given invocation and test id.
-	ResultID string `bigquery:"result_id"`
-
-	// Variant describes one specific way of running the test,
-	// e.g. a specific bucket, builder and a test suite.
-	Variant []StringPair `bigquery:"variant"`
-
-	// A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
-	VariantHash string `bigquery:"variant_hash"`
-
-	// Expected is a flag indicating whether the result of test case execution is expected.
-	// Refer to pb.TestResult.Expected for details.
-	Expected bool `bigquery:"expected"`
-
-	// Status of the test result.
-	// See pb.TestStatus for possible values.
-	Status string `bigquery:"status"`
-
-	// SummaryHTML is a human-readable explanation of the result, in HTML.
-	SummaryHTML string `bigquery:"summary_html"`
-
-	// StartTime is the point in time when the test case started to execute.
-	StartTime bigquery.NullTimestamp `bigquery:"start_time"`
-
-	// Duration of the test case execution in seconds.
-	Duration bigquery.NullFloat64 `bigquery:"duration"`
-
-	// Tags contains metadata for this test result.
-	// It might describe this particular execution or the test case.
-	Tags []StringPair `bigquery:"tags"`
-
-	// If the failures of the test variant are exonerated.
-	// Note: the exoneration is at the test variant level, not result level.
-	Exonerated bool `bigquery:"exonerated"`
-
-	// PartitionTime is used to partition the table.
-	// It is the time when exported invocation was created in Spanner.
-	// https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
-	// mentions "The partitioning column must be a top-level field."
-	// So we keep this column here instead of adding the CreateTime to Invocation.
-	PartitionTime time.Time `bigquery:"partition_time"`
-
-	// TestLocation is the location of the test definition.
-	TestLocation *TestLocation `bigquery:"test_location"`
-}
-
-// TestLocation is a location of a test definition, e.g. the file name.
-// For field description, see the comments in the TestLocation protobuf message.
-type TestLocation struct {
-	FileName string `bigquery:"file_name"`
-	Line     int    `bigquery:"line"`
-}
-
-// Name returns test result name.
-func (tr *TestResultRow) Name() string {
-	return pbutil.TestResultName(tr.ParentInvocation.ID, tr.TestID, tr.ResultID)
-}
-
-// stringPairProtosToStringPairs returns a slice of StringPair derived from *pb.StringPair.
-func stringPairProtosToStringPairs(pairs []*pb.StringPair) []StringPair {
-	if len(pairs) == 0 {
-		return nil
-	}
-
-	sp := make([]StringPair, len(pairs))
-	for i, p := range pairs {
-		sp[i] = StringPair{
-			Key:   p.Key,
-			Value: p.Value,
-		}
-	}
-	return sp
-}
-
-// variantToStringPairs returns a slice of StringPair derived from *pb.Variant.
-func variantToStringPairs(vr *pb.Variant) []StringPair {
-	defMap := vr.GetDef()
-	if len(defMap) == 0 {
-		return nil
-	}
-
-	keys := pbutil.SortedVariantKeys(vr)
-	sp := make([]StringPair, len(keys))
-	for i, k := range keys {
-		sp[i] = StringPair{
-			Key:   k,
-			Value: defMap[k],
-		}
-	}
-	return sp
-}
-
-func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
-	return Invocation{
-		ID:    string(invocations.MustParseName(inv.Name)),
-		Tags:  stringPairProtosToStringPairs(inv.Tags),
+func invocationProtoToRecord(inv *pb.Invocation) *bqpb.InvocationRecord {
+	return &bqpb.InvocationRecord{
+		Id:    string(invocations.MustParseName(inv.Name)),
+		Tags:  inv.Tags,
 		Realm: inv.Realm,
 	}
 }
@@ -222,59 +87,38 @@ type rowInput struct {
 	exonerated bool
 }
 
-func (i *rowInput) row() *TestResultRow {
+func (i *rowInput) row() *bqpb.TestResultRow {
 	tr := i.tr
 
-	ret := &TestResultRow{
-		ExportedInvocation: invocationProtoToInvocation(i.exported),
-		ParentInvocation:   invocationProtoToInvocation(i.parent),
-		TestID:             tr.TestId,
-		ResultID:           tr.ResultId,
-		Variant:            variantToStringPairs(tr.Variant),
-		VariantHash:        tr.VariantHash,
-		Expected:           tr.Expected,
-		Status:             tr.Status.String(),
-		SummaryHTML:        tr.SummaryHtml,
-		Tags:               stringPairProtosToStringPairs(tr.Tags),
-		Exonerated:         i.exonerated,
-		PartitionTime:      pbutil.MustTimestamp(i.exported.CreateTime),
+	ret := &bqpb.TestResultRow{
+		Exported:      invocationProtoToRecord(i.exported),
+		Parent:        invocationProtoToRecord(i.parent),
+		TestId:        tr.TestId,
+		ResultId:      tr.ResultId,
+		Variant:       pbutil.VariantToStringPairs(tr.Variant),
+		VariantHash:   tr.VariantHash,
+		Expected:      tr.Expected,
+		Status:        tr.Status.String(),
+		SummaryHtml:   tr.SummaryHtml,
+		StartTime:     tr.StartTime,
+		Duration:      tr.Duration,
+		Tags:          tr.Tags,
+		Exonerated:    i.exonerated,
+		PartitionTime: i.exported.CreateTime,
+		TestLocation:  tr.TestLocation,
+		TestMetadata:  tr.TestMetadata,
 	}
 
-	if tr.StartTime != nil {
-		ret.StartTime = bigquery.NullTimestamp{
-			Timestamp: pbutil.MustTimestamp(tr.StartTime),
-			Valid:     true,
-		}
-	}
-
-	if tr.Duration != nil {
-		ret.Duration = bigquery.NullFloat64{
-			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
-			Valid:   true,
-		}
-	}
-
-	if len(ret.SummaryHTML) > maxSummaryLength {
-		ret.SummaryHTML = "[Trimmed] " + ret.SummaryHTML[:maxSummaryLength]
-	}
-
-	testLoc := tr.GetTestMetadata().GetLocation()
-	if testLoc == nil {
-		testLoc = tr.TestLocation
-	}
-	if testLoc != nil {
-		ret.TestLocation = &TestLocation{
-			FileName: testLoc.FileName,
-			Line:     int(testLoc.Line),
-		}
+	if len(ret.SummaryHtml) > maxSummaryLength {
+		ret.SummaryHtml = "[Trimmed] " + ret.SummaryHtml[:maxSummaryLength]
 	}
 
 	return ret
 }
 
-// generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func (b *bqExporter) generateBQRow(input *rowInput) *bigquery.StructSaver {
-	ret := &bigquery.StructSaver{Struct: input.row()}
+// generateBQRow returns a *bq.Row to be inserted into BQ.
+func (b *bqExporter) generateBQRow(input *rowInput) *bq.Row {
+	ret := &bq.Row{Message: input.row()}
 
 	if b.UseInsertIDs {
 		// InsertID cannot exceed 128 bytes.
