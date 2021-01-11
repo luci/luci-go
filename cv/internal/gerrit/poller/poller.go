@@ -82,7 +82,7 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 		return schedule(ctx, luciProject, eta)
 	case clock.Now(ctx).After(eta.Add(pollInterval - time.Second)):
 		// Time to finish this task despite error, and trigger a new one.
-		errors.Log(ctx, errors.Annotate(err, "failed to do poll %s", eta).Err())
+		common.LogError(ctx, errors.Annotate(err, "failed to do poll %s", eta).Err())
 		return schedule(ctx, luciProject, eta)
 	default:
 		return err
@@ -236,8 +236,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		// Some progress. We'll retry during next poll.
 		// TODO(tandrii): revisit this logic once CV subscribes to PubSub and makes
 		// polling much less frequent.
-		logging.Errorf(ctx, "failed %d/%d pollers", n, len(errs))
-		errors.Log(ctx, err)
+		common.LogError(ctx, errors.Annotate(err, "failed %d/%d pollers. Most severe error:", n, len(errs)).Err())
 	}
 	return nil
 }
