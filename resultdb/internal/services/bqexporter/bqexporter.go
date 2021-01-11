@@ -30,6 +30,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -47,6 +48,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -363,14 +366,14 @@ func (b *bqExporter) queryTestResults(
 	exportedID invocations.ID,
 	q testresults.Query,
 	exoneratedTestVariants map[testVariantKey]struct{},
-	batchC chan []*bigquery.StructSaver) error {
+	batchC chan []*bq.Row) error {
 
 	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
 	if err != nil {
 		return err
 	}
 
-	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
+	rows := make([]*bq.Row, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	rowCount := 0
 	err = q.Run(ctx, func(tr *pb.TestResult) error {
@@ -390,7 +393,7 @@ func (b *bqExporter) queryTestResults(
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
+			rows = make([]*bq.Row, 0, b.MaxBatchRowCount)
 			batchSize = 0
 		}
 		return nil
@@ -424,7 +427,7 @@ func hasReason(apiErr *googleapi.Error, reason string) bool {
 	return false
 }
 
-func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
+func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bq.Row) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
@@ -449,7 +452,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 
 // insertRowsWithRetries inserts rows into BigQuery.
 // Retries on quotaExceeded errors.
-func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bigquery.StructSaver) error {
+func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bq.Row) error {
 	if err := b.putLimiter.Wait(ctx); err != nil {
 		return err
 	}
@@ -466,11 +469,11 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
-func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*bigquery.StructSaver) {
+func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
 	// Print up to 10 errors.
 	for i := 0; i < 10 && i < len(err); i++ {
-		tr := rows[err[i].RowIndex].Struct.(*TestResultRow)
-		logging.Errorf(ctx, "failed to insert row for %s: %s", tr.Name(), err[i].Error())
+		tr := rows[err[i].RowIndex].Message.(*bqpb.TestResultRow)
+		logging.Errorf(ctx, "failed to insert row for %s: %s", pbutil.TestResultName(tr.Parent.Id, tr.TestId, tr.ResultId), err[i].Error())
 	}
 	if len(err) > 10 {
 		logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
@@ -505,7 +508,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 
 	// Query test results and export to BigQuery.
-	batchC := make(chan []*bigquery.StructSaver)
+	batchC := make(chan []*bq.Row)
 
 	// Batch exports rows to BigQuery.
 	eg, ctx := errgroup.WithContext(ctx)
