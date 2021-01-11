@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "568a39f6_2189ee50",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-11T20:33:59Z",
+      "side": 1,
+      "message": "LGTM. Let\u0027s make sure it works on staging before we release it in canary.",
+      "revId": "591a15c568d1d82e6388a43eb7e56cd7020b1c87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ecc6726_b8c95c97",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-11T20:33:59Z",
+      "side": 1,
+      "message": "5MB:\n- lower-case b means bit\n- the doc says MB, not MiB.",
+      "range": {
+        "startLine": 68,
+        "startChar": 21,
+        "endLine": 68,
+        "endChar": 25
+      },
+      "revId": "591a15c568d1d82e6388a43eb7e56cd7020b1c87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
