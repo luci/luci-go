@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "357b952b_03bf59d9",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-11T23:24:42Z",
+      "side": 1,
+      "message": "Nits: \u0027All tests are loaded\u0027",
+      "range": {
+        "startLine": 95,
+        "startChar": 31,
+        "endLine": 95,
+        "endChar": 53
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6aacc588_62d1c7de",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-11T23:24:42Z",
+      "side": 1,
+      "message": "nits: have been loaded",
+      "range": {
+        "startLine": 28,
+        "startChar": 30,
+        "endLine": 28,
+        "endChar": 33
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce0cce5d_fd40da69",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-11T23:24:42Z",
+      "side": 1,
+      "message": "Do you mean undefined?",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 9
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8b50123_cb2b0f1e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-11T23:24:42Z",
+      "side": 1,
+      "message": "nits: you don\u0027t need an else here",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 102,
+        "endChar": 10
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b597d0f_7c2291b8",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-11T23:24:42Z",
+      "side": 1,
+      "message": "Is this behavior documented anywhere?\n\nAnd do you really need this condition, given that you already handle the case of expected status in line 127?",
+      "range": {
+        "startLine": 103,
+        "startChar": 6,
+        "endLine": 104,
+        "endChar": 71
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
