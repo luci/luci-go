@@ -22,6 +22,30 @@
       },
       "revId": "cb3a005ba5be264b0dff0411fc3265496e501e44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69cb7525_c05fcb35",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-11T23:06:39Z",
+      "side": 0,
+      "message": "Oops. Opened a CL to fix this.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2623368",
+      "parentUuid": "cc2d9ac2_e5d1deb4",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 78
+      },
+      "revId": "cb3a005ba5be264b0dff0411fc3265496e501e44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
