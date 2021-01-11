@@ -393,12 +393,12 @@ func renderMarkdown(t string) (results template.HTML) {
 	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
 		Flags: blackfriday.UseXHTML,
 	})
-	buf := bytes.NewBuffer(blackfriday.Run(
+	untrusted := blackfriday.Run(
 		[]byte(t),
 		blackfriday.WithRenderer(r),
-		blackfriday.WithExtensions(blackfriday.NoIntraEmphasis|blackfriday.FencedCode|blackfriday.Autolink)))
+		blackfriday.WithExtensions(blackfriday.NoIntraEmphasis|blackfriday.FencedCode|blackfriday.Autolink))
 	out := bytes.NewBuffer(nil)
-	if err := sanitizehtml.Sanitize(out, buf); err != nil {
+	if err := sanitizehtml.Sanitize(out, bytes.NewReader(untrusted)); err != nil {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
 	}
 	return template.HTML(out.String())

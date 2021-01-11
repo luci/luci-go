@@ -40,10 +40,15 @@ func TestBundle(t *testing.T) {
 				BodyHTMLTemplate:    `Build {{.Build.Id}} completed with status {{.Build.Status}}`,
 			},
 			{
+				Name:                "markdown",
+				SubjectTextTemplate: "Build {{.Build.Id}}",
+				BodyHTMLTemplate:    `{{.Build.SummaryMarkdown | markdown}}`,
+			},
+			{
 				Name:                "using_other_files",
 				SubjectTextTemplate: "",
 				BodyHTMLTemplate: `
-Reusing templates from another files.
+Reusing templates from other files.
 {{template "inlineEntireFile" .}}
 {{template "steps" .}}`,
 			},
@@ -80,19 +85,27 @@ Reusing templates from another files.
 						Bucket:  "ci",
 						Builder: "linux-rel",
 					},
-					Status: buildbucketpb.Status_SUCCESS,
+					Status:          buildbucketpb.Status_SUCCESS,
+					SummaryMarkdown: "*ninja* compiled `11` files",
 				},
 			}
+
 			Convey("simple template", func() {
 				subject, body := bundle.GenerateEmail("default", input)
-				So(subject, ShouldEqual, "Build 54 completed")
+				// Assert on body first, since errors would be rendered in body.
 				So(body, ShouldEqual, "Build 54 completed with status SUCCESS")
+				So(subject, ShouldEqual, "Build 54 completed")
+			})
+
+			Convey("markdown", func() {
+				_, body := bundle.GenerateEmail("markdown", input)
+				So(body, ShouldEqual, "<p><em>ninja</em> compiled <code>11</code> files</p>\n")
 			})
 
 			Convey("template using other files", func() {
 				_, body := bundle.GenerateEmail("using_other_files", input)
 				So(body, ShouldEqual, `
-Reusing templates from another files.
+Reusing templates from other files.
 Build 54
 steps of build 54 go here`)
 			})
