@@ -16,6 +16,46 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6165/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dfalse\n",
       "revId": "95e7dd9ae9e551755f4e66fb311c7f4cf79ac5b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "350fe23a_310a8934",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-12T21:53:57Z",
+      "side": 1,
+      "message": "It\u0027s not related to this CL, but I think I am missing the \"Load more\" link at the top when trying the demo.\n\nThe scenario I have is that I am looking for a particular test. I loaded the first batch and Ctrl-F to find the name of the test. There is 0 result, so I know that I need to load more. But then I need to scroll to the bottom of the page to see the \"Load more\".\n\nIf we are not going to implement the autoloading or \"Load all\" functionality soon, I think it may worth considering having the \"Load more\" link at the top.",
+      "revId": "95e7dd9ae9e551755f4e66fb311c7f4cf79ac5b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ccdd8cc_8f7e98e8",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-12T21:53:57Z",
+      "side": 1,
+      "message": "nits: I found the \"TV\" a bit confusing. If \"TestVariant\" is too long, perhaps \"Variant\" is good enough?",
+      "range": {
+        "startLine": 45,
+        "startChar": 24,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "95e7dd9ae9e551755f4e66fb311c7f4cf79ac5b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
