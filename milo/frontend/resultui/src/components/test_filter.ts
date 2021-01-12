@@ -17,6 +17,8 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
+import { LoadingStage } from '../models/test_loader';
 
 export interface TestFilter {
   showExpected: boolean;
@@ -31,41 +33,41 @@ export interface TestFilter {
  */
 @customElement('milo-test-filter')
 @consumeConfigsStore
+@consumeInvocationState
 export class TestFilterElement extends MobxLitElement {
   @observable.ref configsStore!: UserConfigsStore;
+  @observable.ref invocationState!: InvocationState;
 
   @computed private get testFilters() { return this.configsStore.userConfigs.tests; }
+  @computed private get loadingStage() {
+    return this.invocationState.testLoader?.stage ?? LoadingStage.LoadingUnexpected;
+  }
+  @computed private get unexpectedVariantCount() {
+    const count = this.invocationState.testLoader?.unexpectedTestVariants.length || 0;
+    return `${count}${this.loadingStage <= LoadingStage.LoadingUnexpected ? '+' : ''}`;
+  }
+  @computed private get flakyVariantCount() {
+    const count = this.invocationState.testLoader?.flakyTestVariants.length || 0;
+    return `${count}${this.loadingStage <= LoadingStage.LoadingFlaky ? '+' : ''}`;
+  }
+  @computed private get exoneratedVariantCount() {
+    const count = this.invocationState.testLoader?.exoneratedTestVariants.length || 0;
+    return `${count}${this.loadingStage <= LoadingStage.LoadingExonerated ? '+' : ''}`;
+  }
+  @computed private get expectedVariantCount() {
+    const count = this.invocationState.testLoader?.expectedTestVariants.length || 0;
+    return `${count}${this.loadingStage <= LoadingStage.LoadingExpected ? '+' : ''}`;
+  }
+
 
   protected render() {
     return html`
       Show:
       <div class="filter">
         <input type="checkbox" id="unexpected" disabled checked>
-        <label for="unexpected" style="color: var(--failure-color);">Unexpected</label>
-      </div class="filter">
-      <div class="filter">
-        <input
-          type="checkbox"
-          id="expected"
-          @change=${(v: MouseEvent) => {
-            this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked;
-            this.configsStore.save();
-          }}
-          ?checked=${this.testFilters.showExpectedVariant}
-        >
-      <label for="expected" style="color: var(--success-color);">Expected</label>
-      </div class="filter">
-      <div class="filter">
-        <input
-          type="checkbox"
-          id="exonerated"
-          @change=${(v: MouseEvent) => {
-            this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked;
-            this.configsStore.save();
-          }}
-          ?checked=${this.testFilters.showExoneratedVariant}
-        >
-        <label for="exonerated" style="color: var(--exonerated-color);">Exonerated</label>
+        <label for="unexpected" style="color: var(--failure-color);">
+          Unexpected (${this.unexpectedVariantCount})
+        </label>
       </div class="filter">
       <div class="filter">
         <input
@@ -77,7 +79,31 @@ export class TestFilterElement extends MobxLitElement {
           }}
           ?checked=${this.testFilters.showFlakyVariant}
         >
-        <label for="flaky" style="color: var(--warning-color);">Flaky</label>
+        <label for="flaky" style="color: var(--warning-color);">Flaky (${this.flakyVariantCount})</label>
+      </div class="filter">
+      <div class="filter">
+        <input
+          type="checkbox"
+          id="exonerated"
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
+          ?checked=${this.testFilters.showExoneratedVariant}
+        >
+        <label for="exonerated" style="color: var(--exonerated-color);">Exonerated (${this.exoneratedVariantCount})</label>
+      </div class="filter">
+      <div class="filter">
+        <input
+          type="checkbox"
+          id="expected"
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
+          ?checked=${this.testFilters.showExpectedVariant}
+        >
+      <label for="expected" style="color: var(--success-color);">Expected (${this.expectedVariantCount})</label>
       </div class="filter">
     `;
   }
