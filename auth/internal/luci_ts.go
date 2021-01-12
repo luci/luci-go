@@ -90,7 +90,7 @@ func (p *luciTSTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 }
 
 func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	client := minter.NewTokenMinterPRPCClient(&prpc.Client{
+	client := minter.NewTokenMinterClient(&prpc.Client{
 		C: &http.Client{
 			Transport: &tokenInjectingTransport{
 				transport: p.transport,

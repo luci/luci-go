@@ -17,9 +17,9 @@ package serviceaccountsv2
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
@@ -32,7 +32,7 @@ type ImportProjectOwnedAccountsConfigsRPC struct {
 }
 
 // ImportProjectOwnedAccountsConfigs fetches configs from luci-config right now.
-func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs(ctx context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs(ctx context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
 	rev, err := r.MappingCache.ImportConfigs(ctx)
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to fetch service accounts configs")

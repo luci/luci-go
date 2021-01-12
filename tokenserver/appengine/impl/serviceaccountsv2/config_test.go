@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
@@ -73,7 +73,7 @@ func TestMapping(t *testing.T) {
 
 func loadMapping(ctx context.Context, text string) (*Mapping, error) {
 	cfg := &admin.ServiceAccountsProjectMapping{}
-	err := proto.UnmarshalText(text, cfg)
+	err := prototext.Unmarshal([]byte(text), cfg)
 	if err != nil {
 		return nil, err
 	}

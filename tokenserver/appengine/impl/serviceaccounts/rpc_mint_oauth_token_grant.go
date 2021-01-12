@@ -9,10 +9,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/gae/service/info"
 
@@ -157,10 +156,9 @@ func (r *MintOAuthTokenGrantRPC) logRequest(c context.Context, req *minter.MintO
 	if !logging.IsLogging(c, logging.Debug) {
 		return
 	}
-	m := jsonpb.Marshaler{Indent: "  "}
-	dump, _ := m.MarshalToString(req)
+	opts := protojson.MarshalOptions{Indent: "  "}
 	logging.Debugf(c, "Identity: %s", caller)
-	logging.Debugf(c, "MintOAuthTokenGrantRequest:\n%s", dump)
+	logging.Debugf(c, "MintOAuthTokenGrantRequest:\n%s", opts.Format(req))
 }
 
 // checkRequestFormat returns an error if the request is obviously wrong.

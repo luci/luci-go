@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-grpc-plugin
 
 // Package minter contains the main API of the token server.
 //

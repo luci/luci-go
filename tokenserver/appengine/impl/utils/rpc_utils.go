@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
@@ -74,13 +74,8 @@ func ValidateAndNormalizeRequest(c context.Context, oauthScope []string, duratio
 
 // LogRequest logs the RPC request.
 func LogRequest(c context.Context, rpc RPC, req proto.Message, caller identity.Identity) {
-	if !logging.IsLogging(c, logging.Debug) {
-		return
+	if logging.IsLogging(c, logging.Debug) {
+		opts := protojson.MarshalOptions{Indent: " "}
+		logging.Debugf(c, "Identity: %s, %s:\n%s", caller, rpc.Name(), opts.Format(req))
 	}
-	m := jsonpb.Marshaler{Indent: " "}
-	dump, err := m.MarshalToString(req)
-	if err != nil {
-		panic(err)
-	}
-	logging.Debugf(c, "Identity: %s, %s:\n%s", caller, rpc.Name(), dump)
 }

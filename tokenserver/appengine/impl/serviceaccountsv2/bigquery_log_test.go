@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -43,7 +43,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			},
 			Response: &minter.MintServiceAccountTokenResponse{
 				Token:          "some-token",
-				Expiry:         &timestamp.Timestamp{Seconds: 123456},
+				Expiry:         &timestamppb.Timestamp{Seconds: 123456},
 				ServiceVersion: "unit-tests/mocked-ver",
 			},
 			RequestedAt:     time.Unix(1234, 0),
@@ -65,8 +65,8 @@ func TestMintedTokenInfo(t *testing.T) {
 			IdTokenAudience: "aud",
 			RequestIdentity: "user:req@example.com",
 			PeerIdentity:    "user:peer@example.com",
-			RequestedAt:     &timestamp.Timestamp{Seconds: 1234},
-			Expiration:      &timestamp.Timestamp{Seconds: 123456},
+			RequestedAt:     &timestamppb.Timestamp{Seconds: 1234},
+			Expiration:      &timestamppb.Timestamp{Seconds: 123456},
 			AuditTags:       []string{"k:v"},
 			ConfigRev:       "config-rev",
 			PeerIp:          "127.1.1.1",

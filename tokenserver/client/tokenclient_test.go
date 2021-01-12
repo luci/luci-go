@@ -20,9 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

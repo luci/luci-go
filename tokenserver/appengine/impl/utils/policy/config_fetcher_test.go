@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
@@ -40,7 +40,7 @@ func TestConfigFetcher(t *testing.T) {
 		})
 
 		f := luciConfigFetcher{}
-		ts := timestamp.Timestamp{} // using timestamp as guinea pig proto message
+		ts := timestamppb.Timestamp{} // using timestamp as guinea pig proto message
 
 		So(f.FetchTextProto(c, "missing", &ts), ShouldEqual, config.ErrNoConfig)
 		So(f.Revision(), ShouldEqual, "")
@@ -57,7 +57,7 @@ func TestConfigFetcher(t *testing.T) {
 		base := gaetesting.TestingContext()
 
 		f := luciConfigFetcher{}
-		ts := timestamp.Timestamp{}
+		ts := timestamppb.Timestamp{}
 
 		c1 := prepareServiceConfig(base, map[string]string{
 			"abc.cfg": "seconds: 12345",

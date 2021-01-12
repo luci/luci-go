@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/signing"

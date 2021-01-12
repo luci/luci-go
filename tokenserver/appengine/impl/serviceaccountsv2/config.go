@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/config/validation"
 
@@ -95,7 +95,7 @@ func (mc *MappingCache) ImportConfigs(ctx context.Context) (rev string, err erro
 func (mc *MappingCache) SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${appid}", configFileName, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		cfg := &admin.ServiceAccountsProjectMapping{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid ServiceAccountsProjectMapping proto message - %s", err)
 		} else {
 			validateMappingCfg(ctx, cfg)

@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
@@ -282,7 +282,7 @@ func TestFindMatchingRule(t *testing.T) {
 
 func loadConfig(ctx context.Context, text string) (*Rules, error) {
 	cfg := &admin.DelegationPermissions{}
-	err := proto.UnmarshalText(text, cfg)
+	err := prototext.Unmarshal([]byte(text), cfg)
 	if err != nil {
 		return nil, err
 	}

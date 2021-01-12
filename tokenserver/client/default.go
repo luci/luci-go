@@ -64,7 +64,7 @@ func New(params Parameters) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		Client: minter.NewTokenMinterPRPCClient(&prpc.Client{
+		Client: minter.NewTokenMinterClient(&prpc.Client{
 			C:    params.Client,
 			Host: params.Backend,
 			Options: &prpc.Options{

@@ -17,10 +17,9 @@ package delegation
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
@@ -33,7 +32,7 @@ type ImportDelegationConfigsRPC struct {
 }
 
 // ImportDelegationConfigs fetches configs from from luci-config right now.
-func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
 	rev, err := r.RulesCache.ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch delegation configs")

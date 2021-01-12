@@ -31,11 +31,10 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
-// Server implements minter.TokenMinterServer RPC interface.
-//
-// This is just an assembly of individual method implementations, properly
-// configured for use in GAE prod setting.
+// serverImpl implements minter.TokenMinterServer RPC interface.
 type serverImpl struct {
+	minter.UnsafeTokenMinterServer
+
 	machinetoken.MintMachineTokenRPC
 	delegation.MintDelegationTokenRPC
 	serviceaccounts.MintOAuthTokenGrantRPC
