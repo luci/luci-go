@@ -47,20 +47,24 @@ func Main(inputMsg proto.Message, cb func(context.Context, *State) error) {
 	panic("implement me")
 }
 
-// MainPropWriter is like Main but also takes a `modFnptr` which is the pointer
-// to a property modifier function as described by MakePropertyModifier.
+// MainWithOutput is like Main but also takes a `writeFnptr` and `mergeFnptr`
+// which are pointers to property writer/merger functions as described by
+// MakePropertyModifier.
+//
+// These functions manipulate the 'top level' output properties, and the
+// proto message in these functions must not conflict with any output
+// property namespaces reserved via MakePropertyModifier.
 //
 // Example:
 //
 //    func main() {
 //      input := *MyInputProps{}
-//      var output func(context.Context, ProtoWriteAlgorithm, *MyOutputProps)
-//      Main(input, &output, func(ctx context.Context, st *build.State) error {
-//        // actual build code here, build is already Start'd
-//        // input was populated from the build.Input.Properties
-//        return nil // will mark the Build as SUCCESS
+//      var writeOutputProps func(context.Context, *MyOutputProps)
+//      var mergeOutputProps func(context.Context, *MyOutputProps)
+//      Main(input, &writeOutputProps, &mergeOutputProps, func(ctx context.Context, st *build.State) error {
+//        writeOutputProps(ctx, &MyOutputProps{...})
 //      })
 //    }
-func MainWithOutput(inputMsg proto.Message, modFnptr interface{}, cb func(context.Context, *State)) {
+func MainWithOutput(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, *State) error) {
 	panic("implement me")
 }
