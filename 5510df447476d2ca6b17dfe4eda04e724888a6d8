@@ -64,6 +64,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "afe9a799_4003e475",
+        "filename": "tokenserver/appengine/impl/utils/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-12T06:05:03Z",
+      "side": 1,
+      "message": "go.chromium.org/luci/common/bq library wants github.com/golang/protobuf/proto.Message protos (aka v1 protos). There\u0027s protov1.MessageV1(...) message to convert v2 protos to v1.",
+      "parentUuid": "6b4b5f98_9a8a6560",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 8
+      },
+      "revId": "5510df447476d2ca6b17dfe4eda04e724888a6d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ed3ebf81_c31d836b",
@@ -81,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7449f5e_b5e91a9a",
+        "filename": "tokenserver/appengine/impl/utils/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-12T06:05:03Z",
+      "side": 1,
+      "message": "It should be fine. IIRC, GAE uses something resembling urandom, it doesn\u0027t run out of entropy, just produces schlock. Either way, this is a temporary state and I expect to get rid of it very soon.",
+      "parentUuid": "ed3ebf81_c31d836b",
+      "revId": "5510df447476d2ca6b17dfe4eda04e724888a6d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "65842e34_4d1d63a6",
@@ -94,6 +136,30 @@
       "writtenOn": "2021-01-12T04:43:10Z",
       "side": 1,
       "message": "one more curiosity: why base64 and not hex? Just preference or copy-pasta, or do you actually prefer base64 in this case?",
+      "range": {
+        "startLine": 124,
+        "startChar": 15,
+        "endLine": 124,
+        "endChar": 22
+      },
+      "revId": "5510df447476d2ca6b17dfe4eda04e724888a6d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b550716b_668b873b",
+        "filename": "tokenserver/appengine/impl/utils/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-12T06:05:03Z",
+      "side": 1,
+      "message": "Smaller size with the same amount of information and same efforts in coding, why not.",
+      "parentUuid": "65842e34_4d1d63a6",
       "range": {
         "startLine": 124,
         "startChar": 15,
