@@ -69,6 +69,24 @@
       "parentUuid": "5eb4b4f1_16dac16a",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "44535cd9_628540f6",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T21:53:49Z",
+      "side": 1,
+      "message": "I may be naive but the difference between \"text/plain; encoding\u003dutf-8\" and \"text/plain;encoding\u003dutf-8\" is only the white space so we can just remove white spaces before matching?",
+      "parentUuid": "1fd9a684_0420cae4",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
