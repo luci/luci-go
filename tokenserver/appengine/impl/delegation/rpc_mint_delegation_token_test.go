@@ -251,22 +251,20 @@ func TestMintDelegationToken(t *testing.T) {
 			So(resp.ServiceVersion, ShouldEqual, "unit-tests/mocked-ver")
 
 			// LogToken called.
-			So(loggedInfo, ShouldResemble, &MintedTokenInfo{
-				Request:   req,
-				Response:  resp,
-				ConfigRev: cfg.ConfigRevision(),
-				Rule: &admin.DelegationRule{
-					Name:                 "requstor for itself",
-					Requestor:            []string{"user:requestor@example.com"},
-					AllowedToImpersonate: []string{"REQUESTOR"},
-					AllowedAudience:      []string{"REQUESTOR"},
-					TargetService:        []string{"*"},
-					MaxValidityDuration:  3600,
-				},
-				PeerIP:    net.ParseIP("127.10.10.10"),
-				RequestID: "gae-request-id",
-				AuthDBRev: 1234,
+			So(loggedInfo.Request, ShouldResembleProto, req)
+			So(loggedInfo.Response, ShouldResembleProto, resp)
+			So(loggedInfo.ConfigRev, ShouldEqual, cfg.ConfigRevision())
+			So(loggedInfo.Rule, ShouldResembleProto, &admin.DelegationRule{
+				Name:                 "requstor for itself",
+				Requestor:            []string{"user:requestor@example.com"},
+				AllowedToImpersonate: []string{"REQUESTOR"},
+				AllowedAudience:      []string{"REQUESTOR"},
+				TargetService:        []string{"*"},
+				MaxValidityDuration:  3600,
 			})
+			So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
+			So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
+			So(loggedInfo.AuthDBRev, ShouldEqual, 1234)
 		})
 
 		Convey("Using delegated identity for auth is forbidden", func() {

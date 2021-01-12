@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package tokenserver.bq;
 
-option go_package = "bq";
+option go_package = "go.chromium.org/luci/tokenserver/api/bq";
 
 import "google/protobuf/timestamp.proto";
 

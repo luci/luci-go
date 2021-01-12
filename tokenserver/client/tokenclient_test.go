@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTokenClient(t *testing.T) {
@@ -63,9 +64,9 @@ func TestTokenClient(t *testing.T) {
 		rpc := c.Client.(*fakeRPCClient).In
 		So(rpc.Signature, ShouldResemble, []byte("fake signature"))
 
-		tokReq := minter.MachineTokenRequest{}
-		So(proto.Unmarshal(rpc.SerializedTokenRequest, &tokReq), ShouldBeNil)
-		So(tokReq, ShouldResemble, minter.MachineTokenRequest{
+		tokReq := &minter.MachineTokenRequest{}
+		So(proto.Unmarshal(rpc.SerializedTokenRequest, tokReq), ShouldBeNil)
+		So(tokReq, ShouldResembleProto, &minter.MachineTokenRequest{
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			IssuedAt:           google.NewTimestamp(clock.Now(ctx)),

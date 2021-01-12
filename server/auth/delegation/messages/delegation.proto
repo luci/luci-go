@@ -12,6 +12,8 @@ syntax = "proto3";
 
 package messages;
 
+option go_package = "go.chromium.org/luci/server/auth/delegation/messages";
+
 
 // Signed serialized Subtoken.
 //

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
@@ -62,7 +63,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.DelegationToken{
+		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.DelegationToken{
 			AuthDbRev:         123,
 			ConfigRev:         "config-rev",
 			ConfigRule:        "rule-name",

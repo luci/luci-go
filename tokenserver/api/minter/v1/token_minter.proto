@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package tokenserver.minter;
 
-option go_package = "minter";
+option go_package = "go.chromium.org/luci/tokenserver/api/minter/v1;minter";
 
 import "google/protobuf/timestamp.proto";
 

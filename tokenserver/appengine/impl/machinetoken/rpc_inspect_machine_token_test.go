@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectMachineTokenRPC(t *testing.T) {
@@ -44,7 +45,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)
-			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
+			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
 				Valid:        true,
 				Signed:       true,
 				NonExpired:   true,
@@ -70,7 +71,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok[:len(tok)-16] + strings.Repeat("0", 16),
 			})
 			So(err, ShouldBeNil)
-			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
+			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "bad signature - crypto/rsa: verification error",
 				Signed:           false,
@@ -98,7 +99,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)
-			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
+			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired",
 				Signed:           true,
@@ -136,7 +137,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)
-			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
+			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired", // "expired" 'beats' revocation
 				Signed:           true,

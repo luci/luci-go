@@ -79,14 +79,11 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			CaId:        123,
 			CertSn:      4096,
 		})
-		loggedInfo.TokenBody = nil
-		So(loggedInfo, ShouldResemble, &MintedTokenInfo{
-			Request:   testingRawRequest(ctx),
-			Response:  resp.TokenResponse,
-			CA:        &testingCA,
-			PeerIP:    net.ParseIP("127.10.10.10"),
-			RequestID: "gae-request-id",
-		})
+		So(loggedInfo.Request, ShouldResembleProto, testingRawRequest(ctx))
+		So(loggedInfo.Response, ShouldResembleProto, resp.TokenResponse)
+		So(loggedInfo.CA, ShouldEqual, &testingCA)
+		So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
+		So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
 	})
 
 	Convey("Unsuccessful RPC", t, func() {
@@ -115,7 +112,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		// generates MintMachineTokenResponse with non-zero error code.
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
+		So(resp, ShouldResembleProto, &minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
 			ErrorMessage:   `the domain "fake.domain" is not whitelisted in the config`,
