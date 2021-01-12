@@ -27,10 +27,12 @@ func TestValidateBigQueryExport(t *testing.T) {
 	Convey(`ValidateBigQueryExport`, t, func() {
 		Convey(`Valid, Empty TestResults`, func() {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "table",
-				TestResults: &pb.BigQueryExport_TestResults{},
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
 			})
 			So(err, ShouldBeNil)
 		})
@@ -59,13 +61,13 @@ func TestValidateBigQueryExport(t *testing.T) {
 			So(err, ShouldErrLike, `table: unspecified`)
 		})
 
-		Convey(`Missing TestResults`, func() {
+		Convey(`Missing ResultType`, func() {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
 				Table:   "table",
 			})
-			So(err, ShouldErrLike, `test_results: unspecified`)
+			So(err, ShouldErrLike, `result_type: unspecified`)
 		})
 
 		Convey(`invalid test result predicate`, func() {
@@ -73,13 +75,33 @@ func TestValidateBigQueryExport(t *testing.T) {
 				Project: "project",
 				Dataset: "dataset",
 				Table:   "table",
-				TestResults: &pb.BigQueryExport_TestResults{
-					Predicate: &pb.TestResultPredicate{
-						TestIdRegexp: "(",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{
+						Predicate: &pb.TestResultPredicate{
+							TestIdRegexp: "(",
+						},
 					},
 				},
 			})
 			So(err, ShouldErrLike, `test_results: predicate`)
+		})
+
+		Convey(`invalid artifact predicate`, func() {
+			err := ValidateBigQueryExport(&pb.BigQueryExport{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+				ResultType: &pb.BigQueryExport_TextArtifacts_{
+					TextArtifacts: &pb.BigQueryExport_TextArtifacts{
+						Predicate: &pb.ArtifactPredicate{
+							TestResultPredicate: &pb.TestResultPredicate{
+								TestIdRegexp: "(",
+							},
+						},
+					},
+				},
+			})
+			So(err, ShouldErrLike, `artifacts: predicate`)
 		})
 	})
 }

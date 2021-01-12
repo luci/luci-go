@@ -64,9 +64,11 @@ func parseBQTable(bqTable string) (*pb.BigQueryExport, error) {
 	}
 
 	return &pb.BigQueryExport{
-		Project:     p[0],
-		Dataset:     p[1],
-		Table:       p[2],
-		TestResults: &pb.BigQueryExport_TestResults{},
+		Project: p[0],
+		Dataset: p[1],
+		Table:   p[2],
+		ResultType: &pb.BigQueryExport_TestResults_{
+			TestResults: &pb.BigQueryExport_TestResults{},
+		},
 	}, nil
 }
