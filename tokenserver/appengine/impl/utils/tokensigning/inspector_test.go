@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

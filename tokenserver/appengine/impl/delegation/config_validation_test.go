@@ -18,9 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/config/validation"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
@@ -216,7 +215,7 @@ func TestValidation(t *testing.T) {
 			c.Printf("Case #%d\n", idx)
 
 			cfg := &admin.DelegationPermissions{}
-			err := proto.UnmarshalText(cs.Cfg, cfg)
+			err := prototext.Unmarshal([]byte(cs.Cfg), cfg)
 			So(err, ShouldBeNil)
 
 			ctx := &validation.Context{Context: context.Background()}

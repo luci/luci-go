@@ -21,7 +21,7 @@ import (
 	"encoding/gob"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/retry/transient"
 	ds "go.chromium.org/luci/gae/service/datastore"

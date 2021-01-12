@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
@@ -24,7 +24,7 @@ type ImportServiceAccountsConfigsRPC struct {
 }
 
 // ImportServiceAccountsConfigs fetches configs from from luci-config right now.
-func (r *ImportServiceAccountsConfigsRPC) ImportServiceAccountsConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportServiceAccountsConfigsRPC) ImportServiceAccountsConfigs(c context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
 	rev, err := r.RulesCache.ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch service accounts configs")

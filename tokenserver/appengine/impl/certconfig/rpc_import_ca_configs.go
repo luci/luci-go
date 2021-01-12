@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -48,7 +48,7 @@ type ImportCAConfigsRPC struct {
 }
 
 // ImportCAConfigs fetches CA configs from from luci-config right now.
-func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
 	content, meta, err := fetchConfigFile(c, configFile)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't read config file - %s", err)
@@ -57,7 +57,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 
 	// Read list of CAs.
 	msg := admin.TokenServerConfig{}
-	if err = proto.UnmarshalText(content, &msg); err != nil {
+	if err = prototext.Unmarshal([]byte(content), &msg); err != nil {
 		return nil, status.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
 
@@ -159,7 +159,7 @@ func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
 	// Validate CA config protos are well-formed.
 	rules.Add("services/${appid}", configFile, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		cfg := &admin.TokenServerConfig{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid TokenServerConfig proto message - %s", err)
 			return nil
 		}

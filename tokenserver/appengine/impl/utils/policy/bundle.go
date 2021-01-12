@@ -17,10 +17,12 @@ package policy
 import (
 	"bytes"
 	"encoding/gob"
-	"reflect"
+	"fmt"
 	"sort"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // ConfigBundle is a bunch of related parsed text proto files.
@@ -53,13 +55,16 @@ func serializeBundle(b ConfigBundle) ([]byte, error) {
 	items := make([]blobWithType, 0, len(b))
 	for _, k := range keys {
 		v := b[k]
+		if v == nil {
+			return nil, fmt.Errorf("no config body in %q", k)
+		}
 		blob, err := proto.Marshal(v)
 		if err != nil {
 			return nil, err
 		}
 		items = append(items, blobWithType{
 			Path: k,
-			Kind: proto.MessageName(v),
+			Kind: string(proto.MessageName(v)),
 			Blob: blob,
 		})
 	}
@@ -85,12 +90,12 @@ func deserializeBundle(blob []byte) (b ConfigBundle, unknown []blobWithType, err
 
 	b = make(ConfigBundle, len(items))
 	for _, item := range items {
-		t := proto.MessageType(item.Kind) // this is *SomeProto type
-		if t == nil {
+		typ, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(item.Kind))
+		if err != nil {
 			unknown = append(unknown, item)
 			continue
 		}
-		msg := reflect.New(t.Elem()).Interface().(proto.Message)
+		msg := typ.New().Interface()
 		if err := proto.Unmarshal(item.Blob, msg); err != nil {
 			return nil, nil, err
 		}

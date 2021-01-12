@@ -19,7 +19,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -36,8 +36,8 @@ import (
 type Client struct {
 	// Client is interface to use for raw RPC calls to the token server.
 	//
-	// Use minter.NewTokenMinterClient (or NewTokenMinterPRPCClient) to
-	// create it. Note that transport-level authentication is not needed.
+	// Use minter.NewTokenMinterClient to create it. Note that transport-level
+	// authentication is not needed.
 	Client TokenMinterClient
 
 	// Signer knows how to sign requests using some private key.

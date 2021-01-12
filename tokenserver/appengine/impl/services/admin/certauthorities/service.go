@@ -27,6 +27,8 @@ import (
 
 // serverImpl implements admin.CertificateAuthoritiesServer RPC interface.
 type serverImpl struct {
+	admin.UnsafeCertificateAuthoritiesServer
+
 	certconfig.FetchCRLRPC
 	certconfig.ListCAsRPC
 	certconfig.GetCAStatusRPC

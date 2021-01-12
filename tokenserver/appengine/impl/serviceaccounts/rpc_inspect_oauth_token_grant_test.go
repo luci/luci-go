@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"google.golang.org/protobuf/proto"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

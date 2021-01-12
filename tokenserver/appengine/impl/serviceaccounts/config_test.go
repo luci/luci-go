@@ -19,10 +19,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -218,7 +217,7 @@ func TestRules(t *testing.T) {
 
 func loadConfig(ctx context.Context, text string) (*Rules, error) {
 	cfg := &admin.ServiceAccountsPermissions{}
-	err := proto.UnmarshalText(text, cfg)
+	err := prototext.Unmarshal([]byte(text), cfg)
 	if err != nil {
 		return nil, err
 	}

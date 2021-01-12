@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/proto/google"
 
@@ -73,14 +73,14 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 			ConfigRev:        "config-rev",
 			ConfigRule:       "rule-name",
 			EndUserIdentity:  "user:end-user@example.com",
-			Expiration:       &timestamp.Timestamp{Seconds: 1422759784, Nanos: 5},
+			Expiration:       &timestamppb.Timestamp{Seconds: 1422759784, Nanos: 5},
 			Fingerprint:      "3f16bed7089f4653e5ef21bfd2824d7f",
 			GaeRequestId:     "gae-request-id",
 			GrantFingerprint: "6d2bfc0147054b3d0ad9dac8d06b6f65",
 			OauthScopes:      []string{"https://scope1", "https://scope2"},
 			PeerIp:           "127.10.10.10",
 			ProxyIdentity:    "user:proxy@example.com",
-			RequestedAt:      &timestamp.Timestamp{Seconds: 1422757984, Nanos: 5},
+			RequestedAt:      &timestamppb.Timestamp{Seconds: 1422757984, Nanos: 5},
 			ServiceAccount:   "service-account@robots.com",
 			ServiceVersion:   "unit-tests/mocked-ver",
 		})

@@ -20,6 +20,7 @@ package adminsrv
 
 import (
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
@@ -30,6 +31,8 @@ import (
 
 // AdminServer implements admin.AdminServer RPC interface.
 type AdminServer struct {
+	admin.UnsafeAdminServer
+
 	certconfig.ImportCAConfigsRPC
 	delegation.ImportDelegationConfigsRPC
 	delegation.InspectDelegationTokenRPC

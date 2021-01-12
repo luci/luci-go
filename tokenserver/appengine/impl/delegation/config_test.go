@@ -18,14 +18,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -282,7 +281,7 @@ func TestFindMatchingRule(t *testing.T) {
 
 func loadConfig(ctx context.Context, text string) (*Rules, error) {
 	cfg := &admin.DelegationPermissions{}
-	err := proto.UnmarshalText(text, cfg)
+	err := prototext.Unmarshal([]byte(text), cfg)
 	if err != nil {
 		return nil, err
 	}

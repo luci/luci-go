@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -77,10 +77,9 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 
 	// Dump the whole request and relevant auth state to the debug log.
 	if logging.IsLogging(c, logging.Debug) {
-		m := jsonpb.Marshaler{Indent: "  "}
-		dump, _ := m.MarshalToString(req)
+		opts := protojson.MarshalOptions{Indent: "  "}
 		logging.Debugf(c, "PeerIdentity: %s", state.PeerIdentity())
-		logging.Debugf(c, "MintDelegationTokenRequest:\n%s", dump)
+		logging.Debugf(c, "MintDelegationTokenRequest:\n%s", opts.Format(req))
 	}
 
 	// Validate the request authentication context: not an anonymous call, no

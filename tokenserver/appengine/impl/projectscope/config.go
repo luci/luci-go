@@ -17,14 +17,13 @@ package projectscope
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	configset "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
@@ -34,7 +33,7 @@ func SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${config_service_appid}", projectsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		ctx.SetFile(projectsCfg)
 		cfg := &config.ProjectsCfg{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid ProjectsCfg proto message - %s", err)
 		} else {
 			validateProjectsCfg(ctx, cfg)

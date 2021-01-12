@@ -20,7 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -58,7 +59,7 @@ func TestImportConfigs(t *testing.T) {
 			Name: "testing",
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
 				fetchCalls++
-				var ts1, ts2 timestamp.Timestamp
+				var ts1, ts2 timestamppb.Timestamp
 				So(f.FetchTextProto(c, "config_1.cfg", &ts1), ShouldBeNil)
 				So(f.FetchTextProto(c, "config_2.cfg", &ts2), ShouldBeNil)
 				return ConfigBundle{"config_1.cfg": &ts1, "config_2.cfg": &ts2}, nil
@@ -104,7 +105,7 @@ func TestImportConfigs(t *testing.T) {
 		p := Policy{
 			Name: "testing",
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
-				var ts timestamp.Timestamp
+				var ts timestamppb.Timestamp
 				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
@@ -134,7 +135,7 @@ func TestQueryable(t *testing.T) {
 		p := Policy{
 			Name: "testing",
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
-				var ts timestamp.Timestamp
+				var ts timestamppb.Timestamp
 				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
@@ -158,7 +159,7 @@ func TestQueryable(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q.ConfigRevision(), ShouldEqual, rev1)
 		qf := q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamp.Timestamp{Seconds: 12345})
+		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamppb.Timestamp{Seconds: 12345})
 
 		So(counter.GetMulti.Total(), ShouldEqual, 4)
 
@@ -196,6 +197,6 @@ func TestQueryable(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q.ConfigRevision(), ShouldEqual, rev2)
 		qf = q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamp.Timestamp{Seconds: 6789})
+		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamppb.Timestamp{Seconds: 6789})
 	})
 }

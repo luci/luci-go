@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 )
 
 const (

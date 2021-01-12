@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config/validation"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
@@ -123,7 +122,7 @@ func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
 func (rc *RulesCache) SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${appid}", delegationCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		cfg := &admin.DelegationPermissions{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid DelegationPermissions proto message - %s", err)
 		} else {
 			validateDelegationCfg(ctx, cfg)
