@@ -23,15 +23,18 @@ import (
 	"net/http"
 	"sync"
 
-	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -40,32 +43,32 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 )
 
-var (
-	caServer    = certauthorities.NewServer()
-	adminServer = adminsrv.NewServer()
-)
-
 func main() {
-	r := router.New()
-	basemw := standard.Base()
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+	}
 
-	standard.InstallHandlers(r)
+	server.Main(nil, modules, func(srv *server.Server) error {
+		adminServer := adminsrv.NewServer(auth.GetSigner(srv.Context))
+		caServer := certauthorities.NewServer()
 
-	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
-	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
+		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
 
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+		srv.Routes.GET("/internal/cron/read-config", cronMW, func(c *router.Context) {
+			readConfigCron(c, adminServer)
+		})
+		srv.Routes.GET("/internal/cron/fetch-crl", cronMW, func(c *router.Context) {
+			fetchCRLCron(c, caServer)
+		})
+
+		return nil
+	})
 }
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
-func readConfigCron(c *router.Context) {
-	// Don't override manually imported configs with 'nil' on devserver.
-	if info.IsDevAppServer(c.Context) {
-		c.Writer.WriteHeader(http.StatusOK)
-		return
-	}
-
+func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
 	// All config fetching callbacks to call in parallel.
 	fetchers := []struct {
 		name string
@@ -100,7 +103,7 @@ func readConfigCron(c *router.Context) {
 }
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
-func fetchCRLCron(c *router.Context) {
+func fetchCRLCron(c *router.Context, caServer admin.CertificateAuthoritiesServer) {
 	list, err := caServer.ListCAs(c.Context, nil)
 	if err != nil {
 		panic(err) // let panic catcher deal with it

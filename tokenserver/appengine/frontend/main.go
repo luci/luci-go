@@ -21,21 +21,19 @@ import (
 	"net/http"
 	"strings"
 
-	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -43,52 +41,47 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 func main() {
-	r := router.New()
-	base := standard.Base()
-
-	adminSrv := adminsrv.NewServer()
-	certsSrv := certauthorities.NewServer()
-	tokenminterSrv := tokenminter.NewServer()
-
-	// Register config validation rules.
-	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
-
-	// Install auth, config and tsmon handlers.
-	standard.InstallHandlers(r)
-
-	// Serve the RPC Explorer UI.
-	rpcexplorer.Install(r)
-
-	// The service has no UI, so just redirect to the RPC Explorer.
-	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
-	})
-
-	// Install all RPC servers. Catch panics, report metrics to tsmon (including
-	// panics themselves, as Internal errors).
-	api := prpc.Server{
-		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
-			grpcmon.UnaryServerInterceptor,
-			grpcutil.UnaryServerPanicCatcherInterceptor,
-			adminCheckInterceptor,
-		),
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 	}
-	admin.RegisterCertificateAuthoritiesServer(&api, certsSrv)
-	admin.RegisterAdminServer(&api, adminSrv)
-	minter.RegisterTokenMinterServer(&api, tokenminterSrv)
-	discovery.Enable(&api)
-	api.InstallHandlers(r, base)
 
-	// Expose all this stuff.
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+	server.Main(nil, modules, func(srv *server.Server) error {
+		bqClient, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+		signer := auth.GetSigner(srv.Context)
+
+		adminSrv := adminsrv.NewServer(signer)
+		certsSrv := certauthorities.NewServer()
+		tokenminterSrv := tokenminter.NewServer(signer, bqClient, srv.Options.Prod)
+
+		adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
+
+		admin.RegisterCertificateAuthoritiesServer(srv.PRPC, certsSrv)
+		admin.RegisterAdminServer(srv.PRPC, adminSrv)
+		minter.RegisterTokenMinterServer(srv.PRPC, tokenminterSrv)
+
+		// Authorization check for admin services.
+		srv.PRPC.UnaryServerInterceptor = adminCheckInterceptor
+
+		// The service has no UI, so just redirect to the RPC Explorer.
+		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
+		})
+
+		return nil
+	})
 }
 
 func adminCheckInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
