@@ -75,9 +75,18 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	}
 
 	return &sinkpb.DecoratedSink{
-		Service: ss,
-		Prelude: authTokenPrelude(cfg.AuthToken),
+		Service:  ss,
+		Prelude:  authTokenPrelude(cfg.AuthToken),
+		Postlude: sinkPostlude,
 	}, nil
+}
+
+func sinkPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	if err != nil {
+		// Log the error, so that each test framework in existence doesn't have it.
+		logging.Errorf(ctx, "%s is responding with %s", methodName, err)
+	}
+	return err
 }
 
 // closeSinkServer closes the dispatcher channels and blocks until they are fully drained,
