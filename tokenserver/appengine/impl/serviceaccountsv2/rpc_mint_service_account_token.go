@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -215,13 +215,12 @@ func (r *MintServiceAccountTokenRPC) logRequest(ctx context.Context, env *callEn
 	if !logging.IsLogging(ctx, logging.Debug) {
 		return
 	}
-	m := jsonpb.Marshaler{Indent: "  "}
-	dump, _ := m.MarshalToString(req)
+	opts := protojson.MarshalOptions{Indent: "  "}
 	logging.Debugf(ctx, "Peer:     %s", env.peer)
 	logging.Debugf(ctx, "Identity: %s", env.caller)
 	logging.Debugf(ctx, "Mapping:  %s", env.mapping.ConfigRevision())
 	logging.Debugf(ctx, "AuthDB:   %d", authdb.Revision(env.db))
-	logging.Debugf(ctx, "MintServiceAccountTokenRequest:\n%s", dump)
+	logging.Debugf(ctx, "MintServiceAccountTokenRequest:\n%s", opts.Format(req))
 }
 
 // validateRequest checks the request is well-formed.

@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/config/validation"
 
@@ -224,7 +224,7 @@ func TestValidation(t *testing.T) {
 			c.Printf("Case #%d\n", idx)
 
 			cfg := &admin.ServiceAccountsPermissions{}
-			err := proto.UnmarshalText(cs.Cfg, cfg)
+			err := prototext.Unmarshal([]byte(cs.Cfg), cfg)
 			So(err, ShouldBeNil)
 
 			ctx := &validation.Context{Context: context.Background()}

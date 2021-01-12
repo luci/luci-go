@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
@@ -56,8 +56,8 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.MachineToken {
 		// Information about the token.
 		MachineFqdn:        i.TokenBody.MachineFqdn,
 		TokenType:          i.Request.TokenType,
-		IssuedAt:           &timestamp.Timestamp{Seconds: int64(i.TokenBody.IssuedAt)},
-		Expiration:         &timestamp.Timestamp{Seconds: int64(i.TokenBody.IssuedAt + i.TokenBody.Lifetime)},
+		IssuedAt:           &timestamppb.Timestamp{Seconds: int64(i.TokenBody.IssuedAt)},
+		Expiration:         &timestamppb.Timestamp{Seconds: int64(i.TokenBody.IssuedAt + i.TokenBody.Lifetime)},
 		CertSerialNumber:   fmt.Sprintf("%d", i.TokenBody.CertSn),
 		SignatureAlgorithm: i.Request.SignatureAlgorithm,
 

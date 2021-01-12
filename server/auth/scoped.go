@@ -157,7 +157,7 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *Token, err 
 				if err != nil {
 					return nil, err, "ERROR_NO_TRANSPORT"
 				}
-				rpcClient = minter.NewTokenMinterPRPCClient(&prpc.Client{
+				rpcClient = minter.NewTokenMinterClient(&prpc.Client{
 					C:    &http.Client{Transport: transport},
 					Host: tokenServiceHost,
 					Options: &prpc.Options{

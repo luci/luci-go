@@ -19,10 +19,10 @@ package main
 import (
 	"context"
 	"net/http"
-
-	"github.com/golang/protobuf/proto"
+	"strings"
 
 	"google.golang.org/appengine"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -45,27 +45,15 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
 )
 
-// adminPrelude returns a prelude that authorizes only administrators.
-func adminPrelude(serviceName string) func(context.Context, string, proto.Message) (context.Context, error) {
-	return func(c context.Context, method string, _ proto.Message) (context.Context, error) {
-		logging.Infof(c, "%s: %q is calling %q", serviceName, auth.CurrentIdentity(c), method)
-		switch admin, err := auth.IsMember(c, "administrators"); {
-		case err != nil:
-			return nil, status.Errorf(codes.Internal, "can't check ACL - %s", err)
-		case !admin:
-			return nil, status.Errorf(codes.PermissionDenied, "not an admin")
-		}
-		return c, nil
-	}
-}
-
 func main() {
 	r := router.New()
 	base := standard.Base()
 
-	// Register config validation rules.
 	adminSrv := adminsrv.NewServer()
-	tokenminter := tokenminter.NewServer()
+	certsSrv := certauthorities.NewServer()
+	tokenminterSrv := tokenminter.NewServer()
+
+	// Register config validation rules.
 	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
@@ -89,21 +77,29 @@ func main() {
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
 			grpcmon.UnaryServerInterceptor,
 			grpcutil.UnaryServerPanicCatcherInterceptor,
+			adminCheckInterceptor,
 		),
 	}
-	admin.RegisterCertificateAuthoritiesServer(&api, &admin.DecoratedCertificateAuthorities{
-		Service: certauthorities.NewServer(),
-		Prelude: adminPrelude("admin.CertificateAuthorities"),
-	})
-	admin.RegisterAdminServer(&api, &admin.DecoratedAdmin{
-		Service: adminSrv,
-		Prelude: adminPrelude("admin.Admin"),
-	})
-	minter.RegisterTokenMinterServer(&api, tokenminter) // auth inside
+	admin.RegisterCertificateAuthoritiesServer(&api, certsSrv)
+	admin.RegisterAdminServer(&api, adminSrv)
+	minter.RegisterTokenMinterServer(&api, tokenminterSrv)
 	discovery.Enable(&api)
 	api.InstallHandlers(r, base)
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)
 	appengine.Main()
+}
+
+func adminCheckInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	if strings.HasPrefix(info.FullMethod, "/tokenserver.admin.") {
+		logging.Warningf(ctx, "%q is calling %q", auth.CurrentIdentity(ctx), info.FullMethod)
+		switch admin, err := auth.IsMember(ctx, "administrators"); {
+		case err != nil:
+			return nil, status.Errorf(codes.Internal, "can't check ACL - %s", err)
+		case !admin:
+			return nil, status.Errorf(codes.PermissionDenied, "not an admin")
+		}
+	}
+	return handler(ctx, req)
 }

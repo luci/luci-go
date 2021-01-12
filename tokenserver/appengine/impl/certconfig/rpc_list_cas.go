@@ -19,8 +19,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
@@ -30,7 +29,7 @@ type ListCAsRPC struct {
 }
 
 // ListCAs returns a list of Common Names of registered CAs.
-func (r *ListCAsRPC) ListCAs(c context.Context, _ *empty.Empty) (*admin.ListCAsResponse, error) {
+func (r *ListCAsRPC) ListCAs(c context.Context, _ *emptypb.Empty) (*admin.ListCAsResponse, error) {
 	names, err := ListCAs(c)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "transient datastore error - %s", err)

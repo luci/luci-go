@@ -20,9 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -135,7 +135,7 @@ func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
 func (rc *RulesCache) SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${appid}", serviceAccountsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		cfg := &admin.ServiceAccountsPermissions{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid ServiceAccountsPermissions proto message - %s", err)
 		} else {
 			validateServiceAccountsCfg(ctx, cfg)

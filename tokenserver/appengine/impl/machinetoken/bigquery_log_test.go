@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
@@ -64,10 +64,10 @@ func TestMintedTokenInfo(t *testing.T) {
 			CaCommonName:       "Fake CA: fake.ca",
 			CaConfigRev:        "cfg-updated-rev",
 			CertSerialNumber:   "4096",
-			Expiration:         &timestamp.Timestamp{Seconds: 1422939906},
+			Expiration:         &timestamppb.Timestamp{Seconds: 1422939906},
 			Fingerprint:        "2d6ccd34ad7af363159ed4bbe18c0e43",
 			GaeRequestId:       "gae-request-id",
-			IssuedAt:           &timestamp.Timestamp{Seconds: 1422936306},
+			IssuedAt:           &timestamppb.Timestamp{Seconds: 1422936306},
 			MachineFqdn:        "luci-token-server-test-1.fake.domain",
 			PeerIp:             "127.10.10.10",
 			ServiceVersion:     "unit-tests/mocked-ver",

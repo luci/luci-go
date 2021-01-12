@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/gae/service/info"
 
@@ -77,11 +76,12 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	}
 
 	// Prevent GrantToken from leaking into the logs.
-	reqcpy := *req
-	if reqcpy.GrantToken != "" {
-		reqcpy.GrantToken = "..."
+	tok := req.GrantToken
+	if req.GrantToken != "" {
+		req.GrantToken = "..."
 	}
-	utils.LogRequest(c, r, &reqcpy, callerID)
+	utils.LogRequest(c, r, req, callerID)
+	req.GrantToken = tok
 
 	if err := utils.ValidateAndNormalizeRequest(c, req.OauthScope, &req.MinValidityDuration, req.AuditTags); err != nil {
 		if status.Code(err) == codes.Unknown {
@@ -205,9 +205,8 @@ func (r *MintOAuthTokenViaGrantRPC) decodeAndValidateToken(c context.Context, gr
 		return nil, status.Errorf(codes.InvalidArgument, "malformed grant token - %s", inspection.InvalidityReason)
 	}
 	if logging.IsLogging(c, logging.Debug) {
-		m := jsonpb.Marshaler{Indent: "  "}
-		dump, _ := m.MarshalToString(grantBody)
-		logging.Debugf(c, "OAuthTokenGrantBody:\n%s", dump)
+		opts := protojson.MarshalOptions{Indent: "  "}
+		logging.Debugf(c, "OAuthTokenGrantBody:\n%s", opts.Format(grantBody))
 	}
 
 	if inspection.InvalidityReason != "" {

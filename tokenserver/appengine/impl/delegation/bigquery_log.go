@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
@@ -53,8 +53,8 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.DelegationToken {
 		TokenId:           fmt.Sprintf("%d", subtok.SubtokenId),
 		DelegatedIdentity: subtok.DelegatedIdentity,
 		RequestorIdentity: subtok.RequestorIdentity,
-		IssuedAt:          &timestamp.Timestamp{Seconds: subtok.CreationTime},
-		Expiration:        &timestamp.Timestamp{Seconds: subtok.CreationTime + int64(subtok.ValidityDuration)},
+		IssuedAt:          &timestamppb.Timestamp{Seconds: subtok.CreationTime},
+		Expiration:        &timestamppb.Timestamp{Seconds: subtok.CreationTime + int64(subtok.ValidityDuration)},
 		TargetAudience:    subtok.Audience,
 		TargetServices:    subtok.Services,
 

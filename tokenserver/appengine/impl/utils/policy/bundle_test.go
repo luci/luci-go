@@ -19,8 +19,8 @@ import (
 	"encoding/gob"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -43,8 +43,8 @@ func TestConfigBundle(t *testing.T) {
 		// other random proto messages. It doesn't matter what proto messages are
 		// used here.
 		b1 := ConfigBundle{
-			"a": &timestamp.Timestamp{Seconds: 1},
-			"b": &duration.Duration{Seconds: 2},
+			"a": &timestamppb.Timestamp{Seconds: 1},
+			"b": &durationpb.Duration{Seconds: 2},
 		}
 		blob, err := serializeBundle(b1)
 		So(err, ShouldBeNil)

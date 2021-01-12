@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
-//go:generate svcdec -type AdminServer
-//go:generate svcdec -type CertificateAuthoritiesServer
+//go:generate cproto -use-grpc-plugin
 
 // Package admin contains The Token Server Administrative and Config API.
 //

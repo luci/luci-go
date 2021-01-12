@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -55,7 +55,7 @@ func (i *MintedGrantInfo) toBigQueryMessage() *bqpb.OAuthTokenGrant {
 		ProxyIdentity:   i.GrantBody.Proxy,
 		EndUserIdentity: i.GrantBody.EndUser,
 		IssuedAt:        i.GrantBody.IssuedAt,
-		Expiration: &timestamp.Timestamp{
+		Expiration: &timestamppb.Timestamp{
 			Seconds: i.GrantBody.IssuedAt.Seconds + i.GrantBody.ValidityDuration,
 			Nanos:   i.GrantBody.IssuedAt.Nanos,
 		},

@@ -18,7 +18,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 
@@ -35,8 +35,8 @@ import (
 type MintedTokenInfo struct {
 	Request      *minter.MintProjectTokenRequest  // RPC input, as is
 	Response     *minter.MintProjectTokenResponse // RPC output, as is
-	RequestedAt  *timestamp.Timestamp
-	Expiration   *timestamp.Timestamp
+	RequestedAt  *timestamppb.Timestamp
+	Expiration   *timestamppb.Timestamp
 	PeerIdentity identity.Identity // caller identity
 	PeerIP       net.IP            // caller IP address
 	RequestID    string            // GAE request ID that handled the RPC

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/proto/google"
 
@@ -70,10 +70,10 @@ func TestMintedGrantInfo(t *testing.T) {
 			ConfigRev:       "config-rev",
 			ConfigRule:      "rule-name",
 			EndUserIdentity: "user:end-user@example.com",
-			Expiration:      &timestamp.Timestamp{Seconds: 1422939906},
+			Expiration:      &timestamppb.Timestamp{Seconds: 1422939906},
 			Fingerprint:     "8b7df143d91c716ecfa5fc1730022f6b",
 			GaeRequestId:    "gae-request-id",
-			IssuedAt:        &timestamp.Timestamp{Seconds: 1422936306},
+			IssuedAt:        &timestamppb.Timestamp{Seconds: 1422936306},
 			PeerIp:          "127.10.10.10",
 			ProxyIdentity:   "user:proxy@example.com",
 			ServiceAccount:  "service-account@robots.com",

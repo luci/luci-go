@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -69,7 +69,7 @@ func readConfigCron(c *router.Context) {
 	// All config fetching callbacks to call in parallel.
 	fetchers := []struct {
 		name string
-		cb   func(context.Context, *empty.Empty) (*admin.ImportedConfigs, error)
+		cb   func(context.Context, *emptypb.Empty) (*admin.ImportedConfigs, error)
 	}{
 		{"ImportCAConfigs", adminServer.ImportCAConfigs},
 		{"ImportDelegationConfigs", adminServer.ImportDelegationConfigs},

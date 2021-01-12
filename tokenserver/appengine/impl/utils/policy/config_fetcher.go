@@ -20,7 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -48,7 +49,13 @@ func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out p
 	defer cancel()
 
 	var meta config.Meta
-	if err := cfgclient.Get(c, "services/${appid}", path, cfgclient.ProtoText(out), &meta); err != nil {
+	err := cfgclient.Get(c,
+		"services/${appid}",
+		path,
+		cfgclient.ProtoText(protov1.MessageV1(out)),
+		&meta,
+	)
+	if err != nil {
 		return err
 	}
 

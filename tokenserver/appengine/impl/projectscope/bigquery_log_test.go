@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -42,8 +42,8 @@ func TestMintedTokenInfo(t *testing.T) {
 				AccessToken:         "blah",
 				ServiceVersion:      "unit-tests/mocked-ver",
 			},
-			RequestedAt: &timestamp.Timestamp{Seconds: 1},
-			Expiration:  &timestamp.Timestamp{Seconds: 1},
+			RequestedAt: &timestamppb.Timestamp{Seconds: 1},
+			Expiration:  &timestamppb.Timestamp{Seconds: 1},
 			PeerIP:      net.ParseIP("127.10.10.10"),
 			RequestID:   "gae-request-id",
 			AuthDBRev:   123,
@@ -53,8 +53,8 @@ func TestMintedTokenInfo(t *testing.T) {
 			Fingerprint:    "8b7df143d91c716ecfa5fc1730022f6b",
 			ServiceAccount: "foo@bar.com",
 			LuciProject:    "someproject",
-			Expiration:     &timestamp.Timestamp{Seconds: 1},
-			RequestedAt:    &timestamp.Timestamp{Seconds: 1},
+			Expiration:     &timestamppb.Timestamp{Seconds: 1},
+			RequestedAt:    &timestamppb.Timestamp{Seconds: 1},
 			AuditTags:      []string{"k:v"},
 			PeerIp:         "127.10.10.10",
 			ServiceVersion: "unit-tests/mocked-ver",

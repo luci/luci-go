@@ -15,17 +15,15 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"os"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 )
 
 // stateInToken is stored in the token file in 'tokend_state' field.
@@ -49,7 +47,7 @@ func readTokenFile(ctx context.Context, path string) (*tokenserver.TokenFile, *s
 		return &tokenserver.TokenFile{}, &stateInToken{}
 	}
 	out := &tokenserver.TokenFile{}
-	if err = jsonpb.Unmarshal(bytes.NewReader(blob), out); err != nil {
+	if err = protojson.Unmarshal(blob, out); err != nil {
 		logging.Warningf(ctx, "Failed to unmarshal token file %q - %s", path, err)
 		return &tokenserver.TokenFile{}, &stateInToken{}
 	}
@@ -79,14 +77,12 @@ func writeTokenFile(ctx context.Context, tokenFile *tokenserver.TokenFile, state
 	}
 	tokenFile.TokendState = stateBlob
 
-	out := bytes.Buffer{}
-	m := jsonpb.Marshaler{}
-	m.Indent = "  "
-	if err := m.Marshal(&out, tokenFile); err != nil {
+	opts := protojson.MarshalOptions{Indent: "  "}
+	blob, err := opts.Marshal(tokenFile)
+	if err != nil {
 		logging.Errorf(ctx, "Failed to marshal the token file - %s", err)
 		return err
 	}
-	blob := out.Bytes()
 
 	return AtomicWriteFile(ctx, path, blob, 0644)
 }

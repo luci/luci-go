@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -68,10 +68,10 @@ func TestMintedTokenInfo(t *testing.T) {
 			ConfigRev:         "config-rev",
 			ConfigRule:        "rule-name",
 			DelegatedIdentity: "user:delegated@example.com",
-			Expiration:        &timestamp.Timestamp{Seconds: 1422939906},
+			Expiration:        &timestamppb.Timestamp{Seconds: 1422939906},
 			Fingerprint:       "8b7df143d91c716ecfa5fc1730022f6b",
 			GaeRequestId:      "gae-request-id",
-			IssuedAt:          &timestamp.Timestamp{Seconds: 1422936306},
+			IssuedAt:          &timestamppb.Timestamp{Seconds: 1422936306},
 			PeerIp:            "127.10.10.10",
 			RequestedIntent:   "intent string",
 			RequestedValidity: 3600,
