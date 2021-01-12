@@ -190,9 +190,8 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	}
 
 	if r.LogToken != nil {
-		// Errors during logging are considered not fatal. bqlog library has
-		// a monitoring counter that tracks number of errors, so they are not
-		// totally invisible.
+		// Errors during logging are considered not fatal. We have a monitoring
+		// counter that tracks number of errors, so they are not totally invisible.
 		tokInfo := MintedTokenInfo{
 			Request:   req,
 			Response:  resp,

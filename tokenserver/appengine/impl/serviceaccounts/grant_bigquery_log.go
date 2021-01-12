@@ -20,9 +20,6 @@ import (
 	"net"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/bqlog"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -32,14 +29,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
-
-var oauthTokenGrantsLog = bqlog.Log{
-	QueueName:           "bqlog-oauth-token-grants", // see queues.yaml
-	DatasetID:           "tokens",                   // see bq/README.md
-	TableID:             "oauth_token_grants",       // see bq/tables/oauth_token_grants.schema
-	DumpEntriesToLogger: true,
-	DryRun:              appengine.IsDevAppServer(),
-}
 
 // MintedGrantInfo is passed to LogGrant.
 //
@@ -96,13 +85,4 @@ func (i *MintedGrantInfo) toBigQueryMessage() *bqpb.OAuthTokenGrant {
 // accidentally pushing fake data to real BigQuery dataset).
 func LogGrant(c context.Context, i *MintedGrantInfo) error {
 	return bq.InsertFromGAEv1(c, "tokens", "oauth_token_grants", i.toBigQueryMessage())
-}
-
-// FlushGrantsLog sends all buffered logged grants to BigQuery.
-//
-// It is fine to call FlushGrantLog concurrently from multiple request handlers,
-// if necessary (it will effectively parallelize the flush).
-func FlushGrantsLog(c context.Context) error {
-	_, err := oauthTokenGrantsLog.Flush(c)
-	return err
 }
