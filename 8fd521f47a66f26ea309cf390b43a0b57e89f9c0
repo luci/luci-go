@@ -129,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0128d61f_32fa960e",
+        "filename": "resultdb/cmd/deriver/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T04:34:14Z",
+      "side": 1,
+      "message": "Because ResultType is a oneof field and \u0026pb.BigQueryExport_TestResults_ is one type that is assignable to it.\n\n\nSee https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2555528/7/resultdb/proto/v1/invocation.pb.go#304",
+      "parentUuid": "6bac7992_4c532665",
+      "range": {
+        "startLine": 70,
+        "startChar": 44,
+        "endLine": 70,
+        "endChar": 46
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "37806056_fefe5c60",
@@ -142,6 +166,30 @@
       "writtenOn": "2020-11-25T17:34:25Z",
       "side": 1,
       "message": "other validation code does not annotate with the name of the oneof because the field is unique already.\nExample: ValidateVariantPredicate.\n\nconsider inlining validateResultType in this func since it is not going to be used by any other function",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 46
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "172f3bff_9e447f43",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T04:34:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37806056_fefe5c60",
       "range": {
         "startLine": 36,
         "startChar": 2,
@@ -169,6 +217,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3581d5e8_cf2a5ff9",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T04:34:14Z",
+      "side": 1,
+      "message": "This code path should never be reached, so we use panic here to indicate something is seriously broken.",
+      "parentUuid": "a7c9e562_237e9786",
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "85338f91_eb7f3f72",
@@ -192,6 +258,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fe00df7_fc57bab0",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T04:34:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85338f91_eb7f3f72",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 2
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "76156530_c9d7f29a",
@@ -205,6 +295,30 @@
       "writtenOn": "2020-11-26T20:30:52Z",
       "side": 1,
       "message": "the abstraction level here seems misaligned with the abstraction level in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2553162/7//COMMIT_MSG#7\nthere we have text artifacts, but here arbitrary artifacts\nI think the must be aligned.\n\nmaybe rename this field to text_artifacts?",
+      "range": {
+        "startLine": 166,
+        "startChar": 14,
+        "endLine": 166,
+        "endChar": 23
+      },
+      "revId": "8fd521f47a66f26ea309cf390b43a0b57e89f9c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb7de418_9f6251f9",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-12T04:34:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76156530_c9d7f29a",
       "range": {
         "startLine": 166,
         "startChar": 14,
