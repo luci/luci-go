@@ -23,14 +23,14 @@ import (
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/bqlog"
-	"go.chromium.org/luci/common/bq"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 var machineTokensLog = bqlog.Log{
@@ -92,9 +92,7 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.MachineToken {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogToken(c context.Context, i *MintedTokenInfo) error {
-	return machineTokensLog.Insert(c, &bq.Row{
-		Message: i.toBigQueryMessage(),
-	})
+	return bq.InsertFromGAEv1(c, "tokens", "machine_tokens", i.toBigQueryMessage())
 }
 
 // FlushTokenLog sends all buffered logged tokens to BigQuery.

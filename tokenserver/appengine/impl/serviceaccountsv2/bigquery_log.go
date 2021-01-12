@@ -23,12 +23,12 @@ import (
 
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/proto/google"
 
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 var mintedTokensLog = bqlog.Log{
@@ -87,9 +87,7 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.ServiceAccountToken {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogToken(ctx context.Context, i *MintedTokenInfo) error {
-	return mintedTokensLog.Insert(ctx, &bq.Row{
-		Message: i.toBigQueryMessage(),
-	})
+	return bq.InsertFromGAEv1(ctx, "tokens", "service_account_tokens", i.toBigQueryMessage())
 }
 
 // FlushTokenLog sends all buffered logged tokens to BigQuery.
