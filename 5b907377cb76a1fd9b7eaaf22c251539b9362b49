@@ -16,6 +16,24 @@
       "message": "does it make a difference now?",
       "revId": "5b907377cb76a1fd9b7eaaf22c251539b9362b49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bdc2d7d_040f5103",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-12T01:52:57Z",
+      "side": 1,
+      "message": "Need to test it in Prod because the data size in Dev too small to see much difference. But at least, it won\u0027t make the performance worse. \n\nI\u0027m still working on adding `status_v2` and removing the legacy `status` composite index, which will be very helpful for the search latency.",
+      "parentUuid": "9a79528c_e780a9e7",
+      "revId": "5b907377cb76a1fd9b7eaaf22c251539b9362b49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
