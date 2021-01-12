@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3aa1ee57_6050162d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T22:36:17Z",
+      "side": 1,
+      "message": "I\u0027ll put it back in a following CL.",
+      "parentUuid": "350fe23a_310a8934",
+      "revId": "95e7dd9ae9e551755f4e66fb311c7f4cf79ac5b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8ccdd8cc_8f7e98e8",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-01-12T21:53:57Z",
       "side": 1,
       "message": "nits: I found the \"TV\" a bit confusing. If \"TestVariant\" is too long, perhaps \"Variant\" is good enough?",
+      "range": {
+        "startLine": 45,
+        "startChar": 24,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "95e7dd9ae9e551755f4e66fb311c7f4cf79ac5b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "43301347_273b65fb",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T22:36:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ccdd8cc_8f7e98e8",
       "range": {
         "startLine": 45,
         "startChar": 24,
