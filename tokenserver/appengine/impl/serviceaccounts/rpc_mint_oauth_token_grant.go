@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/revocation"
@@ -111,9 +111,8 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 
 	// Log it to BigQuery.
 	if r.LogGrant != nil {
-		// Errors during logging are considered not fatal. bqlog library has
-		// a monitoring counter that tracks number of errors, so they are not
-		// totally invisible.
+		// Errors during logging are considered not fatal. We have a monitoring
+		// counter that tracks number of errors, so they are not totally invisible.
 		info := MintedGrantInfo{
 			Request:   req,
 			Response:  resp,

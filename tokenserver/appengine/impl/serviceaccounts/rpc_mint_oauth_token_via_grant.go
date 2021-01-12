@@ -125,9 +125,8 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 
 	// Log it to BigQuery.
 	if r.LogOAuthToken != nil {
-		// Errors during logging are considered not fatal. bqlog library has
-		// a monitoring counter that tracks number of errors, so they are not
-		// totally invisible.
+		// Errors during logging are considered not fatal. We have a monitoring
+		// counter that tracks number of errors, so they are not totally invisible.
 		info := MintedOAuthTokenInfo{
 			RequestedAt: clock.Now(c),
 			Request:     req,
