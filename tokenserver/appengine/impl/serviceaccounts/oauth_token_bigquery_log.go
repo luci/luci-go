@@ -19,9 +19,6 @@ import (
 	"net"
 	"time"
 
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/proto/google"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
@@ -32,14 +29,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
-
-var oauthTokensLog = bqlog.Log{
-	QueueName:           "bqlog-oauth-tokens", // see queues.yaml
-	DatasetID:           "tokens",             // see bq/README.md
-	TableID:             "oauth_tokens",       // see bq/tables/oauth_tokens.schema
-	DumpEntriesToLogger: true,
-	DryRun:              appengine.IsDevAppServer(),
-}
 
 // MintedOAuthTokenInfo is passed to LogOAuthToken.
 //
@@ -98,13 +87,4 @@ func (i *MintedOAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
 // accidentally pushing fake data to real BigQuery dataset).
 func LogOAuthToken(c context.Context, i *MintedOAuthTokenInfo) error {
 	return bq.InsertFromGAEv1(c, "tokens", "oauth_tokens", i.toBigQueryMessage())
-}
-
-// FlushOAuthTokensLog sends all buffered logged tokens to BigQuery.
-//
-// It is fine to call FlushOAuthTokensLog concurrently from multiple request
-// handlers, if necessary (it will effectively parallelize the flush).
-func FlushOAuthTokensLog(c context.Context) error {
-	_, err := oauthTokensLog.Flush(c)
-	return err
 }

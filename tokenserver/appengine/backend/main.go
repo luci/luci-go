@@ -36,11 +36,6 @@ import (
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
-	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
-	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
-	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
-	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
-	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 )
@@ -58,12 +53,6 @@ func main() {
 
 	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
 	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
-	r.GET("/internal/cron/bqlog/machine-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushMachineTokensLogCron)
-	r.GET("/internal/cron/bqlog/delegation-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushDelegationTokensLogCron)
-	r.GET("/internal/cron/bqlog/oauth-token-grants-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokenGrantsLogCron)
-	r.GET("/internal/cron/bqlog/oauth-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokensLogCron)
-	r.GET("/internal/cron/bqlog/project-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushProjectTokensLogCron)
-	r.GET("/internal/cron/bqlog/service-account-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushServiceAccountTokensLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
 	appengine.Main()
@@ -137,50 +126,6 @@ func fetchCRLCron(c *router.Context) {
 	// Retry cron job only on transient errors. On fatal errors let it rerun one
 	// minute later, as usual, to avoid spamming logs with errors.
 	c.Writer.WriteHeader(statusFromErrs(errs))
-}
-
-// flushMachineTokensLogCron is handler for /internal/cron/bqlog/machine-tokens-flush.
-func flushMachineTokensLogCron(c *router.Context) {
-	// FlushTokenLog logs errors inside. We also do not retry on errors. It's fine
-	// to wait and flush on the next iteration.
-	machinetoken.FlushTokenLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
-}
-
-// flushDelegationTokensLogCron is handler for /internal/cron/bqlog/delegation-tokens-flush.
-func flushDelegationTokensLogCron(c *router.Context) {
-	// FlushTokenLog logs errors inside. We also do not retry on errors. It's fine
-	// to wait and flush on the next iteration.
-	delegation.FlushTokenLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
-}
-
-// flushOAuthTokenGrantsLogCron is handler for /internal/cron/bqlog/oauth-token-grants-flush.
-func flushOAuthTokenGrantsLogCron(c *router.Context) {
-	// FlushGrantsLog logs errors inside. We also do not retry on errors. It's
-	// fine to wait and flush on the next iteration.
-	serviceaccounts.FlushGrantsLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
-}
-
-// flushOAuthTokensLogCron is handler for /internal/cron/bqlog/oauth-tokens-flush.
-func flushOAuthTokensLogCron(c *router.Context) {
-	// FlushOAuthTokensLog logs errors inside. We also do not retry on errors.
-	// It's fine to wait and flush on the next iteration.
-	serviceaccounts.FlushOAuthTokensLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
-}
-
-// flushProjectTokensLogCron is handler for /internal/cron/bqlog/project-tokens-flush.
-func flushProjectTokensLogCron(c *router.Context) {
-	projectscope.FlushTokenLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
-}
-
-// flushServiceAccountTokensLogCron is handler for /internal/cron/bqlog/service-account-tokens-flush.
-func flushServiceAccountTokensLogCron(c *router.Context) {
-	serviceaccountsv2.FlushTokenLog(c.Context)
-	c.Writer.WriteHeader(http.StatusOK)
 }
 
 // statusFromErrs returns 500 if any of gRPC errors is codes.Internal.

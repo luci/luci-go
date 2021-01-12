@@ -19,9 +19,6 @@ import (
 	"net"
 	"time"
 
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto/google"
 
@@ -30,14 +27,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
-
-var mintedTokensLog = bqlog.Log{
-	QueueName:           "bqlog-minted-sa-tokens", // see queues.yaml
-	DatasetID:           "tokens",                 // see push_bq_schema.sh
-	TableID:             "service_account_tokens", // see push_bq_schema.sh
-	DumpEntriesToLogger: true,
-	DryRun:              appengine.IsDevAppServer(),
-}
 
 // MintedTokenInfo is passed to LogToken.
 //
@@ -88,13 +77,4 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.ServiceAccountToken {
 // accidentally pushing fake data to real BigQuery dataset).
 func LogToken(ctx context.Context, i *MintedTokenInfo) error {
 	return bq.InsertFromGAEv1(ctx, "tokens", "service_account_tokens", i.toBigQueryMessage())
-}
-
-// FlushTokenLog sends all buffered logged tokens to BigQuery.
-//
-// It is fine to call FlushTokenLog concurrently from multiple request handlers,
-// if necessary (it will effectively parallelize the flush).
-func FlushTokenLog(ctx context.Context) error {
-	_, err := mintedTokensLog.Flush(ctx)
-	return err
 }
