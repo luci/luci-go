@@ -33,6 +33,24 @@
       "message": "maybe mention that it must be an exact match.\nfor example, \"text/plain; encoding\u003dutf-8\" doesn\u0027t satisfy \"text/plain\".\n\nconsider: \n\n  If not empty, the artifact content must be any of these, with an exact match.",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5eb4b4f1_16dac16a",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-12T14:52:37Z",
+      "side": 1,
+      "message": "That\u0027s tricky too because \"text/plain; encoding\u003dutf-8\" and \"text/plain;encoding\u003dutf-8\" are functionally equivalent.\n\nI think a list of \"know valid accepted content types\" would be useful. I can think of application/octet-stream, image/png, image/jpeg (NOT image/jpg!), image/svg+xml.",
+      "parentUuid": "1931e28e_f176fa90",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
