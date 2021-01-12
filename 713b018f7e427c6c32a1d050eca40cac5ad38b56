@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "209ee4bd_f432c275",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-12T18:23:02Z",
+      "side": 1,
+      "message": "PTAL. Inspired by https://chromium-swarm.appspot.com/task?id\u003d51109533f3f67010##",
+      "revId": "713b018f7e427c6c32a1d050eca40cac5ad38b56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
