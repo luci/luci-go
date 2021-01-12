@@ -191,6 +191,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e645fbae_60fcd01d",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-12T00:53:14Z",
+      "side": 1,
+      "message": "I guess what I meant is because you already return in the if condition in line 101, you can just have\n```\nif (this.nextPageToken \u003d\u003d\u003d undefined) {\n      this._stage \u003d LoadingStage.Done;\n      return;\n}\nif (res.testVariants.length \u003c (this.req.pageSize || 1000)) {\n...\n}\n```\nBut it\u0027s just a minor thing.",
+      "parentUuid": "1412880b_1c179ca5",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 102,
+        "endChar": 10
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b597d0f_7c2291b8",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -226,6 +250,30 @@
       "side": 1,
       "message": "\u003e Is this behavior documented anywhere?\nIIRC it\u0027s in a thread in the RPC discussion doc. But it\u0027s not formally documented in the RPC proto definition. I\u0027ll ask chan to document that.\n\n\u003e And do you really need this condition, given that you already handle the case of expected status in line 127?\nYes.\nSuppose we have 10 unexpected/flaky/exonerated variants and 10000 expected ones. The first page will only load the 10 unexpected/flaky/exonerated variants.\nSince the last variant in the first page will be unexpected/flaky/exonerated, we would\u0027ve need to fetch the next page to confirm whether we have loaded all unexpected/flaky/exonerated variants.\nThe extra load can be avoided by the additional logic here.",
       "parentUuid": "2b597d0f_7c2291b8",
+      "range": {
+        "startLine": 103,
+        "startChar": 6,
+        "endLine": 104,
+        "endChar": 71
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "919d16b6_c3e00634",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-12T00:53:14Z",
+      "side": 1,
+      "message": "I see. It makes sense then.",
+      "parentUuid": "5e00e2ed_c306ec5d",
       "range": {
         "startLine": 103,
         "startChar": 6,
