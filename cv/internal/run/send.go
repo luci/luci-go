@@ -49,8 +49,8 @@ func Poke(ctx context.Context, runID common.RunID) error {
 // UpdateConfig tells RunManager to update the given Run to new config.
 func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
 	return send(ctx, runID, &internal.Event{
-		Event: &internal.Event_UpdateConfig{
-			UpdateConfig: &internal.UpdateConfig{
+		Event: &internal.Event_NewConfig{
+			NewConfig: &internal.NewConfig{
 				Hash:     hash,
 				Eversion: eversion,
 			},
