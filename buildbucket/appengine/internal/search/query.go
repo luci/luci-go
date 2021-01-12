@@ -183,9 +183,6 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	if q.Canary != nil {
 		dq = dq.Eq("canary", *q.Canary)
 	}
-	if !q.IncludeExperimental {
-		dq = dq.Eq("experimental", false)
-	}
 
 	idLow, idHigh := q.idRange()
 	if idLow != 0 {
@@ -227,6 +224,12 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		if q.Status != pb.Status_STATUS_UNSPECIFIED &&
 			q.Status != pb.Status_ENDED_MASK &&
 			q.Status != b.Status {
+			return nil
+		}
+
+		// Filter here instead of at the datastore level to reduce the zigzag merge
+		// in index scans as majority builds are non-experimental.
+		if b.Experimental && !q.IncludeExperimental {
 			return nil
 		}
 
