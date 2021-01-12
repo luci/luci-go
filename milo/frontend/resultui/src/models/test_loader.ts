@@ -22,32 +22,49 @@ import { action, computed, observable } from 'mobx';
 import { QueryTestVariantsRequest, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
 import { TestNode } from './test_node';
 
+/**
+ * The stage of the next test variant. The stage can be
+ * 1. LoadingXXX: the status of the next test variant will be no worse than XXX.
+ * 2. Done: all test variants have been loaded.
+ */
+export const enum LoadingStage {
+  LoadingUnexpected = 0,
+  LoadingFlaky = 1,
+  LoadingExonerated = 2,
+  LoadingExpected = 3,
+  Done = 4,
+}
 
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
  * request.
  */
 export class TestLoader {
-  @computed get isLoading() { return !this.done && this.loadingReqCount !== 0; }
+  @computed get isLoading() { return this.stage !== LoadingStage.Done && this.loadingReqCount !== 0; }
   @observable.ref private loadingReqCount = 0;
 
-  @computed get done() { return this._done; }
-  @observable.ref private _done = false;
+  /**
+   * The queryTestVariants RPC sorted the variant by status. We can use this to
+   * tell the possible status of the next test variants and therefore avoid
+   * unnecessary loading.
+   */
+  @computed get stage() { return this._stage; }
+  @observable.ref private _stage = LoadingStage.LoadingUnexpected;
 
   @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
   @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
   @observable.shallow readonly exoneratedTestVariants: TestVariant[] = [];
   @observable.shallow readonly expectedTestVariants: TestVariant[] = [];
 
-  private nextBatch: Promise<IteratorResult<readonly TestVariant[]>>;
+  // undefined means the end has been reached.
+  // empty string is the token for the first page.
+  private nextPageToken: string | undefined = '';
 
   constructor(
     readonly node: TestNode,
-    private readonly testBatches: AsyncIterator<readonly TestVariant[]>,
-  ) {
-    this.nextBatch = this.testBatches.next();
-    this.nextBatch.then((v) => this._done = Boolean(v.done));
-  }
+    private readonly req: QueryTestVariantsRequest,
+    private readonly uiSpecificService: UISpecificService,
+  ) {}
 
   private loadPromise = Promise.resolve();
 
@@ -55,7 +72,7 @@ export class TestLoader {
    * Loads the next batch of tests from the iterator to the node.
    */
   loadNextPage() {
-    if (this.done) {
+    if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }
     this.loadingReqCount++;
@@ -70,17 +87,25 @@ export class TestLoader {
    * this.loadMoreInternal
    */
   private async loadNextPageInternal() {
-    const next = await this.nextBatch;
-    if (next.done) {
+    if (this.nextPageToken === undefined) {
       return;
     }
 
-    // Prefetch the next batch so the UI is more responsive and we can mark the
-    // set this._done to true when there's no more batches.
-    this.nextBatch = this.testBatches.next();
-    this.nextBatch.then((v) => this._done = Boolean(v.done));
+    const res = await this.uiSpecificService
+      .queryTestVariants({...this.req, pageToken: this.nextPageToken});
+    this.nextPageToken = res.nextPageToken;
 
-    this.processTestVariants(next.value);
+    this.processTestVariants(res.testVariants || []);
+    if (this.nextPageToken === undefined) {
+      this._stage = LoadingStage.Done;
+      return;
+    }
+    if (res.testVariants.length < (this.req.pageSize || 1000)) {
+      // When the service returns an incomplete page and nextPageToken is not
+      // undefined, the following pages must be expected test variants.
+      this._stage = LoadingStage.LoadingExpected;
+      return;
+    }
   }
 
   @action
@@ -88,15 +113,19 @@ export class TestLoader {
     for (const testVariant of testVariants) {
       switch (testVariant.status) {
         case TestVariantStatus.UNEXPECTED:
+          this._stage = LoadingStage.LoadingUnexpected;
           this.unexpectedTestVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
+          this._stage = LoadingStage.LoadingFlaky;
           this.flakyTestVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
+          this._stage = LoadingStage.LoadingExonerated;
           this.exoneratedTestVariants.push(testVariant);
           break;
         case TestVariantStatus.EXPECTED:
+          this._stage = LoadingStage.LoadingExpected;
           this.expectedTestVariants.push(testVariant);
           break;
         default:
@@ -105,21 +134,4 @@ export class TestLoader {
       this.node.addTestId(testVariant.testId);
     }
   }
-}
-
-/**
- * Groups test results and exonerations into variant objects.
- * The number of exonerations is assumed to be low. All exonerations are loaded
- * in the first batch.
- * Yielded variants could be modified when new results are processed.
- * The order of variants is not guaranteed.
- */
-export async function* streamVariantBatches(req: QueryTestVariantsRequest, uiSpecificService: UISpecificService): AsyncIterableIterator<readonly TestVariant[]> {
-  let pageToken = req.pageToken;
-
-  do {
-    const res = await uiSpecificService.queryTestVariants({...req, pageToken});
-    pageToken = res.nextPageToken;
-    yield res.testVariants || [];
-  } while (pageToken);
 }

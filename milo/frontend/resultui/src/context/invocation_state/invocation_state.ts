@@ -17,8 +17,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
-import * as iter from '../../libs/iter_utils';
-import { streamVariantBatches, TestLoader } from '../../models/test_loader';
+import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import { Invocation } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
@@ -76,25 +75,12 @@ export class InvocationState {
 
   @observable.ref selectedNode!: TestNode;
 
-  @computed private get testVariantBatchFn() {
-    if (!this.appState.uiSpecificService || !this.invocationName) {
-      return async function*() { yield Promise.race([]); };
-    }
-
-    return iter.teeAsync(streamVariantBatches(
-      {
-        invocations: [this.invocationName],
-      },
-      this.appState.uiSpecificService,
-    ));
-  }
-
   @computed({keepAlive: true})
-  get testLoader(): TestLoader {
-    if (this.isDisposed) {
-      return new TestLoader(TestNode.newRoot(), (async function*() {})());
+  get testLoader(): TestLoader | null {
+    if (this.isDisposed || !this.invocationName || !this.appState.uiSpecificService) {
+      return null;
     }
-    return new TestLoader(TestNode.newRoot(), this.testVariantBatchFn());
+    return new TestLoader(TestNode.newRoot(), {invocations: [this.invocationName]}, this.appState.uiSpecificService);
   }
 }
 
