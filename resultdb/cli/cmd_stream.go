@@ -53,6 +53,14 @@ import (
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 
+func mustReturnInvURL(invName string) string {
+	invID, err := pbutil.ParseInvocationName(invName)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("https://ci.chromium.org/ui/inv/%s", invID)
+}
+
 func cmdStream(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `stream [flags] TEST_CMD [TEST_ARG]...`,
@@ -73,6 +81,10 @@ func cmdStream(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.isNew, "new", false, text.Doc(`
 				If true, create and use a new invocation for the test command.
 				If false, use the current invocation, set in LUCI_CONTEXT.
+			`))
+			r.Flags.BoolVar(&r.isIncluded, "include", false, text.Doc(`
+				If true with -new, the new invocation will be included
+				in the current invocation, set in LUCI_CONTEXT.
 			`))
 			r.Flags.StringVar(&r.realm, "realm", "", text.Doc(`
 				Realm to create the new invocation in. Required if -new is set,
@@ -122,6 +134,7 @@ type streamRun struct {
 
 	// flags
 	isNew                  bool
+	isIncluded             bool
 	realm                  string
 	testIDPrefix           string
 	testTestLocationBase   string
@@ -175,22 +188,39 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
-	if r.isNew {
-		ninv, err := r.createInvocation(ctx, r.realm)
+	switch {
+	case r.isNew:
+		if r.isIncluded && r.resultdbCtx == nil {
+			return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT, but -include was given").Err())
+		}
+
+		newInv, err := r.createInvocation(ctx, r.realm)
 		if err != nil {
 			return r.done(err)
 		}
-		r.invocation = ninv
+		fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - %s\n", mustReturnInvURL(newInv.Name))
+		if r.isIncluded {
+			curInv := r.resultdbCtx.CurrentInvocation
+			if err := r.includeInvocation(ctx, curInv, &newInv); err != nil {
+				if ferr := r.finalizeInvocation(ctx); ferr != nil {
+					logging.Errorf(ctx, "failed to finalize the invocation: %s", ferr)
+				}
+				return r.done(err)
+			}
+			fmt.Fprintf(os.Stderr, "rdb-stream: included %q in %q\n", newInv.Name, curInv.Name)
+		}
 
 		// Update lucictx with the new invocation.
+		r.invocation = newInv
 		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
 			Hostname:          r.host,
 			CurrentInvocation: &r.invocation,
 		})
-	} else {
-		if r.resultdbCtx == nil {
-			return r.done(errors.Reason("the environment does not have an existing invocation; use -new to create a new one").Err())
-		}
+	case r.isIncluded:
+		return r.done(errors.Reason("-new is required for -include").Err())
+	case r.resultdbCtx == nil:
+		return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT; use -new to create a new one").Err())
+	default:
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
 		}
@@ -204,6 +234,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
 				ret = r.done(err)
 			}
+			fmt.Fprintf(os.Stderr, "rdb-stream: finalized invocation - %s\n", mustReturnInvURL(r.invocation.Name))
 		}
 	}()
 
@@ -309,21 +340,22 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 	}
 
 	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
-	fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - https://ci.chromium.org/ui/inv/%s\n", invID)
 	return
+}
+
+func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucictx.ResultDBInvocation) error {
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, parent.UpdateToken)
+	_, err := r.recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
+		IncludingInvocation: parent.Name,
+		AddInvocations:      []string{child.Name},
+	})
+	return err
 }
 
 // finalizeInvocation finalizes the invocation.
 func (r *streamRun) finalizeInvocation(ctx context.Context) error {
-	id, err := pbutil.ParseInvocationName(r.invocation.Name)
-	if err != nil {
-		return errors.Reason("failed to parse invocation name(%q): %s", r.invocation.Name, err).Err()
-	}
-
-	fmt.Fprintf(os.Stderr, "rdb-stream: finalizing the invocation - https://ci.chromium.org/ui/inv/%s\n", id)
-	ctx = metadata.AppendToOutgoingContext(
-		ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
-	_, err = r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
 		Name: r.invocation.Name,
 	})
 	return err
