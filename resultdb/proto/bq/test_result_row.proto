@@ -18,6 +18,7 @@ package luci.resultdb.bq;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/bq/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 
@@ -91,14 +92,4 @@ message TestResultRow {
   // Metadata of the test case,
   // e.g. the original test name, test_location, monorail_component and team_email.
   luci.resultdb.v1.TestMetadata test_metadata = 16;
-}
-
-message InvocationRecord {
-  // The ID of the invocation.
-  string id = 1;
-  // Tags represents Invocation-level string key-value pairs.
-  // A key can be repeated.
-  repeated luci.resultdb.v1.StringPair tags = 2;
-  // The LUCI Realm the invocation exists under.
-  string realm = 3;
 }

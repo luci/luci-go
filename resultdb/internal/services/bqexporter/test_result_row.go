@@ -49,8 +49,9 @@ func generateSchema() (schema bigquery.Schema, err error) {
 	// because they are defined in different files.
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
+	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
 	fdset := &desc.FileDescriptorSet{
-		File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd}}
+		File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
 	conv := bq.SchemaConverter{
 		Desc:           fdset,
 		SourceCodeInfo: make(map[*desc.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),
