@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13cc4386_fa8a0933",
+        "filename": "resultdb/proto/bq/artifact_row.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-12T14:47:19Z",
+      "side": 1,
+      "message": "Would it make sense to call it \"root\"?",
+      "revId": "8a417aca2d88396802364545724df7806b015289",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
