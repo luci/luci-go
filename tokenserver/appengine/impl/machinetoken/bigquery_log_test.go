@@ -24,11 +24,12 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
@@ -59,7 +60,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			RequestID: "gae-request-id",
 		}
 
-		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.MachineToken{
+		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.MachineToken{
 			CaCommonName:       "Fake CA: fake.ca",
 			CaConfigRev:        "cfg-updated-rev",
 			CertSerialNumber:   "4096",

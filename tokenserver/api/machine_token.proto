@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package tokenserver;
 
+option go_package = "go.chromium.org/luci/tokenserver/api;tokenserver";
+
 
 // The kinds of machine tokens the token server can mint.
 //

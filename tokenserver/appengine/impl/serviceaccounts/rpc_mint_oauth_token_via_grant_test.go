@@ -88,7 +88,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		}
 		resp, err := rpc.MintOAuthTokenViaGrant(ctx, req)
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &minter.MintOAuthTokenViaGrantResponse{
+		So(resp, ShouldResembleProto, &minter.MintOAuthTokenViaGrantResponse{
 			AccessToken:    "access-token-for-serviceaccount@robots.com",
 			Expiry:         google.NewTimestamp(testclock.TestTimeUTC.Add(time.Hour)),
 			ServiceVersion: "unit-tests/mocked-ver",

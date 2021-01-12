@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedAdmin struct {
@@ -25,7 +25,7 @@ type DecoratedAdmin struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) ImportCAConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportCAConfigs(ctx context.Context, req *emptypb.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ImportCAConfigs", req)
@@ -42,7 +42,7 @@ func (s *DecoratedAdmin) ImportCAConfigs(ctx context.Context, req *empty.Empty) 
 	return
 }
 
-func (s *DecoratedAdmin) ImportDelegationConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportDelegationConfigs(ctx context.Context, req *emptypb.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ImportDelegationConfigs", req)
@@ -59,7 +59,7 @@ func (s *DecoratedAdmin) ImportDelegationConfigs(ctx context.Context, req *empty
 	return
 }
 
-func (s *DecoratedAdmin) ImportServiceAccountsConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportServiceAccountsConfigs(ctx context.Context, req *emptypb.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ImportServiceAccountsConfigs", req)
@@ -76,7 +76,7 @@ func (s *DecoratedAdmin) ImportServiceAccountsConfigs(ctx context.Context, req *
 	return
 }
 
-func (s *DecoratedAdmin) ImportProjectIdentityConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportProjectIdentityConfigs(ctx context.Context, req *emptypb.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ImportProjectIdentityConfigs", req)
@@ -93,7 +93,7 @@ func (s *DecoratedAdmin) ImportProjectIdentityConfigs(ctx context.Context, req *
 	return
 }
 
-func (s *DecoratedAdmin) ImportProjectOwnedAccountsConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportProjectOwnedAccountsConfigs(ctx context.Context, req *emptypb.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ImportProjectOwnedAccountsConfigs", req)

@@ -6,6 +6,9 @@ syntax = "proto3";
 
 package tokenserver;
 
+option go_package = "go.chromium.org/luci/tokenserver/api;tokenserver";
+
+
 // TokenFile is representation of a token file on disk (serialized as JSON).
 //
 // The token file is consumed by whoever wishes to use machine tokens. It is

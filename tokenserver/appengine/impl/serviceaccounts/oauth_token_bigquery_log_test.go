@@ -23,12 +23,13 @@ import (
 
 	"go.chromium.org/luci/common/proto/google"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedOAuthTokenInfo(t *testing.T) {
@@ -66,7 +67,7 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.OAuthToken{
+		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.OAuthToken{
 			AuditTags:        []string{"k1:v1", "k2:v2"},
 			AuthDbRev:        123,
 			ConfigRev:        "config-rev",

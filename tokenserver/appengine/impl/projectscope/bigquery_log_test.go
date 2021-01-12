@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
@@ -48,7 +49,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev:   123,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.ProjectToken{
+		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.ProjectToken{
 			Fingerprint:    "8b7df143d91c716ecfa5fc1730022f6b",
 			ServiceAccount: "foo@bar.com",
 			LuciProject:    "someproject",
