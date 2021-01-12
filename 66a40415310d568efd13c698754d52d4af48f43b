@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a83e7821_23df2b22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-12T08:56:25Z",
+      "side": 1,
+      "message": "Please take a final look. \nVerified sample tests again, as described in https://paste.googleplex.com/5146320219144192",
+      "revId": "66a40415310d568efd13c698754d52d4af48f43b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

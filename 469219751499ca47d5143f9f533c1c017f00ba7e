@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "25942f2d_1900c2d9",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-12T08:56:25Z",
+      "side": 1,
+      "message": "done in L219.",
+      "parentUuid": "fdb13b9e_1ad7406e",
+      "revId": "469219751499ca47d5143f9f533c1c017f00ba7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "28a93ac6_8ac7e657",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-01-08T17:13:32Z",
       "side": 1,
       "message": "i think this belongs to the callsite more than this func, because SRP",
+      "revId": "469219751499ca47d5143f9f533c1c017f00ba7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "870bc8b1_83da91a6",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-12T08:56:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28a93ac6_8ac7e657",
       "revId": "469219751499ca47d5143f9f533c1c017f00ba7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
