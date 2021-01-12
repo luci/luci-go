@@ -23,14 +23,14 @@ import (
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/bqlog"
-	"go.chromium.org/luci/common/bq"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 var oauthTokenGrantsLog = bqlog.Log{
@@ -95,9 +95,7 @@ func (i *MintedGrantInfo) toBigQueryMessage() *bqpb.OAuthTokenGrant {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogGrant(c context.Context, i *MintedGrantInfo) error {
-	return oauthTokenGrantsLog.Insert(c, &bq.Row{
-		Message: i.toBigQueryMessage(),
-	})
+	return bq.InsertFromGAEv1(c, "tokens", "oauth_token_grants", i.toBigQueryMessage())
 }
 
 // FlushGrantsLog sends all buffered logged grants to BigQuery.
