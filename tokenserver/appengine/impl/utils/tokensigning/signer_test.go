@@ -56,7 +56,7 @@ func TestSignToken(t *testing.T) {
 
 		envelope.Pkcs1Sha256Sig = nil
 		envelope.SerializedSubtoken = nil
-		So(envelope, ShouldResemble, &messages.DelegationToken{
+		So(envelope, ShouldResembleProto, &messages.DelegationToken{
 			SignerId:     "user:service@example.com",
 			SigningKeyId: signer.KeyNameForTest(),
 		})
