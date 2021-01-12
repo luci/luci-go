@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "07bb5095_cbc059b8",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T00:43:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "357b952b_03bf59d9",
+      "range": {
+        "startLine": 95,
+        "startChar": 31,
+        "endLine": 95,
+        "endChar": 53
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6aacc588_62d1c7de",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bc8769b_e376bd98",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T00:43:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6aacc588_62d1c7de",
+      "range": {
+        "startLine": 28,
+        "startChar": 30,
+        "endLine": 28,
+        "endChar": 33
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ce0cce5d_fd40da69",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-01-11T23:24:42Z",
       "side": 1,
       "message": "Do you mean undefined?",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 9
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d515e0a_332a3559",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T00:43:42Z",
+      "side": 1,
+      "message": "yes. fixed.",
+      "parentUuid": "ce0cce5d_fd40da69",
       "range": {
         "startLine": 59,
         "startChar": 5,
@@ -95,6 +167,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1412880b_1c179ca5",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T00:43:42Z",
+      "side": 1,
+      "message": "else is needed because this is true only when the next page token is not undefined.",
+      "parentUuid": "e8b50123_cb2b0f1e",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 102,
+        "endChar": 10
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b597d0f_7c2291b8",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -106,6 +202,30 @@
       "writtenOn": "2021-01-11T23:24:42Z",
       "side": 1,
       "message": "Is this behavior documented anywhere?\n\nAnd do you really need this condition, given that you already handle the case of expected status in line 127?",
+      "range": {
+        "startLine": 103,
+        "startChar": 6,
+        "endLine": 104,
+        "endChar": 71
+      },
+      "revId": "6be0774cab385d3cc08130b256c62101ca0b3efc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e00e2ed_c306ec5d",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-12T00:43:42Z",
+      "side": 1,
+      "message": "\u003e Is this behavior documented anywhere?\nIIRC it\u0027s in a thread in the RPC discussion doc. But it\u0027s not formally documented in the RPC proto definition. I\u0027ll ask chan to document that.\n\n\u003e And do you really need this condition, given that you already handle the case of expected status in line 127?\nYes.\nSuppose we have 10 unexpected/flaky/exonerated variants and 10000 expected ones. The first page will only load the 10 unexpected/flaky/exonerated variants.\nSince the last variant in the first page will be unexpected/flaky/exonerated, we would\u0027ve need to fetch the next page to confirm whether we have loaded all unexpected/flaky/exonerated variants.\nThe extra load can be avoided by the additional logic here.",
+      "parentUuid": "2b597d0f_7c2291b8",
       "range": {
         "startLine": 103,
         "startChar": 6,
