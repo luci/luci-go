@@ -51,7 +51,7 @@ const tokenIDSequenceKind = "delegationTokenID"
 type MintDelegationTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns delegation rules to use for the request.
@@ -61,8 +61,8 @@ type MintDelegationTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogDelegationToken from bigquery_log.go.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger from bigquery_log.go.
+	LogToken TokenLogger
 
 	// mintMock call is used in tests.
 	//

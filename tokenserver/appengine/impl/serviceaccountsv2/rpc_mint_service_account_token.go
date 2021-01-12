@@ -50,7 +50,7 @@ var (
 type MintServiceAccountTokenRPC struct {
 	// Signer is used only for its ServiceInfo.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Mapping returns project<->account mapping to use for the request.
@@ -70,8 +70,8 @@ type MintServiceAccountTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogToken from bigquery_log.go.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // validatedRequest is extracted from MintServiceAccountTokenRequest.

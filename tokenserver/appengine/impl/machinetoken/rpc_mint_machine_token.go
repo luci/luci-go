@@ -45,7 +45,7 @@ import (
 type MintMachineTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// CheckCertificate is mocked in tests.
@@ -55,8 +55,8 @@ type MintMachineTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogToken from bigquery_logger.go.
-	LogToken func(c context.Context, info *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // MintMachineToken generates a new token for an authenticated machine.

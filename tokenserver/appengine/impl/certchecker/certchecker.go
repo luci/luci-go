@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/retry/transient"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
@@ -255,22 +254,12 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 }
 
 // refetchCAPeriod returns for how long to cache the CA in memory by default.
-//
-// On dev server we cache for a very short duration to simplify local testing.
 func refetchCAPeriod(c context.Context) time.Duration {
-	if info.IsDevAppServer(c) {
-		return 100 * time.Millisecond
-	}
 	return RefetchCAPeriod
 }
 
 // refetchCRLPeriod returns for how long to cache the CRL in memory by default.
-//
-// On dev server we cache for a very short duration to simplify local testing.
 func refetchCRLPeriod(c context.Context) time.Duration {
-	if info.IsDevAppServer(c) {
-		return 100 * time.Millisecond
-	}
 	return RefetchCRLPeriod
 }
 

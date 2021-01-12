@@ -32,7 +32,7 @@ import (
 type InspectDelegationTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 }
 
