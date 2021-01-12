@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
@@ -115,6 +116,15 @@ func main() {
 			}
 
 			fmt.Fprintf(c.Writer, "%d\n", ent.Value)
+		})
+
+		srv.Routes.GET("/sign", router.MiddlewareChain{}, func(c *router.Context) {
+			key, sig, err := auth.GetSigner(c.Context).SignBytes(c.Context, []byte("test"))
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			fmt.Fprintf(c.Writer, "Key: %s\nSig: %s\n", key, base64.RawStdEncoding.EncodeToString(sig))
 		})
 
 		return nil
