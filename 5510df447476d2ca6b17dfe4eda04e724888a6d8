@@ -79,6 +79,29 @@
       "message": "qq: is this OK to call from GAEv1 on every request and won\u0027t block due to lack of entropy? (i have no idea how Go + GAE crypto works)",
       "revId": "5510df447476d2ca6b17dfe4eda04e724888a6d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65842e34_4d1d63a6",
+        "filename": "tokenserver/appengine/impl/utils/bq/bq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-12T04:43:10Z",
+      "side": 1,
+      "message": "one more curiosity: why base64 and not hex? Just preference or copy-pasta, or do you actually prefer base64 in this case?",
+      "range": {
+        "startLine": 124,
+        "startChar": 15,
+        "endLine": 124,
+        "endChar": 22
+      },
+      "revId": "5510df447476d2ca6b17dfe4eda04e724888a6d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
