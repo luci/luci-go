@@ -34,12 +34,6 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-const (
-	// infraFailExit is the exit code used when the exparchive fails due to
-	// infrastructure errors (for example, failed server requests).
-	infraFailExit = 2
-)
-
 // CmdArchive returns an object for the `archive` subcommand.
 func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
