@@ -36,7 +36,8 @@ func TestState(t *testing.T) {
 	Convey(`State`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		nowpb := timestamppb.New(testclock.TestRecentTimeUTC)
-		st, ctx := Start(ctx, nil)
+		st, ctx, err := Start(ctx, nil)
+		So(err, ShouldBeNil)
 		defer func() {
 			if st != nil {
 				st.End(nil)
@@ -68,7 +69,7 @@ func TestStateLogging(t *testing.T) {
 	Convey(`State logging`, t, func() {
 		lc := streamclient.NewFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		st, ctx := Start(ctx, &bbpb.Build{
+		st, ctx, err := Start(ctx, &bbpb.Build{
 			Output: &bbpb.Build_Output{
 				Logs: []*bbpb.Log{
 					{Name: "something"},
@@ -76,6 +77,7 @@ func TestStateLogging(t *testing.T) {
 				},
 			},
 		}, OptLogsink(lc.Client))
+		So(err, ShouldBeNil)
 		defer func() { st.End(nil) }()
 		So(st, ShouldNotBeNil)
 
@@ -93,6 +95,7 @@ func TestStateLogging(t *testing.T) {
 			So(st.buildPb, ShouldResembleProto, &bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
+				Input:     &bbpb.Build_Input{},
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
 						{Name: "something"},
@@ -112,6 +115,7 @@ func TestStateLogging(t *testing.T) {
 			So(st.buildPb, ShouldResembleProto, &bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
+				Input:     &bbpb.Build_Input{},
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
 						{Name: "something"},
@@ -151,10 +155,11 @@ func TestStateSend(t *testing.T) {
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ts := timestamppb.New(testclock.TestRecentTimeUTC)
-		st, ctx := Start(ctx, nil, OptSend(rate.Inf, func(vers int64, build *bbpb.Build) {
+		st, ctx, err := Start(ctx, nil, OptSend(rate.Inf, func(vers int64, build *bbpb.Build) {
 			lastBuild = build
 			lastBuildVers <- vers
 		}))
+		So(err, ShouldBeNil)
 		defer func() {
 			if st != nil {
 				st.End(nil)
@@ -171,6 +176,7 @@ func TestStateSend(t *testing.T) {
 			So(lastBuild, ShouldResembleProto, &bbpb.Build{
 				Status:    bbpb.Status_STARTED,
 				StartTime: ts,
+				Input:     &bbpb.Build_Input{},
 				Output:    &bbpb.Build_Output{},
 				Steps: []*bbpb.Step{
 					{
@@ -187,6 +193,7 @@ func TestStateSend(t *testing.T) {
 				So(lastBuild, ShouldResembleProto, &bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
+					Input:     &bbpb.Build_Input{},
 					Output:    &bbpb.Build_Output{},
 					Steps: []*bbpb.Step{
 						{
@@ -205,6 +212,7 @@ func TestStateSend(t *testing.T) {
 				So(lastBuild, ShouldResembleProto, &bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
+					Input:     &bbpb.Build_Input{},
 					Output:    &bbpb.Build_Output{},
 					Steps: []*bbpb.Step{
 						{
@@ -226,6 +234,7 @@ func TestStateSend(t *testing.T) {
 				Status:    bbpb.Status_SUCCESS,
 				StartTime: ts,
 				EndTime:   ts,
+				Input:     &bbpb.Build_Input{},
 				Output:    &bbpb.Build_Output{},
 			})
 		})
@@ -237,7 +246,8 @@ func TestStateView(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test State View functionality`, t, func() {
-		st, _ := Start(context.Background(), nil)
+		st, _, err := Start(context.Background(), nil)
+		So(err, ShouldBeNil)
 		defer func() { st.End(nil) }()
 
 		Convey(`SetSummaryMarkdown`, func() {
