@@ -15,11 +15,6 @@
 package build
 
 import (
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -35,34 +30,9 @@ type StepView struct {
 //
 // This must only be called for ScheduleStep invocations. If the step is already
 // started (e.g. it was produced via StartStep() or Start() was already called),
-// this panics.
+// this does nothing.
 func (s *Step) Start() {
-	s.ensureStarted(func(status bbpb.Status) {
-		if status != bbpb.Status_SCHEDULED {
-			panic(errors.Reason("cannot start step %q: not SCHEDULED: %s", s.name, status).Err())
-		}
-	})
-}
-
-func (s *Step) ensureStarted(chk func(bbpb.Status)) {
-	s.mutate(func() bool {
-		cur := s.stepPb.GetStatus()
-		if chk != nil {
-			chk(cur)
-		}
-		if cur != bbpb.Status_SCHEDULED {
-			return false
-		}
-
-		s.stepPb.Status = bbpb.Status_STARTED
-		s.stepPb.StartTime = timestamppb.New(clock.Now(s.ctx))
-
-		if s.logsink() == nil {
-			logging.Infof(s.ctx, "set status: %s", bbpb.Status_STARTED)
-		}
-
-		return true
-	})
+	s.mutate(nil)
 }
 
 // Modify allows you to atomically manipulate the StepView for this Step.
@@ -73,6 +43,8 @@ func (s *Step) ensureStarted(chk func(bbpb.Status)) {
 //
 // The Set* methods should be preferred unless you need to read/modify/write
 // View items.
+//
+// This starts the step if it's still SCHEDULED.
 func (s *Step) Modify(cb func(*StepView)) {
 	logSM := ""
 	s.mutate(func() bool {
