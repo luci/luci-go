@@ -308,30 +308,40 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 	}
 
 	rootState := GetState(ctx)
+	isRootStateBackground := isBackgroundState(rootState)
 
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
-		// Prefer to use the request context to get authentication headers, if it is
-		// set, to inherit its deadline and cancellation. Assert the request context
-		// carries the same auth state (perhaps the background one) as the transport
-		// context, otherwise there can be very weird side effects. Constructing
-		// the transport with one auth state and then using it with another is not
-		// allowed.
+		// Use the request context as the base to inherit its fields and deadlines,
+		// but substitute the auth state there with the state from the root context,
+		// if necessary. This allows to create an AsSelf RPC transport during
+		// the server startup and then share it from RPCs that have some non-trivial
+		// auth state.
 		reqCtx := req.Context()
 		if reqCtx == context.Background() {
 			reqCtx = ctx
 		} else {
-			switch reqState := GetState(reqCtx); {
+			reqState := GetState(reqCtx)
+			isReqStateBackground := isBackgroundState(reqState)
+			switch {
 			case reqState == rootState:
-				// good, exact same state
-			case isBackgroundState(reqState) && isBackgroundState(rootState):
-				// good, both are background states
-			default:
-				panic(
-					"the transport is shared between different auth contexts, this is not allowed: " +
-						"requests passed to a transport created via GetRPCTransport(ctx, ...) " +
-						"should either not have any context at all, or have a context that carries the same " +
-						"authentication state as `ctx` (i.e. be derived from `ctx` itself or be derived from " +
-						"an appropriate parent of `ctx`, like the root context associated with the incoming request)")
+				// Good, the exact same state (background or not), no need to create
+				// a new context.
+			case isRootStateBackground && isReqStateBackground:
+				// Good, both are background states and therefore equivalent, no need
+				// to create a new context.
+			case isRootStateBackground && !isReqStateBackground:
+				// Transports created from the background state can be used from any
+				// other state. Inherit `reqCtx` deadlines, but inject the background
+				// state there.
+				reqCtx = WithState(reqCtx, rootState)
+			case !isRootStateBackground && isReqStateBackground:
+				// A transport created from a user-authenticated state is attempted to
+				// be used from a background state, this smells like a bug.
+				panic("an RPC transport created from a user context is used from a background server context, this is not allowed")
+			case !isRootStateBackground && !isReqStateBackground:
+				// A transport created from inside one request handler is attempted to
+				// be used from another request handler, this also smells like a bug.
+				panic("a non-background RPC transport is shared between different request contexts, this is not allowed")
 			}
 		}
 		tok, extra, err := options.getRPCHeaders(reqCtx, options, req)
