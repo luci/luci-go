@@ -85,6 +85,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -1331,13 +1332,17 @@ func (s *Server) initAuth() error {
 		return nil
 	})
 
+	// Prepare partially initialized signer for the auth.Config. It will be fully
+	// initialized below once we have a working auth context that can call IAM.
+	signer := &signerImpl{srv: s}
+
 	// Initialize the state in the context.
 	s.Context = auth.Initialize(s.Context, &auth.Config{
 		DBProvider: func(context.Context) (authdb.DB, error) {
 			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
 			return db, nil
 		},
-		Signer:              signerImpl{srv: s},
+		Signer:              signer,
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
@@ -1386,6 +1391,14 @@ func (s *Server) initAuth() error {
 	case err != nil:
 		return errors.Annotate(err, "failed to check the service account email").Err()
 	}
+
+	// We should be able to make authenticated requests now and can construct
+	// an IAM client used by SignBytes implementation.
+	asSelf, err := auth.GetRPCTransport(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return errors.Annotate(err, "failed to construct RPC transport").Err()
+	}
+	signer.iamClient = &iam.Client{Client: &http.Client{Transport: asSelf}}
 
 	// Now initialize the AuthDB (a database with groups and auth config) and
 	// start a goroutine to periodically refresh it.
@@ -1891,21 +1904,22 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 
 // signerImpl implements signing.Signer on top of *Server.
 type signerImpl struct {
-	srv *Server
+	srv       *Server
+	iamClient *iam.Client
 }
 
 // SignBytes signs the blob with some active private key.
-func (s signerImpl) SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error) {
-	return "", nil, errors.Reason("server.Server: SignBytes is not implemented").Err()
+func (s *signerImpl) SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error) {
+	return s.iamClient.SignBlob(ctx, s.srv.runningAs, blob)
 }
 
 // Certificates returns a bundle with public certificates for all active keys.
-func (s signerImpl) Certificates(ctx context.Context) (*signing.PublicCertificates, error) {
-	return nil, errors.Reason("server.Server: Certificates is not implemented").Err()
+func (s *signerImpl) Certificates(ctx context.Context) (*signing.PublicCertificates, error) {
+	return signing.FetchCertificatesForServiceAccount(ctx, s.srv.runningAs)
 }
 
 // ServiceInfo returns information about the current service.
-func (s signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
+func (s *signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
 	return &signing.ServiceInfo{
 		AppID:              s.srv.Options.CloudProject,
 		AppRuntime:         "go",
