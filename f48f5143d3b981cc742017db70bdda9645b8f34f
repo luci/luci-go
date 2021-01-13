@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "bab4d5ab_be4934a0",
+        "filename": "cv/internal/intent/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-13T18:47:56Z",
+      "side": 1,
+      "message": "Oops. accidentally deleted.",
+      "parentUuid": "208fc6f0_c2faac72",
+      "range": {
+        "startLine": 16,
+        "startChar": 68,
+        "endLine": 17,
+        "endChar": 18
+      },
+      "revId": "f48f5143d3b981cc742017db70bdda9645b8f34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c7c1ed0a_389fa1b1",
         "filename": "cv/internal/intent/doc.go",
         "patchSetId": 2
@@ -54,6 +78,24 @@
       "writtenOn": "2021-01-13T17:03:02Z",
       "side": 1,
       "message": "Thanks for good package doc.\n\nOptionally to make it more concrete you could note here examples of how it will be used, e.g. posting to gerrit",
+      "revId": "f48f5143d3b981cc742017db70bdda9645b8f34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8adfc3d9_afa2628e",
+        "filename": "cv/internal/intent/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-13T18:47:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7c1ed0a_389fa1b1",
       "revId": "f48f5143d3b981cc742017db70bdda9645b8f34f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -71,6 +113,30 @@
       "writtenOn": "2021-01-13T17:03:02Z",
       "side": 1,
       "message": "Are they removed as they\u0027re performed?\n\nOr, are they all performed and then all removed; or all performed and then the Intent is deleted?",
+      "range": {
+        "startLine": 30,
+        "startChar": 72,
+        "endLine": 30,
+        "endChar": 75
+      },
+      "revId": "f48f5143d3b981cc742017db70bdda9645b8f34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3acb3d30_83b4d4f1",
+        "filename": "cv/internal/intent/intent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-13T18:47:56Z",
+      "side": 1,
+      "message": "\u003e Are they removed as they\u0027re performed?\n\nYes this is my current plan. I think it is possible we switch to what you said later (i.e. delete after all operations are done) so that RunManager or ProjectManager can verify if the operation has been *truely* performed with external system (e.g. Gerrit). \n\nI reword the comment to make it clearer.",
+      "parentUuid": "46984d41_952c7078",
       "range": {
         "startLine": 30,
         "startChar": 72,
