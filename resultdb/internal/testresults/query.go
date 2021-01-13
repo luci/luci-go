@@ -119,8 +119,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		"InvocationId",
 		"TestId",
 		"ResultId",
-		"Variant",
-		"VariantHash",
 		"IsUnexpected",
 		"Status",
 		"StartTime",
@@ -147,6 +145,8 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("SummaryHtml", "summary_html")
 	selectIfIncluded("Tags", "tags")
 	selectIfIncluded("TestMetadata", "test_metadata")
+	selectIfIncluded("Variant", "variant")
+	selectIfIncluded("VariantHash", "variant_hash")
 
 	// Build a parser function.
 	var b spanutil.Buffer
@@ -164,8 +164,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 			&invID,
 			&tr.TestId,
 			&tr.ResultId,
-			&tr.Variant,
-			&tr.VariantHash,
 			&maybeUnexpected,
 			&tr.Status,
 			&tr.StartTime,
@@ -182,6 +180,10 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &tr.Tags)
 			case "TestMetadata":
 				ptrs = append(ptrs, &tmd)
+			case "Variant":
+				ptrs = append(ptrs, &tr.Variant)
+			case "VariantHash":
+				ptrs = append(ptrs, &tr.VariantHash)
 			default:
 				panic("impossible")
 			}
