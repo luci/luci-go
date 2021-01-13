@@ -88,10 +88,12 @@ func TestExportToBigQuery(t *testing.T) {
 		)...)
 
 		bqExport := &pb.BigQueryExport{
-			Project:     "project",
-			Dataset:     "dataset",
-			Table:       "table",
-			TestResults: &pb.BigQueryExport_TestResults{},
+			Project: "project",
+			Dataset: "dataset",
+			Table:   "table",
+			ResultType: &pb.BigQueryExport_TestResults_{
+				TestResults: &pb.BigQueryExport_TestResults{},
+			},
 		}
 
 		opts := DefaultOptions()

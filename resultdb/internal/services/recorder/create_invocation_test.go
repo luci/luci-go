@@ -151,10 +151,12 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 					Realm: "chromium:ci",
 					BigqueryExports: []*pb.BigQueryExport{
 						{
-							Project:     "project",
-							Dataset:     "dataset",
-							Table:       "table",
-							TestResults: &pb.BigQueryExport_TestResults{},
+							Project: "project",
+							Dataset: "dataset",
+							Table:   "table",
+							ResultType: &pb.BigQueryExport_TestResults_{
+								TestResults: &pb.BigQueryExport_TestResults{},
+							},
 						},
 					},
 				},
@@ -174,10 +176,12 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 					Realm: "chromium:ci",
 					BigqueryExports: []*pb.BigQueryExport{
 						{
-							Project:     "project",
-							Dataset:     "dataset",
-							Table:       "table",
-							TestResults: &pb.BigQueryExport_TestResults{},
+							Project: "project",
+							Dataset: "dataset",
+							Table:   "table",
+							ResultType: &pb.BigQueryExport_TestResults_{
+								TestResults: &pb.BigQueryExport_TestResults{},
+							},
 						},
 					},
 				},
@@ -406,10 +410,12 @@ func TestCreateInvocation(t *testing.T) {
 			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
 			headers := &metadata.MD{}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "table",
-				TestResults: &pb.BigQueryExport_TestResults{},
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
 			}
 			req := &pb.CreateInvocationRequest{
 				InvocationId: "u-inv",
