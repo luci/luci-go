@@ -70,6 +70,30 @@
       },
       "revId": "a3983f760cc60f482d27b291f6364262012b7e05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c8296d2_4e698061",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-13T19:46:02Z",
+      "side": 1,
+      "message": "Only in selecting shards to write to though, right? The incoming requests may not be. For example if a first batch request results in 2 builds tagged as buildset:X, and a second batch results in 200 builds tagged as buildset:X then although shard selection is uniform at random, the shards are not equally full.\n\nAt any rate there are practically only about 20 permanently incomplete tag indices in prod.",
+      "parentUuid": "d048337c_d8ea77b3",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 17
+      },
+      "revId": "a3983f760cc60f482d27b291f6364262012b7e05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
