@@ -123,6 +123,24 @@
       "parentUuid": "9f1539b8_b4ffb1b5",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b4ab437_d99f3b57",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-13T20:06:25Z",
+      "side": 1,
+      "message": "Ah ok then an option is to explicitly call out that the system should strip everything after and including \";\" when filtering?\n\nThus the \";\" part should be denied here. I dunno, I\u0027m not sure I\u0027ll use this feature yet so it\u0027s not a big deal to me.",
+      "parentUuid": "39f27b2d_f840c5ce",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
