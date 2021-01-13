@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -339,6 +340,39 @@ func TestQueryTestResults(t *testing.T) {
 
 			actual, _ := mustFetch(q)
 			So(actual, ShouldResembleProto, expected)
+		})
+
+		Convey(`Variant in the mask`, func() {
+			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+
+			v1 := pbutil.Variant("k", "1")
+			v2 := pbutil.Variant("k", "2")
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.TestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
+			)...)
+
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+
+			Convey(`Present`, func() {
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_id", "variant", "variant_hash")
+				results, _ := mustFetch(q)
+				for _, r := range results {
+					So(r.Variant, ShouldNotBeNil)
+					So(r.VariantHash, ShouldNotEqual, "")
+				}
+			})
+
+			Convey(`Not present`, func() {
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_id")
+				results, _ := mustFetch(q)
+				for _, r := range results {
+					So(r.Variant, ShouldBeNil)
+					So(r.VariantHash, ShouldEqual, "")
+				}
+			})
 		})
 
 		Convey(`Query statements`, func() {
