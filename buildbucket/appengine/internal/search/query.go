@@ -131,6 +131,28 @@ func IndexedTags(tags strpair.Map) []string {
 	return set.ToSortedSlice()
 }
 
+// UpdateTagIndex updates the tag index for the given builds.
+func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
+	// tag -> entries
+	idx := make(map[string][]model.TagIndexEntry)
+	for _, b := range builds {
+		tags := IndexedTags(strpair.ParseMap(b.Tags))
+		for _, t := range tags {
+			ent := model.TagIndexEntry{
+				BuildID:  b.ID,
+				BucketID: b.BucketID,
+			}
+			idx[t] = append(idx[t], ent)
+		}
+	}
+	for tag, ents := range idx {
+		if err := model.UpdateTagIndex(ctx, tag, ents); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Fetch performs main build search logic.
 func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
