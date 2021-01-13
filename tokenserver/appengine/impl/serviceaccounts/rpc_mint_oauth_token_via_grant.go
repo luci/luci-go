@@ -44,7 +44,7 @@ import (
 type MintOAuthTokenViaGrantRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns service account rules to use for the request.
@@ -59,8 +59,8 @@ type MintOAuthTokenViaGrantRPC struct {
 
 	// LogOAuthToken is mocked in tests.
 	//
-	// In prod it is LogOAuthToken from oauth_token_bigquery_log.go.
-	LogOAuthToken func(context.Context, *MintedOAuthTokenInfo) error
+	// In prod it is produced by NewOAuthTokenLogger.
+	LogOAuthToken OAuthTokenLogger
 }
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.

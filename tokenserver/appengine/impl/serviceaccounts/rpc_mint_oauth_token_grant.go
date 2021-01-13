@@ -38,7 +38,7 @@ const tokenIDSequenceKind = "oauthTokenGrantID"
 type MintOAuthTokenGrantRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns service account rules to use for the request.
@@ -48,12 +48,12 @@ type MintOAuthTokenGrantRPC struct {
 
 	// LogGrant is mocked in tests.
 	//
-	// In prod it is LogGrant from grant_bigquery_log.go.
-	LogGrant func(context.Context, *MintedGrantInfo) error
+	// In prod it is produced by NewGrantLogger.
+	LogGrant GrantLogger
 
 	// mintMock call is used in tests.
 	//
-	// In prod it is 'mint'
+	// In prod it is 'mint'.
 	mintMock func(context.Context, *mintParams) (*minter.MintOAuthTokenGrantResponse, *tokenserver.OAuthTokenGrantBody, error)
 }
 
