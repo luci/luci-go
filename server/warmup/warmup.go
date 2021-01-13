@@ -62,7 +62,7 @@ func Warmup(c context.Context) error {
 	for _, cb := range state.callbacks {
 		logging.Infof(c, "Warming up %q", cb.name)
 		if err := cb.Callback(c); err != nil {
-			logging.WithError(err).Errorf(c, "Error when warming up %q", cb.name)
+			logging.Errorf(c, "Error when warming up %q: %s", cb.name, err)
 			merr = append(merr, err)
 		}
 	}
@@ -74,8 +74,12 @@ func Warmup(c context.Context) error {
 	return merr
 }
 
-// InstallHandlers installs HTTP handlers for warmup /_ah/* routes.
-func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+// InstallHandlersDeprecated installs HTTP handlers for warmup /_ah/* routes.
+//
+// It is deprecated. Do not use. On GAEv1 it is called by the framework code.
+// On GAEv2 or on GKE use NewModuleFromFlags() and register the warmup module
+// when starting the server.
+func InstallHandlersDeprecated(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/_ah/warmup", base, httpHandler)
 	r.GET("/_ah/start", base, httpHandler)
 }

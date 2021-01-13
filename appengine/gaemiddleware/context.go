@@ -133,7 +133,7 @@ func (e *Environment) InstallHandlers(r *router.Router) {
 // installs:
 //  * Warmup Handler (warmup)
 func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
-	warmup.InstallHandlers(r, base)
+	warmup.InstallHandlersDeprecated(r, base)
 
 	if e.ExtraHandlers != nil {
 		e.ExtraHandlers(r, base)

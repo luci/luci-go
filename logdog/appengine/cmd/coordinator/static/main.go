@@ -32,7 +32,7 @@ func main() {
 	r := router.New()
 
 	base := router.NewMiddlewareChain()
-	warmup.InstallHandlers(r, base)
+	warmup.InstallHandlersDeprecated(r, base)
 
 	http.Handle("/", r)
 	appengine.Main()
