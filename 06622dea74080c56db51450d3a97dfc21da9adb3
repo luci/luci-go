@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b2440a03_f8be26c4",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-13T19:04:52Z",
+      "side": 1,
+      "message": "Perhaps \"(literally, no other attributes are currently permitted)\"?",
+      "parentUuid": "a3577d9c_986fc07c",
+      "range": {
+        "startLine": 52,
+        "startChar": 58,
+        "endLine": 52,
+        "endChar": 69
+      },
+      "revId": "06622dea74080c56db51450d3a97dfc21da9adb3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "614e0b2e_6b591427",
         "filename": "grpc/prpc/doc.go",
         "patchSetId": 2
