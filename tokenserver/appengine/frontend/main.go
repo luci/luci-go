@@ -20,22 +20,24 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"sync"
 
-	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
+	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -43,52 +45,59 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 func main() {
-	r := router.New()
-	base := standard.Base()
-
-	adminSrv := adminsrv.NewServer()
-	certsSrv := certauthorities.NewServer()
-	tokenminterSrv := tokenminter.NewServer()
-
-	// Register config validation rules.
-	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
-	adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
-
-	// Install auth, config and tsmon handlers.
-	standard.InstallHandlers(r)
-
-	// Serve the RPC Explorer UI.
-	rpcexplorer.Install(r)
-
-	// The service has no UI, so just redirect to the RPC Explorer.
-	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
-	})
-
-	// Install all RPC servers. Catch panics, report metrics to tsmon (including
-	// panics themselves, as Internal errors).
-	api := prpc.Server{
-		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
-			grpcmon.UnaryServerInterceptor,
-			grpcutil.UnaryServerPanicCatcherInterceptor,
-			adminCheckInterceptor,
-		),
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		warmup.NewModuleFromFlags(),
 	}
-	admin.RegisterCertificateAuthoritiesServer(&api, certsSrv)
-	admin.RegisterAdminServer(&api, adminSrv)
-	minter.RegisterTokenMinterServer(&api, tokenminterSrv)
-	discovery.Enable(&api)
-	api.InstallHandlers(r, base)
 
-	// Expose all this stuff.
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+	server.Main(nil, modules, func(srv *server.Server) error {
+		bqClient, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+		signer := auth.GetSigner(srv.Context)
+
+		adminSrv := adminsrv.NewServer(signer)
+		certsSrv := certauthorities.NewServer()
+		tokenminterSrv := tokenminter.NewServer(signer, bqClient, srv.Options.Prod)
+
+		// Config validation rules.
+		adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
+		adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
+
+		// Exposed pRPC services.
+		admin.RegisterCertificateAuthoritiesServer(srv.PRPC, certsSrv)
+		admin.RegisterAdminServer(srv.PRPC, adminSrv)
+		minter.RegisterTokenMinterServer(srv.PRPC, tokenminterSrv)
+
+		// Authorization check for admin services.
+		srv.PRPC.UnaryServerInterceptor = adminCheckInterceptor
+
+		// Cron handlers.
+		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
+		srv.Routes.GET("/internal/cron/read-config", cronMW, func(c *router.Context) {
+			readConfigCron(c, adminSrv)
+		})
+		srv.Routes.GET("/internal/cron/fetch-crl", cronMW, func(c *router.Context) {
+			fetchCRLCron(c, certsSrv)
+		})
+
+		// The service has no UI, so just redirect to the RPC Explorer.
+		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
+		})
+
+		return nil
+	})
 }
 
 func adminCheckInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
@@ -102,4 +111,78 @@ func adminCheckInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		}
 	}
 	return handler(ctx, req)
+}
+
+// readConfigCron is handler for /internal/cron/read-config GAE cron task.
+func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
+	// All config fetching callbacks to call in parallel.
+	fetchers := []struct {
+		name string
+		cb   func(context.Context, *emptypb.Empty) (*admin.ImportedConfigs, error)
+	}{
+		{"ImportCAConfigs", adminServer.ImportCAConfigs},
+		{"ImportDelegationConfigs", adminServer.ImportDelegationConfigs},
+		{"ImportServiceAccountsConfigs", adminServer.ImportServiceAccountsConfigs},
+		{"ImportProjectIdentityConfigs", adminServer.ImportProjectIdentityConfigs},
+		{"ImportProjectOwnedAccountsConfigs", adminServer.ImportProjectOwnedAccountsConfigs},
+	}
+
+	errs := make([]error, len(fetchers))
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(fetchers))
+	for idx, fetcher := range fetchers {
+		idx := idx
+		fetcher := fetcher
+		go func() {
+			defer wg.Done()
+			if _, errs[idx] = fetcher.cb(c.Context, nil); errs[idx] != nil {
+				logging.Errorf(c.Context, "%s failed - %s", fetcher.name, errs[idx])
+			}
+		}()
+	}
+	wg.Wait()
+
+	// Retry cron job only on transient errors. On fatal errors let it rerun one
+	// minute later, as usual, to avoid spamming logs with errors.
+	c.Writer.WriteHeader(statusFromErrs(errs))
+}
+
+// fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
+func fetchCRLCron(c *router.Context, caServer admin.CertificateAuthoritiesServer) {
+	list, err := caServer.ListCAs(c.Context, nil)
+	if err != nil {
+		panic(err) // let panic catcher deal with it
+	}
+
+	// Fetch CRL of each active CA in parallel. In practice there are very few
+	// CAs there (~= 1), so the risk of OOM is small.
+	wg := sync.WaitGroup{}
+	errs := make([]error, len(list.Cn))
+	for i, cn := range list.Cn {
+		wg.Add(1)
+		go func(i int, cn string) {
+			defer wg.Done()
+			_, err := caServer.FetchCRL(c.Context, &admin.FetchCRLRequest{Cn: cn})
+			if err != nil {
+				logging.Errorf(c.Context, "FetchCRL(%q) failed - %s", cn, err)
+				errs[i] = err
+			}
+		}(i, cn)
+	}
+	wg.Wait()
+
+	// Retry cron job only on transient errors. On fatal errors let it rerun one
+	// minute later, as usual, to avoid spamming logs with errors.
+	c.Writer.WriteHeader(statusFromErrs(errs))
+}
+
+// statusFromErrs returns 500 if any of gRPC errors is codes.Internal.
+func statusFromErrs(errs []error) int {
+	for _, err := range errs {
+		if grpc.Code(err) == codes.Internal {
+			return http.StatusInternalServerError
+		}
+	}
+	return http.StatusOK
 }

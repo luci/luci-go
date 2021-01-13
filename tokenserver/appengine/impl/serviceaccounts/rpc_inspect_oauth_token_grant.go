@@ -14,7 +14,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
@@ -22,7 +22,7 @@ import (
 type InspectOAuthTokenGrantRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns service account rules to use for the request.

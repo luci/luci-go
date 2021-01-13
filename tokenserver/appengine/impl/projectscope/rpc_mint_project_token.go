@@ -43,7 +43,7 @@ const (
 type MintProjectTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// MintAccessToken produces an OAuth token for a service account.
@@ -57,7 +57,9 @@ type MintProjectTokenRPC struct {
 	ProjectIdentities func(context.Context) projectidentity.Storage
 
 	// LogToken is mocked in tests.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	//
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // MintProjectToken mints a project-scoped service account OAuth2 token.

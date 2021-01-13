@@ -19,8 +19,10 @@
 package adminsrv
 
 import (
-	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/server/auth/signing"
+
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
@@ -46,8 +48,7 @@ type AdminServer struct {
 // NewServer returns prod AdminServer implementation.
 //
 // It assumes authorization has happened already.
-func NewServer() *AdminServer {
-	signer := gaesigner.Signer{}
+func NewServer(signer signing.Signer) *AdminServer {
 	return &AdminServer{
 		ImportDelegationConfigsRPC: delegation.ImportDelegationConfigsRPC{
 			RulesCache: delegation.GlobalRulesCache,
