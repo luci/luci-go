@@ -199,7 +199,8 @@ func TestStepLog(t *testing.T) {
 	Convey(`Step logging`, t, func() {
 		lc := streamclient.NewFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		buildState, ctx := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		buildState, ctx, err := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		So(err, ShouldBeNil)
 		defer func() { buildState.End(nil) }()
 		So(buildState, ShouldNotBeNil)
 
