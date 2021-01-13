@@ -105,6 +105,24 @@
       "parentUuid": "44535cd9_628540f6",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39f27b2d_f840c5ce",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-13T18:50:07Z",
+      "side": 1,
+      "message": "It\u0027s for users to specify what kind of artifacts they want. For example in the case of export text artifact to bq, we should specify that the content_type of the artifact should be \"text/plain\" (and alike). But in other use cases, the user may only want images, all they want all kinds of artifacts.",
+      "parentUuid": "9f1539b8_b4ffb1b5",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
