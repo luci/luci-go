@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb207be7_4a4fea1a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T23:08:00Z",
+      "side": 1,
+      "message": "Given that Go\u0027s http lib always includes \"Accept-Encoding: gzip\" I have update what this means for the server.",
+      "revId": "99df53ee3359083f4f61f0caa1a6e8baea20aacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

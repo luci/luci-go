@@ -91,6 +91,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "55177cd5_dc456311",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T23:08:00Z",
+      "side": 1,
+      "message": "was this discussion resolved?\n\nI agree with Robbie\u0027s point that it doesn\u0027t help in practice, because we marshal entire response message anyway. Here is the preview of implementation: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2627791/4/grpc/prpc/encoding.go#136\n\nmarking unresolved to make sure we discussed this.",
+      "parentUuid": "2e80ffb2_cc091c6f",
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e325a77d_130dc48f",
         "filename": "grpc/prpc/doc.go",
         "patchSetId": 4
@@ -102,6 +120,30 @@
       "writtenOn": "2021-01-13T19:48:14Z",
       "side": 1,
       "message": "nit: this is misleading. gzip is based on DEFLATE, which is more than just LZ77. I think just saying gzip (perhaps referencing RFC 1952) is sufficient.",
+      "range": {
+        "startLine": 46,
+        "startChar": 61,
+        "endLine": 47,
+        "endChar": 37
+      },
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b64f7fef_517a2205",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T23:08:00Z",
+      "side": 1,
+      "message": "done.\n\nI copied this from MDN: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding#directives\nhttps://tools.ietf.org/html/rfc7230#section-4.2.3 says the same thing,\nbut \"GZIP\" and a reference to RFC is simpler.",
+      "parentUuid": "e325a77d_130dc48f",
       "range": {
         "startLine": 46,
         "startChar": 61,
