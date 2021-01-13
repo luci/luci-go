@@ -18,6 +18,7 @@ package prpc
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -119,7 +120,10 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 // writeMessage writes msg to w in the specified format.
 // c is used to log errors.
 // panics if msg is nil.
-func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format) {
+//
+// If gzipThreshold is positive and marshaled response message exceeds it,
+// then compress the response body.
+func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format, acceptsGZip bool) {
 	if msg == nil {
 		panic("msg is nil")
 	}
@@ -132,8 +136,22 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
 	w.Header().Set(headerContentType, format.MediaType())
-	if _, err := w.Write(body); err != nil {
-		logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+	if acceptsGZip && len(body) > gzipThreshold {
+		w.Header().Set("Content-Encoding", "gzip")
+		gz := gzip.NewWriter(w)
+		if _, err := gz.Write(body); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to write or compress the response body")
+			return
+		}
+		if err := gz.Close(); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to close gzip.Writer")
+			return
+		}
+	} else {
+		if _, err := w.Write(body); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+			return
+		}
 	}
 }
 
