@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 )
@@ -46,6 +47,7 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		warmup.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {

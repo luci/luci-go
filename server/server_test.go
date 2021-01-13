@@ -183,6 +183,41 @@ func TestServer(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("Warmup and cleanup callbacks", func() {
+			var warmups []string
+			var cleanups []string
+
+			srv.RegisterWarmup(func(ctx context.Context) {
+				if err := testContextFeatures(ctx); err != nil {
+					panic(err)
+				}
+				warmups = append(warmups, "a")
+			})
+			srv.RegisterWarmup(func(ctx context.Context) {
+				warmups = append(warmups, "b")
+			})
+
+			srv.RegisterCleanup(func(ctx context.Context) {
+				if err := testContextFeatures(ctx); err != nil {
+					panic(err)
+				}
+				cleanups = append(cleanups, "a")
+			})
+			srv.RegisterCleanup(func(ctx context.Context) {
+				cleanups = append(cleanups, "b")
+			})
+
+			srv.ServeInBackground()
+
+			So(warmups, ShouldResemble, []string{"a", "b"})
+			So(cleanups, ShouldEqual, nil)
+
+			srv.StopBackgroundServing()
+
+			So(warmups, ShouldResemble, []string{"a", "b"})
+			So(cleanups, ShouldResemble, []string{"b", "a"})
+		})
+
 		Convey("RunInBackground", func() {
 			// Queue one activity before starting the serving loop to verify this code
 			// path works.

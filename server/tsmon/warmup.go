@@ -22,11 +22,16 @@ import (
 )
 
 func init() {
-	warmup.Register("server/tsmon", func(c context.Context) (err error) {
-		if settings := fetchCachedSettings(c); settings.Enabled && settings.ProdXAccount != "" {
-			err = canActAsProdX(c, settings.ProdXAccount)
+	warmup.Register("server/tsmon", func(ctx context.Context) (err error) {
+		settings := PortalPage.readOnlySettings()
+		if settings == nil {
+			cached := fetchCachedSettings(ctx)
+			settings = &cached
+		}
+		if settings.Enabled && settings.ProdXAccount != "" {
+			err = canActAsProdX(ctx, settings.ProdXAccount)
 		} else {
-			logging.Infof(c, "Skipping tsmon warmup, not configured")
+			logging.Infof(ctx, "Skipping tsmon warmup, not configured")
 		}
 		return
 	})
