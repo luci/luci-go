@@ -17,7 +17,6 @@ package resultdb
 import (
 	"testing"
 
-	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/server/auth"
@@ -36,9 +35,8 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 	Convey(`TestValidateQueryArtifactsRequest`, t, func() {
 		Convey(`Valid`, func() {
 			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
-				Invocations:  []string{"invocations/x"},
-				PageSize:     50,
-				MaxStaleness: &durpb.Duration{Seconds: 60},
+				Invocations: []string{"invocations/x"},
+				PageSize:    50,
 			})
 			So(err, ShouldBeNil)
 		})

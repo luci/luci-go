@@ -17,10 +17,6 @@ package resultdb
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
-	durpb "github.com/golang/protobuf/ptypes/duration"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -37,7 +33,6 @@ import (
 // *pb.QueryTestExonerationsRequest and *pb.QueryTestResultStatisticsRequest.
 type queryRequest interface {
 	GetInvocations() []string
-	GetMaxStaleness() *durpb.Duration
 }
 
 // queryRequestWithPaging is implemented by *pb.QueryTestResultsRequest and
@@ -56,12 +51,6 @@ func validateQueryRequest(req queryRequest) error {
 	for _, name := range req.GetInvocations() {
 		if err := pbutil.ValidateInvocationName(name); err != nil {
 			return errors.Annotate(err, "invocations: %q", name).Err()
-		}
-	}
-
-	if req.GetMaxStaleness() != nil {
-		if err := pbutil.ValidateMaxStaleness(req.GetMaxStaleness()); err != nil {
-			return errors.Annotate(err, "max_staleness").Err()
 		}
 	}
 
@@ -101,10 +90,6 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
-	if in.MaxStaleness != nil {
-		st, _ := ptypes.Duration(in.MaxStaleness)
-		span.RO(ctx).WithTimestampBound(spanner.MaxStaleness(st))
-	}
 
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))

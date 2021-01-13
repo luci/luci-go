@@ -17,7 +17,6 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/api/field_behavior.proto";
-import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
@@ -198,14 +197,6 @@ message QueryTestResultsRequest {
   // A test result in the response must satisfy this predicate.
   TestResultPredicate predicate = 2;
 
-  // The version of the state from which the response draws is allowed to be
-  // stale up to this duration.
-  // For example, with max staleness of 5m, the response might not contain
-  // results uploaded 4m ago.
-  // Choosing a larger duration may reduce request latency.
-  // Must be <=30m.
-  google.protobuf.Duration max_staleness = 3;
-
   // The maximum number of test results to return.
   //
   // The service may return fewer than this value.
@@ -253,14 +244,6 @@ message QueryTestExonerationsRequest {
   TestExonerationPredicate predicate = 2
       [ (google.api.field_behavior) = REQUIRED ];
 
-  // The version of the state from which the response draws is allowed to be
-  // stale up to this duration.
-  // For example, with max staleness of 5m, the response might not contain
-  // results uploaded 4m ago.
-  // Choosing a larger duration may reduce request latency.
-  // Must be <=30m.
-  google.protobuf.Duration max_staleness = 3;
-
   // The maximum number of test exonerations to return.
   //
   // The service may return fewer than this value.
@@ -296,14 +279,6 @@ message QueryTestResultStatisticsRequest {
   // Specifying multiple invocations is equivalent to requesting one invocation
   // that includes these.
   repeated string invocations = 1;
-
-  // The version of the state from which the response draws is allowed to be
-  // stale up to this duration.
-  // For example, with max staleness of 5m, the response might not contain
-  // results uploaded 4m ago.
-  // Choosing a larger duration may reduce request latency.
-  // Must be <=30m.
-  google.protobuf.Duration max_staleness = 2;
 }
 
 // A response message for QueryTestResultStatistics RPC.
@@ -383,14 +358,6 @@ message QueryArtifactsRequest {
   // Note: this predicate does NOT apply to invocation-level artifacts.
   // To exclude them from the response, use follow_edges.
   TestResultPredicate test_result_predicate = 3;
-
-  // The version of the state from which the response draws is allowed to be
-  // stale up to this duration.
-  // For example, with max staleness of 5m, the response might not contain
-  // artifacts uploaded 4m ago.
-  // Choosing a larger duration may reduce request latency.
-  // Must be <=30m.
-  google.protobuf.Duration max_staleness = 4;
 
   // The maximum number of artifacts to return.
   //

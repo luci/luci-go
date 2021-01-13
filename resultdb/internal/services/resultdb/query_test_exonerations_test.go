@@ -18,7 +18,6 @@ import (
 	"sort"
 	"testing"
 
-	durpb "github.com/golang/protobuf/ptypes/duration"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/grpc/codes"
 
@@ -37,9 +36,8 @@ func TestValidateQueryTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`Valid`, t, func() {
 		err := validateQueryTestExonerationsRequest(&pb.QueryTestExonerationsRequest{
-			Invocations:  []string{"invocations/x"},
-			PageSize:     50,
-			MaxStaleness: &durpb.Duration{Seconds: 60},
+			Invocations: []string{"invocations/x"},
+			PageSize:    50,
 		})
 		So(err, ShouldBeNil)
 	})

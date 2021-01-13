@@ -17,9 +17,6 @@ package resultdb
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -54,10 +51,6 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
-	if in.MaxStaleness != nil {
-		st, _ := ptypes.Duration(in.MaxStaleness)
-		span.RO(ctx).WithTimestampBound(spanner.MaxStaleness(st))
-	}
 
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
