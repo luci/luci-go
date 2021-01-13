@@ -258,7 +258,7 @@ func (s *Server) handlePOST(c *router.Context) {
 		writeError(c.Context, c.Writer, res.err, res.fmt)
 		return
 	}
-	writeMessage(c.Context, c.Writer, res.out, res.fmt)
+	writeMessage(c.Context, c.Writer, res.out, res.fmt, res.gzipResponse)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
@@ -295,9 +295,10 @@ func SetHeader(ctx context.Context, md metadata.MD) error {
 }
 
 type response struct {
-	out proto.Message
-	fmt Format
-	err error
+	out          proto.Message
+	fmt          Format
+	gzipResponse bool
+	err          error
 }
 
 func (s *Server) lookup(serviceName, methodName string) (override Override, service *service, method grpc.MethodDesc, methodFound bool) {
@@ -321,6 +322,8 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		r.err = perr
 		return
 	}
+
+	r.gzipResponse = shouldGZipResponse(c.Request.Header)
 
 	methodCtx, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
 	if err != nil {
