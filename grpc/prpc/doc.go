@@ -41,7 +41,22 @@
 //
 // Protocol
 //
-// ## v.1.2
+// ## v1.3
+//
+// v1.3 adds request/response compression support using Lempel-Ziv coding
+// (LZ77) with a 32-bit CRC, aka GZIP.
+//
+//  - A request MAY have a header "Content-Encoding: gzip" (literally).
+//    If so, the server MUST decompress the request body before unmarshaling the
+//    request message.
+//  - A request MAY have a header "Accept-Encoding: gzip". If specified, then
+//    the server response body SHOULD be compressed. If it is, then the response
+//    must include header "Content-Encoding: gzip".
+//
+// See also https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
+// and https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+//
+// ## v1.2
 //
 // v1.2 is small, backward-compatible amendment to v1.1 that adds support for
 // error details.
@@ -132,4 +147,11 @@
 //
 // If a service/method is not found, the server MUST respond with Unimplemented
 // gRPC code and SHOULD specify HTTP 501 status.
+//
+// Response compression
+//
+// This particular implementation also supports gzip-compression of the
+// response, using standard Content-Encoding.
+// To enable it, the client must pass "Accept-Encoding: gzip" header, literally.
+// This is not a part of the pRPC protocol.
 package prpc
