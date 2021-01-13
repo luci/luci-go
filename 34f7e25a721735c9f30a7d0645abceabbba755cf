@@ -87,6 +87,24 @@
       "parentUuid": "1fd9a684_0420cae4",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f1539b8_b4ffb1b5",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-13T13:34:01Z",
+      "side": 1,
+      "message": "I think I just fail to understand the use case of this field. It\u0027s a passlist?",
+      "parentUuid": "44535cd9_628540f6",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
