@@ -18,7 +18,6 @@ import (
 	"sort"
 	"testing"
 
-	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
@@ -48,14 +47,6 @@ func TestValidateQueryRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocations: "x": does not match`)
 		})
 
-		Convey(`invalid max staleness`, func() {
-			err := validateQueryRequest(&pb.QueryTestResultsRequest{
-				Invocations:  []string{"invocations/x"},
-				MaxStaleness: &durpb.Duration{Seconds: -1},
-			})
-			So(err, ShouldErrLike, `max_staleness: must between 0 and 30m, inclusive`)
-		})
-
 		Convey(`invalid page size`, func() {
 			err := validateQueryRequest(&pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/x"},
@@ -70,9 +61,8 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`Valid`, t, func() {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
-			Invocations:  []string{"invocations/x"},
-			PageSize:     50,
-			MaxStaleness: &durpb.Duration{Seconds: 60},
+			Invocations: []string{"invocations/x"},
+			PageSize:    50,
 		})
 		So(err, ShouldBeNil)
 	})
