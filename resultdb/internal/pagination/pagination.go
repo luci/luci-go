@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	pageSizeMax     = 10000
+	pageSizeMax     = 1e5
 	pageSizeDefault = 1000
 )
 
