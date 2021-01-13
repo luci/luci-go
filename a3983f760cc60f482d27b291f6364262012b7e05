@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b09f0d6_d8d9e8cb",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T01:27:44Z",
+      "side": 1,
+      "message": "Warningf maybe? this should be rather unusual.",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 17
+      },
+      "revId": "a3983f760cc60f482d27b291f6364262012b7e05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
