@@ -16,6 +16,24 @@
       "message": "The change itself lgtm.\n\nBut I think variants are quite important in resultdb concept. So I would expect the most of use cases need the variants.",
       "revId": "4825e7d42f05e0cbea73cbdaa40a6c933acb9c5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "147fe80d_818226ec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T06:03:56Z",
+      "side": 1,
+      "message": "queries that ask for a specific variant don\u0027t need variant back because all test results would have the same variant.",
+      "parentUuid": "d8df27f8_f48a7db4",
+      "revId": "4825e7d42f05e0cbea73cbdaa40a6c933acb9c5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
