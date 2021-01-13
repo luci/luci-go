@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adc4c195_95a1d7ba",
+        "filename": "cv/internal/prjmanager/internal/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-13T20:52:57Z",
+      "side": 1,
+      "message": "based on our today\u0027s conversation, there will actually be a purgatory for CLs per component. I\u0027ll add it here in a later CL.",
+      "revId": "fcd8b351ac1e63778bb03c9bb19f1a0b49fa3b47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
