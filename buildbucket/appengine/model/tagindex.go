@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -113,4 +115,50 @@ func SearchTagIndex(ctx context.Context, key, val string) ([]*TagIndexEntry, err
 		}
 	}
 	return ents, nil
+}
+
+// UpdateTagIndex updates the tag index for the given tag.
+func UpdateTagIndex(ctx context.Context, tag string, ents []TagIndexEntry) error {
+	if len(ents) == 0 {
+		return nil
+	}
+	return updateTagIndex(ctx, tag, mathrand.Intn(ctx, TagIndexShardCount), ents)
+}
+
+// updateTagIndex updates the tag index's specified shard for the given tag.
+func updateTagIndex(ctx context.Context, tag string, shard int, ents []TagIndexEntry) error {
+	if len(ents) == 0 {
+		return nil
+	}
+	shd := &TagIndex{
+		ID: tag,
+	}
+	if shard > 0 {
+		shd.ID = fmt.Sprintf(":%d:%s", shard, tag)
+	}
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		switch err := datastore.Get(ctx, shd); {
+		case err == datastore.ErrNoSuchEntity:
+		case err != nil:
+			return errors.Annotate(err, "error fetching tag index for %q", shd.ID).Err()
+		case shd.Incomplete:
+			// No point in updating an incomplete index because it cannot be searched.
+			return nil
+		}
+
+		orig := len(shd.Entries)
+		shd.Entries = append(shd.Entries, ents...)
+		if len(shd.Entries) > MaxTagIndexEntries {
+			shd.Entries = nil
+			shd.Incomplete = true
+			logging.Warningf(ctx, "marking tag index incomplete for %q", shd.ID)
+		} else {
+			logging.Debugf(ctx, "updating tag index for %q (entries %d -> %d)", shd.ID, orig, len(ents))
+		}
+
+		if err := datastore.Put(ctx, shd); err != nil {
+			return errors.Annotate(err, "error updating tag index for %q", shd.ID).Err()
+		}
+		return nil
+	}, nil)
 }
