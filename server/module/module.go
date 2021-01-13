@@ -102,6 +102,18 @@ type Host interface {
 	// the goroutine will exit soon after the context is canceled.
 	RunInBackground(activity string, f func(context.Context))
 
+	// RegisterWarmup registers a callback that is run in server's ListenAndServe
+	// right before the serving loop.
+	//
+	// It receives the global server context (including all customizations made
+	// by the user code in server.Main). Intended for best-effort warmups: there's
+	// no way to gracefully abort the server startup from a warmup callback.
+	//
+	// All module's essential initialization should happen in its Initialize
+	// method instead. The downside is that Initialize runs before the user code
+	// in server.Main and it can't depend on modifications done there.
+	RegisterWarmup(cb func(context.Context))
+
 	// RegisterCleanup registers a callback that is run in server's ListenAndServe
 	// after the server exits the serving loop.
 	//

@@ -536,7 +536,10 @@ type Server struct {
 	bgrDone chan struct{}  // closed to stop background activities
 	bgrWg   sync.WaitGroup // waits for RunInBackground goroutines to stop
 
-	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
+	warmupM sync.Mutex // protects 'warmup' and the actual warmup critical section
+	warmup  []func(context.Context)
+
+	cleanupM sync.Mutex // protects 'cleanup' and the actual cleanup critical section
 	cleanup  []func(context.Context)
 
 	tsmon   *tsmon.State    // manages flushing of tsmon metrics
@@ -578,6 +581,11 @@ func (h *moduleHostImpl) Routes() *router.Router {
 func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context)) {
 	h.panicIfInvalid()
 	h.srv.RunInBackground(activity, f)
+}
+
+func (h *moduleHostImpl) RegisterWarmup(cb func(context.Context)) {
+	h.panicIfInvalid()
+	h.srv.RegisterWarmup(cb)
 }
 
 func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
@@ -914,7 +922,10 @@ func (s *Server) ListenAndServe() error {
 	// Install the interceptor chain.
 	s.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(interceptors...)
 
-	// Catch SIGTERM while inside this function. Upon receiving SIGTERM, wait
+	// Run registered best-effort warmup callbacks right before serving.
+	s.runWarmup()
+
+	// Catch SIGTERM while inside the serving loop. Upon receiving SIGTERM, wait
 	// until the pod is removed from the load balancer before actually shutting
 	// down and refusing new connections. If we shutdown immediately, some clients
 	// may see connection errors, because they are not aware yet the server is
@@ -1087,6 +1098,31 @@ func (s *Server) waitUntilNotServing() {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// RegisterWarmup registers a callback that is run in server's ListenAndServe
+// right before the serving loop.
+//
+// It receives the global server context (including all customizations made
+// by the user code in server.Main). Intended for best-effort warmups: there's
+// no way to gracefully abort the server startup from a warmup callback.
+//
+// Registering a new warmup callback from within a warmup causes a deadlock,
+// don't do that.
+func (s *Server) RegisterWarmup(cb func(context.Context)) {
+	s.warmupM.Lock()
+	defer s.warmupM.Unlock()
+	s.warmup = append(s.warmup, cb)
+}
+
+// runWarmup runs all registered warmup functions (sequentially in registration
+// order).
+func (s *Server) runWarmup() {
+	s.warmupM.Lock()
+	defer s.warmupM.Unlock()
+	for _, cb := range s.warmup {
+		cb(s.Context)
 	}
 }
 
