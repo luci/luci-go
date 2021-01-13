@@ -29,9 +29,9 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { LoadingStage } from '../models/test_loader';
+import { VARIANT_STATUS_DISPLAY_MAP } from '../libs/constants';
 import { TestNode } from '../models/test_node';
-import { TestVariant } from '../services/resultdb';
+import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 /**
  * Display a list of test results.
@@ -59,52 +59,41 @@ export class TestResultsTabElement extends MobxLitElement {
     if (!this.invocationState.testLoader) {
       return true;
     }
-    let targetStage = LoadingStage.LoadingExpected;
-    if (this.configsStore.userConfigs.tests.showFlakyVariant) {
-      targetStage = LoadingStage.LoadingFlaky;
+    const filters = this.configsStore.userConfigs.tests;
+    const testLoader = this.invocationState.testLoader;
+    if (!testLoader.loadedAllUnexpectedVariant) {
+      return false;
     }
-    if (this.configsStore.userConfigs.tests.showExoneratedVariant) {
-      targetStage = LoadingStage.LoadingExonerated;
+    if (filters.showFlakyVariant && !testLoader.loadedAllFlakyVariant) {
+      return false;
     }
-    if (this.configsStore.userConfigs.tests.showExpectedVariant) {
-      targetStage = LoadingStage.LoadingExpected;
+    if (filters.showExoneratedVariant && !testLoader.loadedAllExoneratedVariant) {
+      return false;
     }
-    return this.invocationState.testLoader.stage > targetStage;
-  }
-
-  @computed get displayedUnexpectedVariants() {
-    return (this.invocationState.testLoader?.unexpectedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
-  }
-
-  @computed get displayedFlakyVariants() {
-    if (!this.configsStore.userConfigs.tests.showFlakyVariant) {
-      return [];
+    if (filters.showExpectedVariant && !testLoader.loadedAllExpectedVariant) {
+      return false;
     }
-    return (this.invocationState.testLoader?.flakyTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
-  }
-  @computed get displayedExoneratedVariants() {
-    if (!this.configsStore.userConfigs.tests.showExoneratedVariant) {
-      return [];
-    }
-    return (this.invocationState.testLoader?.exoneratedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
-  }
-  @computed get displayedExpectedVariants() {
-    if (!this.configsStore.userConfigs.tests.showExpectedVariant) {
-      return [];
-    }
-    return (this.invocationState.testLoader?.expectedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.invocationState.selectedNode.path));
+    return true;
   }
 
   @computed
   private get totalDisplayedVariantCount() {
-    return this.displayedUnexpectedVariants.length +
-      this.displayedFlakyVariants.length +
-      this.displayedExoneratedVariants.length +
-      this.displayedExpectedVariants.length;
+    const filters = this.configsStore.userConfigs.tests;
+    let count = 0;
+    if (filters.showUnexpectedVariant) {
+      count += this.invocationState.filteredUnexpectedVariants.length;
+    }
+    if (filters.showFlakyVariant) {
+      count += this.invocationState.filteredFlakyVariants.length;
+    }
+    if (filters.showExoneratedVariant) {
+      count += this.invocationState.filteredExoneratedVariants.length;
+    }
+    if (filters.showExpectedVariant) {
+      count += this.invocationState.filteredExpectedVariants.length;
+    }
+
+    return count;
   }
 
   @observable.ref private allVariantsWereExpanded = false;
@@ -175,22 +164,40 @@ export class TestResultsTabElement extends MobxLitElement {
 
   private renderAllVariants() {
     return html`
-      ${this.displayedUnexpectedVariants.length === 0 ? html`
-      <div class="list-entry">No unexpected test results.</div>
-      <hr class="divider">
-      ` : html ``}
       ${this.renderIntegrationHint()}
-      ${this.renderVariants(this.displayedUnexpectedVariants, true)}
-      ${this.renderVariants(this.displayedFlakyVariants)}
-      ${this.renderVariants(this.displayedExoneratedVariants)}
-      ${this.renderVariants(this.displayedExpectedVariants)}
+      ${this.renderLoadMore()}
+      <hr class="divider">
+      ${this.renderVariants(
+        TestVariantStatus.UNEXPECTED,
+        this.invocationState.filteredUnexpectedVariants,
+        this.configsStore.userConfigs.tests.showUnexpectedVariant,
+        this.invocationState.testLoader?.loadedAllUnexpectedVariant || false,
+        true,
+      )}
+      ${this.renderVariants(
+        TestVariantStatus.FLAKY,
+        this.invocationState.filteredFlakyVariants,
+        this.configsStore.userConfigs.tests.showFlakyVariant,
+        this.invocationState.testLoader?.loadedAllFlakyVariant || false,
+      )}
+      ${this.renderVariants(
+        TestVariantStatus.EXONERATED,
+        this.invocationState.filteredExoneratedVariants,
+        this.configsStore.userConfigs.tests.showExoneratedVariant,
+        this.invocationState.testLoader?.loadedAllFlakyVariant || false,
+      )}
+      ${this.renderVariants(
+        TestVariantStatus.EXPECTED,
+        this.invocationState.filteredExpectedVariants,
+        this.configsStore.userConfigs.tests.showExpectedVariant,
+        this.invocationState.testLoader?.loadedAllExpectedVariant || false,
+      )}
       ${this.renderLoadMore()}
     `;
   }
 
   private renderIntegrationHint() {
-    const state = this.invocationState;
-    return this.configsStore.userConfigs.hints.showTestResultsHint && !state.testLoader?.isLoading? html `
+    return this.configsStore.userConfigs.hints.showTestResultsHint ? html `
       <div class="list-entry">
         <p>
         Don't see results of your test framework here?
@@ -213,10 +220,16 @@ export class TestResultsTabElement extends MobxLitElement {
     `: html ``;
   }
 
-  private renderVariants(variants: TestVariant[], expandFirst = false) {
+  private renderVariants(
+    status: TestVariantStatus,
+    variants: TestVariant[],
+    display: boolean,
+    fullyLoaded: boolean,
+    expandFirst = false,
+  ) {
     return html`
       ${repeat(
-        variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
+        (display ? variants : []).map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
         ([_, v]) => `${v.testId} ${v.variantHash}`,
         ([prev, v, next]) => html`
         <milo-variant-entry
@@ -228,7 +241,14 @@ export class TestResultsTabElement extends MobxLitElement {
           .prerender=${true}
         ></milo-variant-entry>
       `)}
-      ${variants.length !== 0 ? html`<hr class="divider">` : ''}
+      <div
+        class="list-entry"
+        style=${styleMap({'display': display && variants.length === 0 && fullyLoaded ? '' : 'none'})}
+      >No ${VARIANT_STATUS_DISPLAY_MAP[status]} test results.</div>
+      <hr
+        class="divider"
+        style=${styleMap({'display': display && (variants.length !== 0 || fullyLoaded) ? '' : 'none'})}
+      >
     `;
   }
 
