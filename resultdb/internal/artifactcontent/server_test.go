@@ -167,7 +167,7 @@ func TestServeContent(t *testing.T) {
 			insert.Artifact("inv", "tr/t/t/r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
-				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
+				"RBECASHash":  "sha256:deadbeef",
 			}),
 		)
 
@@ -218,16 +218,6 @@ func TestServeContent(t *testing.T) {
 		})
 
 		Convey(`E2E`, func() {
-			Convey(`Isolate`, func() {
-				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
-				So(err, ShouldBeNil)
-				res, actualContents := fetch(u)
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(actualContents, ShouldEqual, "contents")
-				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
-				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
-			})
-
 			Convey(`RBE-CAS`, func() {
 				casReader.res = []*bytestream.ReadResponse{
 					{Data: []byte("first ")},
