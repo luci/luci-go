@@ -109,6 +109,9 @@ var PortalPage interface {
 	// SetReadOnlySettings switches the portal page to always display the given
 	// settings instead of attempting to fetch them from the settings store.
 	SetReadOnlySettings(s *Settings, banner string)
+
+	// readOnlySettings returns settings set with SetReadOnlySettings or nil.
+	readOnlySettings() *Settings
 } = &settingsPage{}
 
 func (p *settingsPage) SetReadOnlySettings(s *Settings, banner string) {
@@ -116,6 +119,13 @@ func (p *settingsPage) SetReadOnlySettings(s *Settings, banner string) {
 	defer p.m.Unlock()
 	p.readOnly = s
 	p.banner = banner
+}
+
+// readOnlySettings returns settings set with SetReadOnlySettings or nil.
+func (p *settingsPage) readOnlySettings() *Settings {
+	p.m.Lock()
+	defer p.m.Unlock()
+	return p.readOnly
 }
 
 func (p *settingsPage) Title(c context.Context) (string, error) {
