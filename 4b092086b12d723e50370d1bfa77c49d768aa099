@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c2d25ee_f66d63a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-13T19:49:48Z",
+      "side": 1,
+      "message": "Without chunked transfer encoding you\u0027ll need Content-Length header. The only way to get it is to compress everything into a memory buffer before sending it to the network. This buffer is unnecessary when using chunked encoding.",
+      "parentUuid": "2b1689dd_f64f7cf0",
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e325a77d_130dc48f",
