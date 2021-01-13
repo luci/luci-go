@@ -33,6 +33,24 @@
       "message": "gzip encoding is also often accompanied by \"Transfer-Encoding: chunked\" (so that servers can do streaming compression instead of buffering everything in memory to calculate its size). It may be worth documenting too. Perhaps can be done later, after the implementation is finished.",
       "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b1689dd_f64f7cf0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-13T19:46:47Z",
+      "side": 1,
+      "message": "I think practically proto is always going to need to have all the data in a buffer though?",
+      "parentUuid": "1ad4c471_d95328ca",
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
