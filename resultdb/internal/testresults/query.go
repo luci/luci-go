@@ -226,7 +226,6 @@ func (q *Query) Fetch(ctx context.Context) (trs []*pb.TestResult, nextPageToken 
 		panic("PageSize <= 0")
 	}
 
-	trs = make([]*pb.TestResult, 0, q.PageSize)
 	err = q.run(ctx, func(tr *pb.TestResult) error {
 		trs = append(trs, tr)
 		return nil
