@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d608a0c_a34589cb",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T22:40:39Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 6
+      },
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd587ffb_7d97417a",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T22:40:39Z",
+      "side": 1,
+      "message": "nit: inline?\n\nor maybe declare before the loop? it doesn\u0027t depend on t",
+      "range": {
+        "startLine": 141,
+        "startChar": 3,
+        "endLine": 141,
+        "endChar": 6
+      },
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7d41940_65cf950e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T22:40:39Z",
+      "side": 1,
+      "message": "should be parallelized",
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
