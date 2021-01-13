@@ -114,14 +114,6 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 	}
 }
 
-// OptSuppressExit will supress the call to os.Exit from Start in the event that
-// a terminal command-line flag was passed (like `--help`).
-//
-// Instead, Start will return a nil `*State` and an unmodified context.
-func OptSuppressExit() StartOption {
-	panic("not implemented")
-}
-
 // OptParseProperties allows you to parse the build's Input.Properties field as
 // JSONPB into the given protobuf message.
 //
