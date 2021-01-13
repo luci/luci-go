@@ -10,3 +10,6 @@ luci_gae_vars:
 
 entrypoint: >
   main -auth-service-host ${AUTH_SERVICE_HOST}
+
+inbound_services:
+- warmup
