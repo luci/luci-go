@@ -41,7 +41,26 @@
 //
 // Protocol
 //
-// ## v.1.2
+// ## v1.3
+//
+// v1.3 adds request/response body compression support using GZIP (RFC-1952).
+//
+//  - A request MAY have a header "Content-Encoding: gzip".
+//    If it is present, then the server MUST decompress the request body before
+//    unmarshaling the request message.
+//  - A request MAY have a header "Accept-Encoding: gzip"
+//    (literally; no other attributes are currently permitted).
+//    If the header is present, then the server response body MAY be compressed.
+//    If the response body is compressed, then the response MUST include a
+//    header "Content-Encoding: gzip".
+//
+// The server is recommended to decide whether to compress based on the response
+// message size.
+//
+// See also https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
+// and https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+//
+// ## v1.2
 //
 // v1.2 is small, backward-compatible amendment to v1.1 that adds support for
 // error details.
