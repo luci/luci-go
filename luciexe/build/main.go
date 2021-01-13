@@ -26,34 +26,24 @@ import (
 //   * parsing command line for "--output", "--help", etc.
 //   * parsing stdin (as appropriate) for the incoming Build message
 //   * creating and configuring a logdog client to send State evolutions.
+//   * Configuring a logdog client from the environment.
+//   * Writing Build state updates to the logdog "build.proto" stream.
 //   * Start'ing the build in this process.
 //   * End'ing the build with the returned error from your function
 //
-// cbFn should be a function (using Go2 generic syntax) of the type:
+// If `inputMsg` is nil, the top-level properties will be ignored.
 //
-//    type Callback[T proto.Message] func(context.Context, *State, T) error
+// If `writeFnptr` and `mergeFnptr` are nil, they're ignored. Otherwise
+// they work as they would for MakePropertyModifier.
 //
-// Example:
-//
-//    func main() {
-//      input := *MyInputProps{}
-//      Main(input, func(ctx context.Context, st *build.State) error {
-//        // actual build code here, build is already Start'd
-//        // input was populated from the build.Input.Properties
-//        return nil // will mark the Build as SUCCESS
-//      })
-//    }
-func Main(inputMsg proto.Message, cb func(context.Context, *State) error) {
-	panic("implement me")
-}
-
-// MainWithOutput is like Main but also takes a `writeFnptr` and `mergeFnptr`
-// which are pointers to property writer/merger functions as described by
-// MakePropertyModifier.
-//
-// These functions manipulate the 'top level' output properties, and the
-// proto message in these functions must not conflict with any output
-// property namespaces reserved via MakePropertyModifier.
+// CLI Arguments parsed:
+//   * -h / --help : Print help for this binary (including input/output
+//     property type info)
+//   * --strict : Enable strict property parsing (see OptStrictInputProperties)
+//   * --output : luciexe "output" flag; See
+//     https://pkg.go.dev/go.chromium.org/luci/luciexe#hdr-Recursive_Invocation
+//   * -- : Any extra arguments after a "--" token are passed to your callback
+//     as-is.
 //
 // Example:
 //
@@ -61,10 +51,17 @@ func Main(inputMsg proto.Message, cb func(context.Context, *State) error) {
 //      input := *MyInputProps{}
 //      var writeOutputProps func(context.Context, *MyOutputProps)
 //      var mergeOutputProps func(context.Context, *MyOutputProps)
-//      Main(input, &writeOutputProps, &mergeOutputProps, func(ctx context.Context, st *build.State) error {
+//
+//      Main(input, &writeOutputProps, &mergeOutputProps, func(ctx context.Context, args []string, st *build.State) error {
+//        // actual build code here, build is already Start'd
+//        // input was parsed from build.Input.Properties
 //        writeOutputProps(ctx, &MyOutputProps{...})
+//        return nil // will mark the Build as SUCCESS
 //      })
 //    }
-func MainWithOutput(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, *State) error) {
+//
+// NOTE: These types are pretty bad; There's significant opportunity to improve
+// them with Go2 generics.
+func Main(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, []string, *State) error) {
 	panic("implement me")
 }
