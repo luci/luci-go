@@ -116,7 +116,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 	ctx, ctxCloser := context.WithCancel(ctx)
 
 	if cstate.step != nil {
-		cstate.step.ensureStarted(nil)
+		cstate.step.mutate(nil) // to ensure step is STARTED
 	}
 
 	ret := &Step{
@@ -320,6 +320,21 @@ func (s *Step) mutate(cb func() bool) {
 		if protoutil.IsEnded(s.stepPb.Status) {
 			panic(errors.Reason("cannot mutate ended step %q", s.stepPb.Name).Err())
 		}
-		return cb()
+
+		modified := false
+		if s.stepPb.Status == bbpb.Status_SCHEDULED {
+			s.stepPb.Status = bbpb.Status_STARTED
+			s.stepPb.StartTime = timestamppb.New(clock.Now(s.ctx))
+			if s.logsink() == nil {
+				logging.Infof(s.ctx, "set status: %s", bbpb.Status_STARTED)
+			}
+			modified = true
+		}
+
+		if cb != nil {
+			modified = cb() || modified
+		}
+
+		return modified
 	})
 }
