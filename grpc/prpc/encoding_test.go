@@ -95,23 +95,31 @@ func TestEncoding(t *testing.T) {
 		msg := &HelloReply{Message: "Hi"}
 		c := context.Background()
 
-		test := func(f Format, body []byte, contentType string) {
-			Convey(contentType, func() {
-				rec := httptest.NewRecorder()
-				writeMessage(c, rec, msg, f)
-				So(rec.Code, ShouldEqual, http.StatusOK)
-				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
-				So(rec.Body.Bytes(), ShouldResemble, body)
-			})
+		test := func(f Format, body []byte, contentType string, gzip bool) {
+			rec := httptest.NewRecorder()
+			writeMessage(c, rec, msg, f, gzip)
+			So(rec.Code, ShouldEqual, http.StatusOK)
+			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
+			So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
+			So(rec.Body.Bytes(), ShouldResemble, body)
 		}
 
 		msgBytes, err := proto.Marshal(msg)
 		So(err, ShouldBeNil)
 
-		test(FormatBinary, msgBytes, mtPRPCBinary)
-		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
-		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+		Convey("binary", func() {
+			test(FormatBinary, msgBytes, mtPRPCBinary, false)
+		})
+		Convey("json", func() {
+			test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB, false)
+		})
+		Convey("text", func() {
+			test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText, false)
+		})
+		Convey("text compressed", func() {
+			expected := []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 202, 77, 45, 46, 78, 76, 79, 181, 82, 80, 242, 200, 84, 226, 2, 4, 0, 0, 255, 255, 255, 9, 7, 189, 14, 0, 0, 0}
+			test(FormatText, expected, mtPRPCText, true)
+		})
 	})
 
 	Convey("writeError", t, func() {
