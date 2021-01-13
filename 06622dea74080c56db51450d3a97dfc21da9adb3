@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a3577d9c_986fc07c",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T19:03:12Z",
+      "side": 1,
+      "message": "Accept-Encoding value format is actually more general: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding\n\nI was trying to say that this protocol doesn\u0027t understand weights, or multiple values, or parameters, etc.\nWDYT?",
+      "parentUuid": "e58cf674_d869107a",
+      "range": {
+        "startLine": 52,
+        "startChar": 58,
+        "endLine": 52,
+        "endChar": 69
+      },
+      "revId": "06622dea74080c56db51450d3a97dfc21da9adb3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "614e0b2e_6b591427",
         "filename": "grpc/prpc/doc.go",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-13T18:57:51Z",
       "side": 1,
       "message": "nit: ambiguous, can be header OR compressed response. I think better to state:\n\n\"If response body is compressed, then ...\"",
+      "range": {
+        "startLine": 54,
+        "startChar": 9,
+        "endLine": 54,
+        "endChar": 11
+      },
+      "revId": "06622dea74080c56db51450d3a97dfc21da9adb3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c4385ed_da34d6df",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T19:03:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "614e0b2e_6b591427",
       "range": {
         "startLine": 54,
         "startChar": 9,
