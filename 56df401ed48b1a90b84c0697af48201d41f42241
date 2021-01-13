@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "56df401ed48b1a90b84c0697af48201d41f42241",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af590bee_1db19c55",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-13T22:35:53Z",
+      "side": 1,
+      "message": "nit: omit.\nit is pretty much deprecated, and we probably won\u0027t update this code when it is actually deprecated.",
+      "range": {
+        "startLine": 199,
+        "startChar": 16,
+        "endLine": 199,
+        "endChar": 21
+      },
+      "revId": "56df401ed48b1a90b84c0697af48201d41f42241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
