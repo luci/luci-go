@@ -51,6 +51,29 @@
       "parentUuid": "1ad4c471_d95328ca",
       "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e325a77d_130dc48f",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-13T19:48:14Z",
+      "side": 1,
+      "message": "nit: this is misleading. gzip is based on DEFLATE, which is more than just LZ77. I think just saying gzip (perhaps referencing RFC 1952) is sufficient.",
+      "range": {
+        "startLine": 46,
+        "startChar": 61,
+        "endLine": 47,
+        "endChar": 37
+      },
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
