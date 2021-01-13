@@ -99,3 +99,9 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 		panic("impossible")
 	}
 }
+
+// ValidateArtifactPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
+	return ValidateTestResultPredicate(p.GetTestResultPredicate())
+}

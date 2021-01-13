@@ -147,13 +147,24 @@ message BigQueryExport {
   // Name of the BigQuery Table.
   string table = 3 [ (google.api.field_behavior) = REQUIRED ];
 
-  // TestResultExport indicates that test results should be exported.
+  // TestResults indicates that test results should be exported.
   message TestResults {
     // Use predicate to query test results that should be exported to
     // BigQuery table.
     TestResultPredicate predicate = 1;
   }
-  TestResults test_results = 4;
+
+  // TextArtifacts indicates that text artifacts should be exported.
+  message TextArtifacts {
+    // Use predicate to query artifacts that should be exported to
+    // BigQuery table.
+    ArtifactPredicate predicate = 1;
+  }
+
+  oneof result_type {
+    TestResults test_results = 4;
+    TextArtifacts text_artifacts = 6;
+  }
 }
 
 // HistoryOptions indicates how the invocations should be indexed, so that their

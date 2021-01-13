@@ -35,7 +35,7 @@ message TestResultPredicate {
 
   // Filters test results based on TestResult.expected field.
   enum Expectancy {
-    // All test results satisfiy this.
+    // All test results satisfy this.
     // WARNING: using this significantly increases response size and latency.
     ALL = 0;
 
@@ -87,4 +87,35 @@ message VariantPredicate {
     // A variant's key-value pairs must contain those in this one.
     Variant contains = 2;
   }
+}
+
+// Represents a function Artifact -> bool.
+message ArtifactPredicate {
+  // A set of Invocation's outgoing edge types.
+  message EdgeTypeSet {
+    // The edges represented by Invocation.included_invocations field.
+    bool included_invocations = 1;
+    // The parent-child relationship between Invocation and TestResult.
+    bool test_results = 2;
+  }
+
+  // Specifies which edges to follow when retrieving directly/indirectly
+  // included artifacts.
+  // For example,
+  // - to retrieve only invocation-level artifacts, use
+  //   {included_invocations: true}.
+  // - to retrieve only test-result-level artifacts, use {test_results: true}.
+  //
+  // By default, follows all edges.
+  EdgeTypeSet follow_edges = 1; // defaults to All.
+
+  // If an Artifact belongs to a TestResult, then the test result must satisfy
+  // this predicate.
+  // Note: this predicate does NOT apply to invocation-level artifacts.
+  // To exclude them from the response, use follow_edges.
+  TestResultPredicate test_result_predicate = 2;
+
+  // Specifies the content type(s) the artifact should satisfy.
+  // If not empty, the artifact content must be any of these, with an exact match.
+  repeated string content_types = 3;
 }
