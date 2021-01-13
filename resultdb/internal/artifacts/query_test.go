@@ -132,7 +132,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`Only invocations`, func() {
-				q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					IncludedInvocations: true,
 				}
 				actual := mustFetchNames(q)
@@ -152,7 +152,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`Only test results`, func() {
-				q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					TestResults: true,
 				}
 				actual := mustFetchNames(q)
@@ -163,7 +163,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`Both`, func() {
-				q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					IncludedInvocations: true,
 					TestResults:         true,
 				}
@@ -203,7 +203,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`Without invocation artifacts`, func() {
-				q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 				actual := mustFetchNames(q)
 				So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
 			})
@@ -235,7 +235,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`Without invocation artifacts`, func() {
-				q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 				actual := mustFetchNames(q)
 				So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
 			})
@@ -271,7 +271,7 @@ func TestQuery(t *testing.T) {
 				})
 
 				Convey(`Without invocation artifacts`, func() {
-					q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+					q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 					actual := mustFetchNames(q)
 					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
 				})
@@ -289,7 +289,7 @@ func TestQuery(t *testing.T) {
 				})
 
 				Convey(`Without invocation artifacts`, func() {
-					q.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+					q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 					actual := mustFetchNames(q)
 					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
 				})

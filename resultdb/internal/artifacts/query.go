@@ -31,7 +31,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-var followAllEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+var followAllEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 	IncludedInvocations: true,
 	TestResults:         true,
 }
@@ -40,7 +40,7 @@ var followAllEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
 type Query struct {
 	InvocationIDs       invocations.IDSet
 	ParentIDRegexp      string
-	FollowEdges         *pb.QueryArtifactsRequest_EdgeTypeSet
+	FollowEdges         *pb.ArtifactPredicate_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
 	PageSize            int // must be positive
 	PageToken           string
