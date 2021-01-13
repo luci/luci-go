@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a4b47f6_11332ec6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-13T22:43:46Z",
+      "side": 1,
+      "message": "PTAL\n\nThe Token Server hits this when it calls SignBytes from inside a request handler. SignBytes implementation uses GetRPCTransport(AsSelf) created during the server startup. So we end up using such \"background\" transport from within a request handler that has some non-trivial auth context.\n\nI\u0027m not sure why we hit it only now. I suspect other libraries we use (Spanner, Cloud datastore) do not propagate context.Context all the way from public API calls (like datastore.Get) down to the HTTP request level.",
+      "revId": "f392477411650f2760bdb8eb5192e0c01fed7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
