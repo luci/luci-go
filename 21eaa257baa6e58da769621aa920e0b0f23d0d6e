@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7abf4ba4_ec43310b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T03:08:43Z",
+      "side": 1,
+      "message": "This CL looks HUGE, but actual logic is \u003c150LOC.\n350 LOC is spent on tests, which I recommend you review first for understanding, as it also gives examples of what and how is stored in state.PB.",
+      "revId": "21eaa257baa6e58da769621aa920e0b0f23d0d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
