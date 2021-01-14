@@ -124,6 +124,11 @@ func (m *Matcher) Match(host, project, ref string) []config.ConfigGroupID {
 	return ret
 }
 
+// ConfigHash returns ConfigHash for which Matcher does matching.
+func (m *Matcher) ConfigHash() string {
+	return m.state.GetConfigHash()
+}
+
 // TODO(tandrii): add "main" branch too to ease migration once either:
 //   * CQDaemon is no longer involved,
 //   * CQDaemon does the same at the same time.
