@@ -15,9 +15,9 @@
 package state
 
 import (
+	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -43,70 +43,84 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+// TODO: rename
+type CTest struct {
+	cvtesting.Test
+
+	lProject string
+	gHost    string
+}
+
+func (ct CTest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
+	So(updater.Schedule(ctx, &updater.RefreshGerritCL{
+		LuciProject: ct.lProject,
+		Host:        ct.gHost,
+		Change:      change,
+	}), ShouldBeNil)
+	ct.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClassID))
+	eid, err := changelist.GobID(ct.gHost, change)
+	So(err, ShouldBeNil)
+	cl, err := eid.Get(ctx)
+	So(err, ShouldBeNil)
+	So(cl, ShouldNotBeNil)
+	return cl
+}
+
+const cfgText1 = `
+  config_groups {
+    name: "g0"
+    gerrit {
+      url: "https://c-review.example.com"  # Must match gHost.
+      projects {
+        name: "repo/a"
+        ref_regexp:         "refs/heads/main"
+      }
+    }
+  }
+  config_groups {
+    name: "g1"
+		fallback: YES
+    gerrit {
+      url: "https://c-review.example.com"  # Must match gHost.
+      projects {
+        name: "repo/a"
+        ref_regexp:         "refs/heads/.+"
+      }
+    }
+  }
+`
+
+func updateConfigToNoFallabck(ctx context.Context, ct *CTest) config.Meta {
+	cfgText2 := strings.ReplaceAll(cfgText1, "fallback: YES", "fallback: NO")
+	cfg2 := &cfgpb.Config{}
+	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
+	ct.Cfg.Update(ctx, ct.lProject, cfg2)
+	gobmap.Update(ctx, ct.lProject)
+	return ct.Cfg.MustExist(ctx, ct.lProject)
+}
+
 func TestUpdateConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("updateConfig works", t, func() {
-		ct := cvtesting.Test{}
+		ct := CTest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const lProject = "test"
-		const gHost = "c-review.example.com"
-
-		runCLUpdater := func(change int64) *changelist.CL {
-			So(updater.Schedule(ctx, lProject, gHost, change, time.Time{}, 0), ShouldBeNil)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClassID))
-			eid, err := changelist.GobID(gHost, change)
-			So(err, ShouldBeNil)
-			cl, err := eid.Get(ctx)
-			So(err, ShouldBeNil)
-			So(cl, ShouldNotBeNil)
-			return cl
-		}
-
-		const cfgText1 = `
-      config_groups {
-        name: "g0"
-        gerrit {
-          url: "https://c-review.example.com"  # Must match gHost.
-          projects {
-            name: "repo/a"
-            ref_regexp:         "refs/heads/main"
-          }
-        }
-      }
-      config_groups {
-        name: "g1"
-				fallback: YES
-        gerrit {
-          url: "https://c-review.example.com"  # Must match gHost.
-          projects {
-            name: "repo/a"
-            ref_regexp:         "refs/heads/.+"
-          }
-        }
-      }`
 		cfg1 := &cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
 
-		ct.Cfg.Create(ctx, lProject, cfg1)
-		meta := ct.Cfg.MustExist(ctx, lProject)
-		So(gobmap.Update(ctx, lProject), ShouldBeNil)
-
-		updateConfigToNoFallabck := func() config.Meta {
-			cfgText2 := strings.ReplaceAll(cfgText1, "fallback: YES", "fallback: NO")
-			cfg2 := &cfgpb.Config{}
-			So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
-			ct.Cfg.Update(ctx, lProject, cfg2)
-			gobmap.Update(ctx, lProject)
-			return ct.Cfg.MustExist(ctx, lProject)
-		}
+		ct.Cfg.Create(ctx, ct.lProject, cfg1)
+		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
 
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
-			s0 := NewInitial(lProject)
+			s0 := NewInitial(ct.lProject)
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := s0.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
@@ -118,7 +132,7 @@ func TestUpdateConfig(t *testing.T) {
 			})
 			So(s1.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s1.PB, ShouldResembleProto, &internal.PState{
-				LuciProject:      lProject,
+				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Components:       nil,
@@ -140,16 +154,16 @@ func TestUpdateConfig(t *testing.T) {
 			203, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
 			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
 		)
-		ct.GFake.CreateChange(&gf.Change{Host: gHost, ACLs: gf.ACLPublic(), Info: ci101})
-		ct.GFake.CreateChange(&gf.Change{Host: gHost, ACLs: gf.ACLPublic(), Info: ci202})
-		ct.GFake.CreateChange(&gf.Change{Host: gHost, ACLs: gf.ACLPublic(), Info: ci203})
-		ct.GFake.SetDependsOn(gHost, "203_3" /* child */, "202_2" /*parent*/)
-		cl101 := runCLUpdater(101)
-		cl202 := runCLUpdater(202)
-		cl203 := runCLUpdater(203)
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci202})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci203})
+		ct.GFake.SetDependsOn(ct.gHost, "203_3" /* child */, "202_2" /*parent*/)
+		cl101 := ct.runCLUpdater(ctx, 101)
+		cl202 := ct.runCLUpdater(ctx, 202)
+		cl203 := ct.runCLUpdater(ctx, 203)
 
 		s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
-			LuciProject:      lProject,
+			LuciProject:      ct.lProject,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			Pcls: []*internal.PCL{
@@ -181,7 +195,7 @@ func TestUpdateConfig(t *testing.T) {
 					Clids: []int64{int64(cl101.ID)},
 					Pruns: []*internal.PRun{
 						{
-							Id:    lProject + "/" + "1111-v1-beef",
+							Id:    ct.lProject + "/" + "1111-v1-beef",
 							Clids: []int64{int64(cl101.ID)},
 						},
 					},
@@ -201,18 +215,18 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("existing projects is updated without touching components", func() {
-			meta2 := updateConfigToNoFallabck()
+			meta2 := updateConfigToNoFallabck(ctx, &ct)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
 			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
 				Hash:     meta2.Hash(),
 				EVersion: meta2.EVersion,
-				RunIDs:   common.MakeRunIDs(lProject + "/" + "1111-v1-beef"),
+				RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
 			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s2.PB, ShouldResembleProto, &internal.PState{
-				LuciProject:      lProject,
+				LuciProject:      ct.lProject,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*internal.PCL{
@@ -239,7 +253,7 @@ func TestUpdateConfig(t *testing.T) {
 			pb1 = backupPB(s1)
 			changelist.Delete(ctx, cl101.ID)
 
-			meta2 := updateConfigToNoFallabck()
+			meta2 := updateConfigToNoFallabck(ctx, &ct)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
@@ -250,7 +264,7 @@ func TestUpdateConfig(t *testing.T) {
 			})
 			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s2.PB, ShouldResembleProto, &internal.PState{
-				LuciProject:      lProject,
+				LuciProject:      ct.lProject,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*internal.PCL{
@@ -268,13 +282,13 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("disabled project waits for incomplete Runs", func() {
-			ct.Cfg.Disable(ctx, lProject)
+			ct.Cfg.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
 			So(s2.PB, ShouldResembleProto, s1.PB)
 			So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
-				RunIDs: common.MakeRunIDs(lProject + "/" + "1111-v1-beef"),
+				RunIDs: common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
 
 		})
@@ -283,7 +297,7 @@ func TestUpdateConfig(t *testing.T) {
 			for _, c := range s1.PB.GetComponents() {
 				c.Pruns = nil
 			}
-			ct.Cfg.Disable(ctx, lProject)
+			ct.Cfg.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
 			So(s2.Status, ShouldEqual, prjmanager.Status_STOPPED)
