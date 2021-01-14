@@ -206,9 +206,15 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 	for {
 		_, readSpan := trace.StartSpan(ctx, "resultdb.readChunk")
 		n, err := r.Read(buf)
-		if err != nil && err != io.EOF {
+		switch err {
+		case nil, io.EOF:
+		default:
 			readSpan.End(err)
-			return errors.Annotate(err, "failed to read artifact contents").Err()
+			rerr := errors.Annotate(err, "failed to read artifact contents").Err()
+			if err == io.ErrUnexpectedEOF {
+				return appstatus.BadRequest(rerr)
+			}
+			return err
 		}
 		readSpan.Attribute("size", n)
 		readSpan.End(nil)
