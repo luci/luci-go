@@ -18,7 +18,6 @@ import (
 	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -53,7 +52,11 @@ type CTest struct {
 }
 
 func (ct CTest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
-	So(updater.Schedule(ctx, ct.lProject, ct.gHost, change, time.Time{}, 0), ShouldBeNil)
+	So(updater.Schedule(ctx, &updater.RefreshGerritCL{
+		LuciProject: ct.lProject,
+		Host:        ct.gHost,
+		Change:      change,
+	}), ShouldBeNil)
 	ct.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClassID))
 	eid, err := changelist.GobID(ct.gHost, change)
 	So(err, ShouldBeNil)
