@@ -114,7 +114,7 @@
             {
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
               "path": "kitchen-checkout",
-              "version": "refs/heads/master"
+              "version": "HEAD"
             }
           ]
         },
@@ -285,7 +285,7 @@
             {
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
               "path": "kitchen-checkout",
-              "version": "refs/heads/master"
+              "version": "HEAD"
             }
           ]
         },

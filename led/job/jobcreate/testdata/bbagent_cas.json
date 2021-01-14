@@ -109,7 +109,7 @@
             },
             {
               "path": "kitchen-checkout",
-              "version": "refs/heads/master",
+              "version": "HEAD",
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
             }
           ],
@@ -140,7 +140,7 @@
         ],
         "command": [
           "bbagent${EXECUTABLE_SUFFIX}",
-          "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"
+          "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"
         ],
         "env": [
           {
@@ -289,7 +289,7 @@
             },
             {
               "path": "kitchen-checkout",
-              "version": "refs/heads/master",
+              "version": "HEAD",
               "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
             }
           ],
@@ -320,7 +320,7 @@
         ],
         "command": [
           "bbagent${EXECUTABLE_SUFFIX}",
-          "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"
+          "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"
         ],
         "env": [
           {
@@ -502,7 +502,7 @@
         },
         {
           "path": "kitchen-checkout",
-          "version": "refs/heads/master",
+          "version": "HEAD",
           "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
         }
       ],
@@ -533,7 +533,7 @@
     ],
     "command": [
       "bbagent${EXECUTABLE_SUFFIX}",
-      "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"
+      "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"
     ],
     "env": [
       {

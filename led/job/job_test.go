@@ -102,7 +102,7 @@ func TestFlattenToSwarming(t *testing.T) {
 				LedRunID: "infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
 				CIPDInput: &cipdInput{
 					"infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
-					"refs/heads/master",
+					"HEAD",
 				},
 			}
 			So(props, ShouldResemble, expectedProps)
@@ -180,7 +180,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			slice0 := sw.Task.TaskSlices[0]
 			for _, pkg := range slice0.Properties.CipdInputs {
 				// there shouldn't be any recipe package any more
-				So(pkg.Version, ShouldNotEqual, "refs/heads/master")
+				So(pkg.Version, ShouldNotEqual, "HEAD")
 			}
 
 			So(slice0.Properties.Command[:3], ShouldResemble, []string{
@@ -231,7 +231,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			slice0 := sw.Task.TaskSlices[0]
 			for _, pkg := range slice0.Properties.CipdInputs {
 				// there shouldn't be any recipe package any more
-				So(pkg.Version, ShouldNotEqual, "refs/heads/master")
+				So(pkg.Version, ShouldNotEqual, "HEAD")
 			}
 
 			So(slice0.Properties.Command[:3], ShouldResemble, []string{
