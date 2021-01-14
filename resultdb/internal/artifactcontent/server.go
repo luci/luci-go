@@ -196,7 +196,9 @@ func (r *contentRequest) handle(c *router.Context) {
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
 
 	case isolateURL.Valid:
-		r.handleIsolateContent(c.Context, isolateURL.StringVal)
+		// Isolate is deprecated, do not read content from there.
+		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
+		r.sendError(c.Context, err)
 
 	default:
 		r.sendError(c.Context, errors.Reason("neither RBECASHash nor IsolateURL is initialized in %q", key).Err())
