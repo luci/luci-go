@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0fd18dd_35e4641e",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T22:14:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccc44074_01e94780",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 2
+      },
+      "revId": "b88a58373c74f8fbf41303514cc7dcd2c7826b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d966bf85_c5fe8b92",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-14T21:59:27Z",
       "side": 1,
       "message": "nit: s.EnableCompression \u0026\u0026 mayGZipResponse(c.Request.Header)\n\nto skip calling mayGZipResponse if its value is not going to be used\n\nwill save couple nanoseconds!",
+      "range": {
+        "startLine": 336,
+        "startChar": 17,
+        "endLine": 336,
+        "endChar": 32
+      },
+      "revId": "b88a58373c74f8fbf41303514cc7dcd2c7826b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe79e111_aa59b570",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T22:14:47Z",
+      "side": 1,
+      "message": "Done\n\ni am more pleased with less code",
+      "parentUuid": "d966bf85_c5fe8b92",
       "range": {
         "startLine": 336,
         "startChar": 17,
