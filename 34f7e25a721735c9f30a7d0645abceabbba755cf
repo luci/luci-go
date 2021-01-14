@@ -159,6 +159,24 @@
       "parentUuid": "9b4ab437_d99f3b57",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b62b28c5_b1d976dc",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-14T14:45:49Z",
+      "side": 1,
+      "message": "Fine to keep it simple.\n\nThe reason I bring this up is that I think the service should preemptively deny text formats that are not UTF-8. This reduces the complexity of the system, we can assume much more.\n\nSo anything that is text/plain, text/html, application/json, application/xml, text/xml, etc so be required to be UTF-8. For example with json, it\u0027s encoded as \"application/json; charset\u003dutf-8\". The problem is that each mime type has a different way to specify the encoding, and the way to specify it is a bit open ended, e.g. this is likely valid \"text/plain;    encoding\u003dUTF-8   \".\n\nAnyhow, it\u0027s a separate topic and not that much a big deal. My main fear is that this field won\u0027t work well in practice and when we realize it\u0027ll be a bit late and organically grown.",
+      "parentUuid": "d03e63bf_bc3ab39c",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
