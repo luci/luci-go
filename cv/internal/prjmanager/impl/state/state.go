@@ -30,56 +30,53 @@ import (
 
 // State is a state of Project Manager.
 type State struct {
-	LUCIProject string
 
 	// Serializable state.
 
-	Status     prjmanager.Status
-	ConfigHash string
+	Status prjmanager.Status
+	PB     *internal.PState
 
-	// TODO(tandrii): move luciProject, ConfigHash.
-	PB *internal.PState
+	// Helper fields used during mutations.
+	// TODO(tandrii): add them here.
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
 func NewInitial(luciProject string) *State {
 	return &State{
-		LUCIProject: luciProject,
-		PB:          &internal.PState{},
+		Status: prjmanager.Status_STATUS_UNSPECIFIED,
+		PB:     &internal.PState{LuciProject: luciProject},
 	}
 }
 
 // NewExisting returns state from its parts.
 func NewExisting(status prjmanager.Status, pb *internal.PState) *State {
 	return &State{
-		Status:      status,
-		LUCIProject: pb.GetLuciProject(),
-		ConfigHash:  pb.GetConfigHash(),
-		PB:          pb,
+		Status: status,
+		PB:     pb,
 	}
 }
 
 // UpdateConfig updates PM to latest config version.
 func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn, error) {
-	meta, err := config.GetLatestMeta(ctx, s.LUCIProject)
+	meta, err := config.GetLatestMeta(ctx, s.PB.GetLuciProject())
 	if err != nil {
 		return nil, nil, err
 	}
 
 	switch meta.Status {
 	case config.StatusEnabled:
-		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.ConfigHash {
+		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.PB.GetConfigHash() {
 			return s, nil, nil // already up-to-date.
 		}
 		s = s.cloneShallow()
-		s.ConfigHash = meta.Hash()
+		s.PB.ConfigHash = meta.Hash()
 		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
 		// themselves, while others haven't yet even noticed the stopping.
 		// The former will eventually be removed from PState, while the latter will
 		// continue running.
 		s.Status = prjmanager.Status_STARTED
 
-		if err := poller.Poke(ctx, s.LUCIProject); err != nil {
+		if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 			return nil, nil, err
 		}
 		// TODO(tandrii): re-evaluate pending CLs.
@@ -105,7 +102,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 				s = s.cloneShallow()
 				s.Status = prjmanager.Status_STOPPED
 			}
-			if err := poller.Poke(ctx, s.LUCIProject); err != nil {
+			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 				return nil, nil, err
 			}
 			return s, s.cancelRuns, nil
@@ -131,7 +128,7 @@ func (s *State) Poke(ctx context.Context) (*State, eventbox.SideEffectFn, error)
 		return newState, sideEffect, nil
 	}
 	// Propagate downstream.
-	if err := poller.Poke(ctx, s.LUCIProject); err != nil {
+	if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 		return nil, nil, err
 	}
 	if err := s.pokeRuns(ctx); err != nil {
