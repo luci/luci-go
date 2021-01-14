@@ -17,9 +17,9 @@ import '@material/mwc-button';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { computed, observable, reaction } from 'mobx';
+import { observable, reaction } from 'mobx';
 
-import { LoadingStage, TestLoader } from '../../models/test_loader';
+import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import '../dot_spinner';
 import { provideTreeState, TestNavTreeState } from './context';
@@ -36,10 +36,6 @@ export class TestNavTreeElement extends MobxLitElement {
   onSelectedNodeChanged: (node: TestNode) => void = () => {};
 
   treeState = new TestNavTreeState();
-
-  @computed private get allLoaded() {
-    return this.testLoader.stage === LoadingStage.Done;
-  }
 
   private disposer: () => void = () => {};
   connectedCallback() {
@@ -88,11 +84,11 @@ export class TestNavTreeElement extends MobxLitElement {
             id="load-more-btn"
             unelevated dense
             @click=${this.loadNextPage}
-            ?disabled=${this.allLoaded || this.testLoader.isLoading}
+            ?disabled=${this.testLoader.loadedAllVariants || this.testLoader.isLoading}
           >
             ${this.testLoader.isLoading ?
               html`Loading <milo-dot-spinner></milo-dot-spinner>` :
-              this.allLoaded ? 'All tests are Loaded' : 'Load the next 1000 tests'
+              this.testLoader.loadedAllVariants ? 'All tests have been loaded' : 'Load the next 1000 tests'
             }
           </mwc-button>
         </div>

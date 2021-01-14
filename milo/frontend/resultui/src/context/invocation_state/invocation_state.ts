@@ -82,6 +82,24 @@ export class InvocationState {
     }
     return new TestLoader(TestNode.newRoot(), {invocations: [this.invocationName]}, this.appState.uiSpecificService);
   }
+
+  @computed get filteredUnexpectedVariants() {
+    return (this.testLoader?.unexpectedTestVariants || [])
+      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+  }
+
+  @computed get filteredFlakyVariants() {
+    return (this.testLoader?.flakyTestVariants || [])
+      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+  }
+  @computed get filteredExoneratedVariants() {
+    return (this.testLoader?.exoneratedTestVariants || [])
+      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+  }
+  @computed get filteredExpectedVariants() {
+    return (this.testLoader?.expectedTestVariants || [])
+      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+  }
 }
 
 export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');
