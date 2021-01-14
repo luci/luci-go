@@ -158,6 +158,8 @@ message BigQueryExport {
   message TextArtifacts {
     // Use predicate to query artifacts that should be exported to
     // BigQuery table.
+    //
+    // Sub-field predicate.content_type_regexp defaults to "text/.*".
     ArtifactPredicate predicate = 1;
   }
 
