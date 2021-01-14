@@ -213,6 +213,24 @@
       "parentUuid": "18f4d86c_b6032359",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69b08bf8_1db9b6a5",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T22:08:26Z",
+      "side": 1,
+      "message": "I am worried that if we mutate the content we are given, it will make it harder for developers to debug their code. How would they know what their code produces? \nIMO database should not be opinionated - should store the content as is, as long as it conforms to its rules.",
+      "parentUuid": "f9dcdc11_cc200256",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
