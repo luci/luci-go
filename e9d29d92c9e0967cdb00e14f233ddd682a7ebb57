@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9df70ce7_6c184dd0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:06:25Z",
+      "side": 1,
+      "message": "LGTM % bugfix",
+      "revId": "e9d29d92c9e0967cdb00e14f233ddd682a7ebb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c24cd555_eb44e0c8",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:06:25Z",
+      "side": 1,
+      "message": "nit: why 3 lines of code when it could be one? `if err !\u003d nil \u0026\u0026 err !\u003d io.EOF {`",
+      "range": {
+        "startLine": 209,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 10
+      },
+      "revId": "e9d29d92c9e0967cdb00e14f233ddd682a7ebb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d32de5de_155173b0",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:06:25Z",
+      "side": 1,
+      "message": "rerr\n\nbut, this bug happened because the code could be more robust.\nconsider\n  unexpectedEOF \u003d err \u003d\u003d io.ErrUnexpectedEOF\n  err : \u003d ..\n  if unexpectedEOF { ... }\n\nor just\n\n  if err \u003d\u003d io.UnexpectedEOF { \n    return appstatus....\n  }\n  return errors.Annotate(...",
+      "range": {
+        "startLine": 217,
+        "startChar": 10,
+        "endLine": 217,
+        "endChar": 13
+      },
+      "revId": "e9d29d92c9e0967cdb00e14f233ddd682a7ebb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
