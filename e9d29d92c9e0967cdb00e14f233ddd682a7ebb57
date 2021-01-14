@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c97d151c_d2e9d110",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-14T21:17:34Z",
+      "side": 1,
+      "message": "Original is better. changed back.",
+      "parentUuid": "c24cd555_eb44e0c8",
+      "range": {
+        "startLine": 209,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 10
+      },
+      "revId": "e9d29d92c9e0967cdb00e14f233ddd682a7ebb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d32de5de_155173b0",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-14T21:06:25Z",
       "side": 1,
       "message": "rerr\n\nbut, this bug happened because the code could be more robust.\nconsider\n  unexpectedEOF \u003d err \u003d\u003d io.ErrUnexpectedEOF\n  err : \u003d ..\n  if unexpectedEOF { ... }\n\nor just\n\n  if err \u003d\u003d io.UnexpectedEOF { \n    return appstatus....\n  }\n  return errors.Annotate(...",
+      "range": {
+        "startLine": 217,
+        "startChar": 10,
+        "endLine": 217,
+        "endChar": 13
+      },
+      "revId": "e9d29d92c9e0967cdb00e14f233ddd682a7ebb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3543b6af_13131df1",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-14T21:17:34Z",
+      "side": 1,
+      "message": "done with the latter one. thanks for good suggestions.",
+      "parentUuid": "d32de5de_155173b0",
       "range": {
         "startLine": 217,
         "startChar": 10,
