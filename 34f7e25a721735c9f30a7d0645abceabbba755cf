@@ -195,6 +195,24 @@
       "parentUuid": "b62b28c5_b1d976dc",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9dcdc11_cc200256",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-14T22:06:29Z",
+      "side": 1,
+      "message": "I had a similar thought that maybe we should validate/normalize the content types when the artifacts are uploaded to ResultDB.",
+      "parentUuid": "18f4d86c_b6032359",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
