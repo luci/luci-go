@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51be77ef_cf6f1f28",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-14T06:31:43Z",
+      "side": 1,
+      "message": "lgtm (w/ suggestions)",
+      "revId": "bb8c0227485ce8505b8a1b7fdfc2682554f0a899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "309e653c_d19dcc57",
+        "filename": "led/job/jobcreate/testdata/raw_iso.json",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-14T06:31:43Z",
+      "side": 1,
+      "message": "\u0027bucketname\u0027 or \u0027groupname\u0027 would be better, or just remove this line altogether",
+      "range": {
+        "startLine": 125,
+        "startChar": 5,
+        "endLine": 125,
+        "endChar": 11
+      },
+      "revId": "bb8c0227485ce8505b8a1b7fdfc2682554f0a899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c7f50cdd_551bfb44",
+        "filename": "led/job/jobcreate/testdata/raw_iso.json",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-14T06:31:43Z",
+      "side": 1,
+      "message": "hostname",
+      "range": {
+        "startLine": 135,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "bb8c0227485ce8505b8a1b7fdfc2682554f0a899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

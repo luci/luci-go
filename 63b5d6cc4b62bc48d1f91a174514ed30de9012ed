@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d139fd12_0c970232",
+        "filename": "led/ledcli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-14T06:31:43Z",
+      "side": 0,
+      "message": "good fix",
+      "range": {
+        "startLine": 125,
+        "startChar": 70,
+        "endLine": 125,
+        "endChar": 75
+      },
+      "revId": "63b5d6cc4b62bc48d1f91a174514ed30de9012ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
