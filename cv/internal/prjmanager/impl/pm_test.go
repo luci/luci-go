@@ -89,11 +89,11 @@ func TestProjectLifeCycle(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 
 				p, _ = loadProjectEntities(ctx, lProject)
-				So(p.IncompleteRuns, ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
+				So(p.IncompleteRuns(), ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
 				// Must schedule a task per Run for config updates for each of the
 				// started run.
 				runsWithTasks := runtest.SortedRuns(ct.TQ.Tasks())
-				So(runsWithTasks, ShouldResemble, p.IncompleteRuns)
+				So(runsWithTasks, ShouldResemble, p.IncompleteRuns())
 
 				Convey("disable project with incomplete runs", func() {
 					ct.Cfg.Disable(ctx, lProject)
@@ -107,7 +107,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 					// Must schedule a task per Run for cancelation on top of already
 					// scheduled ones before for config disabling.
-					expected := append(runsWithTasks, p.IncompleteRuns...)
+					expected := append(runsWithTasks, p.IncompleteRuns()...)
 					sort.Sort(expected)
 					So(runtest.SortedRuns(ct.TQ.Tasks()), ShouldResemble, expected)
 
@@ -116,19 +116,20 @@ func TestProjectLifeCycle(t *testing.T) {
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
-						So(p.IncompleteRuns, ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
+						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
-						So(p.IncompleteRuns, ShouldBeEmpty)
+						So(p.IncompleteRuns(), ShouldBeEmpty)
 					})
 				})
 			})
 
 			Convey("delete project without incomplete runs", func() {
-				p.IncompleteRuns = nil
+				// No components means also no runs.
+				p.State.Components = nil
 				ct.Cfg.Delete(ctx, lProject)
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))

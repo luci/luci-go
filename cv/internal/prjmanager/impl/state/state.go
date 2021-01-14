@@ -34,11 +34,10 @@ type State struct {
 
 	// Serializable state.
 
-	Status         prjmanager.Status
-	ConfigHash     string
-	IncompleteRuns common.RunIDs
+	Status     prjmanager.Status
+	ConfigHash string
 
-	// TODO(tandrii): move luciProject, ConfigHash and IncompleteRuns here.
+	// TODO(tandrii): move luciProject, ConfigHash.
 	PB *internal.PState
 }
 
@@ -47,6 +46,16 @@ func NewInitial(luciProject string) *State {
 	return &State{
 		LUCIProject: luciProject,
 		PB:          &internal.PState{},
+	}
+}
+
+// NewExisting returns state from its parts.
+func NewExisting(status prjmanager.Status, pb *internal.PState) *State {
+	return &State{
+		Status:      status,
+		LUCIProject: pb.GetLuciProject(),
+		ConfigHash:  pb.GetConfigHash(),
+		PB:          pb,
 	}
 }
 
@@ -90,7 +99,9 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 			s.Status = prjmanager.Status_STOPPING
 			fallthrough
 		case prjmanager.Status_STOPPING:
-			if len(s.IncompleteRuns) == 0 {
+			// TODO(tandrii): pass these Runs to cancelRuns.
+			runs := s.PB.IncompleteRuns()
+			if len(runs) == 0 {
 				s = s.cloneShallow()
 				s.Status = prjmanager.Status_STOPPED
 			}
@@ -132,23 +143,25 @@ func (s *State) Poke(ctx context.Context) (*State, eventbox.SideEffectFn, error)
 
 // OnRunsCreated updates state after new Runs were created.
 func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*State, eventbox.SideEffectFn, error) {
+	existing := s.PB.IncompleteRuns()
 	mutated := false
 	for _, id := range created {
 		if !mutated {
-			if s.IncompleteRuns.ContainsSorted(id) {
+			if existing.ContainsSorted(id) {
 				continue
 			}
 			mutated = true
 			s = s.cloneShallow()
-			cpy := make(common.RunIDs, len(s.IncompleteRuns), len(s.IncompleteRuns)+1)
-			copy(cpy, s.IncompleteRuns)
-			s.IncompleteRuns = cpy
+			cpy := make(common.RunIDs, len(existing), len(existing)+1)
+			copy(cpy, existing)
+			existing = cpy
 		}
-		s.IncompleteRuns.InsertSorted(id)
+		existing.InsertSorted(id)
 	}
 	if !mutated {
 		return s, nil, nil
 	}
+	s.tempSetIncompleteRuns(existing)
 	if s.Status == prjmanager.Status_STOPPED {
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
@@ -160,14 +173,15 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*Stat
 
 // OnRunsCreated updates state after Runs were finished.
 func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*State, eventbox.SideEffectFn, error) {
-	remaining := s.IncompleteRuns.WithoutSorted(finished)
-	if len(remaining) == len(s.IncompleteRuns) {
+	existing := s.PB.IncompleteRuns()
+	remaining := existing.WithoutSorted(finished)
+	if len(remaining) == len(existing) {
 		return s, nil, nil // no change
 	}
 	s = s.cloneShallow()
-	s.IncompleteRuns = remaining
+	s.tempSetIncompleteRuns(remaining)
 
-	if s.Status == prjmanager.Status_STOPPING && len(s.IncompleteRuns) == 0 {
+	if s.Status == prjmanager.Status_STOPPING && len(remaining) == 0 {
 		s.Status = prjmanager.Status_STOPPED
 		return s, nil, nil
 	}
@@ -179,4 +193,13 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, eventbox.SideEffectFn, error) {
 	// TODO(tandrii): implement.
 	return s, nil, nil
+}
+
+func (s *State) tempSetIncompleteRuns(ids common.RunIDs) {
+	// TODO(tandrii): implement this properly. This is done only to pass tests.
+	pruns := make([]*internal.PRun, len(ids))
+	for i, id := range ids {
+		pruns[i] = &internal.PRun{Id: string(id)}
+	}
+	s.PB.Components = []*internal.Component{{Pruns: pruns}}
 }
