@@ -879,6 +879,63 @@ func TestIndexedTags(t *testing.T) {
 	})
 }
 
+func TestUpdateTagIndex(t *testing.T) {
+	t.Parallel()
+
+	Convey("UpdateTagIndex", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		builds := []*model.Build{
+			{
+				ID:       1,
+				BucketID: "bucket",
+				Tags: []string{
+					"a:b",
+					"buildset:b1",
+				},
+			},
+			{
+				ID:       2,
+				BucketID: "bucket",
+				Tags: []string{
+					"a:b",
+					"build_address:address",
+					"buildset:b1",
+				},
+			},
+		}
+		So(UpdateTagIndex(ctx, builds), ShouldBeNil)
+
+		idx, err := model.SearchTagIndex(ctx, "a", "b")
+		So(err, ShouldBeNil)
+		So(idx, ShouldBeNil)
+
+		idx, err = model.SearchTagIndex(ctx, "buildset", "b1")
+		So(err, ShouldBeNil)
+		So(idx, ShouldResemble, []*model.TagIndexEntry{
+			{
+				BuildID:  int64(1),
+				BucketID: "bucket",
+			},
+			{
+				BuildID:  int64(2),
+				BucketID: "bucket",
+			},
+		})
+
+		idx, err = model.SearchTagIndex(ctx, "build_address", "address")
+		So(err, ShouldBeNil)
+		So(idx, ShouldResemble, []*model.TagIndexEntry{
+			{
+				BuildID:  int64(2),
+				BucketID: "bucket",
+			},
+		})
+	})
+}
+
 func TestFetchOnTagIndex(t *testing.T) {
 	t.Parallel()
 
