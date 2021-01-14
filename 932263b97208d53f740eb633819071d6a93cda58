@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f177679_0b8c4aa7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T01:46:18Z",
+      "side": 1,
+      "message": "Also added noop route for \"/auth/pubsub/authdb:push\". It is a pubsub subscription for authdb changes. It is not needed by luci/server code, but keeping the route allows to decouple GAEv2 switch and deletion of the subscription.",
+      "revId": "932263b97208d53f740eb633819071d6a93cda58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
