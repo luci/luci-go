@@ -16,6 +16,24 @@
       "message": "maybe put this into the map unconditionally? it doesn\u0027t hurt to have this in params.\nThen this can be reduced to one line:\n  input.SpecificContentTypes \u003d len(q.ContentTypes) \u003e 0",
       "revId": "00138b043d8c5b2d70e426ba1b68988e0628b59d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cb26990_fc5a88a6",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-14T20:06:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "924bd1e7_73cc40ce",
+      "revId": "00138b043d8c5b2d70e426ba1b68988e0628b59d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
