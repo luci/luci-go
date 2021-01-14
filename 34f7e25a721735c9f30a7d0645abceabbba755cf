@@ -177,6 +177,24 @@
       "parentUuid": "d03e63bf_bc3ab39c",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18f4d86c_b6032359",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:57:07Z",
+      "side": 1,
+      "message": "i see your point.\nit seems a bit orthogonal to BQ Exports. I think this is more about when the data flows into ResultDB, as opposed to when it send it to BQ (at that point, it is kind of already too late).\n\nGTest has a case when they unintentionally produce incorrect UTF-8 sequence due to a bug. Developers still need to see what was produced, and download that, so we cannot reject that data.\n\nThoughts?",
+      "parentUuid": "b62b28c5_b1d976dc",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
