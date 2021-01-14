@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8fec266b_85495fc6",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-14T20:11:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d608a0c_a34589cb",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 6
+      },
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fd587ffb_7d97417a",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "177117c3_370f58f3",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-14T20:11:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd587ffb_7d97417a",
+      "range": {
+        "startLine": 141,
+        "startChar": 3,
+        "endLine": 141,
+        "endChar": 6
+      },
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d7d41940_65cf950e",
@@ -60,6 +108,24 @@
       "writtenOn": "2021-01-13T22:40:39Z",
       "side": 1,
       "message": "should be parallelized",
+      "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62de8d00_eb621623",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-14T20:11:54Z",
+      "side": 1,
+      "message": "Done but, what is the race in the code now? The tests fail because the entities are not yet updated unless I add delays (stuff more things into the channel). But the doc says WorkPool will block until everything is done.",
+      "parentUuid": "d7d41940_65cf950e",
       "revId": "ff1e85cbe6c9bd4c851c0072668d4b6941c6507d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
