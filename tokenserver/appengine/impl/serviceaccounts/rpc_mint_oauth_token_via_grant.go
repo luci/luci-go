@@ -23,13 +23,12 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -44,7 +43,7 @@ import (
 type MintOAuthTokenViaGrantRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns service account rules to use for the request.
@@ -59,8 +58,8 @@ type MintOAuthTokenViaGrantRPC struct {
 
 	// LogOAuthToken is mocked in tests.
 	//
-	// In prod it is LogOAuthToken from oauth_token_bigquery_log.go.
-	LogOAuthToken func(context.Context, *MintedOAuthTokenInfo) error
+	// In prod it is produced by NewOAuthTokenLogger.
+	LogOAuthToken OAuthTokenLogger
 }
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.
@@ -135,7 +134,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 			ConfigRev:   rule.Revision,
 			Rule:        rule.Rule,
 			PeerIP:      state.PeerIP(),
-			RequestID:   info.RequestID(c),
+			RequestID:   trace.SpanContext(c),
 			AuthDBRev:   authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogOAuthToken(c, &info); logErr != nil {

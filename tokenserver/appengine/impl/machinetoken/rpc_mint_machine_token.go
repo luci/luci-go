@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -45,7 +45,7 @@ import (
 type MintMachineTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// CheckCertificate is mocked in tests.
@@ -55,8 +55,8 @@ type MintMachineTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogToken from bigquery_logger.go.
-	LogToken func(c context.Context, info *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // MintMachineToken generates a new token for an authenticated machine.
@@ -173,7 +173,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 				TokenBody: body,
 				CA:        ca,
 				PeerIP:    auth.GetState(c).PeerIP(),
-				RequestID: info.RequestID(c),
+				RequestID: trace.SpanContext(c),
 			}
 			if logErr := r.LogToken(c, &tokInfo); logErr != nil {
 				logging.WithError(logErr).Errorf(c, "Failed to insert the machine token into BigQuery log")

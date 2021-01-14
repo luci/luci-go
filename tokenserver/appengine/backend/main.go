@@ -14,8 +14,6 @@
 
 // Binary backend implements HTTP server that handles requests to 'backend'
 // module.
-//
-// Handlers here are called only via GAE cron or task queues.
 package main
 
 import (
@@ -23,49 +21,35 @@ import (
 	"net/http"
 	"sync"
 
-	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
-	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
-	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
-)
-
-var (
-	caServer    = certauthorities.NewServer()
-	adminServer = adminsrv.NewServer()
+	"go.chromium.org/luci/tokenserver/appengine/impl"
 )
 
 func main() {
-	r := router.New()
-	basemw := standard.Base()
-
-	standard.InstallHandlers(r)
-
-	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
-	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
-
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+	impl.Main(func(srv *server.Server, services *impl.Services) error {
+		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
+		srv.Routes.GET("/internal/cron/read-config", cronMW, func(c *router.Context) {
+			readConfigCron(c, services.Admin)
+		})
+		srv.Routes.GET("/internal/cron/fetch-crl", cronMW, func(c *router.Context) {
+			fetchCRLCron(c, services.Certs)
+		})
+		return nil
+	})
 }
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
-func readConfigCron(c *router.Context) {
-	// Don't override manually imported configs with 'nil' on devserver.
-	if info.IsDevAppServer(c.Context) {
-		c.Writer.WriteHeader(http.StatusOK)
-		return
-	}
-
+func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
 	// All config fetching callbacks to call in parallel.
 	fetchers := []struct {
 		name string
@@ -100,7 +84,7 @@ func readConfigCron(c *router.Context) {
 }
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
-func fetchCRLCron(c *router.Context) {
+func fetchCRLCron(c *router.Context, caServer admin.CertificateAuthoritiesServer) {
 	list, err := caServer.ListCAs(c.Context, nil)
 	if err != nil {
 		panic(err) // let panic catcher deal with it
