@@ -42,6 +42,7 @@ type Query struct {
 	ParentIDRegexp      string
 	FollowEdges         *pb.ArtifactPredicate_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
+	ContentTypes        []string
 	PageSize            int // must be positive
 	PageToken           string
 }
@@ -86,6 +87,9 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 	)
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
+	{{ if .SpecificContentTypes }}
+		AND art.ContentType IN UNNEST(@contentTypes)
+	{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
 LIMIT @limit
 `))
@@ -103,6 +107,7 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 	var input struct {
 		JoinWithTestResults    bool
 		InterestingTestResults bool
+		SpecificContentTypes   bool
 	}
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
@@ -113,26 +118,29 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 			input.InterestingTestResults = true
 		}
 	}
+	params := map[string]interface{}{
+		"invIDs":         q.InvocationIDs,
+		"limit":          q.PageSize,
+		"ParentIdRegexp": q.parentIDRegexp(),
+		// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
+		"variantHashEquals": spanner.NullString{},
+		"variantContains":   []string(nil),
+	}
+	if len(q.ContentTypes) > 0 {
+		input.SpecificContentTypes = true
+		params["contentTypes"] = q.ContentTypes
+	}
+	err = invocations.TokenToMap(q.PageToken, params, "afterInvocationId", "afterParentId", "afterArtifactId")
+	if err != nil {
+		return
+	}
+	testresults.PopulateVariantParams(params, q.TestResultPredicate.GetVariant())
 
 	sql := &bytes.Buffer{}
 	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
 		return
 	}
-
-	st := spanner.NewStatement(sql.String())
-	st.Params["invIDs"] = q.InvocationIDs
-	st.Params["limit"] = q.PageSize
-	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
-	if err != nil {
-		return
-	}
-
-	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
-
-	// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
-	st.Params["variantHashEquals"] = spanner.NullString{}
-	st.Params["variantContains"] = []string(nil)
-	testresults.PopulateVariantParams(st.Params, q.TestResultPredicate.GetVariant())
+	st := spanner.Statement{SQL: sql.String(), Params: params}
 
 	var b spanutil.Buffer
 	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
