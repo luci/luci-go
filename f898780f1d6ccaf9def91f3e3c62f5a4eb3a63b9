@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2890fdc3_bc7c1502",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-14T22:40:16Z",
+      "side": 1,
+      "message": "Nice! Maybe I\u0027ll also need it for RunManager.",
+      "revId": "f898780f1d6ccaf9def91f3e3c62f5a4eb3a63b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55d5a2ce_729b2d61",
+        "filename": "cv/internal/prjmanager/impl/state/side_effect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-14T22:40:16Z",
+      "side": 1,
+      "message": "unfinished sentence",
+      "revId": "f898780f1d6ccaf9def91f3e3c62f5a4eb3a63b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
