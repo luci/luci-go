@@ -107,6 +107,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61e8f090_0836c2ad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T22:33:52Z",
+      "side": 1,
+      "message": "Vadim LGTMed the implementation, so I suppose this was indeed resolved.",
+      "parentUuid": "55177cd5_dc456311",
+      "revId": "4b092086b12d723e50370d1bfa77c49d768aa099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e325a77d_130dc48f",
