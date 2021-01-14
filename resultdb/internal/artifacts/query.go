@@ -42,6 +42,7 @@ type Query struct {
 	ParentIDRegexp      string
 	FollowEdges         *pb.ArtifactPredicate_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
+	ContentTypes        []string
 	PageSize            int // must be positive
 	PageToken           string
 }
@@ -86,6 +87,9 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 	)
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
+	{{ if .SpecificContentTypes }}
+		AND REGEXP_REPLACE(art.ContentType, " ", "") IN UNNEST(@contentTypes)
+	{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
 LIMIT @limit
 `))
@@ -103,6 +107,7 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 	var input struct {
 		JoinWithTestResults    bool
 		InterestingTestResults bool
+		SpecificContentTypes   bool
 	}
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
@@ -113,6 +118,9 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 			input.InterestingTestResults = true
 		}
 	}
+	if len(q.ContentTypes) > 0 {
+		input.SpecificContentTypes = true
+	}
 
 	sql := &bytes.Buffer{}
 	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
@@ -122,6 +130,9 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
+	if len(q.ContentTypes) > 0 {
+		st.Params["contentTypes"] = removeWhiteSpaces(q.ContentTypes)
+	}
 	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
 	if err != nil {
 		return
@@ -223,4 +234,12 @@ func (q *Query) parentIDRegexp() string {
 	// Note: the surrounding parens are important. Without them any expression
 	// matches.
 	return fmt.Sprintf("^(%s)$", strings.Join(alts, "|"))
+}
+
+func removeWhiteSpaces(strs []string) []string {
+	nstrs := make([]string, len(strs))
+	for _, s := range strs {
+		nstrs = append(nstrs, strings.ReplaceAll(s, " ", ""))
+	}
+	return nstrs
 }
