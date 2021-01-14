@@ -114,7 +114,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	after := started.Add(-maxChangeAge)
 	changes, err := q.fetch(ctx, after)
 	// There can be partial result even if err != nil.
-	switch err2 := q.scheduleTasks(ctx, changes); {
+	switch err2 := q.scheduleTasks(ctx, changes, true); {
 	case err != nil:
 		return err
 	case err2 != nil:
@@ -141,7 +141,7 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	after := lastInc.AsTime().Add(-incrementalPollOverlap)
 	changes, err := q.fetch(ctx, after)
 	// There can be partial result even if err != nil.
-	switch err2 := q.scheduleTasks(ctx, changes); {
+	switch err2 := q.scheduleTasks(ctx, changes, false); {
 	case err != nil:
 		return err
 	case err2 != nil:
@@ -183,7 +183,7 @@ func (q *singleQuery) fetch(ctx context.Context, after time.Time) ([]*gerritpb.C
 	}
 }
 
-func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.ChangeInfo) error {
+func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
 	// TODO(tandrii): optimize by checking if CV is interested in the
 	// (host,project,ref) these changes come from before triggering tasks.
 	logging.Debugf(ctx, "scheduling %d CLUpdate tasks", len(changes))
@@ -191,8 +191,14 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		for _, c := range changes {
 			c := c
 			work <- func() error {
-				return updater.Schedule(ctx, q.luciProject, q.sp.GetHost(),
-					c.GetNumber(), c.GetUpdated().AsTime(), 0 /* clid hint */)
+				payload := &updater.RefreshGerritCL{
+					LuciProject:   q.luciProject,
+					Host:          q.sp.GetHost(),
+					Change:        c.GetNumber(),
+					UpdatedHint:   c.GetUpdated(),
+					ForceNotifyPm: forceNotifyPM,
+				}
+				return updater.Schedule(ctx, payload)
 			}
 		}
 	})
