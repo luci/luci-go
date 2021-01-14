@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "b88a58373c74f8fbf41303514cc7dcd2c7826b48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccc44074_01e94780",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T21:59:27Z",
+      "side": 1,
+      "message": "nit: a slightly faster approach would be\n\n  var gzippers sync.Pool\n\n  func getGZipper(w io.Writer) *gzip.Writer {\n    if gw, _ :\u003d gzippers.Get().(*gzip.Writer); gw !\u003d nil {\n      gw.Reset(w)\n      return gw\n    }\n    return gzip.NewWriter(w)\n  }\n\n  func returnGzipper(gw *gzip.Writer) {\n    gzippers.Put(gw)\n  }\n\nIt avoids unnecessarily resetting new writers.",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 2
+      },
+      "revId": "b88a58373c74f8fbf41303514cc7dcd2c7826b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d966bf85_c5fe8b92",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T21:59:27Z",
+      "side": 1,
+      "message": "nit: s.EnableCompression \u0026\u0026 mayGZipResponse(c.Request.Header)\n\nto skip calling mayGZipResponse if its value is not going to be used\n\nwill save couple nanoseconds!",
+      "range": {
+        "startLine": 336,
+        "startChar": 17,
+        "endLine": 336,
+        "endChar": 32
+      },
+      "revId": "b88a58373c74f8fbf41303514cc7dcd2c7826b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
